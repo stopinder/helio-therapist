@@ -1,47 +1,43 @@
 <template>
-  <div class="min-h-screen bg-celestial-dusk text-fog-white font-sans">
+  <div class="flex flex-col min-h-screen bg-celestial-dusk text-fog-white font-sans">
     <!-- Top Bar -->
-    <header class="fixed top-0 left-0 right-0 h-14 bg-celestial-dusk flex items-center justify-between px-8 shadow z-30 border-b border-slate-800">
+    <header class="h-14 bg-celestial-dusk flex items-center justify-between px-8 shadow border-b border-slate-800">
       <div class="text-xl font-bold tracking-tight text-lavender-wash select-none">
         Heliosynthesis
       </div>
       <div class="flex items-center gap-4">
-        <Cog6ToothIcon class="w-5 h-5 text-slate-haze hover:text-fog-white transition cursor-pointer" aria-label="Settings" />
-        <img
-            src="https://ui-avatars.com/api/?name=Therapist&background=232940&color=fff"
-            alt="Therapist profile"
-            class="w-9 h-9 rounded-full object-cover border border-slate-600"
-        />
-        <button
-            class="text-red-400 hover:text-fog-white border border-red-400 hover:border-fog-white rounded-full px-4 py-1.5 text-sm transition"
-        >
-          Logout
-        </button>
+        <Cog6ToothIcon class="w-5 h-5 text-slate-haze hover:text-fog-white cursor-pointer" />
+        <img src="https://ui-avatars.com/api/?name=Therapist&background=232940&color=fff" alt="Therapist profile" class="w-9 h-9 rounded-full border border-slate-600" />
+        <button class="text-red-400 hover:text-fog-white border border-red-400 hover:border-fog-white rounded-full px-4 py-1.5 text-sm">Logout</button>
       </div>
     </header>
 
     <!-- Layout -->
-    <div class="flex pt-14">
-      <SidebarNav class="bg-celestial-dusk border-r border-slate-800">
-        <ClientsSection />
-      </SidebarNav>
+    <div class="flex flex-1">
+      <!-- Left Sidebar -->
+      <aside class="w-56 bg-celestial-dusk border-r border-slate-800 p-4">
+        <ClientsSection @select-client="drawerClient = $event" />
+      </aside>
 
-      <main class="flex-1 min-h-[calc(100vh-3.5rem)] bg-midnight-blue text-fog-white p-10">
-        <section class="max-w-3xl mx-auto">
+
+      <!-- Main Canvas with Message Bar -->
+      <main class="flex flex-col justify-between flex-1 bg-midnight-blue">
+        <div class="flex-grow p-10 max-w-3xl mx-auto w-full">
           <h1 class="text-3xl font-semibold text-lavender-wash mb-2">Therapist Cockpit</h1>
-          <p class="text-slate-haze text-lg">
-            Calm. Structured. Celestial. Now with visual clarity and hierarchy.
-          </p>
-        </section>
+          <p class="text-slate-haze text-lg">Main canvas content</p>
+        </div>
+        <MessageBar />
       </main>
     </div>
   </div>
 </template>
 
 <script setup>
-import SidebarNav from './components/SidebarNav.vue'
 import ClientsSection from './components/ClientsSection.vue'
+import { ref } from 'vue'
+
+const drawerClient = ref(null)
+
 import { Cog6ToothIcon } from '@heroicons/vue/24/outline'
+import MessageBar from './components/MessageBar.vue'
 </script>
-
-
