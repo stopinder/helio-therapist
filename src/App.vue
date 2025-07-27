@@ -19,14 +19,21 @@
         <ClientsSection @select-client="drawerClient = $event" />
       </aside>
 
-
       <!-- Main Canvas with Message Bar -->
-      <main class="flex flex-col justify-between flex-1 bg-midnight-blue">
+      <main class="flex flex-col justify-between flex-1 bg-midnight-blue relative">
         <div class="flex-grow p-10 max-w-3xl mx-auto w-full">
           <h1 class="text-3xl font-semibold text-lavender-wash mb-2">Therapist Cockpit</h1>
           <p class="text-slate-haze text-lg">Main canvas content</p>
         </div>
-        <MessageBar />
+        <!-- Message bar gets prop about sidebar state -->
+        <MessageBar :drawerOpen="!!drawerClient" />
+        <!-- Floating Sidebar, overlays content but not message bar -->
+        <Sidebar
+            v-if="drawerClient"
+            :show="!!drawerClient"
+            :client="drawerClient"
+            @close="drawerClient = null"
+        />
       </main>
     </div>
   </div>
@@ -34,6 +41,7 @@
 
 <script setup>
 import ClientsSection from './components/ClientsSection.vue'
+import Sidebar from './components/SidebarNav.vue'
 import { ref } from 'vue'
 
 const drawerClient = ref(null)

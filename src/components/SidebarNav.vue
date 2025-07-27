@@ -1,35 +1,33 @@
 <template>
-  <aside
-      class="fixed top-0 left-0 h-screen w-64 bg-helios-slate text-white flex flex-col border-r border-slate-700 z-40"
-      aria-label="Therapist Sidebar Navigation"
-  >
-    <!-- Logo / Title -->
-    <div class="h-14 flex items-center justify-center border-b border-slate-700 text-indigo-200 text-xl font-bold tracking-tight select-none">
-      Heliosynthesis
+  <transition name="slide">
+    <div
+        v-if="show"
+        class="fixed right-0 top-14 bottom-0 w-[22rem] z-50"
+    >
+      <div
+          class="relative w-full h-full bg-[#243659] text-fog-white shadow-lg border-l border-violet-glow ring-1 ring-violet-glow/10 p-6 flex flex-col"
+      >
+        <button
+            class="absolute top-4 right-4 text-slate-haze hover:text-fog-white transition"
+            @click="$emit('close')"
+        >
+          <XMarkIcon class="w-5 h-5" />
+        </button>
+        <h2 class="text-xl font-semibold text-lavender-wash mb-4">
+          {{ client?.name }}
+        </h2>
+        <p class="text-slate-haze text-sm">Client details will appear here…</p>
+      </div>
     </div>
-
-    <!-- Sidebar Sections -->
-    <nav class="flex-1 overflow-y-auto px-4 py-6 space-y-8">
-      <!-- Sections injected here -->
-      <slot />
-    </nav>
-  </aside>
+  </transition>
 </template>
 
 <script setup>
-// No props needed yet — receives children via <slot>
+import { XMarkIcon } from '@heroicons/vue/24/outline'
+defineProps({
+  client: Object,
+  show: Boolean
+})
+defineEmits(['close'])
 </script>
 
-<style scoped>
-/* Custom scrollbars (optional) */
-nav::-webkit-scrollbar {
-  width: 6px;
-}
-nav::-webkit-scrollbar-track {
-  background: transparent;
-}
-nav::-webkit-scrollbar-thumb {
-  background-color: rgba(255, 255, 255, 0.1);
-  border-radius: 3px;
-}
-</style>
