@@ -1,17 +1,19 @@
 <template>
   <div
       :class="[
-      'fixed left-56 bottom-0 transition-all duration-300 border-t border-slate-800 p-4 flex items-center gap-3 bg-[#1E2E4C] z-40',
-      drawerOpen ? 'mr-[22rem]' : 'right-0'
+      'fixed bottom-0 left-0 right-0 transition-all duration-300 border-t border-slate-800 p-4 bg-[#1E2E4C] z-40',
+      drawerOpen ? 'md:mr-[22rem]' : ''
     ]"
       style="height:4rem"
   >
-    <MicrophoneIcon class="w-6 h-6 text-violet-glow hover:text-fog-white cursor-pointer transition" />
-    <textarea
-        rows="1"
-        placeholder="Write or speak your reflection..."
-        class="flex-1 resize-none bg-transparent text-fog-white placeholder-slate-haze focus:outline-none"
-    />
+    <div class="flex w-full items-center gap-3">
+      <textarea
+          rows="1"
+          placeholder="Write or speak your reflection..."
+          class="flex-1 resize-none bg-transparent text-fog-white placeholder-slate-haze focus:outline-none"
+      />
+      <MicrophoneIcon class="w-6 h-6 text-violet-glow hover:text-fog-white cursor-pointer transition" />
+    </div>
   </div>
 </template>
 
@@ -21,3 +23,4 @@ defineProps({
   drawerOpen: Boolean
 })
 </script>
+
