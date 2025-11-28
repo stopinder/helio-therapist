@@ -1,12 +1,24 @@
 <template>
-  <div class="flex h-screen bg-[#f5f7fa] text-[#2c3e50] overflow-hidden">
-    <!-- Left Sidebar (hidden on mobile, visible from md up) -->
-    <LeftSidebar
-        class="shrink-0"
-        :clients="clients"
-        :selected-client="selectedClient"
-        @select-client="handleSelectClient"
-    />
+  <div class="flex h-screen bg-[#f5f7fa] text-[#2c3e50] overflow-hidden relative">
+    <!-- Mobile overlay background -->
+    <transition name="fade">
+      <div
+          v-if="isSidebarOpen && !isDesktop"
+          class="fixed inset-0 bg-black/40 z-30"
+          @click="isSidebarOpen = false"
+      ></div>
+    </transition>
+
+    <!-- Left Sidebar -->
+    <transition name="slide">
+      <LeftSidebar
+          v-if="isSidebarOpen || isDesktop"
+          class="fixed md:static top-0 left-0 h-full w-64 bg-white shadow-md z-40 md:z-auto shrink-0"
+          :clients="clients"
+          :selected-client="selectedClient"
+          @select-client="handleSelectClient"
+      />
+    </transition>
 
     <!-- Main area -->
     <div class="flex flex-col flex-1 overflow-hidden">
@@ -14,8 +26,14 @@
       <header
           class="h-14 flex items-center justify-between px-4 md:px-6 border-b border-[#d9dce1] bg-white shadow-sm"
       >
-        <!-- Left: Title -->
-        <div class="flex items-center gap-2">
+        <div class="flex items-center gap-3">
+          <!-- Hamburger (mobile only) -->
+          <button
+              class="md:hidden text-[20px] font-semibold text-[#2c3e50]"
+              @click="isSidebarOpen = !isSidebarOpen"
+          >
+            ☰
+          </button>
           <div class="text-[18px] font-semibold tracking-tight text-[#2c3e50]">
             Therapist Workspace
           </div>
@@ -23,7 +41,6 @@
 
         <!-- Right: Button group -->
         <div class="flex items-center gap-3">
-          <!-- Toggle right panel -->
           <button
               class="text-[13px] px-3 py-1.5 rounded-md border border-[#d9dce1] text-[#3f4754] bg-white hover:bg-[#f5f7fa] transition"
               @click="toggleRightPanel"
@@ -31,14 +48,12 @@
             Client context
           </button>
 
-          <!-- Calendar icon -->
           <button
               class="h-9 w-9 flex items-center justify-center rounded-md border border-[#d9dce1] text-[#3f4754] hover:bg-[#f5f7fa] transition text-[15px]"
           >
             🗓
           </button>
 
-          <!-- Settings icon -->
           <button
               class="h-9 w-9 flex items-center justify-center rounded-md border border-[#d9dce1] text-[#3f4754] hover:bg-[#f5f7fa] transition text-[15px]"
           >
@@ -56,12 +71,14 @@
       </main>
 
       <!-- Message bar -->
-      <footer class="border-t border-[#d9dce1] bg-white shadow-inner px-4 md:px-6 py-3 md:py-4">
+      <footer
+          class="border-t border-[#d9dce1] bg-white shadow-inner px-4 md:px-6 py-3 md:py-4"
+      >
         <MessageBar @submit="handleMessageSubmit" />
       </footer>
     </div>
 
-    <!-- Right slide-in panel (hidden on mobile) -->
+    <!-- Right slide-in panel (toggleable on all screens) -->
     <RightPanel
         :selected-client="selectedClient"
         :open="isRightPanelOpen"
@@ -71,14 +88,26 @@
 </template>
 
 <script setup>
-import { computed, ref } from "vue";
-
+import { ref, computed, onMounted } from "vue";
 import LeftSidebar from "./components/LeftSidebar.vue";
 import RightPanel from "./components/RightPanel.vue";
 import MessageBar from "./components/MessageBar.vue";
 import MainCanvas from "./components/MainCanvas.vue";
 
-// ACTIVE CLIENTS
+// Layout state
+const isSidebarOpen = ref(false);
+const isRightPanelOpen = ref(true);
+const isDesktop = ref(false);
+
+const updateScreen = () => {
+  isDesktop.value = window.innerWidth >= 768;
+};
+onMounted(() => {
+  updateScreen();
+  window.addEventListener("resize", updateScreen);
+});
+
+// Clients
 const clients = ref([
   {
     id: 1,
@@ -89,10 +118,9 @@ const clients = ref([
   },
 ]);
 
-// ARCHIVED CLIENTS
 const archivedClients = ref([]);
+const selectedClient = ref(clients.value[0]);
 
-// ADD CLIENT
 const addClient = (data) => {
   const newClient = {
     id: Date.now(),
@@ -105,18 +133,13 @@ const addClient = (data) => {
   selectedClient.value = newClient;
 };
 
-// ARCHIVE CLIENT (soft delete)
 const archiveClient = (client) => {
   clients.value = clients.value.filter((c) => c.id !== client.id);
   client.archived = true;
   archivedClients.value.push(client);
-
-  if (selectedClient.value?.id === client.id) {
-    selectedClient.value = null;
-  }
+  if (selectedClient.value?.id === client.id) selectedClient.value = null;
 };
 
-// RESTORE CLIENT
 const restoreClient = (client) => {
   archivedClients.value = archivedClients.value.filter(
       (c) => c.id !== client.id
@@ -125,42 +148,50 @@ const restoreClient = (client) => {
   clients.value.push(client);
 };
 
-
-const selectedClient = ref(clients[0]);
-
-// Right panel open state
-const isRightPanelOpen = ref(true);
-
-const toggleRightPanel = () => {
-  isRightPanelOpen.value = !isRightPanelOpen.value;
-};
-
-// Simple in-memory notes, associated with clients
-// shape: { id, clientId, text }
-const sessionNotes = ref([]);
-
-// Select a client from the sidebar
 const handleSelectClient = (client) => {
   selectedClient.value = client;
+  if (!isDesktop.value) isSidebarOpen.value = false; // auto-close on mobile
 };
 
-// Handle input from the message bar
+const sessionNotes = ref([]);
 const handleMessageSubmit = (text) => {
   const value = text.trim();
   if (!value) return;
-
   sessionNotes.value.push({
-    id: Date.now() + Math.random(), // simple unique-ish id
-    clientId: selectedClient.value ? selectedClient.value.id : null,
+    id: Date.now() + Math.random(),
+    clientId: selectedClient.value?.id ?? null,
     text: value,
   });
 };
 
-// Only show notes for the currently selected client
 const filteredNotes = computed(() => {
   if (!selectedClient.value) return [];
   return sessionNotes.value.filter(
-      (note) => note.clientId === selectedClient.value.id,
+      (note) => note.clientId === selectedClient.value.id
   );
 });
+
+const toggleRightPanel = () => {
+  isRightPanelOpen.value = !isRightPanelOpen.value;
+};
 </script>
+
+<style scoped>
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.15s ease;
+}
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
+.slide-enter-active,
+.slide-leave-active {
+  transition: transform 0.25s ease;
+}
+.slide-enter-from,
+.slide-leave-to {
+  transform: translateX(-100%);
+}
+</style>

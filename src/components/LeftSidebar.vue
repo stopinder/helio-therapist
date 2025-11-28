@@ -46,46 +46,46 @@
           </button>
         </div>
 
-        <!-- Client List -->
+        <!-- Client List (scrollable) -->
         <div class="max-h-64 overflow-auto pr-1 space-y-1">
           <div
               v-for="client in clients"
               :key="client.id"
-              class="relative group px-3 py-2 rounded-md hover:bg-[#f7f8fa] transition cursor-pointer"
-              :class="{
-              'bg-[#eef1f5]': selectedClient && client.id === selectedClient.id
-            }"
-              @click="select(client)"
+              class="relative group rounded-md"
           >
-            <div class="flex items-center justify-between">
+            <button
+                class="w-full flex items-center justify-between px-3 py-2 rounded-md hover:bg-[#f7f8fa] transition text-left"
+                :class="{
+                'bg-[#eef1f5]':
+                  selectedClient && client.id === selectedClient.id
+              }"
+                @click="select(client)"
+            >
               <span
-                  class="text-[14px]"
+                  class="text-[14px] truncate"
                   :class="{
                   'font-semibold text-[#2c3e50]':
                     selectedClient && client.id === selectedClient.id,
-                  'text-[#3f4754]': !selectedClient || client.id !== selectedClient.id
+                  'text-[#3f4754]':
+                    !selectedClient || client.id !== selectedClient.id
                 }"
               >
                 {{ client.name }}
               </span>
 
-              <!-- ⋮ menu -->
-              <button
+              <!-- ⋮ menu trigger -->
+              <span
                   class="opacity-0 group-hover:opacity-100 transition text-[16px] px-1"
                   @click.stop="openMenu(client)"
               >
                 ⋮
-              </button>
-            </div>
-
-            <p class="text-[12px] text-slate-600 leading-snug">
-              {{ client.note }}
-            </p>
+              </span>
+            </button>
 
             <!-- Action Menu -->
             <div
                 v-if="menuOpenFor === client.id"
-                class="absolute right-2 top-8 bg-white border border-[#d9dce1] rounded-md shadow-lg text-[13px] z-50"
+                class="absolute right-2 top-9 bg-white border border-[#d9dce1] rounded-md shadow-lg text-[13px] z-50"
             >
               <button
                   class="block w-full text-left px-3 py-2 hover:bg-[#f5f5f7]"
@@ -107,7 +107,7 @@
               class="px-3 py-2 rounded-md hover:bg-[#f7f8fa] transition cursor-pointer"
           >
             <div class="flex items-center justify-between">
-              <span class="text-[14px] text-slate-500 italic">
+              <span class="text-[14px] text-slate-500 italic truncate">
                 {{ client.name }}
               </span>
 
@@ -168,16 +168,24 @@
 </template>
 
 <script setup>
-
 import { ref } from "vue";
 import SidebarGroup from "./sidebar/SidebarGroup.vue";
 import AddClientModal from "./sidebar/AddClientModal.vue";
 import ArchiveClientModal from "./sidebar/ArchiveClientModal.vue";
 
 const props = defineProps({
-  clients: Array,
-  archivedClients: Array,
-  selectedClient: Object,
+  clients: {
+    type: Array,
+    default: () => [],
+  },
+  archivedClients: {
+    type: Array,
+    default: () => [],
+  },
+  selectedClient: {
+    type: Object,
+    default: null,
+  },
 });
 
 const emit = defineEmits([
@@ -191,14 +199,15 @@ const emit = defineEmits([
 const showAddClientModal = ref(false);
 const showArchiveModal = ref(false);
 
-// Temp storage for archive
+// Temp storage for archive target
 const clientToArchive = ref(null);
 
 // Menu open state
 const menuOpenFor = ref(null);
 
 const openMenu = (client) => {
-  menuOpenFor.value = client.id;
+  menuOpenFor.value =
+      menuOpenFor.value === client.id ? null : client.id;
 };
 
 const confirmArchive = (client) => {
@@ -207,24 +216,25 @@ const confirmArchive = (client) => {
   menuOpenFor.value = null;
 };
 
-// Final action
 const archiveNow = () => {
-  emit("archive-client", clientToArchive.value);
+  if (clientToArchive.value) {
+    emit("archive-client", clientToArchive.value);
+  }
   showArchiveModal.value = false;
+  clientToArchive.value = null;
 };
 
-// Add client
 const submitNewClient = (data) => {
   emit("add-client", data);
   showAddClientModal.value = false;
 };
 
-// Select
 const select = (client) => {
   emit("select-client", client);
+  // close any open menu when you select
+  menuOpenFor.value = null;
 };
 
-// Restore
 const restoreClient = (client) => {
   emit("restore-client", client);
 };
@@ -245,6 +255,3 @@ const restoreClient = (client) => {
   border-color: #d9dce1;
 }
 </style>
-
-
-
