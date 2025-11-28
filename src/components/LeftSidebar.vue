@@ -55,26 +55,39 @@
               v-for="client in clients"
               :key="client.id"
               type="button"
-              class="w-full text-left px-3 py-2 cursor-pointer transition-colors"
+              class="w-full text-left px-3 py-3 cursor-pointer rounded-sm transition-all"
               :class="[
-              selectedClient && client.id === selectedClient.id
-                ? 'bg-[#f5f7fa] border-l-2 border-[#3f4754]'
-                : 'hover:bg-[#f5f7fa]'
-            ]"
+    selectedClient && client.id === selectedClient.id
+      ? 'relative bg-[#eef1f5] border-l-4 border-[#3f4754] shadow-sm'
+      : 'hover:bg-[#f5f7fa] border-l-4 border-transparent'
+  ]"
               @click="onSelectClient(client)"
           >
             <div class="flex items-center justify-between">
-              <span class="text-[14px] text-[#2c3e50]">
-                {{ client.name }}
-              </span>
+    <span
+        class="text-[14px]"
+        :class="selectedClient && client.id === selectedClient.id
+        ? 'font-semibold text-[#2c3e50]'
+        : 'font-medium text-[#3f4754]'"
+    >
+      {{ client.name }}
+    </span>
+
               <span class="text-[11px] text-slate-500">
-                {{ client.lastSeen }}
-              </span>
+      {{ client.lastSeen }}
+    </span>
             </div>
-            <p class="text-[12px] text-slate-600 mt-1">
+
+            <p
+                class="text-[12px] mt-1"
+                :class="selectedClient && client.id === selectedClient.id
+      ? 'text-slate-700'
+      : 'text-slate-600'"
+            >
               {{ client.note }}
             </p>
           </button>
+
         </div>
       </section>
     </div>

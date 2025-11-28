@@ -1,17 +1,16 @@
 <template>
   <transition name="slide">
     <aside
-        v-if="isOpen"
+        v-if="open"
         class="w-72 bg-white border-l border-[#d9dce1] shadow-xl fixed right-0 top-0 flex flex-col"
         :style="{ height: 'calc(100% - 4rem)' }"
     >
       <!-- Header -->
       <div class="h-14 flex items-center justify-between px-4 border-b border-[#d9dce1]">
         <span class="text-[16px] font-semibold">
-          <span v-if="selectedClient">Client context</span>
-          <span v-else>Client context</span>
+          Client context
         </span>
-        <button @click="toggle" class="text-[#3f4754] hover:text-black text-sm">
+        <button @click="emit('close')" class="text-[#3f4754] hover:text-black text-sm">
           ✕
         </button>
       </div>
@@ -79,20 +78,20 @@
 </template>
 
 <script setup>
-import { computed, ref } from "vue";
+import { computed } from "vue";
 
 const props = defineProps({
   selectedClient: {
     type: Object,
     default: null,
   },
+  open: {
+    type: Boolean,
+    default: true,
+  },
 });
 
-const isOpen = ref(true);
-
-const toggle = () => {
-  isOpen.value = !isOpen.value;
-};
+const emit = defineEmits(["close"]);
 
 // For now, derive some placeholder alerts/tags based on the mock client
 const derivedAlerts = computed(() => {

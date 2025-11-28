@@ -16,6 +16,13 @@
           Therapist Workspace
         </div>
         <div class="flex items-center gap-4">
+          <!-- Toggle right panel -->
+          <button
+              class="text-[13px] px-3 py-1 rounded border border-[#d9dce1] text-[#3f4754] hover:bg-[#f5f7fa]"
+              @click="toggleRightPanel"
+          >
+            Client context
+          </button>
           <button class="text-[#3f4754] hover:text-black">🗓</button>
           <button class="text-[#3f4754] hover:text-black">⚙️</button>
         </div>
@@ -36,7 +43,11 @@
     </div>
 
     <!-- Right slide-in panel -->
-    <RightPanel :selected-client="selectedClient" />
+    <RightPanel
+        :selected-client="selectedClient"
+        :open="isRightPanelOpen"
+        @close="isRightPanelOpen = false"
+    />
   </div>
 </template>
 
@@ -71,6 +82,13 @@ const clients = [
 ];
 
 const selectedClient = ref(clients[0]);
+
+// Right panel open state
+const isRightPanelOpen = ref(true);
+
+const toggleRightPanel = () => {
+  isRightPanelOpen.value = !isRightPanelOpen.value;
+};
 
 // Simple in-memory notes, associated with clients
 // shape: { id, clientId, text }
