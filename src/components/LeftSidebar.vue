@@ -1,9 +1,11 @@
 <template>
   <aside
-      class="hidden md:flex md:w-64 bg-white border-r border-[#d9dce1] flex-col select-none"
+      class="flex flex-col bg-white border-r border-[#d9dce1] select-none w-64 h-full"
   >
     <!-- Therapist header -->
-    <div class="h-16 flex items-center px-5 border-b border-[#e2e5ea] bg-[#fafbfc]">
+    <div
+        class="h-16 flex items-center px-5 border-b border-[#e2e5ea] bg-[#fafbfc]"
+    >
       <div class="flex items-center gap-3">
         <div
             class="h-9 w-9 rounded-full bg-[#e2dcd4] flex items-center justify-center text-[14px] font-semibold text-[#2c3e50]"
@@ -14,16 +16,13 @@
           <span class="text-[14px] font-semibold text-[#2c3e50]">
             Robert Ormiston
           </span>
-          <span class="text-[12px] text-slate-500">
-            Psychotherapist
-          </span>
+          <span class="text-[12px] text-slate-500"> Psychotherapist </span>
         </div>
       </div>
     </div>
 
     <!-- Sidebar Content -->
     <div class="flex-1 overflow-auto p-4 space-y-6">
-
       <!-- NAVIGATION -->
       <SidebarGroup title="Navigation" :initiallyOpen="true">
         <div class="space-y-1.5 px-2">
@@ -36,7 +35,6 @@
 
       <!-- CLIENTS -->
       <SidebarGroup title="Clients" :initiallyOpen="true">
-        <!-- Add Client Button -->
         <div class="px-2 mb-2">
           <button
               class="w-full py-1.5 text-[13px] rounded-md bg-[#3f4754] text-white hover:bg-[#2f3540] transition"
@@ -46,7 +44,6 @@
           </button>
         </div>
 
-        <!-- Client List (scrollable) -->
         <div class="max-h-64 overflow-auto pr-1 space-y-1">
           <div
               v-for="client in clients"
@@ -57,7 +54,7 @@
                 class="w-full flex items-center justify-between px-3 py-2 rounded-md hover:bg-[#f7f8fa] transition text-left"
                 :class="{
                 'bg-[#eef1f5]':
-                  selectedClient && client.id === selectedClient.id
+                  selectedClient && client.id === selectedClient.id,
               }"
                 @click="select(client)"
             >
@@ -67,13 +64,11 @@
                   'font-semibold text-[#2c3e50]':
                     selectedClient && client.id === selectedClient.id,
                   'text-[#3f4754]':
-                    !selectedClient || client.id !== selectedClient.id
+                    !selectedClient || client.id !== selectedClient.id,
                 }"
               >
                 {{ client.name }}
               </span>
-
-              <!-- ⋮ menu trigger -->
               <span
                   class="opacity-0 group-hover:opacity-100 transition text-[16px] px-1"
                   @click.stop="openMenu(client)"
@@ -82,7 +77,6 @@
               </span>
             </button>
 
-            <!-- Action Menu -->
             <div
                 v-if="menuOpenFor === client.id"
                 class="absolute right-2 top-9 bg-white border border-[#d9dce1] rounded-md shadow-lg text-[13px] z-50"
@@ -110,7 +104,6 @@
               <span class="text-[14px] text-slate-500 italic truncate">
                 {{ client.name }}
               </span>
-
               <button
                   class="text-[12px] text-[#2563eb] hover:underline"
                   @click.stop="restoreClient(client)"
@@ -148,7 +141,6 @@
           <button class="sidebar-btn">Videos</button>
         </div>
       </SidebarGroup>
-
     </div>
 
     <!-- Add Client Modal -->
@@ -174,18 +166,9 @@ import AddClientModal from "./sidebar/AddClientModal.vue";
 import ArchiveClientModal from "./sidebar/ArchiveClientModal.vue";
 
 const props = defineProps({
-  clients: {
-    type: Array,
-    default: () => [],
-  },
-  archivedClients: {
-    type: Array,
-    default: () => [],
-  },
-  selectedClient: {
-    type: Object,
-    default: null,
-  },
+  clients: Array,
+  archivedClients: Array,
+  selectedClient: Object,
 });
 
 const emit = defineEmits([
@@ -195,49 +178,33 @@ const emit = defineEmits([
   "select-client",
 ]);
 
-// Modal state
 const showAddClientModal = ref(false);
 const showArchiveModal = ref(false);
-
-// Temp storage for archive target
 const clientToArchive = ref(null);
-
-// Menu open state
 const menuOpenFor = ref(null);
 
 const openMenu = (client) => {
-  menuOpenFor.value =
-      menuOpenFor.value === client.id ? null : client.id;
+  menuOpenFor.value = menuOpenFor.value === client.id ? null : client.id;
 };
-
 const confirmArchive = (client) => {
   clientToArchive.value = client;
   showArchiveModal.value = true;
   menuOpenFor.value = null;
 };
-
 const archiveNow = () => {
-  if (clientToArchive.value) {
-    emit("archive-client", clientToArchive.value);
-  }
+  if (clientToArchive.value) emit("archive-client", clientToArchive.value);
   showArchiveModal.value = false;
   clientToArchive.value = null;
 };
-
 const submitNewClient = (data) => {
   emit("add-client", data);
   showAddClientModal.value = false;
 };
-
 const select = (client) => {
   emit("select-client", client);
-  // close any open menu when you select
   menuOpenFor.value = null;
 };
-
-const restoreClient = (client) => {
-  emit("restore-client", client);
-};
+const restoreClient = (client) => emit("restore-client", client);
 </script>
 
 <style scoped>
@@ -255,3 +222,5 @@ const restoreClient = (client) => {
   border-color: #d9dce1;
 }
 </style>
+
+

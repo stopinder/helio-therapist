@@ -106,6 +106,33 @@ onMounted(() => {
   updateScreen();
   window.addEventListener("resize", updateScreen);
 });
+let startX = 0;
+let currentX = 0;
+
+const handleTouchStart = (e) => {
+  startX = e.touches[0].clientX;
+};
+const handleTouchMove = (e) => {
+  currentX = e.touches[0].clientX;
+};
+const handleTouchEnd = () => {
+  const diff = currentX - startX;
+  if (startX < 30 && diff > 50) {
+    // Swipe right from left edge
+    isSidebarOpen.value = true;
+  } else if (diff < -50 && isSidebarOpen.value) {
+    // Swipe left to close
+    isSidebarOpen.value = false;
+  }
+  startX = 0;
+  currentX = 0;
+};
+
+onMounted(() => {
+  window.addEventListener("touchstart", handleTouchStart);
+  window.addEventListener("touchmove", handleTouchMove);
+  window.addEventListener("touchend", handleTouchEnd);
+});
 
 // Clients
 const clients = ref([
