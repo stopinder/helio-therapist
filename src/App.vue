@@ -78,27 +78,53 @@ import RightPanel from "./components/RightPanel.vue";
 import MessageBar from "./components/MessageBar.vue";
 import MainCanvas from "./components/MainCanvas.vue";
 
-// Mock clients – centralised here
-const clients = [
+// ACTIVE CLIENTS
+const clients = ref([
   {
     id: 1,
     name: "Celia R.",
-    lastSeen: "Today",
+    email: "",
     note: "Parts work / relationship stress",
+    archived: false,
   },
-  {
-    id: 2,
-    name: "Fabian L.",
-    lastSeen: "Tomorrow",
-    note: "ADHD, overwhelm, shame",
-  },
-  {
-    id: 3,
-    name: "Zala K.",
-    lastSeen: "This week",
-    note: "Trauma history, nervous system work",
-  },
-];
+]);
+
+// ARCHIVED CLIENTS
+const archivedClients = ref([]);
+
+// ADD CLIENT
+const addClient = (data) => {
+  const newClient = {
+    id: Date.now(),
+    name: data.name,
+    email: data.email,
+    note: data.note,
+    archived: false,
+  };
+  clients.value.push(newClient);
+  selectedClient.value = newClient;
+};
+
+// ARCHIVE CLIENT (soft delete)
+const archiveClient = (client) => {
+  clients.value = clients.value.filter((c) => c.id !== client.id);
+  client.archived = true;
+  archivedClients.value.push(client);
+
+  if (selectedClient.value?.id === client.id) {
+    selectedClient.value = null;
+  }
+};
+
+// RESTORE CLIENT
+const restoreClient = (client) => {
+  archivedClients.value = archivedClients.value.filter(
+      (c) => c.id !== client.id
+  );
+  client.archived = false;
+  clients.value.push(client);
+};
+
 
 const selectedClient = ref(clients[0]);
 
