@@ -58,21 +58,94 @@
       <h3 class="text-[16px] font-semibold tracking-tight text-[#2c3e50] mb-3">
         Structured Tools
       </h3>
-      <p class="mt-2 text-[14px] text-slate-600">
-        IFS, CBT maps, and other structured tools for
-        <span v-if="selectedClient">
-          {{ selectedClient.name }}
-        </span>
-        <span v-else>
-          the selected client
-        </span>
-        will be loaded here in future steps.
-      </p>
+
+      <!-- Map mode toggle -->
+      <div class="inline-flex rounded-md border border-[#d9dce1] bg-[#f5f7fa] text-[12px] mb-4 overflow-hidden">
+        <button
+            type="button"
+            class="px-3 py-1.5 border-r border-[#d9dce1] transition"
+            :class="activeMap === 'ifs'
+            ? 'bg-white text-[#2c3e50] font-semibold'
+            : 'text-slate-600 hover:bg-white/60'"
+            @click="activeMap = 'ifs'"
+        >
+          IFS Map
+        </button>
+        <button
+            type="button"
+            class="px-3 py-1.5 border-r border-[#d9dce1] transition"
+            :class="activeMap === 'emdr'
+            ? 'bg-white text-[#2c3e50] font-semibold'
+            : 'text-slate-600 hover:bg-white/60'"
+            @click="activeMap = 'emdr'"
+        >
+          EMDR Map
+        </button>
+        <button
+            type="button"
+            class="px-3 py-1.5 transition"
+            :class="activeMap === 'timeline'
+            ? 'bg-white text-[#2c3e50] font-semibold'
+            : 'text-slate-600 hover:bg-white/60'"
+            @click="activeMap = 'timeline'"
+        >
+          Timeline
+        </button>
+      </div>
+
+      <!-- Map content placeholder -->
+      <div
+          class="mt-2 border border-dashed border-[#d9dce1] rounded-lg px-4 py-4 bg-[#f9fafb] text-[14px] text-slate-700"
+      >
+        <!-- IFS Map -->
+        <template v-if="activeMap === 'ifs'">
+          <p class="mb-2">
+            IFS map for
+            <span v-if="selectedClient">{{ selectedClient.name }}</span>
+            <span v-else>the selected client</span>.
+          </p>
+          <p class="text-[13px] text-slate-600 leading-relaxed">
+            This area will host your IFS parts mapping: Self, protectors,
+            exiles, and their relationships. In a later step, this placeholder
+            will be replaced with an interactive IFS map component.
+          </p>
+        </template>
+
+        <!-- EMDR Map -->
+        <template v-else-if="activeMap === 'emdr'">
+          <p class="mb-2">
+            EMDR process view for
+            <span v-if="selectedClient">{{ selectedClient.name }}</span>
+            <span v-else>the selected client</span>.
+          </p>
+          <p class="text-[13px] text-slate-600 leading-relaxed">
+            This area will represent EMDR targets, SUD/VOC tracking, resources,
+            and phase-oriented progress. Later this becomes an interactive EMDR
+            workflow map.
+          </p>
+        </template>
+
+        <!-- Timeline Map -->
+        <template v-else-if="activeMap === 'timeline'">
+          <p class="mb-2">
+            Timeline / pattern map for
+            <span v-if="selectedClient">{{ selectedClient.name }}</span>
+            <span v-else>the selected client</span>.
+          </p>
+          <p class="text-[13px] text-slate-600 leading-relaxed">
+            This view will summarise relational patterns, key events, and
+            developmental threads over time. It will be the bridge between IFS
+            work, EMDR processing, and narrative understanding.
+          </p>
+        </template>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup>
+import { ref } from "vue";
+
 const props = defineProps({
   selectedClient: {
     type: Object,
@@ -83,4 +156,7 @@ const props = defineProps({
     default: () => [],
   },
 });
+
+// Which structured tool/map is active in the UI
+const activeMap = ref("ifs");
 </script>
