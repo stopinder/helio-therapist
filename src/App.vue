@@ -11,22 +11,43 @@
     <!-- Main area -->
     <div class="flex flex-col flex-1 overflow-hidden">
       <!-- Top header -->
-      <header class="h-14 flex items-center justify-between px-6 border-b border-[#d9dce1] bg-white shadow-sm">
-        <div class="text-[17px] font-semibold">
-          Therapist Workspace
+      <header
+          class="h-14 flex items-center justify-between px-6 border-b border-[#d9dce1] bg-white shadow-sm"
+      >
+        <!-- Left: Title -->
+        <div class="flex items-center gap-2">
+          <div class="text-[18px] font-semibold tracking-tight text-[#2c3e50]">
+            Therapist Workspace
+          </div>
         </div>
-        <div class="flex items-center gap-4">
+
+        <!-- Right: Button group -->
+        <div class="flex items-center gap-3">
+
           <!-- Toggle right panel -->
           <button
-              class="text-[13px] px-3 py-1 rounded border border-[#d9dce1] text-[#3f4754] hover:bg-[#f5f7fa]"
+              class="text-[13px] px-3 py-1.5 rounded-md border border-[#d9dce1] text-[#3f4754] bg-white hover:bg-[#f5f7fa] transition"
               @click="toggleRightPanel"
           >
             Client context
           </button>
-          <button class="text-[#3f4754] hover:text-black">🗓</button>
-          <button class="text-[#3f4754] hover:text-black">⚙️</button>
+
+          <!-- Calendar icon -->
+          <button
+              class="h-9 w-9 flex items-center justify-center rounded-md border border-[#d9dce1] text-[#3f4754] hover:bg-[#f5f7fa] transition text-[15px]"
+          >
+            🗓
+          </button>
+
+          <!-- Settings icon -->
+          <button
+              class="h-9 w-9 flex items-center justify-center rounded-md border border-[#d9dce1] text-[#3f4754] hover:bg-[#f5f7fa] transition text-[15px]"
+          >
+            ⚙️
+          </button>
         </div>
       </header>
+
 
       <!-- Central canvas area -->
       <main class="flex-1 overflow-auto p-6">
