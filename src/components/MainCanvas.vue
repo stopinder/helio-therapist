@@ -1,28 +1,30 @@
 <template>
-  <div class="space-y-6">
+  <div class="space-y-8">
     <!-- Client / session header -->
-    <div class="border border-[#d9dce1] bg-white rounded-md p-6 shadow-sm">
-      <h2 class="text-[17px] font-semibold">
+    <div class="border border-[#d1d5db] bg-white rounded-lg p-6 shadow-sm">
+      <h2 class="text-[18px] font-semibold tracking-tight text-[#2c3e50]">
         <span v-if="selectedClient">
-          Session workspace – {{ selectedClient.name }}
+          Session Workspace — {{ selectedClient.name }}
         </span>
         <span v-else>
-          Session workspace
+          Session Workspace
         </span>
       </h2>
-      <p class="mt-2 text-[14px] text-slate-600">
+      <p class="mt-2 text-[14px] text-slate-600 leading-relaxed">
         <span v-if="selectedClient">
           {{ selectedClient.note }}
         </span>
         <span v-else>
-          Select a client from the left sidebar to begin working.
+          Select a client from the left sidebar to begin.
         </span>
       </p>
     </div>
 
     <!-- Notes block -->
-    <div class="border border-[#d9dce1] bg-white rounded-md p-6 shadow-sm">
-      <h3 class="text-[15px] font-semibold mb-2">Session Notes</h3>
+    <div class="border border-[#d1d5db] bg-white rounded-lg p-6 shadow-sm">
+      <h3 class="text-[16px] font-semibold tracking-tight text-[#2c3e50] mb-3">
+        Session Notes
+      </h3>
 
       <p v-if="!selectedClient" class="mt-1 text-[14px] text-slate-600">
         No client selected. Choose a client from the left sidebar to start
@@ -44,7 +46,7 @@
         <li
             v-for="note in sessionNotes"
             :key="note.id"
-            class="border border-[#e2e5eb] rounded-md px-3 py-2 bg-[#f9fafb]"
+            class="border border-[#e5e7eb] rounded-md px-4 py-2 bg-[#f9fafb] text-[14px] leading-relaxed shadow-sm"
         >
           {{ note.text }}
         </li>
@@ -52,8 +54,10 @@
     </div>
 
     <!-- Structured tools block -->
-    <div class="border border-[#d9dce1] bg-white rounded-md p-6 shadow-sm">
-      <h3 class="text-[15px] font-semibold mb-2">Structured Tools</h3>
+    <div class="border border-[#d1d5db] bg-white rounded-lg p-6 shadow-sm">
+      <h3 class="text-[16px] font-semibold tracking-tight text-[#2c3e50] mb-3">
+        Structured Tools
+      </h3>
       <p class="mt-2 text-[14px] text-slate-600">
         IFS, CBT maps, and other structured tools for
         <span v-if="selectedClient">

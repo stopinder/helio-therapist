@@ -2,7 +2,7 @@
   <transition name="slide">
     <aside
         v-if="open"
-        class="w-72 bg-white border-l border-[#d9dce1] shadow-xl fixed right-0 top-0 flex flex-col"
+        class="hidden md:flex md:w-72 bg-white border-l border-[#d9dce1] shadow-xl fixed right-0 top-0 flex-col"
         :style="{ height: 'calc(100% - 4rem)' }"
     >
       <!-- Header -->
@@ -160,4 +160,3 @@ const derivedTags = computed(() => {
   transition: 0.2s ease;
 }
 </style>
-

@@ -1,6 +1,6 @@
 <template>
-  <div class="flex h-screen bg-[#f5f7fa] text-[#2c3e50]">
-    <!-- Left Sidebar -->
+  <div class="flex h-screen bg-[#f5f7fa] text-[#2c3e50] overflow-hidden">
+    <!-- Left Sidebar (hidden on mobile, visible from md up) -->
     <LeftSidebar
         class="shrink-0"
         :clients="clients"
@@ -12,7 +12,7 @@
     <div class="flex flex-col flex-1 overflow-hidden">
       <!-- Top header -->
       <header
-          class="h-14 flex items-center justify-between px-6 border-b border-[#d9dce1] bg-white shadow-sm"
+          class="h-14 flex items-center justify-between px-4 md:px-6 border-b border-[#d9dce1] bg-white shadow-sm"
       >
         <!-- Left: Title -->
         <div class="flex items-center gap-2">
@@ -23,7 +23,6 @@
 
         <!-- Right: Button group -->
         <div class="flex items-center gap-3">
-
           <!-- Toggle right panel -->
           <button
               class="text-[13px] px-3 py-1.5 rounded-md border border-[#d9dce1] text-[#3f4754] bg-white hover:bg-[#f5f7fa] transition"
@@ -48,9 +47,8 @@
         </div>
       </header>
 
-
       <!-- Central canvas area -->
-      <main class="flex-1 overflow-auto p-6">
+      <main class="flex-1 overflow-auto p-4 md:p-6">
         <MainCanvas
             :selected-client="selectedClient"
             :session-notes="filteredNotes"
@@ -58,12 +56,12 @@
       </main>
 
       <!-- Message bar -->
-      <footer class="border-t border-[#d9dce1] bg-white shadow-inner px-6 py-4">
+      <footer class="border-t border-[#d9dce1] bg-white shadow-inner px-4 md:px-6 py-3 md:py-4">
         <MessageBar @submit="handleMessageSubmit" />
       </footer>
     </div>
 
-    <!-- Right slide-in panel -->
+    <!-- Right slide-in panel (hidden on mobile) -->
     <RightPanel
         :selected-client="selectedClient"
         :open="isRightPanelOpen"
@@ -140,4 +138,3 @@ const filteredNotes = computed(() => {
   );
 });
 </script>
-
