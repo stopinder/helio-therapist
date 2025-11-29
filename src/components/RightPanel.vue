@@ -1,8 +1,8 @@
 <template>
-  <transition name="slide-right">
+  <transition name="panel-slide-fade">
     <aside
         v-if="open"
-        class="fixed inset-y-0 right-0 w-80 bg-white border-l border-[#d9dce1] shadow-xl z-40 flex flex-col transform transition-transform duration-300 ease-in-out md:w-96"
+        class="fixed inset-y-0 right-0 w-80 md:w-96 bg-white border-l border-[#d9dce1] shadow-xl z-50 flex flex-col transform"
     >
       <!-- Header -->
       <div class="flex items-center justify-between px-4 py-3 border-b border-[#e2e5ea] bg-[#fafbfc] sticky top-0 z-10">
@@ -23,7 +23,7 @@
         <!-- Close button -->
         <button
             @click="$emit('close')"
-            class="text-gray-500 hover:text-gray-800 md:hidden"
+            class="text-gray-500 hover:text-gray-800 text-lg font-semibold"
             aria-label="Close client context"
         >
           ✕
@@ -31,10 +31,12 @@
       </div>
 
       <!-- Content -->
-      <div class="flex-1 overflow-auto p-4 space-y-6">
+      <div class="flex-1 overflow-auto p-4 space-y-6 text-[#2c3e50]">
         <!-- Alerts -->
         <section>
-          <h3 class="text-[13px] font-semibold uppercase tracking-wide text-slate-500 mb-2">Alerts</h3>
+          <h3 class="text-[13px] font-semibold uppercase tracking-wide text-slate-500 mb-2">
+            Alerts
+          </h3>
           <div class="space-y-2">
             <div class="bg-yellow-50 border-l-4 border-yellow-400 text-[13px] p-2 rounded">
               Watch for activation when exploring relationship themes.
@@ -47,17 +49,27 @@
 
         <!-- Tags -->
         <section>
-          <h3 class="text-[13px] font-semibold uppercase tracking-wide text-slate-500 mb-2">Tags</h3>
+          <h3 class="text-[13px] font-semibold uppercase tracking-wide text-slate-500 mb-2">
+            Tags
+          </h3>
           <div class="flex flex-wrap gap-2">
-            <span class="px-2 py-1 text-[12px] bg-slate-100 rounded-md">Parts work</span>
-            <span class="px-2 py-1 text-[12px] bg-slate-100 rounded-md">Relationship stress</span>
-            <span class="px-2 py-1 text-[12px] bg-slate-100 rounded-md">Attachment</span>
+            <span class="px-2 py-1 text-[12px] bg-slate-100 rounded-md">
+              Parts work
+            </span>
+            <span class="px-2 py-1 text-[12px] bg-slate-100 rounded-md">
+              Relationship stress
+            </span>
+            <span class="px-2 py-1 text-[12px] bg-slate-100 rounded-md">
+              Attachment
+            </span>
           </div>
         </section>
 
         <!-- Background -->
         <section>
-          <h3 class="text-[13px] font-semibold uppercase tracking-wide text-slate-500 mb-2">Background</h3>
+          <h3 class="text-[13px] font-semibold uppercase tracking-wide text-slate-500 mb-2">
+            Background
+          </h3>
           <ul class="text-[13px] space-y-1">
             <li><strong>GP:</strong> Dr. A. Coleman</li>
             <li><strong>Referred by:</strong> Self</li>
@@ -68,20 +80,44 @@
 
         <!-- Actions -->
         <section>
-          <h3 class="text-[13px] font-semibold uppercase tracking-wide text-slate-500 mb-2">Actions</h3>
+          <h3 class="text-[13px] font-semibold uppercase tracking-wide text-slate-500 mb-2">
+            Actions
+          </h3>
           <div class="space-y-2">
-            <button class="w-full py-2 text-[13px] rounded-md bg-[#2563eb] text-white hover:bg-[#1d4ed8] transition">Schedule / Reschedule Session</button>
-            <button class="w-full py-2 text-[13px] rounded-md border border-[#d9dce1] bg-white text-[#2c3e50] hover:bg-[#f7f8fa] transition">Export Session Summary (PDF)</button>
-            <button class="w-full py-2 text-[13px] rounded-md border border-[#d9dce1] bg-white text-[#2c3e50] hover:bg-[#f7f8fa] transition">View Full Record</button>
+            <button
+                class="w-full py-2 text-[13px] rounded-md bg-[#2563eb] text-white hover:bg-[#1d4ed8] transition"
+            >
+              Schedule / Reschedule Session
+            </button>
+            <button
+                class="w-full py-2 text-[13px] rounded-md border border-[#d9dce1] bg-white text-[#2c3e50] hover:bg-[#f7f8fa] transition"
+            >
+              Export Session Summary (PDF)
+            </button>
+            <button
+                class="w-full py-2 text-[13px] rounded-md border border-[#d9dce1] bg-white text-[#2c3e50] hover:bg-[#f7f8fa] transition"
+            >
+              View Full Record
+            </button>
           </div>
         </section>
 
-        <!-- Zoom / AI Summary placeholder -->
+        <!-- Zoom / AI -->
         <section>
-          <h3 class="text-[13px] font-semibold uppercase tracking-wide text-slate-500 mb-2">Zoom / AI Tools</h3>
+          <h3 class="text-[13px] font-semibold uppercase tracking-wide text-slate-500 mb-2">
+            Zoom / AI Tools
+          </h3>
           <div class="space-y-2">
-            <button class="w-full py-2 text-[13px] rounded-md border border-[#d9dce1] bg-white text-[#3f4754] hover:bg-[#f7f8fa] transition">Generate AI Summary</button>
-            <button class="w-full py-2 text-[13px] rounded-md border border-[#d9dce1] bg-white text-[#3f4754] hover:bg-[#f7f8fa] transition">View Transcript Highlights</button>
+            <button
+                class="w-full py-2 text-[13px] rounded-md border border-[#d9dce1] bg-white text-[#3f4754] hover:bg-[#f7f8fa] transition"
+            >
+              Generate AI Summary
+            </button>
+            <button
+                class="w-full py-2 text-[13px] rounded-md border border-[#d9dce1] bg-white text-[#3f4754] hover:bg-[#f7f8fa] transition"
+            >
+              View Transcript Highlights
+            </button>
           </div>
         </section>
       </div>
@@ -90,13 +126,12 @@
 </template>
 
 <script setup>
-import { computed } from "vue";   // 👈 add this line
+import { computed } from "vue";
 
 const props = defineProps({
   selectedClient: Object,
   open: Boolean
 });
-
 
 const initials = computed(() =>
     props.selectedClient?.name
@@ -108,17 +143,21 @@ const initials = computed(() =>
             .toUpperCase()
         : "CR"
 );
-
 </script>
 
 <style scoped>
-.slide-right-enter-active,
-.slide-right-leave-active {
-  transition: transform 0.25s ease;
+.panel-slide-fade-enter-active,
+.panel-slide-fade-leave-active {
+  transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
 }
-.slide-right-enter-from,
-.slide-right-leave-to {
+.panel-slide-fade-enter-from,
+.panel-slide-fade-leave-to {
+  opacity: 0;
   transform: translateX(100%);
 }
+.panel-slide-fade-enter-to,
+.panel-slide-fade-leave-from {
+  opacity: 1;
+  transform: translateX(0);
+}
 </style>
-
