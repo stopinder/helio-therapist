@@ -16,8 +16,11 @@
           class="z-40 shrink-0 w-64 bg-white border-r border-[#d9dce1] h-full"
           :clients="clients"
           :selected-client="selectedClient"
+          :is-sidebar-open="isSidebarOpen"
           @select-client="handleSelectClient"
+          @close-sidebar="isSidebarOpen = false"
       />
+
     </transition>
 
     <!-- Main Area -->
@@ -129,7 +132,7 @@ import MessageBar from "./components/MessageBar.vue";
 import MainCanvas from "./components/MainCanvas.vue";
 
 const isSidebarOpen = ref(false);
-const isRightPanelOpen = ref(true);
+const isRightPanelOpen = ref(false);
 const isDesktop = ref(false);
 
 // NEW: Zoom state

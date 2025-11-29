@@ -1,10 +1,24 @@
 <template>
   <aside
-      class="flex flex-col bg-white border-r border-[#d9dce1] select-none w-64 h-full"
+      class="fixed inset-y-0 left-0 flex flex-col bg-white border-r border-[#d9dce1] select-none w-64 h-full z-40 transform transition-transform duration-200 ease-in-out md:static md:translate-x-0"
+      :class="{ '-translate-x-full': !isSidebarOpen }"
   >
+    <!-- Close button (mobile only) -->
+    <button
+        @click="$emit('close-sidebar')"
+        class="absolute top-3 right-3 md:hidden text-gray-500 hover:text-gray-800"
+        aria-label="Close sidebar"
+    >
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none"
+           viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round"
+              d="M6 18L18 6M6 6l12 12" />
+      </svg>
+    </button>
+
     <!-- Therapist header -->
     <div
-        class="h-16 flex items-center px-5 border-b border-[#e2e5ea] bg-[#fafbfc]"
+        class="h-16 flex items-center px-5 border-b border-[#e2e5ea] bg-[#fafbfc] mt-1"
     >
       <div class="flex items-center gap-3">
         <div
@@ -53,18 +67,15 @@
             <button
                 class="w-full flex items-center justify-between px-3 py-2 rounded-md hover:bg-[#f7f8fa] transition text-left"
                 :class="{
-                'bg-[#eef1f5]':
-                  selectedClient && client.id === selectedClient.id,
+                'bg-[#eef1f5]': selectedClient && client.id === selectedClient.id,
               }"
                 @click="select(client)"
             >
               <span
                   class="text-[14px] truncate"
                   :class="{
-                  'font-semibold text-[#2c3e50]':
-                    selectedClient && client.id === selectedClient.id,
-                  'text-[#3f4754]':
-                    !selectedClient || client.id !== selectedClient.id,
+                  'font-semibold text-[#2c3e50]': selectedClient && client.id === selectedClient.id,
+                  'text-[#3f4754]': !selectedClient || client.id !== selectedClient.id,
                 }"
               >
                 {{ client.name }}
@@ -158,7 +169,6 @@
     />
   </aside>
 </template>
-
 <script setup>
 import { ref } from "vue";
 import SidebarGroup from "./sidebar/SidebarGroup.vue";
@@ -169,6 +179,7 @@ const props = defineProps({
   clients: Array,
   archivedClients: Array,
   selectedClient: Object,
+  isSidebarOpen: { type: Boolean, default: true }, // 👈 added
 });
 
 const emit = defineEmits([
@@ -176,6 +187,7 @@ const emit = defineEmits([
   "archive-client",
   "restore-client",
   "select-client",
+  "close-sidebar", // 👈 added
 ]);
 
 const showAddClientModal = ref(false);
@@ -206,21 +218,4 @@ const select = (client) => {
 };
 const restoreClient = (client) => emit("restore-client", client);
 </script>
-
-<style scoped>
-.sidebar-btn {
-  width: 100%;
-  text-align: left;
-  padding: 6px 10px;
-  font-size: 13px;
-  border-radius: 6px;
-  transition: 0.15s;
-  border: 1px solid transparent;
-}
-.sidebar-btn:hover {
-  background: #f7f8fa;
-  border-color: #d9dce1;
-}
-</style>
-
 
