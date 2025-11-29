@@ -150,6 +150,13 @@
             >
               View Full Record
             </button>
+            <button
+                class="w-full py-2 text-[13px] rounded-md border border-[#d9dce1] bg-white text-[#2c3e50] hover:bg-[#f7f8fa] transition"
+                @click="$emit('view-map', selectedClient)"
+            >
+              🗺 View Map
+            </button>
+
           </div>
         </section>
 

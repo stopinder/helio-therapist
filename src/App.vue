@@ -120,7 +120,9 @@
         :selected-client="selectedClient"
         :open="isRightPanelOpen"
         @close="isRightPanelOpen = false"
+        @view-map="showClientMap"
     />
+
   </div>
 </template>
 
@@ -134,6 +136,10 @@ import MainCanvas from "./components/MainCanvas.vue";
 const isSidebarOpen = ref(false);
 const isRightPanelOpen = ref(false);
 const isDesktop = ref(false);
+const showClientMap = (client) => {
+  currentView.value = "map";
+  selectedClient.value = client;
+};
 
 // NEW: Zoom state
 const isInSession = ref(false);
