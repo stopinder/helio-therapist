@@ -84,28 +84,48 @@
             Tags
           </h3>
           <div class="flex flex-wrap gap-2">
-            <span class="px-2 py-1 text-[12px] bg-slate-100 rounded-md">
-              Parts work
-            </span>
-            <span class="px-2 py-1 text-[12px] bg-slate-100 rounded-md">
-              Relationship stress
-            </span>
-            <span class="px-2 py-1 text-[12px] bg-slate-100 rounded-md">
-              Attachment
-            </span>
+            <div
+                v-for="(tag, index) in tags"
+                :key="index"
+                class="flex items-center bg-slate-100 rounded-md px-2 py-1 text-[12px]"
+            >
+              <span>{{ tag }}</span>
+              <button
+                  @click="removeTag(index)"
+                  class="ml-1 text-slate-400 hover:text-red-500 text-[11px]"
+                  aria-label="Remove tag"
+              >
+                ✕
+              </button>
+            </div>
+            <input
+                v-model="newTag"
+                @keyup.enter="addTag"
+                placeholder="+ Add tag"
+                class="text-[12px] px-2 py-1 border border-transparent focus:border-[#2563eb] rounded-md outline-none bg-slate-50 w-24"
+            />
           </div>
         </section>
 
-        <!-- Background -->
+
+        <!-- Session Context -->
         <section>
           <h3 class="text-[13px] font-semibold uppercase tracking-wide text-slate-500 mb-2">
-            Background
+            Session Context
           </h3>
-          <ul class="text-[13px] space-y-1">
-            <li><strong>GP:</strong> Dr. A. Coleman</li>
-            <li><strong>Referred by:</strong> Self</li>
-            <li><strong>Last session:</strong> 21 Nov 2025</li>
-            <li><strong>Next session:</strong> 6 Dec 2025, 10:00 AM</li>
+          <ul class="text-[13px] space-y-2">
+            <li>
+              <strong>Last session:</strong>
+              <span class="text-slate-600">21 Nov 2025 — Explored relationship parts, noted self-compassion progress.</span>
+            </li>
+            <li>
+              <strong>Next session:</strong>
+              <span class="text-slate-600">6 Dec 2025 at 10:00 AM</span>
+            </li>
+            <li>
+              <strong>Current focus:</strong>
+              <span class="text-slate-600">Strengthening self-leadership and improving relational boundaries.</span>
+            </li>
           </ul>
         </section>
 
@@ -196,6 +216,22 @@ const removeAlert = (index) => {
   alerts.value.splice(index, 1);
   // 🧠 Later: Supabase delete (supabase.from('alerts').delete().eq('id', alertId))
 };
+const tags = ref(["Parts work", "Relationship stress", "Attachment"]);
+const newTag = ref("");
+
+const addTag = () => {
+  const value = newTag.value.trim();
+  if (!value || tags.value.includes(value)) return;
+  tags.value.push(value);
+  newTag.value = "";
+  // 🧠 Later: Supabase insert into client_tags table
+};
+
+const removeTag = (index) => {
+  tags.value.splice(index, 1);
+  // 🧠 Later: Supabase delete from client_tags table
+};
+
 </script>
 
 <style scoped>
