@@ -37,15 +37,46 @@
           <h3 class="text-[13px] font-semibold uppercase tracking-wide text-slate-500 mb-2">
             Alerts
           </h3>
-          <div class="space-y-2">
-            <div class="bg-yellow-50 border-l-4 border-yellow-400 text-[13px] p-2 rounded">
-              Watch for activation when exploring relationship themes.
+
+          <!-- Existing alerts -->
+          <div v-if="alerts.length" class="space-y-2">
+            <div
+                v-for="(alert, index) in alerts"
+                :key="index"
+                class="bg-yellow-50 border-l-4 border-yellow-400 text-[13px] p-2 rounded flex justify-between items-start"
+            >
+              <span class="flex-1 pr-2">{{ alert }}</span>
+              <button
+                  @click="removeAlert(index)"
+                  class="text-slate-400 hover:text-red-500 text-[12px] font-semibold"
+                  aria-label="Remove alert"
+              >
+                ✕
+              </button>
             </div>
-            <div class="bg-yellow-50 border-l-4 border-yellow-400 text-[13px] p-2 rounded">
-              Ground before moving into deeper parts work.
+          </div>
+          <div v-else class="text-[13px] text-slate-400 italic">No alerts yet.</div>
+
+          <!-- Add new alert -->
+          <div class="mt-3 space-y-2">
+    <textarea
+        v-model="newAlert"
+        placeholder="Add a new alert..."
+        rows="2"
+        class="w-full text-[13px] border border-[#d9dce1] rounded-md p-2 resize-none focus:ring-1 focus:ring-[#2563eb] focus:outline-none"
+    ></textarea>
+            <div class="flex justify-end">
+              <button
+                  @click="addAlert"
+                  :disabled="!newAlert.trim()"
+                  class="text-[13px] px-3 py-1 rounded-md bg-[#2563eb] text-white hover:bg-[#1d4ed8] transition disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Add Alert
+              </button>
             </div>
           </div>
         </section>
+
 
         <!-- Tags -->
         <section>
@@ -126,13 +157,14 @@
 </template>
 
 <script setup>
-import { computed } from "vue";
+import { ref, computed } from "vue";
 
 const props = defineProps({
   selectedClient: Object,
   open: Boolean
 });
 
+// Therapist initials
 const initials = computed(() =>
     props.selectedClient?.name
         ? props.selectedClient.name
@@ -143,6 +175,27 @@ const initials = computed(() =>
             .toUpperCase()
         : "CR"
 );
+
+// ---- Alerts (local for now, Supabase-ready later) ----
+const alerts = ref([
+  "Watch for activation when exploring relationship themes.",
+  "Ground before moving into deeper parts work."
+]);
+
+const newAlert = ref("");
+
+const addAlert = () => {
+  const value = newAlert.value.trim();
+  if (!value) return;
+  alerts.value.push(value);
+  newAlert.value = "";
+  // 🧠 Later: Supabase insert (supabase.from('alerts').insert({ client_id, text: value }))
+};
+
+const removeAlert = (index) => {
+  alerts.value.splice(index, 1);
+  // 🧠 Later: Supabase delete (supabase.from('alerts').delete().eq('id', alertId))
+};
 </script>
 
 <style scoped>
@@ -161,3 +214,4 @@ const initials = computed(() =>
   transform: translateX(0);
 }
 </style>
+
