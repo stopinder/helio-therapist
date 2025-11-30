@@ -340,6 +340,7 @@ import SidebarGroup from "./sidebar/SidebarGroup.vue";
 import AddClientModal from "./sidebar/AddClientModal.vue";
 import AddResourceModal from "./sidebar/AddResourceModal.vue";
 import ArchiveClientModal from "./sidebar/ArchiveClientModal.vue";
+import { jsPDF } from "jspdf";
 
 const props = defineProps({
   clients: Array,
@@ -460,35 +461,42 @@ const exportAll = () => {
     return;
   }
 
-  // 1. Build the export data
-  const exportData = {
-    exportedAt: new Date().toISOString(),
-    total: selected.length,
-    resources: selected.map(r => ({
-      title: r.title,
-      type: r.type,
-      url: r.url,
-      createdAt: r.createdAt,
-    })),
-  };
+  // Create a new PDF document
+  const doc = new jsPDF();
 
-  // 2. Convert to JSON string
-  const jsonString = JSON.stringify(exportData, null, 2);
+  // Add header text
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(16);
+  doc.text("Helio Therapist Resource Export", 20, 20);
 
-  // 3. Create a blob and download link
-  const blob = new Blob([jsonString], { type: "application/json" });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
+  // Add date
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(11);
+  const date = new Date().toLocaleDateString();
+  doc.text(`Export Date: ${date}`, 20, 30);
 
-  link.href = url;
-  link.download = `helio-resources-${new Date().toISOString().slice(0, 10)}.json`;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
+  // Add section title
+  doc.setFontSize(12);
+  doc.text(`Selected Resources (${selected.length})`, 20, 45);
 
-  // 4. Free up memory
-  URL.revokeObjectURL(url);
+  // List each selected resource
+  let y = 55;
+  selected.forEach((r, index) => {
+    const line = `${index + 1}. ${r.title} — ${r.type}`;
+    doc.text(line, 25, y);
+    y += 8;
+  });
+
+  // Footer line
+  y += 10;
+  doc.setFontSize(10);
+  doc.setTextColor(100);
+  doc.text("Generated locally by Helio Therapist prototype", 20, y);
+
+  // Save the PDF
+  doc.save(`helio-resources-${new Date().toISOString().slice(0, 10)}.pdf`);
 };
+
 
 
 const clearAllExports = () => {
