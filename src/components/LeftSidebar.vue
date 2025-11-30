@@ -461,41 +461,68 @@ const exportAll = () => {
     return;
   }
 
-  // Create a new PDF document
   const doc = new jsPDF();
 
-  // Add header text
+  // === HEADER ===
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(16);
-  doc.text("Helio Therapist Resource Export", 20, 20);
+  doc.setFontSize(14);
+  doc.text("Clinical EMDR-Informed IFS Psychotherapy and Counselling", 20, 20, { maxWidth: 170 });
 
-  // Add date
+  doc.setFontSize(12);
+  doc.setFont("helvetica", "bold");
+  doc.text("Chrysalis Therapy Services", 20, 30);
+
+  doc.setFontSize(10);
+  doc.setFont("helvetica", "normal");
+  doc.text("Therapist: Robert Ormiston", 20, 38);
+
+  // Date
+  const date = new Date().toLocaleDateString();
+  doc.text(`Date: ${date}`, 20, 44);
+
+  // Horizontal separator line
+  doc.setDrawColor(180);
+  doc.line(20, 48, 190, 48);
+
+  // === MAIN SECTION ===
+  doc.setFontSize(12);
+  doc.setTextColor(30);
+  doc.setFont("helvetica", "bold");
+  doc.text(`Selected Resources (${selected.length})`, 20, 58);
+
   doc.setFont("helvetica", "normal");
   doc.setFontSize(11);
-  const date = new Date().toLocaleDateString();
-  doc.text(`Export Date: ${date}`, 20, 30);
+  let y = 68;
 
-  // Add section title
-  doc.setFontSize(12);
-  doc.text(`Selected Resources (${selected.length})`, 20, 45);
-
-  // List each selected resource
-  let y = 55;
   selected.forEach((r, index) => {
-    const line = `${index + 1}. ${r.title} — ${r.type}`;
+    const typeLabel =
+        r.type === "audio"
+            ? "Audio file"
+            : r.type === "video"
+                ? "Video file"
+                : r.type === "pdf"
+                    ? "PDF document"
+                    : "Link";
+    const line = `${index + 1}. ${r.title} — ${typeLabel}`;
     doc.text(line, 25, y);
     y += 8;
+    if (y > 270) {
+      doc.addPage();
+      y = 20;
+    }
   });
 
-  // Footer line
-  y += 10;
-  doc.setFontSize(10);
-  doc.setTextColor(100);
-  doc.text("Generated locally by Helio Therapist prototype", 20, y);
+  // === FOOTER ===
+  doc.setDrawColor(220);
+  doc.line(20, y + 5, 190, y + 5);
+  doc.setFontSize(9);
+  doc.setTextColor(120);
+  doc.text("Generated locally for professional use within Chrysalis Therapy Services", 20, y + 12);
 
-  // Save the PDF
-  doc.save(`helio-resources-${new Date().toISOString().slice(0, 10)}.pdf`);
+  // Save file
+  doc.save(`chrysalis-resources-${new Date().toISOString().slice(0, 10)}.pdf`);
 };
+
 
 
 
