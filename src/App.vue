@@ -17,9 +17,16 @@
           :clients="clients"
           :selected-client="selectedClient"
           :is-sidebar-open="isSidebarOpen"
+          :is-in-session="isInSession"
+          :is-syncing="isSyncing"
+          :active-template="activeTemplate"
           @select-client="handleSelectClient"
           @close-sidebar="isSidebarOpen = false"
+          @join-zoom="joinZoom"
+          @end-zoom="endZoom"
+          @sync-transcript="syncTranscript"
           @open-tool="openTool"
+          @open-reflection="openReflection"
       />
     </transition>
 
@@ -41,7 +48,6 @@
           >
             ☰
           </button>
-
           <div class="text-[18px] font-semibold tracking-tight text-[#2c3e50]">
             Therapist Workspace
           </div>
@@ -49,40 +55,6 @@
 
         <!-- Right: controls -->
         <div class="flex items-center gap-3">
-          <!-- Zoom controls (compact) -->
-          <div class="flex items-center gap-2">
-            <button
-                v-if="!isInSession"
-                class="text-[13px] px-3 py-1.5 rounded-md border border-[#d9dce1] text-white bg-[#2563eb] hover:bg-[#1d4ed8] transition"
-                @click="joinZoom"
-            >
-              Join Zoom
-            </button>
-            <button
-                v-else
-                class="text-[13px] px-3 py-1.5 rounded-md border border-[#d9dce1] text-white bg-[#dc2626] hover:bg-[#b91c1c] transition"
-                @click="endZoom"
-            >
-              End Session
-            </button>
-            <button
-                class="text-[13px] px-3 py-1.5 rounded-md border border-[#d9dce1] text-[#3f4754] bg-white hover:bg-[#f5f7fa] transition"
-                @click="enterReflectionMode"
-            >
-              🧘 Reflective Practice
-            </button>
-
-            <button
-                class="text-[13px] px-3 py-1.5 rounded-md border border-[#d9dce1] text-[#3f4754] bg-white hover:bg-[#f5f7fa] transition disabled:opacity-50 disabled:cursor-not-allowed"
-                :disabled="!isInSession || isSyncing"
-                @click="syncTranscript"
-            >
-              <span v-if="isSyncing">Syncing…</span>
-              <span v-else>Sync transcript</span>
-            </button>
-          </div>
-
-          <!-- Client context (Right panel toggle) -->
           <button
               class="text-[13px] px-3 py-1.5 rounded-md border border-[#d9dce1] text-[#3f4754] bg-white hover:bg-[#f5f7fa] transition"
               @click="toggleRightPanel"
@@ -110,19 +82,18 @@
 
       <!-- Central Canvas -->
       <main class="flex-1 overflow-auto p-4 md:p-6">
-        <!-- Show CBT templates dynamically -->
-        <CbtToolLoader
-            v-if="activeTool === 'cbt'"
-            :template="activeTemplate"
-            :session-id="activeZoomSessionId"
-            @save="handleCbtSave"
-        />
-
-        <!-- Default view -->
         <MainCanvas
-            v-else
+            v-if="activeView === 'main'"
             :selected-client="selectedClient"
             :session-notes="filteredNotes"
+        />
+        <CBTToolLoader
+            v-else-if="activeView === 'cbt'"
+            :template="activeTemplate"
+        />
+        <ReflectiveCanvas
+            v-else-if="activeView === 'reflection'"
+            :mode="reflectionMode"
         />
       </main>
 
@@ -148,62 +119,89 @@ import LeftSidebar from "./components/LeftSidebar.vue";
 import RightPanel from "./components/RightPanel.vue";
 import MessageBar from "./components/MessageBar.vue";
 import MainCanvas from "./components/MainCanvas.vue";
-import CBTToolLoader from "./components/tools/cbtToolLoader.vue";
+import CBTToolLoader from "./components/tools/CBTToolLoader.vue";
 
-
-
-const reflectionMode = ref(false);
-const enterReflectionMode = () => {
-  reflectionMode.value = true;
+// Temporary placeholder component for Reflective Practice
+const ReflectiveCanvas = {
+  props: ["mode"],
+  template: `
+    <div class="max-w-3xl mx-auto text-slate-700">
+      <h2 class="text-2xl font-semibold mb-4">Reflective Practice</h2>
+      <p class="mb-3 text-[15px] leading-relaxed">
+        This is your space for reflection and professional self-work. You can write reflections,
+        review previous entries, or view your Therapist Map.
+      </p>
+      <div class="p-4 bg-white border border-[#e5e7eb] rounded-md shadow-sm">
+        <textarea
+          placeholder="Begin reflecting here..."
+          class="w-full h-48 border border-[#d9dce1] rounded-md p-3 text-[14px] focus:outline-none focus:ring-2 focus:ring-[#2563eb]"
+        ></textarea>
+      </div>
+    </div>
+  `,
 };
 
 const isSidebarOpen = ref(false);
 const isRightPanelOpen = ref(false);
 const isDesktop = ref(false);
-const showClientMap = (client) => {
-  selectedClient.value = client;
-};
 
-const activeTool = ref(null);
-const activeTemplate = ref(null);
-
-const openTool = (payload) => {
-  if (typeof payload === "object") {
-    activeTool.value = payload.group;
-    activeTemplate.value = payload.template;
-  } else {
-    activeTool.value = payload;
-    activeTemplate.value = null;
-  }
-};
-
-// NEW: Zoom state
+// Zoom + Session states
 const isInSession = ref(false);
 const isSyncing = ref(false);
-const activeZoomSessionId = ref(null);
 
-// Screen/breakpoint tracking
-const updateScreen = () => (isDesktop.value = window.innerWidth >= 768);
+// Active view modes
+const activeView = ref("main"); // 'main' | 'cbt' | 'reflection'
+const activeTool = ref(null);
+const activeTemplate = ref(null);
+const reflectionMode = ref("new");
 
-// Lifecycle
-onMounted(() => {
-  updateScreen();
-  window.addEventListener("resize", updateScreen);
-});
-
-// --- CLIENT DATA ---
 const clients = ref([
   { id: 1, name: "Celia R.", note: "Parts work / relationship stress", archived: false },
 ]);
 const archivedClients = ref([]);
 const selectedClient = ref(clients.value[0]);
 
+const sessionNotes = ref([]);
+
 const handleSelectClient = (client) => {
   selectedClient.value = client;
+  activeView.value = "main";
   if (!isDesktop.value) isSidebarOpen.value = false;
 };
 
-const sessionNotes = ref([]);
+// Sidebar event handlers
+const openTool = (payload) => {
+  if (payload.group === "cbt") {
+    activeTool.value = "cbt";
+    activeTemplate.value = payload.template;
+    activeView.value = "cbt";
+  } else {
+    activeView.value = "main";
+  }
+};
+
+const openReflection = (mode) => {
+  reflectionMode.value = mode;
+  activeView.value = "reflection";
+};
+
+const joinZoom = () => {
+  isInSession.value = true;
+};
+const endZoom = () => {
+  isInSession.value = false;
+};
+const syncTranscript = async () => {
+  if (!isInSession.value) return;
+  isSyncing.value = true;
+  try {
+    // Placeholder for transcript sync logic
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+  } finally {
+    isSyncing.value = false;
+  }
+};
+
 const handleMessageSubmit = (text) => {
   const value = text.trim();
   if (!value) return;
@@ -213,38 +211,21 @@ const handleMessageSubmit = (text) => {
     text: value,
   });
 };
+
 const filteredNotes = computed(() =>
     selectedClient.value
         ? sessionNotes.value.filter((n) => n.clientId === selectedClient.value.id)
         : []
 );
 
-// Right panel toggle
 const toggleRightPanel = () => (isRightPanelOpen.value = !isRightPanelOpen.value);
+const showClientMap = () => (activeView.value = "main");
 
-// Zoom handlers (placeholder)
-const joinZoom = () => {
-  isInSession.value = true;
-  activeZoomSessionId.value = "zoom-123"; // temporary placeholder
-};
-const endZoom = () => {
-  isInSession.value = false;
-  activeZoomSessionId.value = null;
-};
-const syncTranscript = async () => {
-  if (!isInSession.value) return;
-  isSyncing.value = true;
-  try {
-    // TODO: backend sync later
-  } finally {
-    isSyncing.value = false;
-  }
-};
-
-// CBT save handler
-const handleCbtSave = (payload) => {
-  console.log("CBT save:", payload);
-};
+const updateScreen = () => (isDesktop.value = window.innerWidth >= 768);
+onMounted(() => {
+  updateScreen();
+  window.addEventListener("resize", updateScreen);
+});
 </script>
 
 <style scoped>

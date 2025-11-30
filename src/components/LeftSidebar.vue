@@ -45,6 +45,7 @@
           </button>
         </div>
 
+        <!-- Client List -->
         <div class="max-h-64 overflow-auto pr-1 space-y-1">
           <div
               v-for="client in clients"
@@ -86,41 +87,62 @@
             </div>
           </div>
         </div>
-      </SidebarGroup>
 
-      <!-- ARCHIVED CLIENTS -->
-      <SidebarGroup title="Archived Clients">
-        <div class="max-h-48 overflow-auto pr-1 space-y-1 px-1">
-          <div
-              v-for="client in archivedClients"
-              :key="client.id"
-              class="px-3 py-2 rounded-md hover:bg-[#f7f8fa] transition cursor-pointer"
-          >
-            <div class="flex items-center justify-between">
-              <span class="text-[14px] text-slate-500 italic truncate">
-                {{ client.name }}
-              </span>
-              <button
-                  class="text-[12px] text-[#2563eb] hover:underline"
-                  @click.stop="restoreClient(client)"
-              >
-                Restore
-              </button>
-            </div>
+        <!-- Zoom Session Controls -->
+        <div class="mt-4 border-t border-[#e4e7eb] pt-3 px-2 space-y-2">
+          <div class="text-[12px] font-semibold text-slate-600 uppercase tracking-wide">
+            Session Controls
           </div>
+          <button
+              v-if="!isInSession"
+              class="w-full text-[13px] px-3 py-1.5 rounded-md border border-[#d9dce1] text-white bg-[#2563eb] hover:bg-[#1d4ed8] transition"
+              @click="$emit('join-zoom')"
+          >
+            Join Zoom Session
+          </button>
+          <button
+              v-else
+              class="w-full text-[13px] px-3 py-1.5 rounded-md border border-[#d9dce1] text-white bg-[#dc2626] hover:bg-[#b91c1c] transition"
+              @click="$emit('end-zoom')"
+          >
+            End Session
+          </button>
+          <button
+              class="w-full text-[13px] px-3 py-1.5 rounded-md border border-[#d9dce1] text-[#3f4754] bg-white hover:bg-[#f5f7fa] transition disabled:opacity-50 disabled:cursor-not-allowed"
+              :disabled="!isInSession || isSyncing"
+              @click="$emit('sync-transcript')"
+          >
+            <span v-if="isSyncing">Syncing…</span>
+            <span v-else>Sync Transcript</span>
+          </button>
         </div>
       </SidebarGroup>
 
-      <!-- EXPORT CENTRE -->
-      <SidebarGroup title="Export Centre">
+      <!-- REFLECTIVE PRACTICE -->
+      <SidebarGroup title="Reflective Practice" :defaultOpen="false">
         <div class="px-3 space-y-1.5">
-          <button class="sidebar-btn">Export Session Summary (PDF)</button>
-          <button class="sidebar-btn">Export Client Pack</button>
-          <button class="sidebar-btn">Export All Data</button>
+          <button
+              class="sidebar-btn"
+              @click="$emit('open-reflection', 'new')"
+          >
+            🧘 New Reflection
+          </button>
+          <button
+              class="sidebar-btn"
+              @click="$emit('open-reflection', 'past')"
+          >
+            📘 Past Reflections
+          </button>
+          <button
+              class="sidebar-btn"
+              @click="$emit('open-reflection', 'map')"
+          >
+            🗺 Therapist Map
+          </button>
         </div>
       </SidebarGroup>
 
-      <!-- TOOLS (Closed by Default) -->
+      <!-- TOOLS -->
       <SidebarGroup title="Tools" :defaultOpen="false">
         <div class="space-y-3">
 
@@ -165,6 +187,15 @@
         </div>
       </SidebarGroup>
 
+      <!-- EXPORT CENTRE -->
+      <SidebarGroup title="Export Centre">
+        <div class="px-3 space-y-1.5">
+          <button class="sidebar-btn">Export Session Summary (PDF)</button>
+          <button class="sidebar-btn">Export Client Pack</button>
+          <button class="sidebar-btn">Export All Data</button>
+        </div>
+      </SidebarGroup>
+
       <!-- RESOURCES -->
       <SidebarGroup title="Resources">
         <div class="px-3 space-y-1.5">
@@ -202,7 +233,9 @@ const props = defineProps({
   archivedClients: Array,
   selectedClient: Object,
   isSidebarOpen: { type: Boolean, default: true },
-  activeTemplate: String
+  activeTemplate: String,
+  isInSession: Boolean,
+  isSyncing: Boolean
 });
 
 const emit = defineEmits([
@@ -211,7 +244,11 @@ const emit = defineEmits([
   "restore-client",
   "select-client",
   "close-sidebar",
-  "open-tool"
+  "open-tool",
+  "join-zoom",
+  "end-zoom",
+  "sync-transcript",
+  "open-reflection"
 ]);
 
 const cbtItems = [
@@ -250,3 +287,4 @@ const select = (client) => {
 };
 const restoreClient = (client) => emit("restore-client", client);
 </script>
+
