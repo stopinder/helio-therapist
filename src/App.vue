@@ -27,6 +27,8 @@
           @sync-transcript="syncTranscript"
           @open-tool="openTool"
           @open-reflection="openReflection"
+          @add-client="handleAddClient"
+
       />
     </transition>
 
@@ -48,9 +50,27 @@
           >
             ☰
           </button>
-          <div class="text-[18px] font-semibold tracking-tight text-[#2c3e50]">
-            Therapist Workspace
+
+        </div>
+        <div class="flex flex-col">
+
+
+          <!-- Session status indicator -->
+          <div class="flex items-center gap-2 text-[18px] font-semibold tracking-tight text-[#2c3e50]">
+            <span>Therapist Workspace</span>
+            <span class="text-slate-400 mx-1">·</span>
+            <span
+                class="flex items-center gap-1 text-[13px] font-normal text-slate-500"
+            >
+  <span
+      class="inline-block h-2 w-2 rounded-full"
+      :class="isInSession ? 'bg-green-500' : 'bg-slate-400'"
+  ></span>
+  {{ isInSession ? 'In Session' : 'Offline' }}
+</span>
+
           </div>
+
         </div>
 
         <!-- Right: controls -->
@@ -168,6 +188,18 @@ const handleSelectClient = (client) => {
   activeView.value = "main";
   if (!isDesktop.value) isSidebarOpen.value = false;
 };
+const handleAddClient = (newClientData) => {
+  const newClient = {
+    id: Date.now(),
+    name: newClientData.name?.trim() || "Unnamed Client",
+    note: newClientData.note || "",
+    archived: false,
+  };
+  clients.value.push(newClient);
+  selectedClient.value = newClient;
+  activeView.value = "main";
+};
+
 
 // Sidebar event handlers
 const openTool = (payload) => {
