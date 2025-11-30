@@ -7,6 +7,9 @@
         <span v-if="selectedClient">
           Session Workspace — {{ selectedClient.name }}
         </span>
+        <ClientMap v-if="currentView === 'map'" :client="selectedClient" />
+        <TherapistMap v-if="currentView === 'therapistMap'" />
+
         <span v-else>
           Session Workspace
         </span>
@@ -20,6 +23,11 @@
         </span>
       </p>
     </div>
+    <CbtTemplate
+        v-if="activeTool === 'cbt'"
+        :session-id="activeZoomSessionId"
+        @save="handleCbtSave"
+    />
 
     <!-- Notes block -->
     <div class="border border-[#d1d5db] bg-white rounded-lg p-6 shadow-sm">

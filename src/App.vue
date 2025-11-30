@@ -9,7 +9,7 @@
       ></div>
     </transition>
 
-    <!-- Left Sidebar (flex child now, not fixed) -->
+    <!-- Left Sidebar -->
     <transition name="slide">
       <LeftSidebar
           v-if="isSidebarOpen || isDesktop"
@@ -19,8 +19,8 @@
           :is-sidebar-open="isSidebarOpen"
           @select-client="handleSelectClient"
           @close-sidebar="isSidebarOpen = false"
+          @open-tool="openTool"
       />
-
     </transition>
 
     <!-- Main Area -->
@@ -41,6 +41,7 @@
           >
             ☰
           </button>
+
           <div class="text-[18px] font-semibold tracking-tight text-[#2c3e50]">
             Therapist Workspace
           </div>
@@ -63,6 +64,12 @@
                 @click="endZoom"
             >
               End Session
+            </button>
+            <button
+                class="text-[13px] px-3 py-1.5 rounded-md border border-[#d9dce1] text-[#3f4754] bg-white hover:bg-[#f5f7fa] transition"
+                @click="enterReflectionMode"
+            >
+              🧘 Reflective Practice
             </button>
 
             <button
@@ -104,8 +111,13 @@
       <!-- Central Canvas -->
       <main class="flex-1 overflow-auto p-4 md:p-6">
         <MainCanvas
+            v-if="activeTool !== 'cbt'"
             :selected-client="selectedClient"
             :session-notes="filteredNotes"
+        />
+        <CbtTemplate
+            v-else
+            @save="handleCbtSave"
         />
       </main>
 
@@ -122,7 +134,6 @@
         @close="isRightPanelOpen = false"
         @view-map="showClientMap"
     />
-
   </div>
 </template>
 
@@ -132,13 +143,23 @@ import LeftSidebar from "./components/LeftSidebar.vue";
 import RightPanel from "./components/RightPanel.vue";
 import MessageBar from "./components/MessageBar.vue";
 import MainCanvas from "./components/MainCanvas.vue";
+import CbtTemplate from "./components/tools/CbtTemplate.vue";
+
+const reflectionMode = ref(false);
+const enterReflectionMode = () => {
+  reflectionMode.value = true;
+};
 
 const isSidebarOpen = ref(false);
 const isRightPanelOpen = ref(false);
 const isDesktop = ref(false);
 const showClientMap = (client) => {
-  currentView.value = "map";
   selectedClient.value = client;
+};
+
+const activeTool = ref(null);
+const openTool = (toolName) => {
+  activeTool.value = toolName;
 };
 
 // NEW: Zoom state
@@ -148,23 +169,13 @@ const isSyncing = ref(false);
 // Screen/breakpoint tracking
 const updateScreen = () => (isDesktop.value = window.innerWidth >= 768);
 
-// Swipe gestures for left sidebar
-let startX = 0;
-let currentX = 0;
-
 // Lifecycle
 onMounted(() => {
   updateScreen();
   window.addEventListener("resize", updateScreen);
 
-  window.addEventListener("touchstart", (e) => (startX = e.touches[0].clientX));
-  window.addEventListener("touchmove", (e) => (currentX = e.touches[0].clientX));
-  window.addEventListener("touchend", () => {
-    const diff = currentX - startX;
-    if (startX < 30 && diff > 50) isSidebarOpen.value = true;
-    else if (diff < -50 && isSidebarOpen.value) isSidebarOpen.value = false;
-    startX = currentX = 0;
-  });
+  // Optional: touch handlers if you still want them
+  // (kept minimal here to avoid side effects)
 });
 
 // --- CLIENT DATA ---
@@ -201,22 +212,23 @@ const toggleRightPanel = () => (isRightPanelOpen.value = !isRightPanelOpen.value
 // NEW: Zoom handlers (placeholders; replace with real integration later)
 const joinZoom = () => {
   isInSession.value = true;
-  // TODO: integrate Zoom SDK / deep link
-  // console.log("Joining Zoom…");
 };
 const endZoom = () => {
   isInSession.value = false;
-  // console.log("Ending Zoom…");
 };
 const syncTranscript = async () => {
   if (!isInSession.value) return;
   isSyncing.value = true;
   try {
     // TODO: call backend webhook to fetch transcript + Copilot summary
-    // await fetch('/api/zoom/sync', { method: 'POST', body: JSON.stringify({...}) })
   } finally {
     isSyncing.value = false;
   }
+};
+
+// CBT save handler
+const handleCbtSave = (payload) => {
+  console.log("CBT save:", payload);
 };
 </script>
 
@@ -238,3 +250,5 @@ const syncTranscript = async () => {
   transform: translateX(-100%);
 }
 </style>
+
+

@@ -37,15 +37,7 @@
 
     <!-- Sidebar Content -->
     <div class="flex-1 overflow-auto p-4 space-y-6">
-      <!-- NAVIGATION -->
-      <SidebarGroup title="Navigation" :initiallyOpen="true">
-        <div class="space-y-1.5 px-2">
-          <button class="sidebar-btn">Dashboard</button>
-          <button class="sidebar-btn">Calendar</button>
-          <button class="sidebar-btn">Sessions</button>
-          <button class="sidebar-btn">Resources</button>
-        </div>
-      </SidebarGroup>
+
 
       <!-- CLIENTS -->
       <SidebarGroup title="Clients" :initiallyOpen="true">
@@ -140,9 +132,15 @@
         <div class="px-3 space-y-1.5">
           <button class="sidebar-btn">IFS Quick Tools</button>
           <button class="sidebar-btn">EMDR Tools</button>
-          <button class="sidebar-btn">CBT Templates</button>
+          <button
+              class="sidebar-btn"
+              @click="$emit('open-tool', 'cbt')"
+          >
+            CBT Templates
+          </button>
         </div>
       </SidebarGroup>
+
 
       <!-- RESOURCES -->
       <SidebarGroup title="Resources">
