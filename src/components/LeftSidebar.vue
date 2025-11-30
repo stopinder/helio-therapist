@@ -121,24 +121,9 @@
       <!-- REFLECTIVE PRACTICE -->
       <SidebarGroup title="Reflective Practice" :defaultOpen="false">
         <div class="px-3 space-y-1.5">
-          <button
-              class="sidebar-btn"
-              @click="$emit('open-reflection', 'new')"
-          >
-            🧘 New Reflection
-          </button>
-          <button
-              class="sidebar-btn"
-              @click="$emit('open-reflection', 'past')"
-          >
-            📘 Past Reflections
-          </button>
-          <button
-              class="sidebar-btn"
-              @click="$emit('open-reflection', 'map')"
-          >
-            🗺 Therapist Map
-          </button>
+          <button class="sidebar-btn" @click="$emit('open-reflection', 'new')">🧘 New Reflection</button>
+          <button class="sidebar-btn" @click="$emit('open-reflection', 'past')">📘 Past Reflections</button>
+          <button class="sidebar-btn" @click="$emit('open-reflection', 'map')">🗺 Therapist Map</button>
         </div>
       </SidebarGroup>
 
@@ -198,12 +183,37 @@
 
       <!-- RESOURCES -->
       <SidebarGroup title="Resources">
-        <div class="px-3 space-y-1.5">
-          <button class="sidebar-btn">Worksheets</button>
-          <button class="sidebar-btn">Audio Exercises</button>
-          <button class="sidebar-btn">Videos</button>
+        <div class="px-3 mb-2">
+          <button
+              class="w-full py-1.5 text-[13px] rounded-md bg-[#3f4754] text-white hover:bg-[#2f3540] transition"
+              @click="showAddResourceModal = true"
+          >
+            + Add Resource
+          </button>
+        </div>
+
+        <div v-if="resources.length" class="space-y-1.5 px-2">
+          <button
+              v-for="res in resources"
+              :key="res.id"
+              class="w-full flex flex-col items-start text-left rounded-md px-2.5 py-2 hover:bg-[#f7f8fa] transition"
+              @click="openResource(res)"
+          >
+            <div class="flex items-center gap-2">
+              <span class="text-[17px]">{{ getIcon(res.type) }}</span>
+              <span class="text-[14px] text-[#2c3e50] font-medium truncate">{{ res.title }}</span>
+            </div>
+            <span class="text-[12px] text-slate-500 ml-7">
+        {{ getTypeLabel(res.type) }}
+      </span>
+          </button>
+        </div>
+
+        <div v-else class="px-3 text-[13px] text-slate-400 italic">
+          No resources added yet
         </div>
       </SidebarGroup>
+
     </div>
 
     <!-- Add Client Modal -->
@@ -211,6 +221,13 @@
         v-if="showAddClientModal"
         @close="showAddClientModal = false"
         @submit="submitNewClient"
+    />
+
+    <!-- Add Resource Modal -->
+    <AddResourceModal
+        v-if="showAddResourceModal"
+        @close="showAddResourceModal = false"
+        @submit="submitNewResource"
     />
 
     <!-- Archive Modal -->
@@ -226,12 +243,14 @@
 import { ref } from "vue";
 import SidebarGroup from "./sidebar/SidebarGroup.vue";
 import AddClientModal from "./sidebar/AddClientModal.vue";
+import AddResourceModal from "./sidebar/AddResourceModal.vue";
 import ArchiveClientModal from "./sidebar/ArchiveClientModal.vue";
 
 const props = defineProps({
   clients: Array,
   archivedClients: Array,
   selectedClient: Object,
+  resources: Array, // 👈 new prop
   isSidebarOpen: { type: Boolean, default: true },
   activeTemplate: String,
   isInSession: Boolean,
@@ -240,6 +259,7 @@ const props = defineProps({
 
 const emit = defineEmits([
   "add-client",
+  "add-resource", // 👈 new event
   "archive-client",
   "restore-client",
   "select-client",
@@ -260,6 +280,7 @@ const cbtItems = [
 ];
 
 const showAddClientModal = ref(false);
+const showAddResourceModal = ref(false);
 const showArchiveModal = ref(false);
 const clientToArchive = ref(null);
 const menuOpenFor = ref(null);
@@ -281,10 +302,45 @@ const submitNewClient = (data) => {
   emit("add-client", data);
   showAddClientModal.value = false;
 };
+const submitNewResource = (data) => {
+  emit("add-resource", data);
+  showAddResourceModal.value = false;
+};
 const select = (client) => {
   emit("select-client", client);
   menuOpenFor.value = null;
 };
-const restoreClient = (client) => emit("restore-client", client);
+const openResource = (res) => {
+  if (res.url) window.open(res.url, "_blank");
+};
+const getIcon = (type) => {
+  switch (type) {
+    case "audio":
+      return "🎧";
+    case "video":
+      return "🎥";
+    case "pdf":
+      return "📄";
+    case "link":
+    default:
+      return "🔗";
+  }
+};
+
+const getTypeLabel = (type) => {
+  switch (type) {
+    case "audio":
+      return "Audio file";
+    case "video":
+      return "Video file";
+    case "pdf":
+      return "PDF document";
+    case "link":
+    default:
+      return "External link";
+  }
+};
+
 </script>
+
 
