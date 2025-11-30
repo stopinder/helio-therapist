@@ -87,7 +87,7 @@
             :selected-client="selectedClient"
             :session-notes="filteredNotes"
         />
-        <CBTToolLoader
+        <CbtToolLoader
             v-else-if="activeView === 'cbt'"
             :template="activeTemplate"
         />
@@ -119,7 +119,7 @@ import LeftSidebar from "./components/LeftSidebar.vue";
 import RightPanel from "./components/RightPanel.vue";
 import MessageBar from "./components/MessageBar.vue";
 import MainCanvas from "./components/MainCanvas.vue";
-import CBTToolLoader from "./components/tools/CBTToolLoader.vue";
+import CbtToolLoader from "./components/tools/CBTToolLoader.vue";
 
 // Temporary placeholder component for Reflective Practice
 const ReflectiveCanvas = {

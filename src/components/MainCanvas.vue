@@ -203,7 +203,7 @@
 
 <script setup>
 import { ref, watch, onMounted, onBeforeUnmount, nextTick } from "vue";
-import CbtToolLoader from "./tools/cbtToolLoader.vue";
+import CbtToolLoader from "./tools/CBTToolLoader.vue";
 
 
 const props = defineProps({
