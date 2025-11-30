@@ -134,7 +134,9 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from "vue";
+
+import { ref, computed, onMounted, watch } from "vue";
+
 import LeftSidebar from "./components/LeftSidebar.vue";
 import RightPanel from "./components/RightPanel.vue";
 import MessageBar from "./components/MessageBar.vue";
@@ -175,9 +177,22 @@ const activeTool = ref(null);
 const activeTemplate = ref(null);
 const reflectionMode = ref("new");
 
-const clients = ref([
-  { id: 1, name: "Celia R.", note: "Parts work / relationship stress", archived: false },
-]);
+// Load clients from localStorage, or use the default if nothing is saved yet
+const clients = ref(
+    JSON.parse(localStorage.getItem("helio_clients")) || [
+      { id: 1, name: "Celia R.", note: "Parts work / relationship stress", archived: false },
+    ]
+);
+// Whenever clients change, save them to localStorage
+watch(
+    clients,
+    (newClients) => {
+      localStorage.setItem("helio_clients", JSON.stringify(newClients));
+    },
+    { deep: true }
+);
+
+
 const archivedClients = ref([]);
 const selectedClient = ref(clients.value[0]);
 
