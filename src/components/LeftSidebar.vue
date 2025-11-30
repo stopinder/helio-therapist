@@ -174,12 +174,46 @@
 
       <!-- EXPORT CENTRE -->
       <SidebarGroup title="Export Centre">
-        <div class="px-3 space-y-1.5">
-          <button class="sidebar-btn">Export Session Summary (PDF)</button>
-          <button class="sidebar-btn">Export Client Pack</button>
-          <button class="sidebar-btn">Export All Data</button>
+        <div v-if="resources.length" class="px-3 space-y-1.5">
+          <div
+              v-for="res in resources"
+              :key="res.id"
+              class="flex items-center justify-between text-[13px] py-1 border-b border-[#f1f3f5]"
+          >
+            <label class="flex items-center gap-2 cursor-pointer select-none">
+              <input
+                  type="checkbox"
+                  class="accent-[#2563eb]"
+                  v-model="res.includeInExport"
+                  @change="emit('toggle-resource-export', res.id, res.includeInExport)"
+              />
+              <span>{{ res.title }}</span>
+            </label>
+          </div>
+
+          <!-- buttons under the list -->
+          <div class="flex justify-end gap-2 pt-2 border-t border-[#e5e7eb]">
+            <button
+                class="text-[13px] px-3 py-1.5 rounded-md border border-[#d9dce1] hover:bg-[#f5f7fa] transition"
+                @click="exportAll"
+            >
+              Export All
+            </button>
+            <button
+                class="text-[13px] px-3 py-1.5 rounded-md border border-[#d9dce1] text-red-600 hover:bg-[#f5f7fa] transition"
+                @click="clearAllExports"
+            >
+              Clear All
+            </button>
+          </div>
+        </div>
+
+        <div v-else class="px-3 text-[13px] text-slate-400 italic py-2">
+          No resources to export yet
         </div>
       </SidebarGroup>
+
+
 
       <!-- RESOURCES -->
       <SidebarGroup title="Resources">
@@ -193,26 +227,78 @@
         </div>
 
         <div v-if="resources.length" class="space-y-1.5 px-2">
-          <button
+          <div
               v-for="res in resources"
               :key="res.id"
-              class="w-full flex flex-col items-start text-left rounded-md px-2.5 py-2 hover:bg-[#f7f8fa] transition"
-              @click="openResource(res)"
+              class="relative group rounded-md hover:bg-[#f8fafc] hover:shadow-sm transition-all"
           >
-            <div class="flex items-center gap-2">
-              <span class="text-[17px]">{{ getIcon(res.type) }}</span>
-              <span class="text-[14px] text-[#2c3e50] font-medium truncate">{{ res.title }}</span>
+            <button
+                class="w-full flex flex-col items-start text-left rounded-md px-2.5 py-2"
+                @click="openResource(res)"
+            >
+              <div class="flex items-center justify-between w-full">
+                <div class="flex items-center gap-2">
+                  <span class="w-5 text-[18px] flex-shrink-0">{{ getIcon(res.type) }}</span>
+                  <span class="text-[14px] text-[#2c3e50] font-medium truncate">
+              {{ res.title }}
+            </span>
+                </div>
+
+                <!-- always-visible menu icon -->
+                <span
+                    class="text-[16px] px-1 text-slate-400 hover:text-[#2c3e50] opacity-70 hover:opacity-100 cursor-pointer flex items-center justify-center h-6 w-6"
+                    @click.stop="toggleResourceMenu(res)"
+                >
+            ⋮
+          </span>
+              </div>
+
+              <div class="ml-7">
+          <span class="block text-[12px] text-slate-500">
+            {{ getTypeLabel(res.type) }}
+          </span>
+                <span v-if="res.createdAt" class="block text-[11px] text-slate-400 mt-0.5">
+            {{ formatDate(res.createdAt) }}
+          </span>
+              </div>
+            </button>
+
+            <!-- dropdown -->
+            <div
+                v-if="menuOpenForResource === res.id"
+                class="absolute right-2 top-11 bg-white border border-[#d9dce1] rounded-md shadow-lg text-[13px] z-50"
+                @click.stop
+            >
+              <button
+                  class="block w-full text-left px-3 py-2 hover:bg-[#f5f5f7]"
+                  @click="renameResource(res)"
+              >
+                Rename
+              </button>
+              <button
+                  class="block w-full text-left px-3 py-2 hover:bg-[#f5f5f7]"
+                  @click="deleteResource(res)"
+              >
+                Delete
+              </button>
             </div>
-            <span class="text-[12px] text-slate-500 ml-7">
-        {{ getTypeLabel(res.type) }}
-      </span>
-          </button>
+          </div>
         </div>
 
-        <div v-else class="px-3 text-[13px] text-slate-400 italic">
-          No resources added yet
+        <!-- refined empty state -->
+        <div v-else class="flex flex-col items-center justify-center py-8 text-center text-slate-400">
+          <div class="text-3xl mb-2">📁</div>
+          <p class="text-[13px] mb-2">Your uploaded meditations, worksheets, and links will appear here.</p>
+          <button
+              class="text-[13px] px-3 py-1.5 rounded-md border border-[#d9dce1] hover:bg-[#f5f7fa] transition text-[#3f4754]"
+              @click="showAddResourceModal = true"
+          >
+            + Add your first resource
+          </button>
         </div>
       </SidebarGroup>
+
+
 
     </div>
 
@@ -236,10 +322,19 @@
         @close="showArchiveModal = false"
         @confirm="archiveNow"
     />
+    <ResourcePreviewModal
+        :open="showPreviewModal"
+        :resource="selectedResource"
+        @close="showPreviewModal = false"
+        @export="handleExportResource"
+    />
+
   </aside>
 </template>
 
 <script setup>
+import ResourcePreviewModal from "./sidebar/ResourcePreviewModal.vue";
+
 import { ref } from "vue";
 import SidebarGroup from "./sidebar/SidebarGroup.vue";
 import AddClientModal from "./sidebar/AddClientModal.vue";
@@ -269,6 +364,7 @@ const emit = defineEmits([
   "end-zoom",
   "sync-transcript",
   "open-reflection"
+
 ]);
 
 const cbtItems = [
@@ -310,9 +406,14 @@ const select = (client) => {
   emit("select-client", client);
   menuOpenFor.value = null;
 };
+const showPreviewModal = ref(false);
+const selectedResource = ref(null);
+
 const openResource = (res) => {
-  if (res.url) window.open(res.url, "_blank");
+  selectedResource.value = res;
+  showPreviewModal.value = true;
 };
+
 const getIcon = (type) => {
   switch (type) {
     case "audio":
@@ -340,6 +441,36 @@ const getTypeLabel = (type) => {
       return "External link";
   }
 };
+const formatDate = (iso) => {
+  const date = new Date(iso);
+  const diff = (Date.now() - date.getTime()) / (1000 * 60 * 60 * 24);
+  if (diff < 1) return "Added today";
+  if (diff < 2) return "Added yesterday";
+  if (diff < 7) return `Added ${Math.floor(diff)} days ago`;
+  return `Added on ${date.toLocaleDateString()}`;
+};
+const handleExportResource = (res) => {
+  alert(`Exporting resource: ${res.title}`);
+  // Later, this can bundle into PDF/ZIP via Export Centre
+};
+const exportAll = () => {
+  const selected = props.resources.filter(r => r.includeInExport);
+  if (!selected.length) {
+    alert("No resources selected for export.");
+    return;
+  }
+
+  // For now, just show an alert with the resource names
+  alert(`Exporting ${selected.length} resources:\n\n${selected.map(r => r.title).join("\n")}`);
+};
+
+const clearAllExports = () => {
+  props.resources.forEach(r => (r.includeInExport = false));
+};
+
+
+
+
 
 </script>
 
