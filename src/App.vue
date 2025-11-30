@@ -110,14 +110,19 @@
 
       <!-- Central Canvas -->
       <main class="flex-1 overflow-auto p-4 md:p-6">
+        <!-- Show CBT templates dynamically -->
+        <CbtToolLoader
+            v-if="activeTool === 'cbt'"
+            :template="activeTemplate"
+            :session-id="activeZoomSessionId"
+            @save="handleCbtSave"
+        />
+
+        <!-- Default view -->
         <MainCanvas
-            v-if="activeTool !== 'cbt'"
+            v-else
             :selected-client="selectedClient"
             :session-notes="filteredNotes"
-        />
-        <CbtTemplate
-            v-else
-            @save="handleCbtSave"
         />
       </main>
 
@@ -143,7 +148,9 @@ import LeftSidebar from "./components/LeftSidebar.vue";
 import RightPanel from "./components/RightPanel.vue";
 import MessageBar from "./components/MessageBar.vue";
 import MainCanvas from "./components/MainCanvas.vue";
-import CbtTemplate from "./components/tools/CbtTemplate.vue";
+import CBTToolLoader from "./components/tools/cbtToolLoader.vue";
+
+
 
 const reflectionMode = ref(false);
 const enterReflectionMode = () => {
@@ -158,13 +165,22 @@ const showClientMap = (client) => {
 };
 
 const activeTool = ref(null);
-const openTool = (toolName) => {
-  activeTool.value = toolName;
+const activeTemplate = ref(null);
+
+const openTool = (payload) => {
+  if (typeof payload === "object") {
+    activeTool.value = payload.group;
+    activeTemplate.value = payload.template;
+  } else {
+    activeTool.value = payload;
+    activeTemplate.value = null;
+  }
 };
 
 // NEW: Zoom state
 const isInSession = ref(false);
 const isSyncing = ref(false);
+const activeZoomSessionId = ref(null);
 
 // Screen/breakpoint tracking
 const updateScreen = () => (isDesktop.value = window.innerWidth >= 768);
@@ -173,9 +189,6 @@ const updateScreen = () => (isDesktop.value = window.innerWidth >= 768);
 onMounted(() => {
   updateScreen();
   window.addEventListener("resize", updateScreen);
-
-  // Optional: touch handlers if you still want them
-  // (kept minimal here to avoid side effects)
 });
 
 // --- CLIENT DATA ---
@@ -209,18 +222,20 @@ const filteredNotes = computed(() =>
 // Right panel toggle
 const toggleRightPanel = () => (isRightPanelOpen.value = !isRightPanelOpen.value);
 
-// NEW: Zoom handlers (placeholders; replace with real integration later)
+// Zoom handlers (placeholder)
 const joinZoom = () => {
   isInSession.value = true;
+  activeZoomSessionId.value = "zoom-123"; // temporary placeholder
 };
 const endZoom = () => {
   isInSession.value = false;
+  activeZoomSessionId.value = null;
 };
 const syncTranscript = async () => {
   if (!isInSession.value) return;
   isSyncing.value = true;
   try {
-    // TODO: call backend webhook to fetch transcript + Copilot summary
+    // TODO: backend sync later
   } finally {
     isSyncing.value = false;
   }
@@ -250,5 +265,3 @@ const handleCbtSave = (payload) => {
   transform: translateX(-100%);
 }
 </style>
-
-

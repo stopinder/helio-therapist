@@ -1,5 +1,5 @@
 <!-- src/components/MainCanvas.vue -->
-<template>
+<template>T
   <div class="space-y-8">
     <!-- Client / session header -->
     <div class="border border-[#d1d5db] bg-white rounded-lg p-6 shadow-sm">
@@ -203,6 +203,8 @@
 
 <script setup>
 import { ref, watch, onMounted, onBeforeUnmount, nextTick } from "vue";
+import CbtToolLoader from "./tools/cbtToolLoader.vue";
+
 
 const props = defineProps({
   selectedClient: {

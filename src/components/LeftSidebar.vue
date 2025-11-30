@@ -17,9 +17,7 @@
     </button>
 
     <!-- Therapist header -->
-    <div
-        class="h-16 flex items-center px-5 border-b border-[#e2e5ea] bg-[#fafbfc] mt-1"
-    >
+    <div class="h-16 flex items-center px-5 border-b border-[#e2e5ea] bg-[#fafbfc] mt-1">
       <div class="flex items-center gap-3">
         <div
             class="h-9 w-9 rounded-full bg-[#e2dcd4] flex items-center justify-center text-[14px] font-semibold text-[#2c3e50]"
@@ -27,10 +25,8 @@
           RO
         </div>
         <div class="flex flex-col leading-tight">
-          <span class="text-[14px] font-semibold text-[#2c3e50]">
-            Robert Ormiston
-          </span>
-          <span class="text-[12px] text-slate-500"> Psychotherapist </span>
+          <span class="text-[14px] font-semibold text-[#2c3e50]">Robert Ormiston</span>
+          <span class="text-[12px] text-slate-500">Psychotherapist</span>
         </div>
       </div>
     </div>
@@ -38,9 +34,8 @@
     <!-- Sidebar Content -->
     <div class="flex-1 overflow-auto p-4 space-y-6">
 
-
       <!-- CLIENTS -->
-      <SidebarGroup title="Clients" :initiallyOpen="true">
+      <SidebarGroup title="Clients" :defaultOpen="true">
         <div class="px-2 mb-2">
           <button
               class="w-full py-1.5 text-[13px] rounded-md bg-[#3f4754] text-white hover:bg-[#2f3540] transition"
@@ -58,9 +53,7 @@
           >
             <button
                 class="w-full flex items-center justify-between px-3 py-2 rounded-md hover:bg-[#f7f8fa] transition text-left"
-                :class="{
-                'bg-[#eef1f5]': selectedClient && client.id === selectedClient.id,
-              }"
+                :class="{ 'bg-[#eef1f5]': selectedClient && client.id === selectedClient.id }"
                 @click="select(client)"
             >
               <span
@@ -127,20 +120,50 @@
         </div>
       </SidebarGroup>
 
-      <!-- TOOLS -->
-      <SidebarGroup title="Tools">
-        <div class="px-3 space-y-1.5">
-          <button class="sidebar-btn">IFS Quick Tools</button>
-          <button class="sidebar-btn">EMDR Tools</button>
-          <button
-              class="sidebar-btn"
-              @click="$emit('open-tool', 'cbt')"
-          >
-            CBT Templates
-          </button>
+      <!-- TOOLS (Closed by Default) -->
+      <SidebarGroup title="Tools" :defaultOpen="false">
+        <div class="space-y-3">
+
+          <!-- IFS -->
+          <SidebarGroup title="IFS Tools" :defaultOpen="false">
+            <div class="space-y-1.5 px-3">
+              <button class="sidebar-btn" @click="$emit('open-tool', { group: 'ifs', template: 'parts-map' })">
+                Parts Map
+              </button>
+              <button class="sidebar-btn" @click="$emit('open-tool', { group: 'ifs', template: 'self-energy' })">
+                Self-Energy Exercise
+              </button>
+            </div>
+          </SidebarGroup>
+
+          <!-- EMDR -->
+          <SidebarGroup title="EMDR Tools" :defaultOpen="false">
+            <div class="space-y-1.5 px-3">
+              <button class="sidebar-btn" @click="$emit('open-tool', { group: 'emdr', template: 'target-log' })">
+                Target Log
+              </button>
+              <button class="sidebar-btn" @click="$emit('open-tool', { group: 'emdr', template: 'cognitive' })">
+                Cognitive Interweave
+              </button>
+            </div>
+          </SidebarGroup>
+
+          <!-- CBT -->
+          <SidebarGroup title="CBT Templates" :defaultOpen="false">
+            <div class="space-y-1.5 px-3">
+              <button
+                  v-for="item in cbtItems"
+                  :key="item.key"
+                  class="sidebar-btn"
+                  :class="{ 'bg-[#eef1f5] font-semibold': activeTemplate === item.key }"
+                  @click="$emit('open-tool', { group: 'cbt', template: item.key })"
+              >
+                {{ item.label }}
+              </button>
+            </div>
+          </SidebarGroup>
         </div>
       </SidebarGroup>
-
 
       <!-- RESOURCES -->
       <SidebarGroup title="Resources">
@@ -167,6 +190,7 @@
     />
   </aside>
 </template>
+
 <script setup>
 import { ref } from "vue";
 import SidebarGroup from "./sidebar/SidebarGroup.vue";
@@ -177,7 +201,8 @@ const props = defineProps({
   clients: Array,
   archivedClients: Array,
   selectedClient: Object,
-  isSidebarOpen: { type: Boolean, default: true }, // 👈 added
+  isSidebarOpen: { type: Boolean, default: true },
+  activeTemplate: String
 });
 
 const emit = defineEmits([
@@ -185,8 +210,17 @@ const emit = defineEmits([
   "archive-client",
   "restore-client",
   "select-client",
-  "close-sidebar", // 👈 added
+  "close-sidebar",
+  "open-tool"
 ]);
+
+const cbtItems = [
+  { key: "thought", label: "Thought Record" },
+  { key: "behavioural", label: "Behavioural Activation" },
+  { key: "core", label: "Core Belief Worksheet" },
+  { key: "problem", label: "Problem Solving" },
+  { key: "exposure", label: "Exposure Hierarchy" }
+];
 
 const showAddClientModal = ref(false);
 const showArchiveModal = ref(false);
@@ -216,4 +250,3 @@ const select = (client) => {
 };
 const restoreClient = (client) => emit("restore-client", client);
 </script>
-
