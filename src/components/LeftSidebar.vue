@@ -460,9 +460,36 @@ const exportAll = () => {
     return;
   }
 
-  // For now, just show an alert with the resource names
-  alert(`Exporting ${selected.length} resources:\n\n${selected.map(r => r.title).join("\n")}`);
+  // 1. Build the export data
+  const exportData = {
+    exportedAt: new Date().toISOString(),
+    total: selected.length,
+    resources: selected.map(r => ({
+      title: r.title,
+      type: r.type,
+      url: r.url,
+      createdAt: r.createdAt,
+    })),
+  };
+
+  // 2. Convert to JSON string
+  const jsonString = JSON.stringify(exportData, null, 2);
+
+  // 3. Create a blob and download link
+  const blob = new Blob([jsonString], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+
+  link.href = url;
+  link.download = `helio-resources-${new Date().toISOString().slice(0, 10)}.json`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+
+  // 4. Free up memory
+  URL.revokeObjectURL(url);
 };
+
 
 const clearAllExports = () => {
   props.resources.forEach(r => (r.includeInExport = false));
