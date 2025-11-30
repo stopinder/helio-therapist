@@ -28,6 +28,8 @@
           @open-tool="openTool"
           @open-reflection="openReflection"
           @add-client="handleAddClient"
+          :resources="resources"
+          @add-resource="handleAddResource"
 
       />
     </transition>
@@ -188,6 +190,39 @@ watch(
     clients,
     (newClients) => {
       localStorage.setItem("helio_clients", JSON.stringify(newClients));
+    },
+    { deep: true }
+);
+// Load resources from localStorage or use defaults
+const resources = ref(
+    JSON.parse(localStorage.getItem("helio_resources")) || [
+      { id: 1, title: "Safe Calm Place (Audio)", type: "audio", url: "" },
+      { id: 2, title: "Sensing Exercise (PDF)", type: "pdf", url: "" },
+    ]
+);
+const handleAddResource = (newResourceData) => {
+  const newResource = {
+    id: Date.now(),
+    title: newResourceData.title?.trim() || "Untitled Resource",
+    type: newResourceData.type || "link",
+    url: newResourceData.url || "",
+    includeInExport: false,           // 👈 NEW: starts unselected for export
+    createdAt: new Date().toISOString(), // (optional) helps with “Added today”
+  };
+  resources.value.push(newResource);
+};
+
+const toggleResourceExport = (resourceId, include) => {
+  const item = resources.value.find(r => r.id === resourceId);
+  if (item) item.includeInExport = include;
+};
+
+
+// Auto-save resources when changed
+watch(
+    resources,
+    (newResources) => {
+      localStorage.setItem("helio_resources", JSON.stringify(newResources));
     },
     { deep: true }
 );
