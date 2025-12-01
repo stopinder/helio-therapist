@@ -62,6 +62,7 @@ const props = defineProps({
   sessionId: { type: String, default: null }
 })
 const emit = defineEmits(['save'])
+const clientId = JSON.parse(localStorage.getItem('helio_selectedClient'))?.id
 
 const form = reactive({
   situation: '',

@@ -126,7 +126,8 @@ function saveTargets() {
 
 // Load saved targets for this client
 onMounted(() => {
-  const clientId = localStorage.getItem('helio_selectedClientId')
+  const clientId = JSON.parse(localStorage.getItem('helio_selectedClient'))?.id
+
   const allData = JSON.parse(localStorage.getItem('helio_toolData')) || {}
   const key = `${clientId}_target-log`
   if (allData[key]) {

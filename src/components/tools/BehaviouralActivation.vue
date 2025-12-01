@@ -4,4 +4,8 @@
     <p class="text-[14px] text-slate-600">Worksheet coming soon.</p>
   </div>
 </template>
-<script setup></script>
+<script setup>
+const clientId = JSON.parse(localStorage.getItem('helio_selectedClient'))?.id
+
+
+</script>

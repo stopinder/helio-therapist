@@ -251,20 +251,12 @@ const sessionNotes = ref([]);
 
 const handleSelectClient = (client) => {
   selectedClient.value = client;
+  localStorage.setItem('helio_selectedClient', JSON.stringify(client));
   activeView.value = "main";
   if (!isDesktop.value) isSidebarOpen.value = false;
 };
-const handleAddClient = (newClientData) => {
-  const newClient = {
-    id: Date.now(),
-    name: newClientData.name?.trim() || "Unnamed Client",
-    note: newClientData.note || "",
-    archived: false,
-  };
-  clients.value.push(newClient);
-  selectedClient.value = newClient;
-  activeView.value = "main";
-};
+
+
 
 
 // Sidebar event handlers
@@ -334,6 +326,20 @@ onMounted(() => {
   updateScreen();
   window.addEventListener("resize", updateScreen);
 });
+onMounted(() => {
+  updateScreen()
+  window.addEventListener("resize", updateScreen)
+
+  // ✅ Listen for tool saves and trigger right-panel refresh
+  window.addEventListener('tool-saved', () => {
+    // Force Vue to re-render RightPanel
+    isRightPanelOpen.value = false
+    nextTick(() => {
+      isRightPanelOpen.value = true
+    })
+  })
+})
+
 </script>
 
 <style scoped>
