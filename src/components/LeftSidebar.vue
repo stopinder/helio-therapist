@@ -413,6 +413,25 @@ const exportAll = () => {
   }
 
   const doc = new jsPDF();
+  const downloadSelectedResources = () => {
+    const selected = props.resources?.filter(r => r.selected && r.url);
+    if (!selected?.length) {
+      alert("No resources selected for download.");
+      return;
+    }
+
+    selected.forEach((res, index) => {
+      setTimeout(() => {
+        const link = document.createElement("a");
+        link.href = res.url;
+        link.download = res.title || `resource-${index + 1}`;
+        link.target = "_blank";
+        link.rel = "noopener";
+        link.click();
+      }, index * 300); // gentle stagger for browser stability
+    });
+  };
+
 
   // === HEADER (your current header + logo stays as-is if you already have it) ===
   // If you have addImage above, keep it. Otherwise ignore.
