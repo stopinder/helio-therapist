@@ -117,6 +117,17 @@
             v-else-if="activeView === 'reflection'"
             :mode="reflectionMode"
         />
+        <IFSToolLoader
+            v-else-if="activeView === 'ifs'"
+            :template="activeTemplate"
+            v-on:close="activeView = 'main'"
+        />
+        <EMDRToolLoader
+            v-else-if="activeView === 'emdr'"
+            :template="activeTemplate"
+            v-on:close="activeView = 'main'"
+        />
+
       </main>
 
       <!-- Message Bar -->
@@ -136,6 +147,9 @@
 </template>
 
 <script setup>
+import EMDRToolLoader from "./components/tools/EMDRToolLoader.vue"
+
+import IFSToolLoader from "./components/tools/IFSToolLoader.vue"
 
 import { ref, computed, onMounted, watch } from "vue";
 
@@ -254,13 +268,23 @@ const handleAddClient = (newClientData) => {
 // Sidebar event handlers
 const openTool = (payload) => {
   if (payload.group === "cbt") {
-    activeTool.value = "cbt";
-    activeTemplate.value = payload.template;
-    activeView.value = "cbt";
+    activeTool.value = "cbt"
+    activeTemplate.value = payload.template
+    activeView.value = "cbt"
+  } else if (payload.group === "ifs") {
+    activeTool.value = "ifs"
+    activeTemplate.value = payload.template
+    activeView.value = "ifs"
+  } else if (payload.group === "emdr") {
+    activeTool.value = "emdr"
+    activeTemplate.value = payload.template
+    activeView.value = "emdr"
   } else {
-    activeView.value = "main";
+    activeView.value = "main"
   }
-};
+}
+
+
 
 const openReflection = (mode) => {
   reflectionMode.value = mode;
