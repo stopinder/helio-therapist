@@ -112,7 +112,9 @@
         <CbtToolLoader
             v-else-if="activeView === 'cbt'"
             :template="activeTemplate"
+            v-on:close="activeView = 'main'"
         />
+
         <ReflectiveCanvas
             v-else-if="activeView === 'reflection'"
             :mode="reflectionMode"

@@ -22,6 +22,7 @@
     <div v-if="currentComponent">
       <component v-bind:is="currentComponent" />
     </div>
+
     <div v-else class="text-[14px] text-slate-500 italic">
       Select an IFS tool from the sidebar to begin.
     </div>
@@ -29,12 +30,13 @@
 </template>
 
 <script setup>
-import { ref, watch, computed } from 'vue'
+import { ref, watch, computed, onMounted } from 'vue'
+
+const emit = defineEmits(['close', 'save'])
 
 const props = defineProps({
   template: { type: String, default: null }
 })
-const emit = defineEmits(['close'])
 
 const loaders = {
   'parts-map': () => import('./PartsMap.vue'),
@@ -63,7 +65,28 @@ const readableName = computed(() => {
   return names[props.template] || 'IFS Tool'
 })
 
+// Save current tool state (e.g., when subcomponent emits data)
+function saveToolState(data) {
+  const clientId = localStorage.getItem('helio_selectedClientId')
+  emit('save', {
+    template: props.template || 'ifs-tool',
+    data: { clientId, ...data }
+  })
+}
+
+// Load saved data for the active client/tool when this loader mounts
+onMounted(() => {
+  const clientId = localStorage.getItem('helio_selectedClientId')
+  const allData = JSON.parse(localStorage.getItem('helio_toolData')) || {}
+  const key = `${clientId}_${props.template}`
+  if (allData[key]) {
+    // Optionally, you can pass this to your subcomponent later as a prop
+    console.log('Loaded saved IFS data:', allData[key])
+  }
+})
+
 function goBack() {
   emit('close')
 }
 </script>
+
