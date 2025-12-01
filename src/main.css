@@ -11,3 +11,7 @@ html {
     background: #11172A;
     color: #fff;
 }
+/* Therapist workspace sidebar buttons */
+.sidebar-btn {
+    @apply w-full text-left text-[13px] text-slate-700 hover:bg-[#f1f5f9] rounded-md px-3 py-1.5 transition;
+}

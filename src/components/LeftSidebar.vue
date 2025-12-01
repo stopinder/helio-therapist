@@ -1,9 +1,10 @@
 <template>
   <aside
-      class="fixed inset-y-0 left-0 flex flex-col bg-white border-r border-[#d9dce1] select-none w-64 h-full z-40 transform transition-transform duration-200 ease-in-out md:static md:translate-x-0"
+      class="fixed inset-y-0 left-0 flex flex-col bg-[#faf9f7] border-r border-[#e5e7eb] select-none w-64 h-full z-40 transform transition-transform duration-200 ease-in-out md:static md:translate-x-0"
       :class="{ '-translate-x-full': !isSidebarOpen }"
   >
-    <!-- Close button (mobile only) -->
+
+  <!-- Close button (mobile only) -->
     <button
         @click="$emit('close-sidebar')"
         class="absolute top-3 right-3 md:hidden text-gray-500 hover:text-gray-800"
@@ -57,21 +58,16 @@
                 :class="{ 'bg-[#eef1f5]': selectedClient && client.id === selectedClient.id }"
                 @click="select(client)"
             >
-              <span
-                  class="text-[14px] truncate"
-                  :class="{
-                  'font-semibold text-[#2c3e50]': selectedClient && client.id === selectedClient.id,
-                  'text-[#3f4754]': !selectedClient || client.id !== selectedClient.id,
-                }"
-              >
-                {{ client.name }}
-              </span>
-              <span
-                  class="opacity-0 group-hover:opacity-100 transition text-[16px] px-1"
-                  @click.stop="openMenu(client)"
-              >
-                ⋮
-              </span>
+<span
+    class="text-[14px] truncate"
+    :class="{
+    'font-semibold text-slate-800': selectedClient && client.id === selectedClient.id,
+    'text-slate-700': !selectedClient || client.id !== selectedClient.id,
+  }"
+>
+  {{ client.name }}
+</span>
+
             </button>
 
             <div

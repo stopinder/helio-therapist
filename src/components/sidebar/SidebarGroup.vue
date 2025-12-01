@@ -2,27 +2,34 @@
   <div class="w-full">
     <!-- Header -->
     <button
-        class="w-full flex items-center justify-between px-3 py-2 text-[13px] font-semibold text-[#2c3e50] hover:bg-[#f5f7fa] transition rounded-md"
+        type="button"
+        class="w-full text-left px-4 py-2.5 text-[11px] uppercase tracking-wide font-semibold text-[#475569] hover:bg-[#f1f5f9] transition rounded-md flex justify-between items-center"
         @click="toggle"
+        :aria-expanded="open.toString()"
     >
       <span>{{ title }}</span>
-
       <span
-          class="transition-transform"
-          :class="{ 'rotate-90': open }"
-      >
-        ▶
-      </span>
+          v-if="open"
+          class="text-slate-400 text-[13px]"
+      >−</span>
+      <span
+          v-else
+          class="text-slate-400 text-[13px]"
+      >+</span>
     </button>
 
     <!-- Body -->
     <transition name="slide-vert">
-      <div v-if="open" class="mt-2 pl-2">
+      <div
+          v-if="open"
+          class="mt-2 pl-4 border-l border-[#e5e7eb] space-y-2"
+      >
         <slot />
       </div>
     </transition>
   </div>
 </template>
+
 
 <script setup>
 import { ref } from "vue";
