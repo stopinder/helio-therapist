@@ -116,12 +116,16 @@
 
       <!-- REFLECTIVE PRACTICE -->
       <SidebarGroup title="Reflective Practice" :defaultOpen="false">
-        <div class="px-3 space-y-1.5">
-          <button class="sidebar-btn" @click="$emit('open-reflection', 'new')">🧘 New Reflection</button>
-          <button class="sidebar-btn" @click="$emit('open-reflection', 'past')">📘 Past Reflections</button>
-          <button class="sidebar-btn" @click="$emit('open-reflection', 'map')">🗺 Therapist Map</button>
+        <div class="sidebar-section">
+          <div class="sidebar-section-title">Reflective Practice</div>
+          <div class="px-3 space-y-1.5">
+            <button class="sidebar-btn" @click="$emit('open-reflection', 'new')">🧘 New Reflection</button>
+            <button class="sidebar-btn" @click="$emit('open-reflection', 'past')">📘 Past Reflections</button>
+            <button class="sidebar-btn" @click="$emit('open-reflection', 'map')">🗺 Therapist Map</button>
+          </div>
         </div>
       </SidebarGroup>
+
 
       <!-- TOOLS -->
       <SidebarGroup title="Tools" :defaultOpen="false">
@@ -213,86 +217,34 @@
 
       <!-- RESOURCES -->
       <SidebarGroup title="Resources">
-        <div class="px-3 mb-2">
-          <button
-              class="w-full py-1.5 text-[13px] rounded-md bg-[#3f4754] text-white hover:bg-[#2f3540] transition"
-              @click="showAddResourceModal = true"
-          >
-            + Add Resource
-          </button>
-        </div>
+        <div class="sidebar-section">
+          <div class="sidebar-section-title">Resources</div>
 
-        <div v-if="resources.length" class="space-y-1.5 px-2">
-          <div
-              v-for="res in resources"
-              :key="res.id"
-              class="relative group rounded-md hover:bg-[#f8fafc] hover:shadow-sm transition-all"
-          >
+          <div class="px-3 mb-2">
             <button
-                class="w-full flex flex-col items-start text-left rounded-md px-2.5 py-2"
+                class="sidebar-btn primary"
+                @click="showAddResourceModal = true"
+            >
+              + Add Resource
+            </button>
+          </div>
+
+          <div v-if="resources.length" class="space-y-1.5 px-3">
+            <button
+                v-for="res in resources"
+                :key="res.id"
+                class="sidebar-btn"
                 @click="openResource(res)"
             >
-              <div class="flex items-center justify-between w-full">
-                <div class="flex items-center gap-2">
-                  <span class="w-5 text-[18px] flex-shrink-0">{{ getIcon(res.type) }}</span>
-                  <span class="text-[14px] text-[#2c3e50] font-medium truncate">
               {{ res.title }}
-            </span>
-                </div>
-
-                <!-- always-visible menu icon -->
-                <span
-                    class="text-[16px] px-1 text-slate-400 hover:text-[#2c3e50] opacity-70 hover:opacity-100 cursor-pointer flex items-center justify-center h-6 w-6"
-                    @click.stop="toggleResourceMenu(res)"
-                >
-            ⋮
-          </span>
-              </div>
-
-              <div class="ml-7">
-          <span class="block text-[12px] text-slate-500">
-            {{ getTypeLabel(res.type) }}
-          </span>
-                <span v-if="res.createdAt" class="block text-[11px] text-slate-400 mt-0.5">
-            {{ formatDate(res.createdAt) }}
-          </span>
-              </div>
             </button>
-
-            <!-- dropdown -->
-            <div
-                v-if="menuOpenForResource === res.id"
-                class="absolute right-2 top-11 bg-white border border-[#d9dce1] rounded-md shadow-lg text-[13px] z-50"
-                @click.stop
-            >
-              <button
-                  class="block w-full text-left px-3 py-2 hover:bg-[#f5f5f7]"
-                  @click="renameResource(res)"
-              >
-                Rename
-              </button>
-              <button
-                  class="block w-full text-left px-3 py-2 hover:bg-[#f5f5f7]"
-                  @click="deleteResource(res)"
-              >
-                Delete
-              </button>
-            </div>
+          </div>
+          <div v-else class="px-3 text-[13px] text-slate-400 italic">
+            No resources added yet
           </div>
         </div>
-
-        <!-- refined empty state -->
-        <div v-else class="flex flex-col items-center justify-center py-8 text-center text-slate-400">
-          <div class="text-3xl mb-2">📁</div>
-          <p class="text-[13px] mb-2">Your uploaded meditations, worksheets, and links will appear here.</p>
-          <button
-              class="text-[13px] px-3 py-1.5 rounded-md border border-[#d9dce1] hover:bg-[#f5f7fa] transition text-[#3f4754]"
-              @click="showAddResourceModal = true"
-          >
-            + Add your first resource
-          </button>
-        </div>
       </SidebarGroup>
+
 
 
 

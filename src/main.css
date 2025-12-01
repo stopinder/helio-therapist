@@ -15,3 +15,20 @@ html {
 .sidebar-btn {
     @apply w-full text-left text-[13px] text-slate-700 hover:bg-[#f1f5f9] rounded-md px-3 py-1.5 transition;
 }
+/* Sidebar visual refinements */
+.sidebar-btn {
+    @apply w-full text-left text-[14px] px-3 py-2 rounded-md transition-colors;
+    @apply text-slate-700 hover:bg-[#f5f7fa];
+}
+
+.sidebar-btn.primary {
+    @apply bg-[#3f4754] text-white hover:bg-[#2f3540];
+}
+
+.sidebar-section {
+    @apply mt-4 border-t border-[#eaecef] pt-3;
+}
+
+.sidebar-section-title {
+    @apply text-[12px] uppercase tracking-wide font-semibold text-slate-500 mb-2 px-3;
+}
