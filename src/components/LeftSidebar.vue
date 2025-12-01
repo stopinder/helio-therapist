@@ -333,6 +333,9 @@
 </template>
 
 <script setup>
+import logoImage from "../assets/chrysalis-logo.png";
+
+
 import ResourcePreviewModal from "./sidebar/ResourcePreviewModal.vue";
 
 import { ref } from "vue";
@@ -463,10 +466,15 @@ const exportAll = () => {
 
   const doc = new jsPDF();
 
-  // === HEADER ===
+  // === HEADER (your current header + logo stays as-is if you already have it) ===
+  // If you have addImage above, keep it. Otherwise ignore.
   doc.setFont("helvetica", "bold");
   doc.setFontSize(14);
-  doc.text("Clinical EMDR-Informed IFS Psychotherapy and Counselling", 20, 20, { maxWidth: 170 });
+  doc.text(
+      "Clinical EMDR-Informed IFS Psychotherapy and Counselling",
+      20, 20,
+      { maxWidth: 170 }
+  );
 
   doc.setFontSize(12);
   doc.setFont("helvetica", "bold");
@@ -476,11 +484,9 @@ const exportAll = () => {
   doc.setFont("helvetica", "normal");
   doc.text("Therapist: Robert Ormiston", 20, 38);
 
-  // Date
   const date = new Date().toLocaleDateString();
   doc.text(`Date: ${date}`, 20, 44);
 
-  // Horizontal separator line
   doc.setDrawColor(180);
   doc.line(20, 48, 190, 48);
 
@@ -496,32 +502,43 @@ const exportAll = () => {
 
   selected.forEach((r, index) => {
     const typeLabel =
-        r.type === "audio"
-            ? "Audio file"
-            : r.type === "video"
-                ? "Video file"
-                : r.type === "pdf"
-                    ? "PDF document"
-                    : "Link";
+        r.type === "audio" ? "Audio file" :
+            r.type === "video" ? "Video file" :
+                r.type === "pdf"   ? "PDF document" : "Link";
+
     const line = `${index + 1}. ${r.title} — ${typeLabel}`;
     doc.text(line, 25, y);
     y += 8;
+
+    // New page if near bottom
     if (y > 270) {
       doc.addPage();
       y = 20;
     }
   });
 
-  // === FOOTER ===
-  doc.setDrawColor(220);
-  doc.line(20, y + 5, 190, y + 5);
-  doc.setFontSize(9);
-  doc.setTextColor(120);
-  doc.text("Generated locally for professional use within Chrysalis Therapy Services", 20, y + 12);
+  // === FOOTER CONTACT + PAGE NUMBERS ON EVERY PAGE ===
+  const pageCount = doc.getNumberOfPages();
+  for (let i = 1; i <= pageCount; i++) {
+    doc.setPage(i);
+
+    // contact info (left)
+    doc.setFontSize(9);
+    doc.setTextColor(120);
+    doc.text("emdrifs@robormiston.com", 20, 290);
+
+    // page number (right)
+    doc.text(`Page ${i} of ${pageCount}`, 190, 290, { align: "right" });
+
+    // light line above footer
+    doc.setDrawColor(220);
+    doc.line(20, 285, 190, 285);
+  }
 
   // Save file
   doc.save(`chrysalis-resources-${new Date().toISOString().slice(0, 10)}.pdf`);
 };
+
 
 
 
