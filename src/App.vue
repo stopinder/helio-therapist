@@ -139,11 +139,11 @@
 
 import { ref, computed, onMounted, watch } from "vue";
 
-import LeftSidebar from "./components/LeftSidebar.vue";
-import RightPanel from "./components/RightPanel.vue";
-import MessageBar from "./components/MessageBar.vue";
-import MainCanvas from "./components/MainCanvas.vue";
-import CbtToolLoader from "./components/CBTToolLoader.vue";
+import LeftSidebar from "./components/tools/LeftSidebar.vue";
+import RightPanel from "./components/tools/RightPanel.vue";
+import MessageBar from "./components/tools/MessageBar.vue";
+import MainCanvas from "./components/tools/MainCanvas.vue";
+import CbtToolLoader from "./components/tools/CBTToolLoader.vue";
 
 // Temporary placeholder component for Reflective Practice
 const ReflectiveCanvas = {

@@ -281,16 +281,16 @@
 </template>
 
 <script setup>
-import logoImage from "../assets/chrysalis-logo.png";
+import logoImage from "../../assets/chrysalis-logo.png";
 
 
-import ResourcePreviewModal from "./sidebar/ResourcePreviewModal.vue";
+import ResourcePreviewModal from "../sidebar/ResourcePreviewModal.vue";
 
 import { ref } from "vue";
-import SidebarGroup from "./sidebar/SidebarGroup.vue";
-import AddClientModal from "./sidebar/AddClientModal.vue";
-import AddResourceModal from "./sidebar/AddResourceModal.vue";
-import ArchiveClientModal from "./sidebar/ArchiveClientModal.vue";
+import SidebarGroup from "../sidebar/SidebarGroup.vue";
+import AddClientModal from "../sidebar/AddClientModal.vue";
+import AddResourceModal from "../sidebar/AddResourceModal.vue";
+import ArchiveClientModal from "../sidebar/ArchiveClientModal.vue";
 import { jsPDF } from "jspdf";
 
 const props = defineProps({
