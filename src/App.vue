@@ -54,7 +54,6 @@
         </div>
 
         <div class="flex flex-col">
-          <!-- Session status indicator -->
           <div
               class="flex items-center gap-2 text-[18px] font-semibold tracking-tight text-[#2c3e50]"
           >
@@ -105,12 +104,14 @@
         <!-- Persistent Client Header -->
         <div
             v-if="selectedClient"
-            class="sticky top-0 z-20 mb-4 rounded-md px-4 py-2 flex items-center justify-between shadow-sm backdrop-blur-sm bg-white border-2 transition-colors duration-300"
-            :class="isInSession ? 'border-[#2563eb]' : 'border-[#d9dce1]'"
-
+            class="sticky top-0 z-20 mb-4 rounded-md px-4 py-2 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 shadow-sm backdrop-blur-sm border-2 transition-all duration-300"
+            :class="isInSession
+    ? 'border-[#2563eb] bg-[#eaf1ff]'
+    : 'border-[#d9dce1] bg-white'"
             :style="{ opacity: headerOpacity }"
         >
-          <div
+
+        <div
               class="text-[17px] font-semibold transition-colors duration-300"
               :class="isInSession ? 'text-[#2563eb]' : 'text-[#2c3e50]'"
           >
@@ -119,12 +120,15 @@
                 class="ml-2 text-[13px] font-normal transition-colors duration-300"
                 :class="isInSession ? 'text-[#3b82f6]' : 'text-slate-500'"
             >
-    {{ sessionDate }}
-  </span>
+              {{ sessionDate }}
+            </span>
           </div>
+          <div class="text-[13px] text-slate-500">
+            {{ activeViewLabel }}
+          </div>
+        </div>
 
-
-          <MainCanvas
+        <MainCanvas
             v-if="activeView === 'main'"
             :selected-client="selectedClient"
             :session-notes="filteredNotes"
@@ -183,11 +187,10 @@
 </template>
 
 <script setup>
+import { ref, computed, onMounted, watch, nextTick } from "vue"
 import AIInsightDrawer from "./components/AIInsightDrawer.vue"
 import EMDRToolLoader from "./components/tools/EMDRToolLoader.vue"
 import IFSToolLoader from "./components/tools/IFSToolLoader.vue"
-import { ref, computed, onMounted, watch, nextTick } from "vue"
-
 import LeftSidebar from "./components/tools/LeftSidebar.vue"
 import RightPanel from "./components/tools/RightPanel.vue"
 import MessageBar from "./components/tools/MessageBar.vue"
@@ -328,7 +331,7 @@ const filteredNotes = computed(() =>
         : []
 )
 
-// --- Active view label ---
+// --- View + UI helpers ---
 const activeViewLabel = computed(() => {
   switch (activeView.value) {
     case "cbt": return "CBT Tool"
@@ -339,7 +342,6 @@ const activeViewLabel = computed(() => {
   }
 })
 
-// --- Scroll + Session date ---
 const headerOpacity = ref(1)
 function handleScroll(e) {
   const scrollY = e.target.scrollTop
@@ -382,4 +384,3 @@ onMounted(() => {
   transform: translateX(-100%);
 }
 </style>
-
