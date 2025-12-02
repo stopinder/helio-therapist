@@ -98,7 +98,27 @@
       </header>
 
       <!-- Central Canvas -->
-      <main class="flex-1 overflow-auto p-4 md:p-6">
+      <main
+          class="flex-1 overflow-auto p-4 md:p-6 relative scroll-smooth bg-[#f5f7fa]"
+          @scroll="handleScroll"
+      >
+        <!-- Persistent Client Header -->
+        <div
+            v-if="selectedClient"
+            class="sticky top-0 z-20 mb-4 border border-[#d9dce1] rounded-md px-4 py-2 flex items-center justify-between shadow-sm backdrop-blur-sm bg-white"
+            :style="{ opacity: headerOpacity }"
+        >
+          <div class="text-[17px] font-semibold text-[#2c3e50]">
+            {{ selectedClient.name }}
+            <span class="ml-2 text-[13px] text-slate-500 font-normal">
+              {{ sessionDate }}
+            </span>
+          </div>
+          <div class="text-[13px] text-slate-500">
+            {{ activeViewLabel }}
+          </div>
+        </div>
+
         <MainCanvas
             v-if="activeView === 'main'"
             :selected-client="selectedClient"
@@ -111,7 +131,6 @@
             @generate-insight="handleGenerateInsight"
             @close="activeView = 'main'"
         />
-
 
         <ReflectiveCanvas
             v-else-if="activeView === 'reflection'"
@@ -131,7 +150,6 @@
             @close="activeView = 'main'"
             @generate-insight="handleGenerateInsight"
         />
-
       </main>
 
       <!-- Message Bar -->
@@ -169,7 +187,6 @@ import LeftSidebar from "./components/tools/LeftSidebar.vue"
 import RightPanel from "./components/tools/RightPanel.vue"
 import MessageBar from "./components/tools/MessageBar.vue"
 import MainCanvas from "./components/tools/MainCanvas.vue"
-
 import CbtToolLoader from "./components/tools/CBTToolLoader.vue"
 
 // --- Reflective placeholder ---
@@ -179,8 +196,7 @@ const ReflectiveCanvas = {
     <div class="max-w-3xl mx-auto text-slate-700">
       <h2 class="text-2xl font-semibold mb-4">Reflective Practice</h2>
       <p class="mb-3 text-[15px] leading-relaxed">
-        This is your space for reflection and professional self-work. You can write reflections,
-        review previous entries, or view your Therapist Map.
+        This is your space for reflection and professional self-work.
       </p>
       <div class="p-4 bg-white border border-[#e5e7eb] rounded-md shadow-sm">
         <textarea
@@ -305,6 +321,32 @@ const filteredNotes = computed(() =>
     selectedClient.value
         ? sessionNotes.value.filter((n) => n.clientId === selectedClient.value.id)
         : []
+)
+
+// --- Active view label ---
+const activeViewLabel = computed(() => {
+  switch (activeView.value) {
+    case "cbt": return "CBT Tool"
+    case "ifs": return "IFS Tool"
+    case "emdr": return "EMDR Tool"
+    case "reflection": return "Reflection"
+    default: return "Session Notes"
+  }
+})
+
+// --- Scroll + Session date ---
+const headerOpacity = ref(1)
+function handleScroll(e) {
+  const scrollY = e.target.scrollTop
+  headerOpacity.value = scrollY > 10 ? 0.85 : 1
+}
+
+const sessionDate = computed(() =>
+    new Date().toLocaleDateString(undefined, {
+      weekday: "short",
+      month: "short",
+      day: "numeric",
+    })
 )
 
 const toggleRightPanel = () => (isRightPanelOpen.value = !isRightPanelOpen.value)
