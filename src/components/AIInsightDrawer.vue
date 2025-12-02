@@ -1,0 +1,90 @@
+<!-- src/components/AIInsightDrawer.vue -->
+<template>
+  <transition name="drawer-slide">
+    <div
+        v-if="open"
+        class="fixed inset-x-0 bottom-0 bg-white border-t border-[#d9dce1] shadow-xl z-50 max-h-[60vh] flex flex-col"
+    >
+      <!-- Header -->
+      <div class="flex items-center justify-between px-4 py-3 border-b border-[#e2e5ea] bg-[#fafbfc]">
+        <h3 class="text-[15px] font-semibold text-[#2c3e50]">
+          AI Insight Summary
+        </h3>
+        <button
+            class="text-slate-500 hover:text-slate-700 text-[14px]"
+            v-on:click="$emit('close')"
+        >
+          ✕
+        </button>
+      </div>
+
+      <!-- Content -->
+      <div class="flex-1 overflow-auto p-4 text-[14px] text-slate-700 leading-relaxed">
+        <div v-if="loading" class="flex items-center justify-center py-6">
+          <span class="animate-pulse text-slate-400">Generating insight...</span>
+        </div>
+
+        <div v-else>
+          <p v-if="insight" class="whitespace-pre-wrap">{{ insight }}</p>
+          <p v-else class="italic text-slate-400">
+            No insight generated yet.
+          </p>
+        </div>
+      </div>
+    </div>
+  </transition>
+</template>
+
+<script setup>
+import { ref, watch } from 'vue'
+
+const props = defineProps({
+  open: Boolean,
+  input: Object // receives { tool, clientId, form }
+})
+const emit = defineEmits(['close'])
+
+const loading = ref(false)
+const insight = ref('')
+
+// Watch for new input to simulate AI output
+watch(
+    () => props.input,
+    async (data) => {
+      if (!data) return
+      loading.value = true
+      insight.value = ''
+      // Simulated delay + pseudo AI response
+      await new Promise((r) => setTimeout(r, 1500))
+      insight.value = mockInsight(data)
+      loading.value = false
+    },
+    { deep: true }
+)
+
+// Generate a simple fake AI insight
+function mockInsight(data) {
+  const { form } = data
+  return (
+      `Based on this Thought Record:\n\n` +
+      `• Situation: ${form.situation || '—'}\n` +
+      `• Main thought: ${form.automaticThoughts || '—'}\n` +
+      `• Emotions: ${form.emotions || '—'} (${form.intensity || 'N/A'}%)\n\n` +
+      `Reflective insight:\n` +
+      `It seems this thought may involve cognitive distortions such as all-or-nothing or overgeneralisation. ` +
+      `Encouraging the client to examine both the evidence for and against may support development of a more balanced perspective.`
+  )
+}
+</script>
+
+<style scoped>
+.drawer-slide-enter-active,
+.drawer-slide-leave-active {
+  transition: all 0.3s ease;
+}
+.drawer-slide-enter-from,
+.drawer-slide-leave-to {
+  transform: translateY(100%);
+  opacity: 0;
+}
+</style>

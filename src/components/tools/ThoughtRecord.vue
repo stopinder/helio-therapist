@@ -7,6 +7,7 @@
     </header>
 
     <div class="space-y-4">
+      <!-- Fields -->
       <div>
         <label class="block text-[14px] font-medium text-[#3f4754] mb-1">Situation / Trigger</label>
         <textarea v-model="form.situation" rows="2" class="cbt-input"></textarea>
@@ -43,12 +44,19 @@
         <textarea v-model="form.balancedThought" rows="2" class="cbt-input"></textarea>
       </div>
 
-      <div class="flex justify-end pt-2">
+      <!-- Buttons -->
+      <div class="flex justify-between items-center pt-3">
+        <button
+            v-on:click="generateInsight"
+            class="px-4 py-2 bg-[#2563eb] text-white rounded-md hover:bg-[#1d4ed8] text-[14px]"
+        >
+          💡 Generate Insight
+        </button>
         <button
             v-on:click="save"
             class="px-4 py-2 bg-[#3f4754] text-white rounded-md hover:bg-[#2f3540] text-[14px]"
         >
-          Save
+          💾 Save
         </button>
       </div>
     </div>
@@ -56,14 +64,17 @@
 </template>
 
 <script setup>
-import { reactive } from 'vue';
+import { reactive, watch } from 'vue'
 
 const props = defineProps({
   sessionId: { type: String, default: null }
 })
-const emit = defineEmits(['save'])
-const clientId = JSON.parse(localStorage.getItem('helio_selectedClient'))?.id
+const emit = defineEmits(['save', 'generate-insight'])
 
+const client = JSON.parse(localStorage.getItem('helio_selectedClient'))
+const clientId = client?.id
+
+// --- Reactive form state ---
 const form = reactive({
   situation: '',
   automaticThoughts: '',
@@ -74,8 +85,23 @@ const form = reactive({
   balancedThought: ''
 })
 
+// --- Auto-load saved data for client ---
+const key = `thoughtRecord_${clientId || 'default'}`
+const saved = localStorage.getItem(key)
+if (saved) Object.assign(form, JSON.parse(saved))
+
+// --- Save function ---
 function save() {
+  if (!clientId) return alert('No client selected.')
+  localStorage.setItem(key, JSON.stringify(form))
   emit('save', { ...form, sessionId: props.sessionId })
+  alert('Thought record saved for this client.')
+}
+
+// --- AI Insight function ---
+function generateInsight() {
+  if (!clientId) return alert('No client selected.')
+  emit('generate-insight', { tool: 'cbt_thought', clientId, form })
 }
 </script>
 

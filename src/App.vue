@@ -30,7 +30,6 @@
           @add-client="handleAddClient"
           :resources="resources"
           @add-resource="handleAddResource"
-
       />
     </transition>
 
@@ -52,27 +51,25 @@
           >
             ☰
           </button>
-
         </div>
+
         <div class="flex flex-col">
-
-
           <!-- Session status indicator -->
-          <div class="flex items-center gap-2 text-[18px] font-semibold tracking-tight text-[#2c3e50]">
+          <div
+              class="flex items-center gap-2 text-[18px] font-semibold tracking-tight text-[#2c3e50]"
+          >
             <span>Therapist Workspace</span>
             <span class="text-slate-400 mx-1">·</span>
             <span
                 class="flex items-center gap-1 text-[13px] font-normal text-slate-500"
             >
-  <span
-      class="inline-block h-2 w-2 rounded-full"
-      :class="isInSession ? 'bg-green-500' : 'bg-slate-400'"
-  ></span>
-  {{ isInSession ? 'In Session' : 'Offline' }}
-</span>
-
+              <span
+                  class="inline-block h-2 w-2 rounded-full"
+                  :class="isInSession ? 'bg-green-500' : 'bg-slate-400'"
+              ></span>
+              {{ isInSession ? 'In Session' : 'Offline' }}
+            </span>
           </div>
-
         </div>
 
         <!-- Right: controls -->
@@ -84,7 +81,6 @@
             Client context
           </button>
 
-          <!-- Calendar icon -->
           <button
               class="h-9 w-9 flex items-center justify-center rounded-md border border-[#d9dce1] text-[#3f4754] hover:bg-[#f5f7fa] transition text-[15px]"
               aria-label="Calendar"
@@ -92,7 +88,6 @@
             🗓
           </button>
 
-          <!-- Settings icon -->
           <button
               class="h-9 w-9 flex items-center justify-center rounded-md border border-[#d9dce1] text-[#3f4754] hover:bg-[#f5f7fa] transition text-[15px]"
               aria-label="Settings"
@@ -109,31 +104,36 @@
             :selected-client="selectedClient"
             :session-notes="filteredNotes"
         />
+
         <CbtToolLoader
             v-else-if="activeView === 'cbt'"
             :template="activeTemplate"
-            v-on:close="activeView = 'main'"
+            :selected-client="selectedClient"
+            @generate-insight="handleGenerateInsight"
         />
 
         <ReflectiveCanvas
             v-else-if="activeView === 'reflection'"
             :mode="reflectionMode"
         />
+
         <IFSToolLoader
             v-else-if="activeView === 'ifs'"
             :template="activeTemplate"
             v-on:close="activeView = 'main'"
         />
+
         <EMDRToolLoader
             v-else-if="activeView === 'emdr'"
             :template="activeTemplate"
             v-on:close="activeView = 'main'"
         />
-
       </main>
 
       <!-- Message Bar -->
-      <footer class="border-t border-[#d9dce1] bg-white shadow-inner px-4 md:px-6 py-3 md:py-4">
+      <footer
+          class="border-t border-[#d9dce1] bg-white shadow-inner px-4 md:px-6 py-3 md:py-4"
+      >
         <MessageBar @submit="handleMessageSubmit" />
       </footer>
     </div>
@@ -145,23 +145,30 @@
         @close="isRightPanelOpen = false"
         @view-map="showClientMap"
     />
+
+    <!-- AI Insight Drawer -->
+    <AIInsightDrawer
+        :open="showAIDrawer"
+        :input="aiInput"
+        @close="showAIDrawer = false"
+    />
   </div>
 </template>
 
 <script setup>
+import AIInsightDrawer from "./components/AIInsightDrawer.vue"
 import EMDRToolLoader from "./components/tools/EMDRToolLoader.vue"
-
 import IFSToolLoader from "./components/tools/IFSToolLoader.vue"
+import { ref, computed, onMounted, watch, nextTick } from "vue"
 
-import { ref, computed, onMounted, watch } from "vue";
+import LeftSidebar from "./components/tools/LeftSidebar.vue"
+import RightPanel from "./components/tools/RightPanel.vue"
+import MessageBar from "./components/tools/MessageBar.vue"
+import MainCanvas from "./components/tools/MainCanvas.vue"
 
-import LeftSidebar from "./components/tools/LeftSidebar.vue";
-import RightPanel from "./components/tools/RightPanel.vue";
-import MessageBar from "./components/tools/MessageBar.vue";
-import MainCanvas from "./components/tools/MainCanvas.vue";
-import CbtToolLoader from "./components/tools/CBTToolLoader.vue";
+import CbtToolLoader from "./components/tools/CBTToolLoader.vue"
 
-// Temporary placeholder component for Reflective Practice
+// --- Reflective placeholder ---
 const ReflectiveCanvas = {
   props: ["mode"],
   template: `
@@ -179,87 +186,73 @@ const ReflectiveCanvas = {
       </div>
     </div>
   `,
-};
+}
 
-const isSidebarOpen = ref(false);
-const isRightPanelOpen = ref(false);
-const isDesktop = ref(false);
+// --- State ---
+const isSidebarOpen = ref(false)
+const isRightPanelOpen = ref(false)
+const isDesktop = ref(false)
+const isInSession = ref(false)
+const isSyncing = ref(false)
+const activeView = ref("main")
+const activeTool = ref(null)
+const activeTemplate = ref(null)
+const reflectionMode = ref("new")
 
-// Zoom + Session states
-const isInSession = ref(false);
-const isSyncing = ref(false);
+// --- AI Drawer ---
+const showAIDrawer = ref(false)
+const aiInput = ref(null)
 
-// Active view modes
-const activeView = ref("main"); // 'main' | 'cbt' | 'reflection'
-const activeTool = ref(null);
-const activeTemplate = ref(null);
-const reflectionMode = ref("new");
+const handleGenerateInsight = (data) => {
+  console.log("✅ App received insight event", data)
+  aiInput.value = data
+  showAIDrawer.value = true
+}
 
-// Load clients from localStorage, or use the default if nothing is saved yet
+// --- Clients ---
 const clients = ref(
     JSON.parse(localStorage.getItem("helio_clients")) || [
       { id: 1, name: "Celia R.", note: "Parts work / relationship stress", archived: false },
     ]
-);
-// Whenever clients change, save them to localStorage
-watch(
-    clients,
-    (newClients) => {
-      localStorage.setItem("helio_clients", JSON.stringify(newClients));
-    },
-    { deep: true }
-);
-// Load resources from localStorage or use defaults
+)
+watch(clients, (newClients) => {
+  localStorage.setItem("helio_clients", JSON.stringify(newClients))
+}, { deep: true })
+
+// --- Resources ---
 const resources = ref(
     JSON.parse(localStorage.getItem("helio_resources")) || [
       { id: 1, title: "Safe Calm Place (Audio)", type: "audio", url: "" },
       { id: 2, title: "Sensing Exercise (PDF)", type: "pdf", url: "" },
     ]
-);
+)
+watch(resources, (newResources) => {
+  localStorage.setItem("helio_resources", JSON.stringify(newResources))
+}, { deep: true })
+
 const handleAddResource = (newResourceData) => {
   const newResource = {
     id: Date.now(),
     title: newResourceData.title?.trim() || "Untitled Resource",
     type: newResourceData.type || "link",
     url: newResourceData.url || "",
-    includeInExport: false,           // 👈 NEW: starts unselected for export
-    createdAt: new Date().toISOString(), // (optional) helps with “Added today”
-  };
-  resources.value.push(newResource);
-};
+    includeInExport: false,
+    createdAt: new Date().toISOString(),
+  }
+  resources.value.push(newResource)
+}
 
-const toggleResourceExport = (resourceId, include) => {
-  const item = resources.value.find(r => r.id === resourceId);
-  if (item) item.includeInExport = include;
-};
-
-
-// Auto-save resources when changed
-watch(
-    resources,
-    (newResources) => {
-      localStorage.setItem("helio_resources", JSON.stringify(newResources));
-    },
-    { deep: true }
-);
-
-
-const archivedClients = ref([]);
-const selectedClient = ref(clients.value[0]);
-
-const sessionNotes = ref([]);
+const selectedClient = ref(clients.value[0])
+const sessionNotes = ref([])
 
 const handleSelectClient = (client) => {
-  selectedClient.value = client;
-  localStorage.setItem('helio_selectedClient', JSON.stringify(client));
-  activeView.value = "main";
-  if (!isDesktop.value) isSidebarOpen.value = false;
-};
+  selectedClient.value = client
+  localStorage.setItem("helio_selectedClient", JSON.stringify(client))
+  activeView.value = "main"
+  if (!isDesktop.value) isSidebarOpen.value = false
+}
 
-
-
-
-// Sidebar event handlers
+// --- Tools ---
 const openTool = (payload) => {
   if (payload.group === "cbt") {
     activeTool.value = "cbt"
@@ -278,85 +271,64 @@ const openTool = (payload) => {
   }
 }
 
+// --- Reflection / Zoom / Misc ---
+const openReflection = (mode) => { reflectionMode.value = mode; activeView.value = "reflection" }
+const joinZoom = () => { isInSession.value = true }
+const endZoom = () => { isInSession.value = false }
 
-
-const openReflection = (mode) => {
-  reflectionMode.value = mode;
-  activeView.value = "reflection";
-};
-
-const joinZoom = () => {
-  isInSession.value = true;
-};
-const endZoom = () => {
-  isInSession.value = false;
-};
 const syncTranscript = async () => {
-  if (!isInSession.value) return;
-  isSyncing.value = true;
+  if (!isInSession.value) return
+  isSyncing.value = true
   try {
-    // Placeholder for transcript sync logic
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    await new Promise((resolve) => setTimeout(resolve, 1000))
   } finally {
-    isSyncing.value = false;
+    isSyncing.value = false
   }
-};
+}
 
+// --- Notes ---
 const handleMessageSubmit = (text) => {
-  const value = text.trim();
-  if (!value) return;
+  const value = text.trim()
+  if (!value) return
   sessionNotes.value.push({
     id: Date.now() + Math.random(),
     clientId: selectedClient.value?.id ?? null,
     text: value,
-  });
-};
+  })
+}
 
 const filteredNotes = computed(() =>
     selectedClient.value
         ? sessionNotes.value.filter((n) => n.clientId === selectedClient.value.id)
         : []
-);
+)
 
-const toggleRightPanel = () => (isRightPanelOpen.value = !isRightPanelOpen.value);
-const showClientMap = () => (activeView.value = "main");
+const toggleRightPanel = () => (isRightPanelOpen.value = !isRightPanelOpen.value)
+const showClientMap = () => (activeView.value = "main")
 
-const updateScreen = () => (isDesktop.value = window.innerWidth >= 768);
-onMounted(() => {
-  updateScreen();
-  window.addEventListener("resize", updateScreen);
-});
+const updateScreen = () => (isDesktop.value = window.innerWidth >= 768)
 onMounted(() => {
   updateScreen()
   window.addEventListener("resize", updateScreen)
-
-  // ✅ Listen for tool saves and trigger right-panel refresh
-  window.addEventListener('tool-saved', () => {
-    // Force Vue to re-render RightPanel
+  window.addEventListener("tool-saved", () => {
     isRightPanelOpen.value = false
-    nextTick(() => {
-      isRightPanelOpen.value = true
-    })
+    nextTick(() => { isRightPanelOpen.value = true })
   })
 })
-
 </script>
 
 <style scoped>
-.fade-enter-active,
-.fade-leave-active {
+.fade-enter-active, .fade-leave-active {
   transition: opacity 0.2s ease;
 }
-.fade-enter-from,
-.fade-leave-to {
+.fade-enter-from, .fade-leave-to {
   opacity: 0;
 }
-.slide-enter-active,
-.slide-leave-active {
+.slide-enter-active, .slide-leave-active {
   transition: transform 0.25s ease;
 }
-.slide-enter-from,
-.slide-leave-to {
+.slide-enter-from, .slide-leave-to {
   transform: translateX(-100%);
 }
 </style>
+
