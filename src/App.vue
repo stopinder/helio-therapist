@@ -108,9 +108,10 @@
         <CbtToolLoader
             v-else-if="activeView === 'cbt'"
             :template="activeTemplate"
-            :selected-client="selectedClient"
             @generate-insight="handleGenerateInsight"
+            @close="activeView = 'main'"
         />
+
 
         <ReflectiveCanvas
             v-else-if="activeView === 'reflection'"

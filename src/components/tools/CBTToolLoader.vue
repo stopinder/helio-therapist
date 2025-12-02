@@ -16,11 +16,12 @@
       </div>
       <button
           class="text-[13px] px-3 py-1.5 rounded-md border border-[#d9dce1]
-             text-[#3f4754] bg-white hover:bg-[#f5f7fa] transition"
+       text-[#3f4754] bg-white hover:bg-[#f5f7fa] transition"
           v-on:click="goBack"
       >
         ← Back to Workspace
       </button>
+
     </div>
 
     <!-- Dynamic template loader -->
@@ -106,5 +107,6 @@ function forwardInsight(payload) {
 function goBack() {
   emit('close')
 }
+
 </script>
 
