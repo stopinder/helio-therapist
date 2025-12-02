@@ -28,15 +28,13 @@
 
     <!-- Interweave list -->
     <ul class="divide-y divide-[#e5e7eb] text-[14px]">
-      <li
-          v-for="(iw, idx) in interweaves"
-          v-bind:key="idx"
-          class="py-3"
-      >
+      <li v-for="(iw, idx) in interweaves" :key="idx" class="py-3">
         <div class="flex justify-between items-start">
           <div class="flex-1">
             <div class="font-semibold text-[#2c3e50]">{{ iw.target }}</div>
-            <div class="text-slate-600 text-[13px] mb-1">Purpose: {{ iw.purpose }}</div>
+            <div class="text-slate-600 text-[13px] mb-1">
+              Purpose: {{ iw.purpose }}
+            </div>
 
             <label class="block text-[12px] text-slate-500 mb-0.5">Cognition or Prompt</label>
             <input
@@ -64,8 +62,14 @@
       </li>
     </ul>
 
-    <!-- Save button -->
-    <div class="flex justify-end pt-3">
+    <!-- Action buttons -->
+    <div class="flex justify-end gap-3 pt-3">
+      <button
+          v-on:click="generateInsight"
+          class="px-4 py-2 bg-[#2563eb] text-white rounded-md hover:bg-[#1d4ed8] text-[14px]"
+      >
+        Generate Insight
+      </button>
       <button
           v-on:click="saveInterweaves"
           class="px-4 py-2 bg-[#3f4754] text-white rounded-md hover:bg-[#2f3540] text-[14px]"
@@ -79,7 +83,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 
-const emit = defineEmits(['save'])
+const emit = defineEmits(['save', 'generate-insight'])
 
 const interweaves = ref([])
 const newInterweave = ref({
@@ -100,17 +104,40 @@ function removeInterweave(index) {
 }
 
 function saveInterweaves() {
-  const clientId = localStorage.getItem('helio_selectedClientId')
-  emit('save', {
-    template: 'cognitive',
-    data: { clientId, interweaves: interweaves.value }
-  })
-  alert('Cognitive Interweaves saved for current client.')
+  const clientId = JSON.parse(localStorage.getItem('helio_selectedClient'))?.id
+  if (!clientId) {
+    alert('No client selected — please select a client first.')
+    return
+  }
+
+  const all = JSON.parse(localStorage.getItem('helio_toolData')) || {}
+  all[`${clientId}_cognitive`] = {
+    interweaves: interweaves.value,
+    savedAt: new Date().toISOString()
+  }
+  localStorage.setItem('helio_toolData', JSON.stringify(all))
+
+  alert('Cognitive Interweaves saved for this client!')
+  window.dispatchEvent(new CustomEvent('tool-saved'))
+
+  emit('save', { tool: 'emdr_cognitive', clientId, interweaves: interweaves.value })
+}
+
+function generateInsight() {
+  const clientId = JSON.parse(localStorage.getItem('helio_selectedClient'))?.id
+  if (!clientId) {
+    alert('No client selected — please select a client first.')
+    return
+  }
+
+  const payload = { tool: 'emdr_cognitive', clientId, interweaves: interweaves.value }
+  console.log('🔄 Forwarding EMDR insight event...', payload)
+  emit('generate-insight', payload)
 }
 
 // Load saved interweaves for this client
 onMounted(() => {
-  const clientId = localStorage.getItem('helio_selectedClientId')
+  const clientId = JSON.parse(localStorage.getItem('helio_selectedClient'))?.id
   const allData = JSON.parse(localStorage.getItem('helio_toolData')) || {}
   const key = `${clientId}_cognitive`
   if (allData[key]) {
@@ -118,3 +145,4 @@ onMounted(() => {
   }
 })
 </script>
+

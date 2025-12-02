@@ -15,7 +15,7 @@
             v-model="form.context"
             type="text"
             placeholder="Session date or context"
-            class="w-full border border-[#d9dce1] rounded-md px-3 py-2 text-[14px]"
+            class="cbt-input"
         />
       </div>
 
@@ -25,7 +25,7 @@
             v-model="form.reflections"
             rows="4"
             placeholder="Describe how Self-energy was experienced or accessed..."
-            class="w-full border border-[#d9dce1] rounded-md px-3 py-2 text-[14px]"
+            class="cbt-input"
         ></textarea>
       </div>
 
@@ -35,15 +35,21 @@
             v-model="form.qualities"
             type="text"
             placeholder="e.g., Calm, Curiosity, Courage, Clarity"
-            class="w-full border border-[#d9dce1] rounded-md px-3 py-2 text-[14px]"
+            class="cbt-input"
         />
       </div>
     </div>
 
-    <!-- Save button -->
-    <div class="flex justify-end pt-4">
+    <!-- Action buttons -->
+    <div class="flex justify-end gap-3 pt-4">
       <button
-          v-on:click="saveExercise"
+          v-on:click="generateInsight"
+          class="px-4 py-2 bg-[#2563eb] text-white rounded-md hover:bg-[#1d4ed8] text-[14px]"
+      >
+        Generate Insight
+      </button>
+      <button
+          v-on:click="save"
           class="px-4 py-2 bg-[#3f4754] text-white rounded-md hover:bg-[#2f3540] text-[14px]"
       >
         Save Reflection
@@ -53,9 +59,9 @@
 </template>
 
 <script setup>
-import { reactive, onMounted } from 'vue'
+import { reactive } from 'vue'
 
-const emit = defineEmits(['save'])
+const emit = defineEmits(['save', 'generate-insight'])
 
 const form = reactive({
   context: '',
@@ -63,22 +69,40 @@ const form = reactive({
   qualities: ''
 })
 
-function saveExercise() {
-  const clientId = localStorage.getItem('helio_selectedClientId')
-  emit('save', {
-    template: 'self-energy',
-    data: { clientId, ...form }
-  })
-  alert('Self-Energy reflection saved for current client.')
+function save() {
+  const clientId = JSON.parse(localStorage.getItem('helio_selectedClient'))?.id
+  if (!clientId) {
+    alert('No client selected — please select a client first.')
+    return
+  }
+
+  const all = JSON.parse(localStorage.getItem('helio_toolData')) || {}
+  all[`${clientId}_self-energy`] = { ...form, savedAt: new Date().toISOString() }
+  localStorage.setItem('helio_toolData', JSON.stringify(all))
+
+  alert('Self-Energy reflection saved for this client!')
+  window.dispatchEvent(new CustomEvent('tool-saved'))
+
+  emit('save', { tool: 'ifs_self-energy', clientId, form })
 }
 
-onMounted(() => {
+function generateInsight() {
   const clientId = JSON.parse(localStorage.getItem('helio_selectedClient'))?.id
-
-  const allData = JSON.parse(localStorage.getItem('helio_toolData')) || {}
-  const key = `${clientId}_self-energy`
-  if (allData[key]) {
-    Object.assign(form, allData[key])
+  if (!clientId) {
+    alert('No client selected — please select a client first.')
+    return
   }
-})
+
+  const payload = { tool: 'ifs_self-energy', clientId, form }
+  console.log('🔄 Forwarding IFS insight event...', payload)
+  emit('generate-insight', payload)
+}
 </script>
+
+<style scoped>
+.cbt-input {
+  @apply w-full border border-[#d9dce1] rounded-md px-3 py-2 text-[14px]
+  focus:outline-none focus:ring-2 focus:ring-[#a8b0c1] bg-[#fafbfc];
+}
+</style>
+

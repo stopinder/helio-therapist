@@ -28,15 +28,13 @@
 
     <!-- Targets list -->
     <ul class="divide-y divide-[#e5e7eb] text-[14px]">
-      <li
-          v-for="(t, idx) in targets"
-          v-bind:key="idx"
-          class="py-3"
-      >
+      <li v-for="(t, idx) in targets" :key="idx" class="py-3">
         <div class="flex justify-between items-start">
           <div class="flex-1">
             <div class="font-semibold text-[#2c3e50]">{{ t.memory }}</div>
-            <div class="text-slate-600 text-[13px] mb-1">Neg. Cognition: {{ t.negativeCognition }}</div>
+            <div class="text-slate-600 text-[13px] mb-1">
+              Neg. Cognition: {{ t.negativeCognition }}
+            </div>
 
             <div class="grid grid-cols-2 gap-3 mb-2">
               <div>
@@ -79,8 +77,14 @@
       </li>
     </ul>
 
-    <!-- Save button -->
-    <div class="flex justify-end pt-3">
+    <!-- Buttons -->
+    <div class="flex justify-end gap-3 pt-3">
+      <button
+          v-on:click="generateInsight"
+          class="px-4 py-2 bg-[#2563eb] text-white rounded-md hover:bg-[#1d4ed8] text-[14px]"
+      >
+        Generate Insight
+      </button>
       <button
           v-on:click="saveTargets"
           class="px-4 py-2 bg-[#3f4754] text-white rounded-md hover:bg-[#2f3540] text-[14px]"
@@ -94,7 +98,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 
-const emit = defineEmits(['save'])
+const emit = defineEmits(['save', 'generate-insight'])
 
 const targets = ref([])
 const newTarget = ref({
@@ -116,18 +120,39 @@ function removeTarget(index) {
 }
 
 function saveTargets() {
-  const clientId = localStorage.getItem('helio_selectedClientId')
-  emit('save', {
-    template: 'target-log',
-    data: { clientId, targets: targets.value }
-  })
-  alert('EMDR Target Log saved for current client.')
+  const clientId = JSON.parse(localStorage.getItem('helio_selectedClient'))?.id
+  if (!clientId) {
+    alert('No client selected — please select a client first.')
+    return
+  }
+
+  const all = JSON.parse(localStorage.getItem('helio_toolData')) || {}
+  all[`${clientId}_target-log`] = {
+    targets: targets.value,
+    savedAt: new Date().toISOString()
+  }
+  localStorage.setItem('helio_toolData', JSON.stringify(all))
+
+  alert('EMDR Target Log saved for this client!')
+  window.dispatchEvent(new CustomEvent('tool-saved'))
+
+  emit('save', { tool: 'emdr_target-log', clientId, targets: targets.value })
 }
 
-// Load saved targets for this client
+function generateInsight() {
+  const clientId = JSON.parse(localStorage.getItem('helio_selectedClient'))?.id
+  if (!clientId) {
+    alert('No client selected — please select a client first.')
+    return
+  }
+
+  const payload = { tool: 'emdr_target-log', clientId, targets: targets.value }
+  console.log('🔄 Forwarding EMDR insight event...', payload)
+  emit('generate-insight', payload)
+}
+
 onMounted(() => {
   const clientId = JSON.parse(localStorage.getItem('helio_selectedClient'))?.id
-
   const allData = JSON.parse(localStorage.getItem('helio_toolData')) || {}
   const key = `${clientId}_target-log`
   if (allData[key]) {

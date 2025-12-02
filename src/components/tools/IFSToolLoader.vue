@@ -1,6 +1,7 @@
 <!-- src/components/tools/IFSToolLoader.vue -->
 <template>
   <div class="p-6 text-slate-600 max-w-4xl mx-auto">
+    <!-- Header -->
     <div class="flex items-center justify-between mb-5">
       <div>
         <h2 class="text-[18px] font-semibold text-[#2c3e50]">
@@ -19,8 +20,13 @@
       </button>
     </div>
 
+    <!-- Dynamic tool loader -->
     <div v-if="currentComponent">
-      <component v-bind:is="currentComponent" />
+      <component
+          v-bind:is="currentComponent"
+          v-on:save="handleSave"
+          v-on:generate-insight="forwardInsight"
+      />
     </div>
 
     <div v-else class="text-[14px] text-slate-500 italic">
@@ -30,13 +36,13 @@
 </template>
 
 <script setup>
-import { ref, watch, computed, onMounted } from 'vue'
-
-const emit = defineEmits(['close', 'save'])
+import { ref, watch, computed } from 'vue'
 
 const props = defineProps({
   template: { type: String, default: null }
 })
+
+const emit = defineEmits(['close', 'save', 'generate-insight'])
 
 const loaders = {
   'parts-map': () => import('./PartsMap.vue'),
@@ -65,28 +71,16 @@ const readableName = computed(() => {
   return names[props.template] || 'IFS Tool'
 })
 
-// Save current tool state (e.g., when subcomponent emits data)
-function saveToolState(data) {
-  const clientId = localStorage.getItem('helio_selectedClientId')
-  emit('save', {
-    template: props.template || 'ifs-tool',
-    data: { clientId, ...data }
-  })
+function handleSave(data) {
+  emit('save', { template: props.template, data })
 }
 
-// Load saved data for the active client/tool when this loader mounts
-onMounted(() => {
-  const clientId = localStorage.getItem('helio_selectedClientId')
-  const allData = JSON.parse(localStorage.getItem('helio_toolData')) || {}
-  const key = `${clientId}_${props.template}`
-  if (allData[key]) {
-    // Optionally, you can pass this to your subcomponent later as a prop
-    console.log('Loaded saved IFS data:', allData[key])
-  }
-})
+function forwardInsight(payload) {
+  console.log('🔄 Forwarding IFS insight event...', payload)
+  emit('generate-insight', payload)
+}
 
 function goBack() {
   emit('close')
 }
 </script>
-

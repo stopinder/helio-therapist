@@ -121,14 +121,17 @@
         <IFSToolLoader
             v-else-if="activeView === 'ifs'"
             :template="activeTemplate"
-            v-on:close="activeView = 'main'"
+            @close="activeView = 'main'"
+            @generate-insight="handleGenerateInsight"
         />
 
         <EMDRToolLoader
             v-else-if="activeView === 'emdr'"
             :template="activeTemplate"
-            v-on:close="activeView = 'main'"
+            @close="activeView = 'main'"
+            @generate-insight="handleGenerateInsight"
         />
+
       </main>
 
       <!-- Message Bar -->

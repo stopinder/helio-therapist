@@ -1,6 +1,7 @@
 <!-- src/components/tools/EMDRToolLoader.vue -->
 <template>
   <div class="p-6 text-slate-600 max-w-4xl mx-auto">
+    <!-- Header -->
     <div class="flex items-center justify-between mb-5">
       <div>
         <h2 class="text-[18px] font-semibold text-[#2c3e50]">
@@ -19,8 +20,13 @@
       </button>
     </div>
 
+    <!-- Dynamic tool component -->
     <div v-if="currentComponent">
-      <component v-bind:is="currentComponent" />
+      <component
+          v-bind:is="currentComponent"
+          v-on:save="handleSave"
+          v-on:generate-insight="forwardInsight"
+      />
     </div>
 
     <div v-else class="text-[14px] text-slate-500 italic">
@@ -35,7 +41,8 @@ import { ref, watch, computed } from 'vue'
 const props = defineProps({
   template: { type: String, default: null }
 })
-const emit = defineEmits(['close'])
+
+const emit = defineEmits(['close', 'save', 'generate-insight'])
 
 const loaders = {
   'target-log': () => import('./TargetLog.vue'),
@@ -47,9 +54,15 @@ const currentComponent = ref(null)
 watch(
     () => props.template,
     async (name) => {
-      if (!name) return (currentComponent.value = null)
+      if (!name) {
+        currentComponent.value = null
+        return
+      }
       const loader = loaders[name]
-      if (!loader) return (currentComponent.value = null)
+      if (!loader) {
+        currentComponent.value = null
+        return
+      }
       const mod = await loader()
       currentComponent.value = mod.default
     },
@@ -63,6 +76,15 @@ const readableName = computed(() => {
   }
   return names[props.template] || 'EMDR Tool'
 })
+
+function handleSave(data) {
+  emit('save', { template: props.template, data })
+}
+
+function forwardInsight(payload) {
+  console.log('🔄 Forwarding EMDR insight event...', payload)
+  emit('generate-insight', payload)
+}
 
 function goBack() {
   emit('close')
