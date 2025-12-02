@@ -127,7 +127,6 @@
             {{ activeViewLabel }}
           </div>
         </div>
-
         <MainCanvas
             v-if="activeView === 'main'"
             :selected-client="selectedClient"
@@ -141,10 +140,14 @@
             @close="activeView = 'main'"
         />
 
-        <ReflectiveCanvas
+        <ReflectiveJournal
             v-else-if="activeView === 'reflection'"
-            :mode="reflectionMode"
+            :clients="clients"
+            :selected-client="selectedClient"
+            @generate-insight="handleGenerateInsight"
+            @close="activeView = 'main'"
         />
+
 
         <IFSToolLoader
             v-else-if="activeView === 'ifs'"
@@ -196,6 +199,7 @@ import RightPanel from "./components/tools/RightPanel.vue"
 import MessageBar from "./components/tools/MessageBar.vue"
 import MainCanvas from "./components/tools/MainCanvas.vue"
 import CbtToolLoader from "./components/tools/CBTToolLoader.vue"
+import ReflectiveJournal from "./components/tools/ReflectiveJournal.vue"
 
 // --- Reflective placeholder ---
 const ReflectiveCanvas = {
