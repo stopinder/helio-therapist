@@ -105,21 +105,26 @@
         <!-- Persistent Client Header -->
         <div
             v-if="selectedClient"
-            class="sticky top-0 z-20 mb-4 border border-[#d9dce1] rounded-md px-4 py-2 flex items-center justify-between shadow-sm backdrop-blur-sm bg-white"
+            class="sticky top-0 z-20 mb-4 rounded-md px-4 py-2 flex items-center justify-between shadow-sm backdrop-blur-sm bg-white border-2 transition-colors duration-300"
+            :class="isInSession ? 'border-[#2563eb]' : 'border-[#d9dce1]'"
+
             :style="{ opacity: headerOpacity }"
         >
-          <div class="text-[17px] font-semibold text-[#2c3e50]">
+          <div
+              class="text-[17px] font-semibold transition-colors duration-300"
+              :class="isInSession ? 'text-[#2563eb]' : 'text-[#2c3e50]'"
+          >
             {{ selectedClient.name }}
-            <span class="ml-2 text-[13px] text-slate-500 font-normal">
-              {{ sessionDate }}
-            </span>
+            <span
+                class="ml-2 text-[13px] font-normal transition-colors duration-300"
+                :class="isInSession ? 'text-[#3b82f6]' : 'text-slate-500'"
+            >
+    {{ sessionDate }}
+  </span>
           </div>
-          <div class="text-[13px] text-slate-500">
-            {{ activeViewLabel }}
-          </div>
-        </div>
 
-        <MainCanvas
+
+          <MainCanvas
             v-if="activeView === 'main'"
             :selected-client="selectedClient"
             :session-notes="filteredNotes"
