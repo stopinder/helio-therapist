@@ -29,22 +29,27 @@
 
           <!-- Content -->
           <div class="flex-1 overflow-auto p-4 text-[14px] text-slate-700 leading-relaxed">
-            <div v-if="loading" class="flex items-center justify-center py-6">
-              <span class="animate-pulse text-slate-400">Generating insight...</span>
-            </div>
+            <transition name="content-fade" appear>
+              <div key="drawer-content">
+                <div v-if="loading" class="flex items-center justify-center py-6">
+                  <span class="animate-pulse text-slate-400">Generating insight...</span>
+                </div>
 
-            <div v-else>
-              <p v-if="insight" class="whitespace-pre-wrap">{{ insight }}</p>
-              <p v-else class="italic text-slate-400">
-                No insight generated yet.
-              </p>
-            </div>
+                <div v-else>
+                  <p v-if="insight" class="whitespace-pre-wrap">{{ insight }}</p>
+                  <p v-else class="italic text-slate-400">
+                    No insight generated yet.
+                  </p>
+                </div>
+              </div>
+            </transition>
           </div>
-        </div>
+        </div> <!-- 👈 closes the drawer panel -->
       </transition>
-    </div>
+    </div> <!-- 👈 closes the main fade container -->
   </transition>
 </template>
+
 
 
 <script setup>
@@ -102,5 +107,12 @@ function mockInsight(data) {
 .drawer-slide-enter-from, .drawer-slide-leave-to {
   transform: translateY(100%);
 }
+.content-fade-enter-active {
+  transition: opacity 0.4s ease 0.1s;
+}
+.content-fade-enter-from {
+  opacity: 0;
+}
+
 </style>
 
