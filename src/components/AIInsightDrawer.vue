@@ -95,17 +95,27 @@ function mockInsight(data) {
 </script>
 
 <style scoped>
-/* Fade for full-screen backdrop */
-.drawer-fade-enter-active, .drawer-fade-leave-active {
-  transition: opacity 0.25s ease;
+/* ====== Unified Animations for AI Insight Drawer ====== */
+
+/* General cubic-bezier curve for natural motion */
+:root {
+  --ease-soft: cubic-bezier(0.25, 0.1, 0.25, 1);
 }
-.drawer-fade-enter-from, .drawer-fade-leave-to {
+
+/* Backdrop fade */
+.drawer-fade-enter-active,
+.drawer-fade-leave-active {
+  transition: opacity 0.3s var(--ease-soft);
+}
+.drawer-fade-enter-from,
+.drawer-fade-leave-to {
   opacity: 0;
 }
 
-/* Drawer slide */
-.drawer-slide-enter-active, .drawer-slide-leave-active {
-  transition: transform 0.35s ease;
+/* Drawer slide with soft weighted motion */
+.drawer-slide-enter-active,
+.drawer-slide-leave-active {
+  transition: transform 0.45s var(--ease-soft);
 }
 .drawer-slide-enter-from {
   transform: translateY(100%);
@@ -114,22 +124,27 @@ function mockInsight(data) {
   transform: translateY(100%);
 }
 
-/* Content fade (with delay for enter) */
+/* Content fade-in (slight delay after slide up) */
 .content-fade-enter-active {
-  transition: opacity 0.4s ease 0.1s;
+  transition: opacity 0.4s var(--ease-soft) 0.12s;
 }
 .content-fade-enter-from {
   opacity: 0;
 }
 
-/* 👇 NEW: content fade-out before drawer closes */
+/* Content fade-out (before slide closes) */
 .content-fade-leave-active {
-  transition: opacity 0.25s ease;
+  transition: opacity 0.25s var(--ease-soft);
 }
 .content-fade-leave-from {
   opacity: 1;
 }
 .content-fade-leave-to {
   opacity: 0;
+}
+
+/* Ensure smooth scrolling within drawer */
+.flex-1 {
+  scroll-behavior: smooth;
 }
 </style>
