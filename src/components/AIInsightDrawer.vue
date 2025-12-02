@@ -95,18 +95,26 @@ function mockInsight(data) {
 </script>
 
 <style scoped>
+/* Fade for full-screen backdrop */
 .drawer-fade-enter-active, .drawer-fade-leave-active {
   transition: opacity 0.25s ease;
 }
 .drawer-fade-enter-from, .drawer-fade-leave-to {
   opacity: 0;
 }
+
+/* Drawer slide */
 .drawer-slide-enter-active, .drawer-slide-leave-active {
-  transition: transform 0.3s ease;
+  transition: transform 0.35s ease;
 }
-.drawer-slide-enter-from, .drawer-slide-leave-to {
+.drawer-slide-enter-from {
   transform: translateY(100%);
 }
+.drawer-slide-leave-to {
+  transform: translateY(100%);
+}
+
+/* Content fade (with delay for enter) */
 .content-fade-enter-active {
   transition: opacity 0.4s ease 0.1s;
 }
@@ -114,5 +122,14 @@ function mockInsight(data) {
   opacity: 0;
 }
 
+/* 👇 NEW: content fade-out before drawer closes */
+.content-fade-leave-active {
+  transition: opacity 0.25s ease;
+}
+.content-fade-leave-from {
+  opacity: 1;
+}
+.content-fade-leave-to {
+  opacity: 0;
+}
 </style>
-
