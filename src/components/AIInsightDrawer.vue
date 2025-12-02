@@ -1,39 +1,51 @@
-<!-- src/components/AIInsightDrawer.vue -->
 <template>
-  <transition name="drawer-slide">
-    <div
-        v-if="open"
-        class="fixed inset-x-0 bottom-0 bg-white border-t border-[#d9dce1] shadow-xl z-50 max-h-[60vh] flex flex-col"
-    >
-      <!-- Header -->
-      <div class="flex items-center justify-between px-4 py-3 border-b border-[#e2e5ea] bg-[#fafbfc]">
-        <h3 class="text-[15px] font-semibold text-[#2c3e50]">
-          AI Insight Summary
-        </h3>
-        <button
-            class="text-slate-500 hover:text-slate-700 text-[14px]"
-            v-on:click="$emit('close')"
+  <transition name="drawer-fade">
+    <div v-if="open" class="fixed inset-0 z-50 flex flex-col items-center justify-end">
+      <!-- Backdrop -->
+      <div
+          class="absolute inset-0 bg-black/30 backdrop-blur-[2px]"
+          @click="$emit('close')"
+      ></div>
+
+      <!-- Drawer Panel -->
+      <transition name="drawer-slide">
+        <div
+            class="relative bg-white border-t border-[#d9dce1] shadow-xl w-full
+                 max-h-[60vh] sm:max-h-[70vh] sm:rounded-t-lg sm:w-[90%] md:w-[70%] lg:w-[50%]
+                 mx-auto flex flex-col transition-all duration-300"
         >
-          ✕
-        </button>
-      </div>
+          <!-- Header -->
+          <div class="flex items-center justify-between px-4 py-3 border-b border-[#e2e5ea] bg-[#fafbfc] rounded-t-lg">
+            <h3 class="text-[15px] font-semibold text-[#2c3e50]">
+              AI Insight Summary
+            </h3>
+            <button
+                class="text-slate-500 hover:text-slate-700 text-[14px]"
+                @click="$emit('close')"
+            >
+              ✕
+            </button>
+          </div>
 
-      <!-- Content -->
-      <div class="flex-1 overflow-auto p-4 text-[14px] text-slate-700 leading-relaxed">
-        <div v-if="loading" class="flex items-center justify-center py-6">
-          <span class="animate-pulse text-slate-400">Generating insight...</span>
-        </div>
+          <!-- Content -->
+          <div class="flex-1 overflow-auto p-4 text-[14px] text-slate-700 leading-relaxed">
+            <div v-if="loading" class="flex items-center justify-center py-6">
+              <span class="animate-pulse text-slate-400">Generating insight...</span>
+            </div>
 
-        <div v-else>
-          <p v-if="insight" class="whitespace-pre-wrap">{{ insight }}</p>
-          <p v-else class="italic text-slate-400">
-            No insight generated yet.
-          </p>
+            <div v-else>
+              <p v-if="insight" class="whitespace-pre-wrap">{{ insight }}</p>
+              <p v-else class="italic text-slate-400">
+                No insight generated yet.
+              </p>
+            </div>
+          </div>
         </div>
-      </div>
+      </transition>
     </div>
   </transition>
 </template>
+
 
 <script setup>
 import { ref, watch } from 'vue'
@@ -78,13 +90,17 @@ function mockInsight(data) {
 </script>
 
 <style scoped>
-.drawer-slide-enter-active,
-.drawer-slide-leave-active {
-  transition: all 0.3s ease;
+.drawer-fade-enter-active, .drawer-fade-leave-active {
+  transition: opacity 0.25s ease;
 }
-.drawer-slide-enter-from,
-.drawer-slide-leave-to {
-  transform: translateY(100%);
+.drawer-fade-enter-from, .drawer-fade-leave-to {
   opacity: 0;
 }
+.drawer-slide-enter-active, .drawer-slide-leave-active {
+  transition: transform 0.3s ease;
+}
+.drawer-slide-enter-from, .drawer-slide-leave-to {
+  transform: translateY(100%);
+}
 </style>
+
