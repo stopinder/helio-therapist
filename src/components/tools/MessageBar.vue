@@ -15,6 +15,15 @@
     >
       ↵
     </button>
+    <!-- inside MessageBar.vue -->
+    <button
+        class="h-9 w-9 flex items-center justify-center rounded-md border border-[#d9dce1] text-[#6b7280] bg-[#f9fafb] hover:bg-[#f1f2f4] transition cursor-not-allowed opacity-60"
+        disabled
+        title="Voice input (coming soon)"
+    >
+      🎤
+    </button>
+
   </form>
 </template>
 

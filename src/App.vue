@@ -1,6 +1,5 @@
 <template>
   <div class="flex h-screen bg-[#f5f7fa] text-[#2c3e50] overflow-hidden relative">
-    <!-- Dim overlay for focus on mobile -->
     <transition name="fade">
       <div
           v-if="isSidebarOpen && !isDesktop"
@@ -9,7 +8,6 @@
       ></div>
     </transition>
 
-    <!-- Left Sidebar -->
     <transition name="slide">
       <LeftSidebar
           v-if="isSidebarOpen || isDesktop"
@@ -33,16 +31,11 @@
       />
     </transition>
 
-    <!-- Main Area -->
     <div
         class="flex flex-col flex-1 overflow-hidden transform transition-transform duration-300 ease-in-out"
         :class="{ 'translate-x-64': isSidebarOpen && !isDesktop }"
     >
-      <!-- Header -->
-      <header
-          class="h-14 flex items-center justify-between px-4 md:px-6 border-b border-[#d9dce1] bg-white shadow-sm"
-      >
-        <!-- Left: hamburger + title -->
+      <header class="h-14 flex items-center justify-between px-4 md:px-6 border-b border-[#d9dce1] bg-white shadow-sm">
         <div class="flex items-center gap-3">
           <button
               class="md:hidden text-[20px] font-semibold text-[#2c3e50]"
@@ -54,24 +47,16 @@
         </div>
 
         <div class="flex flex-col">
-          <div
-              class="flex items-center gap-2 text-[18px] font-semibold tracking-tight text-[#2c3e50]"
-          >
+          <div class="flex items-center gap-2 text-[18px] font-semibold tracking-tight text-[#2c3e50]">
             <span>Therapist Workspace</span>
             <span class="text-slate-400 mx-1">·</span>
-            <span
-                class="flex items-center gap-1 text-[13px] font-normal text-slate-500"
-            >
-              <span
-                  class="inline-block h-2 w-2 rounded-full"
-                  :class="isInSession ? 'bg-green-500' : 'bg-slate-400'"
-              ></span>
+            <span class="flex items-center gap-1 text-[13px] font-normal text-slate-500">
+              <span class="inline-block h-2 w-2 rounded-full" :class="isInSession ? 'bg-green-500' : 'bg-slate-400'"></span>
               {{ isInSession ? 'In Session' : 'Offline' }}
             </span>
           </div>
         </div>
 
-        <!-- Right: controls -->
         <div class="flex items-center gap-3">
           <button
               class="text-[13px] px-3 py-1.5 rounded-md border border-[#d9dce1] text-[#3f4754] bg-white hover:bg-[#f5f7fa] transition"
@@ -80,112 +65,71 @@
             Client context
           </button>
 
-          <button
-              class="h-9 w-9 flex items-center justify-center rounded-md border border-[#d9dce1] text-[#3f4754] hover:bg-[#f5f7fa] transition text-[15px]"
-              aria-label="Calendar"
-          >
-            🗓
-          </button>
-
-          <button
-              class="h-9 w-9 flex items-center justify-center rounded-md border border-[#d9dce1] text-[#3f4754] hover:bg-[#f5f7fa] transition text-[15px]"
-              aria-label="Settings"
-          >
-            ⚙️
-          </button>
+          <button class="h-9 w-9 flex items-center justify-center rounded-md border border-[#d9dce1] text-[#3f4754] hover:bg-[#f5f7fa] transition text-[15px]" aria-label="Calendar">🗓</button>
+          <button class="h-9 w-9 flex items-center justify-center rounded-md border border-[#d9dce1] text-[#3f4754] hover:bg-[#f5f7fa] transition text-[15px]" aria-label="Settings">⚙️</button>
         </div>
       </header>
 
-      <!-- Central Canvas -->
-      <main
-          class="flex-1 overflow-auto p-4 md:p-6 relative scroll-smooth bg-[#f5f7fa]"
-          @scroll="handleScroll"
-      >
+      <main class="flex-1 overflow-auto p-4 md:p-6 relative scroll-smooth bg-[#f5f7fa]" @scroll="handleScroll">
         <!-- Persistent Client Header -->
         <div
             v-if="selectedClient"
             class="sticky top-0 z-20 mb-4 rounded-md px-4 py-2 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 shadow-sm backdrop-blur-sm border-2 transition-all duration-300"
-            :class="isInSession
-    ? 'border-[#2563eb] bg-[#eaf1ff]'
-    : 'border-[#d9dce1] bg-white'"
+            :class="isInSession ? 'border-[#2563eb] bg-[#eaf1ff]' : 'border-[#d9dce1] bg-white'"
             :style="{ opacity: headerOpacity }"
         >
-
-        <div
-              class="text-[17px] font-semibold transition-colors duration-300"
-              :class="isInSession ? 'text-[#2563eb]' : 'text-[#2c3e50]'"
-          >
+          <div class="text-[17px] font-semibold transition-colors duration-300" :class="isInSession ? 'text-[#2563eb]' : 'text-[#2c3e50]'">
             {{ selectedClient.name }}
-            <span
-                class="ml-2 text-[13px] font-normal transition-colors duration-300"
-                :class="isInSession ? 'text-[#3b82f6]' : 'text-slate-500'"
-            >
+            <span class="ml-2 text-[13px] font-normal transition-colors duration-300" :class="isInSession ? 'text-[#3b82f6]' : 'text-slate-500'">
               {{ sessionDate }}
             </span>
           </div>
-          <div class="text-[13px] text-slate-500">
-            {{ activeViewLabel }}
-          </div>
+          <div class="text-[13px] text-slate-500">{{ activeViewLabel }}</div>
         </div>
+
         <MainCanvas
             v-if="activeView === 'main'"
             :selected-client="selectedClient"
             :session-notes="filteredNotes"
         />
 
-        <CbtToolLoader
-            v-else-if="activeView === 'cbt'"
-            :template="activeTemplate"
-            @generate-insight="handleGenerateInsight"
-            @close="activeView = 'main'"
-        />
+        <!-- CBT/IFS/EMDR tool loaders -->
+        <CbtToolLoader v-else-if="activeView === 'cbt'" :template="activeTemplate" @generate-insight="handleGenerateInsight" @close="activeView = 'main'" />
+        <IFSToolLoader v-else-if="activeView === 'ifs'" :template="activeTemplate" @close="activeView = 'main'" @generate-insight="handleGenerateInsight" />
+        <EMDRToolLoader v-else-if="activeView === 'emdr'" :template="activeTemplate" @close="activeView = 'main'" @generate-insight="handleGenerateInsight" />
 
+        <!-- Reflective Practice -->
         <ReflectiveJournal
-            v-else-if="activeView === 'reflection'"
+            v-else-if="activeView === 'reflection-new'"
             :clients="clients"
             :selected-client="selectedClient"
+            @save="handleAddReflection"
             @generate-insight="handleGenerateInsight"
             @close="activeView = 'main'"
         />
-
-
-        <IFSToolLoader
-            v-else-if="activeView === 'ifs'"
-            :template="activeTemplate"
+        <PastReflections
+            v-else-if="activeView === 'reflection-past'"
+            :reflections="reflections"
+            :clients="clients"
+            @delete="deleteReflection"
+            @archive="archiveReflection"
             @close="activeView = 'main'"
-            @generate-insight="handleGenerateInsight"
         />
-
-        <EMDRToolLoader
-            v-else-if="activeView === 'emdr'"
-            :template="activeTemplate"
+        <TherapistMap
+            v-else-if="activeView === 'reflection-map'"
+            :reflections="reflections"
             @close="activeView = 'main'"
-            @generate-insight="handleGenerateInsight"
         />
       </main>
 
-      <!-- Message Bar -->
-      <footer
-          class="border-t border-[#d9dce1] bg-white shadow-inner px-4 md:px-6 py-3 md:py-4"
-      >
+      <footer class="border-t border-[#d9dce1] bg-white shadow-inner px-4 md:px-6 py-3 md:py-4">
         <MessageBar @submit="handleMessageSubmit" />
       </footer>
     </div>
 
-    <!-- Right slide-in panel -->
-    <RightPanel
-        :selected-client="selectedClient"
-        :open="isRightPanelOpen"
-        @close="isRightPanelOpen = false"
-        @view-map="showClientMap"
-    />
+    <RightPanel :selected-client="selectedClient" :open="isRightPanelOpen" @close="isRightPanelOpen = false" @view-map="showClientMap" />
 
-    <!-- AI Insight Drawer -->
-    <AIInsightDrawer
-        :open="showAIDrawer"
-        :input="aiInput"
-        @close="showAIDrawer = false"
-    />
+    <AIInsightDrawer :open="showAIDrawer" :input="aiInput" @close="showAIDrawer = false" />
   </div>
 </template>
 
@@ -199,26 +143,11 @@ import RightPanel from "./components/tools/RightPanel.vue"
 import MessageBar from "./components/tools/MessageBar.vue"
 import MainCanvas from "./components/tools/MainCanvas.vue"
 import CbtToolLoader from "./components/tools/CBTToolLoader.vue"
-import ReflectiveJournal from "./components/tools/ReflectiveJournal.vue"
 
-// --- Reflective placeholder ---
-const ReflectiveCanvas = {
-  props: ["mode"],
-  template: `
-    <div class="max-w-3xl mx-auto text-slate-700">
-      <h2 class="text-2xl font-semibold mb-4">Reflective Practice</h2>
-      <p class="mb-3 text-[15px] leading-relaxed">
-        This is your space for reflection and professional self-work.
-      </p>
-      <div class="p-4 bg-white border border-[#e5e7eb] rounded-md shadow-sm">
-        <textarea
-          placeholder="Begin reflecting here..."
-          class="w-full h-48 border border-[#d9dce1] rounded-md p-3 text-[14px] focus:outline-none focus:ring-2 focus:ring-[#2563eb]"
-        ></textarea>
-      </div>
-    </div>
-  `,
-}
+import ReflectiveJournal from "./components/reflective/ReflectiveJournal.vue"
+import PastReflections from "./components/reflective/PastReflections.vue"
+import TherapistMap from "./components/reflective/TherapistMap.vue"
+
 
 // --- State ---
 const isSidebarOpen = ref(false)
@@ -234,9 +163,7 @@ const reflectionMode = ref("new")
 // --- AI Drawer ---
 const showAIDrawer = ref(false)
 const aiInput = ref(null)
-
 const handleGenerateInsight = (data) => {
-  console.log("✅ App received insight event", data)
   aiInput.value = data
   showAIDrawer.value = true
 }
@@ -250,6 +177,19 @@ const clients = ref(
 watch(clients, (newClients) => {
   localStorage.setItem("helio_clients", JSON.stringify(newClients))
 }, { deep: true })
+
+// --- Add Client handler (restored) ---
+const handleAddClient = (newClientData) => {
+  const newClient = {
+    id: Date.now(),
+    name: newClientData.name?.trim() || "Unnamed Client",
+    note: newClientData.note || "",
+    archived: false,
+  }
+  clients.value.push(newClient)
+  selectedClient.value = newClient
+  localStorage.setItem("helio_selectedClient", JSON.stringify(newClient))
+}
 
 // --- Resources ---
 const resources = ref(
@@ -274,6 +214,29 @@ const handleAddResource = (newResourceData) => {
   resources.value.push(newResource)
 }
 
+// --- Reflections (new) ---
+const reflections = ref(JSON.parse(localStorage.getItem('helio_reflections')) || [])
+watch(reflections, (v) => localStorage.setItem('helio_reflections', JSON.stringify(v)), { deep: true })
+
+const handleAddReflection = (entry) => {
+  reflections.value.unshift({  // use unshift so newest shows first
+    ...entry,
+    id: Date.now(),
+    date: new Date().toISOString(),
+  })
+}
+
+
+const deleteReflection = (id) => {
+  const i = reflections.value.findIndex(r => r.id === id)
+  if (i !== -1) reflections.value.splice(i, 1)
+}
+const archiveReflection = (id, to) => {
+  const r = reflections.value.find(r => r.id === id)
+  if (r) r.archived = !!to
+}
+
+// --- Selection ---
 const selectedClient = ref(clients.value[0])
 const sessionNotes = ref([])
 
@@ -303,8 +266,15 @@ const openTool = (payload) => {
   }
 }
 
-// --- Reflection / Zoom / Misc ---
-const openReflection = (mode) => { reflectionMode.value = mode; activeView.value = "reflection" }
+// --- Reflection routing ---
+const openReflection = (mode) => {
+  reflectionMode.value = mode
+  if (mode === 'past') activeView.value = 'reflection-past'
+  else if (mode === 'map') activeView.value = 'reflection-map'
+  else activeView.value = 'reflection-new'
+}
+
+// --- Zoom / Misc ---
 const joinZoom = () => { isInSession.value = true }
 const endZoom = () => { isInSession.value = false }
 
@@ -328,20 +298,21 @@ const handleMessageSubmit = (text) => {
     text: value,
   })
 }
-
 const filteredNotes = computed(() =>
     selectedClient.value
         ? sessionNotes.value.filter((n) => n.clientId === selectedClient.value.id)
         : []
 )
 
-// --- View + UI helpers ---
+// --- View helpers ---
 const activeViewLabel = computed(() => {
   switch (activeView.value) {
     case "cbt": return "CBT Tool"
     case "ifs": return "IFS Tool"
     case "emdr": return "EMDR Tool"
-    case "reflection": return "Reflection"
+    case "reflection-new": return "New Reflection"
+    case "reflection-past": return "Past Reflections"
+    case "reflection-map": return "Therapist Map"
     default: return "Session Notes"
   }
 })
@@ -359,17 +330,6 @@ const sessionDate = computed(() =>
       day: "numeric",
     })
 )
-const handleAddClient = (newClientData) => {
-  const newClient = {
-    id: Date.now(),
-    name: newClientData.name?.trim() || "Unnamed Client",
-    note: newClientData.note || "",
-    archived: false,
-  }
-  clients.value.push(newClient)
-  selectedClient.value = newClient
-  localStorage.setItem("helio_selectedClient", JSON.stringify(newClient))
-}
 
 const toggleRightPanel = () => (isRightPanelOpen.value = !isRightPanelOpen.value)
 const showClientMap = () => (activeView.value = "main")
@@ -386,16 +346,9 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.fade-enter-active, .fade-leave-active {
-  transition: opacity 0.2s ease;
-}
-.fade-enter-from, .fade-leave-to {
-  opacity: 0;
-}
-.slide-enter-active, .slide-leave-active {
-  transition: transform 0.25s ease;
-}
-.slide-enter-from, .slide-leave-to {
-  transform: translateX(-100%);
-}
+.fade-enter-active, .fade-leave-active { transition: opacity 0.2s ease; }
+.fade-enter-from, .fade-leave-to { opacity: 0; }
+.slide-enter-active, .slide-leave-active { transition: transform 0.25s ease; }
+.slide-enter-from, .slide-leave-to { transform: translateX(-100%); }
 </style>
+
