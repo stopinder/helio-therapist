@@ -1,6 +1,11 @@
 <template>
   <transition name="drawer-fade">
-    <div v-if="open" class="fixed inset-0 z-50 flex flex-col items-center justify-end">
+    <div
+        v-if="open"
+        class="fixed inset-0 z-50 flex flex-col items-center justify-end"
+        @keydown.esc="$emit('close')"
+        tabindex="0"
+    >
       <!-- Backdrop -->
       <div
           class="absolute inset-0 bg-black/30 backdrop-blur-[2px]"
@@ -11,21 +16,38 @@
       <transition name="drawer-slide">
         <div
             class="relative bg-white border-t border-[#d9dce1] shadow-xl w-full
-                 max-h-[60vh] sm:max-h-[70vh] sm:rounded-t-lg sm:w-[90%] md:w-[70%] lg:w-[50%]
-                 mx-auto flex flex-col transition-all duration-300"
+                 sm:rounded-t-lg sm:w-[90%] md:w-[70%] lg:w-[50%]
+                 mx-auto flex flex-col"
+            :style="{ height: panelHeightPx + 'px', maxHeight: '90vh', transition: 'height 0.3s ease' }"
         >
           <!-- Header -->
           <div class="flex items-center justify-between px-4 py-3 border-b border-[#e2e5ea] bg-[#fafbfc] rounded-t-lg">
-            <h3 class="text-[15px] font-semibold text-[#2c3e50]">
-              AI Insight Summary
-            </h3>
-            <button
-                class="text-slate-500 hover:text-slate-700 text-[14px]"
-                @click="$emit('close')"
-            >
-              ✕
+            <h3 class="text-[15px] font-semibold text-[#2c3e50]">AI Insight Summary</h3>
+            <button class="text-slate-500 hover:text-slate-700 text-[14px]" @click="$emit('close')" title="Close panel">✕</button>
+          </div>
+
+          <!-- Context line -->
+          <div v-if="input" class="text-[13px] text-slate-500 px-4 py-1 border-b border-[#f1f3f5]">
+            {{ contextLine }}
+          </div>
+
+          <!-- Toolbar -->
+          <div class="flex items-center justify-end gap-2 px-4 py-2 border-b border-[#e2e5ea]">
+            <button class="toolbar-btn" @click="saveInsight">💾 Save</button>
+            <button class="toolbar-btn" @click="exportInsight">📤 Export</button>
+            <button class="toolbar-btn" @click="copyInsight">📝 Copy</button>
+            <button class="toolbar-btn" @click="regenerateInsight">🔁 Regenerate</button>
+            <button class="toolbar-btn" @click="toggleExpand" :title="isExpanded ? 'Collapse panel' : 'Expand panel'">
+              {{ isExpanded ? '⤡ Collapse' : '⤢ Expand' }}
             </button>
           </div>
+
+          <!-- Inline confirmations -->
+          <transition name="fade">
+            <div v-if="feedback" class="text-[13px] text-green-600 text-right px-4 py-1" aria-live="polite">
+              {{ feedback }}
+            </div>
+          </transition>
 
           <!-- Content -->
           <div class="flex-1 overflow-auto p-4 text-[14px] text-slate-700 leading-relaxed">
@@ -37,32 +59,68 @@
 
                 <div v-else>
                   <p v-if="insight" class="whitespace-pre-wrap">{{ insight }}</p>
-                  <p v-else class="italic text-slate-400">
-                    No insight generated yet.
-                  </p>
+                  <p v-else class="italic text-slate-400">No insight generated yet.</p>
+
+                  <!-- View reflection link -->
+                  <div v-if="input?.tool === 'reflection' && input?.clientId" class="mt-4 text-right">
+                    <button
+                        class="text-[13px] px-3 py-1.5 rounded-md border border-[#d9dce1] text-[#3f4754] bg-white hover:bg-[#f5f7fa] transition"
+                        @click="$emit('view-reflection', { clientId: input.clientId })"
+                    >
+                      View attached reflection
+                    </button>
+                  </div>
                 </div>
               </div>
             </transition>
           </div>
-        </div> <!-- 👈 closes the drawer panel -->
+        </div>
       </transition>
-    </div> <!-- 👈 closes the main fade container -->
+    </div>
   </transition>
 </template>
 
-
-
 <script setup>
-import { ref, watch } from 'vue'
+import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
 
 const props = defineProps({
   open: Boolean,
-  input: Object // receives { tool, clientId, form }
+  input: Object // { tool, clientId, form }
 })
-const emit = defineEmits(['close'])
+const emit = defineEmits([
+  'close',
+  'save-insight',
+  'export-insight',
+  'copy-insight',
+  'regenerate-insight',
+  'view-reflection'
+])
 
 const loading = ref(false)
 const insight = ref('')
+const feedback = ref('')
+const isExpanded = ref(false)
+
+// Height control: default 60vh, expanded 90vh (converted to px for smoother animation)
+const panelHeightPx = ref(0)
+function vhToPx(vh) { return Math.round(window.innerHeight * (vh / 100)) }
+function setHeight() { panelHeightPx.value = vhToPx(isExpanded.value ? 90 : 60) }
+function toggleExpand() { isExpanded.value = !isExpanded.value; setHeight() }
+function handleResize() { setHeight() }
+
+// Context line
+const contextLine = computed(() => {
+  if (!props.input) return ''
+  const { tool, form } = props.input
+  const focus = form?.focus || form?.title || 'General'
+  const client = form?.clientName || 'Unknown'
+  const label =
+      tool === 'reflection' ? 'Reflection' :
+          tool === 'cbt' ? 'CBT Tool' :
+              tool === 'ifs' ? 'IFS Parts Map' :
+                  tool === 'emdr' ? 'EMDR Tool' : 'Insight'
+  return `${label} · Client: ${client} · Focus: ${focus}`
+})
 
 // Watch for new input to simulate AI output
 watch(
@@ -71,51 +129,102 @@ watch(
       if (!data) return
       loading.value = true
       insight.value = ''
-      // Simulated delay + pseudo AI response
-      await new Promise((r) => setTimeout(r, 1500))
-      insight.value = mockInsight(data)
+      await new Promise((r) => setTimeout(r, 800))
+      insight.value = mockInsight(data) // no ellipsis/artifact
       loading.value = false
     },
     { deep: true }
 )
 
-// Generate a simple fake AI insight
+// Mock AI response generator (no ellipsis)
 function mockInsight(data) {
-  const { form } = data
-  return (
-      `Based on this Thought Record:\n\n` +
-      `• Situation: ${form.situation || '—'}\n` +
-      `• Main thought: ${form.automaticThoughts || '—'}\n` +
-      `• Emotions: ${form.emotions || '—'} (${form.intensity || 'N/A'}%)\n\n` +
-      `Reflective insight:\n` +
-      `It seems this thought may involve cognitive distortions such as all-or-nothing or overgeneralisation. ` +
-      `Encouraging the client to examine both the evidence for and against may support development of a more balanced perspective.`
-  )
+  const { form } = data || {}
+  const raw = (form?.text || form?.automaticThoughts || '').trim()
+  const preview = raw.length > 240 ? raw.slice(0, 240) : raw
+  const body = preview || 'No source text provided.'
+  return `Reflective summary:\n\n"${body}"\n\nThemes may include boundaries, compassion, and parts integration. Consider reinforcing self-energy and balanced perspective taking.`
 }
+
+// Toolbar actions (all with visible local behavior)
+function saveInsight() {
+  if (!insight.value) return
+  emit('save-insight', { clientId: props.input?.clientId, text: insight.value })
+  feedback.value = '✅ Insight saved'
+  setTimeout(() => (feedback.value = ''), 3000)
+}
+function exportInsight() {
+  if (!insight.value) return
+  try {
+    const blob = new Blob([insight.value], { type: 'text/plain;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `helio-insight-${new Date().toISOString().slice(0,19).replace(/[:T]/g,'-')}.txt`
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    URL.revokeObjectURL(url)
+    emit('export-insight', { text: insight.value })
+    feedback.value = '📤 Exported as .txt'
+  } catch {
+    feedback.value = '⚠️ Export failed'
+  } finally {
+    setTimeout(() => (feedback.value = ''), 3000)
+  }
+}
+async function copyInsight() {
+  if (!insight.value) return
+  try {
+    await navigator.clipboard.writeText(insight.value)
+    emit('copy-insight', { text: insight.value })
+    feedback.value = '✅ Copied to clipboard'
+  } catch {
+    feedback.value = '⚠️ Copy failed'
+  } finally {
+    setTimeout(() => (feedback.value = ''), 3000)
+  }
+}
+function regenerateInsight() {
+  if (!props.input) return
+  emit('regenerate-insight', props.input)
+  feedback.value = ''
+  loading.value = true
+  setTimeout(() => {
+    insight.value = mockInsight(props.input)
+    loading.value = false
+    feedback.value = '🔁 Regenerated'
+    setTimeout(() => (feedback.value = ''), 3000)
+  }, 600)
+}
+
+// Lifecycle: initialize height and keep it correct on resize
+onMounted(() => {
+  setHeight()
+  window.addEventListener('resize', handleResize)
+})
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', handleResize)
+})
 </script>
 
 <style scoped>
-/* ====== Unified Animations for AI Insight Drawer ====== */
-
-/* General cubic-bezier curve for natural motion */
-:root {
-  --ease-soft: cubic-bezier(0.25, 0.1, 0.25, 1);
+.toolbar-btn {
+  @apply text-[13px] px-3 py-1.5 rounded-md border border-[#d9dce1] text-[#3f4754] bg-white hover:bg-[#f5f7fa] transition;
 }
 
-/* Backdrop fade */
+/* === Animations === */
 .drawer-fade-enter-active,
 .drawer-fade-leave-active {
-  transition: opacity 0.3s var(--ease-soft);
+  transition: opacity 0.3s cubic-bezier(0.25, 0.1, 0.25, 1);
 }
 .drawer-fade-enter-from,
 .drawer-fade-leave-to {
   opacity: 0;
 }
 
-/* Drawer slide with soft weighted motion */
 .drawer-slide-enter-active,
 .drawer-slide-leave-active {
-  transition: transform 0.45s var(--ease-soft);
+  transition: transform 0.45s cubic-bezier(0.25, 0.1, 0.25, 1);
 }
 .drawer-slide-enter-from {
   transform: translateY(100%);
@@ -124,27 +233,19 @@ function mockInsight(data) {
   transform: translateY(100%);
 }
 
-/* Content fade-in (slight delay after slide up) */
 .content-fade-enter-active {
-  transition: opacity 0.4s var(--ease-soft) 0.12s;
+  transition: opacity 0.4s cubic-bezier(0.25, 0.1, 0.25, 1) 0.12s;
 }
 .content-fade-enter-from {
   opacity: 0;
 }
-
-/* Content fade-out (before slide closes) */
-.content-fade-leave-active {
-  transition: opacity 0.25s var(--ease-soft);
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.2s ease;
 }
-.content-fade-leave-from {
-  opacity: 1;
-}
-.content-fade-leave-to {
+.fade-enter-from,
+.fade-leave-to {
   opacity: 0;
 }
-
-/* Ensure smooth scrolling within drawer */
-.flex-1 {
-  scroll-behavior: smooth;
-}
 </style>
+
