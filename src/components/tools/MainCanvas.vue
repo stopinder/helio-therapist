@@ -1,5 +1,5 @@
 <!-- src/components/MainCanvas.vue -->
-<template>T
+<template>
   <div class="space-y-8">
     <!-- Client / session header -->
     <div class="border border-[#d1d5db] bg-white rounded-lg p-6 shadow-sm">
@@ -9,7 +9,6 @@
         </span>
         <ClientMap v-if="currentView === 'map'" :client="selectedClient" />
         <TherapistMap v-if="currentView === 'therapistMap'" />
-
         <span v-else>
           Session Workspace
         </span>
