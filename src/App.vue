@@ -359,6 +359,17 @@ const sessionDate = computed(() =>
       day: "numeric",
     })
 )
+const handleAddClient = (newClientData) => {
+  const newClient = {
+    id: Date.now(),
+    name: newClientData.name?.trim() || "Unnamed Client",
+    note: newClientData.note || "",
+    archived: false,
+  }
+  clients.value.push(newClient)
+  selectedClient.value = newClient
+  localStorage.setItem("helio_selectedClient", JSON.stringify(newClient))
+}
 
 const toggleRightPanel = () => (isRightPanelOpen.value = !isRightPanelOpen.value)
 const showClientMap = () => (activeView.value = "main")
