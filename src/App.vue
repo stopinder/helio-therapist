@@ -138,17 +138,21 @@
             v-else-if="activeView === 'reflection'"
             :clients="clients"
             :selected-client="selectedClient"
+            @save="handleSaveReflection"
             @generate-insight="handleGenerateInsight"
             @close="activeView = 'main'"
         />
 
+
         <PastReflections
             v-else-if="activeView === 'past-reflections'"
             :reflections="reflections"
-            :selected-client="selectedClient"
-            @delete-reflection="handleDeleteReflection"
-            @export-all="handleExportAllReflections"
+            :clients="clients"
+            @delete="handleDeleteReflection"
+            @archive="handleArchiveReflection"
+            @close="activeView = 'main'"
         />
+
 
         <IFSToolLoader
             v-else-if="activeView === 'ifs'"
@@ -222,6 +226,19 @@ const activeView = ref("main")
 const activeTool = ref(null)
 const activeTemplate = ref(null)
 const reflectionMode = ref("new")
+const handleSaveReflection = (entry) => {
+  if (!entry?.text?.trim()) return // ignore empty
+  const newReflection = {
+    id: Date.now(),
+    ...entry,
+    date: new Date().toISOString(),
+  }
+  reflections.value.push(newReflection)
+  localStorage.setItem("helio_reflections", JSON.stringify(reflections.value))
+
+  feedbackMessage.value = "✅ Reflection saved"
+  setTimeout(() => (feedbackMessage.value = ""), 3000)
+}
 
 // --- AI Drawer ---
 const showAIDrawer = ref(false)
