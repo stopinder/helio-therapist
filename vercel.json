@@ -5,7 +5,8 @@
     { "src": "dist/**/*", "use": "@vercel/static" }
   ],
   "routes": [
-    { "src": "/api/(.*)", "dest": "/api/$1.js" },
-    { "src": "/(.*)", "dest": "/dist/$1" }
+    { "src": "^/api/(.*)", "dest": "/api/$1.js" },
+    { "handle": "filesystem" },
+    { "src": "/.*", "dest": "/dist/index.html" }
   ]
 }
