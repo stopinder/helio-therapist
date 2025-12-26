@@ -8,9 +8,10 @@ const openai = new OpenAI({
 
 const supabase = createClient(
     process.env.SUPABASE_URL,
-    process.env.SUPABASE_SERVICE_ROLE_KEY // or anon key for testing
+    process.env.SUPABASE_SERVICE_ROLE_KEY // backend-only key
 )
 
+// ✅ ESM syntax for Vercel handler
 export default async function handler(req, res) {
     if (req.method !== 'POST') {
         return res.status(405).json({ error: 'Method not allowed' })

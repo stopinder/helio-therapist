@@ -10,7 +10,9 @@
   },
   "dependencies": {
     "@heroicons/vue": "^2.2.0",
+    "@supabase/supabase-js": "^2.89.0",
     "jspdf": "^3.0.4",
+    "openai": "^6.15.0",
     "pinia": "^2.1.7",
     "vue": "^3.4.0"
   },
