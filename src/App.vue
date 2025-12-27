@@ -138,6 +138,7 @@
             v-else-if="activeView === 'reflection'"
             :clients="clients"
             :selected-client="selectedClient"
+            @save="handleSaveReflection"
             @generate-insight="handleGenerateInsight"
             @close="activeView = 'main'"
         />
@@ -145,9 +146,10 @@
         <PastReflections
             v-else-if="activeView === 'past-reflections'"
             :reflections="reflections"
-            :selected-client="selectedClient"
-            @delete-reflection="handleDeleteReflection"
-            @export-all="handleExportAllReflections"
+            :clients="clients"
+            @delete="handleDeleteReflection"
+            @archive="handleArchiveReflection"
+            @close="activeView = 'main'"
         />
 
         <IFSToolLoader
@@ -162,6 +164,11 @@
             :template="activeTemplate"
             @close="activeView = 'main'"
             @generate-insight="handleGenerateInsight"
+        />
+
+        <TherapistMap
+            v-else-if="activeView === 'therapist-map'"
+            class="w-full h-[calc(100vh-7rem)] relative"
         />
       </main>
 
@@ -211,6 +218,7 @@ import MainCanvas from "./components/tools/MainCanvas.vue"
 import CbtToolLoader from "./components/tools/CBTToolLoader.vue"
 import ReflectiveJournal from "./components/reflective/ReflectiveJournal.vue"
 import PastReflections from "./components/reflective/PastReflections.vue"
+import TherapistMap from "./components/tools/TherapistMap.vue"
 
 // --- State ---
 const isSidebarOpen = ref(false)
@@ -243,6 +251,16 @@ watch(clients, (newClients) => {
   localStorage.setItem("helio_clients", JSON.stringify(newClients))
 }, { deep: true })
 
+const handleAddClient = (newClientData) => {
+  const name = newClientData?.name?.trim() || "New Client"
+  const note = newClientData?.note || ""
+  const newClient = { id: Date.now(), name, note, archived: false }
+  clients.value.push(newClient)
+  selectedClient.value = newClient
+  feedbackMessage.value = "✅ Client added"
+  setTimeout(() => (feedbackMessage.value = ""), 2000)
+}
+
 // --- Resources ---
 const resources = ref(
     JSON.parse(localStorage.getItem("helio_resources")) || [
@@ -274,6 +292,23 @@ watch(reflections, (newVal) => {
   localStorage.setItem("helio_reflections", JSON.stringify(newVal))
 }, { deep: true })
 
+const handleSaveReflection = (entry) => {
+  if (!entry?.text?.trim()) return // ignore empty
+  const newReflection = {
+    id: Date.now(),
+    ...entry,
+    date: new Date().toISOString(),
+  }
+  reflections.value.push(newReflection)
+  feedbackMessage.value = "✅ Reflection saved"
+  setTimeout(() => (feedbackMessage.value = ""), 3000)
+}
+
+const handleArchiveReflection = (id, value) => {
+  const r = reflections.value.find(x => x.id === id)
+  if (r) r.archived = !!value
+}
+
 const handleSaveInsight = ({ clientId, text }) => {
   if (!clientId || !text) return
   const now = new Date().toISOString()
@@ -302,8 +337,8 @@ const handleSaveInsight = ({ clientId, text }) => {
 }
 
 // --- Reflection management ---
-const handleDeleteReflection = (r) => {
-  reflections.value = reflections.value.filter(x => x.id !== r.id)
+const handleDeleteReflection = (id) => {
+  reflections.value = reflections.value.filter(x => x.id !== id)
 }
 const handleExportAllReflections = () => {
   alert("Exporting all reflections... (PDF export coming soon)")
@@ -381,6 +416,7 @@ const activeViewLabel = computed(() => {
     case "emdr": return "EMDR Tool"
     case "reflection": return "Reflection"
     case "past-reflections": return "Past Reflections"
+    case "therapist-map": return "Therapist Map"
     default: return "Session Notes"
   }
 })

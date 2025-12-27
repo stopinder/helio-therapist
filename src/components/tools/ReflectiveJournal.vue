@@ -74,7 +74,9 @@
               class="text-[13px] px-3 py-1.5 rounded-md border border-[#d9dce1] text-[#a1a1aa] bg-white cursor-not-allowed"
               disabled
               title="Voice reflection (coming soon)"
-
+          >
+            🎙️
+          </button>
 
           <button
               class="text-[13px] px-3 py-1.5 rounded-md border border-[#d9dce1] text-[#2563eb] bg-white hover:bg-[#f5f7fa] transition"
@@ -136,15 +138,18 @@ const textarea = ref(null)
 const container = ref(null)
 
 async function save() {
+  if (!form.value.text.trim()) return
+
   const entry = {
     clientId: form.value.clientId ?? null,
     focus: form.value.focus || 'General',
     mood: Math.min(5, Math.max(1, Number(form.value.mood) || 3)),
-    text: form.value.text,
+    text: form.value.text.trim(),
     tags: form.value.tags,
     aiSummary: null,
     archived: false,
   }
+
   emit('save', entry)
   saved.value = true
   setTimeout(() => (saved.value = false), 3000)
@@ -154,7 +159,7 @@ async function save() {
   tagsText.value = ''
 
   await nextTick()
-  // Scroll to top and focus the textarea
+  // Scroll to top and refocus textarea
   container.value?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   textarea.value?.focus()
 }
@@ -170,14 +175,6 @@ function emitInsight() {
   console.log('🔄 Forwarding reflection insight event...', payload)
   emit('generate-insight', payload)
 }
-
-// TODO: Integrate Whisper transcription here later
-async function transcribeFromAudio(blob) {
-  console.log('🎙️ Placeholder: Whisper transcription to be implemented.')
-  // This will call your future Whisper API endpoint and append the transcribed text:
-  // const text = await whisperTranscribe(blob)
-  // form.value.text += text
-}
 </script>
 
 <style scoped>
@@ -188,4 +185,3 @@ async function transcribeFromAudio(blob) {
   opacity: 0;
 }
 </style>
-

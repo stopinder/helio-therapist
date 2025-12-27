@@ -45,7 +45,7 @@
 import { ref, onMounted } from "vue";
 import ReflectionEditor from "./ReflectionEditor.vue";
 import ReflectionList from "./ReflectionList.vue";
-import TherapistMap from "./TherapistMap.vue";
+import TherapistMap from "../tools/TherapistMap.vue";
 
 const props = defineProps({
   mode: { type: String, default: "new" },
