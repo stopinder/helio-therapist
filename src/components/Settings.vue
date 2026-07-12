@@ -1,50 +1,50 @@
 <template>
-  <div class="max-w-3xl mx-auto py-10 px-6">
-    <header class="mb-10">
-      <h1 class="text-2xl font-semibold text-[#1a2b3b]">Settings</h1>
+  <div class="max-w-3xl mx-auto py-6 sm:py-10 px-4 sm:px-6 w-full overflow-x-hidden">
+    <header class="mb-8 sm:mb-10">
+      <h1 class="text-xl sm:text-2xl font-semibold text-[#1a2b3b]">Settings</h1>
     </header>
 
     <!-- Calendar & Video Section -->
     <section class="mb-12">
-      <h2 class="text-[13px] font-semibold uppercase tracking-wider text-slate-500 mb-4 px-1">
+      <h2 class="text-[12px] sm:text-[13px] font-semibold uppercase tracking-wider text-slate-500 mb-4 px-1">
         Calendar & Video
       </h2>
       
       <div class="bg-white border border-[#e2e8f0] rounded-xl overflow-hidden shadow-sm">
         <!-- Google Calendar -->
-        <div class="flex items-center justify-between p-4 border-b border-[#f1f5f9]">
-          <div class="flex items-center gap-4">
-            <div class="w-10 h-10 rounded-lg bg-slate-50 flex items-center justify-center border border-[#f1f5f9]">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between p-4 border-b border-[#f1f5f9] gap-4">
+          <div class="flex items-start sm:items-center gap-4">
+            <div class="flex-shrink-0 w-10 h-10 rounded-lg bg-slate-50 flex items-center justify-center border border-[#f1f5f9]">
               <span class="text-xl">📅</span>
             </div>
-            <div>
-              <div class="text-[15px] font-medium text-[#2c3e50]">Google Calendar</div>
-              <div class="text-[13px] text-slate-400">Not connected</div>
+            <div class="min-w-0 flex-1">
+              <div class="text-[15px] font-medium text-[#2c3e50] break-words">Google Calendar</div>
+              <div class="text-[13px] text-slate-400 break-words">Not connected</div>
             </div>
           </div>
-          <button class="px-4 py-1.5 text-[13px] font-medium text-[#2563eb] hover:bg-[#eff6ff] rounded-md transition border border-transparent hover:border-[#dbeafe]">
+          <button class="w-full sm:w-auto min-h-[44px] sm:min-h-0 px-4 py-2 sm:py-1.5 text-[13px] font-medium text-[#2563eb] hover:bg-[#eff6ff] rounded-md transition border border-transparent hover:border-[#dbeafe] text-center">
             Connect
           </button>
         </div>
 
         <!-- Zoom -->
-        <div class="flex items-center justify-between p-4 border-b border-[#f1f5f9]">
-          <div class="flex items-center gap-4">
-            <div class="w-10 h-10 rounded-lg bg-[#f0f7ff] flex items-center justify-center border border-[#e0efff]">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between p-4 border-b border-[#f1f5f9] gap-4">
+          <div class="flex items-start sm:items-center gap-4">
+            <div class="flex-shrink-0 w-10 h-10 rounded-lg bg-[#f0f7ff] flex items-center justify-center border border-[#e0efff]">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M15 13.5V10C15 8.89543 14.1046 8 13 8H5C3.89543 8 3 8.89543 3 10V16C3 17.1046 3.89543 18 5 18H13C14.1046 18 15 17.1046 15 16V14.5L19.5 18V10L15 13.5Z" fill="#2D8CFF"/>
               </svg>
             </div>
-            <div>
-              <div class="text-[15px] font-medium text-[#2c3e50]">Zoom</div>
-              <div class="text-[13px]" :class="zoomStatus === 'Connected' ? 'text-green-600' : 'text-slate-400'">
+            <div class="min-w-0 flex-1">
+              <div class="text-[15px] font-medium text-[#2c3e50] break-words">Zoom</div>
+              <div class="text-[13px] break-words" :class="zoomStatus === 'Connected' ? 'text-green-600' : 'text-slate-400'">
                 {{ zoomStatus }}
               </div>
             </div>
           </div>
-          <div class="flex items-center gap-2">
+          <div class="flex items-center gap-2 w-full sm:w-auto">
             <template v-if="zoomStatus === 'Connected'">
-              <button @click="disconnectZoom" class="px-4 py-1.5 text-[13px] font-medium text-slate-500 hover:text-red-500 transition">
+              <button @click="disconnectZoom" class="w-full sm:w-auto min-h-[44px] sm:min-h-0 px-4 py-2 sm:py-1.5 text-[13px] font-medium text-slate-500 hover:text-red-500 transition text-center">
                 Disconnect
               </button>
             </template>
@@ -52,7 +52,7 @@
               <button 
                 @click="connectZoom" 
                 :disabled="isConnecting"
-                class="px-4 py-1.5 text-[13px] font-medium text-[#2563eb] hover:bg-[#eff6ff] rounded-md transition border border-transparent hover:border-[#dbeafe] disabled:opacity-50"
+                class="w-full sm:w-auto min-h-[44px] sm:min-h-0 px-4 py-2 sm:py-1.5 text-[13px] font-medium text-[#2563eb] hover:bg-[#eff6ff] rounded-md transition border border-transparent hover:border-[#dbeafe] disabled:opacity-50 text-center"
               >
                 {{ isConnecting ? 'Connecting...' : 'Connect' }}
               </button>
@@ -61,17 +61,17 @@
         </div>
 
         <!-- Outlook Calendar -->
-        <div class="flex items-center justify-between p-4">
-          <div class="flex items-center gap-4">
-            <div class="w-10 h-10 rounded-lg bg-slate-50 flex items-center justify-center border border-[#f1f5f9]">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between p-4 gap-4">
+          <div class="flex items-start sm:items-center gap-4">
+            <div class="flex-shrink-0 w-10 h-10 rounded-lg bg-slate-50 flex items-center justify-center border border-[#f1f5f9]">
               <span class="text-xl">📧</span>
             </div>
-            <div>
-              <div class="text-[15px] font-medium text-[#2c3e50]">Outlook Calendar</div>
-              <div class="text-[13px] text-slate-400">Not connected</div>
+            <div class="min-w-0 flex-1">
+              <div class="text-[15px] font-medium text-[#2c3e50] break-words">Outlook Calendar</div>
+              <div class="text-[13px] text-slate-400 break-words">Not connected</div>
             </div>
           </div>
-          <button class="px-4 py-1.5 text-[13px] font-medium text-[#2563eb] hover:bg-[#eff6ff] rounded-md transition border border-transparent hover:border-[#dbeafe]">
+          <button class="w-full sm:w-auto min-h-[44px] sm:min-h-0 px-4 py-2 sm:py-1.5 text-[13px] font-medium text-[#2563eb] hover:bg-[#eff6ff] rounded-md transition border border-transparent hover:border-[#dbeafe] text-center">
             Connect
           </button>
         </div>
