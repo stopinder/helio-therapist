@@ -3,7 +3,7 @@
       class="flex flex-col bg-[#faf9f7] border-r border-[#e5e7eb] select-none w-64 h-full z-40"
   >
     <!-- Therapist header -->
-    <div class="h-16 flex items-center px-5 border-b border-[#e2e5ea] bg-[#fafbfc] mt-1 shrink-0">
+    <div class="h-16 flex items-center justify-between px-5 border-b border-[#e2e5ea] bg-[#fafbfc] mt-1 shrink-0">
       <div class="flex items-center gap-3">
         <div class="h-9 w-9 rounded-full bg-[#e2dcd4] flex items-center justify-center text-[14px] font-semibold text-[#2c3e50]">
           RO
@@ -13,6 +13,16 @@
           <span class="text-[12px] text-slate-500">Psychotherapist</span>
         </div>
       </div>
+      <!-- Close Button for Mobile -->
+      <button
+          class="md:hidden p-2 text-slate-400 hover:text-slate-600 transition"
+          @click="$emit('close-sidebar')"
+          aria-label="Close menu"
+      >
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M18 6L6 18M6 6l12 12" />
+        </svg>
+      </button>
     </div>
 
     <!-- Sidebar Content -->

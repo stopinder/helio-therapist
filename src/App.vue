@@ -1,37 +1,59 @@
 <template>
   <div class="flex h-screen bg-[#f5f7fa] text-[#2c3e50] overflow-hidden">
-    <!-- Left Sidebar: Fixed -->
-    <LeftSidebar
-        class="z-40 shrink-0 w-64 bg-white border-r border-[#d9dce1] h-full"
-        :selected-nav="selectedNav"
-        @update:selected-nav="selectedNav = $event"
-        :clients="clients"
-        :selected-client="selectedClient"
-        :is-in-session="isInSession"
-        :is-syncing="isSyncing"
-        :active-template="activeTemplate"
-        @select-client="handleSelectClient"
-        @join-zoom="joinZoom"
-        @end-zoom="endZoom"
-        @sync-transcript="syncTranscript"
-        @open-tool="openTool"
-        @open-reflection="openReflection"
-        @add-client="handleAddClient"
-        :resources="resources"
-        @add-resource="handleAddResource"
-    />
+    <!-- Left Sidebar: Desktop (Fixed) / Mobile (Drawer) -->
+    <transition name="slide">
+      <LeftSidebar
+          v-if="isSidebarOpen || isDesktop"
+          class="fixed md:relative z-50 md:z-40 shrink-0 w-64 bg-white border-r border-[#d9dce1] h-full shadow-xl md:shadow-none"
+          :selected-nav="selectedNav"
+          @update:selected-nav="handleNavChange"
+          :clients="clients"
+          :selected-client="selectedClient"
+          :is-in-session="isInSession"
+          :is-syncing="isSyncing"
+          :active-template="activeTemplate"
+          @select-client="handleSelectClient"
+          @join-zoom="joinZoom"
+          @end-zoom="endZoom"
+          @sync-transcript="syncTranscript"
+          @open-tool="openTool"
+          @open-reflection="openReflection"
+          @add-client="handleAddClient"
+          :resources="resources"
+          @add-resource="handleAddResource"
+          @close-sidebar="isSidebarOpen = false"
+      />
+    </transition>
+
+    <!-- Sidebar Backdrop for Mobile -->
+    <div
+        v-if="!isDesktop && isSidebarOpen"
+        class="fixed inset-0 bg-black/20 backdrop-blur-sm z-40 md:hidden"
+        @click="isSidebarOpen = false"
+    ></div>
 
     <!-- Main Content Area -->
-    <div class="flex flex-col flex-1 min-w-0 h-full overflow-hidden">
+    <div class="flex flex-col flex-1 min-w-0 h-full overflow-hidden w-full">
       <!-- Fixed Top Bar -->
       <header
-          class="h-14 flex items-center justify-between px-4 md:px-6 border-b border-[#d9dce1] bg-white shadow-sm shrink-0"
+          class="h-14 flex items-center justify-between px-4 border-b border-[#d9dce1] bg-white shadow-sm shrink-0"
       >
-        <div class="flex items-center gap-3">
-          <div class="flex items-center gap-2 text-[18px] font-semibold tracking-tight text-[#2c3e50]">
-            <span>Therapist Workspace</span>
-            <span class="text-slate-400 mx-1">·</span>
-            <span class="flex items-center gap-1 text-[13px] font-normal text-slate-500">
+        <div class="flex items-center gap-2 md:gap-3 min-w-0">
+          <!-- Mobile Menu Button -->
+          <button
+              class="md:hidden p-2 -ml-2 text-slate-600 hover:bg-slate-100 rounded-md transition"
+              @click="isSidebarOpen = true"
+              aria-label="Open menu"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          </button>
+
+          <div class="flex items-center gap-1 md:gap-2 text-[16px] md:text-[18px] font-semibold tracking-tight text-[#2c3e50] truncate">
+            <span class="truncate">Therapist Workspace</span>
+            <span class="text-slate-400 mx-0.5 md:mx-1 shrink-0">·</span>
+            <span class="flex items-center gap-1 text-[12px] md:text-[13px] font-normal text-slate-500 shrink-0">
               <span
                   class="inline-block h-2 w-2 rounded-full"
                   :class="isInSession ? 'bg-green-500' : 'bg-slate-400'"
@@ -41,9 +63,9 @@
           </div>
         </div>
 
-        <div class="flex items-center gap-3">
+        <div class="flex items-center gap-1.5 md:gap-3">
           <button
-              class="text-[13px] px-3 py-1.5 rounded-md border border-[#d9dce1] transition"
+              class="hidden sm:block text-[13px] px-3 py-1.5 rounded-md border border-[#d9dce1] transition"
               :class="showClientDrawer ? 'bg-[#f5f7fa] text-black border-slate-400' : 'text-[#3f4754] bg-white hover:bg-[#f5f7fa]'"
               @click="showClientDrawer = !showClientDrawer"
               aria-label="Client Context"
@@ -51,6 +73,16 @@
               aria-controls="client-context-drawer"
           >
             Client
+          </button>
+          
+          <!-- Mobile client icon button -->
+          <button
+              class="sm:hidden h-9 w-9 flex items-center justify-center rounded-md border border-[#d9dce1] text-[#3f4754] hover:bg-[#f5f7fa] transition text-[15px]"
+              :class="{ 'bg-[#f5f7fa] border-slate-400': showClientDrawer }"
+              @click="showClientDrawer = !showClientDrawer"
+              aria-label="Client Context"
+          >
+            👤
           </button>
 
           <button
@@ -349,7 +381,12 @@ const handleSelectClient = (client) => {
   selectedClient.value = client
   localStorage.setItem("helio_selectedClient", JSON.stringify(client))
   activeView.value = "main"
-  if (!isDesktop.value) isSidebarOpen.value = false
+  isSidebarOpen.value = false
+}
+
+const handleNavChange = (nav) => {
+  selectedNav.value = nav
+  isSidebarOpen.value = false
 }
 
 const openTool = (payload) => {
@@ -428,7 +465,16 @@ const sessionDate = computed(() =>
 const toggleRightPanel = () => (isRightPanelOpen.value = !isRightPanelOpen.value)
 const showClientMap = () => (activeView.value = "main")
 
-const updateScreen = () => (isDesktop.value = window.innerWidth >= 768)
+const updateScreen = () => {
+  isDesktop.value = window.innerWidth >= 768
+  if (isDesktop.value) {
+    isSidebarOpen.value = true
+  } else if (!isDesktop.value && isSidebarOpen.value) {
+    // If we were desktop and resize to mobile, close sidebar by default
+    // but only if it was open. Actually, just closing it is safer.
+    isSidebarOpen.value = false
+  }
+}
 onMounted(() => {
   updateScreen()
   window.addEventListener("resize", updateScreen)
