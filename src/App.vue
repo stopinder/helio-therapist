@@ -43,7 +43,12 @@
 
         <div class="flex items-center gap-3">
           <button
-              class="text-[13px] px-3 py-1.5 rounded-md border border-[#d9dce1] text-[#3f4754] bg-white hover:bg-[#f5f7fa] transition"
+              class="text-[13px] px-3 py-1.5 rounded-md border border-[#d9dce1] transition"
+              :class="showClientDrawer ? 'bg-[#f5f7fa] text-black border-slate-400' : 'text-[#3f4754] bg-white hover:bg-[#f5f7fa]'"
+              @click="showClientDrawer = !showClientDrawer"
+              aria-label="Client Context"
+              :aria-expanded="showClientDrawer"
+              aria-controls="client-context-drawer"
           >
             Client
           </button>
@@ -170,12 +175,21 @@
         @close="showAIDrawer = false"
         @save-insight="handleSaveInsight"
     />
+
+    <!-- Client Context Drawer -->
+    <ClientContextDrawer
+        id="client-context-drawer"
+        :open="showClientDrawer"
+        :client="selectedClient"
+        @close="showClientDrawer = false"
+    />
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted, watch, nextTick } from "vue"
 import AIInsightDrawer from "./components/AIInsightDrawer.vue"
+import ClientContextDrawer from "./components/tools/ClientContextDrawer.vue"
 import EMDRToolLoader from "./components/tools/EMDRToolLoader.vue"
 import IFSToolLoader from "./components/tools/IFSToolLoader.vue"
 import LeftSidebar from "./components/tools/LeftSidebar.vue"
@@ -201,6 +215,7 @@ const reflectionMode = ref("new")
 
 // --- AI Drawer ---
 const showAIDrawer = ref(false)
+const showClientDrawer = ref(false)
 const aiInput = ref(null)
 const feedbackMessage = ref("")
 
