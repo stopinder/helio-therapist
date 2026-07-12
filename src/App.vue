@@ -1,58 +1,33 @@
 <template>
-  <div class="flex h-screen bg-[#f5f7fa] text-[#2c3e50] overflow-hidden relative">
-    <!-- Dim overlay for focus on mobile -->
-    <transition name="fade">
-      <div
-          v-if="isSidebarOpen && !isDesktop"
-          class="fixed inset-0 bg-black/40 z-30"
-          @click="isSidebarOpen = false"
-      ></div>
-    </transition>
+  <div class="flex h-screen bg-[#f5f7fa] text-[#2c3e50] overflow-hidden">
+    <!-- Left Sidebar: Fixed -->
+    <LeftSidebar
+        class="z-40 shrink-0 w-64 bg-white border-r border-[#d9dce1] h-full"
+        :selected-nav="selectedNav"
+        @update:selected-nav="selectedNav = $event"
+        :clients="clients"
+        :selected-client="selectedClient"
+        :is-in-session="isInSession"
+        :is-syncing="isSyncing"
+        :active-template="activeTemplate"
+        @select-client="handleSelectClient"
+        @join-zoom="joinZoom"
+        @end-zoom="endZoom"
+        @sync-transcript="syncTranscript"
+        @open-tool="openTool"
+        @open-reflection="openReflection"
+        @add-client="handleAddClient"
+        :resources="resources"
+        @add-resource="handleAddResource"
+    />
 
-    <!-- Left Sidebar -->
-    <transition name="slide">
-      <LeftSidebar
-          v-if="isSidebarOpen || isDesktop"
-          class="z-40 shrink-0 w-64 bg-white border-r border-[#d9dce1] h-full"
-          :clients="clients"
-          :selected-client="selectedClient"
-          :is-sidebar-open="isSidebarOpen"
-          :is-in-session="isInSession"
-          :is-syncing="isSyncing"
-          :active-template="activeTemplate"
-          @select-client="handleSelectClient"
-          @close-sidebar="isSidebarOpen = false"
-          @join-zoom="joinZoom"
-          @end-zoom="endZoom"
-          @sync-transcript="syncTranscript"
-          @open-tool="openTool"
-          @open-reflection="openReflection"
-          @add-client="handleAddClient"
-          :resources="resources"
-          @add-resource="handleAddResource"
-      />
-    </transition>
-
-    <!-- Main Area -->
-    <div
-        class="flex flex-col flex-1 overflow-hidden transform transition-transform duration-300 ease-in-out"
-        :class="{ 'translate-x-64': isSidebarOpen && !isDesktop }"
-    >
-      <!-- Header -->
+    <!-- Main Content Area -->
+    <div class="flex flex-col flex-1 min-w-0 h-full overflow-hidden">
+      <!-- Fixed Top Bar -->
       <header
-          class="h-14 flex items-center justify-between px-4 md:px-6 border-b border-[#d9dce1] bg-white shadow-sm"
+          class="h-14 flex items-center justify-between px-4 md:px-6 border-b border-[#d9dce1] bg-white shadow-sm shrink-0"
       >
         <div class="flex items-center gap-3">
-          <button
-              class="md:hidden text-[20px] font-semibold text-[#2c3e50]"
-              @click="isSidebarOpen = !isSidebarOpen"
-              aria-label="Toggle left sidebar"
-          >
-            ☰
-          </button>
-        </div>
-
-        <div class="flex flex-col">
           <div class="flex items-center gap-2 text-[18px] font-semibold tracking-tight text-[#2c3e50]">
             <span>Therapist Workspace</span>
             <span class="text-slate-400 mx-1">·</span>
@@ -66,13 +41,11 @@
           </div>
         </div>
 
-        <!-- Right: controls -->
         <div class="flex items-center gap-3">
           <button
               class="text-[13px] px-3 py-1.5 rounded-md border border-[#d9dce1] text-[#3f4754] bg-white hover:bg-[#f5f7fa] transition"
-              @click="toggleRightPanel"
           >
-            Client context
+            Client
           </button>
 
           <button
@@ -91,110 +64,104 @@
         </div>
       </header>
 
-      <!-- Central Canvas -->
-      <main
-          class="flex-1 overflow-auto p-4 md:p-6 relative scroll-smooth bg-[#f5f7fa]"
-          @scroll="handleScroll"
-      >
-        <!-- Persistent Client Header -->
-        <div
-            v-if="selectedClient"
-            class="sticky top-0 z-20 mb-4 rounded-md px-4 py-2 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 shadow-sm backdrop-blur-sm border-2 transition-all duration-300"
-            :class="isInSession
-            ? 'border-[#2563eb] bg-[#eaf1ff]'
-            : 'border-[#d9dce1] bg-white'"
-            :style="{ opacity: headerOpacity }"
+      <!-- Workspace with Centre and Right Sidebar -->
+      <div class="flex flex-1 overflow-hidden">
+        <!-- Flexible Centre Workspace -->
+        <main
+            class="flex-1 overflow-auto p-4 md:p-6 relative scroll-smooth bg-[#f5f7fa]"
+            @scroll="handleScroll"
         >
-          <div
-              class="text-[17px] font-semibold transition-colors duration-300"
-              :class="isInSession ? 'text-[#2563eb]' : 'text-[#2c3e50]'"
-          >
-            {{ selectedClient.name }}
-            <span
-                class="ml-2 text-[13px] font-normal transition-colors duration-300"
-                :class="isInSession ? 'text-[#3b82f6]' : 'text-slate-500'"
-            >
-              {{ sessionDate }}
-            </span>
+          <div v-if="selectedNav === 'Today'" class="h-full flex flex-col">
+            <h1 class="text-2xl font-bold mb-6 text-[#2c3e50]">Today’s Schedule</h1>
+            <div class="flex-1 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center text-gray-400">
+              Schedule content goes here
+            </div>
           </div>
-          <div class="text-[13px] text-slate-500">{{ activeViewLabel }}</div>
-        </div>
 
-        <!-- View switching -->
-        <MainCanvas
-            v-if="activeView === 'main'"
-            :selected-client="selectedClient"
-            :session-notes="filteredNotes"
-        />
+          <template v-else>
+            <!-- Persistent Client Header -->
+            <div
+                v-if="selectedClient"
+                class="sticky top-0 z-20 mb-4 rounded-md px-4 py-2 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 shadow-sm backdrop-blur-sm border-2 transition-all duration-300"
+                :class="isInSession
+                ? 'border-[#2563eb] bg-[#eaf1ff]'
+                : 'border-[#d9dce1] bg-white'"
+                :style="{ opacity: headerOpacity }"
+            >
+              <div
+                  class="text-[17px] font-semibold transition-colors duration-300"
+                  :class="isInSession ? 'text-[#2563eb]' : 'text-[#2c3e50]'"
+              >
+                {{ selectedClient.name }}
+                <span
+                    class="ml-2 text-[13px] font-normal transition-colors duration-300"
+                    :class="isInSession ? 'text-[#3b82f6]' : 'text-slate-500'"
+                >
+                  {{ sessionDate }}
+                </span>
+              </div>
+              <div class="text-[13px] text-slate-500">{{ activeViewLabel }}</div>
+            </div>
 
-        <CbtToolLoader
-            v-else-if="activeView === 'cbt'"
-            :template="activeTemplate"
-            @generate-insight="handleGenerateInsight"
-            @close="activeView = 'main'"
-        />
+            <!-- View switching -->
+            <MainCanvas
+                v-if="activeView === 'main'"
+                :selected-client="selectedClient"
+                :session-notes="filteredNotes"
+            />
 
-        <ReflectiveJournal
-            v-else-if="activeView === 'reflection'"
-            :clients="clients"
-            :selected-client="selectedClient"
-            @save="handleSaveReflection"
-            @generate-insight="handleGenerateInsight"
-            @close="activeView = 'main'"
-        />
+            <CbtToolLoader
+                v-else-if="activeView === 'cbt'"
+                :template="activeTemplate"
+                @generate-insight="handleGenerateInsight"
+                @close="activeView = 'main'"
+            />
 
-        <PastReflections
-            v-else-if="activeView === 'past-reflections'"
-            :reflections="reflections"
-            :clients="clients"
-            @delete="handleDeleteReflection"
-            @archive="handleArchiveReflection"
-            @close="activeView = 'main'"
-        />
+            <ReflectiveJournal
+                v-else-if="activeView === 'reflection'"
+                :clients="clients"
+                :selected-client="selectedClient"
+                @save="handleSaveReflection"
+                @generate-insight="handleGenerateInsight"
+                @close="activeView = 'main'"
+            />
 
-        <IFSToolLoader
-            v-else-if="activeView === 'ifs'"
-            :template="activeTemplate"
-            @close="activeView = 'main'"
-            @generate-insight="handleGenerateInsight"
-        />
+            <PastReflections
+                v-else-if="activeView === 'past-reflections'"
+                :reflections="reflections"
+                :clients="clients"
+                @delete="handleDeleteReflection"
+                @archive="handleArchiveReflection"
+                @close="activeView = 'main'"
+            />
 
-        <EMDRToolLoader
-            v-else-if="activeView === 'emdr'"
-            :template="activeTemplate"
-            @close="activeView = 'main'"
-            @generate-insight="handleGenerateInsight"
-        />
+            <IFSToolLoader
+                v-else-if="activeView === 'ifs'"
+                :template="activeTemplate"
+                @close="activeView = 'main'"
+                @generate-insight="handleGenerateInsight"
+            />
 
-        <TherapistMap
-            v-else-if="activeView === 'therapist-map'"
-            class="w-full h-[calc(100vh-7rem)] relative"
-        />
-      </main>
+            <EMDRToolLoader
+                v-else-if="activeView === 'emdr'"
+                :template="activeTemplate"
+                @close="activeView = 'main'"
+                @generate-insight="handleGenerateInsight"
+            />
 
-      <!-- Inline feedback -->
-      <transition name="fade">
-        <div
-            v-if="feedbackMessage"
-            class="absolute bottom-16 right-6 text-[13px] text-green-600 bg-white/80 border border-[#d9dce1] px-3 py-1 rounded-md shadow-sm transition-opacity"
-        >
-          {{ feedbackMessage }}
-        </div>
-      </transition>
+            <TherapistMap
+                v-else-if="activeView === 'therapist-map'"
+                class="w-full h-[calc(100vh-7rem)] relative"
+            />
+          </template>
+        </main>
+      </div>
 
-      <!-- Message Bar -->
-      <footer class="border-t border-[#d9dce1] bg-white shadow-inner px-4 md:px-6 py-3 md:py-4">
+      <!-- Message Bar (only if not in Today view or per requirement) -->
+      <footer v-if="selectedNav !== 'Today'" class="border-t border-[#d9dce1] bg-white shadow-inner px-4 md:px-6 py-3 md:py-4">
         <MessageBar @submit="handleMessageSubmit" />
       </footer>
     </div>
-
-    <!-- Right slide-in panel -->
-    <RightPanel
-        :selected-client="selectedClient"
-        :open="isRightPanelOpen"
-        @close="isRightPanelOpen = false"
-        @view-map="showClientMap"
-    />
 
     <!-- AI Insight Drawer -->
     <AIInsightDrawer
@@ -221,12 +188,13 @@ import PastReflections from "./components/reflective/PastReflections.vue"
 import TherapistMap from "./components/tools/TherapistMap.vue"
 
 // --- State ---
-const isSidebarOpen = ref(false)
-const isRightPanelOpen = ref(false)
-const isDesktop = ref(false)
+const isSidebarOpen = ref(true)
+const isRightPanelOpen = ref(true)
+const isDesktop = ref(true)
 const isInSession = ref(false)
 const isSyncing = ref(false)
 const activeView = ref("main")
+const selectedNav = ref("Today")
 const activeTool = ref(null)
 const activeTemplate = ref(null)
 const reflectionMode = ref("new")

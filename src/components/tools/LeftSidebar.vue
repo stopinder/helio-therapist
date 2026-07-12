@@ -1,23 +1,9 @@
 <template>
   <aside
-      class="fixed inset-y-0 left-0 flex flex-col bg-[#faf9f7] border-r border-[#e5e7eb] select-none w-64 h-full z-40 transform transition-transform duration-200 ease-in-out md:static md:translate-x-0"
-      :class="{ '-translate-x-full': !isSidebarOpen }"
+      class="flex flex-col bg-[#faf9f7] border-r border-[#e5e7eb] select-none w-64 h-full z-40"
   >
-    <!-- Close button (mobile only) -->
-    <button
-        @click="$emit('close-sidebar')"
-        class="absolute top-3 right-3 md:hidden text-gray-500 hover:text-gray-800"
-        aria-label="Close sidebar"
-    >
-      <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none"
-           viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-        <path stroke-linecap="round" stroke-linejoin="round"
-              d="M6 18L18 6M6 6l12 12" />
-      </svg>
-    </button>
-
     <!-- Therapist header -->
-    <div class="h-16 flex items-center px-5 border-b border-[#e2e5ea] bg-[#fafbfc] mt-1">
+    <div class="h-16 flex items-center px-5 border-b border-[#e2e5ea] bg-[#fafbfc] mt-1 shrink-0">
       <div class="flex items-center gap-3">
         <div class="h-9 w-9 rounded-full bg-[#e2dcd4] flex items-center justify-center text-[14px] font-semibold text-[#2c3e50]">
           RO
@@ -30,85 +16,98 @@
     </div>
 
     <!-- Sidebar Content -->
-    <div class="flex-1 overflow-auto p-4 space-y-6">
+    <div class="flex-1 overflow-auto p-4 space-y-4">
+      <nav class="space-y-1">
+        <button
+            v-for="item in navItems"
+            :key="item"
+            @click="$emit('update:selected-nav', item)"
+            class="w-full flex items-center px-3 py-2 rounded-md transition text-left text-[14px]"
+            :class="selectedNav === item ? 'bg-[#eef1f5] font-semibold text-slate-800' : 'text-slate-700 hover:bg-[#f7f8fa]'"
+        >
+          {{ item }}
+        </button>
+      </nav>
 
-      <!-- CLIENTS -->
-      <SidebarGroup title="Clients" :defaultOpen="true">
-        <div class="px-2 mb-2">
-          <button
-              class="w-full py-1.5 text-[13px] rounded-md bg-[#3f4754] text-white hover:bg-[#2f3540] transition"
-              @click="showAddClientModal = true"
-          >
-            + Add Client
-          </button>
-        </div>
-
-        <!-- Client List -->
-        <div class="max-h-64 overflow-auto pr-1 space-y-1">
-          <div
-              v-for="client in clients"
-              :key="client.id"
-              class="relative group rounded-md"
-          >
+      <div v-if="false && selectedNav === 'Clients'" class="pt-4 border-t border-[#e2e5ea] space-y-6">
+        <!-- CLIENTS -->
+        <SidebarGroup title="Clients" :defaultOpen="true">
+          <div class="px-2 mb-2">
             <button
-                class="w-full flex items-center justify-between px-3 py-2 rounded-md hover:bg-[#f7f8fa] transition text-left"
-                :class="{ 'bg-[#eef1f5]': selectedClient && client.id === selectedClient.id }"
-                @click="select(client)"
+                class="w-full py-1.5 text-[13px] rounded-md bg-[#3f4754] text-white hover:bg-[#2f3540] transition"
+                @click="showAddClientModal = true"
             >
-              <span
-                  class="text-[14px] truncate"
-                  :class="{
-                  'font-semibold text-slate-800': selectedClient && client.id === selectedClient.id,
-                  'text-slate-700': !selectedClient || client.id !== selectedClient.id,
-                }"
-              >
-                {{ client.name }}
-              </span>
+              + Add Client
             </button>
           </div>
-        </div>
 
-        <!-- Zoom Session Controls -->
-        <div class="mt-4 border-t border-[#e4e7eb] pt-3 px-2 space-y-2">
-          <div class="text-[12px] font-semibold text-slate-600 uppercase tracking-wide">
-            Session Controls
+          <!-- Client List -->
+          <div class="max-h-64 overflow-auto pr-1 space-y-1">
+            <div
+                v-for="client in clients"
+                :key="client.id"
+                class="relative group rounded-md"
+            >
+              <button
+                  class="w-full flex items-center justify-between px-3 py-2 rounded-md hover:bg-[#f7f8fa] transition text-left"
+                  :class="{ 'bg-[#eef1f5]': selectedClient && client.id === selectedClient.id }"
+                  @click="select(client)"
+              >
+                <span
+                    class="text-[14px] truncate"
+                    :class="{
+                    'font-semibold text-slate-800': selectedClient && client.id === selectedClient.id,
+                    'text-slate-700': !selectedClient || client.id !== selectedClient.id,
+                  }"
+                >
+                  {{ client.name }}
+                </span>
+              </button>
+            </div>
           </div>
-          <button
-              v-if="!isInSession"
-              class="w-full text-[13px] px-3 py-1.5 rounded-md border border-[#d9dce1] text-white bg-[#2563eb] hover:bg-[#1d4ed8] transition"
-              @click="$emit('join-zoom')"
-          >
-            Join Zoom Session
-          </button>
-          <button
-              v-else
-              class="w-full text-[13px] px-3 py-1.5 rounded-md border border-[#d9dce1] text-white bg-[#dc2626] hover:bg-[#b91c1c] transition"
-              @click="$emit('end-zoom')"
-          >
-            End Session
-          </button>
-          <button
-              class="w-full text-[13px] px-3 py-1.5 rounded-md border border-[#d9dce1] text-[#3f4754] bg-white hover:bg-[#f5f7fa] transition disabled:opacity-50 disabled:cursor-not-allowed"
-              :disabled="!isInSession || isSyncing"
-              @click="$emit('sync-transcript')"
-          >
-            <span v-if="isSyncing">Syncing…</span>
-            <span v-else>Sync Transcript</span>
-          </button>
-        </div>
-      </SidebarGroup>
 
-      <!-- REFLECTIVE PRACTICE -->
-      <SidebarGroup title="Reflective Practice" :defaultOpen="false">
-        <div class="sidebar-section px-3 space-y-1.5">
-          <button class="sidebar-btn" @click="$emit('open-reflection', 'new')">🧘 New Reflection</button>
-          <button class="sidebar-btn" @click="$emit('open-reflection', 'past')">📘 Past Reflections</button>
-          <button class="sidebar-btn" @click="$emit('open-reflection', 'map')">🗺 Therapist Map</button>
-        </div>
-      </SidebarGroup>
+          <!-- Zoom Session Controls -->
+          <div class="mt-4 border-t border-[#e4e7eb] pt-3 px-2 space-y-2">
+            <div class="text-[12px] font-semibold text-slate-600 uppercase tracking-wide">
+              Session Controls
+            </div>
+            <button
+                v-if="!isInSession"
+                class="w-full text-[13px] px-3 py-1.5 rounded-md border border-[#d9dce1] text-white bg-[#2563eb] hover:bg-[#1d4ed8] transition"
+                @click="$emit('join-zoom')"
+            >
+              Join Zoom Session
+            </button>
+            <button
+                v-else
+                class="w-full text-[13px] px-3 py-1.5 rounded-md border border-[#d9dce1] text-white bg-[#dc2626] hover:bg-[#b91c1c] transition"
+                @click="$emit('end-zoom')"
+            >
+              End Session
+            </button>
+            <button
+                class="w-full text-[13px] px-3 py-1.5 rounded-md border border-[#d9dce1] text-[#3f4754] bg-white hover:bg-[#f5f7fa] transition disabled:opacity-50 disabled:cursor-not-allowed"
+                :disabled="!isInSession || isSyncing"
+                @click="$emit('sync-transcript')"
+            >
+              <span v-if="isSyncing">Syncing…</span>
+              <span v-else>Sync Transcript</span>
+            </button>
+          </div>
+        </SidebarGroup>
+
+        <!-- REFLECTIVE PRACTICE -->
+        <SidebarGroup title="Reflective Practice" :defaultOpen="false">
+          <div class="sidebar-section px-3 space-y-1.5">
+            <button class="sidebar-btn" @click="$emit('open-reflection', 'new')">🧘 New Reflection</button>
+            <button class="sidebar-btn" @click="$emit('open-reflection', 'past')">📘 Past Reflections</button>
+            <button class="sidebar-btn" @click="$emit('open-reflection', 'map')">🗺 Therapist Map</button>
+          </div>
+        </SidebarGroup>
+      </div>
 
       <!-- TOOLS -->
-      <SidebarGroup title="Tools" :defaultOpen="false">
+      <SidebarGroup v-if="false" title="Tools" :defaultOpen="false">
         <div class="space-y-3">
 
           <SidebarGroup title="IFS Tools" :defaultOpen="false">
@@ -150,7 +149,7 @@
       </SidebarGroup>
 
       <!-- EXPORT CENTRE -->
-      <SidebarGroup title="Export Centre">
+      <SidebarGroup v-if="false" title="Export Centre">
         <div v-if="resources.length" class="px-3 space-y-1.5">
           <div
               v-for="res in resources"
@@ -174,7 +173,7 @@
       </SidebarGroup>
 
       <!-- RESOURCES -->
-      <SidebarGroup title="Resources">
+      <SidebarGroup v-if="false" title="Resources">
         <div class="px-3 mb-2">
           <button class="sidebar-btn primary" @click="showAddResourceModal = true">
             + Add Resource
@@ -237,7 +236,8 @@ const props = defineProps({
   isSidebarOpen: { type: Boolean, default: true },
   activeTemplate: String,
   isInSession: Boolean,
-  isSyncing: Boolean
+  isSyncing: Boolean,
+  selectedNav: String
 })
 
 const emit = defineEmits([
@@ -251,8 +251,11 @@ const emit = defineEmits([
   "join-zoom",
   "end-zoom",
   "sync-transcript",
-  "open-reflection"
+  "open-reflection",
+  "update:selected-nav"
 ])
+
+const navItems = ["Today", "Clients", "Reports", "Settings"]
 
 const cbtItems = [
   { key: "thought", label: "Thought Record" },
