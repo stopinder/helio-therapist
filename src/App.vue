@@ -62,6 +62,8 @@
 
           <button
               class="h-9 w-9 flex items-center justify-center rounded-md border border-[#d9dce1] text-[#3f4754] hover:bg-[#f5f7fa] transition text-[15px]"
+              :class="{ 'bg-[#eef1f5] font-semibold border-slate-400': selectedNav === 'Settings' }"
+              @click="selectedNav = 'Settings'"
               aria-label="Settings"
           >
             ⚙️
@@ -81,6 +83,10 @@
             <div class="flex-1 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center text-gray-400">
               Schedule content goes here
             </div>
+          </div>
+
+          <div v-else-if="selectedNav === 'Settings'" class="h-full">
+            <Settings />
           </div>
 
           <template v-else>
@@ -162,8 +168,8 @@
         </main>
       </div>
 
-      <!-- Message Bar (only if not in Today view or per requirement) -->
-      <footer v-if="selectedNav !== 'Today'" class="border-t border-[#d9dce1] bg-white shadow-inner px-4 md:px-6 py-3 md:py-4">
+      <!-- Message Bar (only if not in Today or Settings view or per requirement) -->
+      <footer v-if="selectedNav !== 'Today' && selectedNav !== 'Settings'" class="border-t border-[#d9dce1] bg-white shadow-inner px-4 md:px-6 py-3 md:py-4">
         <MessageBar @submit="handleMessageSubmit" />
       </footer>
     </div>
@@ -200,6 +206,7 @@ import CbtToolLoader from "./components/tools/CBTToolLoader.vue"
 import ReflectiveJournal from "./components/reflective/ReflectiveJournal.vue"
 import PastReflections from "./components/reflective/PastReflections.vue"
 import TherapistMap from "./components/tools/TherapistMap.vue"
+import Settings from "./components/Settings.vue"
 
 // --- State ---
 const isSidebarOpen = ref(true)
