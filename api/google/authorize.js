@@ -1,6 +1,6 @@
 export default async function handler(req, res) {
-  const clientId = process.env.GOOGLE_CLIENT_ID;
-  const redirectUri = process.env.GOOGLE_REDIRECT_URI;
+  const clientId = (process.env.GOOGLE_CLIENT_ID || '').trim();
+  const redirectUri = (process.env.GOOGLE_REDIRECT_URI || '').trim();
   
   if (!clientId || !redirectUri || clientId === 'your_google_client_id_here') {
     return res.status(500).json({ 
@@ -20,14 +20,17 @@ export default async function handler(req, res) {
   
   // In a real implementation, we would store this state in a secure cookie or session
   
-  const googleUrl = `https://accounts.google.com/o/oauth2/v2/auth?` + 
-    `response_type=code` +
-    `&client_id=${clientId}` +
-    `&redirect_uri=${encodeURIComponent(redirectUri)}` +
-    `&scope=${encodeURIComponent(scopes.join(' '))}` +
-    `&state=${state}` +
-    `&access_type=offline` +
-    `&prompt=consent`;
+  const params = new URLSearchParams({
+    response_type: 'code',
+    client_id: clientId,
+    redirect_uri: redirectUri,
+    scope: scopes.join(' '),
+    state,
+    access_type: 'offline',
+    prompt: 'consent',
+  });
+
+  const googleUrl = `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
   
-  res.redirect(googleUrl);
+  res.redirect(302, googleUrl);
 }
