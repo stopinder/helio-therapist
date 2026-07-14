@@ -2,8 +2,11 @@ export default async function handler(req, res) {
   const clientId = process.env.GOOGLE_CLIENT_ID;
   const redirectUri = process.env.GOOGLE_REDIRECT_URI;
   
-  if (!clientId || !redirectUri) {
-    return res.status(500).json({ error: 'Google configuration missing' });
+  if (!clientId || !redirectUri || clientId === 'your_google_client_id_here') {
+    return res.status(500).json({ 
+      error: 'Google configuration missing',
+      details: 'Check GOOGLE_CLIENT_ID and GOOGLE_REDIRECT_URI in .env.local'
+    });
   }
 
   // Scopes for Google Calendar
