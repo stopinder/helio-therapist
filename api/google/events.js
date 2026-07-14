@@ -9,7 +9,7 @@ export default async function handler(req, res) {
       .from('integrations')
       .select('*')
       .eq('provider', 'google')
-      .single();
+      .maybeSingle();
 
     if (dbError) {
       console.error('[Google Calendar] Database error:', dbError);
@@ -20,10 +20,9 @@ export default async function handler(req, res) {
     }
 
     if (!integration) {
-      console.warn('[Google Calendar] Integration not found');
       return res.status(401).json({ 
-        error: 'Google Calendar not connected',
-        details: 'No integration record found in database'
+        error: 'Google Calendar is not connected',
+        code: 'GOOGLE_CONNECTION_NOT_FOUND'
       });
     }
 

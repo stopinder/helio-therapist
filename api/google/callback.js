@@ -42,7 +42,6 @@ export default async function handler(req, res) {
     }
 
     // 3. Store in Supabase integrations table
-    // We store the whole token object (access_token, refresh_token, expiry, etc.)
     const { error: upsertError } = await supabase.from('integrations').upsert({
       provider: 'google',
       email: email,
@@ -55,8 +54,6 @@ export default async function handler(req, res) {
       const msg = encodeURIComponent(upsertError.message || 'Database storage failed');
       return res.redirect(`/?google=error&message=${msg}`);
     }
-
-    console.log('Google integration successful for:', email);
     
     // Redirect back to Settings with a success flag and email
     res.redirect(`/?google=success&email=${encodeURIComponent(email)}`);

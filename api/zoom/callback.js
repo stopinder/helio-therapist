@@ -8,8 +8,6 @@ export default async function handler(req, res) {
   // For Phase 1/2 Personal Test:
   // We'll simulate success and redirect back to settings
   
-  console.log('Zoom callback received code:', code);
-  
   // In a real flow, we'd do the POST to https://zoom.us/oauth/token here
   
   // Redirect back to Settings with a success flag
