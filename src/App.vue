@@ -170,9 +170,12 @@
             </div>
           </div>
 
-          <div v-else-if="selectedNav === 'Settings'" class="h-full">
-            <Settings />
-          </div>
+            <div v-else-if="selectedNav === 'Reports'" class="h-full flex flex-col items-center justify-center text-slate-400">
+              <h1 class="text-2xl font-bold mb-6 text-[#2c3e50]">Reports</h1>
+              <p>Reports content goes here</p>
+            </div>
+
+            <Settings v-else-if="selectedNav === 'Settings'" />
 
           <template v-else>
             <!-- Persistent Client Header -->
