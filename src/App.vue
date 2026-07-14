@@ -112,8 +112,61 @@
         >
           <div v-if="selectedNav === 'Today'" class="h-full flex flex-col">
             <h1 class="text-2xl font-bold mb-6 text-[#2c3e50]">Today’s Schedule</h1>
-            <div class="flex-1 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center text-gray-400">
-              Schedule content goes here
+            
+            <div v-if="calendarLoading" class="flex-1 flex flex-col items-center justify-center text-slate-400 space-y-4">
+              <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+              <p class="text-sm">Fetching your schedule...</p>
+            </div>
+
+            <div v-else-if="calendarError" class="flex-1 flex flex-col items-center justify-center p-8 text-center bg-red-50 rounded-xl border border-red-100">
+              <div class="text-red-500 text-4xl mb-4">⚠️</div>
+              <h3 class="text-lg font-semibold text-red-900 mb-2">Calendar Sync Issue</h3>
+              <p class="text-red-700 mb-6 max-w-md">{{ calendarError }}</p>
+              <button 
+                @click="selectedNav = 'Settings'" 
+                class="px-6 py-2 bg-white border border-red-200 text-red-700 rounded-lg font-medium hover:bg-red-100 transition shadow-sm"
+              >
+                Reconnect Google Calendar
+              </button>
+            </div>
+
+            <div v-else-if="events.length === 0" class="flex-1 border-2 border-dashed border-gray-200 rounded-xl flex flex-col items-center justify-center p-12 text-center bg-white">
+              <div class="text-4xl mb-4 opacity-20">📅</div>
+              <h3 class="text-lg font-medium text-slate-600 mb-1">Your schedule is clear</h3>
+              <p class="text-slate-400 text-sm">No events found for today in your primary calendar.</p>
+            </div>
+
+            <div v-else class="flex-1 space-y-3 overflow-y-auto pr-2 custom-scrollbar">
+              <div 
+                v-for="event in events" 
+                :key="event.id"
+                class="group bg-white border border-slate-100 p-4 rounded-xl shadow-sm hover:shadow-md hover:border-blue-100 transition-all flex items-center justify-between gap-4"
+              >
+                <div class="flex items-center gap-4 min-w-0">
+                  <div class="flex-shrink-0 w-12 text-center">
+                    <div class="text-[11px] font-bold text-blue-600 uppercase tracking-tighter">{{ formatTime(event.start).period }}</div>
+                    <div class="text-[16px] font-black text-slate-800 leading-none">{{ formatTime(event.start).time }}</div>
+                  </div>
+                  <div class="min-w-0">
+                    <h3 class="text-[15px] font-semibold text-slate-800 truncate">{{ event.summary }}</h3>
+                    <p class="text-[12px] text-slate-500 flex items-center gap-1.5 mt-0.5">
+                      <span class="inline-block w-1 h-1 rounded-full bg-slate-300"></span>
+                      {{ formatEventTimeRange(event) }}
+                    </p>
+                  </div>
+                </div>
+                <a 
+                  v-if="event.link" 
+                  :href="event.link" 
+                  target="_blank" 
+                  class="flex-shrink-0 p-2 text-slate-400 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition"
+                  title="View in Google Calendar"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
+                  </svg>
+                </a>
+              </div>
             </div>
           </div>
 
@@ -251,6 +304,53 @@ const selectedNav = ref("Today")
 const activeTool = ref(null)
 const activeTemplate = ref(null)
 const reflectionMode = ref("new")
+
+// --- Google Calendar ---
+const events = ref([])
+const calendarLoading = ref(false)
+const calendarError = ref(null)
+
+const fetchCalendarEvents = async () => {
+  calendarLoading.value = true
+  calendarError.value = null
+  try {
+    const response = await fetch('/api/google/events')
+    const data = await response.json()
+    if (!response.ok) {
+      throw new Error(data.error || 'Failed to fetch events')
+    }
+    events.value = data.events
+  } catch (err) {
+    console.error('Calendar fetch error:', err)
+    calendarError.value = err.message
+  } finally {
+    calendarLoading.value = false
+  }
+}
+
+const formatTime = (dateStr) => {
+  const date = new Date(dateStr)
+  let hours = date.getHours()
+  const minutes = date.getMinutes()
+  const period = hours >= 12 ? 'PM' : 'AM'
+  hours = hours % 12 || 12
+  return {
+    time: `${hours}:${minutes.toString().padStart(2, '0')}`,
+    period
+  }
+}
+
+const formatEventTimeRange = (event) => {
+  const start = formatTime(event.start)
+  const end = formatTime(event.end)
+  return `${start.time}${start.period} – ${end.time}${end.period}`
+}
+
+watch(selectedNav, (newNav) => {
+  if (newNav === 'Today') {
+    fetchCalendarEvents()
+  }
+})
 
 // --- AI Drawer ---
 const showAIDrawer = ref(false)
@@ -482,6 +582,10 @@ onMounted(() => {
     isRightPanelOpen.value = false
     nextTick(() => { isRightPanelOpen.value = true })
   })
+  
+  if (selectedNav.value === 'Today') {
+    fetchCalendarEvents()
+  }
 })
 </script>
 
