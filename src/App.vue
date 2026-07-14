@@ -318,11 +318,19 @@ const fetchCalendarEvents = async () => {
   calendarError.value = null
   try {
     const response = await fetch('/api/google/events')
-    const data = await response.json()
-    if (!response.ok) {
-      throw new Error(data.error || 'Failed to fetch events')
+    const contentType = response.headers.get('content-type')
+    
+    if (contentType && contentType.includes('application/json')) {
+      const data = await response.json()
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to fetch events')
+      }
+      events.value = data.events
+    } else {
+      const text = await response.text()
+      console.error('Non-JSON response received:', text)
+      throw new Error('Server returned an invalid response format. Please try again later.')
     }
-    events.value = data.events
   } catch (err) {
     console.error('Calendar fetch error:', err)
     calendarError.value = err.message

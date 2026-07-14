@@ -11,18 +11,31 @@ export default async function handler(req, res) {
       .eq('provider', 'google')
       .single();
 
-    if (dbError || !integration) {
-      console.error('[Google Calendar] Integration not found:', dbError);
-      return res.status(401).json({ error: 'Google Calendar not connected' });
+    if (dbError) {
+      console.error('[Google Calendar] Database error:', dbError);
+      return res.status(500).json({ 
+        error: 'Database error', 
+        details: dbError.message 
+      });
+    }
+
+    if (!integration) {
+      console.warn('[Google Calendar] Integration not found');
+      return res.status(401).json({ 
+        error: 'Google Calendar not connected',
+        details: 'No integration record found in database'
+      });
     }
 
     let { credentials } = integration;
+    if (!credentials || !credentials.access_token) {
+      console.warn('[Google Calendar] Credentials missing');
+      return res.status(401).json({ 
+        error: 'Google Calendar not connected',
+        details: 'Stored credentials are empty or invalid'
+      });
+    }
 
-    // 2. Check if token needs refresh (simplified check)
-    // In a production app, we'd check credentials.expiry_date
-    // For now, we'll try to use it and refresh if we get a 401.
-    // Or we can proactively refresh if we want to be safe.
-    
     let accessToken = credentials.access_token;
 
     const fetchEvents = async (token) => {
@@ -47,12 +60,24 @@ export default async function handler(req, res) {
     // 3. If 401, try to refresh
     if (response.status === 401 && credentials.refresh_token) {
       console.log('[Google Calendar] Access token expired, refreshing...');
+      
+      const clientId = (process.env.GOOGLE_CLIENT_ID || '').trim();
+      const clientSecret = (process.env.GOOGLE_CLIENT_SECRET || '').trim();
+
+      if (!clientId || !clientSecret || clientId === 'your_google_client_id_here') {
+        console.error('[Google Calendar] Google configuration missing during refresh');
+        return res.status(500).json({ 
+          error: 'Google configuration missing', 
+          details: 'Server environment variables not configured correctly'
+        });
+      }
+
       const refreshResponse = await fetch('https://oauth2.googleapis.com/token', {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: new URLSearchParams({
-          client_id: (process.env.GOOGLE_CLIENT_ID || '').trim(),
-          client_secret: (process.env.GOOGLE_CLIENT_SECRET || '').trim(),
+          client_id: clientId,
+          client_secret: clientSecret,
           refresh_token: credentials.refresh_token,
           grant_type: 'refresh_token'
         })
@@ -62,33 +87,52 @@ export default async function handler(req, res) {
         const newTokens = await refreshResponse.json();
         // Update credentials in DB
         credentials = { ...credentials, ...newTokens };
-        await supabase
+        const { error: updateError } = await supabase
           .from('integrations')
           .update({ credentials })
           .eq('provider', 'google');
+        
+        if (updateError) {
+          console.error('[Google Calendar] Failed to update tokens in DB:', updateError);
+          // We can still continue if we have the new token
+        }
         
         accessToken = newTokens.access_token;
         // Retry fetch
         response = await fetchEvents(accessToken);
       } else {
-        const refreshError = await refreshResponse.json();
+        const refreshError = await refreshResponse.json().catch(() => ({}));
         console.error('[Google Calendar] Token refresh failed:', refreshError);
-        return res.status(403).json({ error: 'Session expired, please reconnect' });
+        return res.status(403).json({ 
+          error: 'Session expired, please reconnect',
+          details: refreshError.error_description || refreshError.error || 'Refresh token invalid'
+        });
       }
     }
 
     if (!response.ok) {
-      const errorData = await response.json();
+      const errorData = await response.json().catch(() => ({}));
       console.error('[Google Calendar] API error:', errorData);
-      return res.status(response.status).json({ error: 'Failed to fetch calendar events' });
+      return res.status(response.status).json({ 
+        error: 'Failed to fetch calendar events',
+        details: errorData.error?.message || response.statusText
+      });
     }
 
     const data = await response.json();
+    if (!data.items) {
+      console.warn('[Google Calendar] Unexpected API response format:', data);
+      return res.status(500).json({ 
+        error: 'Invalid response from Google',
+        details: 'Expected items array was missing'
+      });
+    }
+
     const events = data.items.map(event => ({
       id: event.id,
-      summary: event.summary,
-      start: event.start.dateTime || event.start.date,
-      end: event.end.dateTime || event.end.date,
+      summary: event.summary || '(No title)',
+      start: event.start?.dateTime || event.start?.date,
+      end: event.end?.dateTime || event.end?.date,
       link: event.htmlLink
     }));
 
@@ -96,7 +140,10 @@ export default async function handler(req, res) {
     return res.status(200).json({ events });
 
   } catch (error) {
-    console.error('[Google Calendar] Internal error:', error);
-    return res.status(500).json({ error: 'Internal server error' });
+    console.error('[Google Calendar] Fatal internal error:', error);
+    return res.status(500).json({ 
+      error: 'Internal server error',
+      details: error.message
+    });
   }
 }

@@ -22,9 +22,10 @@ export default async function handler(req, res) {
     });
 
     if (!tokenResponse.ok) {
-      const errorData = await tokenResponse.json();
+      const errorData = await tokenResponse.json().catch(() => ({}));
       console.error('Google token exchange failed:', errorData);
-      return res.redirect('/?google=error&message=Token+exchange+failed');
+      const msg = encodeURIComponent(errorData.error_description || errorData.error || 'Token exchange failed');
+      return res.redirect(`/?google=error&message=${msg}`);
     }
 
     const tokens = await tokenResponse.json();
@@ -51,7 +52,8 @@ export default async function handler(req, res) {
 
     if (upsertError) {
       console.error('Supabase upsert error:', upsertError);
-      return res.redirect('/?google=error&message=Database+storage+failed');
+      const msg = encodeURIComponent(upsertError.message || 'Database storage failed');
+      return res.redirect(`/?google=error&message=${msg}`);
     }
 
     console.log('Google integration successful for:', email);
@@ -60,6 +62,7 @@ export default async function handler(req, res) {
     res.redirect(`/?google=success&email=${encodeURIComponent(email)}`);
   } catch (error) {
     console.error('Google callback error:', error);
-    res.redirect('/?google=error&message=Internal+server+error');
+    const msg = encodeURIComponent(error.message || 'Internal server error');
+    res.redirect(`/?google=error&message=${msg}`);
   }
 }
