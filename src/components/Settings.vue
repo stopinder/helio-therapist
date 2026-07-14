@@ -19,12 +19,36 @@
             </div>
             <div class="min-w-0 flex-1">
               <div class="text-[15px] font-medium text-[#2c3e50] break-words">Google Calendar</div>
-              <div class="text-[13px] text-slate-400 break-words">Not connected</div>
+              <div class="text-[13px] break-words" :class="googleStatus === 'Connected' ? 'text-green-600' : 'text-slate-400'">
+                <template v-if="googleStatus === 'Connected'">
+                  <div class="flex flex-col mt-1">
+                    <span class="font-medium text-green-600">✓ Connected</span>
+                    <span class="text-slate-500 text-[12px] leading-tight">{{ googleEmail }}</span>
+                    <span class="text-slate-400 text-[11px] leading-tight">Last synced: {{ lastSyncedGoogle }}</span>
+                  </div>
+                </template>
+                <template v-else>
+                  Not connected
+                </template>
+              </div>
             </div>
           </div>
-          <button class="w-full sm:w-auto min-h-[44px] sm:min-h-0 px-4 py-2 sm:py-1.5 text-[13px] font-medium text-[#2563eb] hover:bg-[#eff6ff] rounded-md transition border border-transparent hover:border-[#dbeafe] text-center">
-            Connect
-          </button>
+          <div class="flex items-center gap-2 w-full sm:w-auto">
+            <template v-if="googleStatus === 'Connected'">
+              <button @click="disconnectGoogle" class="w-full sm:w-auto min-h-[44px] sm:min-h-0 px-4 py-2 sm:py-1.5 text-[13px] font-medium text-slate-500 hover:text-red-500 transition text-center">
+                Disconnect
+              </button>
+            </template>
+            <template v-else>
+              <button 
+                @click="connectGoogle" 
+                :disabled="isConnectingGoogle"
+                class="w-full sm:w-auto min-h-[44px] sm:min-h-0 px-4 py-2 sm:py-1.5 text-[13px] font-medium text-[#2563eb] hover:bg-[#eff6ff] rounded-md transition border border-transparent hover:border-[#dbeafe] disabled:opacity-50 text-center"
+              >
+                {{ isConnectingGoogle ? 'Connecting...' : 'Connect' }}
+              </button>
+            </template>
+          </div>
         </div>
 
         <!-- Zoom -->
@@ -90,11 +114,10 @@
       </section>
     </div>
 
-    <!-- Success Feedback Overlay -->
     <transition name="fade">
       <div v-if="showSuccess" class="fixed bottom-8 left-1/2 transform -translate-x-1/2 bg-slate-900 text-white px-6 py-3 rounded-full shadow-2xl flex items-center gap-3 z-50">
         <span class="text-green-400">✓</span>
-        <span class="text-[14px] font-medium">Zoom connected successfully</span>
+        <span class="text-[14px] font-medium">{{ successMessage }}</span>
       </div>
     </transition>
   </div>
@@ -105,34 +128,66 @@ import { ref, onMounted } from 'vue'
 
 const zoomStatus = ref('Not connected')
 const isConnecting = ref(false)
+const googleStatus = ref('Not connected')
+const googleEmail = ref('')
+const lastSyncedGoogle = ref('Never')
+const isConnectingGoogle = ref(false)
 const showSuccess = ref(false)
+const successMessage = ref('')
 
 onMounted(() => {
   // Check if we returned from OAuth with success
   const params = new URLSearchParams(window.location.search)
+  
+  // Zoom check
   if (params.get('zoom') === 'success') {
     zoomStatus.value = 'Connected'
+    successMessage.value = 'Zoom connected successfully'
     showSuccess.value = true
-    
-    // Clean up URL
-    window.history.replaceState({}, document.title, window.location.pathname)
-    
-    setTimeout(() => {
-      showSuccess.value = false
-    }, 3000)
+    cleanupUrl()
+  }
+  
+  // Google check
+  if (params.get('google') === 'success') {
+    googleStatus.value = 'Connected'
+    googleEmail.value = params.get('email') || 'Connected'
+    lastSyncedGoogle.value = new Date().toLocaleString()
+    successMessage.value = 'Google Calendar connected successfully'
+    showSuccess.value = true
+    cleanupUrl()
   }
 })
 
+const cleanupUrl = () => {
+  // Clean up URL
+  window.history.replaceState({}, document.title, window.location.pathname)
+  
+  setTimeout(() => {
+    showSuccess.value = false
+  }, 3000)
+}
+
 const connectZoom = () => {
   isConnecting.value = true
-  // In a real flow, this redirects to the backend authorize endpoint
   window.location.href = '/api/zoom/authorize'
 }
 
 const disconnectZoom = async () => {
   if (confirm('Disconnect Zoom?')) {
     zoomStatus.value = 'Not connected'
-    // Logic to call /api/zoom/disconnect would go here
+  }
+}
+
+const connectGoogle = () => {
+  isConnectingGoogle.value = true
+  window.location.href = '/api/google/authorize'
+}
+
+const disconnectGoogle = async () => {
+  if (confirm('Disconnect Google Calendar?')) {
+    googleStatus.value = 'Not connected'
+    googleEmail.value = ''
+    lastSyncedGoogle.value = 'Never'
   }
 }
 </script>
