@@ -93,14 +93,19 @@ export default async function handler(req, res) {
     console.log('[Google Callback] Tokens received');
 
     // 2. Store in Supabase integrations table
-    // FUTURE MIGRATION: Link this to a user_id when Supabase Auth is added.
+    // Match the flat schema identified: access_token, refresh_token, expires_at, etc.
     const integrationData = {
+      user_id: '00000000-0000-0000-0000-000000000000', // Temporary placeholder for required UUID
       provider: 'google',
-      credentials: tokens,
-      last_synced_at: new Date().toISOString()
+      access_token: tokens.access_token,
+      refresh_token: tokens.refresh_token,
+      expires_at: tokens.expires_in ? new Date(Date.now() + tokens.expires_in * 1000).toISOString() : null,
+      token_type: tokens.token_type,
+      scope: tokens.scope,
+      updated_at: new Date().toISOString()
     };
 
-    console.log('[Google Callback] Upserting to Supabase:', JSON.stringify({ ...integrationData, credentials: 'REDACTED' }));
+    console.log('[Google Callback] Upserting to Supabase:', JSON.stringify({ ...integrationData, access_token: 'REDACTED', refresh_token: 'REDACTED' }));
 
     const { data: upsertData, error: upsertError } = await supabase
       .from('integrations')
@@ -109,12 +114,22 @@ export default async function handler(req, res) {
 
     if (upsertError) {
       console.error('[Google Callback] Supabase upsert error:', JSON.stringify(upsertError));
-      const msg = encodeURIComponent(upsertError.message || 'Database storage failed');
-      const details = encodeURIComponent(JSON.stringify(upsertError));
-      return res.redirect(`/?google=error&message=${msg}&details=${details}`);
+      // Fallback: Try a minimal upsert if the schema is strictly id/user_id/provider/credentials
+      console.log('[Google Callback] Retrying with legacy schema');
+      const legacyData = {
+        provider: 'google',
+        credentials: tokens,
+        last_synced_at: new Date().toISOString()
+      };
+      const { error: legacyError } = await supabase
+        .from('integrations')
+        .upsert(legacyData, { onConflict: 'provider' });
+
+      if (legacyError) {
+        const msg = encodeURIComponent(upsertError.message || legacyError.message || 'Database storage failed');
+        return res.redirect(`/?google=error&message=${msg}`);
+      }
     }
-    
-    console.log('[Google Callback] Upsert successful:', JSON.stringify(upsertData));
     
     // Redirect back to Settings with a success flag
     res.redirect(`/?google=success`);
