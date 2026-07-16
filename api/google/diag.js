@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
+import { getSupabaseClient } from '../_lib/supabase.js';
 
 export default async function handler(req, res) {
   const results = {
@@ -16,14 +16,7 @@ export default async function handler(req, res) {
   };
 
   try {
-    const url = (process.env.SUPABASE_URL || '').trim();
-    const key = (process.env.SUPABASE_SERVICE_ROLE_KEY || '').trim();
-
-    if (!url || !key) {
-      throw new Error('SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY is missing');
-    }
-
-    const supabase = createClient(url, key);
+    const supabase = getSupabaseClient();
     results.supabase_initialized = true;
 
     const { data, error } = await supabase

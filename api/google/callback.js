@@ -1,4 +1,4 @@
-// Removing global supabase import to initialize inside handler
+import { getSupabaseClient } from '../_lib/supabase.js';
 import * as cookie from 'cookie';
 import crypto from 'crypto';
 
@@ -7,20 +7,20 @@ export default async function handler(req, res) {
     const { code, state } = req.query;
     
     // Check for required environment variables
-    const supabaseUrl = (process.env.SUPABASE_URL || '').trim();
-    const serviceKey = (process.env.SUPABASE_SERVICE_ROLE_KEY || '').trim();
     const clientId = (process.env.GOOGLE_CLIENT_ID || '').trim();
     const clientSecret = (process.env.GOOGLE_CLIENT_SECRET || '').trim();
     const redirectUri = (process.env.GOOGLE_REDIRECT_URI || '').trim();
-    const stateSecret = (process.env.OAUTH_STATE_SECRET || serviceKey || '').trim();
-
-    if (!supabaseUrl || !serviceKey) {
-      console.error('[Google Callback] Missing Supabase configuration');
-      return res.redirect('/?google=error&message=Server+configuration+error');
+    
+    // Initialize Supabase
+    let supabase;
+    try {
+      supabase = getSupabaseClient();
+    } catch (err) {
+      console.error('[Google Callback] Supabase initialization failed:', err.message);
+      return res.redirect(`/?google=error&message=${encodeURIComponent(err.message)}`);
     }
 
-    const { createClient } = await import('@supabase/supabase-js');
-    const supabase = createClient(supabaseUrl, serviceKey);
+    const stateSecret = (process.env.OAUTH_STATE_SECRET || process.env.SUPABASE_SERVICE_ROLE_KEY || '').trim();
 
     if (!stateSecret) {
       console.error('[Google Callback] Missing OAUTH_STATE_SECRET');

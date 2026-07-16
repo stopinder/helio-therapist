@@ -1,5 +1,4 @@
-import * as cookie from 'cookie';
-// Removing global supabase import to initialize inside handler
+import { getSupabaseClient } from '../_lib/supabase.js';
 
 export default async function handler(req, res) {
   if (req.method !== 'GET') {
@@ -7,19 +6,17 @@ export default async function handler(req, res) {
   }
 
   try {
-    const supabaseUrl = (process.env.SUPABASE_URL || '').trim();
-    const supabaseServiceKey = (process.env.SUPABASE_SERVICE_ROLE_KEY || '').trim();
-    
-    if (!supabaseUrl || !supabaseServiceKey) {
-      console.error('[Google Status] Supabase configuration missing');
+    // Initialize Supabase
+    let supabase;
+    try {
+      supabase = getSupabaseClient();
+    } catch (err) {
+      console.error('[Google Status] Supabase initialization failed:', err.message);
       return res.status(500).json({ 
         error: 'Database connection failed',
-        details: 'Supabase configuration is missing on the server.'
+        details: err.message
       });
     }
-
-    const { createClient } = await import('@supabase/supabase-js');
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     // 1. Get integration from Supabase
     // FUTURE MIGRATION: Query by user_id when Supabase Auth is introduced.

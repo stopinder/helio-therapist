@@ -1,8 +1,20 @@
+import { getSupabaseClient } from '../_lib/supabase.js';
 import * as cookie from 'cookie';
 import crypto from 'crypto';
 
 export default async function handler(req, res) {
   try {
+    // Validate Supabase config first
+    try {
+      getSupabaseClient();
+    } catch (err) {
+      console.error('[Google Authorize] Supabase initialization failed:', err.message);
+      return res.status(500).json({ 
+        error: 'Server configuration error',
+        details: err.message
+      });
+    }
+
     const clientId = (process.env.GOOGLE_CLIENT_ID || '').trim();
     const redirectUri = (process.env.GOOGLE_REDIRECT_URI || '').trim();
     const serviceKey = (process.env.SUPABASE_SERVICE_ROLE_KEY || '').trim();
