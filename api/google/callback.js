@@ -90,6 +90,7 @@ export default async function handler(req, res) {
     }
 
     const tokens = await tokenResponse.json();
+    console.log('[Google Callback] Tokens received');
 
     // 2. Store in Supabase integrations table
     // FUTURE MIGRATION: Link this to a user_id when Supabase Auth is added.
@@ -99,15 +100,21 @@ export default async function handler(req, res) {
       last_synced_at: new Date().toISOString()
     };
 
-    const { error: upsertError } = await supabase
+    console.log('[Google Callback] Upserting to Supabase:', JSON.stringify({ ...integrationData, credentials: 'REDACTED' }));
+
+    const { data: upsertData, error: upsertError } = await supabase
       .from('integrations')
-      .upsert(integrationData, { onConflict: 'provider' });
+      .upsert(integrationData, { onConflict: 'provider' })
+      .select();
 
     if (upsertError) {
-      console.error('Supabase upsert error:', upsertError);
+      console.error('[Google Callback] Supabase upsert error:', JSON.stringify(upsertError));
       const msg = encodeURIComponent(upsertError.message || 'Database storage failed');
-      return res.redirect(`/?google=error&message=${msg}`);
+      const details = encodeURIComponent(JSON.stringify(upsertError));
+      return res.redirect(`/?google=error&message=${msg}&details=${details}`);
     }
+    
+    console.log('[Google Callback] Upsert successful:', JSON.stringify(upsertData));
     
     // Redirect back to Settings with a success flag
     res.redirect(`/?google=success`);

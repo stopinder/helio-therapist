@@ -35,6 +35,28 @@ export default async function handler(req, res) {
       results.query_success = true;
       results.data_sample = data;
     }
+
+    // Try to test upsert with dummy data
+    const dummy = {
+      provider: 'test_diag_' + Date.now(),
+      credentials: { test: true },
+      last_synced_at: new Date().toISOString()
+    };
+    const { data: upsertData, error: upsertError } = await supabase
+      .from('integrations')
+      .upsert(dummy)
+      .select();
+    
+    results.upsert_test = {
+      success: !upsertError,
+      error: upsertError,
+      data: upsertData
+    };
+
+    // Cleanup dummy
+    if (!upsertError) {
+      await supabase.from('integrations').delete().eq('provider', dummy.provider);
+    }
   } catch (err) {
     results.error = {
       message: err.message,
