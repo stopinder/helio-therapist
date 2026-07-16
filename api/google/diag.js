@@ -47,11 +47,25 @@ export default async function handler(req, res) {
       data: colsData
     };
 
+    // Try to find a user_id
+    const { data: userData, error: userError } = await supabase
+      .from('profiles')
+      .select('id')
+      .limit(1);
+    
+    results.profiles_sample = { data: userData, error: userError };
+
+    const targetUserId = userData?.[0]?.id || '00000000-0000-0000-0000-000000000000';
+
     // Try to test upsert with dummy data
     const dummy = {
+      user_id: targetUserId,
       provider: 'test_diag_' + Date.now(),
-      // credentials: { test: true }, 
-      // last_synced_at: new Date().toISOString()
+      access_token: 'test_token',
+      refresh_token: 'test_refresh',
+      expires_at: new Date(Date.now() + 3600000).toISOString(),
+      token_type: 'Bearer',
+      scope: 'test_scope'
     };
     const { data: upsertData, error: upsertError } = await supabase
       .from('integrations')
