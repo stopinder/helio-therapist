@@ -76,17 +76,40 @@ export default async function handler(req, res) {
 
     // 3. Store in Supabase integrations table
     // FUTURE MIGRATION: Link this to a user_id when Supabase Auth is added.
-    const { error: upsertError } = await supabase.from('integrations').upsert({
+    const integrationData = {
       provider: 'google',
-      email: email,
       credentials: tokens,
       last_synced_at: new Date().toISOString()
-    }, { onConflict: 'provider' });
+    };
+
+    // Only add email if we have it
+    if (email && email !== 'Connected') {
+      integrationData.email = email;
+    }
+
+    const { error: upsertError } = await supabase
+      .from('integrations')
+      .upsert(integrationData, { onConflict: 'provider' });
 
     if (upsertError) {
-      console.error('Supabase upsert error:', upsertError);
-      const msg = encodeURIComponent(upsertError.message || 'Database storage failed');
-      return res.redirect(`/?google=error&message=${msg}`);
+      // If the error is about a missing email column, try again without it
+      if (upsertError.message && upsertError.message.includes('column "email" does not exist')) {
+        console.warn('[Google Callback] "email" column missing in integrations table. Retrying without it.');
+        delete integrationData.email;
+        const { error: retryError } = await supabase
+          .from('integrations')
+          .upsert(integrationData, { onConflict: 'provider' });
+        
+        if (retryError) {
+          console.error('Supabase retry upsert error:', retryError);
+          const msg = encodeURIComponent(retryError.message || 'Database storage failed');
+          return res.redirect(`/?google=error&message=${msg}`);
+        }
+      } else {
+        console.error('Supabase upsert error:', upsertError);
+        const msg = encodeURIComponent(upsertError.message || 'Database storage failed');
+        return res.redirect(`/?google=error&message=${msg}`);
+      }
     }
     
     // Redirect back to Settings with a success flag and email
