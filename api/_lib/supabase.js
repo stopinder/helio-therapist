@@ -3,8 +3,10 @@ import { createClient } from '@supabase/supabase-js';
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-if (!supabaseUrl || !supabaseServiceKey) {
-  console.error('Supabase configuration missing: SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY is not set.');
-}
+export const supabase = (supabaseUrl && supabaseServiceKey) 
+  ? createClient(supabaseUrl, supabaseServiceKey)
+  : null;
 
-export const supabase = createClient(supabaseUrl, supabaseServiceKey);
+if (!supabase) {
+  console.error('Supabase client failed to initialize: SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY is missing.');
+}

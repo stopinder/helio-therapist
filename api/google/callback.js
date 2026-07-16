@@ -3,31 +3,44 @@ import { parse } from 'cookie';
 import crypto from 'crypto';
 
 export default async function handler(req, res) {
-  const { code, state } = req.query;
-  const cookies = parse(req.headers.cookie || '');
-  const storedState = cookies.google_oauth_state;
-
-  // 0. Validate state (CSRF protection)
-  if (!state || state !== storedState) {
-    console.error('State mismatch or missing');
-    return res.redirect('/?google=error&message=Security+validation+failed');
-  }
-
-  // Verify the signature of the state
-  const [value, signature] = state.split('.');
-  const hmac = crypto.createHmac('sha256', process.env.SUPABASE_SERVICE_ROLE_KEY);
-  const expectedSignature = hmac.update(value).digest('hex');
-
-  if (signature !== expectedSignature) {
-    console.error('State signature invalid');
-    return res.redirect('/?google=error&message=Security+validation+failed');
-  }
-  
-  if (!code) {
-    return res.redirect('/?google=error&message=No+code+provided');
-  }
-
   try {
+    const { code, state } = req.query;
+    
+    // Check for required environment variables
+    const serviceKey = (process.env.SUPABASE_SERVICE_ROLE_KEY || '').trim();
+    if (!serviceKey) {
+      console.error('[Google Callback] Missing SUPABASE_SERVICE_ROLE_KEY');
+      return res.redirect('/?google=error&message=Server+configuration+error');
+    }
+
+    if (!supabase) {
+      console.error('[Google Callback] Supabase client not initialized');
+      return res.redirect('/?google=error&message=Database+connection+failed');
+    }
+
+    const cookies = parse(req.headers.cookie || '');
+    const storedState = cookies.google_oauth_state;
+
+    // 0. Validate state (CSRF protection)
+    if (!state || state !== storedState) {
+      console.error('State mismatch or missing');
+      return res.redirect('/?google=error&message=Security+validation+failed');
+    }
+
+    // Verify the signature of the state
+    const [value, signature] = state.split('.');
+    const hmac = crypto.createHmac('sha256', serviceKey);
+    const expectedSignature = hmac.update(value).digest('hex');
+
+    if (signature !== expectedSignature) {
+      console.error('State signature invalid');
+      return res.redirect('/?google=error&message=Security+validation+failed');
+    }
+    
+    if (!code) {
+      return res.redirect('/?google=error&message=No+code+provided');
+    }
+
     // 1. Exchange code for tokens
     const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
       method: 'POST',

@@ -6,6 +6,14 @@ export default async function handler(req, res) {
   }
 
   try {
+    if (!supabase) {
+      console.error('[Google Status] Supabase client not initialized');
+      return res.status(500).json({ 
+        error: 'Database connection failed',
+        details: 'Supabase configuration is missing on the server.'
+      });
+    }
+
     // 1. Get integration from Supabase
     // FUTURE MIGRATION: Query by user_id when Supabase Auth is introduced.
     const { data: integration, error: dbError } = await supabase
