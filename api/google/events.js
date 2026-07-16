@@ -1,16 +1,22 @@
-import { supabase } from '../_lib/supabase.js';
+// Removing global supabase import to initialize inside handler
 
 export default async function handler(req, res) {
   console.log('[Google Calendar] Fetching events...');
   
   try {
-    if (!supabase) {
-      console.error('[Google Calendar] Supabase client not initialized');
+    const supabaseUrl = (process.env.SUPABASE_URL || '').trim();
+    const supabaseServiceKey = (process.env.SUPABASE_SERVICE_ROLE_KEY || '').trim();
+
+    if (!supabaseUrl || !supabaseServiceKey) {
+      console.error('[Google Calendar] Supabase configuration missing');
       return res.status(500).json({ 
         error: 'Database connection failed',
         details: 'Supabase configuration is missing on the server.'
       });
     }
+
+    const { createClient } = await import('@supabase/supabase-js');
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     // 1. Get credentials from Supabase
     // FUTURE MIGRATION: Query by user_id when Supabase Auth is introduced.

@@ -1,5 +1,5 @@
-import { supabase } from '../_lib/supabase.js';
-import { parse } from 'cookie';
+// Removing global supabase import to initialize inside handler
+import * as cookie from 'cookie';
 import crypto from 'crypto';
 
 export default async function handler(req, res) {
@@ -7,13 +7,23 @@ export default async function handler(req, res) {
     const { code, state } = req.query;
     
     // Check for required environment variables
+    const supabaseUrl = (process.env.SUPABASE_URL || '').trim();
     const serviceKey = (process.env.SUPABASE_SERVICE_ROLE_KEY || '').trim();
     const clientId = (process.env.GOOGLE_CLIENT_ID || '').trim();
     const clientSecret = (process.env.GOOGLE_CLIENT_SECRET || '').trim();
     const redirectUri = (process.env.GOOGLE_REDIRECT_URI || '').trim();
+    const stateSecret = (process.env.OAUTH_STATE_SECRET || serviceKey || '').trim();
 
-    if (!serviceKey) {
-      console.error('[Google Callback] Missing SUPABASE_SERVICE_ROLE_KEY');
+    if (!supabaseUrl || !serviceKey) {
+      console.error('[Google Callback] Missing Supabase configuration');
+      return res.redirect('/?google=error&message=Server+configuration+error');
+    }
+
+    const { createClient } = await import('@supabase/supabase-js');
+    const supabase = createClient(supabaseUrl, serviceKey);
+
+    if (!stateSecret) {
+      console.error('[Google Callback] Missing OAUTH_STATE_SECRET');
       return res.redirect('/?google=error&message=Server+configuration+error');
     }
 
@@ -32,12 +42,7 @@ export default async function handler(req, res) {
       return res.redirect('/?google=error&message=Google+configuration+missing');
     }
 
-    if (!supabase) {
-      console.error('[Google Callback] Supabase client not initialized');
-      return res.redirect('/?google=error&message=Database+connection+failed');
-    }
-
-    const cookies = parse(req.headers.cookie || '');
+    const cookies = cookie.parse(req.headers.cookie || '');
     const storedState = cookies.google_oauth_state;
 
     // 0. Validate state (CSRF protection)
@@ -48,7 +53,7 @@ export default async function handler(req, res) {
 
     // Verify the signature of the state
     const [value, signature] = state.split('.');
-    const hmac = crypto.createHmac('sha256', serviceKey);
+    const hmac = crypto.createHmac('sha256', stateSecret);
     const expectedSignature = hmac.update(value).digest('hex');
 
     if (signature !== expectedSignature) {
