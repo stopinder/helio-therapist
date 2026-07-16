@@ -63,18 +63,7 @@ export default async function handler(req, res) {
 
     const tokens = await tokenResponse.json();
 
-    // 2. Fetch user email for display
-    const userResponse = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
-      headers: { Authorization: `Bearer ${tokens.access_token}` }
-    });
-    
-    let email = 'Connected';
-    if (userResponse.ok) {
-      const userData = await userResponse.json();
-      email = userData.email;
-    }
-
-    // 3. Store in Supabase integrations table
+    // 2. Store in Supabase integrations table
     // FUTURE MIGRATION: Link this to a user_id when Supabase Auth is added.
     const integrationData = {
       provider: 'google',
@@ -82,38 +71,18 @@ export default async function handler(req, res) {
       last_synced_at: new Date().toISOString()
     };
 
-    // Only add email if we have it
-    if (email && email !== 'Connected') {
-      integrationData.email = email;
-    }
-
     const { error: upsertError } = await supabase
       .from('integrations')
       .upsert(integrationData, { onConflict: 'provider' });
 
     if (upsertError) {
-      // If the error is about a missing email column, try again without it
-      if (upsertError.message && upsertError.message.includes('column "email" does not exist')) {
-        console.warn('[Google Callback] "email" column missing in integrations table. Retrying without it.');
-        delete integrationData.email;
-        const { error: retryError } = await supabase
-          .from('integrations')
-          .upsert(integrationData, { onConflict: 'provider' });
-        
-        if (retryError) {
-          console.error('Supabase retry upsert error:', retryError);
-          const msg = encodeURIComponent(retryError.message || 'Database storage failed');
-          return res.redirect(`/?google=error&message=${msg}`);
-        }
-      } else {
-        console.error('Supabase upsert error:', upsertError);
-        const msg = encodeURIComponent(upsertError.message || 'Database storage failed');
-        return res.redirect(`/?google=error&message=${msg}`);
-      }
+      console.error('Supabase upsert error:', upsertError);
+      const msg = encodeURIComponent(upsertError.message || 'Database storage failed');
+      return res.redirect(`/?google=error&message=${msg}`);
     }
     
-    // Redirect back to Settings with a success flag and email
-    res.redirect(`/?google=success&email=${encodeURIComponent(email)}`);
+    // Redirect back to Settings with a success flag
+    res.redirect(`/?google=success`);
   } catch (error) {
     console.error('Google callback error:', error);
     const msg = encodeURIComponent(error.message || 'Internal server error');

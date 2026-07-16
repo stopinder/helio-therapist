@@ -26,7 +26,6 @@
                 <template v-else-if="googleStatus === 'Connected'">
                   <div class="flex flex-col mt-1">
                     <span class="font-medium text-green-600">✓ Connected</span>
-                    <span class="text-slate-500 text-[12px] leading-tight">{{ googleEmail }}</span>
                     <span class="text-slate-400 text-[11px] leading-tight">Last synced: {{ lastSyncedGoogle }}</span>
                   </div>
                 </template>
@@ -175,7 +174,6 @@ const fetchGoogleStatus = async () => {
       const data = await response.json()
       if (data.connected) {
         googleStatus.value = 'Connected'
-        googleEmail.value = data.email || 'Connected'
         lastSyncedGoogle.value = data.last_synced_at 
           ? new Date(data.last_synced_at).toLocaleString() 
           : 'Unknown'

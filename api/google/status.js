@@ -32,10 +32,8 @@ export default async function handler(req, res) {
     }
 
     // Return safe metadata (no tokens)
-    // Use a default email if the column is missing/null, as we don't want to crash
     return res.status(200).json({
       connected: true,
-      email: integration.email || 'Connected',
       last_synced_at: integration.last_synced_at
     });
   } catch (error) {
