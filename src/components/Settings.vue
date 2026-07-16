@@ -20,7 +20,10 @@
             <div class="min-w-0 flex-1">
               <div class="text-[15px] font-medium text-[#2c3e50] break-words">Google Calendar</div>
               <div class="text-[13px] break-words" :class="googleStatus === 'Connected' ? 'text-green-600' : 'text-slate-400'">
-                <template v-if="googleStatus === 'Connected'">
+                <template v-if="isLoadingStatus">
+                  <span class="text-slate-400 animate-pulse">Checking status...</span>
+                </template>
+                <template v-else-if="googleStatus === 'Connected'">
                   <div class="flex flex-col mt-1">
                     <span class="font-medium text-green-600">✓ Connected</span>
                     <span class="text-slate-500 text-[12px] leading-tight">{{ googleEmail }}</span>
@@ -125,6 +128,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
+import { supabase } from '../../api/_lib/supabase.js'
 
 const zoomStatus = ref('Not connected')
 const isConnecting = ref(false)
@@ -132,10 +136,14 @@ const googleStatus = ref('Not connected')
 const googleEmail = ref('')
 const lastSyncedGoogle = ref('Never')
 const isConnectingGoogle = ref(false)
+const isLoadingStatus = ref(true)
 const showSuccess = ref(false)
 const successMessage = ref('')
 
-onMounted(() => {
+onMounted(async () => {
+  // Fetch initial status from server
+  await fetchGoogleStatus()
+
   // Check if we returned from OAuth with success
   const params = new URLSearchParams(window.location.search)
   
@@ -149,14 +157,38 @@ onMounted(() => {
   
   // Google check
   if (params.get('google') === 'success') {
-    googleStatus.value = 'Connected'
-    googleEmail.value = params.get('email') || 'Connected'
-    lastSyncedGoogle.value = new Date().toLocaleString()
+    // If we just connected, the fetchGoogleStatus above might have missed it 
+    // depending on timing, so we can either trust the URL param temporarily 
+    // or fetch again. Let's fetch again to be sure.
+    await fetchGoogleStatus()
     successMessage.value = 'Google Calendar connected successfully'
     showSuccess.value = true
     cleanupUrl()
   }
 })
+
+const fetchGoogleStatus = async () => {
+  isLoadingStatus.value = true
+  try {
+    const response = await fetch('/api/google/status')
+    if (response.ok) {
+      const data = await response.json()
+      if (data.connected) {
+        googleStatus.value = 'Connected'
+        googleEmail.value = data.email || 'Connected'
+        lastSyncedGoogle.value = data.last_synced_at 
+          ? new Date(data.last_synced_at).toLocaleString() 
+          : 'Unknown'
+      } else {
+        googleStatus.value = 'Not connected'
+      }
+    }
+  } catch (err) {
+    console.error('Failed to fetch Google status:', err)
+  } finally {
+    isLoadingStatus.value = false
+  }
+}
 
 const cleanupUrl = () => {
   // Clean up URL
@@ -185,9 +217,25 @@ const connectGoogle = () => {
 
 const disconnectGoogle = async () => {
   if (confirm('Disconnect Google Calendar?')) {
-    googleStatus.value = 'Not connected'
-    googleEmail.value = ''
-    lastSyncedGoogle.value = 'Never'
+    try {
+      // FUTURE MIGRATION: Scope delete to user_id when Supabase Auth is added.
+      const { error } = await supabase
+        .from('integrations')
+        .delete()
+        .eq('provider', 'google')
+      
+      if (error) throw error
+      
+      googleStatus.value = 'Not connected'
+      googleEmail.value = ''
+      lastSyncedGoogle.value = 'Never'
+      successMessage.value = 'Google Calendar disconnected'
+      showSuccess.value = true
+      setTimeout(() => showSuccess.value = false, 3000)
+    } catch (err) {
+      console.error('Failed to disconnect Google:', err)
+      alert('Failed to disconnect Google Calendar')
+    }
   }
 }
 </script>

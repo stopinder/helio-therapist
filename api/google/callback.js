@@ -1,7 +1,27 @@
 import { supabase } from '../_lib/supabase.js';
+import { parse } from 'cookie';
+import crypto from 'crypto';
 
 export default async function handler(req, res) {
   const { code, state } = req.query;
+  const cookies = parse(req.headers.cookie || '');
+  const storedState = cookies.google_oauth_state;
+
+  // 0. Validate state (CSRF protection)
+  if (!state || state !== storedState) {
+    console.error('State mismatch or missing');
+    return res.redirect('/?google=error&message=Security+validation+failed');
+  }
+
+  // Verify the signature of the state
+  const [value, signature] = state.split('.');
+  const hmac = crypto.createHmac('sha256', process.env.SUPABASE_SERVICE_ROLE_KEY);
+  const expectedSignature = hmac.update(value).digest('hex');
+
+  if (signature !== expectedSignature) {
+    console.error('State signature invalid');
+    return res.redirect('/?google=error&message=Security+validation+failed');
+  }
   
   if (!code) {
     return res.redirect('/?google=error&message=No+code+provided');
@@ -42,6 +62,7 @@ export default async function handler(req, res) {
     }
 
     // 3. Store in Supabase integrations table
+    // FUTURE MIGRATION: Link this to a user_id when Supabase Auth is added.
     const { error: upsertError } = await supabase.from('integrations').upsert({
       provider: 'google',
       email: email,

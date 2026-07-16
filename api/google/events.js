@@ -5,6 +5,7 @@ export default async function handler(req, res) {
   
   try {
     // 1. Get credentials from Supabase
+    // FUTURE MIGRATION: Query by user_id when Supabase Auth is introduced.
     const { data: integration, error: dbError } = await supabase
       .from('integrations')
       .select('*')
