@@ -50,13 +50,13 @@ export default async function handler(req, res) {
     // Try to test upsert with dummy data
     const dummy = {
       provider: 'test_diag_' + Date.now(),
-      // credentials: { test: true }, // Try without credentials first to see what works
-      last_synced_at: new Date().toISOString()
+      // credentials: { test: true }, 
+      // last_synced_at: new Date().toISOString()
     };
     const { data: upsertData, error: upsertError } = await supabase
       .from('integrations')
       .upsert(dummy)
-      .select();
+      .select('*');
     
     results.upsert_test = {
       success: !upsertError,
