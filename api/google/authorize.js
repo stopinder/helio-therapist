@@ -1,5 +1,4 @@
 import { getSupabaseClient } from '../_lib/supabase.js';
-import { serialize } from 'cookie';
 import crypto from 'crypto';
 
 export default async function handler(req, res) {
@@ -68,13 +67,9 @@ export default async function handler(req, res) {
     const signedState = `${state}.${signature}`;
     
     // Set a secure cookie with the state
-    res.setHeader('Set-Cookie', serialize('google_oauth_state', signedState, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      path: '/',
-      maxAge: 60 * 10 // 10 minutes
-    }));
+    const cookie = `google_oauth_state=${encodeURIComponent(signedState)}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=600`;
+
+    res.setHeader('Set-Cookie', cookie);
     
     const params = new URLSearchParams({
       response_type: 'code',
