@@ -1,5 +1,4 @@
 import { getSupabaseClient } from '../_lib/supabase.js';
-import * as cookie from 'cookie';
 import crypto from 'crypto';
 
 export default async function handler(req, res) {
@@ -42,8 +41,13 @@ export default async function handler(req, res) {
       return res.redirect('/?google=error&message=Google+configuration+missing');
     }
 
-    const cookies = cookie.parse(req.headers.cookie || '');
-    const storedState = cookies.google_oauth_state;
+    const cookieHeader = req.headers.cookie || '';
+    const cookies = {};
+    cookieHeader.split(';').forEach(c => {
+      const [key, ...v] = c.trim().split('=');
+      if (key) cookies[key] = v.join('=');
+    });
+    const storedState = cookies.google_oauth_state ? decodeURIComponent(cookies.google_oauth_state) : undefined;
 
     // 0. Validate state (CSRF protection)
     if (!state || state !== storedState) {
