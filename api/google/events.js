@@ -72,11 +72,19 @@ export default async function handler(req, res) {
       const clientId = (process.env.GOOGLE_CLIENT_ID || '').trim();
       const clientSecret = (process.env.GOOGLE_CLIENT_SECRET || '').trim();
 
-      if (!clientId || !clientSecret || clientId === 'your_google_client_id_here') {
-        console.error('[Google Calendar] Google configuration missing during refresh');
+      if (!clientId) {
+        console.error('[Google Calendar] Missing GOOGLE_CLIENT_ID during refresh');
         return res.status(500).json({ 
           error: 'Google configuration missing', 
-          details: 'Server environment variables not configured correctly'
+          details: 'GOOGLE_CLIENT_ID is not configured.'
+        });
+      }
+
+      if (!clientSecret) {
+        console.error('[Google Calendar] Missing GOOGLE_CLIENT_SECRET during refresh');
+        return res.status(500).json({ 
+          error: 'Google configuration missing', 
+          details: 'GOOGLE_CLIENT_SECRET is not configured.'
         });
       }
 

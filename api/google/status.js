@@ -24,7 +24,10 @@ export default async function handler(req, res) {
 
     if (dbError) {
       console.error('[Google Status] Database error:', dbError);
-      return res.status(500).json({ error: 'Database error' });
+      return res.status(500).json({ 
+        error: 'Database error',
+        details: dbError.message 
+      });
     }
 
     if (!integration) {

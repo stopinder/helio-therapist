@@ -8,9 +8,28 @@ export default async function handler(req, res) {
     
     // Check for required environment variables
     const serviceKey = (process.env.SUPABASE_SERVICE_ROLE_KEY || '').trim();
+    const clientId = (process.env.GOOGLE_CLIENT_ID || '').trim();
+    const clientSecret = (process.env.GOOGLE_CLIENT_SECRET || '').trim();
+    const redirectUri = (process.env.GOOGLE_REDIRECT_URI || '').trim();
+
     if (!serviceKey) {
       console.error('[Google Callback] Missing SUPABASE_SERVICE_ROLE_KEY');
       return res.redirect('/?google=error&message=Server+configuration+error');
+    }
+
+    if (!clientId) {
+      console.error('[Google Callback] Missing GOOGLE_CLIENT_ID');
+      return res.redirect('/?google=error&message=Google+configuration+missing');
+    }
+
+    if (!clientSecret) {
+      console.error('[Google Callback] Missing GOOGLE_CLIENT_SECRET');
+      return res.redirect('/?google=error&message=Google+configuration+missing');
+    }
+
+    if (!redirectUri) {
+      console.error('[Google Callback] Missing GOOGLE_REDIRECT_URI');
+      return res.redirect('/?google=error&message=Google+configuration+missing');
     }
 
     if (!supabase) {
@@ -47,9 +66,9 @@ export default async function handler(req, res) {
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: new URLSearchParams({
         code,
-        client_id: (process.env.GOOGLE_CLIENT_ID || '').trim(),
-        client_secret: (process.env.GOOGLE_CLIENT_SECRET || '').trim(),
-        redirect_uri: (process.env.GOOGLE_REDIRECT_URI || '').trim(),
+        client_id: clientId,
+        client_secret: clientSecret,
+        redirect_uri: redirectUri,
         grant_type: 'authorization_code'
       })
     });

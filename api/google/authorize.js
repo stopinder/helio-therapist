@@ -7,11 +7,19 @@ export default async function handler(req, res) {
     const redirectUri = (process.env.GOOGLE_REDIRECT_URI || '').trim();
     const serviceKey = (process.env.SUPABASE_SERVICE_ROLE_KEY || '').trim();
     
-    if (!clientId || !redirectUri || clientId === 'your_google_client_id_here') {
-      console.error('[Google Authorize] Missing Google configuration');
+    if (!clientId || clientId === 'your_google_client_id_here') {
+      console.error('[Google Authorize] Missing GOOGLE_CLIENT_ID');
       return res.status(500).json({ 
         error: 'Google configuration missing',
-        details: 'GOOGLE_CLIENT_ID or GOOGLE_REDIRECT_URI is not configured.'
+        details: 'GOOGLE_CLIENT_ID is not configured.'
+      });
+    }
+
+    if (!redirectUri) {
+      console.error('[Google Authorize] Missing GOOGLE_REDIRECT_URI');
+      return res.status(500).json({ 
+        error: 'Google configuration missing',
+        details: 'GOOGLE_REDIRECT_URI is not configured.'
       });
     }
 
