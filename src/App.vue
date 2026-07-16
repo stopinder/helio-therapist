@@ -118,17 +118,17 @@
               <p class="text-sm">Fetching your schedule...</p>
             </div>
 
-            <div v-else-if="calendarError" class="flex-1 flex flex-col items-center justify-center p-8 text-center bg-red-50 rounded-xl border border-red-100">
-              <div class="text-red-500 text-4xl mb-4">⚠️</div>
-              <h3 class="text-lg font-semibold text-red-900 mb-2">Calendar Sync Issue</h3>
-              <p class="text-red-700 mb-6 max-w-md">{{ calendarError }}</p>
-              <button 
-                @click="selectedNav = 'Settings'" 
-                class="px-6 py-2 bg-white border border-red-200 text-red-700 rounded-lg font-medium hover:bg-red-100 transition shadow-sm"
-              >
-                Reconnect Google Calendar
-              </button>
-            </div>
+      <div v-else-if="calendarError" class="flex-1 flex flex-col items-center justify-center p-8 text-center bg-red-50 rounded-xl border border-red-100">
+        <div class="text-red-500 text-4xl mb-4">⚠️</div>
+        <h3 class="text-lg font-semibold text-red-900 mb-2">Configuration Issue</h3>
+        <p class="text-red-700 mb-6 max-w-md">{{ calendarError }}</p>
+        <button 
+          @click="selectedNav = 'Settings'" 
+          class="px-6 py-2 bg-white border border-red-200 text-red-700 rounded-lg font-medium hover:bg-red-100 transition shadow-sm"
+        >
+          Go to Settings
+        </button>
+      </div>
 
             <div v-else-if="events.length === 0" class="flex-1 border-2 border-dashed border-gray-200 rounded-xl flex flex-col items-center justify-center p-12 text-center bg-white">
               <div class="text-4xl mb-4 opacity-20">📅</div>
@@ -282,6 +282,7 @@
 
 <script setup>
 import { ref, computed, onMounted, watch, nextTick } from "vue"
+import { supabase } from "./lib/supabase.js"
 import AIInsightDrawer from "./components/AIInsightDrawer.vue"
 import ClientContextDrawer from "./components/tools/ClientContextDrawer.vue"
 import EMDRToolLoader from "./components/tools/EMDRToolLoader.vue"
@@ -314,6 +315,10 @@ const calendarLoading = ref(false)
 const calendarError = ref(null)
 
 const fetchCalendarEvents = async () => {
+  if (!supabase) {
+    calendarError.value = "Supabase environment variables are missing (VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY)."
+    return
+  }
   calendarLoading.value = true
   calendarError.value = null
   try {

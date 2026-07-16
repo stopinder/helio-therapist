@@ -128,7 +128,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { supabase } from '../../api/_lib/supabase.js'
+import { supabase } from '../lib/supabase.js'
 
 const zoomStatus = ref('Not connected')
 const isConnecting = ref(false)
@@ -218,6 +218,9 @@ const connectGoogle = () => {
 const disconnectGoogle = async () => {
   if (confirm('Disconnect Google Calendar?')) {
     try {
+      if (!supabase) {
+        throw new Error('Supabase is not configured')
+      }
       // FUTURE MIGRATION: Scope delete to user_id when Supabase Auth is added.
       const { error } = await supabase
         .from('integrations')
