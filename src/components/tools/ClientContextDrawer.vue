@@ -24,7 +24,10 @@
         >
           <!-- Header -->
           <div class="h-14 flex items-center justify-between px-6 border-b border-[#d9dce1] bg-[#fafbfc] shrink-0">
-            <h2 class="text-[16px] font-semibold text-[#2c3e50]">Client Context</h2>
+            <div>
+              <div class="text-[12px] text-slate-500">Client summary</div>
+              <h2 class="text-[16px] font-semibold text-[#2c3e50]">{{ client?.name || 'No client selected' }}</h2>
+            </div>
             <button
                 class="w-8 h-8 flex items-center justify-center rounded-md text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition"
                 @click="$emit('close')"
@@ -96,6 +99,15 @@
               </p>
             </div>
           </div>
+
+          <div v-if="client" class="shrink-0 border-t border-[#d9dce1] bg-white p-4">
+            <button
+                class="w-full rounded-lg bg-[#2563eb] px-4 py-2.5 text-[14px] font-semibold text-white hover:bg-[#1d4ed8] transition"
+                @click="$emit('open-record')"
+            >
+              Open full client record
+            </button>
+          </div>
         </div>
       </transition>
     </div>
@@ -116,7 +128,7 @@ const props = defineProps({
   }
 })
 
-const emit = defineEmits(['close'])
+const emit = defineEmits(['close', 'open-record'])
 
 const drawerContainer = ref(null)
 

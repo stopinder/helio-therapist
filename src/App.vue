@@ -67,18 +67,20 @@
           <button
               class="hidden sm:block text-[13px] px-3 py-1.5 rounded-md border border-[#d9dce1] transition"
               :class="showClientDrawer ? 'bg-[#f5f7fa] text-black border-slate-400' : 'text-[#3f4754] bg-white hover:bg-[#f5f7fa]'"
+              :disabled="!selectedClient"
               @click="showClientDrawer = !showClientDrawer"
               aria-label="Client Context"
               :aria-expanded="showClientDrawer"
               aria-controls="client-context-drawer"
           >
-            Client
+            {{ selectedClient?.name || 'No client selected' }}
           </button>
           
           <!-- Mobile client icon button -->
           <button
               class="sm:hidden h-9 w-9 flex items-center justify-center rounded-md border border-[#d9dce1] text-[#3f4754] hover:bg-[#f5f7fa] transition text-[15px]"
               :class="{ 'bg-[#f5f7fa] border-slate-400': showClientDrawer }"
+              :disabled="!selectedClient"
               @click="showClientDrawer = !showClientDrawer"
               aria-label="Client Context"
           >
@@ -88,6 +90,7 @@
           <button
               class="h-9 w-9 flex items-center justify-center rounded-md border border-[#d9dce1] text-[#3f4754] hover:bg-[#f5f7fa] transition text-[15px]"
               aria-label="Calendar"
+              @click="selectedNav = 'Today'"
           >
             🗓
           </button>
@@ -111,6 +114,14 @@
             @scroll="handleScroll"
         >
           <CalendarSchedule v-if="selectedNav === 'Today'" @open-settings="selectedNav = 'Settings'" />
+
+            <ClientDirectory
+                v-else-if="selectedNav === 'Clients'"
+                :clients="clients"
+                :selected-client="selectedClient"
+                @select-client="handleSelectClient"
+                @add-client="handleAddClient"
+            />
 
             <div v-else-if="selectedNav === 'Reports'" class="h-full flex flex-col items-center justify-center text-slate-400">
               <h1 class="text-2xl font-bold mb-6 text-[#2c3e50]">Reports</h1>
@@ -199,7 +210,7 @@
       </div>
 
       <!-- Message Bar (only if not in Today or Settings view or per requirement) -->
-      <footer v-if="selectedNav !== 'Today' && selectedNav !== 'Settings'" class="border-t border-[#d9dce1] bg-white shadow-inner px-4 md:px-6 py-3 md:py-4">
+      <footer v-if="selectedNav === 'Client Workspace'" class="border-t border-[#d9dce1] bg-white shadow-inner px-4 md:px-6 py-3 md:py-4">
         <MessageBar @submit="handleMessageSubmit" />
       </footer>
     </div>
@@ -218,6 +229,7 @@
         :open="showClientDrawer"
         :client="selectedClient"
         @close="showClientDrawer = false"
+        @open-record="openClientRecord"
     />
   </div>
 </template>
@@ -238,6 +250,7 @@ import PastReflections from "./components/reflective/PastReflections.vue"
 import TherapistMap from "./components/tools/TherapistMap.vue"
 import Settings from "./components/Settings.vue"
 import CalendarSchedule from "./components/CalendarSchedule.vue"
+import ClientDirectory from "./components/ClientDirectory.vue"
 
 // --- State ---
 const isSidebarOpen = ref(true)
@@ -278,6 +291,7 @@ const handleAddClient = (newClientData) => {
   const newClient = { id: Date.now(), name, note, archived: false }
   clients.value.push(newClient)
   selectedClient.value = newClient
+  localStorage.setItem("helio_selectedClient", JSON.stringify(newClient))
   feedbackMessage.value = "✅ Client added"
   setTimeout(() => (feedbackMessage.value = ""), 2000)
 }
@@ -373,14 +387,23 @@ const openReflection = (mode) => {
   else if (mode === "map") activeView.value = "therapist-map"
 }
 
-const selectedClient = ref(clients.value[0])
+const storedClient = JSON.parse(localStorage.getItem("helio_selectedClient") || "null")
+const selectedClient = ref(clients.value.find(client => client.id === storedClient?.id) || null)
 const sessionNotes = ref([])
 
 const handleSelectClient = (client) => {
   selectedClient.value = client
   localStorage.setItem("helio_selectedClient", JSON.stringify(client))
   activeView.value = "main"
+  selectedNav.value = "Client Workspace"
+  showClientDrawer.value = true
   isSidebarOpen.value = false
+}
+
+const openClientRecord = () => {
+  selectedNav.value = "Client Workspace"
+  activeView.value = "main"
+  showClientDrawer.value = false
 }
 
 const handleNavChange = (nav) => {
