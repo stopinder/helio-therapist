@@ -282,7 +282,6 @@
 
 <script setup>
 import { ref, computed, onMounted, watch, nextTick } from "vue"
-import { supabase } from "./lib/supabase.js"
 import AIInsightDrawer from "./components/AIInsightDrawer.vue"
 import ClientContextDrawer from "./components/tools/ClientContextDrawer.vue"
 import EMDRToolLoader from "./components/tools/EMDRToolLoader.vue"
