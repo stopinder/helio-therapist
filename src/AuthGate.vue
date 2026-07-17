@@ -8,15 +8,28 @@
       <h1 class="text-2xl font-semibold text-slate-800">Choose a new password</h1>
       <p class="mt-2 text-sm text-slate-500">Use at least 8 characters.</p>
       <form class="mt-6 space-y-4" @submit.prevent="updatePassword">
-        <input
-          v-model="newPassword"
-          type="password"
-          required
-          minlength="8"
-          autocomplete="new-password"
-          aria-label="New password"
-          class="min-h-12 w-full rounded-lg border border-slate-300 px-3 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-        />
+        <div class="relative">
+          <input
+            id="recovery-password"
+            v-model="newPassword"
+            :type="showNewPassword ? 'text' : 'password'"
+            name="recovery-password"
+            required
+            minlength="8"
+            autocomplete="off"
+            autocapitalize="none"
+            spellcheck="false"
+            aria-label="New password"
+            class="min-h-12 w-full rounded-lg border border-slate-300 px-3 pr-16 text-slate-900 caret-blue-600 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+          />
+          <button
+            type="button"
+            class="absolute inset-y-0 right-0 min-w-14 px-3 text-sm font-medium text-blue-600"
+            @click="showNewPassword = !showNewPassword"
+          >
+            {{ showNewPassword ? 'Hide' : 'Show' }}
+          </button>
+        </div>
         <button type="submit" :disabled="submitting" class="min-h-12 w-full rounded-lg bg-blue-600 px-4 font-medium text-white disabled:opacity-50">
           {{ submitting ? 'Saving…' : 'Save new password' }}
         </button>
@@ -78,14 +91,27 @@
 
         <label class="block">
           <span class="text-sm font-medium text-slate-700">Password</span>
-          <input
-            v-model="password"
-            type="password"
-            required
-            minlength="8"
-            :autocomplete="mode === 'signup' ? 'new-password' : 'current-password'"
-            class="mt-2 min-h-12 w-full rounded-lg border border-slate-300 px-3 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-          />
+          <div class="relative mt-2">
+            <input
+              id="account-password"
+              v-model="password"
+              :type="showPassword ? 'text' : 'password'"
+              name="account-password"
+              required
+              minlength="8"
+              autocomplete="off"
+              autocapitalize="none"
+              spellcheck="false"
+              class="min-h-12 w-full rounded-lg border border-slate-300 px-3 pr-16 text-slate-900 caret-blue-600 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+            />
+            <button
+              type="button"
+              class="absolute inset-y-0 right-0 min-w-14 px-3 text-sm font-medium text-blue-600"
+              @click="showPassword = !showPassword"
+            >
+              {{ showPassword ? 'Hide' : 'Show' }}
+            </button>
+          </div>
           <span v-if="mode === 'signup'" class="mt-1 block text-xs text-slate-400">At least 8 characters</span>
         </label>
 
@@ -123,10 +149,12 @@ const session = ref(null)
 const authLoading = ref(true)
 const recovering = ref(false)
 const newPassword = ref('')
+const showNewPassword = ref(false)
 const mode = ref('signin')
 const fullName = ref('')
 const email = ref('')
 const password = ref('')
+const showPassword = ref(false)
 const submitting = ref(false)
 const message = ref('')
 const errorMessage = ref('')
@@ -162,6 +190,7 @@ const clearFeedback = () => {
 const setMode = (nextMode) => {
   mode.value = nextMode
   password.value = ''
+  showPassword.value = false
   clearFeedback()
 }
 
