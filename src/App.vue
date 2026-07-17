@@ -130,89 +130,10 @@
 
             <Settings v-else-if="selectedNav === 'Settings'" />
 
-          <template v-else>
-            <!-- Persistent Client Header -->
-            <div
-                v-if="selectedClient"
-                class="sticky top-0 z-20 mb-4 rounded-md px-4 py-2 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 shadow-sm backdrop-blur-sm border-2 transition-all duration-300"
-                :class="isInSession
-                ? 'border-[#2563eb] bg-[#eaf1ff]'
-                : 'border-[#d9dce1] bg-white'"
-                :style="{ opacity: headerOpacity }"
-            >
-              <div
-                  class="text-[17px] font-semibold transition-colors duration-300"
-                  :class="isInSession ? 'text-[#2563eb]' : 'text-[#2c3e50]'"
-              >
-                {{ selectedClient.name }}
-                <span
-                    class="ml-2 text-[13px] font-normal transition-colors duration-300"
-                    :class="isInSession ? 'text-[#3b82f6]' : 'text-slate-500'"
-                >
-                  {{ sessionDate }}
-                </span>
-              </div>
-              <div class="text-[13px] text-slate-500">{{ activeViewLabel }}</div>
-            </div>
-
-            <!-- View switching -->
-            <MainCanvas
-                v-if="activeView === 'main'"
-                :selected-client="selectedClient"
-                :session-notes="filteredNotes"
-            />
-
-            <CbtToolLoader
-                v-else-if="activeView === 'cbt'"
-                :template="activeTemplate"
-                @generate-insight="handleGenerateInsight"
-                @close="activeView = 'main'"
-            />
-
-            <ReflectiveJournal
-                v-else-if="activeView === 'reflection'"
-                :clients="clients"
-                :selected-client="selectedClient"
-                @save="handleSaveReflection"
-                @generate-insight="handleGenerateInsight"
-                @close="activeView = 'main'"
-            />
-
-            <PastReflections
-                v-else-if="activeView === 'past-reflections'"
-                :reflections="reflections"
-                :clients="clients"
-                @delete="handleDeleteReflection"
-                @archive="handleArchiveReflection"
-                @close="activeView = 'main'"
-            />
-
-            <IFSToolLoader
-                v-else-if="activeView === 'ifs'"
-                :template="activeTemplate"
-                @close="activeView = 'main'"
-                @generate-insight="handleGenerateInsight"
-            />
-
-            <EMDRToolLoader
-                v-else-if="activeView === 'emdr'"
-                :template="activeTemplate"
-                @close="activeView = 'main'"
-                @generate-insight="handleGenerateInsight"
-            />
-
-            <TherapistMap
-                v-else-if="activeView === 'therapist-map'"
-                class="w-full h-[calc(100vh-7rem)] relative"
-            />
-          </template>
+          <MainCanvas v-else :selected-client="selectedClient" />
         </main>
       </div>
 
-      <!-- Message Bar (only if not in Today or Settings view or per requirement) -->
-      <footer v-if="selectedNav === 'Client Workspace'" class="border-t border-[#d9dce1] bg-white shadow-inner px-4 md:px-6 py-3 md:py-4">
-        <MessageBar @submit="handleMessageSubmit" />
-      </footer>
     </div>
 
     <!-- AI Insight Drawer -->
@@ -242,7 +163,6 @@ import EMDRToolLoader from "./components/tools/EMDRToolLoader.vue"
 import IFSToolLoader from "./components/tools/IFSToolLoader.vue"
 import LeftSidebar from "./components/tools/LeftSidebar.vue"
 import RightPanel from "./components/tools/RightPanel.vue"
-import MessageBar from "./components/tools/MessageBar.vue"
 import MainCanvas from "./components/tools/MainCanvas.vue"
 import CbtToolLoader from "./components/tools/CBTToolLoader.vue"
 import ReflectiveJournal from "./components/reflective/ReflectiveJournal.vue"
@@ -389,7 +309,6 @@ const openReflection = (mode) => {
 
 const storedClient = JSON.parse(localStorage.getItem("helio_selectedClient") || "null")
 const selectedClient = ref(clients.value.find(client => client.id === storedClient?.id) || null)
-const sessionNotes = ref([])
 
 const handleSelectClient = (client) => {
   selectedClient.value = client
@@ -441,22 +360,6 @@ const syncTranscript = async () => {
     isSyncing.value = false
   }
 }
-
-const handleMessageSubmit = (text) => {
-  const value = text.trim()
-  if (!value) return
-  sessionNotes.value.push({
-    id: Date.now() + Math.random(),
-    clientId: selectedClient.value?.id ?? null,
-    text: value,
-  })
-}
-
-const filteredNotes = computed(() =>
-    selectedClient.value
-        ? sessionNotes.value.filter((n) => n.clientId === selectedClient.value.id)
-        : []
-)
 
 const activeViewLabel = computed(() => {
   switch (activeView.value) {
