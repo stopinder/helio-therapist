@@ -162,23 +162,10 @@ onMounted(async () => {
   // Check if we returned from OAuth with success
   const params = new URLSearchParams(window.location.search)
 
-  if (params.get('google') === 'complete' && params.get('state')) {
-    try {
-      const response = await authenticatedFetch('/api/google/complete', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ state: params.get('state') })
-      })
-      const data = await response.json()
-      if (!response.ok) throw new Error(data.error || 'Unable to complete Google connection')
-      successMessage.value = 'Google Calendar connected successfully'
-      showSuccess.value = true
-    } catch (error) {
-      successMessage.value = ''
-      alert(error.message)
-    } finally {
-      cleanupUrl()
-    }
+  if (params.get('google') === 'success') {
+    successMessage.value = 'Google Calendar connected successfully'
+    showSuccess.value = true
+    cleanupUrl()
   }
 
   await fetchGoogleStatus()

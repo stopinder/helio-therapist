@@ -54,21 +54,38 @@ export default async function handler(req, res) {
     }
 
     const tokens = await tokenResponse.json();
-    const { error: updateError } = await supabase
-      .from('oauth_states')
-      .update({
-        pending_credentials: tokens,
-        completed_at: new Date().toISOString()
-      })
-      .eq('id', oauthState.id)
-      .is('completed_at', null);
+    const integration = {
+      user_id: oauthState.user_id,
+      provider: 'google',
+      access_token: tokens.access_token,
+      refresh_token: tokens.refresh_token,
+      expires_at: tokens.expires_in
+        ? new Date(Date.now() + tokens.expires_in * 1000).toISOString()
+        : null,
+      token_type: tokens.token_type,
+      scope: tokens.scope,
+      updated_at: new Date().toISOString()
+    };
 
-    if (updateError) {
-      console.error('[Google Callback] Failed to stage credentials:', updateError);
+    const { error: upsertError } = await supabase
+      .from('integrations')
+      .upsert(integration, { onConflict: 'user_id,provider' });
+
+    if (upsertError) {
+      console.error('[Google Callback] Integration upsert failed:', upsertError);
       return res.redirect(`${appUrl}/?google=error&message=Unable+to+save+Google+connection`);
     }
 
-    return res.redirect(`${appUrl}/?google=complete&state=${encodeURIComponent(state)}`);
+    const { error: deleteError } = await supabase
+      .from('oauth_states')
+      .delete()
+      .eq('id', oauthState.id);
+
+    if (deleteError) {
+      console.warn('[Google Callback] Connected but failed to remove OAuth state:', deleteError);
+    }
+
+    return res.redirect(`${appUrl}/?google=success`);
   } catch (error) {
     console.error('[Google Callback] Error:', error);
     return res.redirect(`${appUrl}/?google=error&message=Internal+server+error`);
