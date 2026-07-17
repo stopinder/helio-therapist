@@ -123,10 +123,7 @@
                 @add-client="handleAddClient"
             />
 
-            <div v-else-if="selectedNav === 'Reports'" class="h-full flex flex-col items-center justify-center text-slate-400">
-              <h1 class="text-2xl font-bold mb-6 text-[#2c3e50]">Reports</h1>
-              <p>Reports content goes here</p>
-            </div>
+            <ReportsWorkspace v-else-if="selectedNav === 'Reports'" :clients="clients" />
 
             <Settings v-else-if="selectedNav === 'Settings'" />
 
@@ -171,6 +168,7 @@ import TherapistMap from "./components/tools/TherapistMap.vue"
 import Settings from "./components/Settings.vue"
 import CalendarSchedule from "./components/CalendarSchedule.vue"
 import ClientDirectory from "./components/ClientDirectory.vue"
+import ReportsWorkspace from "./components/ReportsWorkspace.vue"
 
 // --- State ---
 const isSidebarOpen = ref(true)
