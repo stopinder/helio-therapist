@@ -3,6 +3,28 @@
     <p class="text-sm text-slate-500">Opening MindWorks…</p>
   </main>
 
+  <main v-else-if="recovering" class="min-h-screen bg-slate-100 flex items-center justify-center px-4 py-8 sm:p-6">
+    <section class="w-full max-w-md rounded-2xl bg-white border border-slate-200 shadow-sm p-6 sm:p-8">
+      <h1 class="text-2xl font-semibold text-slate-800">Choose a new password</h1>
+      <p class="mt-2 text-sm text-slate-500">Use at least 8 characters.</p>
+      <form class="mt-6 space-y-4" @submit.prevent="updatePassword">
+        <input
+          v-model="newPassword"
+          type="password"
+          required
+          minlength="8"
+          autocomplete="new-password"
+          aria-label="New password"
+          class="min-h-12 w-full rounded-lg border border-slate-300 px-3 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+        />
+        <button type="submit" :disabled="submitting" class="min-h-12 w-full rounded-lg bg-blue-600 px-4 font-medium text-white disabled:opacity-50">
+          {{ submitting ? 'Saving…' : 'Save new password' }}
+        </button>
+      </form>
+      <p v-if="errorMessage" class="mt-4 rounded-lg bg-red-50 p-3 text-sm text-red-700">{{ errorMessage }}</p>
+    </section>
+  </main>
+
   <App v-else-if="session" />
 
   <main v-else class="min-h-screen bg-slate-100 flex items-center justify-center px-4 py-8 sm:p-6">
@@ -99,6 +121,8 @@ import { supabase } from './lib/supabase.js'
 
 const session = ref(null)
 const authLoading = ref(true)
+const recovering = ref(false)
+const newPassword = ref('')
 const mode = ref('signin')
 const fullName = ref('')
 const email = ref('')
@@ -120,7 +144,8 @@ onMounted(async () => {
   session.value = data.session
   authLoading.value = false
 
-  const listener = supabase.auth.onAuthStateChange((_event, nextSession) => {
+  const listener = supabase.auth.onAuthStateChange((event, nextSession) => {
+    if (event === 'PASSWORD_RECOVERY') recovering.value = true
     session.value = nextSession
     authLoading.value = false
   })
@@ -168,6 +193,22 @@ const submit = async () => {
       })
       if (error) throw error
     }
+  } catch (error) {
+    errorMessage.value = error.message
+  } finally {
+    submitting.value = false
+  }
+}
+
+const updatePassword = async () => {
+  submitting.value = true
+  clearFeedback()
+
+  try {
+    const { error } = await supabase.auth.updateUser({ password: newPassword.value })
+    if (error) throw error
+    recovering.value = false
+    window.history.replaceState({}, document.title, window.location.pathname)
   } catch (error) {
     errorMessage.value = error.message
   } finally {
