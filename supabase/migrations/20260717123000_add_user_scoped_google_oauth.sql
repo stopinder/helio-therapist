@@ -31,16 +31,38 @@ $$;
 alter table public.integrations
   alter column user_id set not null;
 
-alter table public.integrations
-  add constraint integrations_user_id_fkey
-  foreign key (user_id) references auth.users(id) on delete cascade;
+do $$
+begin
+  if not exists (
+    select 1
+    from pg_constraint
+    where conrelid = 'public.integrations'::regclass
+      and conname = 'integrations_user_id_fkey'
+  ) then
+    alter table public.integrations
+      add constraint integrations_user_id_fkey
+      foreign key (user_id) references auth.users(id) on delete cascade;
+  end if;
+end
+$$;
 
-alter table public.integrations
-  add constraint integrations_user_provider_key unique (user_id, provider);
+do $$
+begin
+  if not exists (
+    select 1
+    from pg_constraint
+    where conrelid = 'public.integrations'::regclass
+      and conname = 'integrations_user_provider_key'
+  ) then
+    alter table public.integrations
+      add constraint integrations_user_provider_key unique (user_id, provider);
+  end if;
+end
+$$;
 
 alter table public.integrations enable row level security;
 
-create table public.oauth_states (
+create table if not exists public.oauth_states (
   id uuid primary key,
   user_id uuid not null references auth.users(id) on delete cascade,
   provider text not null,
@@ -52,7 +74,7 @@ create table public.oauth_states (
 
 alter table public.oauth_states enable row level security;
 
-create index oauth_states_expiry_idx
+create index if not exists oauth_states_expiry_idx
   on public.oauth_states (expires_at);
 
 -- No client-facing policies are created. Server-side service credentials own
