@@ -1,0 +1,132 @@
+<template>
+  <section class="calendar-shell">
+    <div class="calendar-heading">
+      <div>
+        <h1>{{ heading }}</h1>
+        <p>{{ rangeLabel }}</p>
+      </div>
+      <div class="view-switcher" aria-label="Calendar view">
+        <button v-for="option in views" :key="option.id" :class="{ active: view === option.id }" @click="setView(option.id)">
+          {{ option.label }}
+        </button>
+      </div>
+    </div>
+
+    <div class="calendar-toolbar">
+      <button class="nav-button" @click="move(-1)" aria-label="Previous date">‹</button>
+      <button class="today-button" @click="goToday">Today</button>
+      <button class="nav-button" @click="move(1)" aria-label="Next date">›</button>
+      <input v-model="dateInput" type="date" class="date-input" aria-label="Choose date" @change="chooseDate" />
+    </div>
+
+    <div v-if="loading" class="calendar-state">
+      <div class="spinner"></div><p>Fetching your schedule…</p>
+    </div>
+    <div v-else-if="error" class="calendar-state error-state">
+      <div class="state-icon">⚠️</div><h2>Calendar unavailable</h2><p>{{ error }}</p>
+      <div class="state-actions"><button @click="loadEvents">Try again</button><button @click="$emit('open-settings')">Go to Settings</button></div>
+    </div>
+    <div v-else-if="view === 'month'" class="month-view">
+      <div v-for="name in weekdayNames" :key="name" class="weekday-name">{{ name }}</div>
+      <button v-for="day in monthDays" :key="day.key" class="month-day" :class="{ muted: !day.currentMonth, today: day.isToday, selected: sameDay(day.date, selectedDate) }" @click="selectMonthDay(day.date)">
+        <span class="day-number">{{ day.date.getDate() }}</span>
+        <span v-for="event in day.events.slice(0, 3)" :key="event.id" class="event-chip" @click.stop="selectedEvent = event">{{ event.summary }}</span>
+        <span v-if="day.events.length > 3" class="more-events">+{{ day.events.length - 3 }} more</span>
+      </button>
+    </div>
+    <div v-else-if="view === 'week'" class="week-view">
+      <section v-for="day in visibleDays" :key="day.key" class="week-day" :class="{ today: day.isToday }">
+        <button class="week-day-heading" @click="openDay(day.date)"><span>{{ shortWeekday(day.date) }}</span><strong>{{ day.date.getDate() }}</strong></button>
+        <p v-if="!day.events.length" class="no-events">No events</p>
+        <button v-for="event in day.events" :key="event.id" class="week-event" @click="selectedEvent = event"><span>{{ eventTime(event) }}</span>{{ event.summary }}</button>
+      </section>
+    </div>
+    <div v-else class="agenda-view">
+      <div v-if="!groupedEvents.length" class="calendar-state empty-state"><div class="state-icon">📅</div><h2>Your schedule is clear</h2><p>No events found for this {{ view === 'day' ? 'day' : 'period' }}.</p></div>
+      <section v-for="group in groupedEvents" :key="group.key" class="agenda-day">
+        <h2>{{ group.label }}</h2>
+        <button v-for="event in group.events" :key="event.id" class="agenda-event" @click="selectedEvent = event">
+          <span class="event-time">{{ eventTime(event) }}</span><span class="event-copy"><strong>{{ event.summary }}</strong><small>{{ eventRange(event) }}</small></span><span aria-hidden="true">›</span>
+        </button>
+      </section>
+    </div>
+
+    <div v-if="selectedEvent" class="modal-backdrop" @click.self="selectedEvent = null">
+      <article class="event-modal" role="dialog" aria-modal="true" aria-labelledby="event-title">
+        <button class="close-button" @click="selectedEvent = null" aria-label="Close">×</button>
+        <p class="event-eyebrow">Google Calendar</p><h2 id="event-title">{{ selectedEvent.summary }}</h2>
+        <dl><div><dt>When</dt><dd>{{ fullEventDate(selectedEvent) }}</dd></div><div v-if="selectedEvent.location"><dt>Where</dt><dd>{{ selectedEvent.location }}</dd></div></dl>
+        <p v-if="selectedEvent.description" class="event-description">{{ selectedEvent.description }}</p>
+        <a v-if="selectedEvent.link" :href="selectedEvent.link" target="_blank" rel="noopener">Open in Google Calendar ↗</a>
+      </article>
+    </div>
+  </section>
+</template>
+
+<script setup>
+import { computed, onMounted, ref, watch } from 'vue'
+import { authenticatedFetch } from '../lib/api.js'
+
+defineEmits(['open-settings'])
+const views = [{ id: 'day', label: 'Day' }, { id: 'week', label: 'Week' }, { id: 'month', label: 'Month' }, { id: 'agenda', label: 'Agenda' }]
+const weekdayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+const view = ref(localStorage.getItem('helio_calendar_view') || 'day')
+const selectedDate = ref(new Date())
+const dateInput = ref(toInputDate(selectedDate.value))
+const events = ref([]), loading = ref(false), error = ref(''), selectedEvent = ref(null)
+
+function startDay(date) { const d = new Date(date); d.setHours(0, 0, 0, 0); return d }
+function addDays(date, count) { const d = new Date(date); d.setDate(d.getDate() + count); return d }
+function startWeek(date) { const d = startDay(date); d.setDate(d.getDate() - ((d.getDay() + 6) % 7)); return d }
+function startMonth(date) { return new Date(date.getFullYear(), date.getMonth(), 1) }
+function endMonth(date) { return new Date(date.getFullYear(), date.getMonth() + 1, 1) }
+function toInputDate(date) { return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}` }
+function sameDay(a,b) { return a.getFullYear()===b.getFullYear() && a.getMonth()===b.getMonth() && a.getDate()===b.getDate() }
+function eventDate(event) { return new Date(event.start) }
+function eventsFor(date) { return events.value.filter(event => sameDay(eventDate(event), date)) }
+
+const requestRange = computed(() => {
+  if (view.value === 'day') return [startDay(selectedDate.value), addDays(startDay(selectedDate.value), 1)]
+  if (view.value === 'week') { const start = startWeek(selectedDate.value); return [start, addDays(start, 7)] }
+  if (view.value === 'month') return [startMonth(selectedDate.value), endMonth(selectedDate.value)]
+  return [startDay(selectedDate.value), addDays(startDay(selectedDate.value), 30)]
+})
+const heading = computed(() => ({day:"Day’s Schedule",week:'Weekly Schedule',month:'Monthly Schedule',agenda:'Agenda'}[view.value]))
+const rangeLabel = computed(() => {
+  const [start,end] = requestRange.value; const final = addDays(end,-1)
+  if (view.value === 'day') return start.toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric',year:'numeric'})
+  if (view.value === 'month') return start.toLocaleDateString(undefined,{month:'long',year:'numeric'})
+  return `${start.toLocaleDateString(undefined,{month:'short',day:'numeric'})} – ${final.toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'})}`
+})
+const visibleDays = computed(() => { const start=requestRange.value[0]; return Array.from({length:7},(_,i)=>makeDay(addDays(start,i))) })
+const monthDays = computed(() => { const first=startWeek(startMonth(selectedDate.value)); return Array.from({length:42},(_,i)=>{const day=makeDay(addDays(first,i)); day.currentMonth=day.date.getMonth()===selectedDate.value.getMonth(); return day}) })
+const groupedEvents = computed(() => {
+  const map=new Map(); for(const event of events.value){const d=eventDate(event); const key=toInputDate(d); if(!map.has(key)) map.set(key,{key,label:d.toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric'}),events:[]}); map.get(key).events.push(event)} return [...map.values()]
+})
+function makeDay(date){return {key:toInputDate(date),date,events:eventsFor(date),isToday:sameDay(date,new Date())}}
+function shortWeekday(date){return date.toLocaleDateString(undefined,{weekday:'short'})}
+function eventTime(event){if(event.allDay)return 'All day'; return new Date(event.start).toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'})}
+function eventRange(event){if(event.allDay)return 'All day'; return `${eventTime(event)} – ${new Date(event.end).toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'})}`}
+function fullEventDate(event){const d=new Date(event.start); return `${d.toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric',year:'numeric'})}, ${eventRange(event)}`}
+function setView(next){view.value=next; localStorage.setItem('helio_calendar_view',next)}
+function chooseDate(){const [y,m,d]=dateInput.value.split('-').map(Number); selectedDate.value=new Date(y,m-1,d)}
+function goToday(){selectedDate.value=new Date()}
+function move(direction){const amount={day:1,week:7,month:0,agenda:30}[view.value]; const d=new Date(selectedDate.value); if(view.value==='month')d.setMonth(d.getMonth()+direction); else d.setDate(d.getDate()+amount*direction); selectedDate.value=d}
+function openDay(date){selectedDate.value=new Date(date); setView('day')}
+function selectMonthDay(date){selectedDate.value=new Date(date); if(window.innerWidth<768)setView('day')}
+
+async function loadEvents(){
+  loading.value=true; error.value=''
+  try { const [start,end]=requestRange.value; const params=new URLSearchParams({timeMin:start.toISOString(),timeMax:end.toISOString()}); const response=await authenticatedFetch(`/api/google/events?${params}`); const data=await response.json(); if(!response.ok)throw new Error(data.details||data.error||'Failed to fetch calendar events'); events.value=data.events||[] }
+  catch(err){console.error('Calendar fetch error:',err); error.value=err.message}
+  finally{loading.value=false}
+}
+watch(selectedDate,()=>{dateInput.value=toInputDate(selectedDate.value); loadEvents()})
+watch(view,loadEvents)
+onMounted(loadEvents)
+</script>
+
+<style scoped>
+.calendar-shell{min-height:100%;display:flex;flex-direction:column;gap:1rem;color:#2c3e50}.calendar-heading{display:flex;justify-content:space-between;align-items:flex-start;gap:1rem}.calendar-heading h1{font-size:1.6rem;font-weight:750;margin:0}.calendar-heading p{color:#64748b;margin:.25rem 0 0}.view-switcher{display:flex;padding:.25rem;background:#e9eef5;border-radius:.7rem;overflow:auto}.view-switcher button{padding:.5rem .8rem;border:0;background:transparent;border-radius:.5rem;color:#526074;font-weight:600}.view-switcher button.active{background:white;color:#1d4ed8;box-shadow:0 1px 3px #0002}.calendar-toolbar{display:flex;align-items:center;gap:.5rem}.calendar-toolbar button,.date-input{height:2.4rem;border:1px solid #d6dce5;background:white;border-radius:.55rem;padding:0 .8rem;color:#334155}.nav-button{font-size:1.4rem}.date-input{margin-left:auto}.calendar-state{min-height:22rem;flex:1;border:2px dashed #d9dee7;border-radius:1rem;background:white;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:2rem;color:#64748b}.calendar-state h2{font-size:1.2rem;color:#475569;margin:.5rem}.spinner{width:2rem;height:2rem;border:3px solid #dbeafe;border-top-color:#2563eb;border-radius:50%;animation:spin 1s linear infinite}.error-state{border-color:#fecaca;background:#fff7f7}.state-icon{font-size:2rem}.state-actions{display:flex;gap:.5rem;margin-top:1rem}.state-actions button{padding:.55rem .85rem;background:white;border:1px solid #fecaca;border-radius:.5rem;color:#b91c1c}.agenda-view{display:flex;flex-direction:column;gap:1rem}.agenda-day h2{font-size:.85rem;text-transform:uppercase;letter-spacing:.06em;color:#64748b;margin:.25rem 0 .5rem}.agenda-event{width:100%;display:grid;grid-template-columns:5rem 1fr auto;align-items:center;gap:1rem;text-align:left;background:white;border:1px solid #e2e8f0;padding:1rem;border-radius:.75rem;margin-bottom:.5rem}.agenda-event:hover,.week-event:hover{border-color:#93c5fd;box-shadow:0 2px 8px #1d4ed815}.event-time{font-weight:700;color:#2563eb}.event-copy{display:flex;flex-direction:column;min-width:0}.event-copy strong{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.event-copy small{color:#64748b;margin-top:.2rem}.week-view{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));background:white;border:1px solid #e2e8f0;border-radius:.8rem;overflow:hidden;min-height:30rem}.week-day{padding:.5rem;border-right:1px solid #e2e8f0}.week-day:last-child{border:0}.week-day.today{background:#eff6ff}.week-day-heading{width:100%;border:0;background:transparent;display:flex;flex-direction:column;align-items:center;color:#64748b;padding:.4rem}.week-day-heading strong{font-size:1.2rem;color:#334155}.week-event{width:100%;text-align:left;background:#eaf2ff;border:1px solid #dbeafe;color:#1e3a8a;border-radius:.4rem;padding:.45rem;margin:.25rem 0;font-size:.75rem;overflow:hidden}.week-event span{display:block;font-weight:700;margin-bottom:.15rem}.no-events{text-align:center;color:#a0aec0;font-size:.7rem}.month-view{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));background:white;border:1px solid #e2e8f0;border-radius:.8rem;overflow:hidden}.weekday-name{text-align:center;padding:.6rem;font-size:.75rem;font-weight:700;color:#64748b;background:#f8fafc}.month-day{min-height:7rem;background:white;border:0;border-top:1px solid #e2e8f0;border-right:1px solid #e2e8f0;padding:.4rem;text-align:left;overflow:hidden}.month-day:nth-child(7n){border-right:0}.month-day.muted{background:#f8fafc;color:#94a3b8}.month-day.today .day-number{background:#2563eb;color:white}.month-day.selected{box-shadow:inset 0 0 0 2px #93c5fd}.day-number{display:inline-flex;width:1.6rem;height:1.6rem;align-items:center;justify-content:center;border-radius:50%;font-size:.8rem}.event-chip{display:block;width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;background:#eef4ff;color:#1e40af;border-radius:.25rem;padding:.2rem .3rem;margin:.18rem 0;font-size:.68rem}.more-events{font-size:.65rem;color:#64748b}.modal-backdrop{position:fixed;inset:0;background:#0f172a66;z-index:80;display:flex;align-items:center;justify-content:center;padding:1rem}.event-modal{position:relative;background:white;border-radius:1rem;padding:1.5rem;width:min(30rem,100%);box-shadow:0 20px 60px #0004}.close-button{position:absolute;right:1rem;top:.75rem;border:0;background:transparent;font-size:1.7rem;color:#64748b}.event-eyebrow{font-size:.75rem;color:#2563eb;text-transform:uppercase;font-weight:700}.event-modal h2{font-size:1.35rem;margin:.3rem 2rem 1rem 0}.event-modal dl div{margin:.8rem 0}.event-modal dt{font-size:.75rem;color:#64748b}.event-modal dd{margin:.15rem 0}.event-description{white-space:pre-wrap;color:#475569}.event-modal a{display:inline-block;margin-top:1rem;color:#2563eb;font-weight:600}@keyframes spin{to{transform:rotate(360deg)}}
+@media(max-width:767px){.calendar-heading{flex-direction:column}.view-switcher{width:100%}.view-switcher button{flex:1}.date-input{margin-left:0;min-width:0;flex:1}.week-view{display:flex;flex-direction:column;border:0;background:transparent}.week-day{border:1px solid #e2e8f0!important;border-radius:.7rem;background:white;margin-bottom:.6rem}.week-day-heading{flex-direction:row;justify-content:space-between}.month-day{min-height:4.6rem;padding:.2rem}.weekday-name{padding:.4rem .1rem;font-size:.65rem}.event-chip{height:.35rem;padding:0;color:transparent}.more-events{display:none}.agenda-event{grid-template-columns:4.2rem 1fr auto;padding:.85rem}.event-modal{align-self:flex-end;border-radius:1rem 1rem 0 0}.modal-backdrop{padding:0;align-items:flex-end}}
+</style>

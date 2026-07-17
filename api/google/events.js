@@ -49,18 +49,31 @@ export default async function handler(req, res) {
 
     let accessToken = integration.access_token;
 
+    const now = new Date();
+    const defaultStart = new Date(now);
+    defaultStart.setHours(0, 0, 0, 0);
+    const defaultEnd = new Date(defaultStart);
+    defaultEnd.setDate(defaultEnd.getDate() + 1);
+    const requestedStart = req.query.timeMin ? new Date(req.query.timeMin) : defaultStart;
+    const requestedEnd = req.query.timeMax ? new Date(req.query.timeMax) : defaultEnd;
+
+    if (Number.isNaN(requestedStart.getTime()) || Number.isNaN(requestedEnd.getTime()) || requestedEnd <= requestedStart) {
+      return res.status(400).json({ error: 'Invalid calendar date range' });
+    }
+
+    const maximumRangeMs = 62 * 24 * 60 * 60 * 1000;
+    if (requestedEnd - requestedStart > maximumRangeMs) {
+      return res.status(400).json({ error: 'Calendar range cannot exceed 62 days' });
+    }
+
     const fetchEvents = async (token) => {
-      const now = new Date();
-      const startOfDay = new Date(now);
-      startOfDay.setHours(0, 0, 0, 0);
-      const endOfDay = new Date(now);
-      endOfDay.setHours(23, 59, 59, 999);
 
       const params = new URLSearchParams({
-        timeMin: startOfDay.toISOString(),
-        timeMax: endOfDay.toISOString(),
+        timeMin: requestedStart.toISOString(),
+        timeMax: requestedEnd.toISOString(),
         singleEvents: 'true',
         orderBy: 'startTime',
+        maxResults: '500',
       });
 
       return fetch(`https://www.googleapis.com/calendar/v3/calendars/primary/events?${params.toString()}`, {
@@ -164,7 +177,11 @@ export default async function handler(req, res) {
       summary: event.summary || '(No title)',
       start: event.start?.dateTime || event.start?.date,
       end: event.end?.dateTime || event.end?.date,
-      link: event.htmlLink
+      allDay: Boolean(event.start?.date && !event.start?.dateTime),
+      link: event.htmlLink,
+      location: event.location || '',
+      description: event.description || '',
+      meetingLink: event.hangoutLink || ''
     }));
 
     console.log(`[Google Calendar] Successfully fetched ${events.length} events`);
