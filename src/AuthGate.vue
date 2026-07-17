@@ -73,7 +73,7 @@ const sendMagicLink = async () => {
     const { error } = await supabase.auth.signInWithOtp({
       email: email.value,
       options: {
-        emailRedirectTo: window.location.origin,
+        emailRedirectTo: 'https://helio-therapist.vercel.app',
         shouldCreateUser: false
       }
     })
