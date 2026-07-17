@@ -1,94 +1,57 @@
-import { getSupabaseClient } from '../_lib/supabase.js';
 import crypto from 'crypto';
+import { requireAuthenticatedUser } from '../_lib/supabase.js';
 
 export default async function handler(req, res) {
-  try {
-    // Validate Supabase config first
-    try {
-      getSupabaseClient();
-    } catch (err) {
-      console.error('[Google Authorize] Supabase initialization failed:', err.message);
-      return res.status(500).json({ 
-        error: 'Server configuration error',
-        details: err.message
-      });
-    }
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
 
+  try {
+    const { supabase, user } = await requireAuthenticatedUser(req);
     const clientId = (process.env.GOOGLE_CLIENT_ID || '').trim();
     const redirectUri = (process.env.GOOGLE_REDIRECT_URI || '').trim();
-    const serviceKey = (process.env.SUPABASE_SERVICE_ROLE_KEY || '').trim();
-    const stateSecret = (process.env.OAUTH_STATE_SECRET || serviceKey || '').trim();
-    
-    if (!clientId || clientId === 'your_google_client_id_here') {
-      console.error('[Google Authorize] Missing GOOGLE_CLIENT_ID');
-      return res.status(500).json({ 
+
+    if (!clientId || !redirectUri) {
+      return res.status(500).json({
         error: 'Google configuration missing',
-        details: 'GOOGLE_CLIENT_ID is not configured.'
+        details: 'GOOGLE_CLIENT_ID and GOOGLE_REDIRECT_URI must be configured in Vercel.'
       });
     }
 
-    if (!redirectUri) {
-      console.error('[Google Authorize] Missing GOOGLE_REDIRECT_URI');
-      return res.status(500).json({ 
-        error: 'Google configuration missing',
-        details: 'GOOGLE_REDIRECT_URI is not configured.'
-      });
+    const state = crypto.randomUUID();
+    const { error: stateError } = await supabase.from('oauth_states').insert({
+      id: state,
+      user_id: user.id,
+      provider: 'google',
+      expires_at: new Date(Date.now() + 10 * 60 * 1000).toISOString()
+    });
+
+    if (stateError) {
+      console.error('[Google Authorize] Failed to store OAuth state:', stateError);
+      return res.status(500).json({ error: 'Unable to start Google connection' });
     }
 
-    if (!serviceKey) {
-      console.error('[Google Authorize] Missing SUPABASE_SERVICE_ROLE_KEY');
-      return res.status(500).json({ 
-        error: 'Server configuration error',
-        details: 'SUPABASE_SERVICE_ROLE_KEY is missing.'
-      });
-    }
-
-    if (!stateSecret) {
-      console.error('[Google Authorize] Missing OAUTH_STATE_SECRET');
-      return res.status(500).json({ 
-        error: 'Server configuration error',
-        details: 'OAUTH_STATE_SECRET is missing.'
-      });
-    }
-
-    // Scopes for Google Calendar
-    const scopes = [
-      'https://www.googleapis.com/auth/calendar.readonly',
-      'https://www.googleapis.com/auth/userinfo.email'
-    ];
-
-    // Generate a random state for security
-    const state = crypto.randomBytes(32).toString('hex');
-    
-    // Sign the state using the state secret
-    // FUTURE MIGRATION: When Supabase Auth is introduced, use the user's session ID or a proper JWT.
-    const hmac = crypto.createHmac('sha256', stateSecret);
-    const signature = hmac.update(state).digest('hex');
-    const signedState = `${state}.${signature}`;
-    
-    // Set a secure cookie with the state
-    const cookie = `google_oauth_state=${encodeURIComponent(signedState)}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=600`;
-
-    res.setHeader('Set-Cookie', cookie);
-    
     const params = new URLSearchParams({
       response_type: 'code',
       client_id: clientId,
       redirect_uri: redirectUri,
-      scope: scopes.join(' '),
-      state: signedState,
+      scope: [
+        'https://www.googleapis.com/auth/calendar.readonly',
+        'https://www.googleapis.com/auth/userinfo.email'
+      ].join(' '),
+      state,
       access_type: 'offline',
-      prompt: 'consent',
+      prompt: 'consent'
     });
 
-    const googleUrl = `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
-    
-    res.redirect(302, googleUrl);
+    res.setHeader('Cache-Control', 'no-store');
+    return res.status(200).json({
+      url: `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`
+    });
   } catch (error) {
-    console.error('[Google Authorize] Fatal error:', error);
-    return res.status(500).json({
-      error: 'Internal server error',
-      details: error.message
+    console.error('[Google Authorize] Error:', error);
+    return res.status(error.status || 500).json({
+      error: error.status === 401 ? error.message : 'Unable to start Google connection'
     });
   }
 }
