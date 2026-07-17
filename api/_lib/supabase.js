@@ -6,7 +6,11 @@ import { createClient } from '@supabase/supabase-js';
  */
 export function getSupabaseClient() {
   const supabaseUrl = (process.env.SUPABASE_URL || '').trim();
-  const supabaseServiceKey = (process.env.SUPABASE_SERVICE_ROLE_KEY || '').trim();
+  const supabaseServiceKey = (
+    process.env.SUPABASE_SERVICE_ROLE_KEY ||
+    process.env.SUPABASE_SECRET_KEY ||
+    ''
+  ).trim();
 
   // Diagnostics
   console.log(`[Supabase Diagnostics]
@@ -30,3 +34,26 @@ export function getSupabaseClient() {
   return createClient(supabaseUrl, supabaseServiceKey);
 }
 
+export async function requireAuthenticatedUser(req) {
+  const authorization = req.headers.authorization || '';
+  const match = authorization.match(/^Bearer\s+(.+)$/i);
+
+  if (!match) {
+    const error = new Error('Authentication required');
+    error.status = 401;
+    error.code = 'AUTH_REQUIRED';
+    throw error;
+  }
+
+  const supabase = getSupabaseClient();
+  const { data, error } = await supabase.auth.getUser(match[1]);
+
+  if (error || !data?.user) {
+    const authError = new Error('Session is invalid or expired');
+    authError.status = 401;
+    authError.code = 'AUTH_INVALID';
+    throw authError;
+  }
+
+  return { supabase, user: data.user };
+}

@@ -104,6 +104,24 @@
       </div>
     </section>
 
+    <section class="mb-12">
+      <h2 class="text-[12px] sm:text-[13px] font-semibold uppercase tracking-wider text-slate-500 mb-4 px-1">
+        Account
+      </h2>
+      <div class="bg-white border border-[#e2e8f0] rounded-xl p-4 shadow-sm flex items-center justify-between gap-4">
+        <div>
+          <div class="text-[15px] font-medium text-[#2c3e50]">Therapist account</div>
+          <div class="text-[13px] text-slate-400">Secure Supabase session</div>
+        </div>
+        <button
+          @click="signOut"
+          class="px-4 py-2 text-[13px] font-medium text-red-600 hover:bg-red-50 rounded-md transition"
+        >
+          Sign out
+        </button>
+      </div>
+    </section>
+
     <!-- Future categories placeholder -->
     <div class="space-y-12 opacity-40 select-none pointer-events-none">
       <section>
@@ -127,6 +145,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
+import { authenticatedFetch } from '../lib/api.js'
 import { supabase } from '../lib/supabase.js'
 
 const zoomStatus = ref('Not connected')
@@ -140,11 +159,29 @@ const showSuccess = ref(false)
 const successMessage = ref('')
 
 onMounted(async () => {
-  // Fetch initial status from server
-  await fetchGoogleStatus()
-
   // Check if we returned from OAuth with success
   const params = new URLSearchParams(window.location.search)
+
+  if (params.get('google') === 'complete' && params.get('state')) {
+    try {
+      const response = await authenticatedFetch('/api/google/complete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ state: params.get('state') })
+      })
+      const data = await response.json()
+      if (!response.ok) throw new Error(data.error || 'Unable to complete Google connection')
+      successMessage.value = 'Google Calendar connected successfully'
+      showSuccess.value = true
+    } catch (error) {
+      successMessage.value = ''
+      alert(error.message)
+    } finally {
+      cleanupUrl()
+    }
+  }
+
+  await fetchGoogleStatus()
   
   // Zoom check
   if (params.get('zoom') === 'success') {
@@ -154,14 +191,8 @@ onMounted(async () => {
     cleanupUrl()
   }
   
-  // Google check
-  if (params.get('google') === 'success') {
-    // If we just connected, the fetchGoogleStatus above might have missed it 
-    // depending on timing, so we can either trust the URL param temporarily 
-    // or fetch again. Let's fetch again to be sure.
-    await fetchGoogleStatus()
-    successMessage.value = 'Google Calendar connected successfully'
-    showSuccess.value = true
+  if (params.get('google') === 'error') {
+    alert(params.get('message') || 'Google connection failed')
     cleanupUrl()
   }
 })
@@ -169,7 +200,7 @@ onMounted(async () => {
 const fetchGoogleStatus = async () => {
   isLoadingStatus.value = true
   try {
-    const response = await fetch('/api/google/status')
+    const response = await authenticatedFetch('/api/google/status')
     if (response.ok) {
       const data = await response.json()
       if (data.connected) {
@@ -208,24 +239,31 @@ const disconnectZoom = async () => {
   }
 }
 
-const connectGoogle = () => {
+const connectGoogle = async () => {
   isConnectingGoogle.value = true
-  window.location.href = '/api/google/authorize'
+  try {
+    const response = await authenticatedFetch('/api/google/authorize', {
+      method: 'POST'
+    })
+    const data = await response.json()
+    if (!response.ok || !data.url) {
+      throw new Error(data.error || 'Unable to start Google connection')
+    }
+    window.location.href = data.url
+  } catch (error) {
+    alert(error.message)
+    isConnectingGoogle.value = false
+  }
 }
 
 const disconnectGoogle = async () => {
   if (confirm('Disconnect Google Calendar?')) {
     try {
-      if (!supabase) {
-        throw new Error('Supabase is not configured')
-      }
-      // FUTURE MIGRATION: Scope delete to user_id when Supabase Auth is added.
-      const { error } = await supabase
-        .from('integrations')
-        .delete()
-        .eq('provider', 'google')
-      
-      if (error) throw error
+      const response = await authenticatedFetch('/api/google/disconnect', {
+        method: 'POST'
+      })
+      const data = await response.json()
+      if (!response.ok) throw new Error(data.error || 'Unable to disconnect Google Calendar')
       
       googleStatus.value = 'Not connected'
       googleEmail.value = ''
@@ -238,6 +276,10 @@ const disconnectGoogle = async () => {
       alert('Failed to disconnect Google Calendar')
     }
   }
+}
+
+const signOut = async () => {
+  await supabase.auth.signOut()
 }
 </script>
 

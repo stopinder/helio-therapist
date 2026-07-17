@@ -295,6 +295,7 @@ import ReflectiveJournal from "./components/reflective/ReflectiveJournal.vue"
 import PastReflections from "./components/reflective/PastReflections.vue"
 import TherapistMap from "./components/tools/TherapistMap.vue"
 import Settings from "./components/Settings.vue"
+import { authenticatedFetch } from "./lib/api.js"
 
 // --- State ---
 const isSidebarOpen = ref(true)
@@ -317,7 +318,7 @@ const fetchCalendarEvents = async () => {
   calendarLoading.value = true
   calendarError.value = null
   try {
-    const response = await fetch('/api/google/events')
+    const response = await authenticatedFetch('/api/google/events')
     const contentType = response.headers.get('content-type')
     
     if (contentType && contentType.includes('application/json')) {

@@ -1,16 +1,17 @@
-import { getSupabaseClient } from '../_lib/supabase.js';
+import { requireAuthenticatedUser } from '../_lib/supabase.js';
 
 export default async function handler(req, res) {
   console.log('[Google Calendar] Fetching events...');
 
   try {
     let supabase;
+    let user;
     try {
-      supabase = getSupabaseClient();
+      ({ supabase, user } = await requireAuthenticatedUser(req));
     } catch (err) {
-      console.error('[Google Calendar] Supabase initialization failed:', err.message);
-      return res.status(500).json({
-        error: 'Database connection failed',
+      console.error('[Google Calendar] Authentication failed:', err.message);
+      return res.status(err.status || 500).json({
+        error: err.status === 401 ? err.message : 'Database connection failed',
         details: err.message
       });
     }
@@ -20,6 +21,7 @@ export default async function handler(req, res) {
       .from('integrations')
       .select('*')
       .eq('provider', 'google')
+      .eq('user_id', user.id)
       .maybeSingle();
 
     if (dbError) {
@@ -120,7 +122,8 @@ export default async function handler(req, res) {
         const { error: updateError } = await supabase
           .from('integrations')
           .update(tokenUpdate)
-          .eq('provider', 'google');
+          .eq('provider', 'google')
+          .eq('user_id', user.id);
 
         if (updateError) {
           console.error('[Google Calendar] Failed to update tokens in DB:', updateError);

@@ -1,4 +1,4 @@
-import { getSupabaseClient } from '../_lib/supabase.js';
+import { requireAuthenticatedUser } from '../_lib/supabase.js';
 
 export default async function handler(req, res) {
   if (req.method !== 'GET') {
@@ -8,12 +8,13 @@ export default async function handler(req, res) {
   try {
     // Initialize Supabase
     let supabase;
+    let user;
     try {
-      supabase = getSupabaseClient();
+      ({ supabase, user } = await requireAuthenticatedUser(req));
     } catch (err) {
-      console.error('[Google Status] Supabase initialization failed:', err.message);
-      return res.status(500).json({ 
-        error: 'Database connection failed',
+      console.error('[Google Status] Authentication failed:', err.message);
+      return res.status(err.status || 500).json({
+        error: err.status === 401 ? err.message : 'Database connection failed',
         details: err.message
       });
     }
@@ -24,6 +25,7 @@ export default async function handler(req, res) {
       .from('integrations')
       .select('*')
       .eq('provider', 'google')
+      .eq('user_id', user.id)
       .maybeSingle();
 
     if (dbError) {
