@@ -315,10 +315,6 @@ const calendarLoading = ref(false)
 const calendarError = ref(null)
 
 const fetchCalendarEvents = async () => {
-  if (!supabase) {
-    calendarError.value = "Supabase environment variables are missing (VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY)."
-    return
-  }
   calendarLoading.value = true
   calendarError.value = null
   try {
