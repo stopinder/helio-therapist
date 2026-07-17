@@ -32,7 +32,12 @@
       <div>🔎</div><h2>Investigations are not enabled yet</h2><p>This area will hold therapist-defined questions, linked observations, supporting and challenging evidence, and a revision history.</p><strong>No investigation will be created or changed by AI without therapist review.</strong>
     </div>
 
-    <div v-else class="section-card empty-state large"><div>📄</div><h2>No documents yet</h2><p>Uploaded files and therapist-approved reports will appear here.</p></div>
+    <div v-else class="section-card">
+      <div class="section-heading"><div><h2>Documents</h2><p>Uploaded reports and therapist-approved documents.</p></div></div>
+      <div v-if="documentsLoading" class="empty-inline">Loading documents…</div>
+      <div v-else-if="!documents.length" class="empty-state large"><div>📄</div><h2>No documents yet</h2><p>Upload a report from the practice Reports page.</p></div>
+      <button v-for="document in documents" :key="document.id" class="session-row" @click="openDocument(document)"><span><strong>{{ document.title }}</strong><small>{{ document.report_date || formatDate(document.created_at) }} · {{ document.original_filename }}</small></span><span>Open ›</span></button>
+    </div>
 
     <div v-if="editingSession" class="modal-backdrop" @click.self="closeEditor">
       <article class="session-editor" role="dialog" aria-modal="true" aria-labelledby="session-title">
@@ -49,9 +54,11 @@
 
 <script setup>
 import { computed, ref, watch } from 'vue'
+import { authenticatedFetch } from '../../lib/api.js'
 const props = defineProps({ selectedClient: { type: Object, default: null } })
 const tabs = [{id:'overview',label:'Overview'},{id:'sessions',label:'Sessions'},{id:'investigations',label:'Investigations'},{id:'documents',label:'Documents'}]
 const activeTab = ref('overview'), editingSession = ref(null), draftNotes = ref(''), allSessions = ref(loadSessions())
+const documents=ref([]),documentsLoading=ref(false)
 const sessions = computed(() => allSessions.value.filter(item => item.clientId === props.selectedClient?.id).sort((a,b) => new Date(b.startedAt)-new Date(a.startedAt)))
 const lastSession = computed(() => sessions.value[0] || null)
 function loadSessions(){try{return JSON.parse(localStorage.getItem('helio_sessions')||'[]')}catch{return []}}
@@ -63,7 +70,10 @@ function completeSession(){editingSession.value.notes=draftNotes.value;editingSe
 function closeEditor(){editingSession.value=null;draftNotes.value=''}
 function formatDate(value){return new Date(value).toLocaleDateString(undefined,{weekday:'short',day:'numeric',month:'short',year:'numeric'})}
 function preview(value){return value.length>70?`${value.slice(0,70)}…`:value}
-watch(()=>props.selectedClient?.id,()=>{activeTab.value='overview';closeEditor()})
+async function loadDocuments(){if(!props.selectedClient)return;documentsLoading.value=true;try{const response=await authenticatedFetch(`/api/documents?clientRef=${encodeURIComponent(props.selectedClient.id)}`);const data=await response.json();documents.value=response.ok?(data.documents||[]):[]}finally{documentsLoading.value=false}}
+async function openDocument(document){const response=await authenticatedFetch(`/api/documents?download=${encodeURIComponent(document.id)}`);const data=await response.json();if(response.ok&&data.url)window.open(data.url,'_blank','noopener')}
+watch(()=>props.selectedClient?.id,()=>{activeTab.value='overview';closeEditor();documents.value=[]})
+watch(activeTab,value=>{if(value==='documents')loadDocuments()})
 </script>
 
 <style scoped>
