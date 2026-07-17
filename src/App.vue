@@ -282,7 +282,6 @@
 
 <script setup>
 import { ref, computed, onMounted, watch, nextTick } from "vue"
-import { supabase } from "./lib/supabase.js"
 import AIInsightDrawer from "./components/AIInsightDrawer.vue"
 import ClientContextDrawer from "./components/tools/ClientContextDrawer.vue"
 import EMDRToolLoader from "./components/tools/EMDRToolLoader.vue"
@@ -315,10 +314,6 @@ const calendarLoading = ref(false)
 const calendarError = ref(null)
 
 const fetchCalendarEvents = async () => {
-  if (!supabase) {
-    calendarError.value = "Supabase environment variables are missing (VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY)."
-    return
-  }
   calendarLoading.value = true
   calendarError.value = null
   try {
