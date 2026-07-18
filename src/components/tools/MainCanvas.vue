@@ -42,7 +42,7 @@
     <div v-if="editingSession" class="modal-backdrop" @click.self="closeEditor">
       <article class="session-editor" role="dialog" aria-modal="true" aria-labelledby="session-title">
         <header><div><p class="eyebrow">{{ editingSession.status === 'completed' ? 'Completed session' : 'Session draft' }}</p><h2 id="session-title">{{ formatDate(editingSession.startedAt) }}</h2></div><button class="close" @click="closeEditor" aria-label="Close">×</button></header>
-        <label for="session-notes">Session notes</label>
+        <div class="note-label"><label for="session-notes">Session notes</label><button v-if="editingSession.status !== 'completed'" class="dictate" :disabled="isDictating || transcribing" @click="toggleDictation">{{ isDictating ? 'Stop dictation' : transcribing ? 'Transcribing…' : '🎙 Dictate note' }}</button></div>
         <textarea id="session-notes" v-model="draftNotes" :disabled="editingSession.status === 'completed'" placeholder="Record the session in your own words…"></textarea>
         <aside class="ai-boundary"><strong>AI assistance</strong><p>Later, the therapist will be able to request a draft summary, actions, or possible observations here. Nothing will be added to the client record automatically.</p></aside>
         <footer><button class="secondary" @click="closeEditor">Close</button><template v-if="editingSession.status !== 'completed'"><button class="secondary" @click="saveDraft">Save draft</button><button class="primary" @click="completeSession">Complete session</button></template></footer>
@@ -59,6 +59,7 @@ const props = defineProps({ selectedClient: { type: Object, default: null } })
 const tabs = [{id:'overview',label:'Overview'},{id:'sessions',label:'Sessions'},{id:'investigations',label:'Investigations'},{id:'documents',label:'Documents'}]
 const activeTab = ref('overview'), editingSession = ref(null), draftNotes = ref(''), allSessions = ref(loadSessions())
 const documents=ref([]),documentsLoading=ref(false)
+const isDictating=ref(false),transcribing=ref(false); let recorder=null, chunks=[]
 const sessions = computed(() => allSessions.value.filter(item => item.clientId === props.selectedClient?.id).sort((a,b) => new Date(b.startedAt)-new Date(a.startedAt)))
 const lastSession = computed(() => sessions.value[0] || null)
 function loadSessions(){try{return JSON.parse(localStorage.getItem('helio_sessions')||'[]')}catch{return []}}
@@ -68,6 +69,7 @@ function openSession(session){editingSession.value=session;draftNotes.value=sess
 function saveDraft(){editingSession.value.notes=draftNotes.value;editingSession.value.updatedAt=new Date().toISOString();persist();closeEditor()}
 function completeSession(){editingSession.value.notes=draftNotes.value;editingSession.value.status='completed';editingSession.value.completedAt=new Date().toISOString();persist();closeEditor()}
 function closeEditor(){editingSession.value=null;draftNotes.value=''}
+async function toggleDictation(){if(isDictating.value){recorder?.stop();return}try{const stream=await navigator.mediaDevices.getUserMedia({audio:true});chunks=[];recorder=new MediaRecorder(stream);recorder.ondataavailable=e=>chunks.push(e.data);recorder.onstop=async()=>{stream.getTracks().forEach(t=>t.stop());isDictating.value=false;transcribing.value=true;try{const blob=new Blob(chunks,{type:recorder.mimeType});const audio=await new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(reader.result);reader.onerror=reject;reader.readAsDataURL(blob)});const response=await authenticatedFetch('/api/ai/transcribe',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({audio})});const data=await response.json();if(!response.ok)throw new Error(data.error);draftNotes.value=`${draftNotes.value}${draftNotes.value?'\\n\\n':''}${data.text}`.trim()}catch(error){alert(error.message||'Unable to transcribe this note')}finally{transcribing.value=false}};recorder.start();isDictating.value=true}catch(error){alert('Microphone access is needed to dictate a note.')}}
 function formatDate(value){return new Date(value).toLocaleDateString(undefined,{weekday:'short',day:'numeric',month:'short',year:'numeric'})}
 function preview(value){return value.length>70?`${value.slice(0,70)}…`:value}
 async function loadDocuments(){if(!props.selectedClient)return;documentsLoading.value=true;try{const response=await authenticatedFetch(`/api/documents?clientRef=${encodeURIComponent(props.selectedClient.id)}`);const data=await response.json();documents.value=response.ok?(data.documents||[]):[]}finally{documentsLoading.value=false}}
