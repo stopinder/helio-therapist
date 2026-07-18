@@ -54,10 +54,10 @@
     <div v-if="selectedEvent" class="modal-backdrop" @click.self="selectedEvent = null">
       <article class="event-modal" role="dialog" aria-modal="true" aria-labelledby="event-title">
         <button class="close-button" @click="selectedEvent = null" aria-label="Close">×</button>
-        <p class="event-eyebrow">Google Calendar</p><h2 id="event-title">{{ selectedEvent.summary }}</h2>
+        <p class="event-eyebrow">{{ selectedEvent.provider || 'Calendar' }}</p><h2 id="event-title">{{ selectedEvent.summary }}</h2>
         <dl><div><dt>When</dt><dd>{{ fullEventDate(selectedEvent) }}</dd></div><div v-if="selectedEvent.location"><dt>Where</dt><dd>{{ selectedEvent.location }}</dd></div></dl>
         <p v-if="selectedEvent.description" class="event-description">{{ selectedEvent.description }}</p>
-        <a v-if="selectedEvent.link" :href="selectedEvent.link" target="_blank" rel="noopener">Open in Google Calendar ↗</a>
+        <a v-if="selectedEvent.link" :href="selectedEvent.link" target="_blank" rel="noopener">Join meeting ↗</a>
       </article>
     </div>
   </section>
@@ -117,7 +117,7 @@ function selectMonthDay(date){selectedDate.value=new Date(date); if(window.inner
 
 async function loadEvents(){
   loading.value=true; error.value=''
-  try { const [start,end]=requestRange.value; const params=new URLSearchParams({timeMin:start.toISOString(),timeMax:end.toISOString()}); const response=await authenticatedFetch(`/api/google/events?${params}`); const data=await response.json(); if(!response.ok)throw new Error(data.details||data.error||'Failed to fetch calendar events'); events.value=data.events||[] }
+  try { const [start,end]=requestRange.value; const params=new URLSearchParams({timeMin:start.toISOString(),timeMax:end.toISOString()}); const response=await authenticatedFetch(`/api/calendar/events?${params}`); const data=await response.json(); if(!response.ok)throw new Error(data.details||data.error||'Failed to fetch calendar events'); events.value=data.events||[] }
   catch(err){console.error('Calendar fetch error:',err); error.value=err.message}
   finally{loading.value=false}
 }
