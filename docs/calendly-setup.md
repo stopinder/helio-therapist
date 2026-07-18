@@ -1,49 +1,42 @@
 # Calendly connection setup
 
-MindWorks uses Calendly OAuth so each therapist connects their own Calendly
-account. Access and refresh tokens stay in the server-only `integrations` table
-and are never returned to the browser.
+MindWorks currently uses a Calendly personal access token for its private MVP.
+The therapist enters the token once in Settings. MindWorks validates it directly
+with Calendly and stores it in the existing server-only `integrations` table,
+scoped to the signed-in Supabase user.
 
-## 1. Create the Calendly OAuth application
+No Calendly client ID, client secret, or Vercel environment variable is needed
+for this connection method.
 
-Create a **Production** web application in the Calendly Developer Portal.
+## Generate a Calendly token
 
-- Redirect URI: `https://helio-therapist.vercel.app/api/calendly/callback`
-- Scopes:
-  - `users:read`
-  - `event_types:read`
-  - `scheduled_events:read`
-  - `webhooks:write`
+1. Sign in to the therapist's normal Calendly account.
+2. Open **Integrations & apps**.
+3. Select **API & Webhooks**.
+4. Generate a personal access token with these scopes:
+   - `users:read`
+   - `event_types:read`
+   - `scheduled_events:read`
+   - `webhooks:write`
+5. Copy the token when Calendly displays it. Do not put it in source code,
+   Vercel variables, chat, email, or a committed `.env` file.
 
-Copy the client ID and client secret when Calendly displays them. Calendly only
-shows the secret once. Do not paste either value into source code or commit them.
+## Connect MindWorks
 
-## 2. Add Vercel environment variables
-
-Add these to the MindWorks Vercel project for **Production**:
-
-- `CALENDLY_CLIENT_ID`
-- `CALENDLY_CLIENT_SECRET`
-- `CALENDLY_REDIRECT_URI=https://helio-therapist.vercel.app/api/calendly/callback`
-
-The existing `APP_URL` should remain the stable production URL:
-
-`https://helio-therapist.vercel.app`
-
-Redeploy after saving the variables.
-
-Test the connection only at `https://helio-therapist.vercel.app`. Do not use a
-Vercel preview URL for OAuth testing because the return must preserve the
-Supabase session on the stable production domain.
-
-## 3. Test the connection
-
-1. Sign in to MindWorks.
+1. Sign in at `https://helio-therapist.vercel.app`.
 2. Open **Settings**.
 3. Select **Connect** beside Calendly.
-4. Approve the requested Calendly access.
-5. Confirm that Settings shows **Connected** after returning to MindWorks.
+4. Paste the token into the secure connection form and select
+   **Connect securely**.
+5. Confirm that Settings shows **Connected**.
 
-This first slice establishes the secure account connection. Booking import,
-webhook processing, and Google Calendar de-duplication should be added only
-after this connection has been verified in production.
+## Webhooks
+
+When booking synchronization is introduced, MindWorks will generate a random
+webhook signing key and supply it while creating the Calendly webhook
+subscription. It is not another credential the therapist needs to obtain from
+Calendly.
+
+This first slice establishes and verifies the account connection. Booking
+import, webhook processing, and Google Calendar de-duplication follow after the
+connection has been verified in production.
