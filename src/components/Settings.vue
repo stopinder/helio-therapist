@@ -275,13 +275,17 @@ onMounted(async () => {
     cleanupUrl()
   }
 
-  await Promise.all([fetchGoogleStatus(), fetchCalendlyStatus()])
+  await Promise.all([fetchGoogleStatus(), fetchCalendlyStatus(), fetchZoomStatus()])
   
-  // Zoom check
   if (params.get('zoom') === 'success') {
-    zoomStatus.value = 'Connected'
+    await fetchZoomStatus()
     successMessage.value = 'Zoom connected successfully'
     showSuccess.value = true
+    cleanupUrl()
+  }
+
+  if (params.get('zoom') === 'error') {
+    alert(params.get('message') || 'Zoom connection failed')
     cleanupUrl()
   }
   
@@ -337,14 +341,52 @@ const cleanupUrl = () => {
   }, 3000)
 }
 
-const connectZoom = () => {
+const fetchZoomStatus = async () => {
+  try {
+    const response = await authenticatedFetch('/api/zoom/status')
+    const data = await response.json()
+    if (!response.ok) throw new Error(data.error || 'Unable to check Zoom connection')
+    zoomStatus.value = data.connected ? 'Connected' : 'Not connected'
+  } catch (error) {
+    console.error('Failed to fetch Zoom status:', error)
+    zoomStatus.value = 'Not connected'
+  }
+}
+
+const connectZoom = async () => {
   isConnecting.value = true
-  window.location.href = '/api/zoom/authorize'
+  try {
+    const response = await authenticatedFetch('/api/zoom/authorize', {
+      method: 'POST'
+    })
+    const data = await response.json()
+    if (!response.ok || !data.url) {
+      throw new Error(data.error || 'Unable to start Zoom connection')
+    }
+    window.location.href = data.url
+  } catch (error) {
+    alert(error.message)
+    isConnecting.value = false
+  }
 }
 
 const disconnectZoom = async () => {
-  if (confirm('Disconnect Zoom?')) {
+  if (!confirm('Disconnect Zoom? Helio will no longer retrieve future Zoom transcripts.')) return
+
+  try {
+    const response = await authenticatedFetch('/api/zoom/disconnect', {
+      method: 'POST'
+    })
+    const data = await response.json()
+    if (!response.ok) throw new Error(data.error || 'Unable to disconnect Zoom')
+
     zoomStatus.value = 'Not connected'
+    successMessage.value = 'Zoom disconnected'
+    showSuccess.value = true
+    setTimeout(() => showSuccess.value = false, 3000)
+  } catch (error) {
+    console.error('Failed to disconnect Zoom:', error)
+    alert(error.message)
   }
 }
 
