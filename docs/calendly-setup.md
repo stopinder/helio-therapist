@@ -20,7 +20,7 @@ shows the secret once. Do not paste either value into source code or commit them
 
 ## 2. Add Vercel environment variables
 
-Add these to the MindWorks Vercel project for Production and Preview:
+Add these to the MindWorks Vercel project for **Production**:
 
 - `CALENDLY_CLIENT_ID`
 - `CALENDLY_CLIENT_SECRET`
@@ -31,6 +31,10 @@ The existing `APP_URL` should remain the stable production URL:
 `https://helio-therapist.vercel.app`
 
 Redeploy after saving the variables.
+
+Test the connection only at `https://helio-therapist.vercel.app`. Do not use a
+Vercel preview URL for OAuth testing because the return must preserve the
+Supabase session on the stable production domain.
 
 ## 3. Test the connection
 
