@@ -169,6 +169,7 @@ import Settings from "./components/Settings.vue"
 import CalendarSchedule from "./components/CalendarSchedule.vue"
 import ClientDirectory from "./components/ClientDirectory.vue"
 import ReportsWorkspace from "./components/ReportsWorkspace.vue"
+import { supabase } from "./lib/supabase.js"
 
 // --- State ---
 const isSidebarOpen = ref(true)
@@ -194,19 +195,29 @@ const handleGenerateInsight = (data) => {
 }
 
 // --- Clients ---
-const clients = ref(
-    JSON.parse(localStorage.getItem("helio_clients")) || [
-      { id: 1, name: "Celia R.", note: "Parts work / relationship stress", archived: false },
-    ]
-)
+const clients = ref([])
 watch(clients, (newClients) => {
   localStorage.setItem("helio_clients", JSON.stringify(newClients))
 }, { deep: true })
 
-const handleAddClient = (newClientData) => {
+const loadClients = async () => {
+  if (!supabase) return
+  const { data, error } = await supabase.from('clients').select('*').order('created_at', { ascending: false })
+  if (error) { console.error('Unable to load clients:', error.message); return }
+  clients.value = (data || []).map(client => ({ ...client, name: client.display_name, note: client.current_focus }))
+  const storedId = JSON.parse(localStorage.getItem("helio_selectedClient") || "null")?.id
+  selectedClient.value = clients.value.find(client => client.id === storedId) || clients.value[0] || null
+}
+
+const handleAddClient = async (newClientData) => {
   const name = newClientData?.name?.trim() || "New Client"
   const note = newClientData?.note || ""
-  const newClient = { id: Date.now(), name, note, archived: false }
+  if (!supabase) return
+  const { data: auth } = await supabase.auth.getUser()
+  if (!auth.user) { feedbackMessage.value = "Please sign in again"; return }
+  const { data, error } = await supabase.from('clients').insert({ user_id: auth.user.id, display_name: name, reference: newClientData?.email || null, current_focus: note }).select().single()
+  if (error) { feedbackMessage.value = `Unable to add client: ${error.message}`; return }
+  const newClient = { ...data, name: data.display_name, note: data.current_focus }
   clients.value.push(newClient)
   selectedClient.value = newClient
   localStorage.setItem("helio_selectedClient", JSON.stringify(newClient))
@@ -399,6 +410,7 @@ const updateScreen = () => {
   }
 }
 onMounted(() => {
+  loadClients()
   updateScreen()
   window.addEventListener("resize", updateScreen)
   window.addEventListener("tool-saved", () => {
