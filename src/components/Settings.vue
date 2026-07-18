@@ -53,6 +53,49 @@
           </div>
         </div>
 
+        <!-- Calendly -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between p-4 border-b border-[#f1f5f9] gap-4">
+          <div class="flex items-start sm:items-center gap-4">
+            <div class="flex-shrink-0 w-10 h-10 rounded-lg bg-[#eef6ff] flex items-center justify-center border border-[#dbeafe]">
+              <span class="text-[18px] font-bold text-[#006bff]" aria-hidden="true">C</span>
+            </div>
+            <div class="min-w-0 flex-1">
+              <div class="text-[15px] font-medium text-[#2c3e50] break-words">Calendly</div>
+              <div class="text-[13px] break-words" :class="calendlyStatus === 'Connected' ? 'text-green-600' : 'text-slate-400'">
+                <template v-if="isLoadingCalendlyStatus">
+                  <span class="text-slate-400 animate-pulse">Checking status...</span>
+                </template>
+                <template v-else-if="calendlyStatus === 'Connected'">
+                  <div class="flex flex-col mt-1">
+                    <span class="font-medium text-green-600">✓ Connected</span>
+                    <span class="text-slate-400 text-[11px] leading-tight">Connected to Calendly</span>
+                  </div>
+                </template>
+                <template v-else>
+                  Connect booking, rescheduling and cancellation updates
+                </template>
+              </div>
+            </div>
+          </div>
+          <div class="flex items-center gap-2 w-full sm:w-auto">
+            <button
+              v-if="calendlyStatus === 'Connected'"
+              @click="disconnectCalendly"
+              class="w-full sm:w-auto min-h-[44px] sm:min-h-0 px-4 py-2 sm:py-1.5 text-[13px] font-medium text-slate-500 hover:text-red-500 transition text-center"
+            >
+              Disconnect
+            </button>
+            <button
+              v-else
+              @click="connectCalendly"
+              :disabled="isConnectingCalendly"
+              class="w-full sm:w-auto min-h-[44px] sm:min-h-0 px-4 py-2 sm:py-1.5 text-[13px] font-medium text-[#2563eb] hover:bg-[#eff6ff] rounded-md transition border border-transparent hover:border-[#dbeafe] disabled:opacity-50 text-center"
+            >
+              {{ isConnectingCalendly ? 'Connecting...' : 'Connect' }}
+            </button>
+          </div>
+        </div>
+
         <!-- Zoom -->
         <div class="flex flex-col sm:flex-row sm:items-center justify-between p-4 border-b border-[#f1f5f9] gap-4">
           <div class="flex items-start sm:items-center gap-4">
@@ -134,6 +177,64 @@
       </section>
     </div>
 
+    <div
+      v-if="showCalendlyToken"
+      class="fixed inset-0 z-50 bg-slate-900/50 flex items-end sm:items-center justify-center p-0 sm:p-4"
+      @click.self="closeCalendlyToken"
+    >
+      <form
+        class="w-full sm:max-w-lg bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl p-5 sm:p-6"
+        @submit.prevent="saveCalendlyToken"
+      >
+        <div class="flex items-start justify-between gap-4 mb-5">
+          <div>
+            <h2 class="text-lg font-semibold text-[#1a2b3b]">Connect Calendly</h2>
+            <p class="text-[13px] text-slate-500 mt-1">
+              Paste your personal access token. It is stored securely and will not be shown again.
+            </p>
+          </div>
+          <button type="button" class="text-2xl leading-none text-slate-400" aria-label="Close" @click="closeCalendlyToken">×</button>
+        </div>
+
+        <label for="calendly-token" class="block text-[13px] font-medium text-slate-700 mb-2">
+          Personal access token
+        </label>
+        <div class="relative">
+          <input
+            id="calendly-token"
+            v-model="calendlyToken"
+            :type="showCalendlyTokenValue ? 'text' : 'password'"
+            name="calendly-token"
+            autocomplete="off"
+            autocapitalize="none"
+            spellcheck="false"
+            required
+            class="w-full min-h-[48px] rounded-lg border border-slate-300 px-3 pr-20 text-sm outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          />
+          <button
+            type="button"
+            class="absolute inset-y-0 right-0 px-3 text-[13px] font-medium text-blue-600"
+            @click="showCalendlyTokenValue = !showCalendlyTokenValue"
+          >
+            {{ showCalendlyTokenValue ? 'Hide' : 'Reveal' }}
+          </button>
+        </div>
+
+        <div class="flex flex-col-reverse sm:flex-row sm:justify-end gap-2 mt-6">
+          <button type="button" class="min-h-[44px] px-4 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-100" @click="closeCalendlyToken">
+            Cancel
+          </button>
+          <button
+            type="submit"
+            :disabled="isConnectingCalendly || !calendlyToken.trim()"
+            class="min-h-[44px] px-5 rounded-lg text-sm font-medium bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
+          >
+            {{ isConnectingCalendly ? 'Verifying…' : 'Connect securely' }}
+          </button>
+        </div>
+      </form>
+    </div>
+
     <transition name="fade">
       <div v-if="showSuccess" class="fixed bottom-8 left-1/2 transform -translate-x-1/2 bg-slate-900 text-white px-6 py-3 rounded-full shadow-2xl flex items-center gap-3 z-50">
         <span class="text-green-400">✓</span>
@@ -155,6 +256,12 @@ const googleEmail = ref('')
 const lastSyncedGoogle = ref('Never')
 const isConnectingGoogle = ref(false)
 const isLoadingStatus = ref(true)
+const calendlyStatus = ref('Not connected')
+const isConnectingCalendly = ref(false)
+const isLoadingCalendlyStatus = ref(true)
+const showCalendlyToken = ref(false)
+const showCalendlyTokenValue = ref(false)
+const calendlyToken = ref('')
 const showSuccess = ref(false)
 const successMessage = ref('')
 
@@ -168,7 +275,7 @@ onMounted(async () => {
     cleanupUrl()
   }
 
-  await fetchGoogleStatus()
+  await Promise.all([fetchGoogleStatus(), fetchCalendlyStatus()])
   
   // Zoom check
   if (params.get('zoom') === 'success') {
@@ -206,6 +313,21 @@ const fetchGoogleStatus = async () => {
   }
 }
 
+const fetchCalendlyStatus = async () => {
+  isLoadingCalendlyStatus.value = true
+  try {
+    const response = await authenticatedFetch('/api/calendly/status')
+    const data = await response.json()
+    if (!response.ok) throw new Error(data.error || 'Unable to check Calendly connection')
+    calendlyStatus.value = data.connected ? 'Connected' : 'Not connected'
+  } catch (err) {
+    console.error('Failed to fetch Calendly status:', err)
+    calendlyStatus.value = 'Not connected'
+  } finally {
+    isLoadingCalendlyStatus.value = false
+  }
+}
+
 const cleanupUrl = () => {
   // Clean up URL
   window.history.replaceState({}, document.title, window.location.pathname)
@@ -223,6 +345,66 @@ const connectZoom = () => {
 const disconnectZoom = async () => {
   if (confirm('Disconnect Zoom?')) {
     zoomStatus.value = 'Not connected'
+  }
+}
+
+const connectCalendly = () => {
+  calendlyToken.value = ''
+  showCalendlyTokenValue.value = false
+  showCalendlyToken.value = true
+}
+
+const closeCalendlyToken = () => {
+  if (isConnectingCalendly.value) return
+  calendlyToken.value = ''
+  showCalendlyTokenValue.value = false
+  showCalendlyToken.value = false
+}
+
+const saveCalendlyToken = async () => {
+  if (!calendlyToken.value.trim()) return
+
+  isConnectingCalendly.value = true
+  try {
+    const response = await authenticatedFetch('/api/calendly/connect', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token: calendlyToken.value.trim() })
+    })
+    const data = await response.json()
+    if (!response.ok) throw new Error(data.error || 'Unable to connect Calendly')
+
+    calendlyStatus.value = 'Connected'
+    successMessage.value = 'Calendly connected successfully'
+    showSuccess.value = true
+    calendlyToken.value = ''
+    showCalendlyTokenValue.value = false
+    showCalendlyToken.value = false
+    setTimeout(() => showSuccess.value = false, 3000)
+  } catch (error) {
+    alert(error.message)
+  } finally {
+    isConnectingCalendly.value = false
+  }
+}
+
+const disconnectCalendly = async () => {
+  if (!confirm('Disconnect Calendly? Existing appointments will not be deleted.')) return
+
+  try {
+    const response = await authenticatedFetch('/api/calendly/disconnect', {
+      method: 'POST'
+    })
+    const data = await response.json()
+    if (!response.ok) throw new Error(data.error || 'Unable to disconnect Calendly')
+
+    calendlyStatus.value = 'Not connected'
+    successMessage.value = 'Calendly disconnected'
+    showSuccess.value = true
+    setTimeout(() => showSuccess.value = false, 3000)
+  } catch (error) {
+    console.error('Failed to disconnect Calendly:', error)
+    alert(error.message)
   }
 }
 
