@@ -38,7 +38,7 @@
           </div>
 
           <!-- Content -->
-          <div class="flex-1 overflow-y-auto p-6 space-y-8">
+          <div class="flex-1 overflow-y-auto p-6 space-y-7">
             <template v-if="client">
               <!-- Current focus -->
               <section>
@@ -48,47 +48,20 @@
                 </p>
               </section>
 
-              <!-- Plans -->
               <section>
-                <h3 class="text-[13px] font-bold text-slate-500 uppercase tracking-wider mb-3">Plans</h3>
-                <ul class="space-y-2 text-[14px] text-slate-600">
-                  <li class="flex items-start gap-2">
-                    <span class="text-slate-400 mt-1">•</span>
-                    <span>Review progress on boundaries</span>
-                  </li>
-                  <li class="flex items-start gap-2">
-                    <span class="text-slate-400 mt-1">•</span>
-                    <span>Introduce parts work mapping</span>
-                  </li>
-                </ul>
-              </section>
-
-              <!-- Risk -->
-              <section>
-                <h3 class="text-[13px] font-bold text-slate-500 uppercase tracking-wider mb-3">Risk</h3>
-                <div class="p-3 bg-slate-50 border border-slate-200 rounded text-[14px] text-slate-600">
-                  Low risk identified. No recent safety concerns.
+                <h3 class="text-[13px] font-bold text-slate-500 uppercase tracking-wider mb-3">Record</h3>
+                <div class="space-y-3 text-[14px] text-slate-600">
+                  <div class="flex justify-between gap-4"><span>Next appointment</span><strong class="text-[#2c3e50]">Not scheduled</strong></div>
+                  <div class="flex justify-between gap-4"><span>Sessions</span><strong class="text-[#2c3e50]">No sessions yet</strong></div>
+                  <div class="flex justify-between gap-4"><span>Investigations</span><strong class="text-[#2c3e50]">None open</strong></div>
                 </div>
               </section>
-
-              <!-- Investigations -->
               <section>
-                <h3 class="text-[13px] font-bold text-slate-500 uppercase tracking-wider mb-3">Investigations</h3>
-                <p class="text-[14px] text-slate-600 italic">No active investigations.</p>
-              </section>
-
-              <!-- Recent notes -->
-              <section>
-                <h3 class="text-[13px] font-bold text-slate-500 uppercase tracking-wider mb-3">Recent notes</h3>
-                <div class="space-y-4">
-                  <div class="border-l-2 border-slate-200 pl-4 py-1">
-                    <div class="text-[12px] text-slate-400 mb-1">Last week</div>
-                    <p class="text-[14px] text-slate-600">Client reported improved communication with partner.</p>
-                  </div>
-                  <div class="border-l-2 border-slate-200 pl-4 py-1">
-                    <div class="text-[12px] text-slate-400 mb-1">2 weeks ago</div>
-                    <p class="text-[14px] text-slate-600">Discussed childhood influences on current triggers.</p>
-                  </div>
+                <h3 class="text-[13px] font-bold text-slate-500 uppercase tracking-wider mb-3">Actions</h3>
+                <div class="grid gap-2">
+                  <button class="context-action" @click="$emit('open-record')">Open full client record</button>
+                  <button class="context-action" @click="$emit('start-session')">Start session</button>
+                  <button class="context-action muted" disabled>Send questionnaire <span>Coming next</span></button>
                 </div>
               </section>
             </template>
@@ -128,7 +101,7 @@ const props = defineProps({
   }
 })
 
-const emit = defineEmits(['close', 'open-record'])
+const emit = defineEmits(['close', 'open-record', 'start-session'])
 
 const drawerContainer = ref(null)
 
@@ -174,4 +147,5 @@ onBeforeUnmount(() => {
 .drawer-slide-leave-to {
   transform: translateX(100%);
 }
+.context-action{width:100%;text-align:left;border:1px solid #d9dce1;border-radius:.55rem;padding:.7rem .8rem;background:white;color:#2563eb;font-size:14px;font-weight:600}.context-action:hover{background:#f8fafc}.context-action.muted{color:#94a3b8;cursor:not-allowed}.context-action span{float:right;font-size:11px;font-weight:500}
 </style>
