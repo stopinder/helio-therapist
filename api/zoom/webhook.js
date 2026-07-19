@@ -82,30 +82,21 @@ export default async function handler(req, res) {
 
     if (intakeError) throw intakeError;
 
-    // Zoom reliably sends recording.completed, and on some accounts it already
-    // contains the completed transcript file while transcript_completed is not
-    // delivered. Accept either event only when it actually contains a transcript.
-    const file = transcriptFile(recording);
-    const transcriptBearingEvent =
-      eventType === 'recording.transcript_completed' ||
-      (eventType === 'recording.completed' && Boolean(file));
-
-    if (!transcriptBearingEvent) {
-      await updateEvent(supabase, intakeEvent.id, {
-        processing_status: 'pending',
-        processing_error: 'Recording event received before a transcript file was available'
-      });
-      console.info('[Zoom Webhook] Recording awaiting transcript file', { meetingId, eventType });
+    // Zoom reliably sends recording.completed. Some accounts do not send a
+    // later transcript_completed event, so both events are valid intake triggers.
+    if (eventType !== 'recording.transcript_completed' && eventType !== 'recording.completed') {
       return res.status(200).json({ received: true });
     }
 
-    if (!file?.download_url || !file?.id || !hostId || !meetingId) {
+    if (!hostId || !meetingId) {
       await updateEvent(supabase, intakeEvent.id, {
         processing_status: 'failed',
-        processing_error: 'Transcript-bearing event did not contain a downloadable file or host id'
+        processing_error: 'Recording event did not contain a Zoom host id or meeting id'
       });
       return res.status(200).json({ received: true });
     }
+
+    let file = transcriptFile(recording);
 
     const integrationFields =
       'user_id, encrypted_access_token, encrypted_refresh_token, expires_at, token_type, scope';
@@ -157,6 +148,37 @@ export default async function handler(req, res) {
 
     const getToken = (options) => getZoomAccessTokenContext(supabase, integration, options);
     const initialToken = await getToken({ forceRefresh: false });
+
+    // The recordings endpoint is the reliable fallback for transcript metadata.
+    // It also covers accounts that only deliver recording.completed webhooks.
+    const recordingsResponse = await fetch(
+      `https://api.zoom.us/v2/meetings/${encodeURIComponent(meetingId)}/recordings`,
+      { headers: { Authorization: `Bearer ${initialToken.accessToken}` } }
+    );
+
+    if (recordingsResponse.ok) {
+      const recordingsMetadata = await recordingsResponse.json();
+      const canonicalFile = transcriptFile(recordingsMetadata);
+      if (canonicalFile?.download_url && canonicalFile?.id) {
+        file = canonicalFile;
+        console.info('[Zoom Webhook] Transcript file resolved from recording list', { meetingId });
+      }
+    } else {
+      console.warn('[Zoom Webhook] Recording file lookup unavailable', {
+        meetingId,
+        status: recordingsResponse.status
+      });
+    }
+
+    if (!file?.download_url || !file?.id) {
+      await updateEvent(supabase, intakeEvent.id, {
+        processing_status: 'received',
+        processing_error: 'Recording received before a downloadable transcript file was available'
+      });
+      console.info('[Zoom Webhook] Recording awaiting transcript file', { meetingId, eventType });
+      return res.status(200).json({ received: true });
+    }
+
     console.info('[Zoom Webhook] Downloading transcript', {
       meetingId,
       credential: 'oauth-access-token',
