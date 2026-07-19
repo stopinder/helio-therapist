@@ -2,6 +2,8 @@ import { requireAuthenticatedUser } from '../_lib/supabase.js';
 
 export default async function handler(req, res) {
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
+  const webhookIntakeVersion = 'transcript-inbox-v2-single-therapist-fallback';
+
   try {
     const { supabase, user } = await requireAuthenticatedUser(req);
     const { data, error } = await supabase.from('integrations')
@@ -11,9 +13,14 @@ export default async function handler(req, res) {
     return res.status(200).json({
       connected: Boolean(data?.encrypted_refresh_token),
       connected_at: data?.updated_at || null,
-      webhook_intake_version: 'transcript-inbox-v2-single-therapist-fallback'
+      webhook_intake_version: webhookIntakeVersion
     });
   } catch (error) {
-    return res.status(error.status || 500).json({ error: error.status === 401 ? error.message : 'Unable to check Zoom connection' });
+    // Deliberately expose only the deployed intake version without sign-in.
+    // This is a non-secret operational diagnostic; integration status remains private.
+    if (error.status === 401) {
+      return res.status(200).json({ webhook_intake_version: webhookIntakeVersion });
+    }
+    return res.status(500).json({ error: 'Unable to check Zoom connection' });
   }
 }
