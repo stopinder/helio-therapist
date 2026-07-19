@@ -142,9 +142,21 @@ export default async function handler(req, res) {
       return res.status(200).json({ received: true });
     }
 
-    const accessToken = await getUsableZoomAccessToken(supabase, integration);
+    // Zoom includes a short-lived download token on recording webhook events.
+    // It is the preferred credential for this specific download. Fall back to
+    // the connected OAuth token only for older payloads that omit it.
+    const downloadToken = body.payload?.download_token;
+    const accessToken = downloadToken || await getUsableZoomAccessToken(supabase, integration);
+    console.info('[Zoom Webhook] Downloading transcript', {
+      meetingId,
+      credential: downloadToken ? 'event-download-token' : 'oauth-access-token'
+    });
+
     const download = await fetch(file.download_url, {
-      headers: { Authorization: `Bearer ${accessToken}` },
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json'
+      },
       redirect: 'follow'
     });
 
