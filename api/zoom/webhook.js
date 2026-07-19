@@ -1,4 +1,6 @@
 import crypto from 'crypto';
+import { getSupabaseClient } from '../_lib/supabase.js';
+import { getUsableZoomAccessToken } from '../_lib/zoom-oauth.js';
 
 function getBody(req) {
   if (!req.body) return {};
@@ -10,6 +12,20 @@ function getBody(req) {
     }
   }
   return req.body;
+}
+
+function transcriptFile(recording) {
+  return (recording.recording_files || []).find((file) => {
+    const fileType = String(file.file_type || '').toUpperCase();
+    const recordingType = String(file.recording_type || '').toLowerCase();
+    return fileType === 'TRANSCRIPT' || recordingType.includes('transcript');
+  });
+}
+
+async function updateEvent(supabase, id, update) {
+  if (!id) return;
+  const { error } = await supabase.from('zoom_webhook_events').update(update).eq('id', id);
+  if (error) console.error('[Zoom Webhook] Unable to update intake event', error.message);
 }
 
 export default async function handler(req, res) {
@@ -26,13 +42,10 @@ export default async function handler(req, res) {
 
   const body = getBody(req);
 
-  // Zoom calls this once when you save the endpoint in the Marketplace.
-  // It proves that Helio controls this URL without exposing the secret.
+  // Zoom calls this when the endpoint is saved. It proves Helio controls the URL.
   if (body.event === 'endpoint.url_validation') {
     const plainToken = body.payload?.plainToken;
-    if (!plainToken) {
-      return res.status(400).json({ error: 'Missing Zoom validation token' });
-    }
+    if (!plainToken) return res.status(400).json({ error: 'Missing Zoom validation token' });
 
     const encryptedToken = crypto
       .createHmac('sha256', secret)
@@ -42,16 +55,102 @@ export default async function handler(req, res) {
     return res.status(200).json({ plainToken, encryptedToken });
   }
 
-  // This endpoint deliberately does not store transcript or client data yet.
-  // The next step will safely match a completed recording to the correct Helio client.
   const recording = body.payload?.object || {};
+  const eventType = body.event || 'unknown';
+  const meetingId = recording.id ? String(recording.id) : null;
+  const hostId = recording.host_id ? String(recording.host_id) : null;
+
   console.info('[Zoom Webhook] Event received', {
-    event: body.event || 'unknown',
-    meetingId: recording.id || null,
-    recordingFiles: Array.isArray(recording.recording_files)
-      ? recording.recording_files.length
-      : 0
+    event: eventType,
+    meetingId,
+    recordingFiles: Array.isArray(recording.recording_files) ? recording.recording_files.length : 0
   });
 
+  try {
+    const supabase = getSupabaseClient();
+    const { data: intakeEvent, error: intakeError } = await supabase
+      .from('zoom_webhook_events')
+      .insert({
+        event_type: eventType,
+        zoom_meeting_id: meetingId,
+        zoom_host_id: hostId,
+        payload: body
+      })
+      .select('id')
+      .single();
+
+    if (intakeError) throw intakeError;
+
+    if (eventType !== 'recording.transcript_completed') {
+      return res.status(200).json({ received: true });
+    }
+
+    const file = transcriptFile(recording);
+    if (!file?.download_url || !file?.id || !hostId || !meetingId) {
+      await updateEvent(supabase, intakeEvent.id, {
+        processing_status: 'failed',
+        processing_error: 'Transcript event did not contain a downloadable file or host id'
+      });
+      return res.status(200).json({ received: true });
+    }
+
+    const { data: integration, error: integrationError } = await supabase
+      .from('integrations')
+      .select('user_id, encrypted_access_token, encrypted_refresh_token, expires_at, token_type, scope')
+      .eq('provider', 'zoom')
+      .eq('provider_account_id', hostId)
+      .maybeSingle();
+
+    if (integrationError) throw integrationError;
+
+    // A transcript is never guessed onto a client. If the therapist has not
+    // re-authorised since account matching was added, preserve the webhook
+    // event for safe reconciliation instead.
+    if (!integration) {
+      await updateEvent(supabase, intakeEvent.id, {
+        processing_status: 'unmatched',
+        processing_error: 'No connected Helio therapist matched this Zoom host'
+      });
+      console.warn('[Zoom Webhook] Transcript awaiting account match', { meetingId, hostId });
+      return res.status(200).json({ received: true });
+    }
+
+    const accessToken = await getUsableZoomAccessToken(supabase, integration);
+    const download = await fetch(file.download_url, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+      redirect: 'follow'
+    });
+
+    if (!download.ok) {
+      throw new Error(`Zoom transcript download failed with ${download.status}`);
+    }
+
+    const originalTranscript = await download.text();
+    if (!originalTranscript.trim()) throw new Error('Zoom returned an empty transcript');
+
+    const { error: transcriptError } = await supabase.from('zoom_transcripts').upsert({
+      therapist_user_id: integration.user_id,
+      zoom_meeting_id: meetingId,
+      zoom_meeting_uuid: recording.uuid ? String(recording.uuid) : null,
+      zoom_recording_file_id: String(file.id),
+      original_format: String(file.file_extension || 'VTT').toUpperCase(),
+      original_transcript: originalTranscript,
+      source: 'zoom_cloud',
+      status: 'unassigned',
+      updated_at: new Date().toISOString()
+    }, { onConflict: 'therapist_user_id,zoom_recording_file_id' });
+
+    if (transcriptError) throw transcriptError;
+
+    await updateEvent(supabase, intakeEvent.id, { processing_status: 'stored' });
+    console.info('[Zoom Webhook] Transcript stored as unassigned', {
+      meetingId,
+      transcriptFileId: file.id
+    });
+  } catch (error) {
+    console.error('[Zoom Webhook] Intake failed', { message: error.message, meetingId, eventType });
+  }
+
+  // Acknowledge promptly so Zoom does not retry while Helio records the failure.
   return res.status(200).json({ received: true });
 }
