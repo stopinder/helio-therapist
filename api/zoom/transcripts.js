@@ -10,7 +10,9 @@ function serialiseTranscript(row) {
     status: row.status,
     clientId: row.client_id,
     receivedAt: row.received_at,
-    updatedAt: row.updated_at
+    updatedAt: row.updated_at,
+    requestedLens: row.requested_lens,
+    sourceRetention: row.source_retention
   };
 }
 
@@ -23,7 +25,7 @@ export default async function handler(req, res) {
     if (req.method === 'GET') {
       const { data, error } = await supabase
         .from('zoom_transcripts')
-        .select('id, zoom_meeting_id, zoom_meeting_uuid, original_format, original_transcript, status, client_id, received_at, updated_at')
+        .select('id, zoom_meeting_id, zoom_meeting_uuid, original_format, original_transcript, status, client_id, received_at, updated_at, requested_lens, source_retention')
         .eq('therapist_user_id', user.id)
         .order('received_at', { ascending: false });
 
@@ -32,13 +34,21 @@ export default async function handler(req, res) {
     }
 
     if (req.method === 'PATCH') {
-      const { id, clientId } = req.body || {};
+      const { id, clientId, requestedLens, sourceRetention } = req.body || {};
+      const allowedLenses = new Set(['clinical_summary', 'draft_note', 'cbt', 'ifs', 'supervision_reflection']);
+      const allowedRetention = new Set(['keep_until_review', 'delete_after_approved_output']);
       if (!id || typeof id !== 'string') {
         return res.status(400).json({ error: 'A transcript id is required.' });
       }
 
       if (clientId !== null && typeof clientId !== 'string') {
         return res.status(400).json({ error: 'Client id must be a client id or null.' });
+      }
+      if (requestedLens !== undefined && requestedLens !== null && !allowedLenses.has(requestedLens)) {
+        return res.status(400).json({ error: 'Choose a supported clinical output.' });
+      }
+      if (sourceRetention !== undefined && !allowedRetention.has(sourceRetention)) {
+        return res.status(400).json({ error: 'Choose a supported source-retention preference.' });
       }
 
       if (clientId) {
@@ -53,16 +63,20 @@ export default async function handler(req, res) {
         if (!client) return res.status(404).json({ error: 'That client was not found.' });
       }
 
+      const update = {
+        client_id: clientId || null,
+        status: clientId ? 'ready' : 'unassigned',
+        updated_at: new Date().toISOString()
+      };
+      if (requestedLens !== undefined) update.requested_lens = requestedLens || null;
+      if (sourceRetention !== undefined) update.source_retention = sourceRetention;
+
       const { data, error } = await supabase
         .from('zoom_transcripts')
-        .update({
-          client_id: clientId || null,
-          status: clientId ? 'ready' : 'unassigned',
-          updated_at: new Date().toISOString()
-        })
+        .update(update)
         .eq('id', id)
         .eq('therapist_user_id', user.id)
-        .select('id, zoom_meeting_id, zoom_meeting_uuid, original_format, original_transcript, status, client_id, received_at, updated_at')
+        .select('id, zoom_meeting_id, zoom_meeting_uuid, original_format, original_transcript, status, client_id, received_at, updated_at, requested_lens, source_retention')
         .maybeSingle();
 
       if (error) throw error;
