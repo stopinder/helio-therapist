@@ -1,6 +1,7 @@
 import crypto from 'crypto';
 import { getSupabaseClient } from '../_lib/supabase.js';
-import { getUsableZoomAccessToken } from '../_lib/zoom-oauth.js';
+import { getZoomAccessTokenContext } from '../_lib/zoom-oauth.js';
+import { downloadZoomTranscriptWithRetry } from '../_lib/zoom-download.js';
 
 function getBody(req) {
   if (!req.body) return {};
@@ -142,51 +143,53 @@ export default async function handler(req, res) {
       return res.status(200).json({ received: true });
     }
 
-    // Zoom includes a short-lived download token on recording webhook events.
-    // It is the preferred credential for this specific download. Fall back to
-    // the connected OAuth token only for older payloads that omit it.
-    const downloadToken = body.payload?.download_token;
-    const accessToken = downloadToken || await getUsableZoomAccessToken(supabase, integration);
+    const getToken = (options) => getZoomAccessTokenContext(supabase, integration, options);
+    const initialToken = await getToken({ forceRefresh: false });
     console.info('[Zoom Webhook] Downloading transcript', {
       meetingId,
-      credential: downloadToken ? 'event-download-token' : 'oauth-access-token'
+      credential: 'oauth-access-token',
+      tokenState: initialToken.refreshed ? 'pre-expiry-refresh' : 'valid'
     });
 
-    // Some webhook payloads provide a recording-file URL that is not usable
-    // with a granular transcript scope. Ask Zoom's dedicated transcript API
-    // for the canonical URL before downloading.
-    let transcriptDownloadUrl = file.download_url;
-    if (!downloadToken) {
-      const transcriptInfo = await fetch(
-        `https://api.zoom.us/v2/meetings/${encodeURIComponent(meetingId)}/transcript`,
-        { headers: { Authorization: `Bearer ${accessToken}` } }
-      );
+    // This endpoint is optional. Zoom returns code 3322 for a just-produced
+    // transcript in some accounts, so that result remains non-fatal.
+    const transcriptInfo = await fetch(
+      `https://api.zoom.us/v2/meetings/${encodeURIComponent(meetingId)}/transcript`,
+      { headers: { Authorization: `Bearer ${initialToken.accessToken}` } }
+    );
 
-      if (transcriptInfo.ok) {
-        const transcriptMetadata = await transcriptInfo.json();
-        if (transcriptMetadata.download_url) {
-          transcriptDownloadUrl = transcriptMetadata.download_url;
-          console.info('[Zoom Webhook] Using dedicated transcript download URL', { meetingId });
-        }
-      } else {
-        const reason = await transcriptInfo.text().catch(() => '');
-        console.warn('[Zoom Webhook] Dedicated transcript lookup unavailable', {
-          meetingId,
-          status: transcriptInfo.status,
-          reason: reason.slice(0, 240)
-        });
+    let transcriptDownloadUrl = file.download_url;
+    if (transcriptInfo.ok) {
+      const transcriptMetadata = await transcriptInfo.json();
+      if (transcriptMetadata.download_url) {
+        transcriptDownloadUrl = transcriptMetadata.download_url;
+        console.info('[Zoom Webhook] Using dedicated transcript download URL', { meetingId });
       }
+    } else {
+      const reason = await transcriptInfo.text().catch(() => '');
+      console.warn('[Zoom Webhook] Dedicated transcript lookup unavailable', {
+        meetingId,
+        status: transcriptInfo.status,
+        reason: reason.slice(0, 240)
+      });
     }
 
-    // The download URL redirects to a file host. Node's fetch removes an
-    // Authorization header across hosts, so use Zoom's documented query-token
-    // form; the redirected request then remains authorised.
-    const authorisedDownloadUrl = new URL(transcriptDownloadUrl);
-    authorisedDownloadUrl.searchParams.set('access_token', accessToken);
-
-    const download = await fetch(authorisedDownloadUrl, {
-      redirect: 'follow',
-      referrerPolicy: 'no-referrer'
+    // Use the exact Zoom file URL with an OAuth Bearer token. A 401 triggers
+    // precisely one forced refresh; refreshed credentials are encrypted and
+    // persisted by getZoomAccessTokenContext before the second attempt.
+    const downloadResult = await downloadZoomTranscriptWithRetry(
+      transcriptDownloadUrl,
+      async ({ forceRefresh }) => {
+        if (!forceRefresh) return initialToken;
+        return getToken({ forceRefresh: true });
+      }
+    );
+    const download = downloadResult.response;
+    console.info('[Zoom Webhook] Transcript download outcome', {
+      meetingId,
+      status: download.status,
+      retried: downloadResult.retried,
+      refreshState: downloadResult.refreshState
     });
 
     if (!download.ok) {
