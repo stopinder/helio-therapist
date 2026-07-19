@@ -8,7 +8,11 @@ export default async function handler(req, res) {
       .select('updated_at, encrypted_refresh_token').eq('user_id', user.id).eq('provider', 'zoom').maybeSingle();
     if (error) throw error;
     res.setHeader('Cache-Control', 'no-store');
-    return res.status(200).json({ connected: Boolean(data?.encrypted_refresh_token), connected_at: data?.updated_at || null });
+    return res.status(200).json({
+      connected: Boolean(data?.encrypted_refresh_token),
+      connected_at: data?.updated_at || null,
+      webhook_intake_version: 'transcript-inbox-v2-single-therapist-fallback'
+    });
   } catch (error) {
     return res.status(error.status || 500).json({ error: error.status === 401 ? error.message : 'Unable to check Zoom connection' });
   }
