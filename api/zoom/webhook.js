@@ -152,10 +152,36 @@ export default async function handler(req, res) {
       credential: downloadToken ? 'event-download-token' : 'oauth-access-token'
     });
 
+    // Some webhook payloads provide a recording-file URL that is not usable
+    // with a granular transcript scope. Ask Zoom's dedicated transcript API
+    // for the canonical URL before downloading.
+    let transcriptDownloadUrl = file.download_url;
+    if (!downloadToken) {
+      const transcriptInfo = await fetch(
+        `https://api.zoom.us/v2/meetings/${encodeURIComponent(meetingId)}/transcript`,
+        { headers: { Authorization: `Bearer ${accessToken}` } }
+      );
+
+      if (transcriptInfo.ok) {
+        const transcriptMetadata = await transcriptInfo.json();
+        if (transcriptMetadata.download_url) {
+          transcriptDownloadUrl = transcriptMetadata.download_url;
+          console.info('[Zoom Webhook] Using dedicated transcript download URL', { meetingId });
+        }
+      } else {
+        const reason = await transcriptInfo.text().catch(() => '');
+        console.warn('[Zoom Webhook] Dedicated transcript lookup unavailable', {
+          meetingId,
+          status: transcriptInfo.status,
+          reason: reason.slice(0, 240)
+        });
+      }
+    }
+
     // The download URL redirects to a file host. Node's fetch removes an
     // Authorization header across hosts, so use Zoom's documented query-token
     // form; the redirected request then remains authorised.
-    const authorisedDownloadUrl = new URL(file.download_url);
+    const authorisedDownloadUrl = new URL(transcriptDownloadUrl);
     authorisedDownloadUrl.searchParams.set('access_token', accessToken);
 
     const download = await fetch(authorisedDownloadUrl, {
