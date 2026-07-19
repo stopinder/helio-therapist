@@ -54,11 +54,26 @@ export default async function handler(req, res) {
     }
 
     const tokens = await tokenResponse.json();
+
+    // Google may omit refresh_token on a later consent flow. Preserve an
+    // existing usable refresh token rather than accidentally removing it.
+    const { data: existingIntegration, error: existingIntegrationError } = await supabase
+      .from('integrations')
+      .select('refresh_token')
+      .eq('provider', 'google')
+      .eq('user_id', oauthState.user_id)
+      .maybeSingle();
+
+    if (existingIntegrationError) {
+      console.error('[Google Callback] Failed to read existing integration:', existingIntegrationError);
+      return res.redirect(`${appUrl}/?google=error&message=Unable+to+save+Google+connection`);
+    }
+
     const integration = {
       user_id: oauthState.user_id,
       provider: 'google',
       access_token: tokens.access_token,
-      refresh_token: tokens.refresh_token,
+      refresh_token: tokens.refresh_token || existingIntegration?.refresh_token || null,
       expires_at: tokens.expires_in
         ? new Date(Date.now() + tokens.expires_in * 1000).toISOString()
         : null,
