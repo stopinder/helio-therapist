@@ -152,12 +152,15 @@ export default async function handler(req, res) {
       credential: downloadToken ? 'event-download-token' : 'oauth-access-token'
     });
 
-    const download = await fetch(file.download_url, {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        'Content-Type': 'application/json'
-      },
-      redirect: 'follow'
+    // The download URL redirects to a file host. Node's fetch removes an
+    // Authorization header across hosts, so use Zoom's documented query-token
+    // form; the redirected request then remains authorised.
+    const authorisedDownloadUrl = new URL(file.download_url);
+    authorisedDownloadUrl.searchParams.set('access_token', accessToken);
+
+    const download = await fetch(authorisedDownloadUrl, {
+      redirect: 'follow',
+      referrerPolicy: 'no-referrer'
     });
 
     if (!download.ok) {
