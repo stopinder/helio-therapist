@@ -123,6 +123,8 @@
                 @add-client="handleAddClient"
             />
 
+            <TranscriptInbox v-else-if="selectedNav === 'Transcripts'" :clients="clients" />
+
             <ReportsWorkspace v-else-if="selectedNav === 'Reports'" :clients="clients" />
 
             <Settings v-else-if="selectedNav === 'Settings'" />
@@ -169,6 +171,7 @@ import Settings from "./components/Settings.vue"
 import CalendarSchedule from "./components/CalendarSchedule.vue"
 import ClientDirectory from "./components/ClientDirectory.vue"
 import ReportsWorkspace from "./components/ReportsWorkspace.vue"
+import TranscriptInbox from "./components/TranscriptInbox.vue"
 import { supabase } from "./lib/supabase.js"
 
 // --- State ---
