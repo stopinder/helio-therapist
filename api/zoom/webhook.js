@@ -94,18 +94,45 @@ export default async function handler(req, res) {
       return res.status(200).json({ received: true });
     }
 
-    const { data: integration, error: integrationError } = await supabase
+    const integrationFields =
+      'user_id, encrypted_access_token, encrypted_refresh_token, expires_at, token_type, scope';
+
+    const { data: matchedIntegration, error: integrationError } = await supabase
       .from('integrations')
-      .select('user_id, encrypted_access_token, encrypted_refresh_token, expires_at, token_type, scope')
+      .select(integrationFields)
       .eq('provider', 'zoom')
       .eq('provider_account_id', hostId)
       .maybeSingle();
 
     if (integrationError) throw integrationError;
 
-    // A transcript is never guessed onto a client. If the therapist has not
-    // re-authorised since account matching was added, preserve the webhook
-    // event for safe reconciliation instead.
+    let integration = matchedIntegration;
+
+    // Some Zoom user-managed apps do not expose the user identity scope, so
+    // provider_account_id cannot be recorded at OAuth time. For the one-user
+    // MVP we can still safely accept a webhook only when Helio has exactly one
+    // Zoom integration. We deliberately do not make this fallback when two or
+    // more therapists have connected Zoom.
+    if (!integration) {
+      const { data: zoomIntegrations, error: fallbackError } = await supabase
+        .from('integrations')
+        .select(integrationFields)
+        .eq('provider', 'zoom')
+        .limit(2);
+
+      if (fallbackError) throw fallbackError;
+
+      if (zoomIntegrations?.length === 1) {
+        integration = zoomIntegrations[0];
+        console.info('[Zoom Webhook] Using single-therapist MVP account fallback', {
+          meetingId,
+          hostId
+        });
+      }
+    }
+
+    // A transcript is never guessed onto a client. A client/session link is
+    // created later by Start Session, after this raw transcript is safely held.
     if (!integration) {
       await updateEvent(supabase, intakeEvent.id, {
         processing_status: 'unmatched',
