@@ -82,15 +82,27 @@ export default async function handler(req, res) {
 
     if (intakeError) throw intakeError;
 
-    if (eventType !== 'recording.transcript_completed') {
+    // Zoom reliably sends recording.completed, and on some accounts it already
+    // contains the completed transcript file while transcript_completed is not
+    // delivered. Accept either event only when it actually contains a transcript.
+    const file = transcriptFile(recording);
+    const transcriptBearingEvent =
+      eventType === 'recording.transcript_completed' ||
+      (eventType === 'recording.completed' && Boolean(file));
+
+    if (!transcriptBearingEvent) {
+      await updateEvent(supabase, intakeEvent.id, {
+        processing_status: 'pending',
+        processing_error: 'Recording event received before a transcript file was available'
+      });
+      console.info('[Zoom Webhook] Recording awaiting transcript file', { meetingId, eventType });
       return res.status(200).json({ received: true });
     }
 
-    const file = transcriptFile(recording);
     if (!file?.download_url || !file?.id || !hostId || !meetingId) {
       await updateEvent(supabase, intakeEvent.id, {
         processing_status: 'failed',
-        processing_error: 'Transcript event did not contain a downloadable file or host id'
+        processing_error: 'Transcript-bearing event did not contain a downloadable file or host id'
       });
       return res.status(200).json({ received: true });
     }
