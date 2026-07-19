@@ -41,7 +41,7 @@ export default async function handler(req, res) {
         return res.status(400).json({ error: 'A transcript id is required.' });
       }
 
-      if (clientId !== null && typeof clientId !== 'string') {
+      if (clientId !== undefined && clientId !== null && typeof clientId !== 'string') {
         return res.status(400).json({ error: 'Client id must be a client id or null.' });
       }
       if (requestedLens !== undefined && requestedLens !== null && !allowedLenses.has(requestedLens)) {
@@ -63,11 +63,11 @@ export default async function handler(req, res) {
         if (!client) return res.status(404).json({ error: 'That client was not found.' });
       }
 
-      const update = {
-        client_id: clientId || null,
-        status: clientId ? 'ready' : 'unassigned',
-        updated_at: new Date().toISOString()
-      };
+      const update = { updated_at: new Date().toISOString() };
+      if (clientId !== undefined) {
+        update.client_id = clientId || null;
+        update.status = clientId ? 'ready' : 'unassigned';
+      }
       if (requestedLens !== undefined) update.requested_lens = requestedLens || null;
       if (sourceRetention !== undefined) update.source_retention = sourceRetention;
 
