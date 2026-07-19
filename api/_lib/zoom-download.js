@@ -8,8 +8,8 @@ function isZoomHost(url) {
 
 /**
  * Fetches the exact Zoom-provided transcript URL. The first request always
- * uses the OAuth Bearer token. For a signed cross-host redirect, the signed
- * URL itself carries authorisation and we intentionally do not forward OAuth.
+ * carries a Bearer token. A signed cross-host redirect is followed without
+ * forwarding OAuth credentials.
  */
 export async function downloadZoomTranscript(downloadUrl, accessToken, fetchImpl = fetch) {
   let url = downloadUrl;
@@ -26,10 +26,19 @@ export async function downloadZoomTranscript(downloadUrl, accessToken, fetchImpl
 
     const location = response.headers.get('location');
     if (!location) return response;
-
     url = new URL(location, url).toString();
     includeBearer = isZoomHost(url);
   }
 
   throw new Error('Zoom transcript download exceeded redirect limit');
+}
+
+export async function downloadZoomTranscriptWithRetry(downloadUrl, getToken, fetchImpl = fetch) {
+  const first = await getToken({ forceRefresh: false });
+  let response = await downloadZoomTranscript(downloadUrl, first.accessToken, fetchImpl);
+  if (response.status !== 401) return { response, retried: false, refreshState: first.refreshed ? 'pre-expiry' : 'valid' };
+
+  const refreshed = await getToken({ forceRefresh: true });
+  response = await downloadZoomTranscript(downloadUrl, refreshed.accessToken, fetchImpl);
+  return { response, retried: true, refreshState: '401-retry' };
 }
