@@ -169,7 +169,7 @@ async function toggleDictation() {
     dictationError.value = microphoneError(error)
   }
 }
-function sessionStatusLabel(session) { return ({ planned: 'Planned', in_progress: 'In progress', completed: 'Completed', closed: 'Closed' })[session?.status] || 'Completed' }
+function sessionStatusLabel(session) { return ({ draft: 'In progress', planned: 'Planned', in_progress: 'In progress', completed: 'Completed', closed: 'Closed' })[session?.status] || 'Completed' }
 function workflowStatusLabel(status) { return ({ awaiting_transcript: 'Awaiting transcript', transcript_received: 'Transcript received', needs_review: 'Needs review', review_choices_saved: 'Review choices saved', drafts_awaiting_review: 'Drafts awaiting review', approved: 'Approved', no_further_action: 'No further action' })[status] || 'No further action' }
 function sessionProgressLabel(session) { const workflow = workflowStatusLabel(session?.workflowStatus); return workflow === 'No further action' ? sessionStatusLabel(session) : sessionStatusLabel(session) + ' · ' + workflow }
 function noteIndicator(session) { if (!session?.notes) return ''; return session.notesStatus === 'draft' && session.status === 'in_progress' ? 'Therapist notes: Draft' : 'Therapist notes: Saved' }
