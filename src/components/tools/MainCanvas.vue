@@ -56,12 +56,12 @@
     </main>
 
     <section v-else-if="activeTab === 'sessions'" class="section-card">
-      <div class="section-heading"><div><p class="eyebrow">Session thinking</p><h2>Session workspace</h2><p>One therapeutic encounter: therapist notes, review and approval.</p></div><button class="primary" @click="startSession">Start session</button></div>
+      <div class="section-heading"><div><p class="eyebrow">Sessions</p><h2>Therapeutic encounters</h2><p>Open a session to review its notes, source material and approved outputs.</p></div></div>
       <div v-if="!sessions.length" class="empty-state"><div>📝</div><h3>No sessions recorded</h3><p>Start a session when you are ready to take notes.</p></div>
       <button v-for="session in sessions" :key="session.id" class="session-row" @click="openSession(session)"><span><strong>{{ formatDate(session.startedAt) }}</strong><small>{{ session.status === 'completed' ? 'Approved output' : 'Session draft' }}<template v-if="session.notes"> · {{ preview(session.notes, 90) }}</template></small></span><span>Open ›</span></button>
     </section>
 
-    <ContinuityWorkspace v-else-if="activeTab === 'continuity'" :sessions="sessions" @back="activeTab = 'overview'" @open-session="openSession" />
+    <ContinuityWorkspace v-else-if="activeTab === 'continuity'" :sessions="sessions" @open-session="openSession" />
 
     <section v-else class="section-card">
       <div class="section-heading"><div><p class="eyebrow">Documents</p><h2>Client documents</h2><p>Uploaded reports and therapist-approved documents.</p></div></div>
