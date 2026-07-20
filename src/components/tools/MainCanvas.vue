@@ -138,6 +138,7 @@ async function startSession() {
     session.zoomState = 'unavailable'; session.zoomError = error?.message || 'Zoom could not be opened. You can continue with your notes and try Zoom again from Settings.'; persist()
   } finally { startingSession.value = false }
 }
+defineExpose({ startSession })
 function openZoomMeeting(session) {
   if (!session?.zoomStartUrl) return
   const popup = window.open(session.zoomStartUrl, '_blank')
