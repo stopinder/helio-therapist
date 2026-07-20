@@ -7,7 +7,8 @@
           <h1>Transcript Inbox</h1>
           <p>Review incoming source material, then decide what needs to happen next. Nothing is analysed automatically.</p>
         </div>
-        <span v-if="actionableCount" class="count">{{ actionableSummary }}</span>
+        <span v-if="errorMessage" class="count unavailable">Inbox unavailable</span>
+        <span v-else-if="actionableCount" class="count">{{ actionableSummary }}</span>
         <span v-else class="count quiet">Inbox up to date</span>
       </header>
 
