@@ -29,6 +29,27 @@ async function updateEvent(supabase, id, update) {
   if (error) console.error('[Zoom Webhook] Unable to update intake event', error.message);
 }
 
+async function findSessionLink(supabase, therapistUserId, meetingId) {
+  const { data, error } = await supabase
+    .from('zoom_session_links')
+    .select('client_id, session_ref')
+    .eq('therapist_user_id', therapistUserId)
+    .eq('zoom_meeting_id', meetingId)
+    .maybeSingle();
+
+  // Keep the existing safe unassigned-transcript path available while a
+  // deployment is ahead of its database migration. The next webhook after the
+  // migration is applied will use the session link normally.
+  if (error?.code === 'PGRST205' || error?.code === '42P01') {
+    console.warn('[Zoom Webhook] Session-link lookup unavailable', {
+      code: error.code
+    });
+    return null;
+  }
+  if (error) throw error;
+  return data || null;
+}
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     res.setHeader('Allow', 'POST');
@@ -146,6 +167,8 @@ export default async function handler(req, res) {
       return res.status(200).json({ received: true });
     }
 
+    const sessionLink = await findSessionLink(supabase, integration.user_id, meetingId);
+
     const getToken = (options) => getZoomAccessTokenContext(supabase, integration, options);
     const initialToken = await getToken({ forceRefresh: false });
 
@@ -241,16 +264,27 @@ export default async function handler(req, res) {
       original_format: String(file.file_extension || 'VTT').toUpperCase(),
       original_transcript: originalTranscript,
       source: 'zoom_cloud',
-      status: 'unassigned',
+      client_id: sessionLink?.client_id || null,
+      session_ref: sessionLink?.session_ref || null,
+      status: sessionLink ? 'ready' : 'unassigned',
       updated_at: new Date().toISOString()
     }, { onConflict: 'therapist_user_id,zoom_recording_file_id' });
 
     if (transcriptError) throw transcriptError;
 
+    if (sessionLink) {
+      await supabase
+        .from('zoom_session_links')
+        .update({ status: 'transcript_received', updated_at: new Date().toISOString() })
+        .eq('therapist_user_id', integration.user_id)
+        .eq('zoom_meeting_id', meetingId);
+    }
+
     await updateEvent(supabase, intakeEvent.id, { processing_status: 'stored' });
-    console.info('[Zoom Webhook] Transcript stored as unassigned', {
+    console.info('[Zoom Webhook] Transcript stored', {
       meetingId,
-      transcriptFileId: file.id
+      transcriptFileId: file.id,
+      linkedToSession: Boolean(sessionLink)
     });
   } catch (error) {
     console.error('[Zoom Webhook] Intake failed', { message: error.message, meetingId, eventType });
