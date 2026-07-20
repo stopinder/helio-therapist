@@ -35,6 +35,7 @@
           <span class="row-main">
             <strong>{{ labelFor(transcript) }}</strong>
             <small>{{ formatDate(transcript.receivedAt) }} · Zoom cloud transcript</small>
+            <small v-if="transcript.clientId && clientName(transcript.clientId)" class="assigned-client">Assigned client · {{ clientName(transcript.clientId) }}</small>
           </span>
           <span :class="['status', workflowState(transcript).id]">{{ workflowState(transcript).label }}</span>
           <span class="open">{{ primaryAction(transcript) }} ›</span>
@@ -59,53 +60,78 @@
       <p v-if="errorMessage" class="notice error" role="alert">{{ errorMessage }}</p>
       <p v-else-if="successMessage" class="notice success" role="status">{{ successMessage }}</p>
 
-      <section class="assignment-card">
-        <div>
-          <p class="eyebrow">{{ workflowState(selected).label }}</p>
-          <h2>{{ assignmentHeading }}</h2>
-          <p>{{ assignmentDescription }}</p>
-        </div>
-        <div class="assignment-controls">
-          <label for="client-select">Client</label>
-          <select id="client-select" v-model="selectedClientId">
-            <option value="" disabled>Select a client…</option>
-            <option v-for="client in clients" :key="client.id" :value="client.id">{{ client.name }}</option>
-          </select>
-          <p v-if="!clients.length" class="field-help">Add a client first, then return here to assign this transcript.</p>
-          <div class="assignment-actions">
-            <button class="secondary" :disabled="saving || !selected.clientId" @click="clearAssignment">Leave unassigned</button>
-            <button class="primary" :disabled="saving || !selectedClientId || selectedClientId === selected.clientId" @click="saveAssignment">
-              {{ saving ? 'Saving…' : selected.clientId ? 'Change client' : 'Assign client' }}
-            </button>
+      <ol class="review-progress" aria-label="Transcript review progress">
+        <li :class="{ complete: selected.clientId, current: !selected.clientId }">
+          <span>{{ selected.clientId ? '✓' : '1' }}</span><div><strong>Client</strong><small>{{ selected.clientId ? clientName(selected.clientId) : 'Choose client' }}</small></div>
+        </li>
+        <li :class="{ complete: selected.sessionRef, current: selected.clientId && !selected.sessionRef }">
+          <span>{{ selected.sessionRef ? '✓' : '2' }}</span><div><strong>Session</strong><small>{{ selected.sessionRef ? 'Linked' : 'Link or create a session' }}</small></div>
+        </li>
+        <li :class="{ complete: selected.reviewChoicesSavedAt, current: selected.sessionRef && !selected.reviewChoicesSavedAt }">
+          <span>{{ selected.reviewChoicesSavedAt ? '✓' : '3' }}</span><div><strong>Review choices</strong><small>{{ selected.reviewChoicesSavedAt ? 'Saved' : 'Choose output and retention' }}</small></div>
+        </li>
+      </ol>
+
+      <section class="workflow-section client-section">
+        <template v-if="!selected.clientId || editingClient">
+          <div>
+            <p class="eyebrow">Client</p>
+            <h2>Client</h2>
+            <p>Select the client this original Zoom transcript belongs to. Helio will not guess.</p>
           </div>
-        </div>
+          <div class="assignment-controls">
+            <label for="client-select">Client</label>
+            <select id="client-select" v-model="selectedClientId">
+              <option value="" disabled>Select a client…</option>
+              <option v-for="client in clients" :key="client.id" :value="client.id">{{ client.name }}</option>
+            </select>
+            <p v-if="!clients.length" class="field-help">Add a client first, then return here to assign this transcript.</p>
+            <div class="assignment-actions">
+              <button v-if="selected.clientId" class="secondary" :disabled="saving" @click="editingClient = false">Cancel</button>
+              <button class="primary" :disabled="saving || !selectedClientId || selectedClientId === selected.clientId" @click="saveAssignment">
+                {{ saving ? 'Saving…' : selected.clientId ? 'Change client' : 'Assign client' }}
+              </button>
+            </div>
+          </div>
+        </template>
+        <template v-else>
+          <div><p class="eyebrow">Client</p><h2>{{ clientName(selected.clientId) }}</h2><p>Assigned client</p></div>
+          <button class="secondary" @click="editingClient = true">Change</button>
+        </template>
       </section>
 
-      <section v-if="selected.clientId" class="session-card">
-        <div>
-          <p class="eyebrow">Session association</p>
-          <h2>{{ selected.sessionRef ? 'Linked session' : 'Link this transcript to a session' }}</h2>
-          <p>{{ selected.sessionRef ? 'This source is linked to one therapeutic encounter.' : 'Choose the session this source belongs to, or create a completed session from this meeting.' }}</p>
-        </div>
-        <div class="assignment-controls">
-          <label for="session-select">Session</label>
-          <select id="session-select" v-model="selectedSessionRef">
-            <option value="" disabled>Select a session…</option>
-            <option v-for="session in sessionsForClient" :key="session.id" :value="String(session.id)">{{ sessionOptionLabel(session) }}</option>
-          </select>
-          <p v-if="!sessionsForClient.length" class="field-help">No sessions for this client yet. Create one from this transcript when you are ready.</p>
-          <div class="assignment-actions">
-            <button class="secondary" :disabled="saving" @click="createSessionFromTranscript">{{ saving ? 'Creating…' : 'Create session' }}</button>
-            <button class="primary" :disabled="saving || !selectedSessionRef || selectedSessionRef === selected.sessionRef" @click="saveSessionLink">
-              {{ saving ? 'Saving…' : selected.sessionRef ? 'Change session' : 'Link session' }}
-            </button>
+      <section v-if="selected.clientId" class="workflow-section session-section">
+        <template v-if="!selected.sessionRef || editingSession">
+          <div>
+            <p class="eyebrow">Session</p>
+            <h2>Session</h2>
+            <p>Link this transcript to an existing session or create a new one.</p>
           </div>
-        </div>
+          <div class="assignment-controls">
+            <label for="session-select">Session</label>
+            <select id="session-select" v-model="selectedSessionRef">
+              <option value="" disabled>Select a session…</option>
+              <option v-for="session in sessionsForClient" :key="session.id" :value="String(session.id)">{{ sessionOptionLabel(session) }}</option>
+            </select>
+            <p v-if="!sessionsForClient.length" class="field-help">No sessions for this client yet. Create one from this transcript when you are ready.</p>
+            <div class="assignment-actions">
+              <button class="secondary" :disabled="saving" @click="createSessionFromTranscript">{{ saving ? 'Creating…' : 'Create session' }}</button>
+              <button v-if="selected.sessionRef" class="secondary" :disabled="saving" @click="editingSession = false">Cancel</button>
+              <button class="primary" :disabled="saving || !selectedSessionRef || selectedSessionRef === selected.sessionRef" @click="saveSessionLink">
+                {{ saving ? 'Saving…' : selected.sessionRef ? 'Change session' : 'Link session' }}
+              </button>
+            </div>
+          </div>
+        </template>
+        <template v-else>
+          <div><p class="eyebrow">Session</p><h2>Linked session</h2><p>This transcript is linked to one therapeutic encounter.</p></div>
+          <button class="secondary" @click="editingSession = true">Change</button>
+        </template>
       </section>
 
       <section class="raw-transcript">
         <header>
-          <div><h2>Original transcript</h2><p>This is source material from Zoom. Helio has not changed it.</p></div>
+          <div><h2>Original transcript</h2><p>This is the original transcript imported from Zoom. Helio has not analysed or changed it.</p></div>
           <div class="source-actions">
             <button class="secondary" :aria-expanded="showRaw" @click="showRaw = !showRaw">{{ showRaw ? 'Hide original transcript' : 'View original transcript' }}</button>
             <button class="secondary download" @click="downloadRaw(selected)">Download .txt</button>
@@ -114,11 +140,11 @@
         <pre v-if="showRaw">{{ selected.text }}</pre>
       </section>
 
-      <section v-if="selected.clientId && selected.sessionRef && !selected.completedAt" class="review-choices">
+      <section v-if="selected.clientId && selected.sessionRef && (!selected.reviewChoicesSavedAt || editingChoices)" class="review-choices">
         <div>
-          <p class="eyebrow">Review choice</p>
-          <h2>{{ selected.reviewChoicesSavedAt ? 'Review choices saved' : 'Review transcript handling' }}</h2>
-          <p>This records your choice only. Helio will not analyse the source or delete it automatically.</p>
+          <p class="eyebrow">Review choices</p>
+          <h2>Review choices</h2>
+          <p>Choose what, if anything, should be requested later and how the original source should be retained. This does not start analysis.</p>
         </div>
         <label for="clinical-output">Requested output</label>
         <select id="clinical-output" v-model="selectedLens">
@@ -132,20 +158,23 @@
           <label><input v-model="sourceRetention" type="radio" value="keep_until_review" /> Keep the original source until I review it</label>
           <label><input v-model="sourceRetention" type="radio" value="delete_after_approved_output" /> Mark for deletion after I approve an output</label>
         </fieldset>
-        <button class="primary save-choices" :disabled="saving" @click="saveReviewChoices">
-          {{ saving ? 'Saving…' : selected.reviewChoicesSavedAt ? 'Update review choices' : 'Save review choices' }}
-        </button>
+        <div class="assignment-actions">
+          <button v-if="selected.reviewChoicesSavedAt" class="secondary" :disabled="saving" @click="editingChoices = false">Cancel</button>
+          <button class="primary save-choices" :disabled="saving" @click="saveReviewChoices">
+            {{ saving ? 'Saving…' : selected.reviewChoicesSavedAt ? 'Update review choices' : 'Save review choices' }}
+          </button>
+        </div>
       </section>
 
-      <section v-if="selected.reviewChoicesSavedAt && !selected.completedAt" class="ready-card">
+      <section v-if="selected.reviewChoicesSavedAt && !editingChoices && !selected.completedAt" class="ready-card">
         <div>
-          <p class="eyebrow">Next action</p>
-          <h2>Review choices are recorded</h2>
-          <p>No analysis has started. Open the linked session when you are ready to continue clinical work.</p>
+          <p class="eyebrow">Review choices</p>
+          <h2>Review choices saved</h2>
+          <p>The transcript has been triaged. Continue any clinical work in the linked session.</p>
         </div>
         <div class="assignment-actions">
-          <button class="secondary" @click="openLinkedSession">Open session</button>
-          <button class="primary" :disabled="saving" @click="markComplete">{{ saving ? 'Saving…' : 'Mark complete' }}</button>
+          <button class="secondary" @click="editingChoices = true">Change choices</button>
+          <button class="primary" :disabled="saving" @click="openLinkedSession">Open session</button>
         </div>
       </section>
 
@@ -168,6 +197,9 @@ const selectedClientId = ref('')
 const selectedSessionRef = ref('')
 const selectedLens = ref('')
 const sourceRetention = ref('keep_until_review')
+const editingClient = ref(false)
+const editingSession = ref(false)
+const editingChoices = ref(false)
 const searchQuery = ref('')
 const filterMode = ref('attention')
 const showRaw = ref(false)
@@ -202,14 +234,6 @@ const filteredTranscripts = computed(() => {
       formatDate(item.receivedAt).toLowerCase().includes(query)
   })
 })
-
-const assignmentHeading = computed(() => {
-  if (!selected.value?.clientId) return 'Assign this transcript to a client'
-  return `Assigned to ${clientName(selected.value.clientId)}`
-})
-const assignmentDescription = computed(() => selected.value?.clientId
-  ? 'Change this only if the source has been linked to the wrong client.'
-  : 'Helio will not guess. Check the meeting, then select the client.')
 
 function formatDate(value) {
   return new Date(value).toLocaleString(undefined, { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
@@ -284,6 +308,7 @@ async function saveAssignment() {
   const transcript = await patchTranscript({ clientId: selectedClientId.value }, 'Unable to save the client assignment.')
   if (transcript) {
     selectedSessionRef.value = ''
+    editingClient.value = false
     successMessage.value = `Assigned to ${clientName(transcript.clientId)}. Link the session next.`
   }
 }
@@ -297,7 +322,10 @@ async function clearAssignment() {
 }
 async function saveSessionLink() {
   const transcript = await patchTranscript({ sessionRef: selectedSessionRef.value }, 'Unable to link this session.')
-  if (transcript) successMessage.value = 'Session linked. Review transcript handling next.'
+  if (transcript) {
+    editingSession.value = false
+    successMessage.value = 'Session linked. Review transcript handling next.'
+  }
 }
 async function createSessionFromTranscript() {
   if (!selected.value?.clientId) return
@@ -323,14 +351,21 @@ async function saveReviewChoices() {
     sourceRetention: sourceRetention.value,
     reviewChoicesSaved: true
   }, 'Unable to save review choices.')
-  if (transcript) successMessage.value = 'Review choices saved. No analysis has started.'
+  if (transcript) {
+    editingChoices.value = false
+    successMessage.value = 'Review choices saved. No analysis has started.'
+  }
 }
 async function markComplete() {
   const transcript = await patchTranscript({ markComplete: true }, 'Unable to complete this transcript.')
   if (transcript) successMessage.value = 'Transcript review is complete.'
 }
-function openLinkedSession() {
+async function openLinkedSession() {
   if (!selected.value?.sessionRef) return
+  if (selected.value.reviewChoicesSavedAt && !selected.value.completedAt) {
+    const completed = await patchTranscript({ markComplete: true }, 'Unable to complete transcript triage.')
+    if (!completed) return
+  }
   window.dispatchEvent(new CustomEvent('helio:open-session', { detail: { sessionId: selected.value.sessionRef, clientId: selected.value.clientId } }))
   selected.value = null
 }
@@ -346,5 +381,5 @@ onMounted(() => { load(); loadLocalSessions() })
 </script>
 
 <style scoped>
-.transcript-inbox{max-width:68rem;margin:0 auto;color:#2c3e50}.page-header{display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;margin-bottom:1rem}.eyebrow{margin:0 0 .25rem;color:#64748b;text-transform:uppercase;font-size:.72rem;font-weight:750;letter-spacing:.08em}.page-header h1,.review-header h1{margin:0;font-size:1.75rem}.page-header p:not(.eyebrow),.review-header p:not(.eyebrow){margin:.3rem 0 0;color:#64748b;line-height:1.5}.count{white-space:nowrap;border-radius:999px;padding:.4rem .65rem;background:#fff7ed;color:#9a3412;font-size:.8rem;font-weight:700}.count.quiet{background:#ecfdf5;color:#047857}.queue-controls{display:flex;align-items:end;justify-content:space-between;gap:1rem;margin:0 0 1rem}.inbox-search{display:block;flex:1;max-width:32rem}.inbox-search span,.assignment-controls label{display:block;font-size:.8rem;font-weight:750;margin-bottom:.35rem}.inbox-search input,.assignment-controls select,.review-choices select{width:100%;box-sizing:border-box;border:1px solid #cbd5e1;border-radius:.6rem;padding:.68rem .75rem;font-size:.95rem;color:#334155;background:white}.filters{display:flex;gap:.4rem;flex-wrap:wrap}.filters button{border:1px solid #cbd5e1;background:white;border-radius:999px;padding:.45rem .65rem;color:#475569;font-weight:700;font-size:.8rem}.filters button.active{border-color:#2563eb;background:#eff6ff;color:#1d4ed8}.notice{margin:0 0 1rem;padding:.75rem;border-radius:.6rem}.notice.error{background:#fef2f2;color:#b91c1c}.notice.success{background:#ecfdf5;color:#047857}.empty-card{min-height:18rem;display:flex;flex-direction:column;justify-content:center;align-items:center;background:white;border:1px solid #dbe1e8;border-radius:.85rem;padding:2rem;text-align:center;color:#64748b}.empty-card.compact{min-height:10rem}.empty-card div{font-size:2rem}.empty-card h2{color:#334155;margin:.5rem}.empty-card p{max-width:30rem;line-height:1.5}.inbox-list{background:white;border:1px solid #dbe1e8;border-radius:.85rem;overflow:hidden}.transcript-row{display:grid;grid-template-columns:auto minmax(0,1fr) auto auto;align-items:center;gap:1rem;width:100%;border:0;border-bottom:1px solid #edf0f4;background:white;padding:1rem 1.2rem;text-align:left;color:#334155}.transcript-row:last-child{border-bottom:0}.transcript-row:hover{background:#eff6ff}.meeting-icon{font-size:1.25rem}.row-main{display:flex;min-width:0;flex-direction:column;gap:.2rem}.row-main small{color:#64748b}.status{font-size:.72rem;font-weight:700;padding:.25rem .5rem;border-radius:999px;white-space:nowrap}.status.needs-client{background:#fff7ed;color:#9a3412}.status.needs-session,.status.needs-review{background:#eff6ff;color:#1d4ed8}.status.review-saved{background:#fef3c7;color:#92400e}.status.complete{background:#ecfdf5;color:#047857}.open{color:#2563eb;font-weight:650;white-space:nowrap}.review-header{margin-bottom:1rem}.back{border:0;background:transparent;padding:0 0 .8rem;color:#2563eb;font-weight:700;font-size:.9rem}.assignment-card,.session-card,.raw-transcript,.review-choices,.ready-card{background:white;border:1px solid #dbe1e8;border-radius:.85rem;padding:1.25rem;margin-bottom:1rem}.assignment-card,.session-card{display:grid;grid-template-columns:minmax(0,1fr) minmax(18rem,24rem);gap:1.5rem;align-items:center;background:#f8fbff;border-color:#bfdbfe}.assignment-card h2,.session-card h2,.raw-transcript h2,.ready-card h2,.review-choices h2{font-size:1.15rem;margin:.1rem 0}.assignment-card p:not(.eyebrow),.session-card p:not(.eyebrow),.raw-transcript p,.ready-card p,.review-choices p:not(.eyebrow){color:#64748b;line-height:1.45;margin:.35rem 0}.field-help{font-size:.78rem;color:#9a3412;margin:.35rem 0 0}.assignment-actions{display:flex;gap:.6rem;margin-top:.75rem;flex-wrap:wrap}.primary,.secondary{padding:.65rem .8rem;border-radius:.6rem;font-weight:700}.primary{border:1px solid #2563eb;background:#2563eb;color:white}.primary:disabled,.secondary:disabled{opacity:.55;cursor:not-allowed}.secondary{border:1px solid #cbd5e1;background:white;color:#334155}.raw-transcript header{display:flex;align-items:flex-start;justify-content:space-between;gap:1rem}.source-actions{display:flex;gap:.6rem;flex-wrap:wrap}.raw-transcript pre{margin:1rem 0 0;max-height:28rem;overflow:auto;white-space:pre-wrap;word-break:break-word;border-radius:.6rem;background:#f8fafc;padding:1rem;color:#334155;font:.86rem/1.6 ui-monospace,SFMono-Regular,Menlo,monospace}.review-choices{display:grid;gap:.8rem;background:#f8fbff;border-color:#bfdbfe}.review-choices>label,.review-choices legend{font-size:.8rem;font-weight:750}.review-choices fieldset{margin:0;padding:.8rem;border:1px solid #dbe1e8;border-radius:.6rem;display:grid;gap:.55rem}.review-choices fieldset label{color:#475569;font-size:.9rem}.review-choices input{accent-color:#2563eb}.save-choices{justify-self:start}.ready-card{display:flex;align-items:center;justify-content:space-between;gap:1rem}.complete-card{border-color:#bbf7d0;background:#f0fdf4}@media(max-width:700px){.page-header,.queue-controls,.raw-transcript header,.ready-card{flex-direction:column;align-items:stretch}.transcript-row{grid-template-columns:auto minmax(0,1fr);gap:.55rem}.status{justify-self:start}.open{grid-column:2}.assignment-card,.session-card{grid-template-columns:1fr}.assignment-actions{flex-direction:column}.assignment-actions button,.save-choices{width:100%}.source-actions,.source-actions button{width:100%}}
+.transcript-inbox{max-width:68rem;margin:0 auto;color:#2c3e50}.page-header{display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;margin-bottom:1rem}.eyebrow{margin:0 0 .25rem;color:#64748b;text-transform:uppercase;font-size:.72rem;font-weight:750;letter-spacing:.08em}.page-header h1,.review-header h1{margin:0;font-size:1.75rem}.page-header p:not(.eyebrow),.review-header p:not(.eyebrow){margin:.3rem 0 0;color:#64748b;line-height:1.5}.count{white-space:nowrap;border-radius:999px;padding:.4rem .65rem;background:#fff7ed;color:#9a3412;font-size:.8rem;font-weight:700}.count.quiet{background:#ecfdf5;color:#047857}.queue-controls{display:flex;align-items:end;justify-content:space-between;gap:1rem;margin:0 0 1rem}.inbox-search{display:block;flex:1;max-width:32rem}.inbox-search span,.assignment-controls label{display:block;font-size:.8rem;font-weight:750;margin-bottom:.35rem}.inbox-search input,.assignment-controls select,.review-choices select{width:100%;box-sizing:border-box;border:1px solid #cbd5e1;border-radius:.6rem;padding:.68rem .75rem;font-size:.95rem;color:#334155;background:white}.filters{display:flex;gap:.4rem;flex-wrap:wrap}.filters button{border:1px solid #cbd5e1;background:white;border-radius:999px;padding:.45rem .65rem;color:#475569;font-weight:700;font-size:.8rem}.filters button.active{border-color:#2563eb;background:#eff6ff;color:#1d4ed8}.notice{margin:0 0 1rem;padding:.75rem;border-radius:.6rem}.notice.error{background:#fef2f2;color:#b91c1c}.notice.success{background:#ecfdf5;color:#047857}.empty-card{min-height:18rem;display:flex;flex-direction:column;justify-content:center;align-items:center;background:white;border:1px solid #dbe1e8;border-radius:.85rem;padding:2rem;text-align:center;color:#64748b}.empty-card.compact{min-height:10rem}.empty-card div{font-size:2rem}.empty-card h2{color:#334155;margin:.5rem}.empty-card p{max-width:30rem;line-height:1.5}.inbox-list{background:white;border:1px solid #dbe1e8;border-radius:.85rem;overflow:hidden}.transcript-row{display:grid;grid-template-columns:auto minmax(0,1fr) auto auto;align-items:center;gap:1rem;width:100%;border:0;border-bottom:1px solid #edf0f4;background:white;padding:1rem 1.2rem;text-align:left;color:#334155}.transcript-row:last-child{border-bottom:0}.transcript-row:hover{background:#eff6ff}.meeting-icon{font-size:1.25rem}.row-main{display:flex;min-width:0;flex-direction:column;gap:.2rem}.row-main small{color:#64748b}.row-main .assigned-client{color:#475569;font-weight:650}.status{font-size:.72rem;font-weight:700;padding:.25rem .5rem;border-radius:999px;white-space:nowrap}.status.needs-client{background:#fff7ed;color:#9a3412}.status.needs-session,.status.needs-review{background:#eff6ff;color:#1d4ed8}.status.review-saved{background:#fef3c7;color:#92400e}.status.complete{background:#ecfdf5;color:#047857}.open{color:#2563eb;font-weight:650;white-space:nowrap}.review-header{margin-bottom:1rem}.review-progress{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.6rem;list-style:none;padding:0;margin:0 0 1rem}.review-progress li{display:flex;gap:.55rem;align-items:center;padding:.65rem .75rem;border:1px solid #dbe1e8;border-radius:.65rem;background:#fff;color:#64748b}.review-progress li>span{display:grid;place-items:center;width:1.45rem;height:1.45rem;border-radius:50%;background:#e2e8f0;color:#475569;font-size:.75rem;font-weight:800}.review-progress strong,.review-progress small{display:block}.review-progress small{font-size:.73rem;margin-top:.12rem}.review-progress .complete{border-color:#bbf7d0;background:#f0fdf4;color:#166534}.review-progress .complete>span{background:#16a34a;color:#fff}.review-progress .current{border-color:#bfdbfe;background:#eff6ff;color:#1d4ed8}.review-progress .current>span{background:#2563eb;color:#fff}.back{border:0;background:transparent;padding:0 0 .8rem;color:#2563eb;font-weight:700;font-size:.9rem}.workflow-section,.raw-transcript,.review-choices,.ready-card{background:white;border:1px solid #dbe1e8;border-radius:.85rem;padding:1.25rem;margin-bottom:1rem}.workflow-section{display:grid;grid-template-columns:minmax(0,1fr) minmax(18rem,24rem);gap:1.5rem;align-items:center;background:#f8fbff;border-color:#bfdbfe}.workflow-section>button{justify-self:end}.workflow-section h2,.raw-transcript h2,.ready-card h2,.review-choices h2{font-size:1.15rem;margin:.1rem 0}.workflow-section p:not(.eyebrow),.raw-transcript p,.ready-card p,.review-choices p:not(.eyebrow){color:#64748b;line-height:1.45;margin:.35rem 0}.field-help{font-size:.78rem;color:#9a3412;margin:.35rem 0 0}.assignment-actions{display:flex;gap:.6rem;margin-top:.75rem;flex-wrap:wrap}.primary,.secondary{padding:.65rem .8rem;border-radius:.6rem;font-weight:700}.primary{border:1px solid #2563eb;background:#2563eb;color:white}.primary:disabled,.secondary:disabled{opacity:.55;cursor:not-allowed}.secondary{border:1px solid #cbd5e1;background:white;color:#334155}.raw-transcript header{display:flex;align-items:flex-start;justify-content:space-between;gap:1rem}.source-actions{display:flex;gap:.6rem;flex-wrap:wrap}.raw-transcript pre{margin:1rem 0 0;max-height:28rem;overflow:auto;white-space:pre-wrap;word-break:break-word;border-radius:.6rem;background:#f8fafc;padding:1rem;color:#334155;font:.86rem/1.6 ui-monospace,SFMono-Regular,Menlo,monospace}.review-choices{display:grid;gap:.8rem;background:#f8fbff;border-color:#bfdbfe}.review-choices>label,.review-choices legend{font-size:.8rem;font-weight:750}.review-choices fieldset{margin:0;padding:.8rem;border:1px solid #dbe1e8;border-radius:.6rem;display:grid;gap:.55rem}.review-choices fieldset label{color:#475569;font-size:.9rem}.review-choices input{accent-color:#2563eb}.save-choices{justify-self:start}.ready-card{display:flex;align-items:center;justify-content:space-between;gap:1rem}.complete-card{border-color:#bbf7d0;background:#f0fdf4}@media(max-width:700px){.page-header,.queue-controls,.raw-transcript header,.ready-card{flex-direction:column;align-items:stretch}.transcript-row{grid-template-columns:auto minmax(0,1fr);gap:.55rem}.status{justify-self:start}.open{grid-column:2}.workflow-section{grid-template-columns:1fr}.workflow-section>button{justify-self:start}.review-progress{grid-template-columns:1fr}.assignment-actions{flex-direction:column}.assignment-actions button,.save-choices{width:100%}.source-actions,.source-actions button{width:100%}}
 </style>
