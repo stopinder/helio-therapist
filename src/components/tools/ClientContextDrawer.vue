@@ -52,8 +52,7 @@
                 <h3 class="text-[13px] font-bold text-slate-500 uppercase tracking-wider mb-3">Record</h3>
                 <div class="space-y-3 text-[14px] text-slate-600">
                   <div class="flex justify-between gap-4"><span>Next appointment</span><strong class="text-[#2c3e50]">Not scheduled</strong></div>
-                  <div class="flex justify-between gap-4"><span>Sessions</span><strong class="text-[#2c3e50]">No sessions yet</strong></div>
-                  <div class="flex justify-between gap-4"><span>Investigations</span><strong class="text-[#2c3e50]">None open</strong></div>
+                  <p class="text-[13px] leading-relaxed text-slate-500">Open the client record to review sessions and therapist-maintained context.</p>
                 </div>
               </section>
               <section>
