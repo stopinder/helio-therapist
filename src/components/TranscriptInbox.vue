@@ -215,7 +215,7 @@ const filters = [
   { id: 'all', label: 'All' }
 ]
 
-const actionableCount = computed(() => transcripts.value.filter(item => workflowState(item).id !== 'complete').length)
+const actionableCount = computed(() => transcripts.value.filter(item => isActionable(item)).length)
 const actionableSummary = computed(() => `${actionableCount.value} need${actionableCount.value === 1 ? 's' : ''} attention`)
 const sessionsForClient = computed(() => localSessions.value
   .filter(session => String(session.clientId) === String(selected.value?.clientId))
@@ -225,8 +225,8 @@ const filteredTranscripts = computed(() => {
   const query = searchQuery.value.trim().toLowerCase()
   return transcripts.value.filter(item => {
     const state = workflowState(item)
-    if (filterMode.value === 'attention' && state.id === 'complete') return false
-    if (filterMode.value === 'completed' && state.id !== 'complete') return false
+    if (filterMode.value === 'attention' && !isActionable(item)) return false
+    if (filterMode.value === 'completed' && isActionable(item)) return false
     if (!query) return true
     return labelFor(item).toLowerCase().includes(query) ||
       clientName(item.clientId).toLowerCase().includes(query) ||
@@ -239,6 +239,9 @@ function formatDate(value) {
   return new Date(value).toLocaleString(undefined, { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
 }
 function labelFor(transcript) { return transcript.meetingId ? `Zoom meeting ${transcript.meetingId}` : 'Zoom transcript' }
+function isActionable(transcript) {
+  return ['needs-client', 'needs-session', 'needs-review'].includes(workflowState(transcript).id)
+}
 function workflowState(transcript) {
   if (!transcript?.clientId || transcript.status === 'unassigned') return { id: 'needs-client', label: 'Needs client' }
   if (!transcript.sessionRef) return { id: 'needs-session', label: 'Needs session' }

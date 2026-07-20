@@ -113,7 +113,12 @@
             class="flex-1 overflow-auto p-4 md:p-6 relative scroll-smooth bg-[#f5f7fa]"
             @scroll="handleScroll"
         >
-          <CalendarSchedule v-if="selectedNav === 'Today'" @open-settings="selectedNav = 'Settings'" />
+          <CalendarSchedule
+              v-if="selectedNav === 'Today'"
+              :clients="clients"
+              @open-settings="selectedNav = 'Settings'"
+              @open-attention-item="handleAttentionItem"
+          />
 
             <ClientDirectory
                 v-else-if="selectedNav === 'Clients'"
@@ -348,6 +353,31 @@ const handleSelectClient = (client) => {
   selectedNav.value = "Client Workspace"
   showClientDrawer.value = true
   isSidebarOpen.value = false
+}
+
+const handleAttentionItem = async (item) => {
+  if (item.source === "Transcript") {
+    selectedNav.value = "Transcripts"
+    return
+  }
+
+  if (item.source === "Report") {
+    selectedNav.value = "Reports"
+    return
+  }
+
+  const client = clients.value.find((candidate) => String(candidate.id) === String(item.clientId))
+  if (!client) return
+
+  selectedClient.value = client
+  localStorage.setItem("helio_selectedClient", JSON.stringify(client))
+  activeView.value = "main"
+  selectedNav.value = "Client Workspace"
+
+  await nextTick()
+  window.dispatchEvent(new CustomEvent("helio:open-session", {
+    detail: { sessionId: item.id, clientId: item.clientId }
+  }))
 }
 
 const openClientRecord = () => {
