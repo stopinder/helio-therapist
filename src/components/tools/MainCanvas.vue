@@ -31,12 +31,12 @@
       <div class="overview-grid">
         <article class="latest-card">
           <div class="card-heading">
-            <div><p class="eyebrow">Latest approved session</p><h2>{{ lastApprovedSession ? formatDate(lastApprovedSession.startedAt) : 'No approved sessions yet' }}</h2></div>
-            <button v-if="lastApprovedSession" class="text-action" @click="openSession(lastApprovedSession)">Open session</button>
+            <div><p class="eyebrow">Latest session</p><h2>{{ lastCompletedSession ? formatDate(lastCompletedSession.startedAt) : 'No sessions yet' }}</h2></div>
+            <button v-if="lastCompletedSession" class="text-action" @click="openSession(lastCompletedSession)">Open session</button>
           </div>
-          <template v-if="lastApprovedSession">
-            <p class="session-status">{{ sessionStateLabel(lastApprovedSession) }}</p>
-            <p class="summary-copy">{{ lastApprovedSession.notes ? preview(lastApprovedSession.notes, 180) : 'No therapist notes recorded.' }}</p>
+          <template v-if="lastCompletedSession">
+            <p class="session-status">{{ sessionProgressLabel(lastCompletedSession) }}</p>
+            <p class="summary-copy">{{ lastCompletedSession.notes ? preview(lastCompletedSession.notes, 180) : 'No therapist notes recorded.' }}</p>
           </template>
           <p v-else class="quiet-copy">No sessions have been recorded yet. Start a session when you are ready.</p>
         </article>
@@ -50,7 +50,7 @@
       <article v-if="sessions.length" class="recent-card">
         <div class="card-heading"><div><p class="eyebrow">Recent sessions</p><h2>Session history</h2></div><button v-if="sessions.length > 3" class="text-action" @click="activeTab = 'sessions'">View all sessions</button></div>
         <button v-for="session in sessions.slice(0, 3)" :key="session.id" class="session-row" @click="openSession(session)">
-          <span><strong>{{ formatDate(session.startedAt) }}</strong><small>{{ sessionStateLabel(session) }}<template v-if="session.notes"> · {{ preview(session.notes, 90) }}</template></small></span><span>Open ›</span>
+          <span><strong>{{ formatDate(session.startedAt) }}</strong><small>{{ sessionProgressLabel(session) }}<template v-if="noteIndicator(session)"> · {{ noteIndicator(session) }}</template><template v-if="session.notes"> · {{ preview(session.notes, 90) }}</template></small></span><span>Open ›</span>
         </button>
       </article>
     </main>
@@ -72,12 +72,12 @@
 
     <div v-if="editingSession" class="modal-backdrop" @click.self="closeEditor">
       <article class="session-editor" role="dialog" aria-modal="true" aria-labelledby="session-title">
-        <header><div><p class="eyebrow">{{ editingSession.status === 'completed' ? 'Approved session' : 'Session workspace' }}</p><h2 id="session-title">{{ formatDate(editingSession.startedAt) }}</h2></div><button class="close" @click="closeEditor" aria-label="Close">×</button></header>
-        <div class="note-label"><label for="session-notes">Therapist notes</label><button v-if="editingSession.status !== 'completed'" class="dictate" :class="{ recording: isDictating }" :disabled="transcribing" @click="toggleDictation"><span class="record-dot" aria-hidden="true"></span>{{ isDictating ? 'Stop dictation' : transcribing ? 'Transcribing…' : 'Start dictation' }}</button></div>
-        <p v-if="editingSession.status !== 'completed'" class="dictation-help" :class="{ recording: isDictating, error: dictationError }" role="status">{{ dictationMessage() }}</p>
-        <textarea id="session-notes" v-model="draftNotes" :disabled="editingSession.status === 'completed'" placeholder="Record the session in your own words…"></textarea>
+        <header><div><p class="eyebrow">{{ sessionStatusLabel(editingSession) === 'Closed' ? 'Closed session' : 'Session workspace' }}</p><h2 id="session-title">{{ formatDate(editingSession.startedAt) }}</h2></div><button class="close" @click="closeEditor" aria-label="Close">×</button></header>
+        <div class="note-label"><label for="session-notes">Therapist notes</label><button v-if="editingSession.status !== 'closed'" class="dictate" :class="{ recording: isDictating }" :disabled="transcribing" @click="toggleDictation"><span class="record-dot" aria-hidden="true"></span>{{ isDictating ? 'Stop dictation' : transcribing ? 'Transcribing…' : 'Start dictation' }}</button></div>
+        <p v-if="editingSession.status !== 'closed'" class="dictation-help" :class="{ recording: isDictating, error: dictationError }" role="status">{{ dictationMessage() }}</p>
+        <textarea id="session-notes" v-model="draftNotes" :disabled="editingSession.status === 'closed'" placeholder="Record the session in your own words…"></textarea>
         <aside class="ai-boundary"><strong>Session review boundary</strong><p>AI-supported pattern recognition is session-specific and provisional. It requires therapist review and never becomes part of the clinical record automatically.</p></aside>
-        <footer><button class="secondary" @click="closeEditor">Close</button><template v-if="editingSession.status !== 'completed'"><button class="secondary" @click="saveDraft">Save draft</button><button class="primary" @click="completeSession">Approve session</button></template></footer>
+        <footer><button class="secondary" @click="closeEditor">Close</button><template v-if="editingSession.status !== 'closed'"><button class="secondary" @click="saveNotes">Save notes</button><button v-if="editingSession.status !== 'completed'" class="primary" @click="completeSession">End session</button><button v-else class="primary" @click="closeSession">Close session</button></template></footer>
       </article>
     </div>
   </section>
@@ -85,7 +85,7 @@
 </template>
 
 <script setup>
-import { computed, ref, watch } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { authenticatedFetch } from '../../lib/api.js'
 import ContinuityWorkspace from './ContinuityWorkspace.vue'
 
@@ -108,15 +108,19 @@ let chunks = []
 let recordingStream = null
 
 const sessions = computed(() => allSessions.value.filter(item => item.clientId === props.selectedClient?.id).sort((a, b) => new Date(b.startedAt) - new Date(a.startedAt)))
-const approvedSessions = computed(() => sessions.value.filter(session => session.status === 'completed'))
-const lastApprovedSession = computed(() => approvedSessions.value[0] || null)
+const completedSessions = computed(() => sessions.value.filter(session => ['completed', 'closed'].includes(session.status)))
+const lastCompletedSession = computed(() => completedSessions.value[0] || null)
 
 function loadSessions() { try { return JSON.parse(localStorage.getItem('helio_sessions') || '[]') } catch { return [] } }
 function persist() { localStorage.setItem('helio_sessions', JSON.stringify(allSessions.value)) }
-function startSession() { const session = { id: Date.now(), clientId: props.selectedClient.id, startedAt: new Date().toISOString(), status: 'draft', notes: '' }; allSessions.value.push(session); persist(); openSession(session) }
+function startSession() {
+  const session = { id: Date.now(), clientId: props.selectedClient.id, startedAt: new Date().toISOString(), status: 'in_progress', workflowStatus: 'no_further_action', notes: '', notesStatus: 'draft' }
+  allSessions.value.push(session); persist(); openSession(session)
+}
 function openSession(session) { editingSession.value = session; draftNotes.value = session.notes || ''; activeTab.value = 'sessions' }
-function saveDraft() { editingSession.value.notes = draftNotes.value; editingSession.value.updatedAt = new Date().toISOString(); persist(); closeEditor() }
-function completeSession() { editingSession.value.notes = draftNotes.value; editingSession.value.status = 'completed'; editingSession.value.completedAt = new Date().toISOString(); persist(); closeEditor() }
+function saveNotes() { editingSession.value.notes = draftNotes.value; editingSession.value.notesStatus = 'saved'; editingSession.value.updatedAt = new Date().toISOString(); persist() }
+function completeSession() { saveNotes(); editingSession.value.status = 'completed'; editingSession.value.completedAt = new Date().toISOString(); persist(); closeEditor() }
+function closeSession() { saveNotes(); editingSession.value.status = 'closed'; editingSession.value.workflowStatus = 'no_further_action'; editingSession.value.closedAt = new Date().toISOString(); persist(); closeEditor() }
 function closeEditor() { stopRecording(); editingSession.value = null; draftNotes.value = ''; dictationError.value = '' }
 function beginEditFocus() { draftFocus.value = props.selectedClient?.note || ''; editingFocus.value = true }
 function cancelFocusEdit() { editingFocus.value = false; draftFocus.value = '' }
@@ -163,25 +167,19 @@ async function toggleDictation() {
     dictationError.value = microphoneError(error)
   }
 }
-function sessionStateLabel(session) {
-  const labels = {
-    planned: 'Planned',
-    in_progress: 'In progress',
-    awaiting_transcript: 'Awaiting transcript',
-    transcript_received: 'Transcript received',
-    drafts_awaiting_review: 'Drafts awaiting review',
-    completed: 'Approved',
-    closed: 'Closed',
-    draft: 'Draft notes'
-  }
-  return labels[session?.status] || 'Session'
-}
+function sessionStatusLabel(session) { return ({ planned: 'Planned', in_progress: 'In progress', completed: 'Completed', closed: 'Closed' })[session?.status] || 'Completed' }
+function workflowStatusLabel(status) { return ({ awaiting_transcript: 'Awaiting transcript', transcript_received: 'Transcript received', needs_review: 'Needs review', review_choices_saved: 'Review choices saved', drafts_awaiting_review: 'Drafts awaiting review', approved: 'Approved', no_further_action: 'No further action' })[status] || 'No further action' }
+function sessionProgressLabel(session) { const workflow = workflowStatusLabel(session?.workflowStatus); return workflow === 'No further action' ? sessionStatusLabel(session) : sessionStatusLabel(session) + ' · ' + workflow }
+function noteIndicator(session) { if (!session?.notes) return ''; return session.notesStatus === 'draft' && session.status === 'in_progress' ? 'Therapist notes: Draft' : 'Therapist notes: Saved' }
+function handleOpenSession(event) { const sessionId = String(event.detail?.sessionId || ''); if (!sessionId) return; allSessions.value = loadSessions(); const session = allSessions.value.find(item => String(item.id) === sessionId && item.clientId === props.selectedClient?.id); if (session) openSession(session) }
 function formatDate(value) { return new Date(value).toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }) }
 function preview(value, length = 90) { return value.length > length ? value.slice(0, length) + '…' : value }
 async function loadDocuments() { if (!props.selectedClient) return; documentsLoading.value = true; try { const response = await authenticatedFetch('/api/documents?clientRef=' + encodeURIComponent(props.selectedClient.id)); const data = await response.json(); documents.value = response.ok ? (data.documents || []) : [] } finally { documentsLoading.value = false } }
 async function openDocument(document) { const response = await authenticatedFetch('/api/documents?download=' + encodeURIComponent(document.id)); const data = await response.json(); if (response.ok && data.url) window.open(data.url, '_blank', 'noopener') }
 watch(() => props.selectedClient?.id, () => { activeTab.value = 'overview'; closeEditor(); cancelFocusEdit(); documents.value = [] })
 watch(activeTab, value => { if (value === 'documents') loadDocuments() })
+onMounted(() => window.addEventListener('helio:open-session', handleOpenSession))
+onUnmounted(() => window.removeEventListener('helio:open-session', handleOpenSession))
 </script>
 
 <style scoped>
