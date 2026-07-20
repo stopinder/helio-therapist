@@ -306,7 +306,7 @@ async function createSessionFromTranscript() {
     startedAt: selected.value.receivedAt,
     createdAt: new Date().toISOString(),
     status: 'completed',
-    workflowStatus: 'transcript_received',
+    workflowStatus: 'needs_review',
     notes: '',
     notesStatus: 'saved',
     createdFromTranscript: true
