@@ -129,7 +129,7 @@
 
             <Settings v-else-if="selectedNav === 'Settings'" />
 
-          <MainCanvas v-else :selected-client="selectedClient" />
+          <MainCanvas v-else :selected-client="selectedClient" @update-focus="handleUpdateClientFocus" />
         </main>
       </div>
 
@@ -225,6 +225,23 @@ const handleAddClient = async (newClientData) => {
   selectedClient.value = newClient
   localStorage.setItem("helio_selectedClient", JSON.stringify(newClient))
   feedbackMessage.value = "✅ Client added"
+  setTimeout(() => (feedbackMessage.value = ""), 2000)
+}
+
+async function handleUpdateClientFocus(note) {
+  if (!selectedClient.value || !supabase) return
+  const { data, error } = await supabase
+    .from('clients')
+    .update({ current_focus: note || null })
+    .eq('id', selectedClient.value.id)
+    .select()
+    .single()
+  if (error) { feedbackMessage.value = `Unable to save focus: ${error.message}`; return }
+  const updated = { ...data, name: data.display_name, note: data.current_focus }
+  clients.value = clients.value.map(client => client.id === updated.id ? updated : client)
+  selectedClient.value = updated
+  localStorage.setItem("helio_selectedClient", JSON.stringify(updated))
+  feedbackMessage.value = "Current focus saved"
   setTimeout(() => (feedbackMessage.value = ""), 2000)
 }
 
