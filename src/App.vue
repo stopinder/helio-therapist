@@ -129,7 +129,7 @@
 
             <Settings v-else-if="selectedNav === 'Settings'" />
 
-          <MainCanvas v-else :selected-client="selectedClient" @update-focus="handleUpdateClientFocus" />
+          <MainCanvas ref="clientWorkspace" v-else :selected-client="selectedClient" @update-focus="handleUpdateClientFocus" />
         </main>
       </div>
 
@@ -150,6 +150,7 @@
         :client="selectedClient"
         @close="showClientDrawer = false"
         @open-record="openClientRecord"
+        @start-session="startClientSession"
     />
   </div>
 </template>
@@ -338,6 +339,7 @@ const openReflection = (mode) => {
 
 const storedClient = JSON.parse(localStorage.getItem("helio_selectedClient") || "null")
 const selectedClient = ref(clients.value.find(client => client.id === storedClient?.id) || null)
+const clientWorkspace = ref(null)
 
 const handleSelectClient = (client) => {
   selectedClient.value = client
@@ -352,6 +354,21 @@ const openClientRecord = () => {
   selectedNav.value = "Client Workspace"
   activeView.value = "main"
   showClientDrawer.value = false
+}
+
+const startClientSession = () => {
+  if (!selectedClient.value) return
+
+  // When the client workspace is already open, invoke the shared action
+  // synchronously so Zoom can open without a browser popup warning.
+  if (selectedNav.value === "Client Workspace" && clientWorkspace.value) {
+    showClientDrawer.value = false
+    clientWorkspace.value.startSession()
+    return
+  }
+
+  openClientRecord()
+  nextTick(() => clientWorkspace.value?.startSession())
 }
 
 const handleNavChange = (nav) => {
