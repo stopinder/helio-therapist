@@ -35,7 +35,7 @@
             <button v-if="lastApprovedSession" class="text-action" @click="openSession(lastApprovedSession)">Open session</button>
           </div>
           <template v-if="lastApprovedSession">
-            <p class="session-status">Approved clinical output</p>
+            <p class="session-status">{{ sessionStateLabel(lastApprovedSession) }}</p>
             <p class="summary-copy">{{ lastApprovedSession.notes ? preview(lastApprovedSession.notes, 180) : 'No therapist notes recorded.' }}</p>
           </template>
           <p v-else class="quiet-copy">No sessions have been recorded yet. Start a session when you are ready.</p>
@@ -50,7 +50,7 @@
       <article v-if="sessions.length" class="recent-card">
         <div class="card-heading"><div><p class="eyebrow">Recent sessions</p><h2>Session history</h2></div><button v-if="sessions.length > 3" class="text-action" @click="activeTab = 'sessions'">View all sessions</button></div>
         <button v-for="session in sessions.slice(0, 3)" :key="session.id" class="session-row" @click="openSession(session)">
-          <span><strong>{{ formatDate(session.startedAt) }}</strong><small>{{ session.status === 'completed' ? 'Approved output' : 'Session draft' }}<template v-if="session.notes"> · {{ preview(session.notes, 90) }}</template></small></span><span>Open ›</span>
+          <span><strong>{{ formatDate(session.startedAt) }}</strong><small>{{ sessionStateLabel(session) }}<template v-if="session.notes"> · {{ preview(session.notes, 90) }}</template></small></span><span>Open ›</span>
         </button>
       </article>
     </main>
@@ -58,7 +58,7 @@
     <section v-else-if="activeTab === 'sessions'" class="section-card">
       <div class="section-heading"><div><p class="eyebrow">Sessions</p><h2>Therapeutic encounters</h2><p>Open a session to review its notes, source material and approved outputs.</p></div></div>
       <div v-if="!sessions.length" class="empty-state"><div>📝</div><h3>No sessions recorded</h3><p>Start a session when you are ready to take notes.</p></div>
-      <button v-for="session in sessions" :key="session.id" class="session-row" @click="openSession(session)"><span><strong>{{ formatDate(session.startedAt) }}</strong><small>{{ session.status === 'completed' ? 'Approved output' : 'Session draft' }}<template v-if="session.notes"> · {{ preview(session.notes, 90) }}</template></small></span><span>Open ›</span></button>
+      <button v-for="session in sessions" :key="session.id" class="session-row" @click="openSession(session)"><span><strong>{{ formatDate(session.startedAt) }}</strong><small>{{ sessionStateLabel(session) }}<template v-if="session.notes"> · {{ preview(session.notes, 90) }}</template></small></span><span>Open ›</span></button>
     </section>
 
     <ContinuityWorkspace v-else-if="activeTab === 'continuity'" :sessions="sessions" @open-session="openSession" />
@@ -162,6 +162,19 @@ async function toggleDictation() {
     recorder = null
     dictationError.value = microphoneError(error)
   }
+}
+function sessionStateLabel(session) {
+  const labels = {
+    planned: 'Planned',
+    in_progress: 'In progress',
+    awaiting_transcript: 'Awaiting transcript',
+    transcript_received: 'Transcript received',
+    drafts_awaiting_review: 'Drafts awaiting review',
+    completed: 'Approved',
+    closed: 'Closed',
+    draft: 'Draft notes'
+  }
+  return labels[session?.status] || 'Session'
 }
 function formatDate(value) { return new Date(value).toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }) }
 function preview(value, length = 90) { return value.length > length ? value.slice(0, length) + '…' : value }
