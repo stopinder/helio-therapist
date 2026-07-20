@@ -24,7 +24,7 @@
 
       <p v-if="errorMessage" class="notice error" role="alert">{{ errorMessage }}</p>
       <div v-if="loading" class="empty-card">Loading transcripts…</div>
-      <div v-else-if="!transcripts.length" class="empty-card">
+      <div v-else-if="!errorMessage && !transcripts.length" class="empty-card">
         <div>📝</div>
         <h2>Inbox up to date</h2>
         <p>New Zoom transcripts will appear here when they need review.</p>
