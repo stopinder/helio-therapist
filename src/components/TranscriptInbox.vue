@@ -7,11 +7,12 @@
           <h1>Transcript Inbox</h1>
           <p>Review each imported transcript and attach it to the right client. Nothing is analysed automatically.</p>
         </div>
-        <span class="count">{{ unassignedCount }} need{{ unassignedCount === 1 ? 's' : '' }} client</span>
+        <span v-if="unassignedCount" class="count">{{ unassignedCount }} need{{ unassignedCount === 1 ? 's' : '' }} client</span>
+        <span v-else class="count quiet">Inbox up to date</span>
       </header>
       <label v-if="transcripts.length" class="inbox-search">
         <span>Search transcripts</span>
-        <input v-model="searchQuery" type="search" placeholder="Meeting number or status…" />
+        <input v-model="searchQuery" type="search" placeholder="Search by client, meeting or status" />
       </label>
 
       <p v-if="errorMessage" class="notice error" role="alert">{{ errorMessage }}</p>
@@ -29,7 +30,7 @@
             <strong>{{ labelFor(transcript) }}</strong>
             <small>{{ formatDate(transcript.receivedAt) }} · Zoom cloud transcript</small>
           </span>
-          <span :class="['status', transcript.status]">{{ transcript.status === 'unassigned' ? 'Needs client' : 'Assigned' }}</span>
+          <span :class="['status', workflowState(transcript).id]">{{ workflowState(transcript).label }}</span>
           <span class="open">Review ›</span>
         </button>
       </div>
@@ -51,9 +52,9 @@
 
       <section class="assignment-card">
         <div>
-          <p class="eyebrow">First step</p>
-          <h2>Assign this transcript to a client</h2>
-          <p>Helio will not guess. Search for and select the client after checking the meeting.</p>
+          <p class="eyebrow">{{ selected.clientId ? 'Client assignment' : 'First step' }}</p>
+          <h2>{{ selected.clientId ? 'Assigned to ' + clientName(selected.clientId) : 'Assign this transcript to a client' }}</h2>
+          <p>{{ selected.clientId ? 'Change this only if the meeting has been linked to the wrong client.' : 'Helio will not guess. Check the meeting, then select the client.' }}</p>
         </div>
         <div class="assignment-controls">
           <label for="client-select">Client</label>
@@ -84,9 +85,9 @@
 
       <section v-if="selected.clientId" class="review-choices">
         <div>
-          <p class="eyebrow">Next step</p>
-          <h2>Choose what you want to create</h2>
-          <p>This records your choice only. Helio will not analyse the source or delete it automatically.</p>
+          <p class="eyebrow">Review choice</p>
+          <h2>{{ workflowState(selected).id === 'review-saved' ? 'Review choices saved' : 'Choose the next step' }}</h2>
+          <p>This saves your choice only. Helio will not analyse the source or delete it automatically.</p>
         </div>
         <label for="clinical-output">Clinical output</label>
         <select id="clinical-output" v-model="selectedLens">
@@ -94,7 +95,6 @@
           <option value="clinical_summary">Clinical summary</option>
           <option value="draft_note">Draft clinical note</option>
           <option value="cbt">CBT reflection</option>
-          <option value="supervision_reflection">Supervision reflection</option>
         </select>
         <fieldset>
           <legend>Source retention</legend>
@@ -102,7 +102,7 @@
           <label><input v-model="sourceRetention" type="radio" value="delete_after_approved_output" /> Mark for deletion after I approve an output</label>
         </fieldset>
         <button class="primary save-choices" :disabled="saving" @click="saveReviewChoices">
-          {{ saving ? 'Saving…' : 'Save review choices' }}
+          {{ saving ? 'Saving…' : workflowState(selected).id === 'review-saved' ? 'Update review choices' : 'Save review choices' }}
         </button>
       </section>
     </template>
@@ -131,11 +131,13 @@ const unassignedCount = computed(() => transcripts.value.filter(item => item.sta
 const filteredTranscripts = computed(() => {
   const query = searchQuery.value.trim().toLowerCase()
   if (!query) return transcripts.value
-  return transcripts.value.filter(item =>
-    labelFor(item).toLowerCase().includes(query) ||
-    item.status.toLowerCase().includes(query) ||
-    formatDate(item.receivedAt).toLowerCase().includes(query)
-  )
+  return transcripts.value.filter(item => {
+    const workflow = workflowState(item)
+    return labelFor(item).toLowerCase().includes(query) ||
+      clientName(item.clientId).toLowerCase().includes(query) ||
+      workflow.label.toLowerCase().includes(query) ||
+      formatDate(item.receivedAt).toLowerCase().includes(query)
+  })
 })
 
 function formatDate(value) {
@@ -143,6 +145,11 @@ function formatDate(value) {
 }
 function labelFor(transcript) {
   return transcript.meetingId ? `Zoom meeting ${transcript.meetingId}` : 'Zoom transcript'
+}
+function workflowState(transcript) {
+  if (!transcript?.clientId || transcript.status === 'unassigned') return { id: 'needs-client', label: 'Needs client' }
+  if (!transcript.requestedLens) return { id: 'needs-review', label: 'Needs review' }
+  return { id: 'review-saved', label: 'Review choices saved' }
 }
 function clientName(clientId) {
   return props.clients.find(client => client.id === clientId)?.name || ''
@@ -239,5 +246,5 @@ onMounted(load)
 </script>
 
 <style scoped>
-.transcript-inbox{max-width:68rem;margin:0 auto;color:#2c3e50}.page-header{display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;margin-bottom:.75rem}.eyebrow{margin:0 0 .25rem;color:#64748b;text-transform:uppercase;font-size:.72rem;font-weight:750;letter-spacing:.08em}.page-header h1,.review-header h1{margin:0;font-size:1.75rem}.page-header p:not(.eyebrow),.review-header p:not(.eyebrow){margin:.3rem 0 0;color:#64748b;line-height:1.5}.count{white-space:nowrap;border-radius:999px;padding:.4rem .65rem;background:#fff7ed;color:#9a3412;font-size:.8rem;font-weight:700}.notice{margin:0 0 1rem;padding:.75rem;border-radius:.6rem}.notice.error{background:#fef2f2;color:#b91c1c}.notice.success{background:#ecfdf5;color:#047857}.empty-card{min-height:22rem;display:flex;flex-direction:column;justify-content:center;align-items:center;background:white;border:1px solid #dbe1e8;border-radius:.85rem;padding:2rem;text-align:center;color:#64748b}.empty-card.compact{min-height:10rem}.empty-card div{font-size:2rem}.empty-card h2{color:#334155;margin:.5rem}.empty-card p{max-width:30rem;line-height:1.5}.inbox-list{background:white;border:1px solid #dbe1e8;border-radius:.85rem;overflow:hidden}.transcript-row{display:grid;grid-template-columns:auto minmax(0,1fr) auto auto;align-items:center;gap:1rem;width:100%;border:0;border-bottom:1px solid #edf0f4;background:white;padding:1rem 1.2rem;text-align:left;color:#334155}.transcript-row:last-child{border-bottom:0}.transcript-row:hover{background:#eff6ff}.meeting-icon{font-size:1.25rem}.row-main{display:flex;min-width:0;flex-direction:column;gap:.2rem}.row-main strong{font-size:1rem}.row-main small{color:#64748b}.status{font-size:.72rem;font-weight:700;padding:.25rem .5rem;border-radius:999px;white-space:nowrap}.status.unassigned{background:#fff7ed;color:#9a3412}.status.ready{background:#ecfdf5;color:#047857}.open{color:#2563eb;font-weight:650;white-space:nowrap}.review-header{margin-bottom:1rem}.back{border:0;background:transparent;padding:0 0 .8rem;color:#2563eb;font-weight:700;font-size:.9rem}.assignment-card,.raw-transcript,.review-choices{background:white;border:1px solid #dbe1e8;border-radius:.85rem;padding:1.25rem;margin-bottom:1rem}.assignment-card{display:grid;grid-template-columns:minmax(0,1fr) minmax(18rem,24rem);gap:1.5rem;align-items:center;border-color:#bfdbfe;background:#f8fbff}.assignment-card h2,.raw-transcript h2,.ready-card h2{font-size:1.15rem;margin:.1rem 0}.assignment-card p:not(.eyebrow),.raw-transcript p,.ready-card p{color:#64748b;line-height:1.45;margin:.35rem 0}.assignment-controls label{display:block;font-size:.8rem;font-weight:750;margin-bottom:.35rem}.assignment-controls select{width:100%;box-sizing:border-box;border:1px solid #94a3b8;border-radius:.6rem;background:white;padding:.7rem .8rem;color:#334155;font-size:1rem}.assignment-controls select:focus{outline:3px solid #bfdbfe;border-color:#2563eb}.field-help{font-size:.78rem;color:#9a3412;margin:.35rem 0 0}.assignment-actions{display:flex;gap:.6rem;margin-top:.75rem}.primary,.secondary{padding:.65rem .8rem;border-radius:.6rem;font-weight:700}.primary{border:1px solid #2563eb;background:#2563eb;color:white}.primary:disabled,.secondary:disabled{opacity:.55;cursor:not-allowed}.secondary{border:1px solid #cbd5e1;background:white;color:#334155}.raw-transcript header{display:flex;align-items:flex-start;justify-content:space-between;gap:1rem}.source-actions{display:flex;gap:.6rem;flex-wrap:wrap}.inbox-search{display:block;max-width:32rem;margin:0 0 1rem}.inbox-search span{display:block;font-size:.8rem;font-weight:700;margin-bottom:.35rem}.inbox-search input{width:100%;box-sizing:border-box;border:1px solid #cbd5e1;border-radius:.6rem;padding:.65rem .75rem;font-size:.95rem;color:#334155;background:white}.inbox-search input:focus{outline:3px solid #bfdbfe;border-color:#2563eb}.download{white-space:nowrap}.raw-transcript pre{margin:1rem 0 0;max-height:28rem;overflow:auto;white-space:pre-wrap;word-break:break-word;border-radius:.6rem;background:#f8fafc;padding:1rem;color:#334155;font:.86rem/1.6 ui-monospace,SFMono-Regular,Menlo,monospace}.review-choices{display:grid;gap:.8rem;background:#f8fbff;border-color:#bfdbfe}.review-choices h2{font-size:1.15rem;margin:.1rem 0}.review-choices p:not(.eyebrow){color:#64748b;line-height:1.45;margin:.35rem 0}.review-choices>label,.review-choices legend{font-size:.8rem;font-weight:750}.review-choices select{width:100%;max-width:28rem;box-sizing:border-box;border:1px solid #94a3b8;border-radius:.6rem;background:white;padding:.7rem .8rem;color:#334155;font-size:1rem}.review-choices fieldset{margin:0;padding:.8rem;border:1px solid #dbe1e8;border-radius:.6rem;display:grid;gap:.55rem}.review-choices fieldset label{color:#475569;font-size:.9rem}.review-choices input{accent-color:#2563eb}.save-choices{justify-self:start}@media(max-width:700px){.page-header{flex-direction:column}.transcript-row{grid-template-columns:auto minmax(0,1fr);gap:.55rem}.status{justify-self:start}.open{grid-column:2}.assignment-card{grid-template-columns:1fr}.assignment-actions{flex-direction:column}.assignment-actions button{width:100%}.raw-transcript header{flex-direction:column}.save-choices{width:100%}.source-actions,.download{width:100%}.source-actions button{flex:1}.review-header h1{font-size:1.45rem}}
+.transcript-inbox{max-width:68rem;margin:0 auto;color:#2c3e50}.page-header{display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;margin-bottom:.75rem}.eyebrow{margin:0 0 .25rem;color:#64748b;text-transform:uppercase;font-size:.72rem;font-weight:750;letter-spacing:.08em}.page-header h1,.review-header h1{margin:0;font-size:1.75rem}.page-header p:not(.eyebrow),.review-header p:not(.eyebrow){margin:.3rem 0 0;color:#64748b;line-height:1.5}.count{white-space:nowrap;border-radius:999px;padding:.4rem .65rem;background:#fff7ed;color:#9a3412;font-size:.8rem;font-weight:700}.count.quiet{background:#f1f5f9;color:#475569}.notice{margin:0 0 1rem;padding:.75rem;border-radius:.6rem}.notice.error{background:#fef2f2;color:#b91c1c}.notice.success{background:#ecfdf5;color:#047857}.empty-card{min-height:22rem;display:flex;flex-direction:column;justify-content:center;align-items:center;background:white;border:1px solid #dbe1e8;border-radius:.85rem;padding:2rem;text-align:center;color:#64748b}.empty-card.compact{min-height:10rem}.empty-card div{font-size:2rem}.empty-card h2{color:#334155;margin:.5rem}.empty-card p{max-width:30rem;line-height:1.5}.inbox-list{background:white;border:1px solid #dbe1e8;border-radius:.85rem;overflow:hidden}.transcript-row{display:grid;grid-template-columns:auto minmax(0,1fr) auto auto;align-items:center;gap:1rem;width:100%;border:0;border-bottom:1px solid #edf0f4;background:white;padding:1rem 1.2rem;text-align:left;color:#334155}.transcript-row:last-child{border-bottom:0}.transcript-row:hover{background:#eff6ff}.meeting-icon{font-size:1.25rem}.row-main{display:flex;min-width:0;flex-direction:column;gap:.2rem}.row-main strong{font-size:1rem}.row-main small{color:#64748b}.status{font-size:.72rem;font-weight:700;padding:.25rem .5rem;border-radius:999px;white-space:nowrap}.status.needs-client{background:#fff7ed;color:#9a3412}.status.needs-review{background:#eff6ff;color:#1d4ed8}.status.review-saved{background:#ecfdf5;color:#047857}.open{color:#2563eb;font-weight:650;white-space:nowrap}.review-header{margin-bottom:1rem}.back{border:0;background:transparent;padding:0 0 .8rem;color:#2563eb;font-weight:700;font-size:.9rem}.assignment-card,.raw-transcript,.review-choices{background:white;border:1px solid #dbe1e8;border-radius:.85rem;padding:1.25rem;margin-bottom:1rem}.assignment-card{display:grid;grid-template-columns:minmax(0,1fr) minmax(18rem,24rem);gap:1.5rem;align-items:center;border-color:#bfdbfe;background:#f8fbff}.assignment-card h2,.raw-transcript h2,.ready-card h2{font-size:1.15rem;margin:.1rem 0}.assignment-card p:not(.eyebrow),.raw-transcript p,.ready-card p{color:#64748b;line-height:1.45;margin:.35rem 0}.assignment-controls label{display:block;font-size:.8rem;font-weight:750;margin-bottom:.35rem}.assignment-controls select{width:100%;box-sizing:border-box;border:1px solid #94a3b8;border-radius:.6rem;background:white;padding:.7rem .8rem;color:#334155;font-size:1rem}.assignment-controls select:focus{outline:3px solid #bfdbfe;border-color:#2563eb}.field-help{font-size:.78rem;color:#9a3412;margin:.35rem 0 0}.assignment-actions{display:flex;gap:.6rem;margin-top:.75rem}.primary,.secondary{padding:.65rem .8rem;border-radius:.6rem;font-weight:700}.primary{border:1px solid #2563eb;background:#2563eb;color:white}.primary:disabled,.secondary:disabled{opacity:.55;cursor:not-allowed}.secondary{border:1px solid #cbd5e1;background:white;color:#334155}.raw-transcript header{display:flex;align-items:flex-start;justify-content:space-between;gap:1rem}.source-actions{display:flex;gap:.6rem;flex-wrap:wrap}.inbox-search{display:block;max-width:32rem;margin:0 0 1rem}.inbox-search span{display:block;font-size:.8rem;font-weight:700;margin-bottom:.35rem}.inbox-search input{width:100%;box-sizing:border-box;border:1px solid #cbd5e1;border-radius:.6rem;padding:.65rem .75rem;font-size:.95rem;color:#334155;background:white}.inbox-search input:focus{outline:3px solid #bfdbfe;border-color:#2563eb}.download{white-space:nowrap}.raw-transcript pre{margin:1rem 0 0;max-height:28rem;overflow:auto;white-space:pre-wrap;word-break:break-word;border-radius:.6rem;background:#f8fafc;padding:1rem;color:#334155;font:.86rem/1.6 ui-monospace,SFMono-Regular,Menlo,monospace}.review-choices{display:grid;gap:.8rem;background:#f8fbff;border-color:#bfdbfe}.review-choices h2{font-size:1.15rem;margin:.1rem 0}.review-choices p:not(.eyebrow){color:#64748b;line-height:1.45;margin:.35rem 0}.review-choices>label,.review-choices legend{font-size:.8rem;font-weight:750}.review-choices select{width:100%;max-width:28rem;box-sizing:border-box;border:1px solid #94a3b8;border-radius:.6rem;background:white;padding:.7rem .8rem;color:#334155;font-size:1rem}.review-choices fieldset{margin:0;padding:.8rem;border:1px solid #dbe1e8;border-radius:.6rem;display:grid;gap:.55rem}.review-choices fieldset label{color:#475569;font-size:.9rem}.review-choices input{accent-color:#2563eb}.save-choices{justify-self:start}@media(max-width:700px){.page-header{flex-direction:column}.transcript-row{grid-template-columns:auto minmax(0,1fr);gap:.55rem}.status{justify-self:start}.open{grid-column:2}.assignment-card{grid-template-columns:1fr}.assignment-actions{flex-direction:column}.assignment-actions button{width:100%}.raw-transcript header{flex-direction:column}.save-choices{width:100%}.source-actions,.download{width:100%}.source-actions button{flex:1}.review-header h1{font-size:1.45rem}}
 </style>
