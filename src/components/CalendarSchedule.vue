@@ -222,7 +222,7 @@ async function loadCalendarEvents() {
     if (!response.ok) throw new Error(data.error || 'Calendar unavailable')
     events.value = (data.events || []).map(event => ({
       id: event.id, title: event.summary || 'Untitled event', source: 'Google Calendar',
-      start: event.start?.dateTime || event.start?.date, end: event.end?.dateTime || event.end?.date,
+      start: event.start?.dateTime || event.start?.date, end: event.end?.dateTime || event.end?.date, htmlLink: event.htmlLink,
       timeLabel: event.start?.dateTime ? new Date(event.start.dateTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'All day'
     }))
   } catch (error) { calendarError.value = error.message || 'Calendar unavailable' }
