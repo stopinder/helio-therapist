@@ -109,6 +109,8 @@ let recordingStream = null
 
 const sessions = computed(() => allSessions.value.filter(item => item.clientId === props.selectedClient?.id).sort((a, b) => new Date(b.startedAt) - new Date(a.startedAt)))
 const completedSessions = computed(() => sessions.value.filter(session => ['completed', 'closed'].includes(session.status)))
+// No AI approval state exists in this pass; keep the Continuity entry point hidden until it does.
+const approvedSessions = computed(() => [])
 const lastCompletedSession = computed(() => completedSessions.value[0] || null)
 
 function loadSessions() { try { return JSON.parse(localStorage.getItem('helio_sessions') || '[]') } catch { return [] } }
