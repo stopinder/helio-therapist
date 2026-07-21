@@ -4,10 +4,10 @@
       <h1 class="text-xl sm:text-2xl font-semibold text-[#1a2b3b]">Settings</h1>
     </header>
 
-    <!-- Calendar & Video Section -->
+    <!-- Configuration only: routine calendar recovery happens in the workspace. -->
     <section class="mb-12">
       <h2 class="text-[12px] sm:text-[13px] font-semibold uppercase tracking-wider text-slate-500 mb-4 px-1">
-        Calendar & Video
+        Scheduling
       </h2>
       
       <div class="bg-white border border-[#e2e8f0] rounded-xl overflow-hidden shadow-sm">
@@ -26,7 +26,7 @@
                 <template v-else-if="googleStatus === 'Connected'">
                   <div class="flex flex-col mt-1">
                     <span class="font-medium text-green-600">✓ Connected</span>
-                    <span class="text-slate-400 text-[11px] leading-tight">Last synced: {{ lastSyncedGoogle }}</span>
+                    <span class="text-slate-400 text-[11px] leading-tight">{{ lastSyncedGoogle }}</span>
                   </div>
                 </template>
                 <template v-else>
@@ -37,9 +37,12 @@
           </div>
           <div class="flex items-center gap-2 w-full sm:w-auto">
             <template v-if="googleStatus === 'Connected'">
-              <button @click="disconnectGoogle" class="w-full sm:w-auto min-h-[44px] sm:min-h-0 px-4 py-2 sm:py-1.5 text-[13px] font-medium text-slate-500 hover:text-red-500 transition text-center">
-                Disconnect
-              </button>
+              <details class="relative">
+                <summary class="list-none cursor-pointer min-h-[44px] sm:min-h-0 px-3 py-2 sm:py-1.5 text-[13px] font-medium text-slate-500 hover:bg-slate-50 rounded-md">•••</summary>
+                <div class="absolute right-0 mt-1 z-10 w-48 bg-white border border-slate-200 rounded-md shadow-lg p-1">
+                  <button @click="disconnectGoogle" class="w-full text-left px-3 py-2 text-[13px] text-red-600 hover:bg-red-50 rounded">Disconnect Google Calendar</button>
+                </div>
+              </details>
             </template>
             <template v-else>
               <button 
@@ -253,7 +256,7 @@ const zoomStatus = ref('Not connected')
 const isConnecting = ref(false)
 const googleStatus = ref('Not connected')
 const googleEmail = ref('')
-const lastSyncedGoogle = ref('Never')
+const lastSyncedGoogle = ref('Not synced yet')
 const isConnectingGoogle = ref(false)
 const isLoadingStatus = ref(true)
 const calendlyStatus = ref('Not connected')
@@ -295,6 +298,15 @@ onMounted(async () => {
   }
 })
 
+const formatSyncTime = (value) => {
+  if (!value) return 'Not synced yet'
+  const date = new Date(value)
+  const elapsed = Date.now() - date.getTime()
+  if (elapsed >= 0 && elapsed < 60 * 1000) return 'Synced just now'
+  if (elapsed >= 0 && elapsed < 60 * 60 * 1000) return `Last synced ${Math.floor(elapsed / 60000)}m ago`
+  return `Last synced ${date.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}`
+}
+
 const fetchGoogleStatus = async () => {
   isLoadingStatus.value = true
   try {
@@ -303,9 +315,7 @@ const fetchGoogleStatus = async () => {
       const data = await response.json()
       if (data.connected) {
         googleStatus.value = 'Connected'
-        lastSyncedGoogle.value = data.last_synced_at 
-          ? new Date(data.last_synced_at).toLocaleString() 
-          : 'Unknown'
+        lastSyncedGoogle.value = formatSyncTime(data.last_synced_at)
       } else {
         googleStatus.value = 'Not connected'
       }
@@ -478,7 +488,7 @@ const disconnectGoogle = async () => {
       
       googleStatus.value = 'Not connected'
       googleEmail.value = ''
-      lastSyncedGoogle.value = 'Never'
+      lastSyncedGoogle.value = 'Not synced yet'
       successMessage.value = 'Google Calendar disconnected'
       showSuccess.value = true
       setTimeout(() => showSuccess.value = false, 3000)
