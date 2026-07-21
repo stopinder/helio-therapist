@@ -43,7 +43,9 @@ export default async function handler(req, res) {
     // Return safe metadata (no tokens)
     return res.status(200).json({
       connected: true,
-      last_synced_at: integration.last_synced_at
+      last_synced_at: integration.last_synced_at,
+      expires_at: integration.expires_at,
+      has_refresh_token: Boolean(integration.refresh_token)
     });
   } catch (error) {
     console.error('[Google Status] Internal error:', error);
