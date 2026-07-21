@@ -87,9 +87,12 @@ Built therapist routes/components:
 - `GET/POST/PATCH /api/resource-assignments` — versioned assignments, actionable review queue, and therapist review state.
 - `GET /api/client-timeline` — clinically meaningful exchange history for the selected client.
 
-Next therapist components/endpoints:
+Built therapist review path:
 
-- `AssignmentReview.vue` — therapist review of structured answers and returned files.
+- `NeedsAttention.vue` opens a completed structured response, shows the submitted PHQ-9 answers and calculated total with a clear non-diagnostic boundary, and lets the therapist explicitly mark it reviewed. That removes the derived Today item and writes the meaningful reviewed Timeline event.
+
+Next therapist component:
+
 - `MeasureHistory.vue` — repeated-measure comparison, introduced after reliable scoring data exists.
 
 Client-facing route/components now built for the constrained first measure:
@@ -99,6 +102,8 @@ Client-facing route/components now built for the constrained first measure:
 - `POST /api/client-completion` — validates all nine answers, stores raw answers and calculated score, transitions the assignment to awaiting review, and writes one clinically meaningful Timeline event.
 
 This is not a general client portal: it does not expose the client record, library, attachments or other assignments. Email delivery is not yet implemented; the therapist copies the one-time assignment link through their chosen approved channel.
+
+If a client gives a non-zero answer to PHQ-9 item 9, the completion form immediately tells them not to wait for therapist review and to use local emergency/crisis support if they may harm themselves or cannot stay safe. Helio still does not treat the score or that response as an automated clinical conclusion.
 
 Server endpoints to introduce with those screens:
 
@@ -136,7 +141,8 @@ It deliberately does **not** add generic tasks, messages, reminders, client logi
 
 - PHQ-9 can be completed in Helio through an opaque, expiry-bound assignment link; raw answers and an auditable calculation version are saved.
 - Completion creates the derived Today review action and Timeline event; existing therapist review removes it from Today.
-- Next: client uploads, authenticated portal/consent decisions, a response viewer and a clear review/discussion control.
+- The first mobile form includes immediate urgent-support guidance for a non-zero response to item 9; it is not an emergency service and does not automate a clinical risk conclusion.
+- Next: client uploads, authenticated portal/consent decisions, measure history, and a clear review/discussion-in-session control.
 
 ### Phase 2 — structured measures
 
