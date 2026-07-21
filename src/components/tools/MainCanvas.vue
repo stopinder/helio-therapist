@@ -64,6 +64,7 @@
       </article>
     </div>
     <ResourcePicker v-if="pickerOpen" :client="selectedClient" :heading="pickerHeading" @close="pickerOpen = false" @sent="handleResourceSent" />
+    <div v-if="completionLink" class="modal-backdrop" @click.self="completionLink = ''"><article class="share-link" role="dialog" aria-modal="true"><p class="eyebrow">Ready to send</p><h2>Share this secure link with {{ selectedClient.name }}</h2><p>The link opens this assignment on mobile and expires in 30 days.</p><input readonly :value="completionLink" @focus="$event.target.select()" /><div><button class="secondary" @click="completionLink = ''">Close</button><button class="primary" @click="copyCompletionLink">{{ copyLabel }}</button></div></article></div>
   </section>
   <div v-else class="empty-state large"><h2>No client selected</h2><p>Choose a client from Clients to open their orientation workspace.</p></div>
 </template>
@@ -71,7 +72,7 @@
 <script setup>
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { authenticatedFetch } from '../../lib/api.js'
-import { timelineEventPresentation } from '../../lib/clinicalExchange.js'
+import { assignmentCompletionUrl, timelineEventPresentation } from '../../lib/clinicalExchange.js'
 import ResourcePicker from './ResourcePicker.vue'
 
 const props = defineProps({ selectedClient: { type: Object, default: null } })
@@ -87,6 +88,8 @@ const startingSession = ref(false)
 const clinicalTimelineEvents = ref([])
 const pickerOpen = ref(false)
 const pickerHeading = ref('Send to client')
+const completionLink = ref('')
+const copyLabel = ref('Copy link')
 const isDictating = ref(false)
 const transcribing = ref(false)
 const dictationError = ref('')
@@ -139,7 +142,8 @@ function zoomMeetingLabel(session) { if (session.zoomState === 'preparing') retu
 function zoomMeetingDescription(session) { if (session.zoomState === 'preparing') return 'Helio is creating a Zoom meeting and linking it to this session.'; if (session.zoomState === 'ready') return 'Zoom opens separately with its full meeting controls. Helio will use this link to route the transcript back to this session.'; return session.zoomError || 'You can continue taking therapist notes. Reconnect Zoom in Settings before the next session.' }
 function openSession(session) { editingSession.value = session; draftNotes.value = session.notes || ''; activeTab.value = 'sessions' }
 function openPicker(heading) { pickerHeading.value = heading; pickerOpen.value = true }
-async function handleResourceSent() { pickerOpen.value = false; await loadClinicalTimeline() }
+async function handleResourceSent({ clientAccessToken }) { pickerOpen.value = false; completionLink.value = assignmentCompletionUrl(clientAccessToken); await loadClinicalTimeline() }
+async function copyCompletionLink() { try { await navigator.clipboard.writeText(completionLink.value); copyLabel.value = 'Copied'; setTimeout(() => { copyLabel.value = 'Copy link' }, 1600) } catch { copyLabel.value = 'Select and copy' } }
 function saveNotes() { editingSession.value.notes = draftNotes.value; editingSession.value.notesStatus = 'saved'; editingSession.value.updatedAt = new Date().toISOString(); persist() }
 function completeSession() { saveNotes(); editingSession.value.status = 'completed'; editingSession.value.workflowStatus = editingSession.value.zoomMeetingId ? 'awaiting_transcript' : 'no_further_action'; editingSession.value.completedAt = new Date().toISOString(); persist(); closeEditor() }
 function closeSession() { saveNotes(); editingSession.value.status = 'closed'; editingSession.value.workflowStatus = editingSession.value.zoomMeetingId ? 'awaiting_transcript' : 'no_further_action'; editingSession.value.closedAt = new Date().toISOString(); persist(); closeEditor() }
@@ -216,4 +220,5 @@ onUnmounted(() => { window.removeEventListener('helio:open-session', handleOpenS
 .timeline-actions,.session-actions{display:flex;flex-wrap:wrap;gap:.45rem}.timeline-actions{justify-content:flex-end}.timeline-actions .secondary,.session-actions .secondary{font-size:.78rem;padding:.5rem .65rem}.session-actions{align-items:center;margin:.8rem 0;padding:.7rem 0;border-top:1px solid #edf0f4;border-bottom:1px solid #edf0f4}.session-actions span{width:100%;font-size:.72rem;text-transform:uppercase;letter-spacing:.07em;font-weight:750;color:#64748b}
 .zoom-session{display:flex;justify-content:space-between;align-items:center;gap:1rem;margin:0 0 1rem;padding:.9rem 1rem;border:1px solid #bfdbfe;border-radius:.7rem;background:#f8fbff}.zoom-session.warn{border-color:#fecaca;background:#fff7f7}.zoom-session strong,.zoom-session small{display:block}.zoom-session small{margin-top:.25rem;color:#64748b;font-size:.8rem;line-height:1.4}.zoom-session.warn small{color:#991b1b}.zoom-session .secondary{flex:0 0 auto;white-space:nowrap}@media(max-width:700px){.zoom-session{align-items:stretch;flex-direction:column}.zoom-session .secondary{width:100%}}
 .preparation-card{display:flex;align-items:center;justify-content:space-between;gap:1rem;margin-bottom:.8rem;padding:1.1rem 1.2rem;background:#f8fbff;border:1px solid #bfdbfe;border-radius:.8rem}.preparation-card h2{font-size:1.05rem;margin:.2rem 0}.preparation-card p:last-child{margin:.35rem 0 0;color:#64748b;line-height:1.45}@media(max-width:700px){.preparation-card{flex-direction:column;align-items:stretch}.preparation-card .primary{width:100%}}
+.share-link{width:min(35rem,100%);background:#fff;border-radius:1rem;padding:1.3rem}.share-link h2{margin:.2rem 0 .5rem}.share-link p{color:#64748b;line-height:1.5}.share-link input{box-sizing:border-box;width:100%;padding:.75rem;border:1px solid #cfd7e2;border-radius:.6rem;font:inherit}.share-link div{display:flex;justify-content:flex-end;gap:.5rem;margin-top:1rem}
 </style>

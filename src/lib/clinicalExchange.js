@@ -21,3 +21,7 @@ export function timelineEventPresentation(type) {
     resource_discussed: { icon: '◷', detail: 'Discussed during session' }
   })[type] || { icon: '•', detail: 'Clinical event' }
 }
+
+export function assignmentCompletionUrl(token, origin = window.location.origin) {
+  return `${origin}/complete?token=${encodeURIComponent(token)}`
+}

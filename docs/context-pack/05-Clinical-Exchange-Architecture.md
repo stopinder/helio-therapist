@@ -71,7 +71,7 @@ Each submitted structured response preserves raw answers plus calculated score d
 
 1. **Send a resource** — therapist opens a client, selects **Send to client**, searches or chooses a recent resource, adds optional instruction/due date, and sends. An assignment and “resource sent” timeline event are created.
 2. **Assign a measure** — same flow, with a measure-specific completion expectation. The assignment carries the exact measure/scoring version.
-3. **Complete in Helio** — client opens a structured assignment, saves progress where allowed, submits answers, and receives clear confirmation. A response, any permitted score, and an awaiting-review state are created.
+3. **Complete in Helio** — client opens a structured assignment through an opaque, expiring link, submits answers, and receives clear confirmation. A response, any permitted score, and an awaiting-review state are created.
 4. **Upload a completed copy** — client opens the assignment, chooses upload, adds one or more permitted files, and submits. The files attach to the response, not to general Documents.
 5. **Review a returned item** — therapist opens it from Timeline or Today, reviews the response and explicitly marks it reviewed.
 6. **See a measure before a session** — Today shows “measure completed — review” until reviewed. The appointment preparation context may also surface that one relevant pending item.
@@ -92,11 +92,13 @@ Next therapist components/endpoints:
 - `AssignmentReview.vue` — therapist review of structured answers and returned files.
 - `MeasureHistory.vue` — repeated-measure comparison, introduced after reliable scoring data exists.
 
-Client-facing routes/components (only after client authentication and consent boundaries are designed):
+Client-facing route/components now built for the constrained first measure:
 
-- `/client/assignments/:accessToken` or an authenticated client-portal equivalent;
-- `ClientAssignmentView.vue` — structured completion or upload return;
-- `ClientUploadResponse.vue` — private attachment upload and confirmation.
+- `/complete?token=…` — an opaque, assignment-specific link, hashed at rest and expiring after 30 days;
+- `ClientCompletion.vue` — mobile-first PHQ-9 completion and confirmation;
+- `POST /api/client-completion` — validates all nine answers, stores raw answers and calculated score, transitions the assignment to awaiting review, and writes one clinically meaningful Timeline event.
+
+This is not a general client portal: it does not expose the client record, library, attachments or other assignments. Email delivery is not yet implemented; the therapist copies the one-time assignment link through their chosen approved channel.
 
 Server endpoints to introduce with those screens:
 
@@ -130,12 +132,11 @@ It deliberately does **not** add generic tasks, messages, reminders, client logi
 - Completed/returned assignments surface in Today while awaiting review; reviewed items leave Today and remain in Timeline.
 - Dedicated, therapist-owned persistence schema with no client exposure.
 
-### Phase 1b — secure return and review — next
+### Phase 1b — secure structured return — partially complete
 
-- Design and implement client authentication, consent, retention, upload limits/types and out-of-hours boundaries.
-- Client completes one structured item in Helio **or** uploads a completed copy.
-- Therapist sees the returned item in Timeline, reviews it, and sees a derived review action in Today.
-- Timeline records sent, returned/completed and reviewed.
+- PHQ-9 can be completed in Helio through an opaque, expiry-bound assignment link; raw answers and an auditable calculation version are saved.
+- Completion creates the derived Today review action and Timeline event; existing therapist review removes it from Today.
+- Next: client uploads, authenticated portal/consent decisions, a response viewer and a clear review/discussion control.
 
 ### Phase 2 — structured measures
 
@@ -156,5 +157,5 @@ It deliberately does **not** add generic tasks, messages, reminders, client logi
 - No diagnosis, automated clinical judgement, or risk conclusion from a score.
 - No generic Document record in place of an assignment/response/review lifecycle.
 - No top-level Resources or Measures app.
-- No client access until authentication, consent, retention and out-of-hours boundaries are designed.
+- The only unauthenticated client surface is an opaque, expiring, assignment-specific PHQ-9 completion link; it reveals no general client information and accepts no files.
 - No low-value operational events in the timeline.

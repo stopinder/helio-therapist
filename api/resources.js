@@ -1,4 +1,5 @@
 import { requireAuthenticatedUser } from './_lib/supabase.js'
+import { phq9Definition } from '../src/lib/phq9.js'
 
 const KINDS = new Set(['worksheet', 'thought_record', 'behavioural_experiment', 'sleep_diary', 'psychoeducation', 'diagnostic_tool', 'outcome_measure', 'therapist_resource', 'document'])
 const MODES = new Set(['structured', 'upload', 'either', 'read_only'])
@@ -25,11 +26,12 @@ export default async function handler(req, res) {
       return res.status(200).json({ resources })
     }
     if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
-    const title = clean(req.body?.title)
-    const kind = clean(req.body?.resourceKind, 40)
-    const completionMode = clean(req.body?.completionMode, 30)
+    const isPhq9 = req.body?.template === 'phq9'
+    const title = isPhq9 ? 'PHQ-9' : clean(req.body?.title)
+    const kind = isPhq9 ? 'outcome_measure' : clean(req.body?.resourceKind, 40)
+    const completionMode = isPhq9 ? 'structured' : clean(req.body?.completionMode, 30)
     if (!title || !KINDS.has(kind) || !MODES.has(completionMode)) return res.status(400).json({ error: 'A title, valid resource type, and completion method are required.' })
-    const description = clean(req.body?.description, 1200)
+    const description = isPhq9 ? 'A brief questionnaire about mood over the last two weeks.' : clean(req.body?.description, 1200)
     const { data: resource, error: resourceError } = await supabase
       .from('resource_library_items')
       .insert({ user_id: user.id, title, resource_kind: kind, description })
@@ -37,7 +39,7 @@ export default async function handler(req, res) {
     if (resourceError) throw resourceError
     const { data: version, error: versionError } = await supabase
       .from('resource_versions')
-      .insert({ resource_id: resource.id, user_id: user.id, version_number: 1, completion_mode: completionMode, client_title: title, client_description: description, published_at: new Date().toISOString() })
+      .insert({ resource_id: resource.id, user_id: user.id, version_number: 1, completion_mode: completionMode, client_title: title, client_description: description, form_definition: isPhq9 ? phq9Definition() : {}, scoring_definition: isPhq9 ? { calculation: 'sum', calculationVersion: 'phq-9-v1' } : {}, published_at: new Date().toISOString() })
       .select().single()
     if (versionError) throw versionError
     return res.status(201).json({ resource: { ...resource, version } })

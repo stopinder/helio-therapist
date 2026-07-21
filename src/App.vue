@@ -116,6 +116,7 @@
           <NeedsAttention
               v-if="selectedNav === 'Today'"
               :clients="clients"
+              @open-settings="selectedNav = 'Settings'"
               @open-transcript="openTranscriptFromQueue"
               @open-session="openSessionFromQueue"
               @select-appointment="openAppointmentPreparation"

@@ -31,11 +31,11 @@ The application currently exposes **Today**, **Clients**, **Transcripts**, and *
 - Therapists can create a basic reusable resource, select it from the one shared contextual picker, and send an immutable versioned assignment to a client with optional instruction and due date.
 - The reserved clinical-exchange schema has been applied to the Helio Supabase project: resources, immutable versions, assignments, responses, response files, measure results and clinically meaningful timeline events have dedicated records.
 
-Client completion, upload, structured outcome-measure scoring and discussion-with-session linking remain deliberately unavailable until secure client access is designed. Timeline and Today now have the therapist-side event/review foundations. The exact architecture and persistence model are documented in [Clinical exchange architecture](05-Clinical-Exchange-Architecture.md).
+PHQ-9 can now be added as a structured outcome-measure template, sent through the same picker and completed on a mobile device through a one-assignment, expiring completion link. Submission preserves item answers, calculates the total, records a completed Timeline event and places the assignment in Today for therapist review. The token is stored only as a hash. Delivery is currently copy-link rather than email, and uploads, other form types, an in-context response viewer and measure trends remain unavailable.
 
 ## Deliberately deferred
 
-- Client messaging, client authentication/portal access, delivery reminders, and an implemented outcome-measure workflow.
+- Client messaging, client accounts, delivery reminders, client uploads and an in-product response viewer.
 - Standalone reports, documents, sessions, assessments, and task applications.
 - Multi-practice/multi-clinic architecture and organisation or supervision pricing.
 - Automatic pattern recognition, longitudinal continuity generation, and any clinical output engine beyond therapist-controlled, reviewable drafting.

@@ -1,6 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { assignmentStatusLabel, completionModeLabel, timelineEventPresentation } from '../src/lib/clinicalExchange.js'
+import { calculatePhq9, phq9Items } from '../src/lib/phq9.js'
 
 test('clinical exchange labels preserve the distinct assignment lifecycle', () => {
   assert.equal(assignmentStatusLabel('awaiting_review'), 'Awaiting review')
@@ -13,4 +14,10 @@ test('clinical timeline shows meaningful exchange events, not delivery mechanics
   assert.deepEqual(timelineEventPresentation('resource_completed'), { icon: '✓', detail: 'Completed · Review required' })
   assert.deepEqual(timelineEventPresentation('resource_returned'), { icon: '↩', detail: 'Returned · Review required' })
   assert.deepEqual(timelineEventPresentation('resource_reviewed'), { icon: '✓', detail: 'Reviewed' })
+})
+
+test('PHQ-9 only calculates complete valid answers and preserves item answers', () => {
+  const answers = Object.fromEntries(phq9Items.map((_, index) => [`q${index + 1}`, String(index % 4)]))
+  assert.deepEqual(calculatePhq9(answers), { total: 12, itemScores: [0, 1, 2, 3, 0, 1, 2, 3, 0], calculationVersion: 'phq-9-v1' })
+  assert.equal(calculatePhq9({ q1: '0' }), null)
 })

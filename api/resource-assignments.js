@@ -1,11 +1,22 @@
 import { requireAuthenticatedUser } from './_lib/supabase.js'
+import crypto from 'crypto'
 
 const clean = (value, maximum = 1200) => String(value || '').trim().slice(0, maximum)
+const tokenHash = token => crypto.createHash('sha256').update(token).digest('hex')
 
 export default async function handler(req, res) {
   try {
     const { supabase, user } = await requireAuthenticatedUser(req)
     if (req.method === 'GET') {
+      const assignmentId = clean(req.query.assignmentId, 80)
+      if (assignmentId) {
+        const { data, error } = await supabase.from('client_resource_assignments')
+          .select('id,client_id,status,therapist_instruction,sent_at,completed_at,reviewed_at,review_note,resource_versions(client_title,form_definition,resource_library_items(title,resource_kind)),client_resource_responses(id,response_kind,structured_answers,submitted_at),outcome_measure_results(scores,calculation_version,completed_at)')
+          .eq('id', assignmentId).eq('user_id', user.id).maybeSingle()
+        if (error) throw error
+        if (!data) return res.status(404).json({ error: 'Assignment not found.' })
+        return res.status(200).json({ assignment: data })
+      }
       if (req.query.needsAttention === 'true') {
         const { data, error } = await supabase.from('client_resource_assignments')
           .select('id,client_id,status,completed_at,sent_at,resource_versions(client_title,resource_library_items(title,resource_kind))')
@@ -51,9 +62,11 @@ export default async function handler(req, res) {
     if (!client) return res.status(404).json({ error: 'Client not found.' })
     if (!version) return res.status(404).json({ error: 'Resource version not found.' })
     const sentSnapshot = { title: version.client_title, description: version.client_description, completionMode: version.completion_mode, resourceVersionId: version.id }
+    const clientAccessToken = crypto.randomBytes(32).toString('base64url')
     const { data: assignment, error } = await supabase.from('client_resource_assignments').insert({
       user_id: user.id, client_id: clientId, resource_version_id: version.id, sent_snapshot: sentSnapshot,
-      therapist_instruction: clean(req.body?.instruction), due_at: req.body?.dueAt || null
+      therapist_instruction: clean(req.body?.instruction), due_at: req.body?.dueAt || null,
+      client_access_token_hash: tokenHash(clientAccessToken), client_access_expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
     }).select().single()
     if (error) throw error
     const { error: timelineError } = await supabase.from('client_timeline_events').insert({
@@ -61,7 +74,7 @@ export default async function handler(req, res) {
       summary: `${version.client_title} sent to client`
     })
     if (timelineError) throw timelineError
-    return res.status(201).json({ assignment })
+    return res.status(201).json({ assignment, clientAccessToken })
   } catch (error) {
     console.error('[Resource assignments]', error)
     return res.status(error.status || 500).json({ error: error.message || 'Resource assignment request failed' })
