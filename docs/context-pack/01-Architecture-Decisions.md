@@ -40,9 +40,10 @@ The present client workspace contains:
 - a quiet client header and therapist-maintained current focus;
 - a timeline of meaningful session activity;
 - sessions, including notes and source material; and
-- documents.
+- documents; and
+- a reserved **Resources & measures** capability for therapist-to-client clinical exchange.
 
-Future capabilities—including messages, questionnaires, reports, approved AI drafts, shared resources, safety work, and appointment changes—belong as linked client events or focused client views, not as top-level apps.
+Future capabilities—including messages, questionnaires, reports, approved AI drafts, shared resources, safety work, and appointment changes—belong as linked client events or focused client views, not as top-level apps. The resource/measure workflow is specified in [Clinical exchange architecture](05-Clinical-Exchange-Architecture.md).
 
 ## Messaging
 

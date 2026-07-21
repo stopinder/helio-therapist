@@ -17,12 +17,14 @@ Only unresolved decisions belong here. Completed decisions should be moved into 
 
 6. When messaging is introduced, what safeguards, response expectations, consent language, and out-of-hours boundaries are required before it becomes a client-facing channel?
 7. Which message, questionnaire, document, or appointment events should create a Today item, and when is an item considered resolved?
+8. Before client access is enabled, what authentication, consent wording, retention period, file limits/types, and out-of-hours expectations are required for resource assignments and uploads?
+9. Which validated outcome measures should be included first, and who signs off the wording, scoring algorithm, licensed use, and clinically appropriate presentation?
 
 ## Integrations and rollout
 
-8. Does a real Zoom start-session and transcript-return test succeed after the required Zoom scope, re-consent, webhook, and database migration are complete?
-9. What is the safest first production rollout and data-retention posture for a single therapist before supporting a wider pilot?
+10. Does a real Zoom start-session and transcript-return test succeed after the required Zoom scope, re-consent, webhook, and database migration are complete?
+11. What is the safest first production rollout and data-retention posture for a single therapist before supporting a wider pilot?
 
 ## Deferred business scope
 
-10. When, if at all, should organisational and supervision pricing be designed after the single-therapist workspace is validated? Consumer discovery, academy, coaching, workforce intelligence, and broad behavioural-investigation products remain deferred.
+12. When, if at all, should organisational and supervision pricing be designed after the single-therapist workspace is validated? Consumer discovery, academy, coaching, workforce intelligence, and broad behavioural-investigation products remain deferred.

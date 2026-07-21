@@ -25,9 +25,13 @@ The application currently exposes **Today**, **Clients**, **Transcripts**, and *
 - Google Calendar/Calendly need a signed-in user with a valid connected integration; verify from the deployed app.
 - Selecting a calendar appointment opens preparation only if its title matches exactly one Helio client; no durable calendar-event-to-client link exists yet.
 
+## Architected but not yet built
+
+- Clinical exchange foundation: the client workspace now has a therapist-only **Resources & measures** view. Therapists can create a simple reusable resource, select it, and send an immutable versioned assignment to a client. Client completion, upload, review actions and outcome-measure scoring remain deliberately unavailable until secure client access is designed. The exact architecture and persistence model are documented in [Clinical exchange architecture](05-Clinical-Exchange-Architecture.md).
+
 ## Deliberately deferred
 
-- Client messaging and an outcome-measure workflow.
+- Client messaging, client authentication/portal access, delivery reminders, and an implemented outcome-measure workflow.
 - Standalone reports, documents, sessions, assessments, and task applications.
 - Multi-practice/multi-clinic architecture and organisation or supervision pricing.
 - Automatic pattern recognition, longitudinal continuity generation, and any clinical output engine beyond therapist-controlled, reviewable drafting.

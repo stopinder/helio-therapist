@@ -50,6 +50,8 @@
 
     <ContinuityWorkspace v-else-if="activeTab === 'continuity'" :sessions="sessions" @open-session="openSession" />
 
+    <ResourcesMeasures v-else-if="activeTab === 'resources'" :client="selectedClient" />
+
     <section v-else class="section-card">
       <div class="section-heading"><div><p class="eyebrow">Documents</p><h2>Client documents</h2><p>Uploaded reports and therapist-approved documents.</p></div></div>
       <div v-if="documentsLoading" class="empty-inline">Loading documents…</div>
@@ -79,10 +81,11 @@
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { authenticatedFetch } from '../../lib/api.js'
 import ContinuityWorkspace from './ContinuityWorkspace.vue'
+import ResourcesMeasures from './ResourcesMeasures.vue'
 
 const props = defineProps({ selectedClient: { type: Object, default: null } })
 const emit = defineEmits(['update-focus'])
-const tabs = [{ id: 'timeline', label: 'Timeline' }, { id: 'sessions', label: 'Sessions' }, { id: 'documents', label: 'Documents' }]
+const tabs = [{ id: 'timeline', label: 'Timeline' }, { id: 'sessions', label: 'Sessions' }, { id: 'resources', label: 'Resources & measures' }, { id: 'documents', label: 'Documents' }]
 const activeTab = ref('timeline')
 const editingSession = ref(null)
 const draftNotes = ref('')
