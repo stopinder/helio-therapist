@@ -113,7 +113,12 @@
             class="flex-1 overflow-auto p-4 md:p-6 relative scroll-smooth bg-[#f5f7fa]"
             @scroll="handleScroll"
         >
-          <CalendarSchedule v-if="selectedNav === 'Today'" @open-settings="selectedNav = 'Settings'" />
+          <NeedsAttention
+              v-if="selectedNav === 'Today'"
+              :clients="clients"
+              @open-transcript="openTranscriptFromQueue"
+              @open-session="openSessionFromQueue"
+          />
 
             <ClientDirectory
                 v-else-if="selectedNav === 'Clients'"
@@ -123,9 +128,8 @@
                 @add-client="handleAddClient"
             />
 
-            <TranscriptInbox v-else-if="selectedNav === 'Transcripts'" :clients="clients" />
+            <TranscriptInbox v-else-if="selectedNav === 'Transcripts'" :clients="clients" :open-transcript-id="queuedTranscriptId" />
 
-            <ReportsWorkspace v-else-if="selectedNav === 'Reports'" :clients="clients" />
 
             <Settings v-else-if="selectedNav === 'Settings'" />
 
@@ -151,6 +155,7 @@
         @close="showClientDrawer = false"
         @open-record="openClientRecord"
         @start-session="startClientSession"
+        @start-session="startClientSession"
     />
   </div>
 </template>
@@ -169,9 +174,8 @@ import ReflectiveJournal from "./components/reflective/ReflectiveJournal.vue"
 import PastReflections from "./components/reflective/PastReflections.vue"
 import TherapistMap from "./components/tools/TherapistMap.vue"
 import Settings from "./components/Settings.vue"
-import CalendarSchedule from "./components/CalendarSchedule.vue"
+import NeedsAttention from "./components/NeedsAttention.vue"
 import ClientDirectory from "./components/ClientDirectory.vue"
-import ReportsWorkspace from "./components/ReportsWorkspace.vue"
 import TranscriptInbox from "./components/TranscriptInbox.vue"
 import { supabase } from "./lib/supabase.js"
 
@@ -183,6 +187,7 @@ const isInSession = ref(false)
 const isSyncing = ref(false)
 const activeView = ref("main")
 const selectedNav = ref("Today")
+const queuedTranscriptId = ref(null)
 const activeTool = ref(null)
 const activeTemplate = ref(null)
 const reflectionMode = ref("new")
@@ -354,6 +359,19 @@ const openClientRecord = () => {
   selectedNav.value = "Client Workspace"
   activeView.value = "main"
   showClientDrawer.value = false
+}
+
+const openTranscriptFromQueue = (item) => {
+  queuedTranscriptId.value = item.transcriptId
+  selectedNav.value = "Transcripts"
+}
+
+const openSessionFromQueue = async (item) => {
+  const client = clients.value.find(candidate => String(candidate.id) === String(item.clientId))
+  if (!client) return
+  handleSelectClient(client)
+  await nextTick()
+  window.dispatchEvent(new CustomEvent("helio:open-session", { detail: { sessionId: item.sessionId, clientId: item.clientId } }))
 }
 
 const startClientSession = () => {
