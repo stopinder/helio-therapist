@@ -127,7 +127,6 @@ async function startSession() {
   } finally { startingSession.value = false }
 }
 defineExpose({ startSession })
-defineExpose({ startSession })
 function openZoomMeeting(session) {
   if (!session?.zoomStartUrl) return
   const popup = window.open(session.zoomStartUrl, '_blank')
