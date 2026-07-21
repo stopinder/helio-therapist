@@ -29,7 +29,7 @@ import CalendarSchedule from './CalendarSchedule.vue'
 
 const props = defineProps({ clients: { type: Array, default: () => [] } })
 const emit = defineEmits(['open-transcript', 'open-session', 'select-appointment'])
-const transcripts = ref([]), sessions = ref([]), loading = ref(true), error = ref('')
+const transcripts = ref([]), sessions = ref([]), assignments = ref([]), loading = ref(true), error = ref('')
 const clientName = id => props.clients.find(client => String(client.id) === String(id))?.name || ''
 function transcriptAction(transcript) {
   if (!transcript.clientId || transcript.status === 'unassigned') return { title: 'Assign a client to a Zoom transcript', detail: 'This source transcript needs a client before it can be linked to a session.', action: 'Assign client' }
@@ -46,11 +46,16 @@ const items = computed(() => {
     key: `session-${session.id}`, kind: 'session', sessionId: session.id, clientId: session.clientId, clientName: clientName(session.clientId), type: session.status === 'in_progress' ? 'Session' : 'Session review', icon: '◷',
     title: session.status === 'in_progress' ? 'Return to an open session' : 'Review session work', detail: session.status === 'in_progress' ? 'Therapist notes are still open for this session.' : 'This session has a review step waiting in the client workspace.', action: session.status === 'in_progress' ? 'Open session' : 'Review session', when: new Date(session.updatedAt || session.startedAt || 0).getTime()
   }))
-  return [...transcriptItems, ...sessionItems].sort((a, b) => b.when - a.when)
+  const assignmentItems = assignments.value.map(assignment => {
+    const title = assignment.resource_versions?.client_title || assignment.resource_versions?.resource_library_items?.title || 'Client item'
+    const isMeasure = assignment.resource_versions?.resource_library_items?.resource_kind === 'outcome_measure'
+    return { key: `assignment-${assignment.id}`, kind: 'assignment', assignmentId: assignment.id, clientId: assignment.client_id, clientName: clientName(assignment.client_id), type: isMeasure ? 'Outcome measure' : 'Client return', icon: isMeasure ? '✓' : '↩', title: `${title} ${assignment.status === 'completed' ? 'completed' : 'returned'} — review`, detail: 'Review it in the clinical context, then mark it reviewed.', action: 'Mark reviewed', when: new Date(assignment.completed_at || assignment.sent_at || 0).getTime() }
+  })
+  return [...transcriptItems, ...sessionItems, ...assignmentItems].sort((a, b) => b.when - a.when)
 })
 function loadSessions() { try { sessions.value = JSON.parse(localStorage.getItem('helio_sessions') || '[]') } catch { sessions.value = [] } }
-async function load() { loading.value = true; error.value = ''; loadSessions(); try { const response = await authenticatedFetch('/api/zoom/transcripts'); const data = await response.json().catch(() => ({})); if (!response.ok) throw new Error(data.error || 'Unable to load the work queue.'); transcripts.value = data.transcripts || [] } catch (err) { error.value = err.message || 'Unable to load the work queue.' } finally { loading.value = false } }
-function act(item) { if (item.kind === 'transcript') emit('open-transcript', item); else emit('open-session', item) }
+async function load() { loading.value = true; error.value = ''; loadSessions(); try { const [transcriptResponse, assignmentResponse] = await Promise.all([authenticatedFetch('/api/zoom/transcripts'), authenticatedFetch('/api/resource-assignments?needsAttention=true')]); const transcriptData = await transcriptResponse.json().catch(() => ({})); const assignmentData = await assignmentResponse.json().catch(() => ({})); if (!transcriptResponse.ok) throw new Error(transcriptData.error || 'Unable to load the work queue.'); if (!assignmentResponse.ok) throw new Error(assignmentData.error || 'Unable to load client review work.'); transcripts.value = transcriptData.transcripts || []; assignments.value = assignmentData.assignments || [] } catch (err) { error.value = err.message || 'Unable to load the work queue.' } finally { loading.value = false } }
+async function act(item) { if (item.kind === 'transcript') emit('open-transcript', item); else if (item.kind === 'session') emit('open-session', item); else { const response = await authenticatedFetch('/api/resource-assignments', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ assignmentId: item.assignmentId, action: 'mark_reviewed' }) }); const data = await response.json().catch(() => ({})); if (!response.ok) { error.value = data.error || 'Unable to mark this item reviewed.'; return } await load() } }
 onMounted(load)
 </script>
 

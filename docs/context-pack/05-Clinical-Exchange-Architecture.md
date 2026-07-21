@@ -16,7 +16,7 @@ The existing `documents` table remains appropriate for therapist-uploaded report
 | --- | --- |
 | Today | Shows only derived, actionable items: returned worksheet, uploaded document, completed measure, or an item needing follow-up. It never lists the whole library or every sent assignment. |
 | Clients | No change. It remains retrieval only. |
-| Client workspace | Add a **Resources & measures** client view. It lists that client's assignments and provides the brief **Send to client** flow. |
+| Client workspace | Timeline is the default clinical story. It contains contextual actions that open the shared Resource Picker; assignments appear as meaningful events, not as a document-type destination. |
 | Timeline | Shows only clinically meaningful milestones: sent, completed/returned, reviewed, and discussed in a session. Delivery and reminder mechanics stay hidden unless they fail. |
 | Sessions | An assignment or review may be linked to a session, but neither requires one. A therapist can explicitly mark a returned item as discussed in a session. |
 | Messaging | No standalone Messages application. Sending is an assignment action; any later client-facing notification channel is delivery infrastructure, not a second resource model. |
@@ -28,18 +28,11 @@ Primary navigation remains **Today, Clients, Transcripts, Settings**. No Resourc
 
 Within a selected client's workspace:
 
-`Timeline | Sessions | Resources & measures | Documents`
+`Timeline | Sessions` (with **Clinical** reserved only if it later earns a distinct clinical purpose).
 
-**Resources & measures** is the client-specific working list. Its states are:
+Timeline has contextual actions: **Send resource**, **Assign outcome measure**, **Request questionnaire**, and **Share document**. Each opens the same shared Resource Picker. The assignment lifecycle remains sent, opened, in progress, completed, awaiting review, and reviewed, but it is shown through clinically meaningful timeline events rather than a tab.
 
-- Sent
-- Opened
-- In progress
-- Completed
-- Awaiting review
-- Reviewed
-
-Its primary action is **Send to client**. The normal flow is deliberately short:
+The normal flow is deliberately short:
 
 `Client workspace → Send to client → search or recent item → optional instruction → optional due date → Send`
 
@@ -80,18 +73,22 @@ Each submitted structured response preserves raw answers plus calculated score d
 2. **Assign a measure** — same flow, with a measure-specific completion expectation. The assignment carries the exact measure/scoring version.
 3. **Complete in Helio** — client opens a structured assignment, saves progress where allowed, submits answers, and receives clear confirmation. A response, any permitted score, and an awaiting-review state are created.
 4. **Upload a completed copy** — client opens the assignment, chooses upload, adds one or more permitted files, and submits. The files attach to the response, not to general Documents.
-5. **Review a returned item** — therapist opens it from Resources & measures, Timeline, or Today; reviews the response and explicitly marks it reviewed.
+5. **Review a returned item** — therapist opens it from Timeline or Today, reviews the response and explicitly marks it reviewed.
 6. **See a measure before a session** — Today shows “measure completed — review” until reviewed. The appointment preparation context may also surface that one relevant pending item.
 7. **Compare measures** — therapist opens a repeated measure’s history and sees completion dates, results and change calculated from the same measure identity/version family.
 8. **Discuss in session** — therapist explicitly records “discussed during session” against a completed assignment; the client timeline shows that meaningful event.
 
-## Routes, screens and components to add in implementation
+## Implementation status and next routes/components
 
-Therapist routes/components:
+Built therapist routes/components:
 
-- `ClientResourcesMeasures.vue` — the client-specific list and state filters.
-- `SendResourceDialog.vue` — recent items, search, optional instruction/due date, and send confirmation.
-- `ResourcePicker.vue` — contextual library search, never a primary page.
+- `ResourcePicker.vue` — shared contextual picker, grouped around recent items, measures, worksheets, psychoeducation, sleep, behavioural experiments and custom resources.
+- `GET/POST /api/resources` — therapist-owned reusable resource creation and contextual picker data.
+- `GET/POST/PATCH /api/resource-assignments` — versioned assignments, actionable review queue, and therapist review state.
+- `GET /api/client-timeline` — clinically meaningful exchange history for the selected client.
+
+Next therapist components/endpoints:
+
 - `AssignmentReview.vue` — therapist review of structured answers and returned files.
 - `MeasureHistory.vue` — repeated-measure comparison, introduced after reliable scoring data exists.
 
@@ -103,9 +100,6 @@ Client-facing routes/components (only after client authentication and consent bo
 
 Server endpoints to introduce with those screens:
 
-- `GET /api/resources?recent=1&q=`
-- `POST /api/resource-assignments`
-- `GET /api/clients/:clientId/resource-assignments`
 - `GET /api/resource-assignments/:id`
 - `POST /api/resource-assignments/:id/responses`
 - `POST /api/resource-assignments/:id/review`
@@ -127,12 +121,20 @@ It deliberately does **not** add generic tasks, messages, reminders, client logi
 
 ## Phased implementation
 
-### Phase 1 — useful clinical exchange
+### Phase 1a — therapist assignment and timeline foundation — complete
 
-- Resource picker with a small therapist-owned library and recent resources.
-- Send an exact resource version to a selected client.
+- Small therapist-owned resource library and contextual picker.
+- Send an exact immutable resource version to a selected client, with optional instruction and due date.
+- Contextual actions in Timeline and an active session, all using the same picker.
+- Resource-sent and reviewed events displayed in Timeline; completed/returned event shapes are reserved for secure client return.
+- Completed/returned assignments surface in Today while awaiting review; reviewed items leave Today and remain in Timeline.
+- Dedicated, therapist-owned persistence schema with no client exposure.
+
+### Phase 1b — secure return and review — next
+
+- Design and implement client authentication, consent, retention, upload limits/types and out-of-hours boundaries.
 - Client completes one structured item in Helio **or** uploads a completed copy.
-- Therapist sees it in Resources & measures, reviews it, and sees the review action in Today.
+- Therapist sees the returned item in Timeline, reviews it, and sees a derived review action in Today.
 - Timeline records sent, returned/completed and reviewed.
 
 ### Phase 2 — structured measures

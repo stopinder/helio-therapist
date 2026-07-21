@@ -25,9 +25,13 @@ The application currently exposes **Today**, **Clients**, **Transcripts**, and *
 - Google Calendar/Calendly need a signed-in user with a valid connected integration; verify from the deployed app.
 - Selecting a calendar appointment opens preparation only if its title matches exactly one Helio client; no durable calendar-event-to-client link exists yet.
 
-## Architected but not yet built
+## Built clinical-exchange foundation
 
-- Clinical exchange foundation: the client workspace now has a therapist-only **Resources & measures** view. Therapists can create a simple reusable resource, select it, and send an immutable versioned assignment to a client. Client completion, upload, review actions and outcome-measure scoring remain deliberately unavailable until secure client access is designed. The exact architecture and persistence model are documented in [Clinical exchange architecture](05-Clinical-Exchange-Architecture.md).
+- Resources & measures is not a client-workspace destination. Timeline is the default workspace and contains contextual Send resource, Assign outcome measure, Request questionnaire and Share document actions.
+- Therapists can create a basic reusable resource, select it from the one shared contextual picker, and send an immutable versioned assignment to a client with optional instruction and due date.
+- The reserved clinical-exchange schema has been applied to the Helio Supabase project: resources, immutable versions, assignments, responses, response files, measure results and clinically meaningful timeline events have dedicated records.
+
+Client completion, upload, structured outcome-measure scoring and discussion-with-session linking remain deliberately unavailable until secure client access is designed. Timeline and Today now have the therapist-side event/review foundations. The exact architecture and persistence model are documented in [Clinical exchange architecture](05-Clinical-Exchange-Architecture.md).
 
 ## Deliberately deferred
 
