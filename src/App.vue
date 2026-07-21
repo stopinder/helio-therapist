@@ -155,7 +155,6 @@
         @close="showClientDrawer = false"
         @open-record="openClientRecord"
         @start-session="startClientSession"
-        @start-session="startClientSession"
     />
   </div>
 </template>
