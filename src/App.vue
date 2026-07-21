@@ -118,6 +118,7 @@
               :clients="clients"
               @open-transcript="openTranscriptFromQueue"
               @open-session="openSessionFromQueue"
+              @select-appointment="openAppointmentPreparation"
           />
 
             <ClientDirectory
@@ -129,7 +130,6 @@
             />
 
             <TranscriptInbox v-else-if="selectedNav === 'Transcripts'" :clients="clients" :open-transcript-id="queuedTranscriptId" />
-
 
             <Settings v-else-if="selectedNav === 'Settings'" />
 
@@ -154,7 +154,6 @@
         :client="selectedClient"
         @close="showClientDrawer = false"
         @open-record="openClientRecord"
-        @start-session="startClientSession"
         @start-session="startClientSession"
     />
   </div>
@@ -355,15 +354,9 @@ const handleSelectClient = (client) => {
   isSidebarOpen.value = false
 }
 
-const openClientRecord = () => {
-  selectedNav.value = "Client Workspace"
-  activeView.value = "main"
-  showClientDrawer.value = false
-}
-
 const openTranscriptFromQueue = (item) => {
   queuedTranscriptId.value = item.transcriptId
-  selectedNav.value = "Transcripts"
+  selectedNav.value = 'Transcripts'
 }
 
 const openSessionFromQueue = async (item) => {
@@ -371,14 +364,36 @@ const openSessionFromQueue = async (item) => {
   if (!client) return
   handleSelectClient(client)
   await nextTick()
-  window.dispatchEvent(new CustomEvent("helio:open-session", { detail: { sessionId: item.sessionId, clientId: item.clientId } }))
+  window.dispatchEvent(new CustomEvent('helio:open-session', { detail: { sessionId: item.sessionId, clientId: item.clientId } }))
+}
+
+const openAppointmentPreparation = async (appointment) => {
+  // Calendar providers do not yet supply a durable Helio client ID. Until they do,
+  // match only an unambiguous client name and leave other events in the calendar.
+  const summary = String(appointment?.summary || '').trim().toLowerCase()
+  const matches = clients.value.filter(client => {
+    const name = String(client.name || '').trim().toLowerCase()
+    return name && (summary === name || summary.includes(name))
+  })
+  if (matches.length !== 1) return
+  handleSelectClient(matches[0])
+  await nextTick()
+  window.dispatchEvent(new CustomEvent('helio:prepare-session', {
+    detail: { clientId: matches[0].id, appointment }
+  }))
+}
+
+const openClientRecord = () => {
+  selectedNav.value = "Client Workspace"
+  activeView.value = "main"
+  showClientDrawer.value = false
 }
 
 const startClientSession = () => {
   if (!selectedClient.value) return
 
-  // When the client workspace is already open, invoke the shared action
-  // synchronously so Zoom can open without a browser popup warning.
+  // Preserve the browser's user gesture when the record is already open,
+  // so Zoom is not treated as an unsolicited pop-up.
   if (selectedNav.value === "Client Workspace" && clientWorkspace.value) {
     showClientDrawer.value = false
     clientWorkspace.value.startSession()

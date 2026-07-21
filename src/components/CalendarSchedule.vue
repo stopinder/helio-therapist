@@ -30,7 +30,7 @@
       <div v-for="name in weekdayNames" :key="name" class="weekday-name">{{ name }}</div>
       <button v-for="day in monthDays" :key="day.key" class="month-day" :class="{ muted: !day.currentMonth, today: day.isToday, selected: sameDay(day.date, selectedDate) }" @click="selectMonthDay(day.date)">
         <span class="day-number">{{ day.date.getDate() }}</span>
-        <span v-for="event in day.events.slice(0, 3)" :key="event.id" class="event-chip" @click.stop="selectedEvent = event">{{ event.summary }}</span>
+        <span v-for="event in day.events.slice(0, 3)" :key="event.id" class="event-chip" @click.stop="selectEvent(event)">{{ event.summary }}</span>
         <span v-if="day.events.length > 3" class="more-events">+{{ day.events.length - 3 }} more</span>
       </button>
     </div>
@@ -38,14 +38,14 @@
       <section v-for="day in visibleDays" :key="day.key" class="week-day" :class="{ today: day.isToday }">
         <button class="week-day-heading" @click="openDay(day.date)"><span>{{ shortWeekday(day.date) }}</span><strong>{{ day.date.getDate() }}</strong></button>
         <p v-if="!day.events.length" class="no-events">No events</p>
-        <button v-for="event in day.events" :key="event.id" class="week-event" @click="selectedEvent = event"><span>{{ eventTime(event) }}</span>{{ event.summary }}</button>
+        <button v-for="event in day.events" :key="event.id" class="week-event" @click="selectEvent(event)"><span>{{ eventTime(event) }}</span>{{ event.summary }}</button>
       </section>
     </div>
     <div v-else class="agenda-view">
       <div v-if="!groupedEvents.length" class="calendar-state empty-state"><div class="state-icon">📅</div><h2>Your schedule is clear</h2><p>No events found for this {{ view === 'day' ? 'day' : 'period' }}.</p></div>
       <section v-for="group in groupedEvents" :key="group.key" class="agenda-day">
         <h2>{{ group.label }}</h2>
-        <button v-for="event in group.events" :key="event.id" class="agenda-event" @click="selectedEvent = event">
+        <button v-for="event in group.events" :key="event.id" class="agenda-event" @click="selectEvent(event)">
           <span class="event-time">{{ eventTime(event) }}</span><span class="event-copy"><strong>{{ event.summary }}</strong><small>{{ eventRange(event) }}</small></span><span aria-hidden="true">›</span>
         </button>
       </section>
@@ -67,7 +67,7 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import { authenticatedFetch } from '../lib/api.js'
 
-defineEmits(['open-settings'])
+const emit = defineEmits(['open-settings', 'select-appointment'])
 const views = [{ id: 'day', label: 'Day' }, { id: 'week', label: 'Week' }, { id: 'month', label: 'Month' }, { id: 'agenda', label: 'Agenda' }]
 const weekdayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 const view = ref(localStorage.getItem('helio_calendar_view') || 'day')
@@ -114,6 +114,10 @@ function goToday(){selectedDate.value=new Date()}
 function move(direction){const amount={day:1,week:7,month:0,agenda:30}[view.value]; const d=new Date(selectedDate.value); if(view.value==='month')d.setMonth(d.getMonth()+direction); else d.setDate(d.getDate()+amount*direction); selectedDate.value=d}
 function openDay(date){selectedDate.value=new Date(date); setView('day')}
 function selectMonthDay(date){selectedDate.value=new Date(date); if(window.innerWidth<768)setView('day')}
+function selectEvent(event) {
+  emit('select-appointment', event)
+  selectedEvent.value = event
+}
 
 async function loadEvents(){
   loading.value=true; error.value=''
