@@ -187,10 +187,10 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { authenticatedFetch } from '../lib/api.js'
 
-const props = defineProps({ clients: { type: Array, default: () => [] } })
+const props = defineProps({ clients: { type: Array, default: () => [] }, openTranscriptId: { type: [String, Number], default: null } })
 const transcripts = ref([])
 const selected = ref(null)
 const selectedClientId = ref('')
@@ -377,7 +377,14 @@ function downloadRaw(transcript) {
   link.click()
   URL.revokeObjectURL(link.href)
 }
-onMounted(() => { load(); loadLocalSessions() })
+async function openQueuedTranscript(id) {
+  if (!id) return
+  if (!transcripts.value.length) await load()
+  const transcript = transcripts.value.find(item => String(item.id) === String(id))
+  if (transcript) openTranscript(transcript)
+}
+watch(() => props.openTranscriptId, openQueuedTranscript)
+onMounted(async () => { await load(); loadLocalSessions(); openQueuedTranscript(props.openTranscriptId) })
 </script>
 
 <style scoped>
