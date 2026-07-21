@@ -27,6 +27,14 @@ Each item has one clear action and opens the exact relevant transcript or sessio
 
 Time-based work and event-based work remain distinct. Appointment-related preparation belongs to the appointment; non-appointment actions belong below it in Needs attention.
 
+## Google Calendar: a workspace service, not a Settings workflow
+
+Google Calendar is the entry point to the clinical day. Once a therapist has connected it, opening Helio restores the authenticated Supabase session and immediately loads the calendar. The calendar service detects a rejected Google access token, silently refreshes it with the stored refresh token, saves the replacement token, and retries the same request before rendering an error.
+
+The calendar shows meaningful service state: **Synced just now**, **Last synced [time]**, **Syncing**, or a concise recovery state. It never falls back to “Unknown”. Transient failures can be retried from the calendar. A reconnect prompt appears in the calendar itself only when Google rejects the refresh token, access has been removed, or a calendar has never been connected.
+
+Settings remains configuration. Google disconnect is intentionally an overflow account-management action, not a routine recovery step. Therapists should not need to visit Settings, understand OAuth, or reconnect after ordinary token expiry, sign-in, browser restart, or computer restart.
+
 ## Clients: retrieval only
 
 Clients is optimised for finding a person quickly as the caseload grows: search first, compact list, entire row clickable, with recent and optional pinned clients when implemented. It should not carry unread counts, activity badges, message previews, or workflow information.
