@@ -18,3 +18,18 @@ test('priority workspace surfaces use semantic spacing', async () => {
   const files = await Promise.all(['App.vue', 'components/NextSessionPreparation.vue', 'components/NeedsAttention.vue', 'components/ClientDirectory.vue', 'components/tools/ClientContextDrawer.vue', 'components/tools/LeftSidebar.vue'].map(path => readFile(new URL(`../src/${path}`, import.meta.url), 'utf8')))
   for (const source of files) assert.match(source, /space-|page-layout|p-stack|px-inline|var\(--space-/)
 })
+
+test('semantic surface, border, and elevation tokens are defined once and exposed to Tailwind', async () => {
+  const css = await readFile(new URL('../src/main.css', import.meta.url), 'utf8')
+  const config = await readFile(new URL('../tailwind.config.js', import.meta.url), 'utf8')
+
+  for (const token of ['surface-canvas', 'surface', 'surface-muted', 'surface-subtle', 'surface-elevated', 'surface-overlay', 'border', 'border-muted', 'border-strong']) {
+    assert.match(css, new RegExp(`--${token}:`))
+    assert.match(config, new RegExp(`(?:'${token}'|${token}): 'var\\(--${token}\\)'`))
+  }
+  for (const token of ['shadow-elevated', 'shadow-overlay']) {
+    assert.match(css, new RegExp(`--${token}:`))
+  }
+  assert.match(config, /elevated: 'var\(--shadow-elevated\)'/)
+  assert.match(config, /overlay: 'var\(--shadow-overlay\)'/)
+})
