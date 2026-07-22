@@ -3,7 +3,6 @@
     <div
         v-if="open"
         class="fixed inset-0 z-[60] flex justify-end"
-        @keydown.esc="$emit('close')"
         tabindex="-1"
         ref="drawerContainer"
     >
@@ -29,7 +28,7 @@
               <h2 class="text-body-long font-semibold text-[#2c3e50]">{{ client?.name || 'No client selected' }}</h2>
             </div>
             <button
-                class="w-8 h-8 flex items-center justify-center rounded-md text-slate-400 hover:text-slate-600 hover:bg-surface-subtle transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2563eb]"
+                class="w-8 h-8 flex items-center justify-center rounded-md text-slate-400 interaction-control focus-visible:outline-none"
                 @click="$emit('close')"
                 aria-label="Close drawer"
             >
@@ -74,7 +73,7 @@
 
           <div v-if="client" class="shrink-0 border-t border-border bg-surface-overlay p-stack-lg">
             <button
-                class="w-full rounded-lg bg-[#2563eb] px-4 py-2.5 text-body font-semibold text-white hover:bg-[#1d4ed8] transition"
+                class="w-full rounded-lg bg-[#2563eb] px-4 py-2.5 text-body font-semibold text-white interaction-control"
                 @click="$emit('open-record')"
             >
               Open full client record
@@ -87,7 +86,8 @@
 </template>
 
 <script setup>
-import { ref, watch, onMounted, onBeforeUnmount } from 'vue'
+import { ref, watch, onBeforeUnmount, toRef } from 'vue'
+import { useFocusTrap } from '../../composables/useFocusTrap.js'
 
 const props = defineProps({
   open: {
@@ -104,28 +104,18 @@ const emit = defineEmits(['close', 'open-record', 'start-session'])
 
 const drawerContainer = ref(null)
 
-// Focus management and Escape key listener
-const handleKeyDown = (e) => {
-  if (e.key === 'Escape' && props.open) {
-    emit('close')
-  }
-}
+useFocusTrap(drawerContainer, toRef(props, 'open'), () => emit('close'))
 
 watch(() => props.open, (isOpen) => {
   if (isOpen) {
-    document.addEventListener('keydown', handleKeyDown)
     // Prevent body scroll when drawer is open
     document.body.style.overflow = 'hidden'
   } else {
-    document.removeEventListener('keydown', handleKeyDown)
     document.body.style.overflow = ''
   }
 })
 
-onBeforeUnmount(() => {
-  document.removeEventListener('keydown', handleKeyDown)
-  document.body.style.overflow = ''
-})
+onBeforeUnmount(() => { document.body.style.overflow = '' })
 </script>
 
 <style scoped>
@@ -146,5 +136,5 @@ onBeforeUnmount(() => {
 .drawer-slide-leave-to {
   transform: translateX(100%);
 }
-.context-action{width:100%;text-align:left;border:1px solid var(--border);border-radius:.55rem;padding:.7rem .8rem;background:var(--surface-elevated);color:#2563eb;font-size:14px;font-weight:600}.context-action:hover{background:var(--surface-subtle);border-color:var(--border-strong)}.context-action:focus-visible{outline:2px solid #2563eb;outline-offset:2px}.context-action.muted{color:#94a3b8;cursor:not-allowed;background:var(--surface-muted)}.context-action span{float:right;font-size:11px;font-weight:500}
+.context-action{width:100%;text-align:left;border:1px solid var(--border);border-radius:.55rem;padding:.7rem .8rem;background:var(--surface-elevated);color:#2563eb;font-size:14px;font-weight:600;transition:background-color var(--motion-standard) var(--motion-ease),border-color var(--motion-standard) var(--motion-ease)}.context-action:hover:not(:disabled){background:var(--state-hover);border-color:var(--border-strong)}.context-action.muted{color:var(--state-disabled);cursor:not-allowed;background:var(--surface-muted)}.context-action span{float:right;font-size:11px;font-weight:500}
 </style>

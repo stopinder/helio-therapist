@@ -17,6 +17,17 @@ module.exports = {
         border: 'var(--border)',
         'border-muted': 'var(--border-muted)',
         'border-strong': 'var(--border-strong)',
+        'state-hover': 'var(--state-hover)',
+        'state-active': 'var(--state-active)',
+        'state-selected': 'var(--state-selected)',
+        'state-focus-ring': 'var(--state-focus-ring)',
+        'state-disabled': 'var(--state-disabled)',
+        'state-loading': 'var(--state-loading)',
+        'state-success': 'var(--state-success)',
+        'state-warning': 'var(--state-warning)',
+        'state-danger': 'var(--state-danger)',
+        'state-recording': 'var(--state-recording)',
+        'state-ai-working': 'var(--state-ai-working)',
         'celestial-dusk': '#16243B',   // Sidebar
         'midnight-blue': '#1F3159',    // Canvas
         'lavender-wash': '#C0B8FF',    // Accent
@@ -59,6 +70,11 @@ module.exports = {
       boxShadow: {
         elevated: 'var(--shadow-elevated)',
         overlay: 'var(--shadow-overlay)',
+      },
+      transitionDuration: {
+        fast: 'var(--motion-fast)',
+        standard: 'var(--motion-standard)',
+        slow: 'var(--motion-slow)',
       },
     },
   },

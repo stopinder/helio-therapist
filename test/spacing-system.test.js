@@ -33,3 +33,28 @@ test('semantic surface, border, and elevation tokens are defined once and expose
   assert.match(config, /elevated: 'var\(--shadow-elevated\)'/)
   assert.match(config, /overlay: 'var\(--shadow-overlay\)'/)
 })
+
+test('semantic interaction and motion tokens are defined once and exposed to Tailwind', async () => {
+  const css = await readFile(new URL('../src/main.css', import.meta.url), 'utf8')
+  const config = await readFile(new URL('../tailwind.config.js', import.meta.url), 'utf8')
+
+  for (const token of ['hover', 'active', 'selected', 'focus-ring', 'disabled', 'loading', 'success', 'warning', 'danger', 'recording', 'ai-working']) {
+    assert.match(css, new RegExp(`--state-${token}:`))
+    assert.match(config, new RegExp(`['"]state-${token}['"]: 'var\\(--state-${token}\\)'`))
+  }
+  for (const token of ['fast', 'standard', 'slow']) assert.match(css, new RegExp(`--motion-${token}:`))
+  assert.match(css, /:focus-visible/)
+  assert.match(css, /prefers-reduced-motion: reduce/)
+})
+
+test('primary drawers use the shared keyboard focus trap', async () => {
+  const focusTrap = await readFile(new URL('../src/composables/useFocusTrap.js', import.meta.url), 'utf8')
+  const [clientDrawer, aiDrawer] = await Promise.all([
+    readFile(new URL('../src/components/tools/ClientContextDrawer.vue', import.meta.url), 'utf8'),
+    readFile(new URL('../src/components/AIInsightDrawer.vue', import.meta.url), 'utf8')
+  ])
+  assert.match(focusTrap, /event\.key !== 'Tab'/)
+  assert.match(focusTrap, /previouslyFocused/)
+  assert.match(clientDrawer, /useFocusTrap/)
+  assert.match(aiDrawer, /useFocusTrap/)
+})

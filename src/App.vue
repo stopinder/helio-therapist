@@ -41,7 +41,7 @@
         <div class="flex items-center gap-2 md:gap-3 min-w-0">
           <!-- Mobile Menu Button -->
           <button
-              class="md:hidden p-2 -ml-2 text-slate-600 hover:bg-surface-subtle rounded-md transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2563eb]"
+              class="md:hidden p-2 -ml-2 text-slate-600 rounded-md interaction-control focus-visible:outline-none"
               @click="isSidebarOpen = true"
               aria-label="Open menu"
           >
@@ -65,8 +65,8 @@
 
         <div class="flex items-center gap-1.5 md:gap-3">
           <button
-              class="hidden sm:block type-body-sm px-3 py-1.5 rounded-md border border-border transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2563eb]"
-              :class="showClientDrawer ? 'bg-surface-subtle text-black border-border-strong' : 'text-[#3f4754] bg-surface-elevated hover:bg-surface-subtle'"
+              class="hidden sm:block type-body-sm px-3 py-1.5 rounded-md border border-border interaction-control focus-visible:outline-none"
+              :class="showClientDrawer ? 'state-selected text-black border-border-strong' : 'text-[#3f4754] bg-surface-elevated'"
               :disabled="!selectedClient"
               @click="showClientDrawer = !showClientDrawer"
               aria-label="Client Context"
@@ -78,8 +78,8 @@
           
           <!-- Mobile client icon button -->
           <button
-              class="sm:hidden h-9 w-9 flex items-center justify-center rounded-md border border-border text-[#3f4754] hover:bg-surface-subtle transition type-body focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2563eb]"
-              :class="{ 'bg-surface-subtle border-border-strong': showClientDrawer }"
+              class="sm:hidden h-9 w-9 flex items-center justify-center rounded-md border border-border text-[#3f4754] interaction-control type-body focus-visible:outline-none"
+              :class="{ 'state-selected border-border-strong': showClientDrawer }"
               :disabled="!selectedClient"
               @click="showClientDrawer = !showClientDrawer"
               aria-label="Client Context"
@@ -88,7 +88,7 @@
           </button>
 
           <button
-              class="h-9 w-9 flex items-center justify-center rounded-md border border-border text-[#3f4754] hover:bg-surface-subtle transition type-body focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2563eb]"
+              class="h-9 w-9 flex items-center justify-center rounded-md border border-border text-[#3f4754] interaction-control type-body focus-visible:outline-none"
               aria-label="Calendar"
               @click="selectedNav = 'Today'"
           >
@@ -96,8 +96,8 @@
           </button>
 
           <button
-              class="h-9 w-9 flex items-center justify-center rounded-md border border-border text-[#3f4754] hover:bg-surface-subtle transition type-body focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2563eb]"
-              :class="{ 'bg-surface-subtle font-semibold border-border-strong': selectedNav === 'Settings' }"
+              class="h-9 w-9 flex items-center justify-center rounded-md border border-border text-[#3f4754] interaction-control type-body focus-visible:outline-none"
+              :class="{ 'state-selected font-semibold border-border-strong': selectedNav === 'Settings' }"
               @click="selectedNav = 'Settings'"
               aria-label="Settings"
           >
@@ -130,7 +130,7 @@
               <button
                   v-for="appointment in laterTodayAppointments"
                   :key="appointment.id"
-                  class="later-today__appointment"
+                  class="later-today__appointment interaction-row"
                   @click="openAppointmentPreparation(appointment)"
               >
                 <span>{{ appointmentTime(appointment) }}</span>

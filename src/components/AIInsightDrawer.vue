@@ -5,6 +5,7 @@
         class="fixed inset-0 z-50 flex flex-col items-center justify-end"
         @keydown.esc="$emit('close')"
         tabindex="0"
+        ref="drawerContainer"
     >
       <!-- Backdrop -->
       <div
@@ -19,6 +20,9 @@
                  sm:rounded-t-lg sm:w-[90%] md:w-[70%] lg:w-[50%]
                  mx-auto flex flex-col"
             :style="{ height: panelHeightPx + 'px', maxHeight: '90vh', transition: 'height 0.3s ease' }"
+            role="dialog"
+            aria-modal="true"
+            aria-label="AI insight summary"
         >
           <!-- Header -->
           <div class="flex items-center justify-between px-4 py-3 border-b border-[#e2e5ea] bg-[#fafbfc] rounded-t-lg">
@@ -81,7 +85,8 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
+import { ref, computed, watch, onMounted, onBeforeUnmount, toRef } from 'vue'
+import { useFocusTrap } from '../composables/useFocusTrap.js'
 
 const props = defineProps({
   open: Boolean,
@@ -100,6 +105,8 @@ const loading = ref(false)
 const insight = ref('')
 const feedback = ref('')
 const isExpanded = ref(false)
+const drawerContainer = ref(null)
+useFocusTrap(drawerContainer, toRef(props, 'open'), () => emit('close'))
 
 // Height control: default 60vh, expanded 90vh (converted to px for smoother animation)
 const panelHeightPx = ref(0)
@@ -209,13 +216,18 @@ onBeforeUnmount(() => {
 
 <style scoped>
 .toolbar-btn {
-  @apply text-body-sm px-3 py-1.5 rounded-md border border-[#d9dce1] text-[#3f4754] bg-white hover:bg-[#f5f7fa] transition;
+  @apply text-body-sm px-3 py-1.5 rounded-md border border-border text-[#3f4754] bg-surface-elevated;
+  transition: background-color var(--motion-standard) var(--motion-ease), border-color var(--motion-standard) var(--motion-ease);
+}
+.toolbar-btn:hover {
+  background: var(--state-hover);
+  border-color: var(--border-strong);
 }
 
 /* === Animations === */
 .drawer-fade-enter-active,
 .drawer-fade-leave-active {
-  transition: opacity 0.3s cubic-bezier(0.25, 0.1, 0.25, 1);
+  transition: opacity var(--motion-slow) var(--motion-ease);
 }
 .drawer-fade-enter-from,
 .drawer-fade-leave-to {
@@ -224,7 +236,7 @@ onBeforeUnmount(() => {
 
 .drawer-slide-enter-active,
 .drawer-slide-leave-active {
-  transition: transform 0.45s cubic-bezier(0.25, 0.1, 0.25, 1);
+  transition: transform var(--motion-slow) var(--motion-ease);
 }
 .drawer-slide-enter-from {
   transform: translateY(100%);
@@ -234,18 +246,17 @@ onBeforeUnmount(() => {
 }
 
 .content-fade-enter-active {
-  transition: opacity 0.4s cubic-bezier(0.25, 0.1, 0.25, 1) 0.12s;
+  transition: opacity var(--motion-standard) var(--motion-ease);
 }
 .content-fade-enter-from {
   opacity: 0;
 }
 .fade-enter-active,
 .fade-leave-active {
-  transition: opacity 0.2s ease;
+  transition: opacity var(--motion-standard) var(--motion-ease);
 }
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0;
 }
 </style>
-
