@@ -1,10 +1,10 @@
 <template>
-  <div class="flex h-screen bg-[#f5f7fa] text-[#2c3e50] overflow-hidden">
+  <div class="flex h-screen bg-surface-canvas text-[#2c3e50] overflow-hidden">
     <!-- Left Sidebar: Desktop (Fixed) / Mobile (Drawer) -->
     <transition name="slide">
       <LeftSidebar
           v-if="isSidebarOpen || isDesktop"
-          class="fixed md:relative z-50 md:z-40 shrink-0 w-64 bg-white border-r border-[#d9dce1] h-full shadow-xl md:shadow-none"
+          class="fixed md:relative z-50 md:z-40 shrink-0 w-64 bg-surface border-r border-border h-full shadow-overlay md:shadow-none"
           :selected-nav="selectedNav"
           @update:selected-nav="handleNavChange"
           :clients="clients"
@@ -36,12 +36,12 @@
     <div class="flex flex-col flex-1 min-w-0 h-full overflow-hidden w-full">
       <!-- Fixed Top Bar -->
       <header
-          class="h-14 flex items-center justify-between px-4 border-b border-[#d9dce1] bg-white shadow-sm shrink-0"
+          class="h-14 flex items-center justify-between px-4 border-b border-border bg-surface shrink-0"
       >
         <div class="flex items-center gap-2 md:gap-3 min-w-0">
           <!-- Mobile Menu Button -->
           <button
-              class="md:hidden p-2 -ml-2 text-slate-600 hover:bg-slate-100 rounded-md transition"
+              class="md:hidden p-2 -ml-2 text-slate-600 hover:bg-surface-subtle rounded-md transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2563eb]"
               @click="isSidebarOpen = true"
               aria-label="Open menu"
           >
@@ -65,8 +65,8 @@
 
         <div class="flex items-center gap-1.5 md:gap-3">
           <button
-              class="hidden sm:block type-body-sm px-3 py-1.5 rounded-md border border-[#d9dce1] transition"
-              :class="showClientDrawer ? 'bg-[#f5f7fa] text-black border-slate-400' : 'text-[#3f4754] bg-white hover:bg-[#f5f7fa]'"
+              class="hidden sm:block type-body-sm px-3 py-1.5 rounded-md border border-border transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2563eb]"
+              :class="showClientDrawer ? 'bg-surface-subtle text-black border-border-strong' : 'text-[#3f4754] bg-surface-elevated hover:bg-surface-subtle'"
               :disabled="!selectedClient"
               @click="showClientDrawer = !showClientDrawer"
               aria-label="Client Context"
@@ -78,8 +78,8 @@
           
           <!-- Mobile client icon button -->
           <button
-              class="sm:hidden h-9 w-9 flex items-center justify-center rounded-md border border-[#d9dce1] text-[#3f4754] hover:bg-[#f5f7fa] transition type-body"
-              :class="{ 'bg-[#f5f7fa] border-slate-400': showClientDrawer }"
+              class="sm:hidden h-9 w-9 flex items-center justify-center rounded-md border border-border text-[#3f4754] hover:bg-surface-subtle transition type-body focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2563eb]"
+              :class="{ 'bg-surface-subtle border-border-strong': showClientDrawer }"
               :disabled="!selectedClient"
               @click="showClientDrawer = !showClientDrawer"
               aria-label="Client Context"
@@ -88,7 +88,7 @@
           </button>
 
           <button
-              class="h-9 w-9 flex items-center justify-center rounded-md border border-[#d9dce1] text-[#3f4754] hover:bg-[#f5f7fa] transition type-body"
+              class="h-9 w-9 flex items-center justify-center rounded-md border border-border text-[#3f4754] hover:bg-surface-subtle transition type-body focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2563eb]"
               aria-label="Calendar"
               @click="selectedNav = 'Today'"
           >
@@ -96,8 +96,8 @@
           </button>
 
           <button
-              class="h-9 w-9 flex items-center justify-center rounded-md border border-[#d9dce1] text-[#3f4754] hover:bg-[#f5f7fa] transition type-body"
-              :class="{ 'bg-[#eef1f5] font-semibold border-slate-400': selectedNav === 'Settings' }"
+              class="h-9 w-9 flex items-center justify-center rounded-md border border-border text-[#3f4754] hover:bg-surface-subtle transition type-body focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2563eb]"
+              :class="{ 'bg-surface-subtle font-semibold border-border-strong': selectedNav === 'Settings' }"
               @click="selectedNav = 'Settings'"
               aria-label="Settings"
           >
@@ -110,7 +110,7 @@
       <div class="flex flex-1 overflow-hidden">
         <!-- Flexible Centre Workspace -->
         <main
-            class="flex-1 overflow-auto page-layout relative scroll-smooth bg-[#f5f7fa]"
+            class="flex-1 overflow-auto page-layout relative scroll-smooth bg-surface-canvas"
             @scroll="handleScroll"
         >
           <section v-if="selectedNav === 'Today'" class="today-workspace">
@@ -577,5 +577,5 @@ onMounted(() => {
 .slide-enter-from, .slide-leave-to {
   transform: translateX(-100%);
 }
-.today-workspace{max-width:68rem;margin:0 auto;color:#2c3e50}.today-workspace-heading{margin-bottom:1.25rem}.today-workspace-heading h1{margin:0}.today-workspace-heading p:not(.today-eyebrow){margin:.3rem 0 0;color:#64748b}.today-eyebrow{margin:0 0 .25rem;text-transform:uppercase;letter-spacing:.08em;color:#64748b}.later-today,.today-calendar{margin-top:1.5rem}.later-today__heading,.today-calendar__heading{margin-bottom:.65rem}.later-today h2,.today-calendar h2{margin:0;color:#334155}.later-today p,.today-calendar p{margin:.2rem 0 0;color:#64748b}.later-today__appointment{width:100%;display:grid;grid-template-columns:5rem 1fr auto;align-items:center;gap:.75rem;text-align:left;background:#fff;border:1px solid #e2e8f0;border-radius:.7rem;padding:.8rem 1rem;margin-bottom:.45rem;color:#334155}.later-today__appointment:hover{border-color:#93c5fd;box-shadow:0 2px 8px #1d4ed815}.later-today__appointment>span:first-child{font-weight:700;color:#2563eb}.today-calendar{padding-top:.25rem;border-top:1px solid #dce3eb}@media(max-width:700px){.later-today__appointment{grid-template-columns:4.5rem 1fr auto}}
+.today-workspace{max-width:68rem;margin:0 auto;color:#2c3e50}.today-workspace-heading{margin-bottom:var(--space-stack-xl)}.today-workspace-heading h1{margin:0}.today-workspace-heading p:not(.today-eyebrow){margin:var(--space-stack-xs) 0 0;color:#64748b}.today-eyebrow{margin:0 0 var(--space-stack-xs);text-transform:uppercase;letter-spacing:.08em;color:#64748b}.later-today,.today-calendar{margin-top:var(--space-stack-2xl)}.later-today__heading,.today-calendar__heading{margin-bottom:var(--space-stack-md)}.later-today h2,.today-calendar h2{margin:0;color:#334155}.later-today p,.today-calendar p{margin:var(--space-stack-xs) 0 0;color:#64748b}.later-today__appointment{width:100%;display:grid;grid-template-columns:5rem 1fr auto;align-items:center;gap:var(--space-inline-md);text-align:left;background:var(--surface);border:1px solid var(--border-muted);border-radius:.7rem;padding:var(--space-stack-md) var(--space-stack-lg);margin-bottom:var(--space-stack-xs);color:#334155}.later-today__appointment:hover{background:var(--surface-subtle);border-color:var(--border)}.later-today__appointment:focus-visible{outline:2px solid #2563eb;outline-offset:2px}.later-today__appointment>span:first-child{font-weight:700;color:#2563eb}.today-calendar{padding-top:var(--space-stack-xs);border-top:1px solid var(--border-muted)}@media(max-width:700px){.later-today__appointment{grid-template-columns:4.5rem 1fr auto}}
 </style>
