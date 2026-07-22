@@ -16,20 +16,20 @@
       <!-- Drawer Panel -->
       <transition name="drawer-slide">
         <div
-            class="relative w-full sm:w-[380px] md:w-[420px] bg-white shadow-2xl h-full flex flex-col border-l border-[#d9dce1]"
+          class="relative w-full sm:w-[380px] md:w-[420px] bg-surface-overlay shadow-overlay h-full flex flex-col border-l border-border"
             @click.stop
             role="dialog"
             aria-modal="true"
             aria-label="Client Context"
         >
           <!-- Header -->
-          <div class="h-14 flex items-center justify-between px-stack-xl border-b border-[#d9dce1] bg-[#fafbfc] shrink-0">
+          <div class="h-14 flex items-center justify-between px-stack-xl border-b border-border bg-surface-muted shrink-0">
             <div>
               <div class="text-caption text-slate-500">Client summary</div>
               <h2 class="text-body-long font-semibold text-[#2c3e50]">{{ client?.name || 'No client selected' }}</h2>
             </div>
             <button
-                class="w-8 h-8 flex items-center justify-center rounded-md text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition"
+                class="w-8 h-8 flex items-center justify-center rounded-md text-slate-400 hover:text-slate-600 hover:bg-surface-subtle transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2563eb]"
                 @click="$emit('close')"
                 aria-label="Close drawer"
             >
@@ -38,7 +38,7 @@
           </div>
 
           <!-- Content -->
-          <div class="flex-1 overflow-y-auto p-stack-xl space-y-8">
+          <div class="flex-1 overflow-y-auto p-stack-xl space-y-8 bg-surface-overlay">
             <template v-if="client">
               <!-- Current focus -->
               <section>
@@ -72,7 +72,7 @@
             </div>
           </div>
 
-          <div v-if="client" class="shrink-0 border-t border-[#d9dce1] bg-white p-stack-lg">
+          <div v-if="client" class="shrink-0 border-t border-border bg-surface-overlay p-stack-lg">
             <button
                 class="w-full rounded-lg bg-[#2563eb] px-4 py-2.5 text-body font-semibold text-white hover:bg-[#1d4ed8] transition"
                 @click="$emit('open-record')"
@@ -146,5 +146,5 @@ onBeforeUnmount(() => {
 .drawer-slide-leave-to {
   transform: translateX(100%);
 }
-.context-action{width:100%;text-align:left;border:1px solid #d9dce1;border-radius:.55rem;padding:.7rem .8rem;background:white;color:#2563eb;font-size:14px;font-weight:600}.context-action:hover{background:#f8fafc}.context-action.muted{color:#94a3b8;cursor:not-allowed}.context-action span{float:right;font-size:11px;font-weight:500}
+.context-action{width:100%;text-align:left;border:1px solid var(--border);border-radius:.55rem;padding:.7rem .8rem;background:var(--surface-elevated);color:#2563eb;font-size:14px;font-weight:600}.context-action:hover{background:var(--surface-subtle);border-color:var(--border-strong)}.context-action:focus-visible{outline:2px solid #2563eb;outline-offset:2px}.context-action.muted{color:#94a3b8;cursor:not-allowed;background:var(--surface-muted)}.context-action span{float:right;font-size:11px;font-weight:500}
 </style>
