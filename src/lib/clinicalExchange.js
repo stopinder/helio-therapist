@@ -9,7 +9,7 @@ export function assignmentStatusLabel(status) {
 }
 
 export function completionModeLabel(mode) {
-  return ({ structured: 'Complete in Helio', upload: 'Upload completed copy', either: 'Complete or upload', read_only: 'Read only' })[mode] || 'Complete in Helio'
+  return ({ complete_in_helio: 'Complete in Helio', upload: 'Upload completed copy', complete_or_upload: 'Complete or upload', read_only: 'Read only' })[mode] || 'Complete in Helio'
 }
 
 export function timelineEventPresentation(type) {

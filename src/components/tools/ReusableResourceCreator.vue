@@ -4,7 +4,8 @@
     <div class="creator-fields">
       <label>Title<input v-model="draft.title" placeholder="e.g. Sleep diary" /></label>
       <label>Type<select v-model="draft.resourceKind"><option v-for="[value, label] in resourceKinds" :key="value" :value="value">{{ label }}</option></select></label>
-      <label>Completion method<select v-model="draft.completionMode"><option value="structured">Complete in Helio</option><option value="upload">Upload completed copy</option><option value="either">Complete or upload</option><option value="read_only">Read only</option></select></label>
+      <label>Who can use this?<select v-model="draft.audience"><option value="client">Client</option><option value="both">Client and therapist</option><option value="therapist">Therapist only</option></select></label>
+      <label>Completion method<select v-model="draft.completionMode"><option value="complete_in_helio">Complete in Helio</option><option value="upload">Upload completed copy</option><option value="complete_or_upload">Complete or upload</option><option value="read_only">Read only</option></select></label>
       <p v-if="error" class="creator-error" role="alert">{{ error }}</p>
       <button type="button" class="secondary" :disabled="creating || !draft.title.trim()" @click="create">{{ creating ? 'Creating…' : 'Create resource' }}</button>
     </div>
@@ -18,7 +19,7 @@ import { resourceKinds } from '../../lib/clinicalExchange.js'
 
 const emit = defineEmits(['created'])
 const expanded = ref(false), creating = ref(false), error = ref('')
-const emptyDraft = () => ({ title: '', resourceKind: 'worksheet', completionMode: 'structured' })
+const emptyDraft = () => ({ title: '', resourceKind: 'worksheet', audience: 'client', completionMode: 'complete_in_helio' })
 const draft = ref(emptyDraft())
 
 async function create() {

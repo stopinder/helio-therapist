@@ -7,7 +7,8 @@ test('clinical exchange labels preserve the distinct assignment lifecycle', () =
   assert.equal(assignmentStatusLabel('awaiting_review'), 'Awaiting review')
   assert.equal(assignmentStatusLabel('reviewed'), 'Reviewed')
   assert.equal(completionModeLabel('upload'), 'Upload completed copy')
-  assert.equal(completionModeLabel('either'), 'Complete or upload')
+  assert.equal(completionModeLabel('complete_or_upload'), 'Complete or upload')
+  assert.equal(completionModeLabel('complete_in_helio'), 'Complete in Helio')
 })
 
 test('clinical timeline shows meaningful exchange events, not delivery mechanics', () => {

@@ -3,6 +3,7 @@ import crypto from 'crypto'
 
 const clean = (value, maximum = 1200) => String(value || '').trim().slice(0, maximum)
 const tokenHash = token => crypto.createHash('sha256').update(token).digest('hex')
+const idempotencyKey = value => clean(value, 160)
 
 export default async function handler(req, res) {
   try {
@@ -52,17 +53,24 @@ export default async function handler(req, res) {
     if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
     const clientId = clean(req.body?.clientId, 80)
     const resourceVersionIds = [...new Set((Array.isArray(req.body?.resourceVersionIds) ? req.body.resourceVersionIds : [req.body?.resourceVersionId]).map(id => clean(id, 80)).filter(Boolean))]
+    const requestKey = idempotencyKey(req.headers['idempotency-key'] || req.body?.idempotencyKey)
     if (!clientId || !resourceVersionIds.length) return res.status(400).json({ error: 'Client and at least one resource are required.' })
     const [{ data: client, error: clientError }, { data: versions, error: versionError }] = await Promise.all([
       supabase.from('clients').select('id').eq('id', clientId).eq('user_id', user.id).maybeSingle(),
-      supabase.from('resource_versions').select('id,client_title,client_description,completion_mode,resource_id').in('id', resourceVersionIds).eq('user_id', user.id)
+      supabase.from('resource_versions').select('id,client_title,client_description,completion_mode,resource_id,resource_library_items!inner(id,audience,resource_kind)').in('id', resourceVersionIds).eq('user_id', user.id)
     ])
     if (clientError) throw clientError
     if (versionError) throw versionError
     if (!client) return res.status(404).json({ error: 'Client not found.' })
     if ((versions || []).length !== resourceVersionIds.length) return res.status(404).json({ error: 'One or more resources could not be found.' })
+    if (versions.some(version => version.resource_library_items?.audience === 'therapist')) return res.status(403).json({ error: 'Therapist-only resources cannot be sent to a client.' })
     const instruction = clean(req.body?.instruction), dueAt = req.body?.dueAt || null
-    const { data: request, error: requestError } = await supabase.from('client_requests').insert({ user_id: user.id, client_id: clientId, therapist_instruction: instruction, due_at: dueAt, delivery_channel: 'copy_link' }).select().single()
+    if (requestKey) {
+      const { data: existing, error: existingError } = await supabase.from('client_requests').select('*,client_request_items(*)').eq('user_id', user.id).eq('idempotency_key', requestKey).maybeSingle()
+      if (existingError) throw existingError
+      if (existing) return res.status(200).json({ request: existing, assignments: existing.client_request_items, duplicate: true })
+    }
+    const { data: request, error: requestError } = await supabase.from('client_requests').insert({ user_id: user.id, client_id: clientId, therapist_instruction: instruction, due_at: dueAt, delivery_channel: 'copy_link', idempotency_key: requestKey || null }).select().single()
     if (requestError) throw requestError
     const tokens = versions.map(() => crypto.randomBytes(32).toString('base64url'))
     const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
