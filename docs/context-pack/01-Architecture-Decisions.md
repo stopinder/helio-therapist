@@ -79,3 +79,32 @@ Helio creates and retains the client/session link; Zoom opens separately with it
 ## Current appointment-link boundary
 
 Google Calendar and Calendly events do not yet supply a durable Helio client identifier. Helio therefore opens preparation automatically only when an appointment title matches exactly one client name. This is an interim convenience, not a clinical identity match. A durable appointment-to-client link must be designed before relying on automatic matching in clinical use.
+
+
+## Session, transcript, clinical note and private-reflection boundaries
+
+Each concept answers a different question and must not be merged:
+
+- **Timeline** tells the selective longitudinal clinical story.
+- **Sessions** preserve every therapeutic encounter.
+- **Clinical notes** are the therapist-approved clinical record for that encounter.
+- **Transcript** is secondary source material: what was said, never an automatic clinical record.
+- **Private reflections** preserve therapist-only professional thinking.
+- **Supervision** gathers only reflections deliberately selected by the therapist.
+
+Private reflections are stored separately from clinical events and are explicitly labelled: **“Not part of the client’s clinical record.”** They never enter Timeline, client-facing content, or routine exports. A reflection can be linked to a client and, where available, a session reference without duplicating the session material.
+
+The quiet default action is **Add private reflection**. **Add to supervision** is deliberate and optional. The therapist-level Supervision workspace groups selected original reflections by client rather than generating a summary from client records. Any future AI agenda draft remains therapist-reviewed; it may organise selected material but must not infer, diagnose, or make clinical decisions.
+
+
+## Session workspace hierarchy
+
+Opening a Session starts at **Overview**, which orients the therapist to the encounter and current focus. Its internal order is deliberate:
+
+1. Overview
+2. Clinical note — the therapist-approved primary record
+3. Transcript — clearly labelled secondary source material
+4. Resources & actions
+5. Private reflection — therapist-only, never part of the clinical record
+
+The Transcript must not become the default view or visually dominate the approved note. Session lists remain compact retrieval tools: date, available duration, status, note state, genuinely outstanding follow-up, and a short note preview. Detailed material belongs inside the Session.
