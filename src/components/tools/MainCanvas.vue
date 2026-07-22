@@ -40,6 +40,7 @@
           <span><strong>{{ event.title }}</strong><small>{{ formatDate(event.date) }} · {{ event.detail }}</small></span><span v-if="event.session">Open ›</span>
         </button>
       </section>
+      <PrivateReflectionsPanel :client-id="selectedClient.id" />
     </main>
 
     <section v-else-if="activeTab === 'sessions'" class="section-card">
@@ -60,6 +61,7 @@
         <div class="session-actions"><span>Client actions</span><button class="secondary" @click="openPicker">Send to client</button></div>
         <p v-if="editingSession.status !== 'closed'" class="dictation-help" :class="{ recording: isDictating, error: dictationError }" role="status">{{ dictationMessage() }}</p>
         <textarea id="session-notes" v-model="draftNotes" :disabled="editingSession.status === 'closed'" placeholder="Record the session in your own words…"></textarea>
+        <PrivateReflectionsPanel :client-id="selectedClient.id" :session-ref="editingSession.id" />
         <footer><button class="secondary" @click="closeEditor">Close</button><template v-if="editingSession.status !== 'closed'"><button class="secondary" @click="saveNotes">Save notes</button><button v-if="editingSession.status !== 'completed'" class="primary" @click="completeSession">End session</button><button v-else class="primary" @click="closeSession">Close session</button></template></footer>
       </article>
     </div>
@@ -74,6 +76,7 @@ import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { authenticatedFetch } from '../../lib/api.js'
 import { assignmentCompletionUrl, timelineEventPresentation } from '../../lib/clinicalExchange.js'
 import ResourcePicker from './ResourcePicker.vue'
+import PrivateReflectionsPanel from './PrivateReflectionsPanel.vue'
 
 const props = defineProps({ selectedClient: { type: Object, default: null } })
 const emit = defineEmits(['update-focus'])
