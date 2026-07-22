@@ -1,14 +1,14 @@
 <template>
   <section class="client-directory">
-    <header><div><h1>Clients</h1><p>Find a client and open their workspace.</p></div><button class="primary" @click="showAddClient = true">+ Add client</button></header>
+    <header><div><h1>Clients</h1><p>Find a client and open their workspace.</p></div><button class="secondary" @click="showAddClient = true">+ Add client</button></header>
     <label class="search-box"><span aria-hidden="true">⌕</span><input v-model="query" type="search" placeholder="Search by name or identifier" autocomplete="off" @keydown="handleSearchKeydown" /></label>
 
-    <section v-if="recentClients.length" class="recent-section" aria-labelledby="recent-clients-heading">
+    <section v-if="showRecentClients" class="recent-section" aria-labelledby="recent-clients-heading">
       <h2 id="recent-clients-heading">Recently viewed</h2>
       <div class="client-list" role="list">
         <button v-for="client in recentClients" :key="client.id" class="client-row" :class="{ selected: selectedClient?.id === client.id }" @click="selectClient(client)">
           <span class="avatar">{{ initials(client.name) }}</span>
-          <span class="client-copy"><strong>{{ client.name }}</strong><small v-if="identifierFor(client)">{{ identifierFor(client) }}</small></span>
+          <span class="client-copy"><strong>{{ client.name }}</strong><small v-if="clientContext(client)">{{ clientContext(client) }}</small></span>
         </button>
       </div>
     </section>
@@ -24,7 +24,7 @@
       <div v-if="filteredClients.length" class="client-list" role="list" aria-label="Client directory">
         <button v-for="(client, index) in filteredClients" :key="client.id" class="client-row" :class="{ selected: selectedClient?.id === client.id, 'keyboard-active': keyboardIndex === index }" :aria-current="selectedClient?.id === client.id ? 'true' : undefined" @click="selectClient(client)" @mouseenter="keyboardIndex = index">
           <span class="avatar">{{ initials(client.name) }}</span>
-          <span class="client-copy"><strong>{{ client.name }}</strong><small v-if="identifierFor(client)">{{ identifierFor(client) }}</small></span>
+          <span class="client-copy"><strong>{{ client.name }}</strong><small v-if="clientContext(client)">{{ clientContext(client) }}</small></span>
         </button>
       </div>
     </section>
@@ -51,10 +51,25 @@ const recentClients = computed(() => recentClientIds.value
   .map(id => filteredClients.value.find(client => String(client.id) === String(id)))
   .filter(Boolean)
   .slice(0, 5))
+const showRecentClients = computed(() => props.clients.filter(client => !client.archived).length > 8 && recentClients.value.length > 0 && !query.value)
 function initials(name = '') { return name.split(/\s+/).filter(Boolean).slice(0, 2).map(part => part[0]).join('').toUpperCase() || '?' }
 function addClient(data) { emit('add-client', data); showAddClient.value = false }
 function selectClient(client) { recentClientIds.value = [client.id, ...recentClientIds.value.filter(id => id !== client.id)].slice(0, 10); localStorage.setItem('helio_recent_clients', JSON.stringify(recentClientIds.value)); emit('select-client', client) }
 function identifierFor(client) { return clientIdentifier(client, filteredClients.value) }
+function clientContext(client) {
+  if (client.next_appointment_at) return `Next appointment ${formatRelativeDate(client.next_appointment_at)}`
+  if (client.last_session_at) return `Last session ${formatRelativeDate(client.last_session_at)}`
+  return identifierFor(client)
+}
+function formatRelativeDate(value) {
+  const target = new Date(value); const today = new Date()
+  target.setHours(0, 0, 0, 0); today.setHours(0, 0, 0, 0)
+  const days = Math.round((target - today) / 86400000)
+  if (days === 0) return 'today'
+  if (days === 1) return 'tomorrow'
+  if (days === -1) return 'yesterday'
+  return target.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
+}
 function handleSearchKeydown(event) {
   if (event.key === 'ArrowDown' && filteredClients.value.length) { event.preventDefault(); keyboardIndex.value = Math.min(keyboardIndex.value + 1, filteredClients.value.length - 1); return }
   if (event.key === 'ArrowUp' && filteredClients.value.length) { event.preventDefault(); keyboardIndex.value = Math.max(keyboardIndex.value - 1, 0); return }
@@ -67,4 +82,5 @@ watch([query, statusFilter, sortBy], () => { keyboardIndex.value = -1 })
 
 <style scoped>
 .client-directory{max-width:52rem;margin:0 auto;color:#2c3e50}.client-directory header{display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;margin-bottom:1.2rem}.client-directory h1{font-size:1.65rem;font-weight:750;margin:0}.client-directory header p{color:#64748b;margin:.25rem 0 0}.primary{border:0;border-radius:.55rem;background:#2563eb;color:white;font-weight:650;padding:.65rem .9rem;white-space:nowrap}.search-box{display:flex;align-items:center;gap:.65rem;background:white;border:1px solid #d9dfe8;border-radius:.6rem;padding:0 .85rem;margin-bottom:1.4rem;color:#64748b}.search-box:focus-within{border-color:#60a5fa;box-shadow:0 0 0 3px #dbeafe}.search-box input{width:100%;border:0;outline:0;background:transparent;padding:.72rem 0;font-size:.95rem}.recent-section{margin-bottom:1.5rem}.recent-section h2,.list-heading h2{font-size:.8rem;letter-spacing:.02em;font-weight:750;color:#526074;margin:0}.client-list{border-top:1px solid #dfe5ec;border-bottom:1px solid #dfe5ec;background:white}.client-row{display:grid;grid-template-columns:2rem minmax(0,1fr);align-items:center;gap:.65rem;width:100%;min-height:52px;padding:.45rem .65rem;text-align:left;border:0;border-bottom:1px solid #edf0f4;background:white;color:#2c3e50;transition:background .14s}.client-row:last-child{border-bottom:0}.client-row:hover,.client-row:focus-visible,.client-row.keyboard-active{background:#f4f8ff;outline:none}.client-row.selected{background:#f7fbff}.avatar{display:flex;width:2rem;height:2rem;align-items:center;justify-content:center;border-radius:50%;background:#e7edf5;color:#334155;font-size:.72rem;font-weight:750}.client-copy{display:flex;align-items:baseline;gap:.5rem;min-width:0}.client-copy strong{font-size:.92rem;font-weight:650;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.client-copy small{font-size:.77rem;color:#708096;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.all-clients{margin-top:.25rem}.list-heading{display:flex;align-items:center;justify-content:space-between;gap:1rem;margin-bottom:.45rem}.list-heading h2 span{font-weight:500;color:#8793a5;margin-left:.25rem}.directory-controls{display:flex;gap:.4rem}.compact-control select{appearance:auto;border:0;background:transparent;color:#64748b;font-size:.78rem;padding:.28rem .15rem}.compact-control select:hover{color:#334155}.empty-state{min-height:12rem;border:1px dashed #d9dfe8;border-radius:.7rem;background:white;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;color:#64748b}.empty-state div{font-size:1.5rem;opacity:.4}.empty-state h2{color:#475569;margin:.4rem 0 .15rem;font-size:1rem}.empty-state p{margin:0;font-size:.9rem}.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}@media(max-width:700px){.client-directory header{align-items:center}.client-directory h1{font-size:1.45rem}.client-directory header p{font-size:.85rem}.client-copy{gap:.35rem}.list-heading{align-items:center}.directory-controls{gap:.2rem}.compact-control select{font-size:.75rem}.client-row{min-height:50px}}
+.secondary{border:1px solid #cbd5e1;border-radius:.55rem;background:white;color:#334155;font-weight:650;padding:.6rem .8rem;white-space:nowrap}
 </style>

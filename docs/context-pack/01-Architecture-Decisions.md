@@ -1,23 +1,25 @@
 # Architecture decisions
 
-## Navigation: attention is separate from retrieval
+## Navigation: daily orientation, attention and retrieval are separate
 
 Primary navigation is:
 
-- **Today** — real work requiring a clear therapist action.
+- **Today** — the schedule-led daily workspace and the default landing place.
 - **Clients** — search-first retrieval of a known client.
-- **Transcripts** — a pre-clinical triage pipeline for Zoom source material.
+- **Inbox** — a single action queue for unfinished clinical work, including transcript triage.
 - **Settings** — account and integration configuration.
 
 There are no top-level Messages, Reports, Documents, Sessions, Assessments, or Tasks areas. Those are client capabilities, not separate applications.
 
-## Today: schedule first, attention second
+## Today: schedule first
 
-Today is the therapist's desk for the day. It begins with the calendar because the first questions are “Who am I seeing?”, “When?”, and “What is next?” It supports day, week, month, and agenda views plus direct navigation to tomorrow or another date.
+Today is the therapist's desk for the day. It begins with the calendar because the first questions are “Who am I seeing?”, “When?”, and “What is next?” It supports day, week, month, and agenda views plus direct navigation to tomorrow or another date. When one calendar title maps unambiguously to a Helio client, its popover offers **Open client workspace**. Agenda rows show one concise status where Helio has sufficient real state.
 
 An appointment is the primary time-based unit of work. When Helio can identify one unambiguous client for an appointment, selecting it opens that client's preparation context: current focus, timeline, and a deliberate Start session action.
 
-**Needs attention** follows the schedule. It is not a replacement calendar, generic to-do list, or client list. It shows only real actionable state derived from existing records, such as:
+## Inbox: one clinical work queue
+
+Inbox is not a message centre or an archive. It shows only real actionable state derived from existing records, such as:
 
 - a Zoom transcript awaiting assignment, session linking, or review choices;
 - an open session; or
@@ -25,7 +27,7 @@ An appointment is the primary time-based unit of work. When Helio can identify o
 
 Each item has one clear action and opens the exact relevant transcript or session. It disappears from the active queue when the underlying state is complete. The queue must not invent AI work, clinical review, or administrative tasks.
 
-Time-based work and event-based work remain distinct. Appointment-related preparation belongs to the appointment; non-appointment actions belong below it in Needs attention.
+Time-based work and event-based work remain distinct. Appointment-related preparation belongs to Today; non-appointment actions belong in Inbox. Empty Inbox is a quiet, positive state, not a permanent panel on Today.
 
 ## Google Calendar: a workspace service, not a Settings workflow
 
@@ -37,7 +39,7 @@ Settings remains configuration. Google disconnect is intentionally an overflow a
 
 ## Clients: retrieval only
 
-Clients is optimised for finding a person quickly as the caseload grows: search first, compact list, entire row clickable, with recent and optional pinned clients when implemented. It should not carry unread counts, activity badges, message previews, or workflow information.
+Clients is optimised for finding a person quickly as the caseload grows: search first, compact list, entire row clickable, with recent clients appearing only in larger active directories and only when search is not in use. Add client is a secondary action. Each row shows at most one contextual cue when that data is available. It should not carry unread counts, activity badges, message previews, or workflow information.
 
 ## Client workspace: continuous and timeline-first
 
@@ -58,7 +60,7 @@ Do not build a standalone Messages area. A future client message belongs in the 
 
 ## Transcript boundary
 
-Transcript Inbox is triage, not clinical work:
+Transcript triage is one type of Inbox work, not a primary navigation destination:
 
 `Transcript arrives → assign client → link/create session → choose review/retention preferences → open Session Workspace`
 

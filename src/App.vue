@@ -52,13 +52,13 @@
 
           <div class="flex items-center gap-1 md:gap-2 text-[16px] md:text-[18px] font-semibold tracking-tight text-[#2c3e50] truncate">
             <span class="truncate">Therapist Workspace</span>
-            <span class="text-slate-400 mx-0.5 md:mx-1 shrink-0">·</span>
-            <span class="flex items-center gap-1 text-[12px] md:text-[13px] font-normal text-slate-500 shrink-0">
+            <span v-if="isInSession" class="text-slate-400 mx-0.5 md:mx-1 shrink-0">·</span>
+              <span v-if="isInSession" class="flex items-center gap-1 text-[12px] md:text-[13px] font-normal text-slate-500 shrink-0">
               <span
                   class="inline-block h-2 w-2 rounded-full"
                   :class="isInSession ? 'bg-green-500' : 'bg-slate-400'"
               ></span>
-              {{ isInSession ? 'In Session' : 'Offline' }}
+              In session
             </span>
           </div>
         </div>
@@ -113,8 +113,19 @@
             class="flex-1 overflow-auto p-4 md:p-6 relative scroll-smooth bg-[#f5f7fa]"
             @scroll="handleScroll"
         >
+          <section v-if="selectedNav === 'Today'" class="today-workspace">
+            <header class="today-workspace-heading">
+              <div><p class="today-eyebrow">Today</p><h1>Today’s work</h1><p>Open the next client, then return here when you need to re-orient.</p></div>
+            </header>
+            <CalendarSchedule
+                :clients="clients"
+                @open-settings="selectedNav = 'Settings'"
+                @select-appointment="openAppointmentPreparation"
+            />
+          </section>
+
           <NeedsAttention
-              v-if="selectedNav === 'Today'"
+              v-else-if="selectedNav === 'Inbox' && !queuedTranscriptId"
               :clients="clients"
               @open-settings="selectedNav = 'Settings'"
               @open-transcript="openTranscriptFromQueue"
@@ -130,7 +141,7 @@
                 @add-client="handleAddClient"
             />
 
-            <TranscriptInbox v-else-if="selectedNav === 'Transcripts'" :clients="clients" :open-transcript-id="queuedTranscriptId" />
+            <TranscriptInbox v-else-if="selectedNav === 'Inbox'" :clients="clients" :open-transcript-id="queuedTranscriptId" />
 
             <Settings v-else-if="selectedNav === 'Settings'" />
 
@@ -177,6 +188,7 @@ import Settings from "./components/Settings.vue"
 import NeedsAttention from "./components/NeedsAttention.vue"
 import ClientDirectory from "./components/ClientDirectory.vue"
 import TranscriptInbox from "./components/TranscriptInbox.vue"
+import CalendarSchedule from "./components/CalendarSchedule.vue"
 import { supabase } from "./lib/supabase.js"
 
 // --- State ---
@@ -357,7 +369,7 @@ const handleSelectClient = (client) => {
 
 const openTranscriptFromQueue = (item) => {
   queuedTranscriptId.value = item.transcriptId
-  selectedNav.value = 'Transcripts'
+  selectedNav.value = 'Inbox'
 }
 
 const openSessionFromQueue = async (item) => {
@@ -407,6 +419,7 @@ const startClientSession = () => {
 
 const handleNavChange = (nav) => {
   selectedNav.value = nav
+  if (nav !== 'Inbox') queuedTranscriptId.value = null
   isSidebarOpen.value = false
 }
 
@@ -504,4 +517,5 @@ onMounted(() => {
 .slide-enter-from, .slide-leave-to {
   transform: translateX(-100%);
 }
+.today-workspace{max-width:68rem;margin:0 auto;color:#2c3e50}.today-workspace-heading{margin-bottom:1.25rem}.today-workspace-heading h1{margin:0;font-size:1.7rem;font-weight:750}.today-workspace-heading p:not(.today-eyebrow){margin:.3rem 0 0;color:#64748b}.today-eyebrow{margin:0 0 .25rem;text-transform:uppercase;letter-spacing:.08em;color:#64748b;font-size:.72rem;font-weight:750}
 </style>

@@ -24,7 +24,7 @@ The existing `documents` table remains appropriate for therapist-uploaded report
 
 ## Revised information architecture
 
-Primary navigation remains **Today, Clients, Transcripts, Settings**. No Resources, Measures, Forms, Homework, Uploads or Documents item is added to primary navigation.
+Primary navigation remains **Today, Clients, Inbox, Settings**. Transcript review is surfaced through Inbox rather than a dedicated destination. No Resources, Measures, Forms, Homework, Uploads or Documents item is added to primary navigation.
 
 Within a selected client's workspace:
 
