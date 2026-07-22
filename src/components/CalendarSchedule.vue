@@ -66,7 +66,7 @@ import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { authenticatedFetch } from '../lib/api.js'
 
 const props = defineProps({ clients: { type: Array, default: () => [] } })
-const emit = defineEmits(['open-settings', 'select-appointment'])
+const emit = defineEmits(['open-settings', 'select-appointment', 'next-appointment'])
 const views = [{ id: 'day', label: 'Day' }, { id: 'week', label: 'Week' }, { id: 'month', label: 'Month' }]
 const weekdayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 const savedView = localStorage.getItem('helio_calendar_view')
@@ -79,6 +79,7 @@ const eventPopoverStyle = ref({})
 const hasLoadedOnce = ref(false)
 const googleService = ref({ state: 'checking', lastSyncedAt: null })
 const automaticRetries = ref(0)
+const nextAppointmentEvents = ref([])
 let retryTimer = null
 
 function startDay(date) { const d = new Date(date); d.setHours(0, 0, 0, 0); return d }
@@ -152,6 +153,13 @@ function matchedClient(event) {
   })
   return matches.length === 1 ? matches[0] : null
 }
+function emitNextMatchedAppointment(calendarEvents) {
+  const now = Date.now()
+  const next = (calendarEvents || [])
+    .filter(event => !event.allDay && new Date(event.start).getTime() > now && matchedClient(event))
+    .sort((a, b) => new Date(a.start) - new Date(b.start))[0] || null
+  emit('next-appointment', next)
+}
 function appointmentStatus(event) {
   const client = matchedClient(event)
   if (!client) return ''
@@ -209,6 +217,22 @@ async function loadEvents(){
   }
   finally{loading.value=false;hasLoadedOnce.value=true}
 }
+async function loadNextMatchedAppointment() {
+  const start = new Date()
+  const end = addDays(start, 30)
+  try {
+    const params = new URLSearchParams({ timeMin: start.toISOString(), timeMax: end.toISOString() })
+    const response = await authenticatedFetch(`/api/calendar/events?${params}`)
+    const data = await response.json().catch(() => ({}))
+    if (!response.ok) throw new Error(data.error || 'Unable to load the next appointment')
+    nextAppointmentEvents.value = data.events || []
+    emitNextMatchedAppointment(nextAppointmentEvents.value)
+  } catch {
+    nextAppointmentEvents.value = []
+    emit('next-appointment', null)
+  }
+}
+function refreshCalendar() { loadEvents(); loadNextMatchedAppointment() }
 async function reconnectGoogle() {
   try {
     const response = await authenticatedFetch('/api/google/authorize', { method: 'POST' })
@@ -221,8 +245,9 @@ async function reconnectGoogle() {
 }
 watch(selectedDate,()=>{dateInput.value=toInputDate(selectedDate.value); loadEvents()})
 watch(view,loadEvents)
-onMounted(() => { loadEvents(); window.addEventListener('online', loadEvents); document.addEventListener('pointerdown', onDocumentPointerDown); window.addEventListener('keydown', onKeyDown) })
-onUnmounted(() => { if (retryTimer) window.clearTimeout(retryTimer); window.removeEventListener('online', loadEvents); document.removeEventListener('pointerdown', onDocumentPointerDown); window.removeEventListener('keydown', onKeyDown) })
+watch(() => props.clients, () => emitNextMatchedAppointment(nextAppointmentEvents.value), { deep: true })
+onMounted(() => { refreshCalendar(); window.addEventListener('online', refreshCalendar); document.addEventListener('pointerdown', onDocumentPointerDown); window.addEventListener('keydown', onKeyDown) })
+onUnmounted(() => { if (retryTimer) window.clearTimeout(retryTimer); window.removeEventListener('online', refreshCalendar); document.removeEventListener('pointerdown', onDocumentPointerDown); window.removeEventListener('keydown', onKeyDown) })
 </script>
 
 <style scoped>

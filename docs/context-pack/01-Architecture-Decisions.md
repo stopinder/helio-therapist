@@ -13,7 +13,9 @@ There are no top-level Messages, Reports, Documents, Sessions, Assessments, or T
 
 ## Today: schedule first, then the next piece of work
 
-Today is the therapist's desk for the day. It begins with the calendar because the first questions are “Who am I seeing?”, “When?”, and “What is next?” It supports day, week, and month views plus direct navigation to tomorrow or another date. When one calendar title maps unambiguously to a Helio client, its popover offers **Open client workspace**. Appointment rows show one concise status where Helio has sufficient real state.
+Today is the therapist's desk for the day. Before the next matched appointment, it surfaces one compact preparation state: client and time, therapist-maintained current focus, the last clinically useful timeline development, and at most one unresolved preparation item. Its only action is **Prepare for session**, which opens the existing client preparation context. It supports day, week, and month views plus direct navigation to tomorrow or another date. When one calendar title maps unambiguously to a Helio client, its popover offers **Open client workspace**. Appointment rows show one concise status where Helio has sufficient real state.
+
+This is deliberately the first time-aware state only. Between-session documentation and end-of-day wrap-up are not built until real use shows that this preparation state reduces reopening, searching, and remembering.
 
 An appointment is the primary time-based unit of work. When Helio can identify one unambiguous client for an appointment, selecting it opens that client's preparation context: current focus, timeline, and a deliberate Start session action.
 

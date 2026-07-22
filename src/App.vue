@@ -117,10 +117,16 @@
             <header class="today-workspace-heading">
               <div><p class="today-eyebrow">Today</p><h1>Today’s work</h1><p>Open the next client, then return here when you need to re-orient.</p></div>
             </header>
+            <NextSessionPreparation
+                :appointment="nextMatchedAppointment"
+                :client="nextMatchedClient"
+                @prepare="openAppointmentPreparation"
+            />
             <CalendarSchedule
                 :clients="clients"
                 @open-settings="selectedNav = 'Settings'"
                 @select-appointment="openAppointmentPreparation"
+                @next-appointment="nextMatchedAppointment = $event"
             />
           </section>
 
@@ -189,6 +195,7 @@ import NeedsAttention from "./components/NeedsAttention.vue"
 import ClientDirectory from "./components/ClientDirectory.vue"
 import TranscriptInbox from "./components/TranscriptInbox.vue"
 import CalendarSchedule from "./components/CalendarSchedule.vue"
+import NextSessionPreparation from "./components/NextSessionPreparation.vue"
 import { supabase } from "./lib/supabase.js"
 
 // --- State ---
@@ -200,6 +207,7 @@ const isSyncing = ref(false)
 const activeView = ref("main")
 const selectedNav = ref("Today")
 const queuedTranscriptId = ref(null)
+const nextMatchedAppointment = ref(null)
 const activeTool = ref(null)
 const activeTemplate = ref(null)
 const reflectionMode = ref("new")
@@ -217,6 +225,14 @@ const handleGenerateInsight = (data) => {
 
 // --- Clients ---
 const clients = ref([])
+const nextMatchedClient = computed(() => {
+  const summary = String(nextMatchedAppointment.value?.summary || '').trim().toLowerCase()
+  const matches = clients.value.filter(client => {
+    const name = String(client.name || '').trim().toLowerCase()
+    return name && (summary === name || summary.includes(name))
+  })
+  return matches.length === 1 ? matches[0] : null
+})
 watch(clients, (newClients) => {
   localStorage.setItem("helio_clients", JSON.stringify(newClients))
 }, { deep: true })
