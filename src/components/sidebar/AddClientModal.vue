@@ -4,40 +4,40 @@
       @click.self="emit('close')"
   >
     <div class="w-full max-w-sm bg-white rounded-lg p-6 shadow-xl">
-      <h2 class="text-[16px] font-semibold text-[#2c3e50] mb-4">Add Client</h2>
+      <h2 class="text-body-long font-semibold text-[#2c3e50] mb-4">Add Client</h2>
 
       <div class="space-y-4">
         <input
             v-model="name"
             type="text"
             placeholder="Client name"
-            class="w-full border border-[#d1d5db] rounded-md px-3 py-2 text-[14px]"
+            class="w-full border border-[#d1d5db] rounded-md px-3 py-2 text-body"
         />
 
         <input
             v-model="email"
             type="email"
             placeholder="Email (optional)"
-            class="w-full border border-[#d1d5db] rounded-md px-3 py-2 text-[14px]"
+            class="w-full border border-[#d1d5db] rounded-md px-3 py-2 text-body"
         />
 
         <textarea
             v-model="note"
             placeholder="Quick note (optional)"
-            class="w-full border border-[#d1d5db] rounded-md px-3 py-2 text-[14px]"
+            class="w-full border border-[#d1d5db] rounded-md px-3 py-2 text-body"
         ></textarea>
       </div>
 
       <div class="flex justify-end gap-3 mt-6">
         <button
-            class="px-3 py-1.5 text-[13px] rounded-md border border-[#d1d5db]"
+            class="px-3 py-1.5 text-body-sm rounded-md border border-[#d1d5db]"
             @click="emit('close')"
         >
           Cancel
         </button>
 
         <button
-            class="px-4 py-1.5 text-[13px] rounded-md bg-[#3f4754] text-white font-medium"
+            class="px-4 py-1.5 text-body-sm rounded-md bg-[#3f4754] text-white font-medium"
             @click="submit"
         >
           Add

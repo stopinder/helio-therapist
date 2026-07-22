@@ -5,12 +5,12 @@
     <!-- Therapist header -->
     <div class="h-16 flex items-center justify-between px-5 border-b border-[#e2e5ea] bg-[#fafbfc] mt-1 shrink-0">
       <div class="flex items-center gap-3">
-        <div class="h-9 w-9 rounded-full bg-[#e2dcd4] flex items-center justify-center text-[14px] font-semibold text-[#2c3e50]">
+        <div class="h-9 w-9 rounded-full bg-[#e2dcd4] flex items-center justify-center text-body font-semibold text-[#2c3e50]">
           RO
         </div>
         <div class="flex flex-col leading-tight">
-          <span class="text-[14px] font-semibold text-[#2c3e50]">Robert Ormiston</span>
-          <span class="text-[12px] text-slate-500">Psychotherapist</span>
+          <span class="text-body font-semibold text-[#2c3e50]">Robert Ormiston</span>
+          <span class="text-caption text-slate-500">Psychotherapist</span>
         </div>
       </div>
       <!-- Close Button for Mobile -->
@@ -32,7 +32,7 @@
             v-for="item in navItems"
             :key="item"
             @click="$emit('update:selected-nav', item)"
-            class="w-full flex items-center px-3 py-2 rounded-md transition text-left text-[14px]"
+            class="w-full flex items-center px-3 py-2 rounded-md transition text-left text-body"
             :class="selectedNav === item ? 'bg-[#eef1f5] font-semibold text-slate-800' : 'text-slate-700 hover:bg-[#f7f8fa]'"
         >
           {{ item }}
@@ -44,7 +44,7 @@
         <SidebarGroup title="Clients" :defaultOpen="true">
           <div class="px-2 mb-2">
             <button
-                class="w-full py-1.5 text-[13px] rounded-md bg-[#3f4754] text-white hover:bg-[#2f3540] transition"
+                class="w-full py-1.5 text-body-sm rounded-md bg-[#3f4754] text-white hover:bg-[#2f3540] transition"
                 @click="showAddClientModal = true"
             >
               + Add Client
@@ -64,7 +64,7 @@
                   @click="select(client)"
               >
                 <span
-                    class="text-[14px] truncate"
+                    class="text-body truncate"
                     :class="{
                     'font-semibold text-slate-800': selectedClient && client.id === selectedClient.id,
                     'text-slate-700': !selectedClient || client.id !== selectedClient.id,
@@ -78,25 +78,25 @@
 
           <!-- Zoom Session Controls -->
           <div class="mt-4 border-t border-[#e4e7eb] pt-3 px-2 space-y-2">
-            <div class="text-[12px] font-semibold text-slate-600 uppercase tracking-wide">
+            <div class="text-caption font-semibold text-slate-600 uppercase tracking-wide">
               Session Controls
             </div>
             <button
                 v-if="!isInSession"
-                class="w-full text-[13px] px-3 py-1.5 rounded-md border border-[#d9dce1] text-white bg-[#2563eb] hover:bg-[#1d4ed8] transition"
+                class="w-full text-body-sm px-3 py-1.5 rounded-md border border-[#d9dce1] text-white bg-[#2563eb] hover:bg-[#1d4ed8] transition"
                 @click="$emit('join-zoom')"
             >
               Join Zoom Session
             </button>
             <button
                 v-else
-                class="w-full text-[13px] px-3 py-1.5 rounded-md border border-[#d9dce1] text-white bg-[#dc2626] hover:bg-[#b91c1c] transition"
+                class="w-full text-body-sm px-3 py-1.5 rounded-md border border-[#d9dce1] text-white bg-[#dc2626] hover:bg-[#b91c1c] transition"
                 @click="$emit('end-zoom')"
             >
               End Session
             </button>
             <button
-                class="w-full text-[13px] px-3 py-1.5 rounded-md border border-[#d9dce1] text-[#3f4754] bg-white hover:bg-[#f5f7fa] transition disabled:opacity-50 disabled:cursor-not-allowed"
+                class="w-full text-body-sm px-3 py-1.5 rounded-md border border-[#d9dce1] text-[#3f4754] bg-white hover:bg-[#f5f7fa] transition disabled:opacity-50 disabled:cursor-not-allowed"
                 :disabled="!isInSession || isSyncing"
                 @click="$emit('sync-transcript')"
             >
@@ -164,7 +164,7 @@
           <div
               v-for="res in resources"
               :key="res.id"
-              class="flex items-center justify-between text-[13px] py-1 border-b border-[#f1f3f5]"
+              class="flex items-center justify-between text-body-sm py-1 border-b border-[#f1f3f5]"
           >
             <label class="flex items-center gap-2 cursor-pointer select-none">
               <input
@@ -177,7 +177,7 @@
             </label>
           </div>
         </div>
-        <div v-else class="px-3 text-[13px] text-slate-400 italic py-2">
+        <div v-else class="px-3 text-body-sm text-slate-400 italic py-2">
           No resources to export yet
         </div>
       </SidebarGroup>
@@ -199,7 +199,7 @@
             {{ res.title }}
           </button>
         </div>
-        <div v-else class="px-3 text-[13px] text-slate-400 italic">
+        <div v-else class="px-3 text-body-sm text-slate-400 italic">
           No resources added yet
         </div>
       </SidebarGroup>

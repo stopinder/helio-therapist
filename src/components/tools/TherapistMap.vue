@@ -3,13 +3,13 @@
     <!-- Toolbar -->
     <div class="absolute top-3 left-3 z-10 flex gap-2 bg-white border border-gray-300 rounded-md shadow-sm p-2">
       <button
-          class="text-[13px] px-3 py-1.5 rounded-md border border-gray-300 bg-white hover:bg-gray-100 transition"
+          class="text-body-sm px-3 py-1.5 rounded-md border border-gray-300 bg-white hover:bg-gray-100 transition"
           @click="addNode"
       >
         + Add Node
       </button>
       <button
-          class="text-[13px] px-3 py-1.5 rounded-md border border-gray-300 bg-white hover:bg-gray-100 transition"
+          class="text-body-sm px-3 py-1.5 rounded-md border border-gray-300 bg-white hover:bg-gray-100 transition"
           @click="clearAll"
       >
         Clear All
@@ -36,7 +36,7 @@
     <div
         v-for="node in nodes"
         :key="node.id"
-        class="absolute rounded-md shadow-sm border text-center cursor-pointer text-[13px] font-medium transition-colors"
+        class="absolute rounded-md shadow-sm border text-center cursor-pointer text-body-sm font-medium transition-colors"
         :style="{
         top: node.y + 'px',
         left: node.x + 'px',

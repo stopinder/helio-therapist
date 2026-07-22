@@ -1,7 +1,7 @@
 <template>
   <div class="max-w-5xl mx-auto p-6 bg-white border border-[#d9dce1] rounded-lg shadow-sm relative">
-    <h2 class="text-[18px] font-semibold text-[#2c3e50] mb-2">Therapist Map</h2>
-    <p class="text-[14px] text-slate-600 mb-4">
+    <h2 class="text-h3 font-semibold text-[#2c3e50] mb-2">Therapist Map</h2>
+    <p class="text-body text-slate-600 mb-4">
       Double-click any node to rename and assign a type. Drag to move; click nodes to connect. Click lines to delete.
     </p>
 
@@ -44,7 +44,7 @@
       <div
           v-for="node in nodes"
           :key="node.id"
-          class="absolute w-28 min-h-16 flex flex-col items-center justify-center text-center text-[13px]
+          class="absolute w-28 min-h-16 flex flex-col items-center justify-center text-center text-body-sm
                text-[#2c3e50] border rounded-md shadow-sm select-none transition-colors p-1 cursor-grab"
           :style="{
           left: node.x + 'px',
@@ -60,13 +60,13 @@
         <template v-if="editingNode && editingNode.id === node.id">
           <input
               v-model="editLabel"
-              class="w-full border border-[#d9dce1] rounded-sm text-[13px] px-1 py-0.5 mb-1 focus:outline-none focus:ring-1 focus:ring-[#2563eb]"
+              class="w-full border border-[#d9dce1] rounded-sm text-body-sm px-1 py-0.5 mb-1 focus:outline-none focus:ring-1 focus:ring-[#2563eb]"
               @keyup.enter="saveEdit"
               @blur="saveEdit"
           />
           <select
               v-model="editType"
-              class="w-full border border-[#d9dce1] rounded-sm text-[12px] px-1 py-0.5 focus:outline-none focus:ring-1 focus:ring-[#2563eb]"
+              class="w-full border border-[#d9dce1] rounded-sm text-caption px-1 py-0.5 focus:outline-none focus:ring-1 focus:ring-[#2563eb]"
           >
             <option>General</option>
             <option>Part</option>
@@ -79,45 +79,45 @@
         <!-- Normal view -->
         <template v-else>
           <div class="font-medium">{{ node.label }}</div>
-          <div class="text-[11px] text-slate-500">{{ node.type || 'General' }}</div>
+          <div class="text-overline text-slate-500">{{ node.type || 'General' }}</div>
         </template>
       </div>
 
       <!-- Empty state -->
-      <p v-if="!nodes.length" class="absolute inset-0 flex items-center justify-center text-slate-400 text-[14px]">
+      <p v-if="!nodes.length" class="absolute inset-0 flex items-center justify-center text-slate-400 text-body">
         🗺 Click “Add Node” to begin mapping your reflections
       </p>
     </div>
 
     <!-- Controls -->
     <div class="flex flex-wrap justify-end gap-2 md:gap-3 mt-5">
-      <button class="px-3 md:px-4 py-2 bg-[#3f4754] text-white rounded-md hover:bg-[#2f3540] text-[14px]" @click="addNode">
+      <button class="px-3 md:px-4 py-2 bg-[#3f4754] text-white rounded-md hover:bg-[#2f3540] text-body" @click="addNode">
         + Add Node
       </button>
       <button
-          class="px-3 md:px-4 py-2 bg-[#eab308] text-white rounded-md hover:bg-[#ca8a04] text-[14px]"
+          class="px-3 md:px-4 py-2 bg-[#eab308] text-white rounded-md hover:bg-[#ca8a04] text-body"
           :disabled="!connections.length"
           @click="clearConnections"
       >
         Clear Connections
       </button>
       <button
-          class="px-3 md:px-4 py-2 bg-[#e11d48] text-white rounded-md hover:bg-[#b91c1c] text-[14px]"
+          class="px-3 md:px-4 py-2 bg-[#e11d48] text-white rounded-md hover:bg-[#b91c1c] text-body"
           :disabled="!nodes.length"
           @click="clearMap"
       >
         Clear Map
       </button>
-      <button class="px-3 md:px-4 py-2 bg-[#2563eb] text-white rounded-md hover:bg-[#1d4ed8] text-[14px]" @click="generateInsight">
+      <button class="px-3 md:px-4 py-2 bg-[#2563eb] text-white rounded-md hover:bg-[#1d4ed8] text-body" @click="generateInsight">
         Generate AI Summary
       </button>
-      <button class="px-3 md:px-4 py-2 bg-[#3f4754] text-white rounded-md hover:bg-[#2f3540] text-[14px]" @click="goBack">
+      <button class="px-3 md:px-4 py-2 bg-[#3f4754] text-white rounded-md hover:bg-[#2f3540] text-body" @click="goBack">
         Back to Workspace
       </button>
     </div>
 
     <!-- Helper text -->
-    <div class="mt-3 text-[12px] text-slate-500 flex flex-col gap-1">
+    <div class="mt-3 text-caption text-slate-500 flex flex-col gap-1">
       <span>Tip: Double-click a node to rename or set a type. Click a node to connect; click a line to delete.</span>
       <span>Press Esc to clear selection. All changes auto-save locally.</span>
     </div>

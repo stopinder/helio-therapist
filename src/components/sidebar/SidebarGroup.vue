@@ -3,18 +3,18 @@
     <!-- Header -->
     <button
         type="button"
-        class="w-full text-left px-4 py-2.5 text-[11px] uppercase tracking-wide font-semibold text-[#475569] hover:bg-[#f1f5f9] transition rounded-md flex justify-between items-center"
+        class="w-full text-left px-4 py-2.5 text-overline uppercase tracking-wide font-semibold text-[#475569] hover:bg-[#f1f5f9] transition rounded-md flex justify-between items-center"
         @click="toggle"
         :aria-expanded="open.toString()"
     >
       <span>{{ title }}</span>
       <span
           v-if="open"
-          class="text-slate-400 text-[13px]"
+          class="text-slate-400 text-body-sm"
       >−</span>
       <span
           v-else
-          class="text-slate-400 text-[13px]"
+          class="text-slate-400 text-body-sm"
       >+</span>
     </button>
 

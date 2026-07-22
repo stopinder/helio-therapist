@@ -2,7 +2,7 @@
   <section>
     <!-- Header -->
     <button
-        class="w-full flex justify-between items-center text-xs text-slate-haze uppercase tracking-wider mb-2 px-2 py-1 hover:text-fog-white transition"
+        class="w-full flex justify-between items-center text-caption text-slate-haze uppercase tracking-wider mb-2 px-2 py-1 hover:text-fog-white transition"
         @click="isOpen = !isOpen"
     >
       <span>Clients</span>
@@ -18,7 +18,7 @@
         v-model="search"
         type="text"
         placeholder="Search..."
-        class="w-full text-sm px-3 py-1.5 rounded bg-celestial-dusk text-fog-white placeholder-slate-haze border border-slate-700 mb-2 focus:outline-none focus:ring-1 focus:ring-violet-glow"
+        class="w-full text-body px-3 py-1.5 rounded bg-celestial-dusk text-fog-white placeholder-slate-haze border border-slate-700 mb-2 focus:outline-none focus:ring-1 focus:ring-violet-glow"
     />
 
     <!-- Clients List & Add -->
@@ -31,7 +31,7 @@
               class="flex justify-between items-center px-3 py-2 rounded-lg hover:bg-white/5 transition cursor-pointer"
               @click="selectClient(client)"
           >
-            <span class="text-sm">{{ client.name }}</span>
+            <span class="text-body">{{ client.name }}</span>
             <TrashIcon
                 class="w-4 h-4 text-red-400 hover:text-red-300"
                 @click.stop="confirmDelete(client)"
@@ -42,7 +42,7 @@
         <!-- Add Client Button -->
         <button
             @click="addClient"
-            class="w-full flex items-center justify-center gap-2 px-3 py-2 text-sm text-violet-glow hover:text-fog-white hover:bg-white/5 rounded-lg transition"
+            class="w-full flex items-center justify-center gap-2 px-3 py-2 text-body text-violet-glow hover:text-fog-white hover:bg-white/5 rounded-lg transition"
         >
           <PlusIcon class="w-5 h-5" />
           Add Client

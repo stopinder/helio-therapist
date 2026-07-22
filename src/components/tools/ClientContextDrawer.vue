@@ -25,15 +25,15 @@
           <!-- Header -->
           <div class="h-14 flex items-center justify-between px-6 border-b border-[#d9dce1] bg-[#fafbfc] shrink-0">
             <div>
-              <div class="text-[12px] text-slate-500">Client summary</div>
-              <h2 class="text-[16px] font-semibold text-[#2c3e50]">{{ client?.name || 'No client selected' }}</h2>
+              <div class="text-caption text-slate-500">Client summary</div>
+              <h2 class="text-body-long font-semibold text-[#2c3e50]">{{ client?.name || 'No client selected' }}</h2>
             </div>
             <button
                 class="w-8 h-8 flex items-center justify-center rounded-md text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition"
                 @click="$emit('close')"
                 aria-label="Close drawer"
             >
-              <span class="text-xl">✕</span>
+              <span class="text-h2">✕</span>
             </button>
           </div>
 
@@ -42,21 +42,21 @@
             <template v-if="client">
               <!-- Current focus -->
               <section>
-                <h3 class="text-[13px] font-bold text-slate-500 uppercase tracking-wider mb-3">Current focus</h3>
-                <p class="text-[15px] text-[#2c3e50] leading-relaxed">
+                <h3 class="text-body-sm font-bold text-slate-500 uppercase tracking-wider mb-3">Current focus</h3>
+                <p class="text-body text-[#2c3e50] leading-relaxed">
                   {{ client.note || 'No specific focus defined.' }}
                 </p>
               </section>
 
               <section>
-                <h3 class="text-[13px] font-bold text-slate-500 uppercase tracking-wider mb-3">Record</h3>
-                <div class="space-y-3 text-[14px] text-slate-600">
+                <h3 class="text-body-sm font-bold text-slate-500 uppercase tracking-wider mb-3">Record</h3>
+                <div class="space-y-3 text-body text-slate-600">
                   <div class="flex justify-between gap-4"><span>Next appointment</span><strong class="text-[#2c3e50]">Not scheduled</strong></div>
-                  <p class="text-[13px] leading-relaxed text-slate-500">Open the client record to review sessions and therapist-maintained context.</p>
+                  <p class="text-body-sm leading-relaxed text-slate-500">Open the client record to review sessions and therapist-maintained context.</p>
                 </div>
               </section>
               <section>
-                <h3 class="text-[13px] font-bold text-slate-500 uppercase tracking-wider mb-3">Actions</h3>
+                <h3 class="text-body-sm font-bold text-slate-500 uppercase tracking-wider mb-3">Actions</h3>
                 <div class="grid gap-2">
                   <button class="context-action" @click="$emit('open-record')">Open full client record</button>
                   <button class="context-action" @click="$emit('start-session')">Start session</button>
@@ -66,7 +66,7 @@
             </template>
 
             <div v-else class="h-full flex items-center justify-center text-center p-8">
-              <p class="text-slate-500 text-[15px]">
+              <p class="text-slate-500 text-body">
                 No client selected. Open a client or appointment to view context.
               </p>
             </div>
@@ -74,7 +74,7 @@
 
           <div v-if="client" class="shrink-0 border-t border-[#d9dce1] bg-white p-4">
             <button
-                class="w-full rounded-lg bg-[#2563eb] px-4 py-2.5 text-[14px] font-semibold text-white hover:bg-[#1d4ed8] transition"
+                class="w-full rounded-lg bg-[#2563eb] px-4 py-2.5 text-body font-semibold text-white hover:bg-[#1d4ed8] transition"
                 @click="$emit('open-record')"
             >
               Open full client record

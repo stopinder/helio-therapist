@@ -2,8 +2,8 @@
   <div class="max-w-4xl mx-auto text-slate-700">
     <!-- Header -->
     <div class="mb-6">
-      <h2 class="text-2xl font-semibold mb-2">Reflective Practice</h2>
-      <p class="text-[15px] text-slate-600">
+      <h2 class="text-h1 font-semibold mb-2">Reflective Practice</h2>
+      <p class="text-body text-slate-600">
         This private workspace is for your own professional reflection.
       </p>
     </div>
@@ -13,7 +13,7 @@
       <button
           v-for="view in views"
           :key="view.key"
-          class="px-3 py-1.5 rounded-md text-[14px] border border-[#d9dce1] transition"
+          class="px-3 py-1.5 rounded-md text-body border border-[#d9dce1] transition"
           :class="view.key === mode
           ? 'bg-[#2563eb] text-white border-[#2563eb]'
           : 'bg-white hover:bg-[#f0f2f5] text-[#3f4754]'"

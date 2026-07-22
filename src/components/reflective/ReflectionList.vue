@@ -1,10 +1,10 @@
 <template>
   <div>
-    <h3 class="text-xl font-semibold mb-4 text-[#2c3e50]">
+    <h3 class="text-h2 font-semibold mb-4 text-[#2c3e50]">
       Past Reflections
     </h3>
 
-    <div v-if="!reflections.length" class="text-[14px] text-slate-500 italic">
+    <div v-if="!reflections.length" class="text-body text-slate-500 italic">
       No reflections recorded yet.
     </div>
 
@@ -19,12 +19,12 @@
           @click="$emit('open', reflection)"
       >
         <div class="flex justify-between items-start mb-2">
-          <div class="text-[14px] font-semibold text-[#2c3e50]">
+          <div class="text-body font-semibold text-[#2c3e50]">
             Reflection — {{ formatDate(reflection.date) }}
           </div>
         </div>
 
-        <div class="text-[14px] text-slate-600 leading-relaxed line-clamp-3">
+        <div class="text-body text-slate-600 leading-relaxed line-clamp-3">
           {{ reflection.text }}
         </div>
       </div>

@@ -11,19 +11,19 @@
         <!-- Header -->
         <div class="flex items-start justify-between p-5 border-b border-[#e5e7eb] bg-[#fafbfc]">
           <div class="flex items-center gap-3 pr-8">
-            <div class="text-2xl leading-none">{{ getIcon(resource.type) }}</div>
+            <div class="text-h1 leading-none">{{ getIcon(resource.type) }}</div>
             <div>
-              <h2 class="text-[17px] font-semibold text-[#2c3e50] leading-snug">
+              <h2 class="text-h3 font-semibold text-[#2c3e50] leading-snug">
                 {{ resource.title }}
               </h2>
-              <p class="text-[13px] text-slate-500 mt-0.5">
+              <p class="text-body-sm text-slate-500 mt-0.5">
                 {{ getTypeLabel(resource.type) }}
                 <span v-if="resource.createdAt"> · {{ formatDate(resource.createdAt) }}</span>
               </p>
             </div>
           </div>
           <button
-              class="text-slate-500 hover:text-slate-700 text-lg leading-none"
+              class="text-slate-500 hover:text-slate-700 text-h3 leading-none"
               @click="$emit('close')"
               aria-label="Close preview"
           >
@@ -51,13 +51,13 @@
           <template v-else>
             <div class="flex flex-col items-center justify-center text-center py-8">
               <div class="text-4xl mb-3">🔗</div>
-              <p class="text-[14px] text-slate-600 mb-3">
+              <p class="text-body text-slate-600 mb-3">
                 This is a link resource.
               </p>
               <a
                   :href="resource.url"
                   target="_blank"
-                  class="text-[13px] text-[#2563eb] hover:underline"
+                  class="text-body-sm text-[#2563eb] hover:underline"
               >
                 Open link in new tab
               </a>

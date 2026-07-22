@@ -22,12 +22,12 @@
         >
           <!-- Header -->
           <div class="flex items-center justify-between px-4 py-3 border-b border-[#e2e5ea] bg-[#fafbfc] rounded-t-lg">
-            <h3 class="text-[15px] font-semibold text-[#2c3e50]">AI Insight Summary</h3>
-            <button class="text-slate-500 hover:text-slate-700 text-[14px]" @click="$emit('close')" title="Close panel">✕</button>
+            <h3 class="text-body font-semibold text-[#2c3e50]">AI Insight Summary</h3>
+            <button class="text-slate-500 hover:text-slate-700 text-body" @click="$emit('close')" title="Close panel">✕</button>
           </div>
 
           <!-- Context line -->
-          <div v-if="input" class="text-[13px] text-slate-500 px-4 py-1 border-b border-[#f1f3f5]">
+          <div v-if="input" class="text-body-sm text-slate-500 px-4 py-1 border-b border-[#f1f3f5]">
             {{ contextLine }}
           </div>
 
@@ -44,13 +44,13 @@
 
           <!-- Inline confirmations -->
           <transition name="fade">
-            <div v-if="feedback" class="text-[13px] text-green-600 text-right px-4 py-1" aria-live="polite">
+            <div v-if="feedback" class="text-body-sm text-green-600 text-right px-4 py-1" aria-live="polite">
               {{ feedback }}
             </div>
           </transition>
 
           <!-- Content -->
-          <div class="flex-1 overflow-auto p-4 text-[14px] text-slate-700 leading-relaxed">
+          <div class="flex-1 overflow-auto p-4 text-body text-slate-700 leading-relaxed">
             <transition name="content-fade" appear>
               <div key="drawer-content">
                 <div v-if="loading" class="flex items-center justify-center py-6">
@@ -64,7 +64,7 @@
                   <!-- View reflection link -->
                   <div v-if="input?.tool === 'reflection' && input?.clientId" class="mt-4 text-right">
                     <button
-                        class="text-[13px] px-3 py-1.5 rounded-md border border-[#d9dce1] text-[#3f4754] bg-white hover:bg-[#f5f7fa] transition"
+                        class="text-body-sm px-3 py-1.5 rounded-md border border-[#d9dce1] text-[#3f4754] bg-white hover:bg-[#f5f7fa] transition"
                         @click="$emit('view-reflection', { clientId: input.clientId })"
                     >
                       View attached reflection
@@ -209,7 +209,7 @@ onBeforeUnmount(() => {
 
 <style scoped>
 .toolbar-btn {
-  @apply text-[13px] px-3 py-1.5 rounded-md border border-[#d9dce1] text-[#3f4754] bg-white hover:bg-[#f5f7fa] transition;
+  @apply text-body-sm px-3 py-1.5 rounded-md border border-[#d9dce1] text-[#3f4754] bg-white hover:bg-[#f5f7fa] transition;
 }
 
 /* === Animations === */

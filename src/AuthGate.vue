@@ -1,12 +1,12 @@
 <template>
   <main v-if="authLoading" class="min-h-screen bg-slate-100 flex items-center justify-center p-4">
-    <p class="text-sm text-slate-500">Opening MindWorks…</p>
+    <p class="text-body text-slate-500">Opening MindWorks…</p>
   </main>
 
   <main v-else-if="recovering" class="min-h-screen bg-slate-100 flex items-center justify-center px-4 py-8 sm:p-6">
     <section class="w-full max-w-md rounded-2xl bg-white border border-slate-200 shadow-sm p-6 sm:p-8">
-      <h1 class="text-2xl font-semibold text-slate-800">Choose a new password</h1>
-      <p class="mt-2 text-sm text-slate-500">Use at least 8 characters.</p>
+      <h1 class="text-h1 font-semibold text-slate-800">Choose a new password</h1>
+      <p class="mt-2 text-body text-slate-500">Use at least 8 characters.</p>
       <form class="mt-6 space-y-4" @submit.prevent="updatePassword">
         <div class="relative">
           <input
@@ -24,7 +24,7 @@
           />
           <button
             type="button"
-            class="absolute inset-y-0 right-0 min-w-14 px-3 text-sm font-medium text-blue-600"
+            class="absolute inset-y-0 right-0 min-w-14 px-3 text-body font-medium text-blue-600"
             @click="showNewPassword = !showNewPassword"
           >
             {{ showNewPassword ? 'Hide' : 'Show' }}
@@ -34,7 +34,7 @@
           {{ submitting ? 'Saving…' : 'Save new password' }}
         </button>
       </form>
-      <p v-if="errorMessage" class="mt-4 rounded-lg bg-red-50 p-3 text-sm text-red-700">{{ errorMessage }}</p>
+      <p v-if="errorMessage" class="mt-4 rounded-lg bg-red-50 p-3 text-body text-red-700">{{ errorMessage }}</p>
     </section>
   </main>
 
@@ -44,15 +44,15 @@
 
   <main v-else class="min-h-screen bg-slate-100 flex items-center justify-center px-4 py-8 sm:p-6">
     <section class="w-full max-w-md rounded-2xl bg-white border border-slate-200 shadow-sm p-6 sm:p-8">
-      <h1 class="text-2xl font-semibold text-slate-800">MindWorks</h1>
-      <p class="mt-2 text-sm text-slate-500">
+      <h1 class="text-h1 font-semibold text-slate-800">MindWorks</h1>
+      <p class="mt-2 text-body text-slate-500">
         {{ mode === 'signup' ? 'Create your therapist workspace.' : 'Sign in to your therapist workspace.' }}
       </p>
 
       <div class="mt-6 grid grid-cols-2 rounded-lg bg-slate-100 p-1" role="tablist" aria-label="Account access">
         <button
           type="button"
-          class="min-h-11 rounded-md px-3 text-sm font-medium transition"
+          class="min-h-11 rounded-md px-3 text-body font-medium transition"
           :class="mode === 'signin' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500'"
           @click="setMode('signin')"
         >
@@ -60,7 +60,7 @@
         </button>
         <button
           type="button"
-          class="min-h-11 rounded-md px-3 text-sm font-medium transition"
+          class="min-h-11 rounded-md px-3 text-body font-medium transition"
           :class="mode === 'signup' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500'"
           @click="setMode('signup')"
         >
@@ -70,7 +70,7 @@
 
       <form class="mt-6 space-y-4" @submit.prevent="submit">
         <label v-if="mode === 'signup'" class="block">
-          <span class="text-sm font-medium text-slate-700">Full name</span>
+          <span class="text-body font-medium text-slate-700">Full name</span>
           <input
             v-model.trim="fullName"
             type="text"
@@ -81,7 +81,7 @@
         </label>
 
         <label class="block">
-          <span class="text-sm font-medium text-slate-700">Email address</span>
+          <span class="text-body font-medium text-slate-700">Email address</span>
           <input
             v-model.trim="email"
             type="email"
@@ -92,7 +92,7 @@
         </label>
 
         <label class="block">
-          <span class="text-sm font-medium text-slate-700">Password</span>
+          <span class="text-body font-medium text-slate-700">Password</span>
           <div class="relative mt-2">
             <input
               id="account-password"
@@ -108,13 +108,13 @@
             />
             <button
               type="button"
-              class="absolute inset-y-0 right-0 min-w-14 px-3 text-sm font-medium text-blue-600"
+              class="absolute inset-y-0 right-0 min-w-14 px-3 text-body font-medium text-blue-600"
               @click="showPassword = !showPassword"
             >
               {{ showPassword ? 'Hide' : 'Show' }}
             </button>
           </div>
-          <span v-if="mode === 'signup'" class="mt-1 block text-xs text-slate-400">At least 8 characters</span>
+          <span v-if="mode === 'signup'" class="mt-1 block text-caption text-slate-400">At least 8 characters</span>
         </label>
 
         <button
@@ -130,14 +130,14 @@
         v-if="mode === 'signin'"
         type="button"
         :disabled="submitting || !email"
-        class="mt-4 min-h-11 w-full text-sm font-medium text-blue-600 disabled:text-slate-300"
+        class="mt-4 min-h-11 w-full text-body font-medium text-blue-600 disabled:text-slate-300"
         @click="resetPassword"
       >
         Forgot your password?
       </button>
 
-      <p v-if="message" class="mt-4 rounded-lg bg-green-50 p-3 text-sm text-green-700">{{ message }}</p>
-      <p v-if="errorMessage" class="mt-4 rounded-lg bg-red-50 p-3 text-sm text-red-700">{{ errorMessage }}</p>
+      <p v-if="message" class="mt-4 rounded-lg bg-green-50 p-3 text-body text-green-700">{{ message }}</p>
+      <p v-if="errorMessage" class="mt-4 rounded-lg bg-red-50 p-3 text-body text-red-700">{{ errorMessage }}</p>
     </section>
   </main>
 </template>

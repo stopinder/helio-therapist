@@ -1,10 +1,10 @@
 <template>
   <div class="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
     <div class="bg-white rounded-md shadow-lg p-5 w-[90%] max-w-sm">
-      <h2 class="text-lg font-semibold mb-4 text-[#2c3e50]">Add Resource</h2>
+      <h2 class="text-h3 font-semibold mb-4 text-[#2c3e50]">Add Resource</h2>
 
       <form @submit.prevent="submit">
-        <label class="block text-sm text-slate-600 mb-1">Title</label>
+        <label class="block text-body text-slate-600 mb-1">Title</label>
         <input
             v-model="form.title"
             type="text"
@@ -12,7 +12,7 @@
             placeholder="Resource title"
         />
 
-        <label class="block text-sm text-slate-600 mb-1">Type</label>
+        <label class="block text-body text-slate-600 mb-1">Type</label>
         <select
             v-model="form.type"
             class="w-full mb-3 border border-[#d9dce1] rounded-md p-2"
@@ -23,7 +23,7 @@
           <option value="link">Link</option>
         </select>
 
-        <label class="block text-sm text-slate-600 mb-1">URL (optional)</label>
+        <label class="block text-body text-slate-600 mb-1">URL (optional)</label>
         <input
             v-model="form.url"
             type="text"

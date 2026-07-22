@@ -50,10 +50,10 @@
             </svg>
           </button>
 
-          <div class="flex items-center gap-1 md:gap-2 text-[16px] md:text-[18px] font-semibold tracking-tight text-[#2c3e50] truncate">
+          <div class="flex items-center gap-1 md:gap-2 type-h3 tracking-tight text-[#2c3e50] truncate">
             <span class="truncate">Therapist Workspace</span>
             <span v-if="isInSession" class="text-slate-400 mx-0.5 md:mx-1 shrink-0">·</span>
-              <span v-if="isInSession" class="flex items-center gap-1 text-[12px] md:text-[13px] font-normal text-slate-500 shrink-0">
+              <span v-if="isInSession" class="flex items-center gap-1 type-caption text-slate-500 shrink-0">
               <span
                   class="inline-block h-2 w-2 rounded-full"
                   :class="isInSession ? 'bg-green-500' : 'bg-slate-400'"
@@ -65,7 +65,7 @@
 
         <div class="flex items-center gap-1.5 md:gap-3">
           <button
-              class="hidden sm:block text-[13px] px-3 py-1.5 rounded-md border border-[#d9dce1] transition"
+              class="hidden sm:block type-body-sm px-3 py-1.5 rounded-md border border-[#d9dce1] transition"
               :class="showClientDrawer ? 'bg-[#f5f7fa] text-black border-slate-400' : 'text-[#3f4754] bg-white hover:bg-[#f5f7fa]'"
               :disabled="!selectedClient"
               @click="showClientDrawer = !showClientDrawer"
@@ -78,7 +78,7 @@
           
           <!-- Mobile client icon button -->
           <button
-              class="sm:hidden h-9 w-9 flex items-center justify-center rounded-md border border-[#d9dce1] text-[#3f4754] hover:bg-[#f5f7fa] transition text-[15px]"
+              class="sm:hidden h-9 w-9 flex items-center justify-center rounded-md border border-[#d9dce1] text-[#3f4754] hover:bg-[#f5f7fa] transition type-body"
               :class="{ 'bg-[#f5f7fa] border-slate-400': showClientDrawer }"
               :disabled="!selectedClient"
               @click="showClientDrawer = !showClientDrawer"
@@ -88,7 +88,7 @@
           </button>
 
           <button
-              class="h-9 w-9 flex items-center justify-center rounded-md border border-[#d9dce1] text-[#3f4754] hover:bg-[#f5f7fa] transition text-[15px]"
+              class="h-9 w-9 flex items-center justify-center rounded-md border border-[#d9dce1] text-[#3f4754] hover:bg-[#f5f7fa] transition type-body"
               aria-label="Calendar"
               @click="selectedNav = 'Today'"
           >
@@ -96,7 +96,7 @@
           </button>
 
           <button
-              class="h-9 w-9 flex items-center justify-center rounded-md border border-[#d9dce1] text-[#3f4754] hover:bg-[#f5f7fa] transition text-[15px]"
+              class="h-9 w-9 flex items-center justify-center rounded-md border border-[#d9dce1] text-[#3f4754] hover:bg-[#f5f7fa] transition type-body"
               :class="{ 'bg-[#eef1f5] font-semibold border-slate-400': selectedNav === 'Settings' }"
               @click="selectedNav = 'Settings'"
               aria-label="Settings"
@@ -115,7 +115,7 @@
         >
           <section v-if="selectedNav === 'Today'" class="today-workspace">
             <header class="today-workspace-heading">
-              <div><p class="today-eyebrow">Today</p><h1>Your clinical day</h1><p>Start with the next person you need to hold in mind.</p></div>
+              <div><p class="today-eyebrow type-overline">Today</p><h1 class="type-h1">Your clinical day</h1><p class="type-body">Start with the next person you need to hold in mind.</p></div>
             </header>
             <NextSessionPreparation
                 :appointment="nextMatchedAppointment"
@@ -124,8 +124,8 @@
             />
             <section v-if="laterTodayAppointments.length" class="later-today" aria-labelledby="later-today-heading">
               <div class="later-today__heading">
-                <h2 id="later-today-heading">Later today</h2>
-                <p>Your remaining appointments after the next session.</p>
+                <h2 id="later-today-heading" class="type-h2">Later today</h2>
+                <p class="type-body-sm">Your remaining appointments after the next session.</p>
               </div>
               <button
                   v-for="appointment in laterTodayAppointments"
@@ -134,14 +134,14 @@
                   @click="openAppointmentPreparation(appointment)"
               >
                 <span>{{ appointmentTime(appointment) }}</span>
-                <strong>{{ appointment.summary }}</strong>
+                <strong class="type-body-medium">{{ appointment.summary }}</strong>
                 <span aria-hidden="true">›</span>
               </button>
             </section>
             <section class="today-calendar" aria-labelledby="today-calendar-heading">
               <div class="today-calendar__heading">
-                <h2 id="today-calendar-heading">Calendar</h2>
-                <p>Reference and navigation for the rest of your day.</p>
+                <h2 id="today-calendar-heading" class="type-h2">Calendar</h2>
+                <p class="type-body-sm">Reference and navigation for the rest of your day.</p>
               </div>
             <CalendarSchedule
                 :clients="clients"
@@ -577,5 +577,5 @@ onMounted(() => {
 .slide-enter-from, .slide-leave-to {
   transform: translateX(-100%);
 }
-.today-workspace{max-width:68rem;margin:0 auto;color:#2c3e50}.today-workspace-heading{margin-bottom:1.25rem}.today-workspace-heading h1{margin:0;font-size:1.7rem;font-weight:750}.today-workspace-heading p:not(.today-eyebrow){margin:.3rem 0 0;color:#64748b}.today-eyebrow{margin:0 0 .25rem;text-transform:uppercase;letter-spacing:.08em;color:#64748b;font-size:.72rem;font-weight:750}.later-today,.today-calendar{margin-top:1.5rem}.later-today__heading,.today-calendar__heading{margin-bottom:.65rem}.later-today h2,.today-calendar h2{margin:0;font-size:1rem;color:#334155}.later-today p,.today-calendar p{margin:.2rem 0 0;color:#64748b;font-size:.88rem}.later-today__appointment{width:100%;display:grid;grid-template-columns:5rem 1fr auto;align-items:center;gap:.75rem;text-align:left;background:#fff;border:1px solid #e2e8f0;border-radius:.7rem;padding:.8rem 1rem;margin-bottom:.45rem;color:#334155}.later-today__appointment:hover{border-color:#93c5fd;box-shadow:0 2px 8px #1d4ed815}.later-today__appointment>span:first-child{font-weight:700;color:#2563eb}.later-today__appointment strong{font-size:.95rem}.today-calendar{padding-top:.25rem;border-top:1px solid #dce3eb}@media(max-width:700px){.later-today__appointment{grid-template-columns:4.5rem 1fr auto}}
+.today-workspace{max-width:68rem;margin:0 auto;color:#2c3e50}.today-workspace-heading{margin-bottom:1.25rem}.today-workspace-heading h1{margin:0}.today-workspace-heading p:not(.today-eyebrow){margin:.3rem 0 0;color:#64748b}.today-eyebrow{margin:0 0 .25rem;text-transform:uppercase;letter-spacing:.08em;color:#64748b}.later-today,.today-calendar{margin-top:1.5rem}.later-today__heading,.today-calendar__heading{margin-bottom:.65rem}.later-today h2,.today-calendar h2{margin:0;color:#334155}.later-today p,.today-calendar p{margin:.2rem 0 0;color:#64748b}.later-today__appointment{width:100%;display:grid;grid-template-columns:5rem 1fr auto;align-items:center;gap:.75rem;text-align:left;background:#fff;border:1px solid #e2e8f0;border-radius:.7rem;padding:.8rem 1rem;margin-bottom:.45rem;color:#334155}.later-today__appointment:hover{border-color:#93c5fd;box-shadow:0 2px 8px #1d4ed815}.later-today__appointment>span:first-child{font-weight:700;color:#2563eb}.today-calendar{padding-top:.25rem;border-top:1px solid #dce3eb}@media(max-width:700px){.later-today__appointment{grid-template-columns:4.5rem 1fr auto}}
 </style>

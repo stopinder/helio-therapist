@@ -7,11 +7,11 @@
         v-model="inputValue"
         type="text"
         placeholder="Type a note or instruction and press Enter…"
-        class="flex-1 px-4 py-2 text-[15px] bg-transparent outline-none"
+        class="flex-1 px-4 py-2 text-body bg-transparent outline-none"
     />
     <button
         type="submit"
-        class="px-4 text-[#3f4754] hover:text-black text-sm"
+        class="px-4 text-[#3f4754] hover:text-black text-body"
     >
       ↵
     </button>
