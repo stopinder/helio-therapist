@@ -1,7 +1,7 @@
 <template>
   <article v-if="appointment && client" class="next-session" data-testid="next-session-preparation">
     <div class="next-session__heading">
-      <p class="eyebrow">Next session</p>
+      <p class="eyebrow">Next client</p>
       <h2>{{ client.name }} <span>· {{ appointmentTime }}</span></h2>
     </div>
 

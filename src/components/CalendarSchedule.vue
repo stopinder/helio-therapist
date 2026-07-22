@@ -3,7 +3,7 @@
     <div class="calendar-heading">
       <div>
         <h1>{{ heading }}</h1>
-        <p>{{ rangeLabel }} <span v-if="syncLabel" class="sync-status" :class="syncState">· {{ syncLabel }}</span></p>
+        <p>{{ referenceView ? 'Reference and navigation' : rangeLabel }} <span v-if="syncLabel" class="sync-status" :class="syncState">· {{ syncLabel }}</span></p>
       </div>
       <div class="view-switcher" aria-label="Calendar view">
         <button v-for="option in views" :key="option.id" :class="{ active: view === option.id }" @click="setView(option.id)">
@@ -65,8 +65,11 @@
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { authenticatedFetch } from '../lib/api.js'
 
-const props = defineProps({ clients: { type: Array, default: () => [] } })
-const emit = defineEmits(['open-settings', 'select-appointment', 'next-appointment'])
+const props = defineProps({
+  clients: { type: Array, default: () => [] },
+  referenceView: { type: Boolean, default: false }
+})
+const emit = defineEmits(['open-settings', 'select-appointment', 'next-appointment', 'upcoming-appointments'])
 const views = [{ id: 'day', label: 'Day' }, { id: 'week', label: 'Week' }, { id: 'month', label: 'Month' }]
 const weekdayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 const savedView = localStorage.getItem('helio_calendar_view')
@@ -98,7 +101,7 @@ const requestRange = computed(() => {
   if (view.value === 'month') return [startMonth(selectedDate.value), endMonth(selectedDate.value)]
   return [startDay(selectedDate.value), addDays(startDay(selectedDate.value), 1)]
 })
-const heading = computed(() => ({day:"Day’s Schedule",week:'Weekly Schedule',month:'Monthly Schedule'}[view.value]))
+const heading = computed(() => props.referenceView ? 'Calendar' : ({day:"Day’s Schedule",week:'Weekly Schedule',month:'Monthly Schedule'}[view.value]))
 const rangeLabel = computed(() => {
   const [start,end] = requestRange.value; const final = addDays(end,-1)
   if (view.value === 'day') return start.toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric',year:'numeric'})
@@ -159,6 +162,7 @@ function emitNextMatchedAppointment(calendarEvents) {
     .filter(event => !event.allDay && new Date(event.start).getTime() > now && matchedClient(event))
     .sort((a, b) => new Date(a.start) - new Date(b.start))[0] || null
   emit('next-appointment', next)
+  emit('upcoming-appointments', calendarEvents || [])
 }
 function appointmentStatus(event) {
   const client = matchedClient(event)
@@ -230,6 +234,7 @@ async function loadNextMatchedAppointment() {
   } catch {
     nextAppointmentEvents.value = []
     emit('next-appointment', null)
+    emit('upcoming-appointments', [])
   }
 }
 function refreshCalendar() { loadEvents(); loadNextMatchedAppointment() }

@@ -7,7 +7,7 @@ Last updated: 22 July 2026. This is a working implementation record; it distingu
 - Supabase-backed client records and authentication scaffolding.
 - Search-first client directory and a timeline-first client workspace.
 - Client workspace is timeline-first with an appointment preparation hand-off, therapist-maintained current focus, a focused active-session surface, editable therapist notes, and a prominent dictated-note control. Preparation shows one real carry-forward event when available; active session keeps the current focus visible without exposing generic AI controls.
-- Today daily workspace: calendar-first day/week/month navigation, direct client-workspace opening for unambiguous appointment/client matches, and a single available session status.
+- Today daily workspace: clinically led hierarchy. The next matched client and their preparation context appear first, followed by a compact Later today list; day/week/month calendar navigation remains below as reference. It opens the client workspace directly for unambiguous appointment/client matches and surfaces only one available session status.
 - Inbox with progressive client → session → review/retention transcript triage, plus unfinished session and client-return work; it hands off to the relevant session or client context.
 - Google Calendar and Calendly integration routes, with Google Calendar treated as a startup workspace service: calendar reads silently refresh a rejected Google access token, persist the replacement token, retry the read, and record the successful sync time.
 - Zoom OAuth routes, webhook transcript intake, transcript queue endpoints, and a Start Session endpoint that creates a Zoom meeting linked to a Helio session.

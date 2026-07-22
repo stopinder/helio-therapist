@@ -10,7 +10,7 @@ It must orient a therapist within ten seconds without turning the client record 
 
 ## Design rules
 
-- **Today** answers: *Who is next, and what needs my attention?*
+- **Today** answers: *Who is next, and what needs my attention?* It presents clinical orientation before scheduling reference: Next client, Later today, then Calendar.
 - **Inbox** answers: *What decision or finishing action is outstanding?*
 - **Client workspace** answers: *What do I need to hold in mind for this person, right now?*
 - Timeline is the enduring clinical story. It is not an audit log.

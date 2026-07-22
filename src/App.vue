@@ -115,19 +115,43 @@
         >
           <section v-if="selectedNav === 'Today'" class="today-workspace">
             <header class="today-workspace-heading">
-              <div><p class="today-eyebrow">Today</p><h1>Today’s work</h1><p>Open the next client, then return here when you need to re-orient.</p></div>
+              <div><p class="today-eyebrow">Today</p><h1>Your clinical day</h1><p>Start with the next person you need to hold in mind.</p></div>
             </header>
             <NextSessionPreparation
                 :appointment="nextMatchedAppointment"
                 :client="nextMatchedClient"
                 @prepare="openAppointmentPreparation"
             />
+            <section v-if="laterTodayAppointments.length" class="later-today" aria-labelledby="later-today-heading">
+              <div class="later-today__heading">
+                <h2 id="later-today-heading">Later today</h2>
+                <p>Your remaining appointments after the next session.</p>
+              </div>
+              <button
+                  v-for="appointment in laterTodayAppointments"
+                  :key="appointment.id"
+                  class="later-today__appointment"
+                  @click="openAppointmentPreparation(appointment)"
+              >
+                <span>{{ appointmentTime(appointment) }}</span>
+                <strong>{{ appointment.summary }}</strong>
+                <span aria-hidden="true">›</span>
+              </button>
+            </section>
+            <section class="today-calendar" aria-labelledby="today-calendar-heading">
+              <div class="today-calendar__heading">
+                <h2 id="today-calendar-heading">Calendar</h2>
+                <p>Reference and navigation for the rest of your day.</p>
+              </div>
             <CalendarSchedule
                 :clients="clients"
+                reference-view
                 @open-settings="selectedNav = 'Settings'"
                 @select-appointment="openAppointmentPreparation"
                 @next-appointment="nextMatchedAppointment = $event"
+                @upcoming-appointments="upcomingAppointments = $event"
             />
+            </section>
           </section>
 
           <NeedsAttention
@@ -208,6 +232,7 @@ const activeView = ref("main")
 const selectedNav = ref("Today")
 const queuedTranscriptId = ref(null)
 const nextMatchedAppointment = ref(null)
+const upcomingAppointments = ref([])
 const activeTool = ref(null)
 const activeTemplate = ref(null)
 const reflectionMode = ref("new")
@@ -226,12 +251,31 @@ const handleGenerateInsight = (data) => {
 // --- Clients ---
 const clients = ref([])
 const nextMatchedClient = computed(() => {
-  const summary = String(nextMatchedAppointment.value?.summary || '').trim().toLowerCase()
+  return matchedClientForAppointment(nextMatchedAppointment.value)
+})
+const matchedClientForAppointment = (appointment) => {
+  const summary = String(appointment?.summary || '').trim().toLowerCase()
   const matches = clients.value.filter(client => {
     const name = String(client.name || '').trim().toLowerCase()
     return name && (summary === name || summary.includes(name))
   })
   return matches.length === 1 ? matches[0] : null
+}
+const laterTodayAppointments = computed(() => {
+  const nextId = nextMatchedAppointment.value?.id
+  const now = new Date()
+  const endOfToday = new Date(now)
+  endOfToday.setHours(24, 0, 0, 0)
+  return upcomingAppointments.value
+    .filter(appointment => !appointment.allDay
+      && appointment.id !== nextId
+      && new Date(appointment.start).getTime() > now.getTime()
+      && new Date(appointment.start).getTime() < endOfToday.getTime()
+      && matchedClientForAppointment(appointment))
+    .sort((a, b) => new Date(a.start) - new Date(b.start))
+})
+const appointmentTime = (appointment) => new Date(appointment.start).toLocaleTimeString(undefined, {
+  hour: 'numeric', minute: '2-digit'
 })
 watch(clients, (newClients) => {
   localStorage.setItem("helio_clients", JSON.stringify(newClients))
@@ -533,5 +577,5 @@ onMounted(() => {
 .slide-enter-from, .slide-leave-to {
   transform: translateX(-100%);
 }
-.today-workspace{max-width:68rem;margin:0 auto;color:#2c3e50}.today-workspace-heading{margin-bottom:1.25rem}.today-workspace-heading h1{margin:0;font-size:1.7rem;font-weight:750}.today-workspace-heading p:not(.today-eyebrow){margin:.3rem 0 0;color:#64748b}.today-eyebrow{margin:0 0 .25rem;text-transform:uppercase;letter-spacing:.08em;color:#64748b;font-size:.72rem;font-weight:750}
+.today-workspace{max-width:68rem;margin:0 auto;color:#2c3e50}.today-workspace-heading{margin-bottom:1.25rem}.today-workspace-heading h1{margin:0;font-size:1.7rem;font-weight:750}.today-workspace-heading p:not(.today-eyebrow){margin:.3rem 0 0;color:#64748b}.today-eyebrow{margin:0 0 .25rem;text-transform:uppercase;letter-spacing:.08em;color:#64748b;font-size:.72rem;font-weight:750}.later-today,.today-calendar{margin-top:1.5rem}.later-today__heading,.today-calendar__heading{margin-bottom:.65rem}.later-today h2,.today-calendar h2{margin:0;font-size:1rem;color:#334155}.later-today p,.today-calendar p{margin:.2rem 0 0;color:#64748b;font-size:.88rem}.later-today__appointment{width:100%;display:grid;grid-template-columns:5rem 1fr auto;align-items:center;gap:.75rem;text-align:left;background:#fff;border:1px solid #e2e8f0;border-radius:.7rem;padding:.8rem 1rem;margin-bottom:.45rem;color:#334155}.later-today__appointment:hover{border-color:#93c5fd;box-shadow:0 2px 8px #1d4ed815}.later-today__appointment>span:first-child{font-weight:700;color:#2563eb}.later-today__appointment strong{font-size:.95rem}.today-calendar{padding-top:.25rem;border-top:1px solid #dce3eb}@media(max-width:700px){.later-today__appointment{grid-template-columns:4.5rem 1fr auto}}
 </style>
