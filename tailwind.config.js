@@ -6,6 +6,17 @@ module.exports = {
   theme: {
     extend: {
       colors: {
+        // Semantic surface hierarchy. Source values live in main.css so the
+        // same layers are available to component CSS and Tailwind utilities.
+        'surface-canvas': 'var(--surface-canvas)',
+        surface: 'var(--surface)',
+        'surface-muted': 'var(--surface-muted)',
+        'surface-subtle': 'var(--surface-subtle)',
+        'surface-elevated': 'var(--surface-elevated)',
+        'surface-overlay': 'var(--surface-overlay)',
+        border: 'var(--border)',
+        'border-muted': 'var(--border-muted)',
+        'border-strong': 'var(--border-strong)',
         'celestial-dusk': '#16243B',   // Sidebar
         'midnight-blue': '#1F3159',    // Canvas
         'lavender-wash': '#C0B8FF',    // Accent
@@ -44,6 +55,10 @@ module.exports = {
         'stack-2xl': 'var(--space-stack-2xl)',
         section: 'var(--space-section)',
         page: 'var(--space-page)',
+      },
+      boxShadow: {
+        elevated: 'var(--shadow-elevated)',
+        overlay: 'var(--shadow-overlay)',
       },
     },
   },
