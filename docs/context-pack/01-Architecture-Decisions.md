@@ -95,3 +95,16 @@ Each concept answers a different question and must not be merged:
 Private reflections are stored separately from clinical events and are explicitly labelled: **“Not part of the client’s clinical record.”** They never enter Timeline, client-facing content, or routine exports. A reflection can be linked to a client and, where available, a session reference without duplicating the session material.
 
 The quiet default action is **Add private reflection**. **Add to supervision** is deliberate and optional. The therapist-level Supervision workspace groups selected original reflections by client rather than generating a summary from client records. Any future AI agenda draft remains therapist-reviewed; it may organise selected material but must not infer, diagnose, or make clinical decisions.
+
+
+## Session workspace hierarchy
+
+Opening a Session starts at **Overview**, which orients the therapist to the encounter and current focus. Its internal order is deliberate:
+
+1. Overview
+2. Clinical note — the therapist-approved primary record
+3. Transcript — clearly labelled secondary source material
+4. Resources & actions
+5. Private reflection — therapist-only, never part of the clinical record
+
+The Transcript must not become the default view or visually dominate the approved note. Session lists remain compact retrieval tools: date, available duration, status, note state, genuinely outstanding follow-up, and a short note preview. Detailed material belongs inside the Session.
