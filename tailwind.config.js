@@ -29,8 +29,23 @@ module.exports = {
         caption: ['0.75rem', { lineHeight: '1rem' }],
         overline: ['0.6875rem', { lineHeight: '1rem', letterSpacing: '0.08em' }],
       },
+      spacing: {
+        // Semantic spacing aliases. Values remain defined in main.css so CSS
+        // variables are the source of truth across Tailwind and component CSS.
+        'inline-xs': 'var(--space-inline-xs)',
+        'inline-sm': 'var(--space-inline-sm)',
+        'inline-md': 'var(--space-inline-md)',
+        'inline-lg': 'var(--space-inline-lg)',
+        'stack-xs': 'var(--space-stack-xs)',
+        'stack-sm': 'var(--space-stack-sm)',
+        'stack-md': 'var(--space-stack-md)',
+        'stack-lg': 'var(--space-stack-lg)',
+        'stack-xl': 'var(--space-stack-xl)',
+        'stack-2xl': 'var(--space-stack-2xl)',
+        section: 'var(--space-section)',
+        page: 'var(--space-page)',
+      },
     },
   },
   plugins: [],
 }
-

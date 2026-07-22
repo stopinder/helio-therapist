@@ -110,7 +110,7 @@
       <div class="flex flex-1 overflow-hidden">
         <!-- Flexible Centre Workspace -->
         <main
-            class="flex-1 overflow-auto p-4 md:p-6 relative scroll-smooth bg-[#f5f7fa]"
+            class="flex-1 overflow-auto page-layout relative scroll-smooth bg-[#f5f7fa]"
             @scroll="handleScroll"
         >
           <section v-if="selectedNav === 'Today'" class="today-workspace">

@@ -26,13 +26,13 @@
     </div>
 
     <!-- Sidebar Content -->
-    <div class="flex-1 overflow-auto p-4 space-y-4">
-      <nav class="space-y-1">
+    <div class="flex-1 overflow-auto p-stack-lg space-y-stack-xl">
+      <nav class="space-y-stack-xs">
         <button
             v-for="item in navItems"
             :key="item"
             @click="$emit('update:selected-nav', item)"
-            class="w-full flex items-center px-3 py-2 rounded-md transition text-left text-body"
+            class="w-full flex items-center px-inline-md py-stack-sm rounded-md transition text-left text-body"
             :class="selectedNav === item ? 'bg-[#eef1f5] font-semibold text-slate-800' : 'text-slate-700 hover:bg-[#f7f8fa]'"
         >
           {{ item }}

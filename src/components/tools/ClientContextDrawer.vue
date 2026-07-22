@@ -23,7 +23,7 @@
             aria-label="Client Context"
         >
           <!-- Header -->
-          <div class="h-14 flex items-center justify-between px-6 border-b border-[#d9dce1] bg-[#fafbfc] shrink-0">
+          <div class="h-14 flex items-center justify-between px-stack-xl border-b border-[#d9dce1] bg-[#fafbfc] shrink-0">
             <div>
               <div class="text-caption text-slate-500">Client summary</div>
               <h2 class="text-body-long font-semibold text-[#2c3e50]">{{ client?.name || 'No client selected' }}</h2>
@@ -38,7 +38,7 @@
           </div>
 
           <!-- Content -->
-          <div class="flex-1 overflow-y-auto p-6 space-y-7">
+          <div class="flex-1 overflow-y-auto p-stack-xl space-y-8">
             <template v-if="client">
               <!-- Current focus -->
               <section>
@@ -72,7 +72,7 @@
             </div>
           </div>
 
-          <div v-if="client" class="shrink-0 border-t border-[#d9dce1] bg-white p-4">
+          <div v-if="client" class="shrink-0 border-t border-[#d9dce1] bg-white p-stack-lg">
             <button
                 class="w-full rounded-lg bg-[#2563eb] px-4 py-2.5 text-body font-semibold text-white hover:bg-[#1d4ed8] transition"
                 @click="$emit('open-record')"

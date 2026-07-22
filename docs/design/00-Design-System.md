@@ -5,6 +5,7 @@ This folder is the design home for Helio in Obsidian. It keeps design decisions,
 ## Structure
 
 - `01-Typography.md` — the active typography system and implementation rules.
+- `02-Spacing.md` — the active spacing scale, usage rules, and documented exceptions.
 - `assets/` — source design assets: logos, approved illustrations, exports, and reference images. Use descriptive filenames and retain source files where possible.
 - Future decisions belong in this folder as short, dated Markdown notes, for example `02-Colour-and-Contrast.md` or `03-Component-Principles.md`.
 

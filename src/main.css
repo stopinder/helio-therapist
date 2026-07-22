@@ -10,6 +10,25 @@ html {
     color: #fff;
 }
 
+:root {
+    --space-inline-xs: 0.25rem;
+    --space-inline-sm: 0.5rem;
+    --space-inline-md: 0.75rem;
+    --space-inline-lg: 1rem;
+    --space-stack-xs: 0.25rem;
+    --space-stack-sm: 0.5rem;
+    --space-stack-md: 0.75rem;
+    --space-stack-lg: 1rem;
+    --space-stack-xl: 1.5rem;
+    --space-stack-2xl: 2rem;
+    --space-section: 2.5rem;
+    --space-page: 1rem;
+}
+
+@media (min-width: 768px) {
+    :root { --space-page: 2rem; }
+}
+
 @layer components {
     /* Helio's only type scale. The weight is part of the semantic role. */
     .type-display { @apply font-sans text-display font-bold; }
@@ -22,6 +41,12 @@ html {
     .type-body-sm { @apply font-sans text-body-sm font-normal; }
     .type-caption { @apply font-sans text-caption font-medium; }
     .type-overline { @apply font-sans text-overline font-semibold uppercase tracking-[0.08em]; }
+
+    /* Layout primitives for page-level and panel-level rhythm. */
+    .page-layout { @apply p-page; }
+    .page-section { margin-top: var(--space-section); }
+    .card-standard { padding: var(--space-stack-xl); }
+    .card-compact { padding: var(--space-stack-lg); }
 }
 /* Therapist workspace sidebar buttons */
 .sidebar-btn {
