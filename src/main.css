@@ -6,11 +6,23 @@
 
 html {
     font-family: 'Inter', system-ui, sans-serif;
-    background: #11172A;
-    color: #fff;
+    background: var(--surface-canvas);
+    color: #2c3e50;
 }
 
 :root {
+    /* Semantic surface, boundary, and elevation hierarchy. */
+    --surface-canvas: #f4f5f3;
+    --surface: #fbfbfa;
+    --surface-muted: #f1f2ef;
+    --surface-subtle: #f7f7f5;
+    --surface-elevated: #ffffff;
+    --surface-overlay: #ffffff;
+    --border: #d9ddd8;
+    --border-muted: #e7e9e5;
+    --border-strong: #bcc3bc;
+    --shadow-elevated: 0 1px 2px rgb(24 32 28 / 0.05), 0 8px 24px rgb(24 32 28 / 0.06);
+    --shadow-overlay: 0 8px 24px rgb(24 32 28 / 0.10), 0 24px 64px rgb(24 32 28 / 0.12);
     --space-inline-xs: 0.25rem;
     --space-inline-sm: 0.5rem;
     --space-inline-md: 0.75rem;
@@ -47,15 +59,14 @@ html {
     .page-section { margin-top: var(--space-section); }
     .card-standard { padding: var(--space-stack-xl); }
     .card-compact { padding: var(--space-stack-lg); }
+    .surface-card { @apply rounded-lg border border-border-muted bg-surface; }
+    .surface-panel { @apply rounded-lg border border-border bg-surface; }
+    .control-surface { @apply border border-border bg-surface-elevated hover:border-border-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2563eb]; }
 }
 /* Therapist workspace sidebar buttons */
 .sidebar-btn {
-    @apply w-full text-left text-body-sm text-slate-700 hover:bg-[#f1f5f9] rounded-md px-3 py-1.5 transition;
-}
-/* Sidebar visual refinements */
-.sidebar-btn {
     @apply w-full text-left text-body px-3 py-2 rounded-md transition-colors;
-    @apply text-slate-700 hover:bg-[#f5f7fa];
+    @apply text-slate-700 hover:bg-surface-subtle focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2563eb];
 }
 
 .sidebar-btn.primary {
@@ -63,7 +74,7 @@ html {
 }
 
 .sidebar-section {
-    @apply mt-4 border-t border-[#eaecef] pt-3;
+    @apply mt-4 border-t border-border-muted pt-3;
 }
 
 .sidebar-section-title {
