@@ -38,7 +38,8 @@ export default async function handler(req, res) {
     if (updateError) throw updateError
     const { data: measureResult, error: resultError } = await supabase.from('outcome_measure_results').insert({ assignment_id: assignment.id, response_id: response.id, user_id: assignment.user_id, client_id: assignment.client_id, resource_id: assignment.resource_versions.resource_id, resource_version_id: assignment.resource_version_id, calculation_version: score.calculationVersion, scores: { total: score.total, itemScores: score.itemScores }, completed_at: submittedAt }).select('id').single()
     if (resultError) throw resultError
-    const { error: eventError } = await supabase.from('client_timeline_events').insert({ user_id: assignment.user_id, client_id: assignment.client_id, client_request_id: assignment.client_request_id, client_request_item_id: assignment.id, event_type: 'resource_completed', subject_type: 'measure_result', subject_id: measureResult.id, occurred_at: submittedAt, summary: `${present(assignment).title} completed` })
+    // Completion is workflow state. The score is the clinical information worth carrying forward.
+    const { error: eventError } = await supabase.from('client_timeline_events').insert({ user_id: assignment.user_id, client_id: assignment.client_id, client_request_id: assignment.client_request_id, client_request_item_id: assignment.id, event_type: 'outcome_measure_recorded', subject_type: 'measure_result', subject_id: measureResult.id, occurred_at: submittedAt, summary: `${present(assignment).title} score: ${score.total}` })
     if (eventError) throw eventError
     return res.status(201).json({ submitted: true })
   } catch (error) {

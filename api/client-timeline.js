@@ -1,6 +1,14 @@
 import { requireAuthenticatedUser } from './_lib/supabase.js'
 
 const clean = (value, maximum = 80) => String(value || '').trim().slice(0, maximum)
+// The clinical timeline is deliberately narrower than the event table. Older
+// workflow events remain available to audit/workflow surfaces but are never
+// presented as part of a client's clinical story.
+const clinicalEventTypes = [
+  'outcome_measure_recorded', 'risk_assessment_recorded', 'diagnosis_updated',
+  'treatment_plan_updated', 'goal_updated', 'referral_recorded',
+  'medication_changed', 'client_life_event', 'clinical_milestone'
+]
 
 export default async function handler(req, res) {
   try {
@@ -10,7 +18,7 @@ export default async function handler(req, res) {
     if (!clientId) return res.status(400).json({ error: 'Client is required.' })
     const { data, error } = await supabase.from('client_timeline_events')
       .select('id,event_type,subject_type,subject_id,occurred_at,summary,session_id')
-      .eq('user_id', user.id).eq('client_id', clientId).order('occurred_at', { ascending: false })
+      .eq('user_id', user.id).eq('client_id', clientId).in('event_type', clinicalEventTypes).order('occurred_at', { ascending: false })
     if (error) throw error
     return res.status(200).json({ events: data || [] })
   } catch (error) {

@@ -45,9 +45,6 @@ export default async function handler(req, res) {
       const reviewedAt = new Date().toISOString()
       const { data: assignment, error } = await supabase.from('client_request_items').update({ status: 'reviewed', reviewed_at: reviewedAt, reviewed_by: user.id, review_note: clean(req.body?.reviewNote) }).eq('id', assignmentId).eq('user_id', user.id).select().single()
       if (error) throw error
-      const title = current.resource_versions?.client_title || 'Resource'
-      const { error: timelineError } = await supabase.from('client_timeline_events').insert({ user_id: user.id, client_id: current.client_id, client_request_id: current.client_request_id, client_request_item_id: assignment.id, event_type: 'resource_reviewed', subject_type: 'assignment', subject_id: assignment.id, occurred_at: reviewedAt, summary: `${title} reviewed` })
-      if (timelineError) throw timelineError
       return res.status(200).json({ assignment })
     }
     if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
@@ -81,11 +78,6 @@ export default async function handler(req, res) {
     }))
     const { data: assignments, error } = await supabase.from('client_request_items').insert(itemsToInsert).select()
     if (error) { await supabase.from('client_requests').delete().eq('id', request.id).eq('user_id', user.id); throw error }
-    const { error: timelineError } = await supabase.from('client_timeline_events').insert(assignments.map(assignment => ({
-      user_id: user.id, client_id: clientId, client_request_id: request.id, client_request_item_id: assignment.id, event_type: 'resource_sent', subject_type: 'assignment', subject_id: assignment.id,
-      summary: `${assignment.sent_snapshot?.title || 'Resource'} sent to client`
-    })))
-    if (timelineError) throw timelineError
     return res.status(201).json({ request, assignments, clientAccessTokens: tokens })
   } catch (error) {
     console.error('[Resource assignments]', error)

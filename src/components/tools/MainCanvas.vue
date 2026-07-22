@@ -34,7 +34,7 @@
 
       <section class="timeline-card">
         <div class="card-heading"><div><p class="eyebrow">Timeline</p><h2>Clinical story</h2><p class="quiet-copy">What has happened with this person. It shows clinically useful events, not an audit log.</p></div><div class="timeline-actions"><button class="secondary" @click="openPicker">Send to client</button></div></div>
-        <div v-if="!timelineEvents.length" class="empty-inline">No activity recorded yet. Start a session when you are ready.</div>
+        <div v-if="!timelineEvents.length" class="empty-inline">No clinical events recorded yet. Complete a session or record a clinically meaningful change.</div>
         <button v-for="event in timelineEvents" :key="event.id" class="timeline-event" @click="event.session && openSession(event.session)">
           <span class="timeline-marker" aria-hidden="true">{{ event.icon }}</span>
           <span><strong>{{ event.title }}</strong><small>{{ formatDate(event.date) }} · {{ event.detail }}</small></span><span v-if="event.session">Open ›</span>
@@ -102,14 +102,14 @@ const completedSessions = computed(() => sessions.value.filter(session => ['comp
 // No AI approval state exists in this pass; keep the Continuity entry point hidden until it does.
 const approvedSessions = computed(() => [])
 const lastCompletedSession = computed(() => completedSessions.value[0] || null)
-const timelineEvents = computed(() => [...sessions.value.map(session => ({
+const timelineEvents = computed(() => [...completedSessions.value.map(session => ({
   id: `session-${session.id}`, date: session.closedAt || session.completedAt || session.updatedAt || session.startedAt, session, icon: '◷',
-  title: session.status === 'in_progress' ? 'Session in progress' : 'Session recorded',
+  title: 'Session completed',
   detail: sessionProgressLabel(session) + (session.notes ? ' · Therapist notes saved' : '')
 })), ...clinicalTimelineEvents.value.map(event => ({
   id: `clinical-${event.id}`, date: event.occurred_at, icon: timelineIcon(event.event_type), title: event.summary, detail: timelineDetail(event.event_type)
 }))].sort((a, b) => new Date(b.date) - new Date(a.date)))
-const lastMeaningfulEvent = computed(() => timelineEvents.value.find(event => !event.session || ['completed', 'closed'].includes(event.session.status)) || null)
+const lastMeaningfulEvent = computed(() => timelineEvents.value[0] || null)
 
 function loadSessions() { try { return JSON.parse(localStorage.getItem('helio_sessions') || '[]') } catch { return [] } }
 function persist() { localStorage.setItem('helio_sessions', JSON.stringify(allSessions.value)) }

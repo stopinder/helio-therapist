@@ -42,7 +42,7 @@ const assignments = ref([])
 const appointmentTime = computed(() => new Date(props.appointment?.start).toLocaleString(undefined, {
   weekday: 'short', hour: 'numeric', minute: '2-digit'
 }))
-const lastDevelopment = computed(() => timeline.value.find(event => event.event_type !== 'resource_sent') || null)
+const lastDevelopment = computed(() => timeline.value[0] || null)
 const preparationItem = computed(() => {
   const openSession = loadSessions().find(session => String(session.clientId) === String(props.client?.id)
     && (session.status === 'in_progress' || ['needs_review', 'drafts_awaiting_review'].includes(session.workflowStatus)))

@@ -11,10 +11,9 @@ test('clinical exchange labels preserve the distinct assignment lifecycle', () =
   assert.equal(completionModeLabel('complete_in_helio'), 'Complete in Helio')
 })
 
-test('clinical timeline shows meaningful exchange events, not delivery mechanics', () => {
-  assert.deepEqual(timelineEventPresentation('resource_completed'), { icon: '✓', detail: 'Completed · Review required' })
-  assert.deepEqual(timelineEventPresentation('resource_returned'), { icon: '↩', detail: 'Returned · Review required' })
-  assert.deepEqual(timelineEventPresentation('resource_reviewed'), { icon: '✓', detail: 'Reviewed' })
+test('clinical timeline presents clinical findings, not workflow activity', () => {
+  assert.deepEqual(timelineEventPresentation('outcome_measure_recorded'), { icon: '✓', detail: 'Outcome measure' })
+  assert.deepEqual(timelineEventPresentation('resource_completed'), { icon: '•', detail: 'Clinical event' })
 })
 
 test('PHQ-9 only calculates complete valid answers and preserves item answers', () => {

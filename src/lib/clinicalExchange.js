@@ -14,11 +14,15 @@ export function completionModeLabel(mode) {
 
 export function timelineEventPresentation(type) {
   return ({
-    resource_sent: { icon: '↗', detail: 'Sent to client' },
-    resource_completed: { icon: '✓', detail: 'Completed · Review required' },
-    resource_returned: { icon: '↩', detail: 'Returned · Review required' },
-    resource_reviewed: { icon: '✓', detail: 'Reviewed' },
-    resource_discussed: { icon: '◷', detail: 'Discussed during session' }
+    outcome_measure_recorded: { icon: '✓', detail: 'Outcome measure' },
+    risk_assessment_recorded: { icon: '!', detail: 'Risk assessment' },
+    diagnosis_updated: { icon: '•', detail: 'Diagnosis updated' },
+    treatment_plan_updated: { icon: '•', detail: 'Treatment plan updated' },
+    goal_updated: { icon: '•', detail: 'Goal updated' },
+    referral_recorded: { icon: '↗', detail: 'Referral' },
+    medication_changed: { icon: '•', detail: 'Medication change' },
+    client_life_event: { icon: '•', detail: 'Client-reported event' },
+    clinical_milestone: { icon: '•', detail: 'Clinical milestone' }
   })[type] || { icon: '•', detail: 'Clinical event' }
 }
 

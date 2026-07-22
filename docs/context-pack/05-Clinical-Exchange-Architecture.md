@@ -16,8 +16,8 @@ The existing `documents` table remains appropriate for therapist-uploaded report
 | --- | --- |
 | Today | Shows only derived, actionable items: returned worksheet, uploaded document, completed measure, or an item needing follow-up. It never lists the whole library or every sent assignment. |
 | Clients | No change. It remains retrieval only. |
-| Client workspace | Timeline is the default clinical story. It contains contextual actions that open the shared Resource Picker; assignments appear as meaningful events, not as a document-type destination. |
-| Timeline | Shows only clinically meaningful milestones: sent, completed/returned, reviewed, and discussed in a session. Delivery and reminder mechanics stay hidden unless they fail. |
+| Client workspace | Timeline is the default clinical story. It contains contextual actions that open the shared Resource Picker; assignments are workflow, not a document-type destination. |
+| Timeline | Shows clinical information or change only: completed sessions, scored measures, risk assessments, diagnoses, treatment-plan or goal changes, referrals, medication changes, significant client-reported events, and therapist-authored milestones. Delivery, completion, review, reminder and audit mechanics stay out. |
 | Sessions | An assignment or review may be linked to a session, but neither requires one. A therapist can explicitly mark a returned item as discussed in a session. |
 | Messaging | No standalone Messages application. Sending is an assignment action; any later client-facing notification channel is delivery infrastructure, not a second resource model. |
 | Existing documents | Remains a therapist-side report/document capability. A client-uploaded response belongs to an assignment response, even if its file storage is implemented using the same private-storage patterns. |
@@ -30,7 +30,7 @@ Within a selected client's workspace:
 
 `Timeline | Sessions` (with **Clinical** reserved only if it later earns a distinct clinical purpose).
 
-Timeline and an active session have one contextual action: **Send to client**. It opens the shared picker for supported resources, measures, questionnaires and documents. The assignment lifecycle remains sent, opened, in progress, completed, awaiting review, and reviewed, but it is shown through clinically meaningful timeline events rather than a tab.
+Timeline and an active session have one contextual action: **Send to client**. It opens the shared picker for supported resources, measures, questionnaires and documents. The assignment lifecycle remains sent, opened, in progress, completed, awaiting review, and reviewed, but it belongs to workflow/attention views rather than the Timeline.
 
 The normal flow is deliberately short:
 
@@ -70,11 +70,11 @@ Each submitted structured response preserves raw answers plus calculated score d
 
 ## Required journeys
 
-1. **Send resources** — therapist opens a client, selects one or more resources, adds an optional shared instruction/due date, and sends. One client request, individual request items and meaningful “resource sent” timeline events are created.
+1. **Send resources** — therapist opens a client, selects one or more resources, adds an optional shared instruction/due date, and sends. One client request and individual request items are created; sending does not create a Timeline event.
 2. **Assign a measure** — same flow, with a measure-specific completion expectation. The assignment carries the exact measure/scoring version.
 3. **Complete in Helio** — client opens a structured assignment through an opaque, expiring link, submits answers, and receives clear confirmation. A response, any permitted score, and an awaiting-review state are created.
 4. **Upload a completed copy** — client opens the assignment, chooses upload, adds one or more permitted files, and submits. The files attach to the response, not to general Documents.
-5. **Review a returned item** — therapist opens it from Timeline or Today, reviews the response and explicitly marks it reviewed.
+5. **Review a returned item** — therapist opens it from Today, reviews the response and explicitly marks it reviewed. Review state does not create a Timeline event.
 6. **See a measure before a session** — Today shows “measure completed — review” until reviewed. The appointment preparation context may also surface that one relevant pending item.
 7. **Compare measures** — therapist opens a repeated measure’s history and sees completion dates, results and change calculated from the same measure identity/version family.
 8. **Discuss in session** — therapist explicitly records “discussed during session” against a completed assignment; the client timeline shows that meaningful event.
@@ -86,11 +86,11 @@ Built therapist routes/components:
 - `ResourcePicker.vue` — shared contextual picker. Selection is a single draft state shared by results and the **Selected** summary; optional instruction and due date appear only after an item is selected. It groups recent items, measures, worksheets, psychoeducation, sleep, behavioural experiments and custom resources.
 - `GET/POST /api/resources` — therapist-owned reusable resource creation and contextual picker data.
 - `GET/POST/PATCH /api/resource-assignments` — request creation, independently actionable request items, review queue and therapist review state.
-- `GET /api/client-timeline` — clinically meaningful exchange history for the selected client.
+- `GET /api/client-timeline` — the selected client's clinical narrative, filtered to meaningful clinical events.
 
 Built therapist review path:
 
-- `NeedsAttention.vue` opens a completed structured response, shows the submitted PHQ-9 answers and calculated total with a clear non-diagnostic boundary, and lets the therapist explicitly mark it reviewed. That removes the derived Today item and writes the meaningful reviewed Timeline event.
+- `NeedsAttention.vue` opens a completed structured response, shows the submitted PHQ-9 answers and calculated total with a clear non-diagnostic boundary, and lets the therapist explicitly mark it reviewed. That removes the derived Today item; the review is not a Timeline event.
 
 Next therapist component:
 
@@ -100,7 +100,7 @@ Client-facing route/components now built for the constrained first measure:
 
 - `/complete?token=…` — an opaque, assignment-specific link, hashed at rest and expiring after 30 days;
 - `ClientCompletion.vue` — mobile-first PHQ-9 completion and confirmation;
-- `POST /api/client-completion` — validates all nine answers, stores raw answers and calculated score, transitions the assignment to awaiting review, and writes one clinically meaningful Timeline event.
+- `POST /api/client-completion` — validates all nine answers, stores raw answers and calculated score, transitions the assignment to awaiting review, and writes one Timeline event containing the score rather than a completion status.
 
 This is not a general client portal: it does not expose the client record, library, attachments or other assignments. Email delivery is not yet implemented; the therapist copies the one-time assignment link through their chosen approved channel.
 
