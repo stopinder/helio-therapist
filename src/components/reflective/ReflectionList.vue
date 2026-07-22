@@ -1,10 +1,10 @@
 <template>
   <div>
-    <h3 class="text-h2 font-semibold mb-4 text-[#2c3e50]">
+    <h3 class="text-h2 font-semibold mb-4 text-ink">
       Past Reflections
     </h3>
 
-    <div v-if="!reflections.length" class="text-body text-slate-500 italic">
+    <div v-if="!reflections.length" class="text-body text-ink-muted italic">
       No reflections recorded yet.
     </div>
 
@@ -15,16 +15,16 @@
       <div
           v-for="reflection in reflections"
           :key="reflection.id"
-          class="bg-white border border-[#e5e7eb] rounded-md shadow-sm p-4 hover:shadow transition cursor-pointer"
+          class="bg-surface-elevated border border-border-muted rounded-control  p-4 hover:shadow transition-colors duration-standard ease-out cursor-pointer"
           @click="$emit('open', reflection)"
       >
         <div class="flex justify-between items-start mb-2">
-          <div class="text-body font-semibold text-[#2c3e50]">
+          <div class="text-body font-semibold text-ink">
             Reflection — {{ formatDate(reflection.date) }}
           </div>
         </div>
 
-        <div class="text-body text-slate-600 leading-relaxed line-clamp-3">
+        <div class="text-body text-ink-secondary leading-relaxed line-clamp-3">
           {{ reflection.text }}
         </div>
       </div>

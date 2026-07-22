@@ -1,22 +1,22 @@
 <!-- src/components/tools/CBTToolLoader.vue -->
 <template>
-  <div class="p-6 text-slate-600 max-w-4xl mx-auto">
+  <div class="p-6 text-ink-secondary max-w-4xl mx-auto">
     <!-- Header -->
     <div class="flex items-center justify-between mb-5">
       <div>
-        <h2 class="text-h3 font-semibold text-[#2c3e50]">
+        <h2 class="text-h3 font-semibold text-ink">
           CBT — {{ readableName }}
         </h2>
-        <p class="text-body-sm text-slate-500 mt-0.5">
+        <p class="text-body-sm text-ink-muted mt-0.5">
           Cognitive Behavioural Therapy Worksheet
         </p>
-        <p v-if="selectedClient" class="mt-1 text-body-sm text-slate-600 italic">
+        <p v-if="selectedClient" class="mt-1 text-body-sm text-ink-secondary italic">
           Working with: <span class="font-semibold">{{ selectedClient.name }}</span>
         </p>
       </div>
       <button
-          class="text-body-sm px-3 py-1.5 rounded-md border border-[#d9dce1]
-       text-[#3f4754] bg-white hover:bg-[#f5f7fa] transition"
+          class="text-body-sm px-3 py-1.5 rounded-control border border-border
+       text-ink-secondary bg-surface-elevated hover:bg-surface-subtle transition-colors duration-standard ease-out"
           v-on:click="goBack"
       >
         ← Back to Workspace
@@ -34,7 +34,7 @@
       />
     </div>
 
-    <div v-else class="text-body text-slate-500 italic">
+    <div v-else class="text-body text-ink-muted italic">
       Select a CBT template from the sidebar to begin.
     </div>
   </div>

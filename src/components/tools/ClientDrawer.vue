@@ -1,27 +1,27 @@
 <template>
-  <transition name="slide">
+  <transition-colors duration-standard ease-out name="slide">
     <aside
         v-if="isOpen"
-        class="w-72 bg-white border-l border-[#d9dce1] shadow-xl h-full fixed right-0 top-0 flex flex-col"
+        class="w-72 bg-surface-elevated border-l border-border shadow-overlay h-full fixed right-0 top-0 flex flex-col"
     >
-      <div class="h-14 flex items-center justify-between px-4 border-b border-[#d9dce1]">
+      <div class="h-14 flex items-center justify-between px-4 border-b border-border">
         <span class="text-body-long font-semibold">Client Info</span>
-        <button @click="toggle" class="text-[#3f4754] hover:text-black">✕</button>
+        <button @click="toggle" class="text-ink-secondary hover:text-ink">✕</button>
       </div>
 
       <div class="p-4 space-y-4 overflow-auto">
-        <div class="border border-[#d9dce1] rounded-md p-4 shadow-sm bg-white">
+        <div class="border border-border rounded-control p-4  bg-surface-elevated">
           <div class="text-body font-semibold">Alerts</div>
-          <p class="text-body-sm text-slate-600 mt-2">None yet.</p>
+          <p class="text-body-sm text-ink-secondary mt-2">None yet.</p>
         </div>
 
-        <div class="border border-[#d9dce1] rounded-md p-4 shadow-sm bg-white">
+        <div class="border border-border rounded-control p-4  bg-surface-elevated">
           <div class="text-body font-semibold">Tags</div>
-          <p class="text-body-sm text-slate-600 mt-2">No tags added.</p>
+          <p class="text-body-sm text-ink-secondary mt-2">No tags added.</p>
         </div>
       </div>
     </aside>
-  </transition>
+  </transition-colors duration-standard ease-out>
 </template>
 
 <script setup>

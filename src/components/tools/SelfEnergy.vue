@@ -1,8 +1,8 @@
 <!-- src/components/tools/SelfEnergy.vue -->
 <template>
-  <div class="p-6 bg-white rounded-lg shadow-sm border border-[#d9dce1] max-w-3xl mx-auto">
-    <h2 class="text-h3 font-semibold text-[#2c3e50] mb-3">Self-Energy Exercise</h2>
-    <p class="text-body text-slate-600 mb-4">
+  <div class="p-6 bg-surface-elevated rounded-panel  border border-border max-w-3xl mx-auto">
+    <h2 class="text-h3 font-semibold text-ink mb-3">Self-Energy Exercise</h2>
+    <p class="text-body text-ink-secondary mb-4">
       Reflect on Self-Energy qualities such as calm, curiosity, compassion, and clarity.
       Use this space to note what you observe or feel during the exercise.
     </p>
@@ -10,7 +10,7 @@
     <!-- Reflection form -->
     <div class="space-y-3">
       <div>
-        <label class="block text-body font-medium text-[#3f4754] mb-1">Date / Context</label>
+        <label class="block text-body font-medium text-ink-secondary mb-1">Date / Context</label>
         <input
             v-model="form.context"
             type="text"
@@ -20,7 +20,7 @@
       </div>
 
       <div>
-        <label class="block text-body font-medium text-[#3f4754] mb-1">Reflections</label>
+        <label class="block text-body font-medium text-ink-secondary mb-1">Reflections</label>
         <textarea
             v-model="form.reflections"
             rows="4"
@@ -30,7 +30,7 @@
       </div>
 
       <div>
-        <label class="block text-body font-medium text-[#3f4754] mb-1">Qualities Present</label>
+        <label class="block text-body font-medium text-ink-secondary mb-1">Qualities Present</label>
         <input
             v-model="form.qualities"
             type="text"
@@ -44,13 +44,13 @@
     <div class="flex justify-end gap-3 pt-4">
       <button
           v-on:click="generateInsight"
-          class="px-4 py-2 bg-[#2563eb] text-white rounded-md hover:bg-[#1d4ed8] text-body"
+          class="px-4 py-2 bg-action-link text-on-action rounded-control hover:bg-action-link-hover text-body"
       >
         Generate Insight
       </button>
       <button
           v-on:click="save"
-          class="px-4 py-2 bg-[#3f4754] text-white rounded-md hover:bg-[#2f3540] text-body"
+          class="px-4 py-2 bg-action-primary text-on-action rounded-control hover:bg-action-primary-hover text-body"
       >
         Save Reflection
       </button>
@@ -101,8 +101,8 @@ function generateInsight() {
 
 <style scoped>
 .cbt-input {
-  @apply w-full border border-[#d9dce1] rounded-md px-3 py-2 text-body
-  focus:outline-none focus:ring-2 focus:ring-[#a8b0c1] bg-[#fafbfc];
+  @apply w-full border border-border rounded-control px-3 py-2 text-body
+  focus:outline-none focus:ring-2 focus:ring-state-focus-ring bg-surface-subtle;
 }
 </style>
 

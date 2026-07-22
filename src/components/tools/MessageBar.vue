@@ -1,6 +1,6 @@
 <template>
   <form
-      class="flex items-center bg-white border border-[#d9dce1] rounded-md shadow-sm"
+      class="flex items-center bg-surface-elevated border border-border rounded-control "
       @submit.prevent="onSubmit"
   >
     <input
@@ -11,13 +11,13 @@
     />
     <button
         type="submit"
-        class="px-4 text-[#3f4754] hover:text-black text-body"
+        class="px-4 text-ink-secondary hover:text-ink text-body"
     >
       ↵
     </button>
     <!-- inside MessageBar.vue -->
     <button
-        class="h-9 w-9 flex items-center justify-center rounded-md border border-[#d9dce1] text-[#6b7280] bg-[#f9fafb] hover:bg-[#f1f2f4] transition cursor-not-allowed opacity-60"
+        class="h-9 w-9 flex items-center justify-center rounded-control border border-border text-ink-muted bg-surface-subtle hover:bg-surface-muted transition-colors duration-standard ease-out cursor-not-allowed opacity-60"
         disabled
         title="Voice input (coming soon)"
     >

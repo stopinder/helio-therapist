@@ -1,12 +1,12 @@
 <template>
-  <main v-if="authLoading" class="min-h-screen bg-slate-100 flex items-center justify-center p-4">
-    <p class="text-body text-slate-500">Opening MindWorks…</p>
+  <main v-if="authLoading" class="min-h-screen bg-surface-muted flex items-center justify-center p-4">
+    <p class="text-body text-ink-muted">Opening MindWorks…</p>
   </main>
 
-  <main v-else-if="recovering" class="min-h-screen bg-slate-100 flex items-center justify-center px-4 py-8 sm:p-6">
-    <section class="w-full max-w-md rounded-2xl bg-white border border-slate-200 shadow-sm p-6 sm:p-8">
-      <h1 class="text-h1 font-semibold text-slate-800">Choose a new password</h1>
-      <p class="mt-2 text-body text-slate-500">Use at least 8 characters.</p>
+  <main v-else-if="recovering" class="min-h-screen bg-surface-muted flex items-center justify-center px-4 py-8 sm:p-6">
+    <section class="w-full max-w-md rounded-panel bg-surface-elevated border border-border-muted  p-6 sm:p-8">
+      <h1 class="text-h1 font-semibold text-ink">Choose a new password</h1>
+      <p class="mt-2 text-body text-ink-muted">Use at least 8 characters.</p>
       <form class="mt-6 space-y-4" @submit.prevent="updatePassword">
         <div class="relative">
           <input
@@ -20,21 +20,21 @@
             autocapitalize="none"
             spellcheck="false"
             aria-label="New password"
-            class="min-h-12 w-full rounded-lg border border-slate-300 px-3 pr-16 text-slate-900 caret-blue-600 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+            class="min-h-12 w-full rounded-panel border border-border px-3 pr-16 text-ink caret-action-link outline-none focus:border-action-link focus:ring-2 focus:ring-state-selected"
           />
           <button
             type="button"
-            class="absolute inset-y-0 right-0 min-w-14 px-3 text-body font-medium text-blue-600"
+            class="absolute inset-y-0 right-0 min-w-14 px-3 text-body font-medium text-action-link"
             @click="showNewPassword = !showNewPassword"
           >
             {{ showNewPassword ? 'Hide' : 'Show' }}
           </button>
         </div>
-        <button type="submit" :disabled="submitting" class="min-h-12 w-full rounded-lg bg-blue-600 px-4 font-medium text-white disabled:opacity-50">
+        <button type="submit" :disabled="submitting" class="min-h-12 w-full rounded-panel bg-action-link px-4 font-medium text-on-action disabled:opacity-50">
           {{ submitting ? 'Saving…' : 'Save new password' }}
         </button>
       </form>
-      <p v-if="errorMessage" class="mt-4 rounded-lg bg-red-50 p-3 text-body text-red-700">{{ errorMessage }}</p>
+      <p v-if="errorMessage" class="mt-4 rounded-panel bg-state-danger-surface p-3 text-body text-state-danger">{{ errorMessage }}</p>
     </section>
   </main>
 
@@ -42,26 +42,26 @@
 
   <App v-else-if="session" />
 
-  <main v-else class="min-h-screen bg-slate-100 flex items-center justify-center px-4 py-8 sm:p-6">
-    <section class="w-full max-w-md rounded-2xl bg-white border border-slate-200 shadow-sm p-6 sm:p-8">
-      <h1 class="text-h1 font-semibold text-slate-800">MindWorks</h1>
-      <p class="mt-2 text-body text-slate-500">
+  <main v-else class="min-h-screen bg-surface-muted flex items-center justify-center px-4 py-8 sm:p-6">
+    <section class="w-full max-w-md rounded-panel bg-surface-elevated border border-border-muted  p-6 sm:p-8">
+      <h1 class="text-h1 font-semibold text-ink">MindWorks</h1>
+      <p class="mt-2 text-body text-ink-muted">
         {{ mode === 'signup' ? 'Create your therapist workspace.' : 'Sign in to your therapist workspace.' }}
       </p>
 
-      <div class="mt-6 grid grid-cols-2 rounded-lg bg-slate-100 p-1" role="tablist" aria-label="Account access">
+      <div class="mt-6 grid grid-cols-2 rounded-panel bg-surface-muted p-1" role="tablist" aria-label="Account access">
         <button
           type="button"
-          class="min-h-11 rounded-md px-3 text-body font-medium transition"
-          :class="mode === 'signin' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500'"
+          class="min-h-11 rounded-control px-3 text-body font-medium transition-colors duration-standard ease-out"
+          :class="mode === 'signin' ? 'bg-surface-elevated text-ink ' : 'text-ink-muted'"
           @click="setMode('signin')"
         >
           Sign in
         </button>
         <button
           type="button"
-          class="min-h-11 rounded-md px-3 text-body font-medium transition"
-          :class="mode === 'signup' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500'"
+          class="min-h-11 rounded-control px-3 text-body font-medium transition-colors duration-standard ease-out"
+          :class="mode === 'signup' ? 'bg-surface-elevated text-ink ' : 'text-ink-muted'"
           @click="setMode('signup')"
         >
           Create account
@@ -70,29 +70,29 @@
 
       <form class="mt-6 space-y-4" @submit.prevent="submit">
         <label v-if="mode === 'signup'" class="block">
-          <span class="text-body font-medium text-slate-700">Full name</span>
+          <span class="text-body font-medium text-ink-secondary">Full name</span>
           <input
             v-model.trim="fullName"
             type="text"
             required
             autocomplete="name"
-            class="mt-2 min-h-12 w-full rounded-lg border border-slate-300 bg-white px-3 text-slate-900 caret-blue-600 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+            class="mt-2 min-h-12 w-full rounded-panel border border-border bg-surface-elevated px-3 text-ink caret-action-link outline-none focus:border-action-link focus:ring-2 focus:ring-state-selected"
           />
         </label>
 
         <label class="block">
-          <span class="text-body font-medium text-slate-700">Email address</span>
+          <span class="text-body font-medium text-ink-secondary">Email address</span>
           <input
             v-model.trim="email"
             type="email"
             required
             autocomplete="email"
-            class="mt-2 min-h-12 w-full rounded-lg border border-slate-300 bg-white px-3 text-slate-900 caret-blue-600 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+            class="mt-2 min-h-12 w-full rounded-panel border border-border bg-surface-elevated px-3 text-ink caret-action-link outline-none focus:border-action-link focus:ring-2 focus:ring-state-selected"
           />
         </label>
 
         <label class="block">
-          <span class="text-body font-medium text-slate-700">Password</span>
+          <span class="text-body font-medium text-ink-secondary">Password</span>
           <div class="relative mt-2">
             <input
               id="account-password"
@@ -104,23 +104,23 @@
               autocomplete="off"
               autocapitalize="none"
               spellcheck="false"
-              class="min-h-12 w-full rounded-lg border border-slate-300 px-3 pr-16 text-slate-900 caret-blue-600 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+              class="min-h-12 w-full rounded-panel border border-border px-3 pr-16 text-ink caret-action-link outline-none focus:border-action-link focus:ring-2 focus:ring-state-selected"
             />
             <button
               type="button"
-              class="absolute inset-y-0 right-0 min-w-14 px-3 text-body font-medium text-blue-600"
+              class="absolute inset-y-0 right-0 min-w-14 px-3 text-body font-medium text-action-link"
               @click="showPassword = !showPassword"
             >
               {{ showPassword ? 'Hide' : 'Show' }}
             </button>
           </div>
-          <span v-if="mode === 'signup'" class="mt-1 block text-caption text-slate-400">At least 8 characters</span>
+          <span v-if="mode === 'signup'" class="mt-1 block text-caption text-ink-subtle">At least 8 characters</span>
         </label>
 
         <button
           type="submit"
           :disabled="submitting"
-          class="min-h-12 w-full rounded-lg bg-blue-600 px-4 font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+          class="min-h-12 w-full rounded-panel bg-action-link px-4 font-medium text-on-action hover:bg-action-link-hover disabled:opacity-50"
         >
           {{ submitting ? 'Please wait…' : mode === 'signup' ? 'Create account' : 'Sign in' }}
         </button>
@@ -130,14 +130,14 @@
         v-if="mode === 'signin'"
         type="button"
         :disabled="submitting || !email"
-        class="mt-4 min-h-11 w-full text-body font-medium text-blue-600 disabled:text-slate-300"
+        class="mt-4 min-h-11 w-full text-body font-medium text-action-link disabled:text-ink-subtle"
         @click="resetPassword"
       >
         Forgot your password?
       </button>
 
-      <p v-if="message" class="mt-4 rounded-lg bg-green-50 p-3 text-body text-green-700">{{ message }}</p>
-      <p v-if="errorMessage" class="mt-4 rounded-lg bg-red-50 p-3 text-body text-red-700">{{ errorMessage }}</p>
+      <p v-if="message" class="mt-4 rounded-panel bg-state-success-surface p-3 text-body text-state-success">{{ message }}</p>
+      <p v-if="errorMessage" class="mt-4 rounded-panel bg-state-danger-surface p-3 text-body text-state-danger">{{ errorMessage }}</p>
     </section>
   </main>
 </template>

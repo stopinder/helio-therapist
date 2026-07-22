@@ -3,30 +3,30 @@
     <!-- Header -->
     <button
         type="button"
-        class="w-full text-left px-4 py-2.5 text-overline uppercase tracking-wide font-semibold text-[#475569] hover:bg-[#f1f5f9] transition rounded-md flex justify-between items-center"
+        class="w-full text-left px-4 py-2.5 text-overline uppercase tracking-wide font-semibold text-ink-muted hover:bg-surface-subtle transition-colors duration-standard ease-out rounded-control flex justify-between items-center"
         @click="toggle"
         :aria-expanded="open.toString()"
     >
       <span>{{ title }}</span>
       <span
           v-if="open"
-          class="text-slate-400 text-body-sm"
+          class="text-ink-subtle text-body-sm"
       >−</span>
       <span
           v-else
-          class="text-slate-400 text-body-sm"
+          class="text-ink-subtle text-body-sm"
       >+</span>
     </button>
 
     <!-- Body -->
-    <transition name="slide-vert">
+    <transition-colors duration-standard ease-out name="slide-vert">
       <div
           v-if="open"
-          class="mt-2 pl-4 border-l border-[#e5e7eb] space-y-2"
+          class="mt-2 pl-4 border-l border-border-muted space-y-2"
       >
         <slot />
       </div>
-    </transition>
+    </transition-colors duration-standard ease-out>
   </div>
 </template>
 

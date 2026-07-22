@@ -1,14 +1,14 @@
 <!-- src/components/tools/PartsMap.vue -->
 <template>
-  <div class="p-6 bg-white rounded-lg shadow-sm border border-[#d9dce1] max-w-3xl mx-auto">
-    <h2 class="text-h3 font-semibold text-[#2c3e50] mb-2">IFS Parts Map</h2>
-    <p class="text-body text-slate-600 mb-4">
+  <div class="p-6 bg-surface-elevated rounded-panel  border border-border max-w-3xl mx-auto">
+    <h2 class="text-h3 font-semibold text-ink mb-2">IFS Parts Map</h2>
+    <p class="text-body text-ink-secondary mb-4">
       Visualize internal parts, roles, and relationships. Interactive mapping coming soon.
     </p>
 
     <div class="space-y-4">
       <div>
-        <label class="block text-body font-medium text-[#3f4754] mb-1">
+        <label class="block text-body font-medium text-ink-secondary mb-1">
           Part Name
         </label>
         <input
@@ -20,7 +20,7 @@
       </div>
 
       <div>
-        <label class="block text-body font-medium text-[#3f4754] mb-1">
+        <label class="block text-body font-medium text-ink-secondary mb-1">
           Role / Function
         </label>
         <textarea
@@ -32,7 +32,7 @@
       </div>
 
       <div>
-        <label class="block text-body font-medium text-[#3f4754] mb-1">
+        <label class="block text-body font-medium text-ink-secondary mb-1">
           Related Parts
         </label>
         <input
@@ -47,13 +47,13 @@
     <div class="flex justify-end gap-3 pt-4">
       <button
           v-on:click="generateInsight"
-          class="px-4 py-2 bg-[#2563eb] text-white rounded-md hover:bg-[#1d4ed8] text-body"
+          class="px-4 py-2 bg-action-link text-on-action rounded-control hover:bg-action-link-hover text-body"
       >
         Generate Insight
       </button>
       <button
           v-on:click="save"
-          class="px-4 py-2 bg-[#3f4754] text-white rounded-md hover:bg-[#2f3540] text-body"
+          class="px-4 py-2 bg-action-primary text-on-action rounded-control hover:bg-action-primary-hover text-body"
       >
         Save
       </button>
@@ -104,7 +104,7 @@ function generateInsight() {
 
 <style scoped>
 .cbt-input {
-  @apply w-full border border-[#d9dce1] rounded-md px-3 py-2 text-body
-  focus:outline-none focus:ring-2 focus:ring-[#a8b0c1] bg-[#fafbfc];
+  @apply w-full border border-border rounded-control px-3 py-2 text-body
+  focus:outline-none focus:ring-2 focus:ring-state-focus-ring bg-surface-subtle;
 }
 </style>

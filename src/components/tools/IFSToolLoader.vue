@@ -1,19 +1,19 @@
 <!-- src/components/tools/IFSToolLoader.vue -->
 <template>
-  <div class="p-6 text-slate-600 max-w-4xl mx-auto">
+  <div class="p-6 text-ink-secondary max-w-4xl mx-auto">
     <!-- Header -->
     <div class="flex items-center justify-between mb-5">
       <div>
-        <h2 class="text-h3 font-semibold text-[#2c3e50]">
+        <h2 class="text-h3 font-semibold text-ink">
           IFS — {{ readableName }}
         </h2>
-        <p class="text-body-sm text-slate-500 mt-0.5">
+        <p class="text-body-sm text-ink-muted mt-0.5">
           Internal Family Systems Interactive Tool
         </p>
       </div>
       <button
-          class="text-body-sm px-3 py-1.5 rounded-md border border-[#d9dce1]
-               text-[#3f4754] bg-white hover:bg-[#f5f7fa] transition"
+          class="text-body-sm px-3 py-1.5 rounded-control border border-border
+               text-ink-secondary bg-surface-elevated hover:bg-surface-subtle transition-colors duration-standard ease-out"
           v-on:click="goBack"
       >
         ← Back to Workspace
@@ -29,7 +29,7 @@
       />
     </div>
 
-    <div v-else class="text-body text-slate-500 italic">
+    <div v-else class="text-body text-ink-muted italic">
       Select an IFS tool from the sidebar to begin.
     </div>
   </div>

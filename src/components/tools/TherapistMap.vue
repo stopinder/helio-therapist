@@ -1,15 +1,15 @@
 <template>
-  <div class="w-full h-full bg-[#f9fafb] relative select-none overflow-hidden">
+  <div class="w-full h-full bg-surface-subtle relative select-none overflow-hidden">
     <!-- Toolbar -->
-    <div class="absolute top-3 left-3 z-10 flex gap-2 bg-white border border-gray-300 rounded-md shadow-sm p-2">
+    <div class="absolute top-3 left-3 z-10 flex gap-2 bg-surface-elevated border border-border rounded-control  p-2">
       <button
-          class="text-body-sm px-3 py-1.5 rounded-md border border-gray-300 bg-white hover:bg-gray-100 transition"
+          class="text-body-sm px-3 py-1.5 rounded-control border border-border bg-surface-elevated hover:bg-surface-muted transition-colors duration-standard ease-out"
           @click="addNode"
       >
         + Add Node
       </button>
       <button
-          class="text-body-sm px-3 py-1.5 rounded-md border border-gray-300 bg-white hover:bg-gray-100 transition"
+          class="text-body-sm px-3 py-1.5 rounded-control border border-border bg-surface-elevated hover:bg-surface-muted transition-colors duration-standard ease-out"
           @click="clearAll"
       >
         Clear All
@@ -36,19 +36,19 @@
     <div
         v-for="node in nodes"
         :key="node.id"
-        class="absolute rounded-md shadow-sm border text-center cursor-pointer text-body-sm font-medium transition-colors"
+        class="absolute rounded-control  border text-center cursor-pointer text-body-sm font-medium transition-colors"
         :style="{
         top: node.y + 'px',
         left: node.x + 'px',
         width: nodeSize + 'px',
         height: nodeSize + 'px',
         backgroundColor: node.color,
-        borderColor: selectedNode?.id === node.id ? '#2563eb' : '#d1d5db',
+        borderColor: selectedNode?.id === node.id ? 'var(--action-link)' : '#d1d5db',
       }"
         @mousedown="startDrag($event, node)"
         @click="handleNodeClick(node, $event)"
     >
-      <div class="flex items-center justify-center w-full h-full p-2 text-slate-700">
+      <div class="flex items-center justify-center w-full h-full p-2 text-ink-secondary">
         {{ node.label }}
       </div>
     </div>

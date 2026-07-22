@@ -1,29 +1,29 @@
 <template>
-  <transition name="fade">
+  <transition-colors duration-standard ease-out name="fade">
     <div
         v-if="open && resource"
-        class="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50"
+        class="fixed inset-0 bg-backdrop backdrop-blur-sm flex items-center justify-center z-50"
     >
       <!-- Modal Container -->
       <div
-          class="bg-white rounded-xl shadow-2xl w-[94%] max-w-2xl max-h-[88vh] flex flex-col overflow-hidden border border-[#e5e7eb]"
+          class="bg-surface-elevated rounded-panel shadow-overlay w-[94%] max-w-2xl max-h-[88vh] flex flex-col overflow-hidden border border-border-muted"
       >
         <!-- Header -->
-        <div class="flex items-start justify-between p-5 border-b border-[#e5e7eb] bg-[#fafbfc]">
+        <div class="flex items-start justify-between p-5 border-b border-border-muted bg-surface-subtle">
           <div class="flex items-center gap-3 pr-8">
             <div class="text-h1 leading-none">{{ getIcon(resource.type) }}</div>
             <div>
-              <h2 class="text-h3 font-semibold text-[#2c3e50] leading-snug">
+              <h2 class="text-h3 font-semibold text-ink leading-snug">
                 {{ resource.title }}
               </h2>
-              <p class="text-body-sm text-slate-500 mt-0.5">
+              <p class="text-body-sm text-ink-muted mt-0.5">
                 {{ getTypeLabel(resource.type) }}
                 <span v-if="resource.createdAt"> · {{ formatDate(resource.createdAt) }}</span>
               </p>
             </div>
           </div>
           <button
-              class="text-slate-500 hover:text-slate-700 text-h3 leading-none"
+              class="text-ink-muted hover:text-ink-secondary text-h3 leading-none"
               @click="$emit('close')"
               aria-label="Close preview"
           >
@@ -32,32 +32,32 @@
         </div>
 
         <!-- Content -->
-        <div class="flex-1 overflow-y-auto p-5 bg-[#f9fafb]">
+        <div class="flex-1 overflow-y-auto p-5 bg-surface-subtle">
           <template v-if="resource.type === 'audio'">
-            <audio :src="resource.url" controls class="w-full rounded-md"></audio>
+            <audio :src="resource.url" controls class="w-full rounded-control"></audio>
           </template>
 
           <template v-else-if="resource.type === 'video'">
-            <video :src="resource.url" controls class="w-full rounded-md shadow-sm"></video>
+            <video :src="resource.url" controls class="w-full rounded-control "></video>
           </template>
 
           <template v-else-if="resource.type === 'pdf'">
             <iframe
                 :src="resource.url"
-                class="w-full h-[65vh] border rounded-md shadow-inner bg-white"
+                class="w-full h-[65vh] border rounded-control shadow-elevated bg-surface-elevated"
             ></iframe>
           </template>
 
           <template v-else>
             <div class="flex flex-col items-center justify-center text-center py-8">
               <div class="text-4xl mb-3">🔗</div>
-              <p class="text-body text-slate-600 mb-3">
+              <p class="text-body text-ink-secondary mb-3">
                 This is a link resource.
               </p>
               <a
                   :href="resource.url"
                   target="_blank"
-                  class="text-body-sm text-[#2563eb] hover:underline"
+                  class="text-body-sm text-action-link hover:underline"
               >
                 Open link in new tab
               </a>
@@ -66,9 +66,9 @@
         </div>
 
         <!-- Footer -->
-        <div class="flex justify-end gap-2 p-4 border-t border-[#e5e7eb] bg-white">
+        <div class="flex justify-end gap-2 p-4 border-t border-border-muted bg-surface-elevated">
           <button
-              class="px-4 py-2 rounded-md border border-[#d9dce1] text-[#3f4754] hover:bg-[#f5f7fa] transition"
+              class="px-4 py-2 rounded-control border border-border text-ink-secondary hover:bg-surface-subtle transition-colors duration-standard ease-out"
               @click="$emit('close')"
           >
             Close
@@ -76,14 +76,14 @@
 
           <button
               v-if="resource?.url"
-              class="px-4 py-2 rounded-md border border-[#d9dce1] text-[#3f4754] hover:bg-[#f5f7fa] transition"
+              class="px-4 py-2 rounded-control border border-border text-ink-secondary hover:bg-surface-subtle transition-colors duration-standard ease-out"
               @click="downloadResource"
           >
             Download
           </button>
 
           <button
-              class="px-4 py-2 rounded-md bg-[#3f4754] text-white hover:bg-[#2f3540] transition"
+              class="px-4 py-2 rounded-control bg-action-primary text-on-action hover:bg-action-primary-hover transition-colors duration-standard ease-out"
               @click="$emit('export', resource)"
           >
             Export Resource
@@ -91,7 +91,7 @@
         </div>
       </div>
     </div>
-  </transition>
+  </transition-colors duration-standard ease-out>
 </template>
 
 <script setup>

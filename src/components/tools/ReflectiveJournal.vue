@@ -1,10 +1,10 @@
 <template>
   <div class="max-w-3xl mx-auto space-y-4">
-    <div ref="container" class="bg-white border border-[#e5e7eb] rounded-md p-5 shadow-sm">
+    <div ref="container" class="bg-surface-elevated border border-border-muted rounded-control p-5 ">
       <div class="flex items-center justify-between mb-3">
-        <h2 class="text-h3 font-semibold text-[#2c3e50]">New Reflection</h2>
+        <h2 class="text-h3 font-semibold text-ink">New Reflection</h2>
         <button
-            class="text-body-sm px-3 py-1.5 rounded-md border border-[#d9dce1] text-[#3f4754] bg-white hover:bg-[#f5f7fa] transition"
+            class="text-body-sm px-3 py-1.5 rounded-control border border-border text-ink-secondary bg-surface-elevated hover:bg-surface-subtle transition-colors duration-standard ease-out"
             @click="$emit('close')"
         >
           Back to Workspace
@@ -13,65 +13,65 @@
 
       <!-- Inputs -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
-        <label class="text-body-sm text-slate-600">
+        <label class="text-body-sm text-ink-secondary">
           Client (optional)
           <select
               v-model="form.clientId"
-              class="mt-1 w-full text-body border border-[#d9dce1] rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-[#2563eb]"
+              class="mt-1 w-full text-body border border-border rounded-control p-2 focus:outline-none focus:ring-2 focus:ring-state-focus-ring"
           >
             <option :value="null">— None —</option>
             <option v-for="c in clients" :key="c.id" :value="c.id">{{ c.name }}</option>
           </select>
         </label>
 
-        <label class="text-body-sm text-slate-600">
+        <label class="text-body-sm text-ink-secondary">
           Focus
           <input
               v-model.trim="form.focus"
               placeholder="e.g., supervision, boundaries, self-energy"
-              class="mt-1 w-full text-body border border-[#d9dce1] rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-[#2563eb]"
+              class="mt-1 w-full text-body border border-border rounded-control p-2 focus:outline-none focus:ring-2 focus:ring-state-focus-ring"
           />
         </label>
 
-        <label class="text-body-sm text-slate-600">
+        <label class="text-body-sm text-ink-secondary">
           Mood (1–5)
           <input
               v-model.number="form.mood"
               type="number"
               min="1" max="5"
-              class="mt-1 w-full text-body border border-[#d9dce1] rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-[#2563eb]"
+              class="mt-1 w-full text-body border border-border rounded-control p-2 focus:outline-none focus:ring-2 focus:ring-state-focus-ring"
           />
         </label>
 
-        <label class="text-body-sm text-slate-600">
+        <label class="text-body-sm text-ink-secondary">
           Tags (comma-separated)
           <input
               v-model.trim="tagsText"
               placeholder="presence, burden, countertransference"
-              class="mt-1 w-full text-body border border-[#d9dce1] rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-[#2563eb]"
+              class="mt-1 w-full text-body border border-border rounded-control p-2 focus:outline-none focus:ring-2 focus:ring-state-focus-ring"
           />
         </label>
       </div>
 
-      <label class="block text-body-sm text-slate-600">
+      <label class="block text-body-sm text-ink-secondary">
         Reflection
         <textarea
             ref="textarea"
             v-model.trim="form.text"
             placeholder="Write your reflection..."
-            class="mt-1 w-full h-48 border border-[#d9dce1] rounded-md p-3 text-body focus:outline-none focus:ring-2 focus:ring-[#2563eb]"
+            class="mt-1 w-full h-48 border border-border rounded-control p-3 text-body focus:outline-none focus:ring-2 focus:ring-state-focus-ring"
         ></textarea>
       </label>
 
       <!-- Buttons -->
       <div class="flex items-center justify-between mt-4">
-        <div class="text-caption text-slate-500">
+        <div class="text-caption text-ink-muted">
           Saved locally. You can generate an AI summary for deeper insights.
         </div>
         <div class="flex gap-2">
           <!-- Whisper mic placeholder -->
           <button
-              class="text-body-sm px-3 py-1.5 rounded-md border border-[#d9dce1] text-[#a1a1aa] bg-white cursor-not-allowed"
+              class="text-body-sm px-3 py-1.5 rounded-control border border-border text-ink-subtle bg-surface-elevated cursor-not-allowed"
               disabled
               title="Voice reflection (coming soon)"
           >
@@ -79,7 +79,7 @@
           </button>
 
           <button
-              class="text-body-sm px-3 py-1.5 rounded-md border border-[#d9dce1] text-[#2563eb] bg-white hover:bg-[#f5f7fa] transition"
+              class="text-body-sm px-3 py-1.5 rounded-control border border-border text-action-link bg-surface-elevated hover:bg-surface-subtle transition-colors duration-standard ease-out"
               :disabled="!form.text"
               @click="emitInsight"
           >
@@ -87,7 +87,7 @@
           </button>
 
           <button
-              class="text-body-sm px-3 py-1.5 rounded-md border border-[#d9dce1] text-white bg-[#3f4754] hover:bg-[#2f3540] transition disabled:opacity-50 disabled:cursor-not-allowed"
+              class="text-body-sm px-3 py-1.5 rounded-control border border-border text-on-action bg-action-primary hover:bg-action-primary-hover transition-colors duration-standard ease-out disabled:opacity-50 disabled:cursor-not-allowed"
               :disabled="!form.text"
               @click="save"
           >
@@ -97,15 +97,15 @@
       </div>
 
       <!-- Inline confirmation -->
-      <transition name="fade">
+      <transition-colors duration-standard ease-out name="fade">
         <div
             v-if="saved"
-            class="text-body-sm text-green-600 mt-2 text-right"
+            class="text-body-sm text-state-success mt-2 text-right"
             aria-live="polite"
         >
           ✅ Saved!
         </div>
-      </transition>
+      </transition-colors duration-standard ease-out>
     </div>
   </div>
 </template>

@@ -2,12 +2,12 @@
   <section>
     <!-- Header -->
     <button
-        class="w-full flex justify-between items-center text-caption text-slate-haze uppercase tracking-wider mb-2 px-2 py-1 hover:text-fog-white transition"
+        class="w-full flex justify-between items-center text-caption text-ink-muted uppercase tracking-wider mb-2 px-2 py-1 hover:text-on-action transition-colors duration-standard ease-out"
         @click="isOpen = !isOpen"
     >
       <span>Clients</span>
       <ChevronDownIcon
-          class="w-4 h-4 transition-transform duration-200"
+          class="w-4 h-4 transition-transform duration-slow"
           :class="{ 'rotate-180': isOpen }"
       />
     </button>
@@ -18,22 +18,22 @@
         v-model="search"
         type="text"
         placeholder="Search..."
-        class="w-full text-body px-3 py-1.5 rounded bg-celestial-dusk text-fog-white placeholder-slate-haze border border-slate-700 mb-2 focus:outline-none focus:ring-1 focus:ring-violet-glow"
+        class="w-full text-body px-3 py-1.5 rounded bg-ink text-on-action placeholder-ink-muted border border-border-strong mb-2 focus:outline-none focus:ring-1 focus:ring-state-focus-ring"
     />
 
     <!-- Clients List & Add -->
-    <transition name="fade">
+    <transition-colors duration-standard ease-out name="fade">
       <div v-show="isOpen" class="space-y-1">
         <ul class="space-y-1 max-h-48 overflow-y-auto pr-1 scrollbar-hide">
           <li
               v-for="client in filteredClients"
               :key="client.id"
-              class="flex justify-between items-center px-3 py-2 rounded-lg hover:bg-white/5 transition cursor-pointer"
+              class="flex justify-between items-center px-3 py-2 rounded-panel hover:bg-surface-elevated/5 transition-colors duration-standard ease-out cursor-pointer"
               @click="selectClient(client)"
           >
             <span class="text-body">{{ client.name }}</span>
             <TrashIcon
-                class="w-4 h-4 text-red-400 hover:text-red-300"
+                class="w-4 h-4 text-state-danger hover:text-state-danger"
                 @click.stop="confirmDelete(client)"
             />
           </li>
@@ -42,13 +42,13 @@
         <!-- Add Client Button -->
         <button
             @click="addClient"
-            class="w-full flex items-center justify-center gap-2 px-3 py-2 text-body text-violet-glow hover:text-fog-white hover:bg-white/5 rounded-lg transition"
+            class="w-full flex items-center justify-center gap-2 px-3 py-2 text-body text-action-link hover:text-on-action hover:bg-surface-elevated/5 rounded-panel transition-colors duration-standard ease-out"
         >
           <PlusIcon class="w-5 h-5" />
           Add Client
         </button>
       </div>
-    </transition>
+    </transition-colors duration-standard ease-out>
 
     <!-- Confirm Delete Modal -->
     <ConfirmDialog

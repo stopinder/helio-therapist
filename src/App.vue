@@ -1,7 +1,7 @@
 <template>
-  <div class="flex h-screen bg-surface-canvas text-[#2c3e50] overflow-hidden">
+  <div class="flex h-screen bg-surface-canvas text-ink overflow-hidden">
     <!-- Left Sidebar: Desktop (Fixed) / Mobile (Drawer) -->
-    <transition name="slide">
+    <transition-colors duration-standard ease-out name="slide">
       <LeftSidebar
           v-if="isSidebarOpen || isDesktop"
           class="fixed md:relative z-50 md:z-40 shrink-0 w-64 bg-surface border-r border-border h-full shadow-overlay md:shadow-none"
@@ -23,12 +23,12 @@
           @add-resource="handleAddResource"
           @close-sidebar="isSidebarOpen = false"
       />
-    </transition>
+    </transition-colors duration-standard ease-out>
 
     <!-- Sidebar Backdrop for Mobile -->
     <div
         v-if="!isDesktop && isSidebarOpen"
-        class="fixed inset-0 bg-black/20 backdrop-blur-sm z-40 md:hidden"
+        class="fixed inset-0 bg-backdrop backdrop-blur-sm z-40 md:hidden"
         @click="isSidebarOpen = false"
     ></div>
 
@@ -41,7 +41,7 @@
         <div class="flex items-center gap-2 md:gap-3 min-w-0">
           <!-- Mobile Menu Button -->
           <button
-              class="md:hidden p-2 -ml-2 text-slate-600 rounded-md interaction-control focus-visible:outline-none"
+              class="md:hidden p-2 -ml-2 text-ink-secondary rounded-control interaction-control focus-visible:outline-none"
               @click="isSidebarOpen = true"
               aria-label="Open menu"
           >
@@ -50,13 +50,13 @@
             </svg>
           </button>
 
-          <div class="flex items-center gap-1 md:gap-2 type-h3 tracking-tight text-[#2c3e50] truncate">
+          <div class="flex items-center gap-1 md:gap-2 type-h3 tracking-tight text-ink truncate">
             <span class="truncate">Therapist Workspace</span>
-            <span v-if="isInSession" class="text-slate-400 mx-0.5 md:mx-1 shrink-0">·</span>
-              <span v-if="isInSession" class="flex items-center gap-1 type-caption text-slate-500 shrink-0">
+            <span v-if="isInSession" class="text-ink-subtle mx-0.5 md:mx-1 shrink-0">·</span>
+              <span v-if="isInSession" class="flex items-center gap-1 type-caption text-ink-muted shrink-0">
               <span
-                  class="inline-block h-2 w-2 rounded-full"
-                  :class="isInSession ? 'bg-green-500' : 'bg-slate-400'"
+                  class="inline-block h-2 w-2 rounded-pill"
+                  :class="isInSession ? 'bg-state-success' : 'bg-state-disabled'"
               ></span>
               In session
             </span>
@@ -65,8 +65,8 @@
 
         <div class="flex items-center gap-1.5 md:gap-3">
           <button
-              class="hidden sm:block type-body-sm px-3 py-1.5 rounded-md border border-border interaction-control focus-visible:outline-none"
-              :class="showClientDrawer ? 'state-selected text-black border-border-strong' : 'text-[#3f4754] bg-surface-elevated'"
+              class="hidden sm:block type-body-sm px-3 py-1.5 rounded-control border border-border interaction-control focus-visible:outline-none"
+              :class="showClientDrawer ? 'state-selected text-ink border-border-strong' : 'text-ink-secondary bg-surface-elevated'"
               :disabled="!selectedClient"
               @click="showClientDrawer = !showClientDrawer"
               aria-label="Client Context"
@@ -78,7 +78,7 @@
           
           <!-- Mobile client icon button -->
           <button
-              class="sm:hidden h-9 w-9 flex items-center justify-center rounded-md border border-border text-[#3f4754] interaction-control type-body focus-visible:outline-none"
+              class="sm:hidden h-9 w-9 flex items-center justify-center rounded-control border border-border text-ink-secondary interaction-control type-body focus-visible:outline-none"
               :class="{ 'state-selected border-border-strong': showClientDrawer }"
               :disabled="!selectedClient"
               @click="showClientDrawer = !showClientDrawer"
@@ -88,7 +88,7 @@
           </button>
 
           <button
-              class="h-9 w-9 flex items-center justify-center rounded-md border border-border text-[#3f4754] interaction-control type-body focus-visible:outline-none"
+              class="h-9 w-9 flex items-center justify-center rounded-control border border-border text-ink-secondary interaction-control type-body focus-visible:outline-none"
               aria-label="Calendar"
               @click="selectedNav = 'Today'"
           >
@@ -96,7 +96,7 @@
           </button>
 
           <button
-              class="h-9 w-9 flex items-center justify-center rounded-md border border-border text-[#3f4754] interaction-control type-body focus-visible:outline-none"
+              class="h-9 w-9 flex items-center justify-center rounded-control border border-border text-ink-secondary interaction-control type-body focus-visible:outline-none"
               :class="{ 'state-selected font-semibold border-border-strong': selectedNav === 'Settings' }"
               @click="selectedNav = 'Settings'"
               aria-label="Settings"
@@ -577,5 +577,5 @@ onMounted(() => {
 .slide-enter-from, .slide-leave-to {
   transform: translateX(-100%);
 }
-.today-workspace{max-width:68rem;margin:0 auto;color:#2c3e50}.today-workspace-heading{margin-bottom:var(--space-stack-xl)}.today-workspace-heading h1{margin:0}.today-workspace-heading p:not(.today-eyebrow){margin:var(--space-stack-xs) 0 0;color:#64748b}.today-eyebrow{margin:0 0 var(--space-stack-xs);text-transform:uppercase;letter-spacing:.08em;color:#64748b}.later-today,.today-calendar{margin-top:var(--space-stack-2xl)}.later-today__heading,.today-calendar__heading{margin-bottom:var(--space-stack-md)}.later-today h2,.today-calendar h2{margin:0;color:#334155}.later-today p,.today-calendar p{margin:var(--space-stack-xs) 0 0;color:#64748b}.later-today__appointment{width:100%;display:grid;grid-template-columns:5rem 1fr auto;align-items:center;gap:var(--space-inline-md);text-align:left;background:var(--surface);border:1px solid var(--border-muted);border-radius:.7rem;padding:var(--space-stack-md) var(--space-stack-lg);margin-bottom:var(--space-stack-xs);color:#334155}.later-today__appointment:hover{background:var(--surface-subtle);border-color:var(--border)}.later-today__appointment:focus-visible{outline:2px solid #2563eb;outline-offset:2px}.later-today__appointment>span:first-child{font-weight:700;color:#2563eb}.today-calendar{padding-top:var(--space-stack-xs);border-top:1px solid var(--border-muted)}@media(max-width:700px){.later-today__appointment{grid-template-columns:4.5rem 1fr auto}}
+.today-workspace{max-width:68rem;margin:0 auto;color:var(--text-primary)}.today-workspace-heading{margin-bottom:var(--space-stack-xl)}.today-workspace-heading h1{margin:0}.today-workspace-heading p:not(.today-eyebrow){margin:var(--space-stack-xs) 0 0;color:var(--text-muted)}.today-eyebrow{margin:0 0 var(--space-stack-xs);text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted)}.later-today,.today-calendar{margin-top:var(--space-stack-2xl)}.later-today__heading,.today-calendar__heading{margin-bottom:var(--space-stack-md)}.later-today h2,.today-calendar h2{margin:0;color:var(--text-secondary)}.later-today p,.today-calendar p{margin:var(--space-stack-xs) 0 0;color:var(--text-muted)}.later-today__appointment{width:100%;display:grid;grid-template-columns:5rem 1fr auto;align-items:center;gap:var(--space-inline-md);text-align:left;background:var(--surface);border:1px solid var(--border-muted);border-radius:.7rem;padding:var(--space-stack-md) var(--space-stack-lg);margin-bottom:var(--space-stack-xs);color:var(--text-secondary)}.later-today__appointment:hover{background:var(--surface-subtle);border-color:var(--border)}.later-today__appointment:focus-visible{outline:2px solid var(--action-link);outline-offset:2px}.later-today__appointment>span:first-child{font-weight:700;color:var(--action-link)}.today-calendar{padding-top:var(--space-stack-xs);border-top:1px solid var(--border-muted)}@media(max-width:700px){.later-today__appointment{grid-template-columns:4.5rem 1fr auto}}
 </style>

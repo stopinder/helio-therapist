@@ -1,14 +1,14 @@
 <template>
-  <div class="max-w-5xl mx-auto p-6 bg-white border border-[#d9dce1] rounded-lg shadow-sm relative">
-    <h2 class="text-h3 font-semibold text-[#2c3e50] mb-2">Therapist Map</h2>
-    <p class="text-body text-slate-600 mb-4">
+  <div class="max-w-5xl mx-auto p-6 bg-surface-elevated border border-border rounded-panel  relative">
+    <h2 class="text-h3 font-semibold text-ink mb-2">Therapist Map</h2>
+    <p class="text-body text-ink-secondary mb-4">
       Double-click any node to rename and assign a type. Drag to move; click nodes to connect. Click lines to delete.
     </p>
 
     <!-- Map Canvas -->
     <div
         ref="canvas"
-        class="relative w-full h-[440px] bg-[#f9fafb] border border-[#e5e7eb] rounded-md overflow-hidden"
+        class="relative w-full h-[440px] bg-surface-subtle border border-border-muted rounded-control overflow-hidden"
         @mousedown="startDrag"
         @mousemove="onDrag"
         @mouseup="endDrag"
@@ -33,7 +33,7 @@
                 :y1="nodeById(conn.fromId)?.y + NODE_H/2"
                 :x2="nodeById(conn.toId)?.x + NODE_W/2"
                 :y2="nodeById(conn.toId)?.y + NODE_H/2"
-                :stroke="selectedNodeId && (conn.fromId === selectedNodeId || conn.toId === selectedNodeId) ? '#2563eb' : '#cbd5e1'"
+                :stroke="selectedNodeId && (conn.fromId === selectedNodeId || conn.toId === selectedNodeId) ? 'var(--action-link)' : 'var(--border)'"
                 stroke-width="2"
             />
           </g>
@@ -45,12 +45,12 @@
           v-for="node in nodes"
           :key="node.id"
           class="absolute w-28 min-h-16 flex flex-col items-center justify-center text-center text-body-sm
-               text-[#2c3e50] border rounded-md shadow-sm select-none transition-colors p-1 cursor-grab"
+               text-ink border rounded-control  select-none transition-colors p-1 cursor-grab"
           :style="{
           left: node.x + 'px',
           top: node.y + 'px',
           backgroundColor: typeColors[node.type || 'General'],
-          borderColor: node.id === selectedNodeId ? '#2563eb' : '#d9dce1'
+          borderColor: node.id === selectedNodeId ? 'var(--action-link)' : '#d9dce1'
         }"
           @mousedown.stop="beginNodeDrag(node, $event)"
           @click.stop="handleNodeClick(node)"
@@ -60,13 +60,13 @@
         <template v-if="editingNode && editingNode.id === node.id">
           <input
               v-model="editLabel"
-              class="w-full border border-[#d9dce1] rounded-sm text-body-sm px-1 py-0.5 mb-1 focus:outline-none focus:ring-1 focus:ring-[#2563eb]"
+              class="w-full border border-border rounded-sm text-body-sm px-1 py-0.5 mb-1 focus:outline-none focus:ring-1 focus:ring-state-focus-ring"
               @keyup.enter="saveEdit"
               @blur="saveEdit"
           />
           <select
               v-model="editType"
-              class="w-full border border-[#d9dce1] rounded-sm text-caption px-1 py-0.5 focus:outline-none focus:ring-1 focus:ring-[#2563eb]"
+              class="w-full border border-border rounded-sm text-caption px-1 py-0.5 focus:outline-none focus:ring-1 focus:ring-state-focus-ring"
           >
             <option>General</option>
             <option>Part</option>
@@ -79,45 +79,45 @@
         <!-- Normal view -->
         <template v-else>
           <div class="font-medium">{{ node.label }}</div>
-          <div class="text-overline text-slate-500">{{ node.type || 'General' }}</div>
+          <div class="text-overline text-ink-muted">{{ node.type || 'General' }}</div>
         </template>
       </div>
 
       <!-- Empty state -->
-      <p v-if="!nodes.length" class="absolute inset-0 flex items-center justify-center text-slate-400 text-body">
+      <p v-if="!nodes.length" class="absolute inset-0 flex items-center justify-center text-ink-subtle text-body">
         🗺 Click “Add Node” to begin mapping your reflections
       </p>
     </div>
 
     <!-- Controls -->
     <div class="flex flex-wrap justify-end gap-2 md:gap-3 mt-5">
-      <button class="px-3 md:px-4 py-2 bg-[#3f4754] text-white rounded-md hover:bg-[#2f3540] text-body" @click="addNode">
+      <button class="px-3 md:px-4 py-2 bg-action-primary text-on-action rounded-control hover:bg-action-primary-hover text-body" @click="addNode">
         + Add Node
       </button>
       <button
-          class="px-3 md:px-4 py-2 bg-[#eab308] text-white rounded-md hover:bg-[#ca8a04] text-body"
+          class="px-3 md:px-4 py-2 bg-state-warning text-on-action rounded-control hover:bg-state-warning text-body"
           :disabled="!connections.length"
           @click="clearConnections"
       >
         Clear Connections
       </button>
       <button
-          class="px-3 md:px-4 py-2 bg-[#e11d48] text-white rounded-md hover:bg-[#b91c1c] text-body"
+          class="px-3 md:px-4 py-2 bg-state-danger text-on-action rounded-control hover:bg-state-danger text-body"
           :disabled="!nodes.length"
           @click="clearMap"
       >
         Clear Map
       </button>
-      <button class="px-3 md:px-4 py-2 bg-[#2563eb] text-white rounded-md hover:bg-[#1d4ed8] text-body" @click="generateInsight">
+      <button class="px-3 md:px-4 py-2 bg-action-link text-on-action rounded-control hover:bg-action-link-hover text-body" @click="generateInsight">
         Generate AI Summary
       </button>
-      <button class="px-3 md:px-4 py-2 bg-[#3f4754] text-white rounded-md hover:bg-[#2f3540] text-body" @click="goBack">
+      <button class="px-3 md:px-4 py-2 bg-action-primary text-on-action rounded-control hover:bg-action-primary-hover text-body" @click="goBack">
         Back to Workspace
       </button>
     </div>
 
     <!-- Helper text -->
-    <div class="mt-3 text-caption text-slate-500 flex flex-col gap-1">
+    <div class="mt-3 text-caption text-ink-muted flex flex-col gap-1">
       <span>Tip: Double-click a node to rename or set a type. Click a node to connect; click a line to delete.</span>
       <span>Press Esc to clear selection. All changes auto-save locally.</span>
     </div>
@@ -146,9 +146,9 @@ const editType = ref("General")
 
 // Soft color palette by type
 const typeColors = {
-  General: "#ffffff",
+  General: "var(--surface-elevated)",
   Part: "#f3f0ff",
-  Emotion: "#eff6ff",
+  Emotion: "var(--state-selected)",
   Memory: "#f0fdfa",
   Theme: "#f9fafb",
 }

@@ -1,11 +1,11 @@
 <template>
   <div class="max-w-5xl mx-auto">
-    <div class="bg-[#faf4ea] border border-[#e7dccd] rounded-md p-4 shadow-sm">
+    <div class="bg-reflection border border-border-reflection rounded-control p-4 ">
       <div class="flex items-center justify-between mb-3">
-        <h2 class="text-h3 font-semibold text-[#2c3e50]">Past Reflections</h2>
+        <h2 class="text-h3 font-semibold text-ink">Past Reflections</h2>
         <div class="flex gap-2">
           <button
-              class="text-body-sm px-3 py-1.5 rounded-md border border-[#d9d2c6] text-[#3f4754] bg-white hover:bg-[#f7efe4] transition"
+              class="text-body-sm px-3 py-1.5 rounded-control border border-border-reflection text-ink-secondary bg-surface-elevated hover:bg-reflection-hover transition-colors duration-standard ease-out"
               @click="$emit('close')"
           >Close</button>
         </div>
@@ -16,32 +16,32 @@
         <input
             v-model.trim="filters.q"
             placeholder="Search text or tags…"
-            class="text-body border border-[#d9d2c6] rounded-md p-2 bg-white focus:outline-none focus:ring-2 focus:ring-[#c9a86a]"
+            class="text-body border border-border-reflection rounded-control p-2 bg-surface-elevated focus:outline-none focus:ring-2 focus:ring-state-reflection-focus"
         />
         <select
             v-model="filters.clientId"
-            class="text-body border border-[#d9d2c6] rounded-md p-2 bg-white focus:outline-none focus:ring-2 focus:ring-[#c9a86a]"
+            class="text-body border border-border-reflection rounded-control p-2 bg-surface-elevated focus:outline-none focus:ring-2 focus:ring-state-reflection-focus"
         >
           <option :value="null">All clients</option>
           <option v-for="c in clients" :key="c.id" :value="c.id">{{ c.name }}</option>
         </select>
         <select
             v-model="filters.focus"
-            class="text-body border border-[#d9d2c6] rounded-md p-2 bg-white focus:outline-none focus:ring-2 focus:ring-[#c9a86a]"
+            class="text-body border border-border-reflection rounded-control p-2 bg-surface-elevated focus:outline-none focus:ring-2 focus:ring-state-reflection-focus"
         >
           <option value="">All foci</option>
           <option v-for="f in focusOptions" :key="f" :value="f">{{ f }}</option>
         </select>
         <select
             v-model.number="filters.mood"
-            class="text-body border border-[#d9d2c6] rounded-md p-2 bg-white focus:outline-none focus:ring-2 focus:ring-[#c9a86a]"
+            class="text-body border border-border-reflection rounded-control p-2 bg-surface-elevated focus:outline-none focus:ring-2 focus:ring-state-reflection-focus"
         >
           <option :value="0">Any mood</option>
           <option v-for="m in [1,2,3,4,5]" :key="m" :value="m">Mood {{ m }}</option>
         </select>
       </div>
 
-      <div v-if="filtered.length === 0" class="text-body-sm text-slate-500 italic">
+      <div v-if="filtered.length === 0" class="text-body-sm text-ink-muted italic">
         No reflections match your filters.
       </div>
 
@@ -49,35 +49,35 @@
         <article
             v-for="r in filtered"
             :key="r.id"
-            class="bg-white border border-[#e7dccd] rounded-md p-3 hover:shadow-sm transition"
+            class="bg-surface-elevated border border-border-reflection rounded-control p-3 hover: transition-colors duration-standard ease-out"
         >
           <div class="flex items-start justify-between">
             <div>
-              <div class="text-body font-semibold text-[#2c3e50]">
-                {{ r.focus }} <span class="text-caption text-slate-500">· Mood {{ r.mood }}</span>
+              <div class="text-body font-semibold text-ink">
+                {{ r.focus }} <span class="text-caption text-ink-muted">· Mood {{ r.mood }}</span>
               </div>
-              <div class="text-caption text-slate-500">
+              <div class="text-caption text-ink-muted">
                 {{ formatDate(r.date) }} <span v-if="r.clientId">· {{ clientName(r.clientId) }}</span>
               </div>
             </div>
             <div class="flex items-center gap-2">
               <button
-                  class="text-caption px-2 py-1 rounded-md border border-[#d9d2c6] bg-white hover:bg-[#f7efe4] transition"
+                  class="text-caption px-2 py-1 rounded-control border border-border-reflection bg-surface-elevated hover:bg-reflection-hover transition-colors duration-standard ease-out"
                   @click="select(r)"
               >View</button>
               <button
-                  class="text-caption px-2 py-1 rounded-md border border-[#d9d2c6] bg-white hover:bg-[#f7efe4] transition"
+                  class="text-caption px-2 py-1 rounded-control border border-border-reflection bg-surface-elevated hover:bg-reflection-hover transition-colors duration-standard ease-out"
                   @click="$emit('archive', r.id, !r.archived)"
               >{{ r.archived ? 'Unarchive' : 'Archive' }}</button>
               <button
-                  class="text-caption px-2 py-1 rounded-md border border-[#e8b1a8] text-red-600 bg-white hover:bg-[#fde9e6] transition"
+                  class="text-caption px-2 py-1 rounded-control border border-state-danger text-state-danger bg-surface-elevated hover:bg-state-danger-surface transition-colors duration-standard ease-out"
                   @click="$emit('delete', r.id)"
               >Delete</button>
             </div>
           </div>
-          <p class="mt-2 text-body text-slate-700 line-clamp-4">{{ r.text }}</p>
-          <div class="mt-2 text-caption text-slate-500">
-            <span v-for="t in r.tags" :key="t" class="mr-2 inline-block px-2 py-0.5 rounded bg-[#fff7ed] border border-[#f1d5b8]">
+          <p class="mt-2 text-body text-ink-secondary line-clamp-4">{{ r.text }}</p>
+          <div class="mt-2 text-caption text-ink-muted">
+            <span v-for="t in r.tags" :key="t" class="mr-2 inline-block px-2 py-0.5 rounded bg-state-warning-surface border border-border-reflection-tag">
               #{{ t }}
             </span>
           </div>
@@ -85,32 +85,32 @@
       </div>
 
       <!-- Detail drawer -->
-      <transition name="fade">
-        <div v-if="detail" class="fixed inset-0 bg-black/30 flex items-end md:items-center justify-center z-40" @click.self="detail=null">
-          <div class="w-full md:max-w-2xl bg-white rounded-t-md md:rounded-md border border-[#e7dccd] p-4 shadow-lg">
+      <transition-colors duration-standard ease-out name="fade">
+        <div v-if="detail" class="fixed inset-0 bg-backdrop flex items-end md:items-center justify-center z-40" @click.self="detail=null">
+          <div class="w-full md:max-w-2xl bg-surface-elevated rounded-t-md md:rounded-control border border-border-reflection p-4 shadow-overlay">
             <div class="flex items-center justify-between mb-2">
               <div>
-                <div class="text-body-long font-semibold text-[#2c3e50]">{{ detail.focus }}</div>
-                <div class="text-caption text-slate-500">{{ formatDate(detail.date) }} · Mood {{ detail.mood }}</div>
+                <div class="text-body-long font-semibold text-ink">{{ detail.focus }}</div>
+                <div class="text-caption text-ink-muted">{{ formatDate(detail.date) }} · Mood {{ detail.mood }}</div>
               </div>
               <button
-                  class="text-body-sm px-3 py-1.5 rounded-md border border-[#d9d2c6] bg-white hover:bg-[#f7efe4]"
+                  class="text-body-sm px-3 py-1.5 rounded-control border border-border-reflection bg-surface-elevated hover:bg-reflection-hover"
                   @click="detail=null"
               >Close</button>
             </div>
-            <div class="text-body text-slate-700 whitespace-pre-wrap">{{ detail.text }}</div>
-            <div class="mt-2 text-caption text-slate-500">
-              <span v-for="t in detail.tags" :key="t" class="mr-2 inline-block px-2 py-0.5 rounded bg-[#fff7ed] border border-[#f1d5b8]">
+            <div class="text-body text-ink-secondary whitespace-pre-wrap">{{ detail.text }}</div>
+            <div class="mt-2 text-caption text-ink-muted">
+              <span v-for="t in detail.tags" :key="t" class="mr-2 inline-block px-2 py-0.5 rounded bg-state-warning-surface border border-border-reflection-tag">
                 #{{ t }}
               </span>
             </div>
-            <div v-if="detail.aiSummary" class="mt-3 p-3 bg-[#faf4ea] border border-[#e7dccd] rounded">
-              <div class="text-body-sm font-semibold text-[#2c3e50] mb-1">AI Summary</div>
-              <div class="text-body text-slate-700 whitespace-pre-wrap">{{ detail.aiSummary }}</div>
+            <div v-if="detail.aiSummary" class="mt-3 p-3 bg-reflection border border-border-reflection rounded">
+              <div class="text-body-sm font-semibold text-ink mb-1">AI Summary</div>
+              <div class="text-body text-ink-secondary whitespace-pre-wrap">{{ detail.aiSummary }}</div>
             </div>
           </div>
         </div>
-      </transition>
+      </transition-colors duration-standard ease-out>
     </div>
   </div>
 </template>

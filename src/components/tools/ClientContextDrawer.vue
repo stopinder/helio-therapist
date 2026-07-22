@@ -1,5 +1,5 @@
 <template>
-  <transition name="drawer-fade">
+  <transition-colors duration-standard ease-out name="drawer-fade">
     <div
         v-if="open"
         class="fixed inset-0 z-[60] flex justify-end"
@@ -8,12 +8,12 @@
     >
       <!-- Backdrop (for outside click) -->
       <div
-          class="absolute inset-0 bg-black/10 transition-opacity"
+          class="absolute inset-0 bg-backdrop transition-opacity duration-standard ease-out"
           @click="$emit('close')"
       ></div>
 
       <!-- Drawer Panel -->
-      <transition name="drawer-slide">
+      <transition-colors duration-standard ease-out name="drawer-slide">
         <div
           class="relative w-full sm:w-[380px] md:w-[420px] bg-surface-overlay shadow-overlay h-full flex flex-col border-l border-border"
             @click.stop
@@ -24,11 +24,11 @@
           <!-- Header -->
           <div class="h-14 flex items-center justify-between px-stack-xl border-b border-border bg-surface-muted shrink-0">
             <div>
-              <div class="text-caption text-slate-500">Client summary</div>
-              <h2 class="text-body-long font-semibold text-[#2c3e50]">{{ client?.name || 'No client selected' }}</h2>
+              <div class="text-caption text-ink-muted">Client summary</div>
+              <h2 class="text-body-long font-semibold text-ink">{{ client?.name || 'No client selected' }}</h2>
             </div>
             <button
-                class="w-8 h-8 flex items-center justify-center rounded-md text-slate-400 interaction-control focus-visible:outline-none"
+                class="w-8 h-8 flex items-center justify-center rounded-control text-ink-subtle interaction-control focus-visible:outline-none"
                 @click="$emit('close')"
                 aria-label="Close drawer"
             >
@@ -41,21 +41,21 @@
             <template v-if="client">
               <!-- Current focus -->
               <section>
-                <h3 class="text-body-sm font-bold text-slate-500 uppercase tracking-wider mb-3">Current focus</h3>
-                <p class="text-body text-[#2c3e50] leading-relaxed">
+                <h3 class="text-body-sm font-bold text-ink-muted uppercase tracking-wider mb-3">Current focus</h3>
+                <p class="text-body text-ink leading-relaxed">
                   {{ client.note || 'No specific focus defined.' }}
                 </p>
               </section>
 
               <section>
-                <h3 class="text-body-sm font-bold text-slate-500 uppercase tracking-wider mb-3">Record</h3>
-                <div class="space-y-3 text-body text-slate-600">
-                  <div class="flex justify-between gap-4"><span>Next appointment</span><strong class="text-[#2c3e50]">Not scheduled</strong></div>
-                  <p class="text-body-sm leading-relaxed text-slate-500">Open the client record to review sessions and therapist-maintained context.</p>
+                <h3 class="text-body-sm font-bold text-ink-muted uppercase tracking-wider mb-3">Record</h3>
+                <div class="space-y-3 text-body text-ink-secondary">
+                  <div class="flex justify-between gap-4"><span>Next appointment</span><strong class="text-ink">Not scheduled</strong></div>
+                  <p class="text-body-sm leading-relaxed text-ink-muted">Open the client record to review sessions and therapist-maintained context.</p>
                 </div>
               </section>
               <section>
-                <h3 class="text-body-sm font-bold text-slate-500 uppercase tracking-wider mb-3">Actions</h3>
+                <h3 class="text-body-sm font-bold text-ink-muted uppercase tracking-wider mb-3">Actions</h3>
                 <div class="grid gap-2">
                   <button class="context-action" @click="$emit('open-record')">Open full client record</button>
                   <button class="context-action" @click="$emit('start-session')">Start session</button>
@@ -65,7 +65,7 @@
             </template>
 
             <div v-else class="h-full flex items-center justify-center text-center p-8">
-              <p class="text-slate-500 text-body">
+              <p class="text-ink-muted text-body">
                 No client selected. Open a client or appointment to view context.
               </p>
             </div>
@@ -73,16 +73,16 @@
 
           <div v-if="client" class="shrink-0 border-t border-border bg-surface-overlay p-stack-lg">
             <button
-                class="w-full rounded-lg bg-[#2563eb] px-4 py-2.5 text-body font-semibold text-white interaction-control"
+                class="w-full rounded-panel bg-action-link px-4 py-2.5 text-body font-semibold text-on-action interaction-control"
                 @click="$emit('open-record')"
             >
               Open full client record
             </button>
           </div>
         </div>
-      </transition>
+      </transition-colors duration-standard ease-out>
     </div>
-  </transition>
+  </transition-colors duration-standard ease-out>
 </template>
 
 <script setup>
@@ -136,5 +136,5 @@ onBeforeUnmount(() => { document.body.style.overflow = '' })
 .drawer-slide-leave-to {
   transform: translateX(100%);
 }
-.context-action{width:100%;text-align:left;border:1px solid var(--border);border-radius:.55rem;padding:.7rem .8rem;background:var(--surface-elevated);color:#2563eb;font-size:14px;font-weight:600;transition:background-color var(--motion-standard) var(--motion-ease),border-color var(--motion-standard) var(--motion-ease)}.context-action:hover:not(:disabled){background:var(--state-hover);border-color:var(--border-strong)}.context-action.muted{color:var(--state-disabled);cursor:not-allowed;background:var(--surface-muted)}.context-action span{float:right;font-size:11px;font-weight:500}
+.context-action{width:100%;text-align:left;border:1px solid var(--border);border-radius:.55rem;padding:.7rem .8rem;background:var(--surface-elevated);color:var(--action-link);font-size:14px;font-weight:600;transition:background-color var(--motion-standard) var(--motion-ease),border-color var(--motion-standard) var(--motion-ease)}.context-action:hover:not(:disabled){background:var(--state-hover);border-color:var(--border-strong)}.context-action.muted{color:var(--state-disabled);cursor:not-allowed;background:var(--surface-muted)}.context-action span{float:right;font-size:11px;font-weight:500}
 </style>

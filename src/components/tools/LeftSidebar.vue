@@ -1,21 +1,21 @@
 <template>
   <aside
-      class="flex flex-col bg-[#faf9f7] border-r border-[#e5e7eb] select-none w-64 h-full z-40"
+      class="flex flex-col bg-sidebar border-r border-border-muted select-none w-64 h-full z-40"
   >
     <!-- Therapist header -->
-    <div class="h-16 flex items-center justify-between px-5 border-b border-[#e2e5ea] bg-[#fafbfc] mt-1 shrink-0">
+    <div class="h-16 flex items-center justify-between px-5 border-b border-border-muted bg-surface-subtle mt-1 shrink-0">
       <div class="flex items-center gap-3">
-        <div class="h-9 w-9 rounded-full bg-[#e2dcd4] flex items-center justify-center text-body font-semibold text-[#2c3e50]">
+        <div class="h-9 w-9 rounded-pill bg-avatar flex items-center justify-center text-body font-semibold text-ink">
           RO
         </div>
         <div class="flex flex-col leading-tight">
-          <span class="text-body font-semibold text-[#2c3e50]">Robert Ormiston</span>
-          <span class="text-caption text-slate-500">Psychotherapist</span>
+          <span class="text-body font-semibold text-ink">Robert Ormiston</span>
+          <span class="text-caption text-ink-muted">Psychotherapist</span>
         </div>
       </div>
       <!-- Close Button for Mobile -->
       <button
-          class="md:hidden p-2 text-slate-400 hover:text-slate-600 transition"
+          class="md:hidden p-2 text-ink-subtle hover:text-ink-secondary transition-colors duration-standard ease-out"
           @click="$emit('close-sidebar')"
           aria-label="Close menu"
       >
@@ -32,19 +32,19 @@
             v-for="item in navItems"
             :key="item"
             @click="$emit('update:selected-nav', item)"
-            class="w-full flex items-center px-inline-md py-stack-sm rounded-md transition text-left text-body"
-            :class="selectedNav === item ? 'bg-[#eef1f5] font-semibold text-slate-800' : 'text-slate-700 hover:bg-[#f7f8fa]'"
+            class="w-full flex items-center px-inline-md py-stack-sm rounded-control transition-colors duration-standard ease-out text-left text-body"
+            :class="selectedNav === item ? 'bg-state-selected font-semibold text-ink' : 'text-ink-secondary hover:bg-surface-subtle'"
         >
           {{ item }}
         </button>
       </nav>
 
-      <div v-if="false && selectedNav === 'Clients'" class="pt-4 border-t border-[#e2e5ea] space-y-6">
+      <div v-if="false && selectedNav === 'Clients'" class="pt-4 border-t border-border-muted space-y-6">
         <!-- CLIENTS -->
         <SidebarGroup title="Clients" :defaultOpen="true">
           <div class="px-2 mb-2">
             <button
-                class="w-full py-1.5 text-body-sm rounded-md bg-[#3f4754] text-white hover:bg-[#2f3540] transition"
+                class="w-full py-1.5 text-body-sm rounded-control bg-action-primary text-on-action hover:bg-action-primary-hover transition-colors duration-standard ease-out"
                 @click="showAddClientModal = true"
             >
               + Add Client
@@ -56,18 +56,18 @@
             <div
                 v-for="client in clients"
                 :key="client.id"
-                class="relative group rounded-md"
+                class="relative group rounded-control"
             >
               <button
-                  class="w-full flex items-center justify-between px-3 py-2 rounded-md hover:bg-[#f7f8fa] transition text-left"
-                  :class="{ 'bg-[#eef1f5]': selectedClient && client.id === selectedClient.id }"
+                  class="w-full flex items-center justify-between px-3 py-2 rounded-control hover:bg-surface-subtle transition-colors duration-standard ease-out text-left"
+                  :class="{ 'bg-state-selected': selectedClient && client.id === selectedClient.id }"
                   @click="select(client)"
               >
                 <span
                     class="text-body truncate"
                     :class="{
-                    'font-semibold text-slate-800': selectedClient && client.id === selectedClient.id,
-                    'text-slate-700': !selectedClient || client.id !== selectedClient.id,
+                    'font-semibold text-ink': selectedClient && client.id === selectedClient.id,
+                    'text-ink-secondary': !selectedClient || client.id !== selectedClient.id,
                   }"
                 >
                   {{ client.name }}
@@ -77,26 +77,26 @@
           </div>
 
           <!-- Zoom Session Controls -->
-          <div class="mt-4 border-t border-[#e4e7eb] pt-3 px-2 space-y-2">
-            <div class="text-caption font-semibold text-slate-600 uppercase tracking-wide">
+          <div class="mt-4 border-t border-border-muted pt-3 px-2 space-y-2">
+            <div class="text-caption font-semibold text-ink-secondary uppercase tracking-wide">
               Session Controls
             </div>
             <button
                 v-if="!isInSession"
-                class="w-full text-body-sm px-3 py-1.5 rounded-md border border-[#d9dce1] text-white bg-[#2563eb] hover:bg-[#1d4ed8] transition"
+                class="w-full text-body-sm px-3 py-1.5 rounded-control border border-border text-on-action bg-action-link hover:bg-action-link-hover transition-colors duration-standard ease-out"
                 @click="$emit('join-zoom')"
             >
               Join Zoom Session
             </button>
             <button
                 v-else
-                class="w-full text-body-sm px-3 py-1.5 rounded-md border border-[#d9dce1] text-white bg-[#dc2626] hover:bg-[#b91c1c] transition"
+                class="w-full text-body-sm px-3 py-1.5 rounded-control border border-border text-on-action bg-state-danger hover:bg-state-danger transition-colors duration-standard ease-out"
                 @click="$emit('end-zoom')"
             >
               End Session
             </button>
             <button
-                class="w-full text-body-sm px-3 py-1.5 rounded-md border border-[#d9dce1] text-[#3f4754] bg-white hover:bg-[#f5f7fa] transition disabled:opacity-50 disabled:cursor-not-allowed"
+                class="w-full text-body-sm px-3 py-1.5 rounded-control border border-border text-ink-secondary bg-surface-elevated hover:bg-surface-subtle transition-colors duration-standard ease-out disabled:opacity-50 disabled:cursor-not-allowed"
                 :disabled="!isInSession || isSyncing"
                 @click="$emit('sync-transcript')"
             >
@@ -148,7 +148,7 @@
                   v-for="item in cbtItems"
                   :key="item.key"
                   class="sidebar-btn"
-                  :class="{ 'bg-[#eef1f5] font-semibold': activeTemplate === item.key }"
+                  :class="{ 'bg-state-selected font-semibold': activeTemplate === item.key }"
                   @click="$emit('open-tool', { group: 'cbt', template: item.key })"
               >
                 {{ item.label }}
@@ -164,12 +164,12 @@
           <div
               v-for="res in resources"
               :key="res.id"
-              class="flex items-center justify-between text-body-sm py-1 border-b border-[#f1f3f5]"
+              class="flex items-center justify-between text-body-sm py-1 border-b border-border-muted"
           >
             <label class="flex items-center gap-2 cursor-pointer select-none">
               <input
                   type="checkbox"
-                  class="accent-[#2563eb]"
+                  class="accent-[var(--action-link)]"
                   v-model="res.includeInExport"
                   @change="$emit('toggle-resource-export', res.id, res.includeInExport)"
               />
@@ -177,7 +177,7 @@
             </label>
           </div>
         </div>
-        <div v-else class="px-3 text-body-sm text-slate-400 italic py-2">
+        <div v-else class="px-3 text-body-sm text-ink-subtle italic py-2">
           No resources to export yet
         </div>
       </SidebarGroup>
@@ -199,7 +199,7 @@
             {{ res.title }}
           </button>
         </div>
-        <div v-else class="px-3 text-body-sm text-slate-400 italic">
+        <div v-else class="px-3 text-body-sm text-ink-subtle italic">
           No resources added yet
         </div>
       </SidebarGroup>

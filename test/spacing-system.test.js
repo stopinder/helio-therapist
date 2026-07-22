@@ -58,3 +58,20 @@ test('primary drawers use the shared keyboard focus trap', async () => {
   assert.match(clientDrawer, /useFocusTrap/)
   assert.match(aiDrawer, /useFocusTrap/)
 })
+
+test('shared visual decisions have semantic tokens and templates do not use arbitrary colour utilities', async () => {
+  const css = await readFile(new URL('../src/main.css', import.meta.url), 'utf8')
+  const config = await readFile(new URL('../tailwind.config.js', import.meta.url), 'utf8')
+  const sources = await Promise.all((await import('node:child_process')).execFileSync('rg', ['--files', 'src', '-g', '*.{vue,css}'], { encoding: 'utf8' })
+    .trim().split('\n').map(path => readFile(new URL(`../${path}`, import.meta.url), 'utf8')))
+
+  for (const token of ['text-primary', 'text-secondary', 'text-muted', 'action-primary', 'action-link', 'radius-control', 'radius-panel', 'control-target']) {
+    assert.match(css, new RegExp(`--${token}:`))
+  }
+  for (const name of ['ink', 'action-primary', 'action-link', 'backdrop']) {
+    assert.match(config, new RegExp(`(?:['"]${name}['"]|\\b${name}):`))
+  }
+  for (const source of sources) {
+    assert.doesNotMatch(source, /(?:bg|text|border|ring)-\[[^\]]+\]/)
+  }
+})

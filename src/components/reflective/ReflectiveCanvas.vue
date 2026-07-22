@@ -1,9 +1,9 @@
 <template>
-  <div class="max-w-4xl mx-auto text-slate-700">
+  <div class="max-w-4xl mx-auto text-ink-secondary">
     <!-- Header -->
     <div class="mb-6">
       <h2 class="text-h1 font-semibold mb-2">Reflective Practice</h2>
-      <p class="text-body text-slate-600">
+      <p class="text-body text-ink-secondary">
         This private workspace is for your own professional reflection.
       </p>
     </div>
@@ -13,10 +13,10 @@
       <button
           v-for="view in views"
           :key="view.key"
-          class="px-3 py-1.5 rounded-md text-body border border-[#d9dce1] transition"
+          class="px-3 py-1.5 rounded-control text-body border border-border transition-colors duration-standard ease-out"
           :class="view.key === mode
-          ? 'bg-[#2563eb] text-white border-[#2563eb]'
-          : 'bg-white hover:bg-[#f0f2f5] text-[#3f4754]'"
+          ? 'bg-action-link text-on-action border-action-link'
+          : 'bg-surface-elevated hover:bg-surface-subtle text-ink-secondary'"
           @click="$emit('switch-mode', view.key)"
       >
         {{ view.label }}

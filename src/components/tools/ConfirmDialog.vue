@@ -1,21 +1,21 @@
 <template>
-  <transition name="fade">
+  <transition-colors duration-standard ease-out name="fade">
     <div
         v-if="show"
-        class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60"
+        class="fixed inset-0 z-50 flex items-center justify-center bg-backdrop"
     >
-      <div class="bg-celestial-dusk border border-slate-700 rounded-xl p-6 w-80 shadow-lg">
-        <h2 class="text-h3 font-semibold text-fog-white mb-2">{{ title }}</h2>
-        <p class="text-body text-slate-haze mb-4">{{ message }}</p>
+      <div class="bg-ink border border-border-strong rounded-panel p-6 w-80 shadow-overlay">
+        <h2 class="text-h3 font-semibold text-on-action mb-2">{{ title }}</h2>
+        <p class="text-body text-ink-muted mb-4">{{ message }}</p>
         <div class="flex justify-end gap-3">
           <button
-              class="px-3 py-1.5 text-body text-slate-haze hover:text-fog-white"
+              class="px-3 py-1.5 text-body text-ink-muted hover:text-on-action"
               @click="$emit('cancel')"
           >
             Cancel
           </button>
           <button
-              class="px-3 py-1.5 text-body text-red-400 hover:text-white border border-red-400 hover:border-white rounded transition"
+              class="px-3 py-1.5 text-body text-state-danger hover:text-on-action border border-state-danger hover:border-border-strong rounded transition-colors duration-standard ease-out"
               @click="$emit('confirm')"
           >
             Delete
@@ -23,7 +23,7 @@
         </div>
       </div>
     </div>
-  </transition>
+  </transition-colors duration-standard ease-out>
 </template>
 
 <script setup>

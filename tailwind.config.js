@@ -14,6 +14,15 @@ module.exports = {
         'surface-subtle': 'var(--surface-subtle)',
         'surface-elevated': 'var(--surface-elevated)',
         'surface-overlay': 'var(--surface-overlay)',
+        ink: 'var(--text-primary)',
+        'ink-secondary': 'var(--text-secondary)',
+        'ink-muted': 'var(--text-muted)',
+        'ink-subtle': 'var(--text-subtle)',
+        'on-action': 'var(--text-on-action)',
+        'action-primary': 'var(--action-primary)',
+        'action-primary-hover': 'var(--action-primary-hover)',
+        'action-link': 'var(--action-link)',
+        'action-link-hover': 'var(--action-link-hover)',
         border: 'var(--border)',
         'border-muted': 'var(--border-muted)',
         'border-strong': 'var(--border-strong)',
@@ -28,12 +37,17 @@ module.exports = {
         'state-danger': 'var(--state-danger)',
         'state-recording': 'var(--state-recording)',
         'state-ai-working': 'var(--state-ai-working)',
-        'celestial-dusk': '#16243B',   // Sidebar
-        'midnight-blue': '#1F3159',    // Canvas
-        'lavender-wash': '#C0B8FF',    // Accent
-        'fog-white': '#EDEFF2',        // Primary text
-        'slate-haze': '#A8AFBE',       // Secondary text
-        'violet-glow': '#9CA1FF',      // Hover/CTA
+        'state-success-surface': 'var(--state-success-surface)',
+        'state-warning-surface': 'var(--state-warning-surface)',
+        'state-danger-surface': 'var(--state-danger-surface)',
+        reflection: 'var(--surface-reflection)',
+        'reflection-hover': 'var(--surface-reflection-hover)',
+        'border-reflection': 'var(--border-reflection)',
+        'border-reflection-tag': 'var(--border-reflection-tag)',
+        'state-reflection-focus': 'var(--state-reflection-focus)',
+        sidebar: 'var(--surface-sidebar)',
+        avatar: 'var(--surface-avatar)',
+        backdrop: 'var(--surface-backdrop)',
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],
@@ -70,6 +84,17 @@ module.exports = {
       boxShadow: {
         elevated: 'var(--shadow-elevated)',
         overlay: 'var(--shadow-overlay)',
+      },
+      borderRadius: {
+        control: 'var(--radius-control)',
+        panel: 'var(--radius-panel)',
+        pill: 'var(--radius-pill)',
+      },
+      minHeight: {
+        touch: 'var(--control-target)',
+      },
+      backdropBlur: {
+        soft: '2px',
       },
       transitionDuration: {
         fast: 'var(--motion-fast)',

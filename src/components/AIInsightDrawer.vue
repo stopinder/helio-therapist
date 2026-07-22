@@ -1,5 +1,5 @@
 <template>
-  <transition name="drawer-fade">
+  <transition-colors duration-standard ease-out name="drawer-fade">
     <div
         v-if="open"
         class="fixed inset-0 z-50 flex flex-col items-center justify-end"
@@ -9,14 +9,14 @@
     >
       <!-- Backdrop -->
       <div
-          class="absolute inset-0 bg-black/30 backdrop-blur-[2px]"
+          class="absolute inset-0 bg-backdrop backdrop-blur-soft"
           @click="$emit('close')"
       ></div>
 
       <!-- Drawer Panel -->
-      <transition name="drawer-slide">
+      <transition-colors duration-standard ease-out name="drawer-slide">
         <div
-            class="relative bg-white border-t border-[#d9dce1] shadow-xl w-full
+            class="relative bg-surface-elevated border-t border-border shadow-overlay w-full
                  sm:rounded-t-lg sm:w-[90%] md:w-[70%] lg:w-[50%]
                  mx-auto flex flex-col"
             :style="{ height: panelHeightPx + 'px', maxHeight: '90vh', transition: 'height 0.3s ease' }"
@@ -25,18 +25,18 @@
             aria-label="AI insight summary"
         >
           <!-- Header -->
-          <div class="flex items-center justify-between px-4 py-3 border-b border-[#e2e5ea] bg-[#fafbfc] rounded-t-lg">
-            <h3 class="text-body font-semibold text-[#2c3e50]">AI Insight Summary</h3>
-            <button class="text-slate-500 hover:text-slate-700 text-body" @click="$emit('close')" title="Close panel">✕</button>
+          <div class="flex items-center justify-between px-4 py-3 border-b border-border-muted bg-surface-subtle rounded-t-lg">
+            <h3 class="text-body font-semibold text-ink">AI Insight Summary</h3>
+            <button class="text-ink-muted hover:text-ink-secondary text-body" @click="$emit('close')" title="Close panel">✕</button>
           </div>
 
           <!-- Context line -->
-          <div v-if="input" class="text-body-sm text-slate-500 px-4 py-1 border-b border-[#f1f3f5]">
+          <div v-if="input" class="text-body-sm text-ink-muted px-4 py-1 border-b border-border-muted">
             {{ contextLine }}
           </div>
 
           <!-- Toolbar -->
-          <div class="flex items-center justify-end gap-2 px-4 py-2 border-b border-[#e2e5ea]">
+          <div class="flex items-center justify-end gap-2 px-4 py-2 border-b border-border-muted">
             <button class="toolbar-btn" @click="saveInsight">💾 Save</button>
             <button class="toolbar-btn" @click="exportInsight">📤 Export</button>
             <button class="toolbar-btn" @click="copyInsight">📝 Copy</button>
@@ -47,28 +47,28 @@
           </div>
 
           <!-- Inline confirmations -->
-          <transition name="fade">
-            <div v-if="feedback" class="text-body-sm text-green-600 text-right px-4 py-1" aria-live="polite">
+          <transition-colors duration-standard ease-out name="fade">
+            <div v-if="feedback" class="text-body-sm text-state-success text-right px-4 py-1" aria-live="polite">
               {{ feedback }}
             </div>
-          </transition>
+          </transition-colors duration-standard ease-out>
 
           <!-- Content -->
-          <div class="flex-1 overflow-auto p-4 text-body text-slate-700 leading-relaxed">
-            <transition name="content-fade" appear>
+          <div class="flex-1 overflow-auto p-4 text-body text-ink-secondary leading-relaxed">
+            <transition-colors duration-standard ease-out name="content-fade" appear>
               <div key="drawer-content">
                 <div v-if="loading" class="flex items-center justify-center py-6">
-                  <span class="animate-pulse text-slate-400">Generating insight...</span>
+                  <span class="animate-pulse text-ink-subtle">Generating insight...</span>
                 </div>
 
                 <div v-else>
                   <p v-if="insight" class="whitespace-pre-wrap">{{ insight }}</p>
-                  <p v-else class="italic text-slate-400">No insight generated yet.</p>
+                  <p v-else class="italic text-ink-subtle">No insight generated yet.</p>
 
                   <!-- View reflection link -->
                   <div v-if="input?.tool === 'reflection' && input?.clientId" class="mt-4 text-right">
                     <button
-                        class="text-body-sm px-3 py-1.5 rounded-md border border-[#d9dce1] text-[#3f4754] bg-white hover:bg-[#f5f7fa] transition"
+                        class="text-body-sm px-3 py-1.5 rounded-control border border-border text-ink-secondary bg-surface-elevated hover:bg-surface-subtle transition-colors duration-standard ease-out"
                         @click="$emit('view-reflection', { clientId: input.clientId })"
                     >
                       View attached reflection
@@ -76,12 +76,12 @@
                   </div>
                 </div>
               </div>
-            </transition>
+            </transition-colors duration-standard ease-out>
           </div>
         </div>
-      </transition>
+      </transition-colors duration-standard ease-out>
     </div>
-  </transition>
+  </transition-colors duration-standard ease-out>
 </template>
 
 <script setup>
@@ -216,7 +216,7 @@ onBeforeUnmount(() => {
 
 <style scoped>
 .toolbar-btn {
-  @apply text-body-sm px-3 py-1.5 rounded-md border border-border text-[#3f4754] bg-surface-elevated;
+  @apply text-body-sm px-3 py-1.5 rounded-control border border-border text-ink-secondary bg-surface-elevated;
   transition: background-color var(--motion-standard) var(--motion-ease), border-color var(--motion-standard) var(--motion-ease);
 }
 .toolbar-btn:hover {
