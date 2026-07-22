@@ -15,9 +15,10 @@
 - Separate **retrieval** (Clients) from **attention** (Today).
 - The client workspace is the default home for client-related material.
 - Treat therapist-to-client worksheets, measures and returned material as a clinical exchange: reusable resource → versioned assignment → response → therapist review. Do not collapse this lifecycle into a generic document upload.
-- Use Today only for a resource or measure that needs a clear therapist action, such as review or follow-up; do not duplicate the resource library there.
-- Use Today only for real, actionable underlying state. It is not a duplicate task system.
-- The Transcript Inbox is source-material triage only. Hand off to Session Workspace after triage.
+- Today is the time-based daily workspace. It is for preparation before an appointment, working through the day, and returning to orient after a session; it is not a duplicate task system.
+- Inbox contains only real, actionable underlying state that requires a therapist decision or finishing action. It must not contain informational activity such as a completed sync, a client opening a resource, or an automatically generated item.
+- The transcript flow is source-material triage inside Inbox. Hand off to Session Workspace after triage; do not expose transcripts as a separate product area.
+- Client directory rows show one contextual cue only. They never become a dashboard of statuses, badges, or workflow history.
 - Preserve normal Zoom functionality by opening Zoom separately; do not embed a fragile video call in Helio.
 - Avoid client names in externally visible Zoom meeting titles.
 

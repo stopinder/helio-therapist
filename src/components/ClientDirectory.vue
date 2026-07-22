@@ -59,7 +59,7 @@ function identifierFor(client) { return clientIdentifier(client, filteredClients
 function clientContext(client) {
   if (client.next_appointment_at) return `Next appointment ${formatRelativeDate(client.next_appointment_at)}`
   if (client.last_session_at) return `Last session ${formatRelativeDate(client.last_session_at)}`
-  return identifierFor(client)
+  return identifierFor(client) || 'Nothing outstanding'
 }
 function formatRelativeDate(value) {
   const target = new Date(value); const today = new Date()

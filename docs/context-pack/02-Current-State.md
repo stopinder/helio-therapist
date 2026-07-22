@@ -6,8 +6,8 @@ Last updated: 22 July 2026. This is a working implementation record; it distingu
 
 - Supabase-backed client records and authentication scaffolding.
 - Search-first client directory and a timeline-first client workspace.
-- Session workspace with editable therapist notes, current focus, documents, and a prominent dictated-note control.
-- Today daily workspace: calendar-first day/week/month/agenda navigation, direct client-workspace opening for unambiguous appointment/client matches, and a single available session status.
+- Client workspace is timeline-first with an appointment preparation hand-off, therapist-maintained current focus, a focused active-session surface, editable therapist notes, and a prominent dictated-note control. Preparation shows one real carry-forward event when available; active session keeps the current focus visible without exposing generic AI controls.
+- Today daily workspace: calendar-first day/week/month navigation, direct client-workspace opening for unambiguous appointment/client matches, and a single available session status.
 - Inbox with progressive client → session → review/retention transcript triage, plus unfinished session and client-return work; it hands off to the relevant session or client context.
 - Google Calendar and Calendly integration routes, with Google Calendar treated as a startup workspace service: calendar reads silently refresh a rejected Google access token, persist the replacement token, retry the read, and record the successful sync time.
 - Zoom OAuth routes, webhook transcript intake, transcript queue endpoints, and a Start Session endpoint that creates a Zoom meeting linked to a Helio session.
@@ -18,7 +18,7 @@ The application currently exposes **Today**, **Clients**, **Inbox**, and **Setti
 
 ## Requires deployment, migration or environment verification
 
-- The outbound client-request refactor is implemented locally and awaits publication plus migration `20260722100000_add_client_requests_and_request_items.sql`; do not use its multi-item request path in production until that migration has been applied successfully.
+- The multi-item client-request implementation is published to `main`. Its production database migration `20260722100000_add_client_requests_and_request_items.sql` still requires confirmation in Supabase before the multi-item request path can be treated as production-ready.
 - The Zoom start-session flow requires the Zoom `meeting:write:meeting` scope, re-consent after adding it, and the Zoom session-link database migration applied to Supabase.
 - Zoom cloud transcript import requires the webhook configuration, valid credentials, and an actual recorded/transcribed meeting test.
 - Dictation needs a real browser microphone permission and authenticated transcription endpoint test with normal browser audio.

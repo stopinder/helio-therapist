@@ -67,9 +67,10 @@ import { authenticatedFetch } from '../lib/api.js'
 
 const props = defineProps({ clients: { type: Array, default: () => [] } })
 const emit = defineEmits(['open-settings', 'select-appointment'])
-const views = [{ id: 'day', label: 'Day' }, { id: 'week', label: 'Week' }, { id: 'month', label: 'Month' }, { id: 'agenda', label: 'Agenda' }]
+const views = [{ id: 'day', label: 'Day' }, { id: 'week', label: 'Week' }, { id: 'month', label: 'Month' }]
 const weekdayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
-const view = ref(localStorage.getItem('helio_calendar_view') || 'day')
+const savedView = localStorage.getItem('helio_calendar_view')
+const view = ref(['day', 'week', 'month'].includes(savedView) ? savedView : 'day')
 const selectedDate = ref(new Date())
 const dateInput = ref(toInputDate(selectedDate.value))
 const events = ref([]), loading = ref(false), error = ref(''), selectedEvent = ref(null)
@@ -94,9 +95,9 @@ const requestRange = computed(() => {
   if (view.value === 'day') return [startDay(selectedDate.value), addDays(startDay(selectedDate.value), 1)]
   if (view.value === 'week') { const start = startWeek(selectedDate.value); return [start, addDays(start, 7)] }
   if (view.value === 'month') return [startMonth(selectedDate.value), endMonth(selectedDate.value)]
-  return [startDay(selectedDate.value), addDays(startDay(selectedDate.value), 30)]
+  return [startDay(selectedDate.value), addDays(startDay(selectedDate.value), 1)]
 })
-const heading = computed(() => ({day:"Day’s Schedule",week:'Weekly Schedule',month:'Monthly Schedule',agenda:'Agenda'}[view.value]))
+const heading = computed(() => ({day:"Day’s Schedule",week:'Weekly Schedule',month:'Monthly Schedule'}[view.value]))
 const rangeLabel = computed(() => {
   const [start,end] = requestRange.value; const final = addDays(end,-1)
   if (view.value === 'day') return start.toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric',year:'numeric'})
@@ -136,7 +137,7 @@ function fullEventDate(event){const d=new Date(event.start); return `${d.toLocal
 function setView(next){view.value=next; localStorage.setItem('helio_calendar_view',next)}
 function chooseDate(){const [y,m,d]=dateInput.value.split('-').map(Number); selectedDate.value=new Date(y,m-1,d)}
 function goToday(){selectedDate.value=new Date()}
-function move(direction){const amount={day:1,week:7,month:0,agenda:30}[view.value]; const d=new Date(selectedDate.value); if(view.value==='month')d.setMonth(d.getMonth()+direction); else d.setDate(d.getDate()+amount*direction); selectedDate.value=d}
+function move(direction){const amount={day:1,week:7,month:0}[view.value]; const d=new Date(selectedDate.value); if(view.value==='month')d.setMonth(d.getMonth()+direction); else d.setDate(d.getDate()+amount*direction); selectedDate.value=d}
 function openDay(date){selectedDate.value=new Date(date); setView('day')}
 function selectMonthDay(date){selectedDate.value=new Date(date); if(window.innerWidth<768)setView('day')}
 function selectEvent(event, trigger) {

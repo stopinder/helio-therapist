@@ -11,21 +11,23 @@ Primary navigation is:
 
 There are no top-level Messages, Reports, Documents, Sessions, Assessments, or Tasks areas. Those are client capabilities, not separate applications.
 
-## Today: schedule first
+## Today: schedule first, then the next piece of work
 
-Today is the therapist's desk for the day. It begins with the calendar because the first questions are “Who am I seeing?”, “When?”, and “What is next?” It supports day, week, month, and agenda views plus direct navigation to tomorrow or another date. When one calendar title maps unambiguously to a Helio client, its popover offers **Open client workspace**. Agenda rows show one concise status where Helio has sufficient real state.
+Today is the therapist's desk for the day. It begins with the calendar because the first questions are “Who am I seeing?”, “When?”, and “What is next?” It supports day, week, and month views plus direct navigation to tomorrow or another date. When one calendar title maps unambiguously to a Helio client, its popover offers **Open client workspace**. Appointment rows show one concise status where Helio has sufficient real state.
 
 An appointment is the primary time-based unit of work. When Helio can identify one unambiguous client for an appointment, selecting it opens that client's preparation context: current focus, timeline, and a deliberate Start session action.
 
 ## Inbox: one clinical work queue
 
-Inbox is not a message centre or an archive. It shows only real actionable state derived from existing records, such as:
+Inbox is not a message centre, activity history, or archive. It shows only real actionable state derived from existing records, such as:
 
 - a Zoom transcript awaiting assignment, session linking, or review choices;
 - an open session; or
 - a session review state that genuinely exists.
 
 Each item has one clear action and opens the exact relevant transcript or session. It disappears from the active queue when the underlying state is complete. The queue must not invent AI work, clinical review, or administrative tasks.
+
+Informational events never create Inbox debt: a calendar synchronisation, a transcript being stored, a client viewing a resource, or an AI process completing are activity-history facts, not work. An Inbox item exists only where a therapist decision or action is still required.
 
 Time-based work and event-based work remain distinct. Appointment-related preparation belongs to Today; non-appointment actions belong in Inbox. Empty Inbox is a quiet, positive state, not a permanent panel on Today.
 
@@ -51,6 +53,8 @@ The present client workspace contains:
 - a timeline of meaningful session activity;
 - sessions, including notes and source material; and
 - contextual clinical-exchange actions in Timeline and the active session, backed by one Resource Picker.
+
+Phase Two makes this a single continuous flow rather than a record with separate destinations: preparation before a known appointment, a focused active-session surface, then a short closing/documentation step. Timeline remains the durable clinical story; Sessions remains the encounter and source-material boundary. No separate formulation tab is introduced. Therapist-maintained current focus and therapist-approved session material are the places from which formulation can emerge.
 
 Future capabilities—including messages, questionnaires, reports, approved AI drafts, shared resources, safety work, and appointment changes—belong as linked client events or focused client views, not as top-level apps. The resource/measure workflow is specified in [Clinical exchange architecture](05-Clinical-Exchange-Architecture.md).
 

@@ -15,7 +15,7 @@
 
     <main v-if="activeTab === 'timeline'" class="overview">
       <article v-if="preparingFor" class="preparation-card">
-        <div><p class="eyebrow">Upcoming appointment</p><h2>{{ preparingFor.summary || 'Session preparation' }}</h2><p>{{ appointmentTime(preparingFor) }}. Review the current focus and recent timeline before opening the session.</p></div>
+        <div><p class="eyebrow">Upcoming appointment</p><h2>{{ preparingFor.summary || 'Session preparation' }}</h2><p>{{ appointmentTime(preparingFor) }}. Review the current focus and one recent clinical event before opening the session.</p><p v-if="lastMeaningfulEvent" class="preparation-carry-forward"><strong>Carry forward:</strong> {{ lastMeaningfulEvent.title }} <span>· {{ formatDate(lastMeaningfulEvent.date) }}</span></p></div>
         <button class="primary" :disabled="startingSession" @click="startSession">{{ startingSession ? 'Preparing Zoom…' : 'Start session' }}</button>
       </article>
       <article class="focus-card">
@@ -50,16 +50,16 @@
 
     <div v-if="editingSession" class="modal-backdrop" @click.self="closeEditor">
       <article class="session-editor" role="dialog" aria-modal="true" aria-labelledby="session-title">
-        <header><div><p class="eyebrow">{{ sessionStatusLabel(editingSession) === 'Closed' ? 'Closed session' : 'Session workspace' }}</p><h2 id="session-title">{{ formatDate(editingSession.startedAt) }}</h2></div><button class="close" @click="closeEditor" aria-label="Close">×</button></header>
+        <header><div><p class="eyebrow">{{ sessionStatusLabel(editingSession) === 'Closed' ? 'Closed session' : editingSession.status === 'completed' ? 'Session complete' : 'Active session' }}</p><h2 id="session-title">{{ formatDate(editingSession.startedAt) }}</h2></div><button class="close" @click="closeEditor" aria-label="Close">×</button></header>
         <section v-if="editingSession.zoomState" class="zoom-session" :class="{ warn: editingSession.zoomState === 'unavailable' }">
           <div><p class="eyebrow">Zoom</p><strong>{{ zoomMeetingLabel(editingSession) }}</strong><small>{{ zoomMeetingDescription(editingSession) }}</small></div>
           <button v-if="editingSession.zoomStartUrl" class="secondary" @click="openZoomMeeting(editingSession)">Open Zoom</button>
         </section>
+        <section v-if="selectedClient.note" class="session-context"><p class="eyebrow">Current focus</p><p>{{ selectedClient.note }}</p></section>
         <div class="note-label"><label for="session-notes">Therapist notes</label><button v-if="editingSession.status !== 'closed'" class="dictate" :class="{ recording: isDictating }" :disabled="transcribing" @click="toggleDictation"><span class="record-dot" aria-hidden="true"></span>{{ isDictating ? 'Stop dictation' : transcribing ? 'Transcribing…' : 'Start dictation' }}</button></div>
         <div class="session-actions"><span>Client actions</span><button class="secondary" @click="openPicker">Send to client</button></div>
         <p v-if="editingSession.status !== 'closed'" class="dictation-help" :class="{ recording: isDictating, error: dictationError }" role="status">{{ dictationMessage() }}</p>
         <textarea id="session-notes" v-model="draftNotes" :disabled="editingSession.status === 'closed'" placeholder="Record the session in your own words…"></textarea>
-        <aside class="ai-boundary"><strong>Session review boundary</strong><p>AI-supported pattern recognition is session-specific and provisional. It requires therapist review and never becomes part of the clinical record automatically.</p></aside>
         <footer><button class="secondary" @click="closeEditor">Close</button><template v-if="editingSession.status !== 'closed'"><button class="secondary" @click="saveNotes">Save notes</button><button v-if="editingSession.status !== 'completed'" class="primary" @click="completeSession">End session</button><button v-else class="primary" @click="closeSession">Close session</button></template></footer>
       </article>
     </div>
@@ -109,6 +109,7 @@ const timelineEvents = computed(() => [...sessions.value.map(session => ({
 })), ...clinicalTimelineEvents.value.map(event => ({
   id: `clinical-${event.id}`, date: event.occurred_at, icon: timelineIcon(event.event_type), title: event.summary, detail: timelineDetail(event.event_type)
 }))].sort((a, b) => new Date(b.date) - new Date(a.date)))
+const lastMeaningfulEvent = computed(() => timelineEvents.value.find(event => !event.session || ['completed', 'closed'].includes(event.session.status)) || null)
 
 function loadSessions() { try { return JSON.parse(localStorage.getItem('helio_sessions') || '[]') } catch { return [] } }
 function persist() { localStorage.setItem('helio_sessions', JSON.stringify(allSessions.value)) }
@@ -220,4 +221,5 @@ onUnmounted(() => { window.removeEventListener('helio:open-session', handleOpenS
 .zoom-session{display:flex;justify-content:space-between;align-items:center;gap:1rem;margin:0 0 1rem;padding:.9rem 1rem;border:1px solid #bfdbfe;border-radius:.7rem;background:#f8fbff}.zoom-session.warn{border-color:#fecaca;background:#fff7f7}.zoom-session strong,.zoom-session small{display:block}.zoom-session small{margin-top:.25rem;color:#64748b;font-size:.8rem;line-height:1.4}.zoom-session.warn small{color:#991b1b}.zoom-session .secondary{flex:0 0 auto;white-space:nowrap}@media(max-width:700px){.zoom-session{align-items:stretch;flex-direction:column}.zoom-session .secondary{width:100%}}
 .preparation-card{display:flex;align-items:center;justify-content:space-between;gap:1rem;margin-bottom:.8rem;padding:1.1rem 1.2rem;background:#f8fbff;border:1px solid #bfdbfe;border-radius:.8rem}.preparation-card h2{font-size:1.05rem;margin:.2rem 0}.preparation-card p:last-child{margin:.35rem 0 0;color:#64748b;line-height:1.45}@media(max-width:700px){.preparation-card{flex-direction:column;align-items:stretch}.preparation-card .primary{width:100%}}
 .share-link{width:min(35rem,100%);background:#fff;border-radius:1rem;padding:1.3rem}.share-link h2{margin:.2rem 0 .5rem}.share-link p{color:#64748b;line-height:1.5}.share-link label{display:block;margin:.75rem 0;color:#334155;font-size:.85rem}.share-link label strong{display:block;margin-bottom:.35rem}.share-link input{box-sizing:border-box;width:100%;padding:.75rem;border:1px solid #cfd7e2;border-radius:.6rem;font:inherit}.share-link div{display:flex;justify-content:flex-end;gap:.5rem;margin-top:1rem}
+.session-context{background:#f8fafc;border:1px solid #e2e8f0;border-radius:.65rem;padding:.8rem;margin:0 0 .85rem}.session-context p:last-child{white-space:pre-wrap;color:#475569;line-height:1.5;margin:.25rem 0 0}.preparation-carry-forward{padding-top:.55rem;border-top:1px solid #dbeafe}.preparation-carry-forward span{color:#64748b}
 </style>
