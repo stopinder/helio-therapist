@@ -6,7 +6,7 @@ Resources, worksheets, measures, homework and returned files are one **clinical 
 
 The flow is:
 
-`Resource library → client assignment → client response → therapist review → client timeline / Today when action is required`
+`Resource library → client request → request item → client response → therapist review → client timeline / Today when action is required`
 
 The existing `documents` table remains appropriate for therapist-uploaded reports and approved documents. It must not be stretched to represent a reusable resource, a sent copy, a structured response, a score, or a review decision.
 
@@ -30,7 +30,7 @@ Within a selected client's workspace:
 
 `Timeline | Sessions` (with **Clinical** reserved only if it later earns a distinct clinical purpose).
 
-Timeline has contextual actions: **Send resource**, **Assign outcome measure**, **Request questionnaire**, and **Share document**. Each opens the same shared Resource Picker. The assignment lifecycle remains sent, opened, in progress, completed, awaiting review, and reviewed, but it is shown through clinically meaningful timeline events rather than a tab.
+Timeline and an active session have one contextual action: **Send to client**. It opens the shared picker for supported resources, measures, questionnaires and documents. The assignment lifecycle remains sent, opened, in progress, completed, awaiting review, and reviewed, but it is shown through clinically meaningful timeline events rather than a tab.
 
 The normal flow is deliberately short:
 
@@ -46,8 +46,9 @@ These concepts must remain distinct.
 | --- | --- | --- |
 | Resource | Reusable source material owned by a therapist: worksheet, psychoeducation, diagnostic tool, outcome measure, PDF, link, or therapist-authored item. | It is never the record that a client completed. |
 | Resource version | Immutable publishable revision of a resource. Includes its form definition, scoring definition and/or source file. | Editing creates a new version. |
-| Assignment | A client-specific send of one exact resource version, with optional instruction and due date. | Holds a snapshot of the sent version's client-facing details. |
-| Response | The client’s structured answers and/or returned work. | Belongs to an assignment, never directly to the library item. |
+| Client request | One clinician send action for one client. | Owns recipient, shared instruction, due date, delivery channel and sent metadata. |
+| Client request item | One exact resource version included in a request. | Owns its snapshot, completion link and independent lifecycle. |
+| Response | The client’s structured answers and/or returned work. | Belongs to a request item, never directly to the library item. |
 | Response file | A scanned worksheet, photo, completed PDF, external report or other uploaded return. | Kept privately and attached to the response. |
 | Measure result | A structured interpretation-ready result: raw item answers, calculation version, score(s), and completion time. | Helio calculates and organises; it does not diagnose. |
 | Review | A therapist’s state and timestamp, with optional internal note. | It is separate from completion. |
@@ -69,7 +70,7 @@ Each submitted structured response preserves raw answers plus calculated score d
 
 ## Required journeys
 
-1. **Send a resource** — therapist opens a client, selects **Send to client**, searches or chooses a recent resource, adds optional instruction/due date, and sends. An assignment and “resource sent” timeline event are created.
+1. **Send resources** — therapist opens a client, selects one or more resources, adds an optional shared instruction/due date, and sends. One client request, individual request items and meaningful “resource sent” timeline events are created.
 2. **Assign a measure** — same flow, with a measure-specific completion expectation. The assignment carries the exact measure/scoring version.
 3. **Complete in Helio** — client opens a structured assignment through an opaque, expiring link, submits answers, and receives clear confirmation. A response, any permitted score, and an awaiting-review state are created.
 4. **Upload a completed copy** — client opens the assignment, chooses upload, adds one or more permitted files, and submits. The files attach to the response, not to general Documents.
@@ -82,9 +83,9 @@ Each submitted structured response preserves raw answers plus calculated score d
 
 Built therapist routes/components:
 
-- `ResourcePicker.vue` — shared contextual picker, grouped around recent items, measures, worksheets, psychoeducation, sleep, behavioural experiments and custom resources.
+- `ResourcePicker.vue` — shared contextual picker. Selection is a single draft state shared by results and the **Selected** summary; optional instruction and due date appear only after an item is selected. It groups recent items, measures, worksheets, psychoeducation, sleep, behavioural experiments and custom resources.
 - `GET/POST /api/resources` — therapist-owned reusable resource creation and contextual picker data.
-- `GET/POST/PATCH /api/resource-assignments` — versioned assignments, actionable review queue, and therapist review state.
+- `GET/POST/PATCH /api/resource-assignments` — request creation, independently actionable request items, review queue and therapist review state.
 - `GET /api/client-timeline` — clinically meaningful exchange history for the selected client.
 
 Built therapist review path:
@@ -124,6 +125,8 @@ Migration `20260721120000_add_clinical_resource_exchange_architecture.sql` reser
 - `outcome_measure_results`; and
 - `client_timeline_events` for clinically meaningful events.
 
+Migration `20260722100000_add_client_requests_and_request_items.sql` evolves this without discarding existing clinical records. `client_requests` is the shared send envelope; the former assignment records are renamed `client_request_items`, retaining all existing response, score and token links. New timeline events reference the item and optionally the parent request. A read-only compatibility view preserves the former `client_resource_assignments` name during rollout.
+
 It deliberately does **not** add generic tasks, messages, reminders, client logins, email delivery, or a public client upload endpoint. The initial row-level policies are therapist-owned only, so deploying the schema cannot accidentally expose clinical records to a client.
 
 ## Phased implementation
@@ -131,7 +134,7 @@ It deliberately does **not** add generic tasks, messages, reminders, client logi
 ### Phase 1a — therapist assignment and timeline foundation — complete
 
 - Small therapist-owned resource library and contextual picker.
-- Send an exact immutable resource version to a selected client, with optional instruction and due date.
+- Send one or more exact immutable resource versions in one client request, with shared optional instruction and due date; each item progresses independently.
 - Contextual actions in Timeline and an active session, all using the same picker.
 - Resource-sent and reviewed events displayed in Timeline; completed/returned event shapes are reserved for secure client return.
 - Completed/returned assignments surface in Today while awaiting review; reviewed items leave Today and remain in Timeline.

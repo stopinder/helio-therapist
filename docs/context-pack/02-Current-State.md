@@ -1,6 +1,6 @@
 # Current state
 
-Last updated: 21 July 2026. This is a working implementation record; it distinguishes code present in this checkout from production and integration verification.
+Last updated: 22 July 2026. This is a working implementation record; it distinguishes code present in this checkout from production and integration verification.
 
 ## Built in this repository
 
@@ -18,7 +18,7 @@ The application currently exposes **Today**, **Clients**, **Transcripts**, and *
 
 ## Requires deployment, migration or environment verification
 
-- The current checkout has uncommitted workspace/navigation changes and is one commit ahead of `origin/main`; do not assume its exact state is live until it is committed, pushed, and Vercel reports a successful production deployment.
+- The outbound client-request refactor is implemented locally and awaits publication plus migration `20260722100000_add_client_requests_and_request_items.sql`; do not use its multi-item request path in production until that migration has been applied successfully.
 - The Zoom start-session flow requires the Zoom `meeting:write:meeting` scope, re-consent after adding it, and the Zoom session-link database migration applied to Supabase.
 - Zoom cloud transcript import requires the webhook configuration, valid credentials, and an actual recorded/transcribed meeting test.
 - Dictation needs a real browser microphone permission and authenticated transcription endpoint test with normal browser audio.
@@ -28,11 +28,13 @@ The application currently exposes **Today**, **Clients**, **Transcripts**, and *
 
 ## Built clinical-exchange foundation
 
-- Resources & measures is not a client-workspace destination. Timeline is the default workspace and contains contextual Send resource, Assign outcome measure, Request questionnaire and Share document actions.
-- Therapists can create a basic reusable resource, select it from the one shared contextual picker, and send an immutable versioned assignment to a client with optional instruction and due date.
+- Resources & measures is not a client-workspace destination. Timeline is the default workspace and contains one contextual **Send to client** action. It opens the unified picker for supported resources, measures, questionnaires and documents.
+- Therapists can create a basic reusable resource, select one or more items in the shared contextual picker, and send one client request with shared optional instruction and due date. Each sent item has an independent completion/review lifecycle.
 - The reserved clinical-exchange schema has been applied to the Helio Supabase project: resources, immutable versions, assignments, responses, response files, measure results and clinically meaningful timeline events have dedicated records.
 
-After migration `20260721153000` is applied, PHQ-9 can be added as a structured outcome-measure template, sent through the same picker and completed on a mobile device through a one-assignment, expiring completion link. Submission preserves item answers, calculates the total, records a completed Timeline event and places the assignment in Today for therapist review. The therapist can open that result, see the answers and total with a non-diagnostic boundary, then explicitly mark it reviewed. The token is stored only as a hash. A non-zero answer to item 9 shows immediate urgent-support guidance in the client form; it does not replace emergency support or therapist judgement. Delivery is currently copy-link rather than email, and uploads, other form types, measure trends, and a distinct in-context response view remain unavailable.
+After migration `20260721153000` is applied, PHQ-9 can be added as a structured outcome-measure template, sent through the same picker and completed on a mobile device through a one-item, expiring completion link. Submission preserves item answers, calculates the total, records a completed Timeline event and places the item in Today for therapist review. The therapist can open that result, see the answers and total with a non-diagnostic boundary, then explicitly mark it reviewed. The token is stored only as a hash. A non-zero answer to item 9 shows immediate urgent-support guidance in the client form; it does not replace emergency support or therapist judgement. Delivery is currently copy-link rather than email, and uploads, other form types, measure trends, and a distinct in-context response view remain unavailable.
+
+- Migration `20260722100000_add_client_requests_and_request_items.sql` is required before the multi-selection request model can be used in production. It creates the shared request envelope, evolves assignments into independently progressing request items, and preserves prior clinical records and their links.
 
 ## Deliberately deferred
 

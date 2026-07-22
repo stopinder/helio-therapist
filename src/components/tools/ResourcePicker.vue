@@ -1,25 +1,26 @@
 <template>
   <div class="modal-backdrop" @click.self="close">
     <article class="resource-dialog" role="dialog" aria-modal="true" aria-labelledby="resource-picker-title">
-      <header><div><p class="eyebrow">{{ client.name }}</p><h2 id="resource-picker-title">{{ heading }}</h2><p>Choose resources first. Then configure the request that will be sent for your selection.</p></div><button class="close" aria-label="Close" @click="close">×</button></header>
+      <header><div><p class="eyebrow">{{ client.name }}</p><h2 id="resource-picker-title">Send to client</h2><p>Choose one or more items, then add an instruction or due date if useful.</p></div><button class="close" aria-label="Close" @click="close">×</button></header>
       <p v-if="error" class="exchange-error" role="alert">{{ error }}</p>
-      <label class="search-label">Find a resource<input v-model="query" autofocus placeholder="Search resources, measures and worksheets" @input="loadResources" /></label>
+      <label class="search-label">Find something to send<input v-model="query" autofocus placeholder="Search resources, measures, questionnaires and documents" @input="loadResources" /></label>
       <div v-if="resourcesLoading" class="empty-inline">Loading library…</div>
       <template v-else>
         <section v-for="group in groupedResources" :key="group.id" v-show="group.items.length" class="picker-group">
           <h3>{{ group.label }}</h3>
-          <button v-for="resource in group.items" :key="resource.id" class="resource-choice" :class="{ chosen: isSelected(resource) }" @click="toggleResource(resource)"><span><strong>{{ resource.title }}</strong><small>{{ kindLabel(resource.resource_kind) }} · {{ completionModeLabel(resource.version?.completion_mode) }}</small></span><span>{{ isSelected(resource) ? 'Selected' : 'Select' }}</span></button>
+          <button v-for="resource in group.items" :key="catalogKey(resource)" class="resource-choice" :class="{ chosen: isSelected(resource) }" @click="toggleResource(resource)"><span><strong>{{ resource.title }}</strong><small>{{ kindLabel(resource.resource_kind) }} · {{ completionModeLabel(resource.version?.completion_mode) }}</small></span><span>{{ isSelected(resource) ? '✓ Selected' : 'Select' }}</span></button>
         </section>
         <p v-if="!resources.length" class="empty-inline">No matching resources yet. Add a reusable resource below.</p>
       </template>
-      <button v-if="!resources.some(item => item.title === 'PHQ-9')" class="add-template" :disabled="creating" @click="createPhq9">{{ creating ? 'Adding…' : 'Add PHQ-9 to library' }}</button><details class="add-resource"><summary>Add a simple reusable resource</summary><label>Title<input v-model="newResource.title" placeholder="e.g. Sleep diary" /></label><label>Type<select v-model="newResource.resourceKind"><option v-for="[value, label] in resourceKinds" :key="value" :value="value">{{ label }}</option></select></label><label>How the client completes it<select v-model="newResource.completionMode"><option value="structured">Complete in Helio</option><option value="upload">Upload completed copy</option><option value="either">Complete or upload</option><option value="read_only">Read only</option></select></label><button class="secondary" :disabled="creating" @click="createResource">{{ creating ? 'Adding…' : 'Add to library' }}</button></details>
+      <button v-if="!resources.some(item => item.title === 'PHQ-9')" class="add-template" :disabled="creating" @click="createPhq9">{{ creating ? 'Adding…' : 'Add PHQ-9 to library' }}</button>
+      <ReusableResourceCreator @created="handleResourceCreated" />
       <section class="selected-resources" aria-labelledby="selected-resources-title">
-        <div class="selected-resources-heading"><div><p class="eyebrow">Request</p><h3 id="selected-resources-title">Selected resources</h3></div><span>{{ selectedResources.length }} selected</span></div>
-        <p v-if="!selectedResources.length" class="empty-inline">Select one or more resources above to configure a request.</p>
-        <ul v-else><li v-for="resource in selectedResources" :key="resource.version?.id"><span><strong>{{ resource.title }}</strong><small>{{ kindLabel(resource.resource_kind) }}</small></span><button type="button" class="remove-resource" :aria-label="`Remove ${resource.title}`" @click="toggleResource(resource)">Remove</button></li></ul>
-        <fieldset :disabled="!selectedResources.length || sending"><label>Optional instruction<textarea v-model="instruction" placeholder="What would you like the client to do with these resources?" /></label><label>Optional due date<input v-model="dueAt" type="date" /></label></fieldset>
+        <div class="selected-resources-heading"><h3 id="selected-resources-title">Selected</h3><span>{{ selectedResources.length ? `${selectedResources.length} selected` : 'No items selected' }}</span></div>
+        <p v-if="!selectedResources.length" class="empty-inline">Select one or more items above to configure the request.</p>
+        <template v-else><ul><li v-for="resource in selectedResources" :key="catalogKey(resource)"><span><strong>{{ resource.title }}</strong><small>{{ kindLabel(resource.resource_kind) }}</small></span><button type="button" class="remove-resource" :aria-label="`Remove ${resource.title}`" @click="toggleResource(resource)">Remove</button></li></ul>
+        <label>Optional instruction<textarea v-model="instruction" :disabled="sending" placeholder="What would you like the client to do with these items?" /></label><label>Optional due date<input v-model="dueAt" :disabled="sending" type="date" /></label></template>
       </section>
-      <footer><button class="secondary" @click="close">Cancel</button><button class="primary" :disabled="!selectedResources.length || sending" @click="send">{{ sending ? 'Sending…' : selectedResources.length > 1 ? `Send ${selectedResources.length} resources` : 'Send to client' }}</button></footer>
+      <footer><button class="secondary" @click="close">Cancel</button><button class="primary" :disabled="!selectedResources.length || !client?.id || sending" @click="send">{{ sending ? 'Sending…' : 'Send to client' }}</button></footer>
     </article>
   </div>
 </template>
@@ -28,12 +29,13 @@
 import { computed, ref } from 'vue'
 import { authenticatedFetch } from '../../lib/api.js'
 import { completionModeLabel, resourceKinds } from '../../lib/clinicalExchange.js'
+import ReusableResourceCreator from './ReusableResourceCreator.vue'
 
-const props = defineProps({ client: { type: Object, required: true }, heading: { type: String, default: 'Send to client' } })
+const props = defineProps({ client: { type: Object, required: true } })
 const emit = defineEmits(['close', 'sent'])
 const resources = ref([]), resourcesLoading = ref(false), selectedResources = ref([]), query = ref(''), instruction = ref(''), dueAt = ref(''), sending = ref(false), creating = ref(false), error = ref('')
-const newResource = ref({ title: '', resourceKind: 'worksheet', completionMode: 'structured' })
 const kindLabel = kind => resourceKinds.find(([value]) => value === kind)?.[1] || 'Resource'
+const catalogKey = resource => `${resource.resource_kind || 'resource'}:${resource.id || resource.version?.id}`
 const recentlyUsed = () => { try { return JSON.parse(localStorage.getItem('helio_recent_resources') || '[]') } catch { return [] } }
 const groupedResources = computed(() => {
   const recentIds = recentlyUsed()
@@ -46,11 +48,11 @@ const groupedResources = computed(() => {
 async function responseJson(response) { const data = await response.json().catch(() => ({})); if (!response.ok) throw new Error(data.error || 'Something went wrong.'); return data }
 async function loadResources() { resourcesLoading.value = true; try { resources.value = (await responseJson(await authenticatedFetch(`/api/resources?q=${encodeURIComponent(query.value)}`))).resources || [] } catch (cause) { error.value = cause.message } finally { resourcesLoading.value = false } }
 function close() { emit('close') }
-function isSelected(resource) { return selectedResources.value.some(item => item.version?.id === resource.version?.id) }
-function toggleResource(resource) { selectedResources.value = isSelected(resource) ? selectedResources.value.filter(item => item.version?.id !== resource.version?.id) : [...selectedResources.value, resource] }
-async function createResource(payload = newResource.value) { creating.value = true; error.value = ''; try { const resource = (await responseJson(await authenticatedFetch('/api/resources', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }))).resource; resources.value.unshift(resource); toggleResource(resource); newResource.value = { title: '', resourceKind: 'worksheet', completionMode: 'structured' } } catch (cause) { error.value = cause.message } finally { creating.value = false } }
-function createPhq9() { return createResource({ template: 'phq9' }) }
-async function send() { if (!selectedResources.value.length) return; sending.value = true; error.value = ''; try { const sent = await Promise.all(selectedResources.value.map(async resource => responseJson(await authenticatedFetch('/api/resource-assignments', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ clientId: props.client.id, resourceVersionId: resource.version.id, instruction: instruction.value, dueAt: dueAt.value || null }) })))); const ids = [...selectedResources.value.map(resource => resource.id), ...recentlyUsed().filter(id => !selectedResources.value.some(resource => resource.id === id))].slice(0, 8); localStorage.setItem('helio_recent_resources', JSON.stringify(ids)); emit('sent', { assignments: sent.map(item => item.assignment), clientAccessTokens: sent.map(item => item.clientAccessToken) }); emit('close') } catch (cause) { error.value = cause.message } finally { sending.value = false } }
+function isSelected(resource) { return selectedResources.value.some(item => catalogKey(item) === catalogKey(resource)) }
+function toggleResource(resource) { selectedResources.value = isSelected(resource) ? selectedResources.value.filter(item => catalogKey(item) !== catalogKey(resource)) : [...selectedResources.value, resource] }
+async function createPhq9() { creating.value = true; error.value = ''; try { const resource = (await responseJson(await authenticatedFetch('/api/resources', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ template: 'phq9' }) }))).resource; handleResourceCreated(resource) } catch (cause) { error.value = cause.message } finally { creating.value = false } }
+function handleResourceCreated(resource) { resources.value.unshift(resource); if (!isSelected(resource)) toggleResource(resource) }
+async function send() { if (!selectedResources.value.length) return; sending.value = true; error.value = ''; try { const sent = await responseJson(await authenticatedFetch('/api/resource-assignments', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ clientId: props.client.id, resourceVersionIds: selectedResources.value.map(resource => resource.version.id), instruction: instruction.value, dueAt: dueAt.value || null }) })); const ids = [...selectedResources.value.map(resource => resource.id), ...recentlyUsed().filter(id => !selectedResources.value.some(resource => resource.id === id))].slice(0, 8); localStorage.setItem('helio_recent_resources', JSON.stringify(ids)); emit('sent', { request: sent.request, assignments: sent.assignments, clientAccessTokens: sent.clientAccessTokens }); emit('close') } catch (cause) { error.value = cause.message } finally { sending.value = false } }
 loadResources()
 </script>
 

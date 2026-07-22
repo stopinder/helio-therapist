@@ -33,7 +33,7 @@
       </article>
 
       <section class="timeline-card">
-        <div class="card-heading"><div><p class="eyebrow">Timeline</p><h2>Clinical story</h2><p class="quiet-copy">What has happened with this person. It shows clinically useful events, not an audit log.</p></div><div class="timeline-actions"><button class="secondary" @click="openPicker('Send resource')">Send resource</button><button class="secondary" @click="openPicker('Assign outcome measure')">Assign outcome measure</button><button class="secondary" @click="openPicker('Request questionnaire')">Request questionnaire</button><button class="secondary" @click="openPicker('Share document')">Share document</button></div></div>
+        <div class="card-heading"><div><p class="eyebrow">Timeline</p><h2>Clinical story</h2><p class="quiet-copy">What has happened with this person. It shows clinically useful events, not an audit log.</p></div><div class="timeline-actions"><button class="secondary" @click="openPicker">Send to client</button></div></div>
         <div v-if="!timelineEvents.length" class="empty-inline">No activity recorded yet. Start a session when you are ready.</div>
         <button v-for="event in timelineEvents" :key="event.id" class="timeline-event" @click="event.session && openSession(event.session)">
           <span class="timeline-marker" aria-hidden="true">{{ event.icon }}</span>
@@ -56,14 +56,14 @@
           <button v-if="editingSession.zoomStartUrl" class="secondary" @click="openZoomMeeting(editingSession)">Open Zoom</button>
         </section>
         <div class="note-label"><label for="session-notes">Therapist notes</label><button v-if="editingSession.status !== 'closed'" class="dictate" :class="{ recording: isDictating }" :disabled="transcribing" @click="toggleDictation"><span class="record-dot" aria-hidden="true"></span>{{ isDictating ? 'Stop dictation' : transcribing ? 'Transcribing…' : 'Start dictation' }}</button></div>
-        <div class="session-actions"><span>Client actions</span><button class="secondary" @click="openPicker('Send resource')">Send resource</button><button class="secondary" @click="openPicker('Assign outcome measure')">Assign outcome measure</button><button class="secondary" @click="openPicker('Request questionnaire')">Request questionnaire</button><button class="secondary" @click="openPicker('Share document')">Share document</button></div>
+        <div class="session-actions"><span>Client actions</span><button class="secondary" @click="openPicker">Send to client</button></div>
         <p v-if="editingSession.status !== 'closed'" class="dictation-help" :class="{ recording: isDictating, error: dictationError }" role="status">{{ dictationMessage() }}</p>
         <textarea id="session-notes" v-model="draftNotes" :disabled="editingSession.status === 'closed'" placeholder="Record the session in your own words…"></textarea>
         <aside class="ai-boundary"><strong>Session review boundary</strong><p>AI-supported pattern recognition is session-specific and provisional. It requires therapist review and never becomes part of the clinical record automatically.</p></aside>
         <footer><button class="secondary" @click="closeEditor">Close</button><template v-if="editingSession.status !== 'closed'"><button class="secondary" @click="saveNotes">Save notes</button><button v-if="editingSession.status !== 'completed'" class="primary" @click="completeSession">End session</button><button v-else class="primary" @click="closeSession">Close session</button></template></footer>
       </article>
     </div>
-    <ResourcePicker v-if="pickerOpen" :client="selectedClient" :heading="pickerHeading" @close="pickerOpen = false" @sent="handleResourceSent" />
+    <ResourcePicker v-if="pickerOpen" :client="selectedClient" @close="pickerOpen = false" @sent="handleResourceSent" />
     <div v-if="completionLinks.length" class="modal-backdrop" @click.self="completionLinks = []"><article class="share-link" role="dialog" aria-modal="true"><p class="eyebrow">Ready to send</p><h2>Share {{ completionLinks.length === 1 ? 'this secure link' : 'these secure links' }} with {{ selectedClient.name }}</h2><p>Each link opens its assignment on mobile and expires in 30 days.</p><label v-for="item in completionLinks" :key="item.url"><strong>{{ item.title }}</strong><input readonly :value="item.url" @focus="$event.target.select()" /></label><div><button class="secondary" @click="completionLinks = []">Close</button><button class="primary" @click="copyCompletionLinks">{{ copyLabel }}</button></div></article></div>
   </section>
   <div v-else class="empty-state large"><h2>No client selected</h2><p>Choose a client from Clients to open their orientation workspace.</p></div>
@@ -87,7 +87,6 @@ const allSessions = ref(loadSessions())
 const startingSession = ref(false)
 const clinicalTimelineEvents = ref([])
 const pickerOpen = ref(false)
-const pickerHeading = ref('Send to client')
 const completionLinks = ref([])
 const copyLabel = ref('Copy link')
 const isDictating = ref(false)
@@ -141,7 +140,7 @@ function openZoomMeeting(session) {
 function zoomMeetingLabel(session) { if (session.zoomState === 'preparing') return 'Preparing your Zoom meeting…'; if (session.zoomState === 'ready') return 'Zoom meeting ready'; return 'Zoom was not opened' }
 function zoomMeetingDescription(session) { if (session.zoomState === 'preparing') return 'Helio is creating a Zoom meeting and linking it to this session.'; if (session.zoomState === 'ready') return 'Zoom opens separately with its full meeting controls. Helio will use this link to route the transcript back to this session.'; return session.zoomError || 'You can continue taking therapist notes. Reconnect Zoom in Settings before the next session.' }
 function openSession(session) { editingSession.value = session; draftNotes.value = session.notes || ''; activeTab.value = 'sessions' }
-function openPicker(heading) { pickerHeading.value = heading; pickerOpen.value = true }
+function openPicker() { pickerOpen.value = true }
 async function handleResourceSent({ assignments, clientAccessTokens }) { pickerOpen.value = false; completionLinks.value = assignments.map((assignment, index) => ({ title: assignment.sent_snapshot?.title || 'Resource', url: assignmentCompletionUrl(clientAccessTokens[index]) })); await loadClinicalTimeline() }
 async function copyCompletionLinks() { try { await navigator.clipboard.writeText(completionLinks.value.map(item => `${item.title}: ${item.url}`).join('\n')); copyLabel.value = 'Copied'; setTimeout(() => { copyLabel.value = 'Copy links' }, 1600) } catch { copyLabel.value = 'Select and copy' } }
 function saveNotes() { editingSession.value.notes = draftNotes.value; editingSession.value.notesStatus = 'saved'; editingSession.value.updatedAt = new Date().toISOString(); persist() }
