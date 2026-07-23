@@ -11,9 +11,11 @@ Primary navigation is:
 
 There are no top-level Messages, Reports, Documents, Sessions, Assessments, or Tasks areas. Those are client capabilities, not separate applications.
 
-## Today: schedule first, then the next piece of work
+## Today: clinical day first, then today’s schedule
 
 Today is the therapist's desk for the day. Before the next matched appointment, it surfaces one compact preparation state: client and time, therapist-maintained current focus, the last clinically useful timeline development, and at most one unresolved preparation item. Its only action is **Prepare for session**, which opens the existing client preparation context. It supports day, week, and month views plus direct navigation to tomorrow or another date. When one calendar title maps unambiguously to a Helio client, its popover offers **Open client workspace**. Appointment rows show one concise status where Helio has sufficient real state.
+
+The schedule section is labelled **Today’s schedule**, not “Calendar”. Helio names the therapist’s work and purpose rather than the widget used to support it. Its quiet subtitle remains **Reference and navigation** with meaningful sync state when available. This keeps the schedule visually and conceptually continuous with **Your clinical day**, while retaining day, week, and month navigation.
 
 This is deliberately the first time-aware state only. Between-session documentation and end-of-day wrap-up are not built until real use shows that this preparation state reduces reopening, searching, and remembering.
 
