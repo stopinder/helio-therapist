@@ -1,24 +1,26 @@
 <template>
   <section class="supervision-workspace">
-    <header>
-      <p class="eyebrow">Therapist workspace</p>
+    <header class="supervision-introduction">
       <h1>Supervision</h1>
-      <p>Private reflections you deliberately selected to think through with your supervisor.</p>
+      <p>A private place to gather reflections, questions and themes before meeting with your supervisor.</p>
     </header>
-    <div v-if="loading" class="quiet">Loading supervision agenda…</div>
-    <div v-else-if="!groups.length" class="empty">
-      <h2>Nothing marked for supervision</h2>
-      <p>From a private reflection, choose <strong>Add to supervision</strong>. Helio will keep the original reflection linked here without copying it into the client record.</p>
-    </div>
-    <section v-for="group in groups" :key="group.clientId || 'unlinked'" class="client-group">
-      <h2>{{ group.clientName }}</h2>
-      <article v-for="reflection in group.items" :key="reflection.id">
-        <p>{{ reflection.body }}</p>
-        <p v-if="reflection.supervision_question" class="question"><strong>Question:</strong> {{ reflection.supervision_question }}</p>
-        <small><template v-if="reflection.theme">{{ reflection.theme }} · </template>{{ date(reflection.created_at) }}</small>
-      </article>
+    <p class="privacy-reassurance"><span>Private by design</span> Everything here belongs to your reflective practice. Nothing is copied into the clinical record unless you choose to do so.</p>
+
+    <div v-if="loading" class="quiet" aria-live="polite">Opening your supervision space…</div>
+    <section v-else-if="!groups.length" class="empty-reflective-space" aria-labelledby="empty-supervision-heading">
+      <h2 id="empty-supervision-heading">Nothing here yet</h2>
+      <p>When a reflection feels worth exploring in supervision, you can add it here. Your original reflection remains private and connected to where it was written.</p>
     </section>
-    <p class="boundary">This agenda contains therapist-only reflections. Any future AI draft must be reviewed and approved before use; it will not interpret the therapist or make clinical decisions.</p>
+    <div v-else class="supervision-notes">
+      <section v-for="group in groups" :key="group.clientId || 'unlinked'" class="client-group">
+        <h2>{{ group.clientName }}</h2>
+        <article v-for="reflection in group.items" :key="reflection.id" class="supervision-note">
+          <p>{{ reflection.body }}</p>
+          <p v-if="reflection.supervision_question" class="question"><span>Question to explore</span>{{ reflection.supervision_question }}</p>
+          <small><template v-if="reflection.theme">{{ reflection.theme }} <i aria-hidden="true">·</i> </template>{{ date(reflection.created_at) }}</small>
+        </article>
+      </section>
+    </div>
   </section>
 </template>
 
@@ -47,5 +49,24 @@ watch(() => props.clients, load, { immediate: true, deep: true })
 </script>
 
 <style scoped>
-.supervision-workspace{max-width:58rem;margin:0 auto}.eyebrow{text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);font-size:.7rem;font-weight:700;margin:0 0 .25rem}.supervision-workspace h1{margin:.1rem 0 .35rem}.supervision-workspace header>p:last-child,.quiet,.empty p,.boundary,small{color:var(--text-muted);line-height:1.5}.empty,.client-group{margin-top:1rem;padding:1.2rem;background:var(--surface);border:1px solid var(--border-muted);border-radius:.8rem}.empty h2,.client-group h2{margin:0;font-size:1.1rem}.client-group article{border-top:1px solid var(--border-muted);padding:.9rem 0}.client-group article:first-of-type{margin-top:.7rem}.client-group p{white-space:pre-wrap;line-height:1.55;margin:.2rem 0}.question{color:var(--text-secondary)}.boundary{margin-top:1rem;padding:.9rem 1rem;background:var(--surface-muted);border-left:3px solid var(--border-strong);font-size:.85rem}
+.supervision-workspace { max-width: 42rem; margin: 0 auto; padding: clamp(1rem, 3vw, 2.5rem) 0 4rem; }
+.supervision-introduction { max-width: 37rem; }
+.supervision-workspace h1 { margin: 0; font-family: 'Newsreader', Georgia, serif; font-size: clamp(2.15rem, 5vw, 3rem); font-weight: 500; letter-spacing: -.025em; line-height: 1; }
+.supervision-introduction > p { max-width: 34rem; margin: .85rem 0 0; color: var(--text-secondary); font-size: 1rem; line-height: 1.7; }
+.privacy-reassurance { max-width: 37rem; margin: 2.5rem 0 0; padding: .95rem 0 0; border-top: 1px solid var(--border-muted); color: var(--text-muted); font-size: .875rem; line-height: 1.65; }
+.privacy-reassurance span { color: var(--text-secondary); font-weight: 600; margin-right: .35rem; }
+.quiet { margin-top: 3.5rem; color: var(--text-muted); font-size: .9375rem; }
+.empty-reflective-space { max-width: 34rem; margin-top: 4.5rem; padding: 0 0 3rem; }
+.empty-reflective-space h2, .client-group h2 { margin: 0; color: var(--text-primary); font-family: 'Newsreader', Georgia, serif; font-size: 1.5rem; font-weight: 500; letter-spacing: -.012em; }
+.empty-reflective-space p { max-width: 32rem; margin: .75rem 0 0; color: var(--text-muted); line-height: 1.7; }
+.supervision-notes { margin-top: 3.5rem; }
+.client-group + .client-group { margin-top: 3.5rem; }
+.supervision-note { padding: 1.3rem 0 1.35rem; border-bottom: 1px solid var(--border-muted); }
+.client-group h2 + .supervision-note { margin-top: .55rem; border-top: 1px solid var(--border-muted); }
+.supervision-note p { margin: 0; color: var(--text-primary); font-size: .975rem; line-height: 1.75; white-space: pre-wrap; }
+.supervision-note .question { margin-top: .9rem; color: var(--text-secondary); }
+.question span { display: block; margin-bottom: .18rem; color: var(--text-muted); font-size: .75rem; font-weight: 600; letter-spacing: .015em; }
+small { display: block; margin-top: .9rem; color: var(--text-muted); font-size: .78rem; line-height: 1.45; }
+small i { font-style: normal; margin: 0 .16rem; }
+@media (max-width: 640px) { .supervision-workspace { padding-top: .5rem; } .privacy-reassurance { margin-top: 2rem; } .empty-reflective-space { margin-top: 3.25rem; } .supervision-notes { margin-top: 2.75rem; } }
 </style>

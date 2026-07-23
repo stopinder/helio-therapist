@@ -8,7 +8,7 @@ test('Today has one focused before-session preparation state', async () => {
   const preparation = await readFile(new URL('../src/components/NextSessionPreparation.vue', import.meta.url), 'utf8')
 
   assert.match(app, /<NextSessionPreparation/)
-  assert.match(app, /Later today/)
+  assert.doesNotMatch(app, /Later today/)
   assert.match(app, /reference-view/)
   assert.match(calendar, /next-appointment/)
   assert.match(calendar, /upcoming-appointments/)

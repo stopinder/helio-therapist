@@ -122,22 +122,6 @@
                 :client="nextMatchedClient"
                 @prepare="openAppointmentPreparation"
             />
-            <section v-if="laterTodayAppointments.length" class="later-today" aria-labelledby="later-today-heading">
-              <div class="later-today__heading">
-                <h2 id="later-today-heading" class="type-h2">Later today</h2>
-                <p class="type-body-sm">Your remaining appointments after the next session.</p>
-              </div>
-              <button
-                  v-for="appointment in laterTodayAppointments"
-                  :key="appointment.id"
-                  class="later-today__appointment interaction-row"
-                  @click="openAppointmentPreparation(appointment)"
-              >
-                <span>{{ appointmentTime(appointment) }}</span>
-                <strong class="type-body-medium">{{ appointment.summary }}</strong>
-                <span aria-hidden="true">›</span>
-              </button>
-            </section>
             <section class="today-calendar">
               <CalendarSchedule
                 :clients="clients"
@@ -145,7 +129,6 @@
                 @open-settings="selectedNav = 'Settings'"
                 @select-appointment="openAppointmentPreparation"
                 @next-appointment="nextMatchedAppointment = $event"
-                @upcoming-appointments="upcomingAppointments = $event"
             />
             </section>
           </section>
@@ -231,7 +214,6 @@ const activeView = ref("main")
 const selectedNav = ref("Today")
 const queuedTranscriptId = ref(null)
 const nextMatchedAppointment = ref(null)
-const upcomingAppointments = ref([])
 const activeTool = ref(null)
 const activeTemplate = ref(null)
 const reflectionMode = ref("new")
@@ -260,22 +242,6 @@ const matchedClientForAppointment = (appointment) => {
   })
   return matches.length === 1 ? matches[0] : null
 }
-const laterTodayAppointments = computed(() => {
-  const nextId = nextMatchedAppointment.value?.id
-  const now = new Date()
-  const endOfToday = new Date(now)
-  endOfToday.setHours(24, 0, 0, 0)
-  return upcomingAppointments.value
-    .filter(appointment => !appointment.allDay
-      && appointment.id !== nextId
-      && new Date(appointment.start).getTime() > now.getTime()
-      && new Date(appointment.start).getTime() < endOfToday.getTime()
-      && matchedClientForAppointment(appointment))
-    .sort((a, b) => new Date(a.start) - new Date(b.start))
-})
-const appointmentTime = (appointment) => new Date(appointment.start).toLocaleTimeString(undefined, {
-  hour: 'numeric', minute: '2-digit'
-})
 watch(clients, (newClients) => {
   localStorage.setItem("helio_clients", JSON.stringify(newClients))
 }, { deep: true })
@@ -576,5 +542,5 @@ onMounted(() => {
 .slide-enter-from, .slide-leave-to {
   transform: translateX(-100%);
 }
-.today-workspace{max-width:68rem;margin:0 auto;color:var(--text-primary)}.today-workspace-heading{margin-bottom:var(--space-stack-xl)}.today-workspace-heading h1{margin:0}.today-workspace-heading p:not(.today-eyebrow){margin:var(--space-stack-xs) 0 0;color:var(--text-muted)}.today-eyebrow{margin:0 0 var(--space-stack-xs);text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted)}.later-today,.today-calendar{margin-top:var(--space-stack-2xl)}.later-today__heading,.today-calendar__heading{margin-bottom:var(--space-stack-md)}.later-today h2,.today-calendar h2{margin:0;color:var(--text-secondary)}.later-today p,.today-calendar p{margin:var(--space-stack-xs) 0 0;color:var(--text-muted)}.later-today__appointment{width:100%;display:grid;grid-template-columns:5rem 1fr auto;align-items:center;gap:var(--space-inline-md);text-align:left;background:var(--surface);border:1px solid var(--border-muted);border-radius:.7rem;padding:var(--space-stack-md) var(--space-stack-lg);margin-bottom:var(--space-stack-xs);color:var(--text-secondary)}.later-today__appointment:hover{background:var(--surface-subtle);border-color:var(--border)}.later-today__appointment:focus-visible{outline:2px solid var(--action-link);outline-offset:2px}.later-today__appointment>span:first-child{font-weight:700;color:var(--action-link)}.today-calendar{padding-top:var(--space-stack-xs);border-top:1px solid var(--border-muted)}@media(max-width:700px){.later-today__appointment{grid-template-columns:4.5rem 1fr auto}}
+.today-workspace{max-width:68rem;margin:0 auto;color:var(--text-primary)}.today-workspace-heading{margin-bottom:var(--space-stack-xl)}.today-workspace-heading h1{margin:0}.today-workspace-heading p:not(.today-eyebrow){margin:var(--space-stack-xs) 0 0;color:var(--text-muted)}.today-eyebrow{margin:0 0 var(--space-stack-xs);text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted)}.today-calendar{margin-top:var(--space-stack-2xl);padding-top:var(--space-stack-2xl);border-top:1px solid var(--border-muted)}
 </style>

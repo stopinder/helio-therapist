@@ -13,7 +13,7 @@ There are no top-level Messages, Reports, Documents, Sessions, Assessments, or T
 
 ## Today: clinical day first, then today’s schedule
 
-Today is the therapist's desk for the day. Before the next matched appointment, it surfaces one compact preparation state: client and time, therapist-maintained current focus, the last clinically useful timeline development, and at most one unresolved preparation item. Its only action is **Prepare for session**, which opens the existing client preparation context. It supports day, week, and month views plus direct navigation to tomorrow or another date. When one calendar title maps unambiguously to a Helio client, its popover offers **Open client workspace**. Appointment rows show one concise status where Helio has sufficient real state.
+Today is the therapist's desk for the day. Before the schedule, it surfaces one compact preparation state for the next matched appointment: client and time, therapist-maintained current focus, the last clinically useful timeline development, and at most one unresolved preparation item. Its only action is **Prepare for session**, which opens the existing client preparation context. The page does not repeat remaining appointments in a separate list: that would compete with the next person and duplicate the supporting schedule. It supports day, week, and month views plus direct navigation to tomorrow or another date. When one calendar title maps unambiguously to a Helio client, its popover offers **Open client workspace**. Appointment rows show one concise status where Helio has sufficient real state.
 
 The schedule section is labelled **Today’s schedule**, not “Calendar”. Helio names the therapist’s work and purpose rather than the widget used to support it. Its quiet subtitle remains **Reference and navigation** with meaningful sync state when available. This keeps the schedule visually and conceptually continuous with **Your clinical day**, while retaining day, week, and month navigation.
 
@@ -97,6 +97,10 @@ Each concept answers a different question and must not be merged:
 Private reflections are stored separately from clinical events and are explicitly labelled: **“Not part of the client’s clinical record.”** They never enter Timeline, client-facing content, or routine exports. A reflection can be linked to a client and, where available, a session reference without duplicating the session material.
 
 The quiet default action is **Add private reflection**. **Add to supervision** is deliberate and optional. The therapist-level Supervision workspace groups selected original reflections by client rather than generating a summary from client records. Any future AI agenda draft remains therapist-reviewed; it may organise selected material but must not infer, diagnose, or make clinical decisions.
+
+## Reflective workspace design language
+
+Supervision, Private Reflections, Session Preparation, and Personal Notes are reflective workspaces, not operational dashboards. They use a slower visual rhythm: a direct human purpose, generous whitespace, restrained editorial hierarchy, warm quiet surfaces, and minimal visible chrome. Persistent compliance or AI messaging does not belong in these spaces; privacy is conveyed as brief environmental reassurance, and AI guidance appears only when an AI action is deliberately opened. This visual language preserves the shared Helio system while helping therapists feel that they have somewhere private to think.
 
 
 ## Session workspace hierarchy
