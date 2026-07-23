@@ -138,12 +138,8 @@
                 <span aria-hidden="true">›</span>
               </button>
             </section>
-            <section class="today-calendar" aria-labelledby="today-calendar-heading">
-              <div class="today-calendar__heading">
-                <h2 id="today-calendar-heading" class="type-h2">Calendar</h2>
-                <p class="type-body-sm">Reference and navigation for the rest of your day.</p>
-              </div>
-            <CalendarSchedule
+            <section class="today-calendar">
+              <CalendarSchedule
                 :clients="clients"
                 reference-view
                 @open-settings="selectedNav = 'Settings'"
