@@ -51,6 +51,7 @@ module.exports = {
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],
+        serif: ['Newsreader', 'Georgia', 'serif'],
       },
       fontSize: {
         // Semantic scale. Components should use the `type-*` classes in
