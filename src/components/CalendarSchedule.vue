@@ -101,7 +101,7 @@ const requestRange = computed(() => {
   if (view.value === 'month') return [startMonth(selectedDate.value), endMonth(selectedDate.value)]
   return [startDay(selectedDate.value), addDays(startDay(selectedDate.value), 1)]
 })
-const heading = computed(() => props.referenceView ? 'Calendar' : ({day:"Day’s Schedule",week:'Weekly Schedule',month:'Monthly Schedule'}[view.value]))
+const heading = computed(() => props.referenceView ? 'Today’s schedule' : ({day:"Day’s Schedule",week:'Weekly Schedule',month:'Monthly Schedule'}[view.value]))
 const rangeLabel = computed(() => {
   const [start,end] = requestRange.value; const final = addDays(end,-1)
   if (view.value === 'day') return start.toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric',year:'numeric'})
