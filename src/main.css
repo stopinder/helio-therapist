@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Newsreader:opsz,wght@6..72,500;6..72,600&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -7,57 +7,57 @@
 html {
     font-family: 'Inter', system-ui, sans-serif;
     background: var(--surface-canvas);
-    color: #2c3e50;
+    color: var(--text-primary);
 }
 
 :root {
     /* Semantic surface, boundary, and elevation hierarchy. */
-    --surface-canvas: #f4f5f3;
-    --surface: #fbfbfa;
-    --surface-muted: #f1f2ef;
-    --surface-subtle: #f7f7f5;
+    --surface-canvas: #f6f4f0;
+    --surface: #fbfaf7;
+    --surface-muted: #f0ede7;
+    --surface-subtle: #f8f6f2;
     --surface-elevated: #ffffff;
-    --surface-overlay: #ffffff;
-    --text-primary: #2c3e50;
-    --text-secondary: #3f4754;
-    --text-muted: #64748b;
-    --text-subtle: #94a3b8;
+    --surface-overlay: #fefdfb;
+    --text-primary: #292a28;
+    --text-secondary: #4d4b46;
+    --text-muted: #746f67;
+    --text-subtle: #9b958b;
     --text-on-action: #ffffff;
-    --action-primary: #3f4754;
-    --action-primary-hover: #2f3540;
-    --action-link: #2563eb;
-    --action-link-hover: #1d4ed8;
-    --border: #d9ddd8;
-    --border-muted: #e7e9e5;
-    --border-strong: #bcc3bc;
-    --shadow-elevated: 0 1px 2px rgb(24 32 28 / 0.05), 0 8px 24px rgb(24 32 28 / 0.06);
-    --shadow-overlay: 0 8px 24px rgb(24 32 28 / 0.10), 0 24px 64px rgb(24 32 28 / 0.12);
+    --action-primary: #4e625b;
+    --action-primary-hover: #40544d;
+    --action-link: #5a746a;
+    --action-link-hover: #405c52;
+    --border: #d8d3ca;
+    --border-muted: #e8e4dd;
+    --border-strong: #beb8ae;
+    --shadow-elevated: 0 1px 2px rgb(52 46 37 / 0.03), 0 6px 18px rgb(52 46 37 / 0.04);
+    --shadow-overlay: 0 10px 30px rgb(52 46 37 / 0.08), 0 28px 72px rgb(52 46 37 / 0.08);
     /* Semantic interaction states. Component code must refer to roles, not
        invent a new blue/grey/red for each control. */
-    --state-hover: #eef2ee;
-    --state-active: #e3e9e3;
-    --state-selected: #e8f0ff;
-    --state-focus-ring: #2563eb;
-    --state-disabled: #a5ada5;
-    --state-loading: #64748b;
-    --state-success: #047857;
-    --state-warning: #b45309;
-    --state-danger: #b91c1c;
-    --state-recording: #b91c1c;
-    --state-ai-working: #5b5fc7;
-    --state-success-surface: #ecfdf5;
-    --state-warning-surface: #fffbeb;
-    --state-danger-surface: #fef2f2;
-    --surface-reflection: #faf4ea;
-    --surface-reflection-hover: #f7efe4;
-    --border-reflection: #e7dccd;
-    --border-reflection-tag: #f1d5b8;
-    --state-reflection-focus: #c9a86a;
-    --surface-sidebar: #faf9f7;
-    --surface-avatar: #e2dcd4;
-    --surface-backdrop: rgb(15 23 42 / 0.5);
-    --radius-control: 0.375rem;
-    --radius-panel: 0.5rem;
+    --state-hover: #eeece6;
+    --state-active: #e4e0d8;
+    --state-selected: #e4ebe5;
+    --state-focus-ring: #476e60;
+    --state-disabled: #aaa399;
+    --state-loading: #746f67;
+    --state-success: #3d7160;
+    --state-warning: #9a641b;
+    --state-danger: #a7453f;
+    --state-recording: #a7453f;
+    --state-ai-working: #667367;
+    --state-success-surface: #edf5ef;
+    --state-warning-surface: #faf4e8;
+    --state-danger-surface: #fbefed;
+    --surface-reflection: #f7f2e9;
+    --surface-reflection-hover: #f1eadf;
+    --border-reflection: #e2d7c6;
+    --border-reflection-tag: #e7d0ad;
+    --state-reflection-focus: #9b7a49;
+    --surface-sidebar: #f9f7f3;
+    --surface-avatar: #e4ddd2;
+    --surface-backdrop: rgb(40 38 34 / 0.38);
+    --radius-control: 0.5rem;
+    --radius-panel: 0.75rem;
     --radius-pill: 9999px;
     --control-target: 2.75rem;
     --motion-fast: 100ms;
@@ -84,9 +84,9 @@ html {
 
 @layer components {
     /* Helio's only type scale. The weight is part of the semantic role. */
-    .type-display { @apply font-sans text-display font-bold; }
-    .type-h1 { @apply font-sans text-h1 font-bold; }
-    .type-h2 { @apply font-sans text-h2 font-semibold; }
+    .type-display { @apply font-serif text-display font-semibold; }
+    .type-h1 { @apply font-serif text-h1 font-semibold; }
+    .type-h2 { @apply font-serif text-h2 font-semibold; }
     .type-h3 { @apply font-sans text-h3 font-semibold; }
     .type-body { @apply font-sans text-body font-normal; }
     .type-body-medium { @apply font-sans text-body font-medium; }
@@ -101,7 +101,7 @@ html {
     .card-standard { padding: var(--space-stack-xl); }
     .card-compact { padding: var(--space-stack-lg); }
     .surface-card { @apply rounded-panel border border-border-muted bg-surface; }
-    .surface-panel { @apply rounded-panel border border-border bg-surface; }
+    .surface-panel { @apply rounded-panel border border-border-muted bg-surface; }
     .control-surface { @apply border border-border bg-surface-elevated hover:border-border-strong focus-visible:outline-none; }
     .control-field { @apply w-full rounded-control border border-border bg-surface-elevated px-inline-md py-stack-sm type-body focus-visible:outline-none; }
     .button-secondary { @apply min-h-touch rounded-control border border-border bg-surface-elevated px-inline-lg py-stack-sm type-body-medium text-ink-secondary interaction-control; }
@@ -124,6 +124,10 @@ html {
     .status-danger { color: var(--state-danger); }
     .empty-state-standard { text-align: center; padding: var(--space-stack-2xl); color: var(--text-muted); }
 }
+
+/* Editorial type is reserved for orientation: page titles, client names, and
+   major section headings. Forms, navigation, notes, and controls stay Inter. */
+.editorial-heading { font-family: 'Newsreader', Georgia, serif; font-weight: 600; }
 
 /* One keyboard focus treatment across the app. :focus-visible prevents the
    ring appearing after ordinary mouse use, while the offset preserves it on
