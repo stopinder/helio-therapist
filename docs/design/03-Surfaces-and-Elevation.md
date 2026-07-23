@@ -6,20 +6,20 @@ Helio uses a restrained layer hierarchy. The page canvas carries most of the int
 
 | Role | Value | Use |
 | --- | --- | --- |
-| `surface-canvas` | `#f4f5f3` | Application background and space between sections |
-| `surface` | `#fbfbfa` | Meaningful working panels and contained clinical content |
-| `surface-muted` | `#f1f2ef` | Toolbars, grouped metadata, and quieter context |
-| `surface-subtle` | `#f7f7f5` | Hover and selected-region backgrounds |
+| `surface-canvas` | `#f6f4f0` | Warm off-white application background and space between sections |
+| `surface` | `#fbfaf7` | Paper-toned working panels and contained clinical content |
+| `surface-muted` | `#f0ede7` | Toolbars, grouped metadata, and quieter context |
+| `surface-subtle` | `#f8f6f2` | Hover and selected-region backgrounds |
 | `surface-elevated` | `#ffffff` | Inputs, menus, and compact transient panels |
 | `surface-overlay` | `#ffffff` | Drawers and modal content |
 
 | Boundary | Value | Use |
 | --- | --- | --- |
-| `border` | `#d9ddd8` | Inputs, drawer edges, and stable panel boundaries |
-| `border-muted` | `#e7e9e5` | Internal row separators and quiet dividers |
-| `border-strong` | `#bcc3bc` | Hovered controls and selected outlined controls only |
+| `border` | `#d8d3ca` | Inputs, drawer edges, and stable panel boundaries |
+| `border-muted` | `#e8e4dd` | Internal row separators and quiet dividers |
+| `border-strong` | `#beb8ae` | Hovered controls and selected outlined controls only |
 
-`shadow-elevated` is reserved for menus and popovers. `shadow-overlay` is reserved for drawers and dialogs. Stable cards, timelines, navigation, calendar columns, and page sections have no shadow.
+`shadow-elevated` is reserved for menus and popovers. `shadow-overlay` is reserved for drawers and dialogs. Both use warm, near-invisible shadows. Stable cards, timelines, navigation, calendar columns, and page sections have no shadow.
 
 ## Usage rules
 
