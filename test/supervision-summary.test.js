@@ -17,6 +17,7 @@ test('a reflection may be saved empty or short, while summary generation needs e
 test('the summary request is authenticated and delimits source writing', async () => {
   const endpoint = await readFile(new URL('../api/ai/supervision-summary.js', import.meta.url), 'utf8')
   assert.match(endpoint, /requireAuthenticatedUser/)
+  assert.match(endpoint, /SUPERVISION_SUMMARY_MINIMUM_CHARACTERS/)
   assert.match(endpoint, /supervisionSummarySystemPrompt/)
   assert.match(endpoint, /buildReflectionInput\(reflection\)/)
   assert.equal(buildReflectionInput('one reflection'), '<reflection>\none reflection\n</reflection>')

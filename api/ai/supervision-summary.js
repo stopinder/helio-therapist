@@ -1,6 +1,7 @@
 import OpenAI from 'openai'
 import { requireAuthenticatedUser } from '../_lib/supabase.js'
 import {
+  SUPERVISION_SUMMARY_MINIMUM_CHARACTERS,
   SUPERVISION_SUMMARY_PROMPT_VERSION,
   buildReflectionInput,
   canSummariseReflection,
