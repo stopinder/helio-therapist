@@ -40,7 +40,7 @@ After migration `20260721153000` is applied, PHQ-9 can be added as a structured 
 
 - Client messaging, client accounts, delivery reminders, client uploads and an in-product response viewer.
 - Standalone reports, documents, sessions, assessments, and task applications.
-- Multi-practice/multi-clinic architecture and organisation or supervision pricing.
+- Multi-practice/multi-clinic architecture and organisation-level pricing.
 - Automatic pattern recognition, longitudinal continuity generation, and any clinical output engine beyond therapist-controlled, reviewable drafting.
 
 ## Known implementation limitation

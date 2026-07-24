@@ -152,9 +152,7 @@
 
             <TranscriptInbox v-else-if="selectedNav === 'Inbox'" :clients="clients" :open-transcript-id="queuedTranscriptId" />
 
-            <ReflectionWorkspace v-else-if="selectedNav === 'Reflections'" :clients="clients" @open-supervision="selectedNav = 'Supervision'" />
-
-            <SupervisionWorkspace v-else-if="selectedNav === 'Supervision'" :clients="clients" @back-to-reflections="selectedNav = 'Reflections'" />
+            <ReflectionWorkspace v-else-if="selectedNav === 'Reflections'" :clients="clients" />
 
             <Settings v-else-if="selectedNav === 'Settings'" />
 
@@ -198,7 +196,6 @@ import ReflectiveJournal from "./components/reflective/ReflectiveJournal.vue"
 import PastReflections from "./components/reflective/PastReflections.vue"
 import TherapistMap from "./components/tools/TherapistMap.vue"
 import Settings from "./components/Settings.vue"
-import SupervisionWorkspace from "./components/SupervisionWorkspace.vue"
 import ReflectionWorkspace from "./components/ReflectionWorkspace.vue"
 import NeedsAttention from "./components/NeedsAttention.vue"
 import ClientDirectory from "./components/ClientDirectory.vue"

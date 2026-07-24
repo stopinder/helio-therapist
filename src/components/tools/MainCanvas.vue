@@ -40,7 +40,6 @@
           <span><strong>{{ event.title }}</strong><small>{{ formatDate(event.date) }} · {{ event.detail }}</small></span><span v-if="event.session">Open ›</span>
         </button>
       </section>
-      <PrivateReflectionsPanel :client-id="selectedClient.id" />
     </main>
 
     <section v-else-if="activeTab === 'sessions'" class="section-card">
@@ -61,7 +60,6 @@
         <section v-else-if="sessionWorkspaceTab === 'clinical-note'"><div class="note-label"><div><p class="eyebrow">Primary clinical record</p><label for="session-notes">Therapist-approved clinical note</label></div><button v-if="editingSession.status !== 'closed'" class="dictate" :class="{ recording: isDictating }" :disabled="transcribing" @click="toggleDictation"><span class="record-dot" aria-hidden="true"></span>{{ isDictating ? 'Stop dictation' : transcribing ? 'Transcribing…' : 'Start dictation' }}</button></div><p class="note-guidance">Record the session in your own words. Review and save this note before relying on source material.</p><p v-if="editingSession.status !== 'closed'" class="dictation-help" :class="{ recording: isDictating, error: dictationError }" role="status">{{ dictationMessage() }}</p><textarea id="session-notes" v-model="draftNotes" :disabled="editingSession.status === 'closed'" placeholder="Record the session in your own words…"></textarea></section>
         <section v-else-if="sessionWorkspaceTab === 'transcript'" class="source-material"><p class="eyebrow">Source material</p><h3>Transcript</h3><p>A transcript preserves what was said. It is not the approved clinical record and is never added without your review.</p><p class="quiet-copy">No transcript is available for this session yet.</p><button class="secondary" @click="sessionWorkspaceTab = 'clinical-note'">Return to clinical note</button></section>
         <section v-else-if="sessionWorkspaceTab === 'resources-actions'"><div class="session-actions"><span>Resources and actions</span><button class="secondary" @click="openPicker">Send to client</button></div><p class="quiet-copy">Resources shared, agreed actions and follow-up tasks will appear here for this session.</p></section>
-        <PrivateReflectionsPanel v-else-if="sessionWorkspaceTab === 'private-reflection'" :client-id="selectedClient.id" :session-ref="editingSession.id" />
         <footer><button class="secondary" @click="closeEditor">Close</button><template v-if="editingSession.status !== 'closed'"><button class="secondary" @click="saveNotes">Save notes</button><button v-if="editingSession.status !== 'completed'" class="primary" @click="completeSession">End session</button><button v-else class="primary" @click="closeSession">Close session</button></template></footer>
       </article>
     </div>
@@ -76,13 +74,12 @@ import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { authenticatedFetch } from '../../lib/api.js'
 import { assignmentCompletionUrl, timelineEventPresentation } from '../../lib/clinicalExchange.js'
 import ResourcePicker from './ResourcePicker.vue'
-import PrivateReflectionsPanel from './PrivateReflectionsPanel.vue'
 
 const props = defineProps({ selectedClient: { type: Object, default: null } })
 const emit = defineEmits(['update-focus'])
 const tabs = [{ id: 'timeline', label: 'Timeline' }, { id: 'sessions', label: 'Sessions' }]
 const activeTab = ref('timeline')
-const sessionTabs = [{ id: 'overview', label: 'Overview' }, { id: 'clinical-note', label: 'Clinical note' }, { id: 'transcript', label: 'Transcript' }, { id: 'resources-actions', label: 'Resources & actions' }, { id: 'private-reflection', label: 'Private reflection' }]
+const sessionTabs = [{ id: 'overview', label: 'Overview' }, { id: 'clinical-note', label: 'Clinical note' }, { id: 'transcript', label: 'Transcript' }, { id: 'resources-actions', label: 'Resources & actions' }]
 const sessionWorkspaceTab = ref('overview')
 const editingSession = ref(null)
 const draftNotes = ref('')

@@ -92,24 +92,23 @@ Each concept answers a different question and must not be merged:
 - **Clinical notes** are the therapist-approved clinical record for that encounter.
 - **Transcript** is secondary source material: what was said, never an automatic clinical record.
 - **Private reflections** preserve therapist-only professional thinking.
-- **Supervision** gathers only reflections deliberately selected by the therapist.
 
 Private reflections are stored separately from clinical events and are explicitly labelled: **“Not part of the client’s clinical record.”** They never enter Timeline, client-facing content, or routine exports. A reflection can be linked to a client and, where available, a session reference without duplicating the session material.
 
-The quiet default action is **Add private reflection**. **Add to supervision** is deliberate and optional. The therapist-level Supervision workspace groups selected original reflections by client rather than generating a summary from client records. Any future AI agenda draft remains therapist-reviewed; it may organise selected material but must not infer, diagnose, or make clinical decisions.
+Private reflection is entered through the therapist-level **Reflections** workspace rather than client or session tabs. This protects its therapist-only boundary and avoids turning reflective writing into clinical documentation. Any optional supervision summary remains attached to its originating reflection and must be explicitly saved by the therapist.
 
 ## Reflective workspace design language
 
-Supervision, Private Reflections, Session Preparation, and Personal Notes are reflective workspaces, not operational dashboards. They use a slower visual rhythm: a direct human purpose, generous whitespace, restrained editorial hierarchy, warm quiet surfaces, and minimal visible chrome. Persistent compliance or AI messaging does not belong in these spaces; privacy is conveyed as brief environmental reassurance, and AI guidance appears only when an AI action is deliberately opened. This visual language preserves the shared Helio system while helping therapists feel that they have somewhere private to think.
+Reflections, Session Preparation, and Personal Notes are reflective workspaces, not operational dashboards. They use a slower visual rhythm: a direct human purpose, generous whitespace, restrained editorial hierarchy, warm quiet surfaces, and minimal visible chrome. Persistent compliance or AI messaging does not belong in these spaces; privacy is conveyed as brief environmental reassurance, and AI guidance appears only when an AI action is deliberately opened. This visual language preserves the shared Helio system while helping therapists feel that they have somewhere private to think.
 
 
-## Reflections first; supervision second
+## One reflection workspace; optional supervision preparation
 
-**Reflections** is the therapist-level entry point for private professional writing. It is a single, calm writing surface: no dashboard, no queue, no persistent AI panel, and no requirement to classify a thought before recording it. Each reflection remains therapist-only and separate from the client’s clinical record.
+**Reflections** is the only therapist-level destination for private professional writing. It is a single, calm writing surface: no dashboard, no queue, no persistent AI panel, no supervision homepage, and no requirement to classify a thought before recording it. Each reflection remains therapist-only and separate from the client’s clinical record.
 
-Once writing has begun, the therapist may deliberately choose **Reflect with AI**. Any response is temporary and dismissible, offers only tentative prompts, and never becomes part of the reflection or clinical record unless the therapist chooses to write or save their own words.
+The workflow is **reflect → save → optionally use assistance**. **Summarise for supervision** is an optional action on a saved reflection, never a route or competing workspace. It produces an editable attached preparation note while preserving the original reflection exactly as written; saving that note is explicit and it never enters a clinical record automatically.
 
-**Add to supervision** remains a quiet optional action on an individual reflection. **Supervision** is therefore a secondary view, reached from Reflections, which gathers only those original reflections the therapist has deliberately selected. It never becomes a competing writing system or an AI-generated account of a client.
+**Practice over time** is also accessed from Reflections. It offers cautious, therapist-level pattern language drawn from saved reflections, not client analysis, diagnosis, or authoritative conclusions.
 
 ## Session workspace hierarchy
 
