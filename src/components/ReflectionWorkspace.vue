@@ -1,55 +1,183 @@
 <template>
   <section class="reflection-workspace">
-    <header class="reflection-introduction"><h1>Reflections</h1><p>A private place to write or speak about your work.</p></header>
-    <p class="privacy-reassurance">Private reflection · Not part of a client’s clinical record.</p>
+    <header v-if="localView === 'main'" class="reflection-introduction">
+      <h1>Reflections</h1>
+      <p>A private place to write or speak about your work.</p>
+    </header>
+    <header v-else class="reflection-introduction">
+      <div class="flex items-center gap-2">
+        <button type="button" class="text-ink-secondary hover:text-ink transition-colors" @click="localView = 'main'">← Back</button>
+        <h1>Archive</h1>
+      </div>
+      <p>Your complete history of private reflections.</p>
+    </header>
 
-    <form class="journal" @submit.prevent="saveReflection">
+    <p v-if="localView === 'main'" class="privacy-reassurance">Private reflection · Not part of a client’s clinical record.</p>
+
+    <!-- Editor (Primary focus on main screen) -->
+    <form v-if="localView === 'main'" class="journal" @submit.prevent="saveReflection">
       <label class="sr-only" for="reflection-body">Reflection</label>
-      <section class="editor-surface"><textarea id="reflection-body" ref="editor" v-model="body" class="reflection-editor" placeholder="Write or speak whatever feels important…" aria-label="Reflection" /></section>
+      <section class="editor-surface">
+        <textarea id="reflection-body" ref="editor" v-model="body" class="reflection-editor" placeholder="Write or speak whatever feels important…" aria-label="Reflection" />
+      </section>
       <div class="action-bar">
         <div class="voice-control">
           <button v-if="!isRecording" type="button" class="secondary-action" :disabled="isTranscribing" @click="startRecording">{{ isTranscribing ? 'Adding to reflection…' : '🎙 Record voice' }}</button>
-          <template v-else><span class="recording-status" aria-live="polite"><span class="recording-indicator" aria-hidden="true" />Recording · {{ elapsed }}</span><button type="button" class="secondary-action" @click="togglePause">{{ isPaused ? 'Resume' : 'Pause' }}</button><button type="button" class="secondary-action" @click="stopRecording">Stop and add to reflection</button></template>
+          <template v-else>
+            <span class="recording-status" aria-live="polite"><span class="recording-indicator" aria-hidden="true" />Recording · {{ elapsed }}</span>
+            <button type="button" class="secondary-action" @click="togglePause">{{ isPaused ? 'Resume' : 'Pause' }}</button>
+            <button type="button" class="secondary-action" @click="stopRecording">Stop and add to reflection</button>
+          </template>
         </div>
-        <div class="save-actions"><button type="button" class="secondary-action" :aria-describedby="canSummarise ? undefined : 'summary-threshold'" :disabled="generatingSummary || !canSummarise" @click="summariseCurrent">{{ generatingSummary ? 'Preparing draft…' : 'Summarise for supervision' }}</button><button type="submit" class="primary-action" :disabled="saving">{{ saving ? 'Saving…' : 'Save reflection' }}</button></div>
+        <div class="save-actions">
+          <button type="button" class="secondary-action" @click="summariseCurrentAttempt">
+            {{ generatingSummary ? 'Preparing draft…' : 'Summarise for supervision' }}
+          </button>
+          <button type="submit" class="primary-action" :disabled="saving">{{ saving ? 'Saving…' : 'Save reflection' }}</button>
+        </div>
       </div>
-      <p id="summary-threshold" class="quiet threshold-note">{{ canSummarise ? 'A summary is created only when you choose it.' : `Write a little more to create a supervision summary (${minimumSummaryCharacters} characters).` }}</p>
+      <p v-if="showThresholdGuidance && !canSummarise" id="summary-threshold" class="quiet threshold-note text-state-warning">
+        Write a little more to create a supervision summary (${minimumSummaryCharacters} characters).
+      </p>
       <p v-if="saveError" class="error-message" role="alert">{{ saveError }}</p>
     </form>
 
-    <section class="reflection-history" aria-labelledby="recent-reflections-heading"><h2 id="recent-reflections-heading">Recent reflections</h2><p v-if="loading" class="quiet">Opening your reflections…</p><p v-else-if="!reflections.length" class="quiet">Nothing here yet. This is a place to return to when something feels worth holding onto.</p>
-      <article v-for="reflection in reflections" :key="reflection.id" class="reflection-note"><p>{{ reflection.body || 'Empty reflection' }}</p><footer><span>{{ date(reflection.created_at) }}</span><button v-if="canSummariseText(reflection.body)" type="button" @click="openSummary(reflection)">Summarise for supervision</button></footer><p v-if="reflection.latestSummary" class="saved-summary"><strong>Saved supervision summary</strong>{{ reflection.latestSummary.edited_content }}</p></article>
+    <!-- History List -->
+    <section class="reflection-history" :aria-labelledby="localView === 'main' ? 'recent-reflections-heading' : 'archive-heading'">
+      <h2 v-if="localView === 'main'" id="recent-reflections-heading">Recent reflections</h2>
+      <p v-if="loading" class="quiet">Opening your reflections…</p>
+      <p v-else-if="!reflections.length" class="quiet">Nothing here yet. This is a place to return to when something feels worth holding onto.</p>
+      
+      <div v-else class="compact-history divide-y divide-border border-y border-border mb-6">
+        <button 
+          v-for="reflection in displayedReflections" 
+          :key="reflection.id" 
+          type="button"
+          class="w-full text-left px-inline-md py-stack-md hover:bg-surface-subtle focus-visible:ring-2 focus-visible:ring-action-primary transition-colors group"
+          @click="openDetail(reflection)"
+        >
+          <div class="flex justify-between items-baseline mb-1">
+            <span class="type-caption font-semibold text-ink-secondary">{{ date(reflection.created_at) }}</span>
+            <span class="type-caption text-action-link opacity-0 group-hover:opacity-100 transition-opacity">View</span>
+          </div>
+          <p class="type-body-sm text-ink-secondary line-clamp-2">{{ reflection.body || 'Empty reflection' }}</p>
+        </button>
+      </div>
+
+      <button v-if="localView === 'main' && reflections.length > 3" type="button" class="text-action-link hover:underline type-body-sm" @click="localView = 'archive'">
+        View all reflections
+      </button>
     </section>
 
-    <div v-if="summaryOpen" class="modal-backdrop" @click.self="closeSummary"><section class="summary-dialog" role="dialog" aria-modal="true" aria-labelledby="summary-title"><header><h2 id="summary-title">Supervision summary</h2><button type="button" class="close-button" aria-label="Close" @click="closeSummary">×</button></header><p class="quiet">A private, editable draft based only on this reflection. Use it as you choose in human supervision.</p><p v-if="summaryError" class="error-message" role="alert">{{ summaryError }} <button type="button" class="inline-action" @click="generateSummary">Try again</button></p><p v-else-if="generatingSummary" class="quiet" aria-live="polite">Preparing a draft from this reflection…</p><textarea v-else v-model="summaryDraft" aria-label="Supervision summary" /><footer><button type="button" class="secondary-action" :disabled="generatingSummary" @click="generateSummary">Regenerate draft</button><button type="button" class="secondary-action" @click="closeSummary">Discard</button><button type="button" class="primary-action" :disabled="savingSummary || generatingSummary || !summaryDraft.trim()" @click="saveSummary">{{ savingSummary ? 'Saving…' : 'Save summary' }}</button></footer></section></div>
+    <!-- Detail View Modal -->
+    <div v-if="selectedReflection" class="modal-backdrop" @click.self="closeDetail">
+      <section class="detail-dialog" role="dialog" aria-modal="true" :aria-labelledby="`detail-title-${selectedReflection.id}`">
+        <header class="flex justify-between items-center mb-6">
+          <h2 :id="`detail-title-${selectedReflection.id}`" class="type-h3">{{ date(selectedReflection.created_at) }}</h2>
+          <button type="button" class="close-button text-2xl" aria-label="Close" @click="closeDetail">×</button>
+        </header>
+        
+        <div class="detail-content space-y-8 overflow-y-auto max-h-[70vh]">
+          <div class="reflection-text whitespace-pre-wrap type-body">
+            {{ selectedReflection.body }}
+          </div>
+
+          <div class="summary-section border-t border-border pt-6">
+            <h3 class="type-overline mb-4">Supervision Summary</h3>
+            
+            <div v-if="selectedReflection.latestSummary" class="saved-summary-box bg-surface-muted p-4 rounded-control">
+              <p class="type-body italic mb-4">{{ selectedReflection.latestSummary.edited_content }}</p>
+              <button type="button" class="secondary-action" @click="openSummary(selectedReflection)">Edit summary</button>
+            </div>
+
+            <div v-else class="summary-actions">
+              <button 
+                type="button" 
+                class="secondary-action" 
+                :disabled="generatingSummary"
+                @click="summariseFromDetail(selectedReflection)"
+              >
+                {{ generatingSummary ? 'Preparing draft…' : 'Summarise for supervision' }}
+              </button>
+              <p v-if="!canSummariseText(selectedReflection.body)" class="type-caption text-ink-muted mt-2">
+                This reflection is too short to summarise.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- Summary Editor Modal (Existing logic preserved) -->
+    <div v-if="summaryOpen" class="modal-backdrop" @click.self="closeSummary">
+      <section class="summary-dialog" role="dialog" aria-modal="true" aria-labelledby="summary-title">
+        <header>
+          <h2 id="summary-title">Supervision summary</h2>
+          <button type="button" class="close-button" aria-label="Close" @click="closeSummary">×</button>
+        </header>
+        <p class="quiet">A private, editable draft based only on this reflection. Use it as you choose in human supervision.</p>
+        <p v-if="summaryError" class="error-message" role="alert">{{ summaryError }} <button type="button" class="inline-action" @click="generateSummary">Try again</button></p>
+        <p v-else-if="generatingSummary" class="quiet" aria-live="polite">Preparing a draft from this reflection…</p>
+        <textarea v-else v-model="summaryDraft" aria-label="Supervision summary" class="w-full min-h-[200px] p-3 border border-border rounded-control bg-surface" />
+        <footer>
+          <button type="button" class="secondary-action" :disabled="generatingSummary" @click="generateSummary">Regenerate draft</button>
+          <button type="button" class="secondary-action" @click="closeSummary">Discard</button>
+          <button type="button" class="primary-action" :disabled="savingSummary || generatingSummary || !summaryDraft.trim()" @click="saveSummary">{{ savingSummary ? 'Saving…' : 'Save summary' }}</button>
+        </footer>
+      </section>
+    </div>
   </section>
 </template>
 
 <script setup>
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { supabase } from '../lib/supabase.js'
 import { authenticatedFetch } from '../lib/api.js'
+
+const props = defineProps({
+  view: { type: String, default: 'main' }
+})
+const emit = defineEmits(['update:view'])
+
+const localView = computed({
+  get: () => props.view,
+  set: (val) => emit('update:view', val)
+})
 
 // A short paragraph, not a word count: enough material for a specific, grounded draft.
 const minimumSummaryCharacters = 80
 const reflections = ref([]), loading = ref(false), saving = ref(false), savingSummary = ref(false), generatingSummary = ref(false)
 const body = ref(''), saveError = ref(''), summaryOpen = ref(false), summaryDraft = ref(''), summaryReflection = ref(null), summaryError = ref('')
 const editor = ref(null), recorder = ref(null), audioChunks = ref([]), isRecording = ref(false), isPaused = ref(false), isTranscribing = ref(false), seconds = ref(0), timer = ref(null)
+
+const selectedReflection = ref(null)
+const showThresholdGuidance = ref(false)
+
 const elapsed = computed(() => `00:${String(seconds.value).padStart(2, '0')}`)
 const canSummarise = computed(() => canSummariseText(body.value))
 const canSummariseText = value => String(value || '').trim().length >= minimumSummaryCharacters
 
+const displayedReflections = computed(() => {
+  if (localView.value === 'main') {
+    return reflections.value.slice(0, 3)
+  }
+  return reflections.value
+})
+
 async function load() {
   if (!supabase) return
   loading.value = true
-  const [{ data: notes }, { data: summaries }] = await Promise.all([
-    supabase.from('private_reflections').select('*').order('created_at', { ascending: false }),
-    supabase.from('reflection_supervision_summaries').select('*').in('generation_status', ['saved']).order('created_at', { ascending: false })
-  ])
-  const summaryByReflection = new Map()
-  for (const summary of summaries || []) if (!summaryByReflection.has(summary.reflection_id)) summaryByReflection.set(summary.reflection_id, summary)
-  reflections.value = (notes || []).map(note => ({ ...note, latestSummary: summaryByReflection.get(note.id) || null }))
-  loading.value = false
+  try {
+    const [{ data: notes }, { data: summaries }] = await Promise.all([
+      supabase.from('private_reflections').select('*').order('created_at', { ascending: false }),
+      supabase.from('reflection_supervision_summaries').select('*').in('generation_status', ['saved']).order('created_at', { ascending: false })
+    ])
+    const summaryByReflection = new Map()
+    for (const summary of summaries || []) if (!summaryByReflection.has(summary.reflection_id)) summaryByReflection.set(summary.reflection_id, summary)
+    reflections.value = (notes || []).map(note => ({ ...note, latestSummary: summaryByReflection.get(note.id) || null }))
+  } finally {
+    loading.value = false
+  }
 }
 
 async function saveReflection({ keepOpen = false } = {}) {
@@ -61,16 +189,35 @@ async function saveReflection({ keepOpen = false } = {}) {
   saving.value = false
   if (error || !data) { saveError.value = 'Your reflection could not be saved. Please try again.'; return null }
   reflections.value.unshift({ ...data, latestSummary: null })
-  if (!keepOpen) body.value = ''
+  if (!keepOpen) {
+    body.value = ''
+    showThresholdGuidance.value = false
+  }
   return data
 }
 
-async function summariseCurrent() {
-  if (!canSummarise.value) return
+async function summariseCurrentAttempt() {
+  if (!canSummarise.value) {
+    showThresholdGuidance.value = true
+    return
+  }
   const reflection = await saveReflection({ keepOpen: true })
   if (!reflection) return
   body.value = ''
   openSummary(reflection, true)
+}
+
+function summariseFromDetail(reflection) {
+  if (!canSummariseText(reflection.body)) return
+  openSummary(reflection, true)
+}
+
+function openDetail(reflection) {
+  selectedReflection.value = reflection
+}
+
+function closeDetail() {
+  selectedReflection.value = null
 }
 
 function openSummary(reflection, generate = false) {
@@ -103,7 +250,14 @@ async function saveSummary() {
   const { data, error } = await supabase.from('reflection_supervision_summaries').insert({ reflection_id: summaryReflection.value.id, user_id: auth.user.id, generated_content: summaryDraft.value.trim(), edited_content: summaryDraft.value.trim(), generation_status: 'saved', model: summaryReflection.value.pendingMetadata?.model || null, prompt_version: summaryReflection.value.pendingMetadata?.promptVersion || null, generated_at: new Date().toISOString(), saved_at: new Date().toISOString() }).select().single()
   savingSummary.value = false
   if (error || !data) { summaryError.value = 'The draft is still open, but could not be saved. Please try again.'; return }
-  reflections.value = reflections.value.map(item => item.id === summaryReflection.value.id ? { ...item, latestSummary: data } : item)
+  
+  const updatedReflection = { ...summaryReflection.value, latestSummary: data }
+  reflections.value = reflections.value.map(item => item.id === summaryReflection.value.id ? updatedReflection : item)
+  
+  if (selectedReflection.value && selectedReflection.value.id === summaryReflection.value.id) {
+    selectedReflection.value = updatedReflection
+  }
+  
   closeSummary()
 }
 

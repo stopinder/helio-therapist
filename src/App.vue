@@ -23,7 +23,7 @@
           @add-resource="handleAddResource"
           @close-sidebar="isSidebarOpen = false"
       />
-    </transition-colors duration-standard ease-out>
+    </transition-colors>
 
     <!-- Sidebar Backdrop for Mobile -->
     <div
@@ -152,7 +152,12 @@
 
             <TranscriptInbox v-else-if="selectedNav === 'Inbox'" :clients="clients" :open-transcript-id="queuedTranscriptId" />
 
-            <ReflectionWorkspace v-else-if="selectedNav === 'Reflections'" :clients="clients" />
+            <ReflectionWorkspace
+                v-else-if="selectedNav === 'Reflections'"
+                :clients="clients"
+                :view="reflectionView"
+                @update:view="reflectionView = $event"
+            />
 
             <Settings v-else-if="selectedNav === 'Settings'" />
 
@@ -217,6 +222,7 @@ const nextMatchedAppointment = ref(null)
 const activeTool = ref(null)
 const activeTemplate = ref(null)
 const reflectionMode = ref("new")
+const reflectionView = ref("main")
 
 // --- AI Drawer ---
 const showAIDrawer = ref(false)
