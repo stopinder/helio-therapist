@@ -265,7 +265,7 @@ const emit = defineEmits([
   "update:selected-nav"
 ])
 
-const navItems = ["Today", "Clients", "Inbox", "Supervision", "Settings"]
+const navItems = ["Today", "Clients", "Inbox", "Reflections", "Settings"]
 
 const cbtItems = [
   { key: "thought", label: "Thought Record" },

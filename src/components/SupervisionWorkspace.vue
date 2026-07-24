@@ -1,6 +1,7 @@
 <template>
   <section class="supervision-workspace">
     <header class="supervision-introduction">
+      <button class="back-link" @click="$emit('back-to-reflections')">← Reflections</button>
       <h1>Supervision</h1>
       <p>A private place to gather reflections, questions and themes before meeting with your supervisor.</p>
     </header>
@@ -28,6 +29,7 @@
 import { computed, ref, watch } from 'vue'
 import { supabase } from '../lib/supabase.js'
 const props = defineProps({ clients: { type: Array, default: () => [] } })
+defineEmits(['back-to-reflections'])
 const items = ref([]), loading = ref(false)
 const groups = computed(() => {
   const byClient = new Map()
@@ -51,6 +53,8 @@ watch(() => props.clients, load, { immediate: true, deep: true })
 <style scoped>
 .supervision-workspace { max-width: 42rem; margin: 0 auto; padding: clamp(1rem, 3vw, 2.5rem) 0 4rem; }
 .supervision-introduction { max-width: 37rem; }
+.back-link { margin: 0 0 1.4rem; padding: 0; border: 0; background: transparent; color: var(--text-muted); font: inherit; font-size: .875rem; cursor: pointer; }
+.back-link:hover { color: var(--text-secondary); }
 .supervision-workspace h1 { margin: 0; font-family: 'Newsreader', Georgia, serif; font-size: clamp(2.15rem, 5vw, 3rem); font-weight: 500; letter-spacing: -.025em; line-height: 1; }
 .supervision-introduction > p { max-width: 34rem; margin: .85rem 0 0; color: var(--text-secondary); font-size: 1rem; line-height: 1.7; }
 .privacy-reassurance { max-width: 37rem; margin: 2.5rem 0 0; padding: .95rem 0 0; border-top: 1px solid var(--border-muted); color: var(--text-muted); font-size: .875rem; line-height: 1.65; }

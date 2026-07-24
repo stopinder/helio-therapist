@@ -57,6 +57,17 @@ export default async function handler(req, res) {
 function buildPrompt(body) {
     const { worksheet_type, worksheet_fields, context } = body;
 
+    if (worksheet_type === "private_reflection") {
+        return `
+The therapist has written this private professional reflection. It is not a clinical record.
+
+Reflection:
+${worksheet_fields.reflection || ""}
+
+Task:
+Offer up to three brief, tentative questions that could help the therapist continue their own thinking. Do not diagnose the therapist or client; do not infer countertransference as fact; do not recommend interventions; do not create a clinical note. Use language such as “You might want to consider…” or “Would it be useful to notice…?”`;
+    }
+
     return `
 Worksheet type: ${worksheet_type}
 ${context ? `Focus: ${context}` : ""}
