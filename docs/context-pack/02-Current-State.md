@@ -1,6 +1,6 @@
 # Current state
 
-Last updated: 22 July 2026. This is a working implementation record; it distinguishes code present in this checkout from production and integration verification.
+Last updated: 24 July 2026. This is a working implementation record; it distinguishes code present in this checkout from production and integration verification.
 
 ## Built in this repository
 
@@ -8,13 +8,14 @@ Last updated: 22 July 2026. This is a working implementation record; it distingu
 - Search-first client directory and a timeline-first client workspace.
 - Client workspace is timeline-first with an appointment preparation hand-off, therapist-maintained current focus, a focused active-session surface, editable therapist notes, and a prominent dictated-note control. Preparation shows one real carry-forward event when available; active session keeps the current focus visible without exposing generic AI controls.
 - Today daily workspace: clinically led hierarchy. The next matched client and their preparation context appear first; **Today’s schedule** provides day/week/month reference navigation below. It opens the client workspace directly for unambiguous appointment/client matches and surfaces only one available session status. There is no competing appointment list between the preparation state and the schedule.
+- Therapist-level **Reflections** workspace: one visibly editable, private journal with typing and in-place voice dictation. Therapists save the original reflection first, then may optionally create and explicitly save an editable **Supervision summary** attached to that reflection. **Practice over time** is a secondary, cautious view of recurring language across saved reflections. There is no Supervision page, AI chat, or client/session reflection panel.
 - Inbox with progressive client → session → review/retention transcript triage, plus unfinished session and client-return work; it hands off to the relevant session or client context.
 - Google Calendar and Calendly integration routes, with Google Calendar treated as a startup workspace service: calendar reads silently refresh a rejected Google access token, persist the replacement token, retry the read, and record the successful sync time.
 - Zoom OAuth routes, webhook transcript intake, transcript queue endpoints, and a Start Session endpoint that creates a Zoom meeting linked to a Helio session.
 
 ## Present navigation in the working tree
 
-The application currently exposes **Today**, **Clients**, **Inbox**, and **Settings**. Transcripts are Inbox items, not a top-level navigation destination. Reports and Messages are not top-level navigation items.
+The application currently exposes **Today**, **Clients**, **Inbox**, **Reflections**, and **Settings**. Transcripts are Inbox items, not a top-level navigation destination. Supervision is an optional action on a saved reflection, not a navigation destination. Reports and Messages are not top-level navigation items.
 
 ## Requires deployment, migration or environment verification
 
@@ -25,6 +26,7 @@ The application currently exposes **Today**, **Clients**, **Inbox**, and **Setti
 - Google Calendar/Calendly need a signed-in user with a valid connected integration; verify the Google silent-refresh and reconnect-only-on-revocation paths from the deployed app.
 - Selecting a calendar appointment opens preparation only if its title matches exactly one Helio client; no durable calendar-event-to-client link exists yet.
 - Production code for secure PHQ-9 completion was published on 21 July 2026 (`29b6019`, followed by `ac4f017`). Migration `20260721153000_add_client_completion_links.sql` was confirmed local-only and ready to apply; do not treat the client completion route as database-ready until `npx supabase db push` succeeds and the migration appears on both sides of `supabase migration list`.
+- The unified Reflections workspace requires `20260724090000_add_reflection_supervision_summaries.sql` in Supabase before saved supervision summaries can be treated as production-ready. The reflection editor, dictation interaction, and practice-pattern presentation still require deployed-app verification with an authenticated therapist account.
 
 ## Built clinical-exchange foundation
 

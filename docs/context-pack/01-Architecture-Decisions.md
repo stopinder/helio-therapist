@@ -95,7 +95,7 @@ Each concept answers a different question and must not be merged:
 
 Private reflections are stored separately from clinical events and are explicitly labelled: **“Not part of the client’s clinical record.”** They never enter Timeline, client-facing content, or routine exports. A reflection can be linked to a client and, where available, a session reference without duplicating the session material.
 
-Private reflection is entered through the therapist-level **Reflections** workspace rather than client or session tabs. This protects its therapist-only boundary and avoids turning reflective writing into clinical documentation. Any optional supervision summary remains attached to its originating reflection and must be explicitly saved by the therapist.
+Private reflection is entered only through the therapist-level **Reflections** workspace, never through client or session tabs. This protects its therapist-only boundary and avoids turning reflective writing into clinical documentation. Any optional supervision summary remains attached to its originating reflection and must be explicitly saved by the therapist.
 
 ## Reflective workspace design language
 
@@ -108,7 +108,9 @@ Reflections, Session Preparation, and Personal Notes are reflective workspaces, 
 
 The workflow is **reflect → save → optionally use assistance**. **Summarise for supervision** is an optional action on a saved reflection, never a route or competing workspace. It produces an editable attached preparation note while preserving the original reflection exactly as written; saving that note is explicit and it never enters a clinical record automatically.
 
-**Practice over time** is also accessed from Reflections. It offers cautious, therapist-level pattern language drawn from saved reflections, not client analysis, diagnosis, or authoritative conclusions.
+Dictation belongs to the same editor: a therapist can type, record, pause, stop, and add a transcript without leaving the page. The editor remains visibly writable and the primary **Save reflection** action remains stronger than all assistance actions.
+
+**Practice over time** is also accessed from Reflections, below the writing and recent-reflection flow. It offers cautious, therapist-level pattern language drawn from saved reflections, not client analysis, diagnosis, or authoritative conclusions. Its language describes what *appears frequently* in the writing; it does not make claims about the therapist.
 
 ## Session workspace hierarchy
 
@@ -118,6 +120,5 @@ Opening a Session starts at **Overview**, which orients the therapist to the enc
 2. Clinical note — the therapist-approved primary record
 3. Transcript — clearly labelled secondary source material
 4. Resources & actions
-5. Private reflection — therapist-only, never part of the clinical record
 
 The Transcript must not become the default view or visually dominate the approved note. Session lists remain compact retrieval tools: date, available duration, status, note state, genuinely outstanding follow-up, and a short note preview. Detailed material belongs inside the Session.
