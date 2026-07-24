@@ -102,6 +102,14 @@ Private reflection is entered only through the therapist-level **Reflections** w
 Reflections, Session Preparation, and Personal Notes are reflective workspaces, not operational dashboards. They use a slower visual rhythm: a direct human purpose, generous whitespace, restrained editorial hierarchy, warm quiet surfaces, and minimal visible chrome. Persistent compliance or AI messaging does not belong in these spaces; privacy is conveyed as brief environmental reassurance, and AI guidance appears only when an AI action is deliberately opened. This visual language preserves the shared Helio system while helping therapists feel that they have somewhere private to think.
 
 
+## Practice Intelligence: reflection, supervision summary and My Practice
+
+Helio has three distinct therapist-only layers. **Reflection** is the therapist’s original private writing and is immutable source material: AI never rewrites, replaces, or edits it. **Supervision summary** is an optional, editable and versioned derived artefact from one reflection, requested explicitly by the therapist and saved beside—not inside—that source writing. **My Practice** is a future private longitudinal portrait of the therapist’s practice; it surfaces transparent observations, never advice, supervision, diagnosis, client-risk conclusions, or clinical instruction.
+
+Practice Intelligence observes; it does not supervise. The first summary action may use only the one reflection the therapist explicitly chooses. It has no chat interface, background analysis, automatic notifications, or persistent AI panel. A short reflection can always be saved; the summary action becomes available at 80 non-whitespace characters, enough material for a grounded, non-generic draft.
+
+Future My Practice observations must make their evidence visible. Reflections, supervision summaries, workload/calendar metadata, caseload metadata, and client transcripts are separate streams—not one opaque pool. Every observation must show included and excluded streams. Transcript inclusion must be explicit per client, reversible, and visible to the therapist. No practice-wide analysis is built until there is accumulated data and deliberate source selection.
+
 ## One reflection workspace; optional supervision preparation
 
 **Reflections** is the only therapist-level destination for private professional writing. It is a single, calm writing surface: no dashboard, no queue, no persistent AI panel, no supervision homepage, and no requirement to classify a thought before recording it. Each reflection remains therapist-only and separate from the client’s clinical record.
@@ -110,7 +118,7 @@ The workflow is **reflect → save → optionally use assistance**. **Summarise 
 
 Dictation belongs to the same editor: a therapist can type, record, pause, stop, and add a transcript without leaving the page. The editor remains visibly writable and the primary **Save reflection** action remains stronger than all assistance actions.
 
-**Practice over time** is also accessed from Reflections, below the writing and recent-reflection flow. It offers cautious, therapist-level pattern language drawn from saved reflections, not client analysis, diagnosis, or authoritative conclusions. Its language describes what *appears frequently* in the writing; it does not make claims about the therapist.
+The first Practice Intelligence sprint deliberately excludes practice-wide analysis and a “Practice patterns” surface. **My Practice** is the future name for that longitudinal space, not Patterns, Insights, Analytics, Dashboard, or AI Supervision.
 
 ## Session workspace hierarchy
 
