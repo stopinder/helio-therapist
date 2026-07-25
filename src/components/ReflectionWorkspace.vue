@@ -272,9 +272,39 @@ async function saveSummary() {
   const { data: auth } = await supabase.auth.getUser()
   const previous = summaryReflection.value.latestSummary
   if (previous) await supabase.from('reflection_supervision_summaries').update({ generation_status: 'superseded', superseded_at: new Date().toISOString() }).eq('id', previous.id)
-  const { data, error } = await supabase.from('reflection_supervision_summaries').insert({ reflection_id: summaryReflection.value.id, user_id: auth.user.id, generated_content: summaryDraft.value.trim(), edited_content: summaryDraft.value.trim(), generation_status: 'saved', model: summaryReflection.value.pendingMetadata?.model || null, prompt_version: summaryReflection.value.pendingMetadata?.promptVersion || null, generated_at: new Date().toISOString(), saved_at: new Date().toISOString() }).select().single()
+  const { data, error } = await supabase.from('reflection_supervision_summaries').insert({
+    reflection_id: summaryReflection.value.id,
+    user_id: auth.user.id,
+    generated_content: summaryDraft.value.trim(),
+    edited_content: summaryDraft.value.trim(),
+    generation_status: 'saved',
+    model: summaryReflection.value.pendingMetadata?.model || null,
+    prompt_version: summaryReflection.value.pendingMetadata?.promptVersion || null,
+    generated_at: new Date().toISOString(),
+    saved_at: new Date().toISOString()
+  }).select().single()
+
+  if (!error && data) {
+    await supabase.from('private_reflections').update({
+      supervision_summary: summaryDraft.value.trim()
+    }).eq('id', summaryReflection.value.id)
+  }
   savingSummary.value = false
-  if (error || !data) { summaryError.value = 'The draft is still open, but could not be saved. Please try again.'; return }
+  if (error || !data) {
+    if (error) {
+      console.error('[Supervision Summary] Save error:', error)
+      // Log more details in development if available
+      if (import.meta.env.DEV) {
+        console.error('Payload:', {
+          reflection_id: summaryReflection.value.id,
+          user_id: auth.user.id,
+          generation_status: 'saved'
+        })
+      }
+    }
+    summaryError.value = 'The draft is still open, but could not be saved. Please try again.';
+    return
+  }
   
   const updatedReflection = { ...summaryReflection.value, latestSummary: data }
   reflections.value = reflections.value.map(item => item.id === summaryReflection.value.id ? updatedReflection : item)
