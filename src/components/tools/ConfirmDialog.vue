@@ -1,5 +1,5 @@
 <template>
-  <transition-colors duration-standard ease-out name="fade">
+  <Transition duration-standard ease-out name="fade">
     <div
         v-if="show"
         class="fixed inset-0 z-50 flex items-center justify-center bg-backdrop"
@@ -23,7 +23,7 @@
         </div>
       </div>
     </div>
-  </transition-colors duration-standard ease-out>
+  </Transition>
 </template>
 
 <script setup>

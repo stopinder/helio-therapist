@@ -86,14 +86,14 @@
       </div>
 
       <!-- Inline confirmation -->
-      <transition-colors duration-standard ease-out name="fade">
+      <Transition duration-standard ease-out name="fade">
         <div
             v-if="saved"
             class="text-body-sm text-state-success mt-2 text-right"
         >
           ✅ Saved!
         </div>
-      </transition-colors duration-standard ease-out>
+      </Transition>
     </div>
   </div>
 </template>

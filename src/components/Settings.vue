@@ -238,12 +238,12 @@
       </form>
     </div>
 
-    <transition-colors duration-standard ease-out name="fade">
+    <Transition duration-standard ease-out name="fade">
       <div v-if="showSuccess" class="fixed bottom-8 left-1/2 transform -translate-x-1/2 bg-ink text-on-action px-6 py-3 rounded-pill shadow-overlay flex items-center gap-3 z-50">
         <span class="text-state-success">✓</span>
         <span class="text-body font-medium">{{ successMessage }}</span>
       </div>
-    </transition-colors duration-standard ease-out>
+    </Transition>
   </div>
 </template>
 

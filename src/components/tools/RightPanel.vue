@@ -1,6 +1,6 @@
 <!-- src/components/RightPanel.vue -->
 <template>
-  <transition-colors duration-standard ease-out name="panel-slide-fade">
+  <Transition duration-standard ease-out name="panel-slide-fade">
     <aside
         v-if="open"
         class="fixed inset-y-0 right-0 w-80 md:w-96 bg-surface-elevated border-l border-border
@@ -166,7 +166,7 @@
         </section>
       </div>
     </aside>
-  </transition-colors duration-standard ease-out>
+  </Transition>
 </template>
 
 <script setup>

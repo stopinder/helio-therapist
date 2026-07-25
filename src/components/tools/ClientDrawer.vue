@@ -1,5 +1,5 @@
 <template>
-  <transition-colors duration-standard ease-out name="slide">
+  <Transition duration-standard ease-out name="slide">
     <aside
         v-if="isOpen"
         class="w-72 bg-surface-elevated border-l border-border shadow-overlay h-full fixed right-0 top-0 flex flex-col"
@@ -21,7 +21,7 @@
         </div>
       </div>
     </aside>
-  </transition-colors duration-standard ease-out>
+  </Transition>
 </template>
 
 <script setup>

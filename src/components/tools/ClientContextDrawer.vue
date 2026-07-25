@@ -1,5 +1,5 @@
 <template>
-  <transition-colors duration-standard ease-out name="drawer-fade">
+  <Transition duration-standard ease-out name="drawer-fade">
     <div
         v-if="open"
         class="fixed inset-0 z-[60] flex justify-end"
@@ -13,7 +13,7 @@
       ></div>
 
       <!-- Drawer Panel -->
-      <transition-colors duration-standard ease-out name="drawer-slide">
+      <Transition duration-standard ease-out name="drawer-slide">
         <div
           class="relative w-full sm:w-[380px] md:w-[420px] bg-surface-overlay shadow-overlay h-full flex flex-col border-l border-border"
             @click.stop
@@ -80,9 +80,9 @@
             </button>
           </div>
         </div>
-      </transition-colors duration-standard ease-out>
+      </Transition>
     </div>
-  </transition-colors duration-standard ease-out>
+  </Transition>
 </template>
 
 <script setup>

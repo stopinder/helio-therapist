@@ -1,5 +1,5 @@
 <template>
-  <transition-colors duration-standard ease-out name="drawer-fade">
+  <Transition duration-standard ease-out name="drawer-fade">
     <div
         v-if="open"
         class="fixed inset-0 z-50 flex flex-col items-center justify-end"
@@ -14,7 +14,7 @@
       ></div>
 
       <!-- Drawer Panel -->
-      <transition-colors duration-standard ease-out name="drawer-slide">
+      <Transition duration-standard ease-out name="drawer-slide">
         <div
             class="relative bg-surface-elevated border-t border-border shadow-overlay w-full
                  sm:rounded-t-lg sm:w-[90%] md:w-[70%] lg:w-[50%]
@@ -47,15 +47,15 @@
           </div>
 
           <!-- Inline confirmations -->
-          <transition-colors duration-standard ease-out name="fade">
+          <Transition duration-standard ease-out name="fade">
             <div v-if="feedback" class="text-body-sm text-state-success text-right px-4 py-1" aria-live="polite">
               {{ feedback }}
             </div>
-          </transition-colors duration-standard ease-out>
+          </Transition>
 
           <!-- Content -->
           <div class="flex-1 overflow-auto p-4 text-body text-ink-secondary leading-relaxed">
-            <transition-colors duration-standard ease-out name="content-fade" appear>
+            <Transition duration-standard ease-out name="content-fade" appear>
               <div key="drawer-content">
                 <div v-if="loading" class="flex items-center justify-center py-6">
                   <span class="animate-pulse text-ink-subtle">Generating insight...</span>
@@ -76,12 +76,12 @@
                   </div>
                 </div>
               </div>
-            </transition-colors duration-standard ease-out>
+            </Transition>
           </div>
         </div>
-      </transition-colors duration-standard ease-out>
+      </Transition>
     </div>
-  </transition-colors duration-standard ease-out>
+  </Transition>
 </template>
 
 <script setup>

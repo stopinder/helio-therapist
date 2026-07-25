@@ -1,7 +1,7 @@
 <template>
   <div class="flex h-screen bg-surface-canvas text-ink overflow-hidden">
     <!-- Left Sidebar: Desktop (Fixed) / Mobile (Drawer) -->
-    <transition-colors duration-standard ease-out name="slide">
+    <Transition duration-standard ease-out name="slide">
       <LeftSidebar
           v-if="isSidebarOpen || isDesktop"
           class="fixed md:relative z-50 md:z-40 shrink-0 w-64 bg-surface border-r border-border h-full shadow-overlay md:shadow-none"
@@ -23,7 +23,7 @@
           @add-resource="handleAddResource"
           @close-sidebar="isSidebarOpen = false"
       />
-    </transition-colors>
+    </Transition>
 
     <!-- Sidebar Backdrop for Mobile -->
     <div

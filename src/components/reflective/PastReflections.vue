@@ -85,7 +85,7 @@
       </div>
 
       <!-- Detail drawer -->
-      <transition-colors duration-standard ease-out name="fade">
+      <Transition duration-standard ease-out name="fade">
         <div v-if="detail" class="fixed inset-0 bg-backdrop flex items-end md:items-center justify-center z-40" @click.self="detail=null">
           <div class="w-full md:max-w-2xl bg-surface-elevated rounded-t-md md:rounded-control border border-border-reflection p-4 shadow-overlay">
             <div class="flex items-center justify-between mb-2">
@@ -110,7 +110,7 @@
             </div>
           </div>
         </div>
-      </transition-colors duration-standard ease-out>
+      </Transition>
     </div>
   </div>
 </template>

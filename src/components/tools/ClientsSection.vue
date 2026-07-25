@@ -22,7 +22,7 @@
     />
 
     <!-- Clients List & Add -->
-    <transition-colors duration-standard ease-out name="fade">
+    <Transition duration-standard ease-out name="fade">
       <div v-show="isOpen" class="space-y-1">
         <ul class="space-y-1 max-h-48 overflow-y-auto pr-1 scrollbar-hide">
           <li
@@ -48,7 +48,7 @@
           Add Client
         </button>
       </div>
-    </transition-colors duration-standard ease-out>
+    </Transition>
 
     <!-- Confirm Delete Modal -->
     <ConfirmDialog

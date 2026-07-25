@@ -19,14 +19,14 @@
     </button>
 
     <!-- Body -->
-    <transition-colors duration-standard ease-out name="slide-vert">
+    <Transition duration-standard ease-out name="slide-vert">
       <div
           v-if="open"
           class="mt-2 pl-4 border-l border-border-muted space-y-2"
       >
         <slot />
       </div>
-    </transition-colors duration-standard ease-out>
+    </Transition>
   </div>
 </template>
 
