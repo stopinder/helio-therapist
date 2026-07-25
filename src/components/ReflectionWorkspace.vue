@@ -55,24 +55,24 @@
         </div>
       </section>
 
-      <div class="action-bar">
+      <div class="action-bar gap-4">
         <div class="voice-control">
-          <button v-if="!isRecording" type="button" class="secondary-action" :disabled="isTranscribing" @click="startRecording">{{ isTranscribing ? 'Adding to reflectionâ€¦' : 'ðŸŽ™ Record voice' }}</button>
+          <button v-if="!isRecording" type="button" class="secondary-action" :disabled="isTranscribing" @click="startRecording">{{ isTranscribing ? 'Adding to reflection...' : '🎙️ Record voice' }}</button>
           <template v-else>
-            <span class="recording-status" aria-live="polite"><span class="recording-indicator" aria-hidden="true" />Recording Â· {{ elapsed }}</span>
+            <span class="recording-status" aria-live="polite"><span class="recording-indicator" aria-hidden="true" />Recording · {{ elapsed }}</span>
             <button type="button" class="secondary-action" @click="togglePause">{{ isPaused ? 'Resume' : 'Pause' }}</button>
             <button type="button" class="secondary-action" @click="stopRecording">Stop and add to reflection</button>
           </template>
         </div>
         <div class="save-actions">
           <button type="button" class="secondary-action" @click="summariseCurrentAttempt">
-            {{ generatingSummary ? 'Preparing draftâ€¦' : 'Summarise for supervision' }}
+            {{ generatingSummary ? 'Preparing draft...' : 'Summarise for supervision' }}
           </button>
-          <button type="submit" class="primary-action" :disabled="saving || (relationshipType === 'client' && !selectedClientId)">{{ saving ? 'Savingâ€¦' : 'Save reflection' }}</button>
+          <button type="submit" class="primary-action" :disabled="saving || (relationshipType === 'client' && !selectedClientId)">{{ saving ? 'Saving...' : 'Save reflection' }}</button>
         </div>
       </div>
       <p v-if="showThresholdGuidance && !canSummarise" id="summary-threshold" class="quiet threshold-note text-state-warning">
-        Write a little more to create a supervision summary (${minimumSummaryCharacters} characters).
+        Write a little more to create a supervision summary ({{ minimumSummaryCharacters }} characters).
       </p>
       <p v-if="saveError" class="error-message" role="alert">{{ saveError }}</p>
     </form>
@@ -80,7 +80,7 @@
     <!-- History List -->
     <section class="reflection-history" :aria-labelledby="localView === 'main' ? 'recent-reflections-heading' : 'archive-heading'">
       <h2 v-if="localView === 'main'" id="recent-reflections-heading">Recent reflections</h2>
-      <p v-if="loading" class="quiet">Opening your reflectionsâ€¦</p>
+      <p v-if="loading" class="quiet">Opening your reflections...</p>
       <p v-else-if="!reflections.length" class="quiet">Nothing here yet. This is a place to return to when something feels worth holding onto.</p>
       
       <div v-else class="compact-history divide-y divide-border border-y border-border mb-6">
@@ -525,6 +525,205 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
-.reflection-workspace{max-width:48rem;margin:0 auto;padding:clamp(1rem,3vw,2.5rem) 0 5rem}.reflection-introduction h1,.reflection-history h2,.summary-dialog h2{margin:0;font-family:'Newsreader',Georgia,serif;font-weight:500;letter-spacing:-.025em;color:var(--text-primary)}.reflection-introduction h1{font-size:clamp(2.15rem,5vw,3rem);line-height:1}.reflection-introduction p{margin:.85rem 0 0;color:var(--text-secondary);line-height:1.7}.privacy-reassurance{margin:1.4rem 0 0;color:var(--text-muted);font-size:.875rem}.journal{margin-top:2rem}.editor-surface{border:1px solid var(--border);border-radius:.75rem;background:var(--surface-elevated);box-shadow:0 1px 2px rgba(45,38,30,.04)}.reflection-editor{box-sizing:border-box;display:block;min-height:360px;width:100%;resize:none;border:0;background:transparent;padding:1.25rem 1.5rem;color:var(--text-primary);font:inherit;font-size:17px;line-height:1.75;outline:0}.reflection-editor::placeholder{color:var(--text-muted)}.action-bar{display:flex;gap:.75rem;justify-content:space-between;align-items:center;margin-top:1rem}.voice-control,.save-actions{display:flex;gap:.5rem;align-items:center;flex-wrap:wrap}.secondary-action,.primary-action{border-radius:.6rem;padding:.6rem .85rem;font:inherit;font-size:.875rem;cursor:pointer}.secondary-action{border:1px solid var(--border);background:var(--surface-elevated);color:var(--text-secondary)}.primary-action{border:1px solid var(--text-primary);background:var(--text-primary);color:var(--surface-elevated);font-weight:600}.secondary-action:disabled,.primary-action:disabled{opacity:.5;cursor:not-allowed}.quiet,.threshold-note{margin:.7rem 0 0;color:var(--text-muted);font-size:.9375rem;line-height:1.7}.threshold-note{font-size:.8125rem}.error-message{margin:.7rem 0 0;color:var(--state-danger);font-size:.875rem}.inline-action{border:0;background:transparent;color:inherit;font:inherit;text-decoration:underline;cursor:pointer}.recording-status{display:flex;align-items:center;gap:.4rem;color:var(--text-secondary);font-size:.875rem}.recording-indicator{width:.55rem;height:.55rem;border-radius:999px;background:#b7443e}.reflection-history{margin-top:4.5rem}.reflection-history h2{font-size:1.5rem}.reflection-note{padding:1.3rem 0;border-bottom:1px solid var(--border-muted)}.reflection-note:first-of-type{margin-top:.7rem;border-top:1px solid var(--border-muted)}.reflection-note>p{margin:0;white-space:pre-wrap;line-height:1.75}.reflection-note footer{display:flex;gap:.7rem;margin-top:.75rem;color:var(--text-muted);font-size:.78rem}.reflection-note footer button{border:0;padding:0;background:transparent;color:var(--text-secondary);font:inherit;cursor:pointer}.saved-summary{margin-top:1rem!important;padding:.85rem;border-left:2px solid var(--border);color:var(--text-secondary)!important;font-size:.9rem}.saved-summary strong{display:block;margin-bottom:.3rem;color:var(--text-muted);font-size:.75rem}.modal-backdrop{position:fixed;inset:0;z-index:70;display:grid;place-items:center;padding:1rem;background:rgba(20,18,16,.65);backdrop-filter:blur(4px)}.modal-panel{width:min(100%,42rem);max-height:95vh;overflow:hidden;display:flex;flex-direction:column;border:1px solid var(--border);border-radius:1rem;background:var(--surface);padding:2rem;box-shadow:0 20px 50px rgba(0,0,0,.3)}.modal-content{overflow-y:auto;flex:1}.close-button{border:0;background:transparent;color:var(--text-muted);font-size:1.5rem;cursor:pointer}.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}@media(max-width:640px){.reflection-workspace{padding-top:.5rem}.action-bar{align-items:stretch;flex-direction:column}.save-actions{justify-content:flex-end}.reflection-editor{min-height:320px;padding:1.15rem}.modal-panel{padding:1.25rem}}
+.reflection-workspace {
+  max-width: 48rem;
+  margin: 0 auto;
+  padding: clamp(1rem, 3vw, 2.5rem) 0 5rem;
+}
+.reflection-introduction {
+  margin-bottom: 2rem;
+}
+.reflection-introduction h1 {
+  font-size: 1.875rem;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 0.5rem;
+}
+.reflection-introduction p {
+  color: var(--text-muted);
+}
+.privacy-reassurance {
+  background: var(--surface-subtle);
+  border: 1px solid var(--border-muted);
+  border-radius: 0.75rem;
+  padding: 0.75rem 1rem;
+  font-size: 0.875rem;
+  color: var(--text-muted);
+  margin-bottom: 2rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.privacy-reassurance::before {
+  content: "🔒";
+  font-size: 1rem;
+}
+.journal {
+  margin-bottom: 3rem;
+}
+.editor-surface {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  margin-bottom: 1.5rem;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.editor-surface:focus-within {
+  border-color: var(--action-primary);
+  box-shadow: 0 0 0 2px var(--action-primary-alpha);
+}
+.reflection-editor {
+  width: 100%;
+  min-height: 240px;
+  padding: 1.5rem;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  font-size: 1rem;
+  line-height: 1.6;
+  resize: vertical;
+  outline: none;
+}
+.action-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 1rem;
+}
+.voice-control {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+.recording-status {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--state-error);
+}
+.recording-indicator {
+  width: 0.75rem;
+  height: 0.75rem;
+  background: var(--state-error);
+  border-radius: 50%;
+  animation: pulse 1.5s infinite;
+}
+@keyframes pulse {
+  0% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(1.1); }
+  100% { opacity: 1; transform: scale(1); }
+}
+.save-actions {
+  display: flex;
+  gap: 0.75rem;
+}
+.primary-action {
+  background: var(--action-primary);
+  color: white;
+  padding: 0.625rem 1.25rem;
+  border-radius: 0.75rem;
+  font-weight: 600;
+  border: 0;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.primary-action:hover:not(:disabled) {
+  background: var(--action-primary-hover);
+}
+.primary-action:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.secondary-action {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 0.625rem 1.25rem;
+  border-radius: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+}
+.secondary-action:hover:not(:disabled) {
+  background: var(--surface-subtle);
+  border-color: var(--border-hover);
+}
+.secondary-action:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.threshold-note {
+  margin-top: 1rem;
+  font-size: 0.875rem;
+  text-align: center;
+}
+.error-message {
+  margin-top: 1rem;
+  color: var(--state-error);
+  font-size: 0.875rem;
+  text-align: center;
+}
+.reflection-history h2 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 1.5rem;
+}
+.quiet {
+  color: var(--text-muted);
+  font-style: italic;
+  text-align: center;
+  padding: 2rem 0;
+}
+.modal-backdrop{position:fixed;inset:0;z-index:70;display:grid;place-items:center;padding:1rem;background:rgba(20,18,16,.65);backdrop-filter:blur(4px)}
+.modal-panel{width:min(100%,42rem);max-height:95vh;overflow:hidden;display:flex;flex-direction:column;border:1px solid var(--border);border-radius:1rem;background:var(--surface);padding:2rem;box-shadow:0 20px 50px rgba(0,0,0,.3)}
+.modal-content {
+  overflow-y: auto;
+  flex: 1;
+}
+.close-button {
+  border: 0;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 1.5rem;
+  cursor: pointer;
+}
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+@media (max-width: 640px) {
+  .reflection-workspace {
+    padding-top: 0.5rem;
+  }
+  .action-bar {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 1rem;
+  }
+  .save-actions {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+  .save-actions button {
+    width: 100%;
+  }
+  .reflection-editor {
+    min-height: 320px;
+    padding: 1.15rem;
+  }
+  .modal-panel {
+    padding: 1.25rem;
+  }
+}
 </style>
 
