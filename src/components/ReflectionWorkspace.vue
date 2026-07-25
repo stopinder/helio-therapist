@@ -21,40 +21,6 @@
         <textarea id="reflection-body" ref="editor" v-model="body" class="reflection-editor" placeholder="Write or speak whatever feels important…" aria-label="Reflection" />
       </section>
 
-      <section class="relationship-control mb-6">
-        <div class="flex flex-col gap-3">
-          <label class="type-overline text-ink-muted">Related to</label>
-          <div class="flex flex-wrap gap-4">
-            <label class="flex items-center gap-2 cursor-pointer group">
-              <input type="radio" v-model="relationshipType" value="personal" class="sr-only" />
-              <div class="h-5 w-5 rounded-pill border-2 flex items-center justify-center transition-colors" :class="relationshipType === 'personal' ? 'border-action-primary bg-action-primary' : 'border-border group-hover:border-ink-subtle'">
-                <div v-if="relationshipType === 'personal'" class="h-2 w-2 rounded-pill bg-white" />
-              </div>
-              <span class="type-body-sm" :class="relationshipType === 'personal' ? 'text-ink font-medium' : 'text-ink-secondary'">Personal / general practice</span>
-            </label>
-            <label class="flex items-center gap-2 cursor-pointer group">
-              <input type="radio" v-model="relationshipType" value="client" class="sr-only" />
-              <div class="h-5 w-5 rounded-pill border-2 flex items-center justify-center transition-colors" :class="relationshipType === 'client' ? 'border-action-primary bg-action-primary' : 'border-border group-hover:border-ink-subtle'">
-                <div v-if="relationshipType === 'client'" class="h-2 w-2 rounded-pill bg-white" />
-              </div>
-              <span class="type-body-sm" :class="relationshipType === 'client' ? 'text-ink font-medium' : 'text-ink-secondary'">Client</span>
-            </label>
-          </div>
-
-          <div v-if="relationshipType === 'client'" class="animate-in fade-in slide-in-from-top-1 duration-200">
-            <select 
-              v-model="selectedClientId" 
-              class="w-full max-w-md p-2 border border-border rounded-control bg-surface type-body-sm focus:border-action-primary focus:ring-1 focus:ring-action-primary outline-none"
-              aria-label="Select client"
-            >
-              <option :value="null" disabled>Choose a client…</option>
-              <option v-for="client in clients" :key="client.id" :value="client.id">{{ client.display_name }}</option>
-            </select>
-            <p v-if="!clients.length" class="type-caption text-state-error mt-1">No clients found. Add one in the Client Directory.</p>
-          </div>
-        </div>
-      </section>
-
       <div class="action-bar gap-4">
         <div class="voice-control">
           <button v-if="!isRecording" type="button" class="secondary-action" :disabled="isTranscribing" @click="startRecording">{{ isTranscribing ? 'Adding to reflection...' : '🎙️ Record voice' }}</button>
@@ -68,7 +34,7 @@
           <button type="button" class="secondary-action" @click="summariseCurrentAttempt">
             {{ generatingSummary ? 'Preparing draft...' : 'Summarise for supervision' }}
           </button>
-          <button type="submit" class="primary-action" :disabled="saving || (relationshipType === 'client' && !selectedClientId)">{{ saving ? 'Saving...' : 'Save reflection' }}</button>
+          <button type="submit" class="primary-action" :disabled="saving">{{ saving ? 'Saving...' : 'Save reflection' }}</button>
         </div>
       </div>
       <p v-if="showThresholdGuidance && !canSummarise" id="summary-threshold" class="quiet threshold-note text-state-warning">
@@ -113,9 +79,6 @@
             <div class="flex flex-col">
               <h2 :id="`detail-title-${selectedReflection.id}`" class="type-h3">{{ date(selectedReflection.created_at) }}</h2>
               <div class="relationship-info mt-1">
-                <span class="type-caption text-ink-muted">
-                  {{ selectedReflection.client_id ? `Privately linked to ${clientDisplayName(selectedReflection.client_id)}` : 'Personal / general practice' }}
-                </span>
                 <span class="type-caption text-ink-muted block mt-0.5">Not part of the client’s clinical record.</span>
               </div>
             </div>
@@ -235,8 +198,6 @@ const body = ref(''), saveError = ref(''), summaryDraft = ref(''), summaryReflec
 const detailStage = ref('reflection') // reflection, generating, summary
 const editor = ref(null), recorder = ref(null), audioChunks = ref([]), isRecording = ref(false), isPaused = ref(false), isTranscribing = ref(false), seconds = ref(0), timer = ref(null)
 
-const clients = ref([]), relationshipType = ref('personal'), selectedClientId = ref(null), clientsLoading = ref(false)
-
 const selectedReflection = ref(null)
 const showThresholdGuidance = ref(false)
 
@@ -255,10 +216,9 @@ async function load() {
   if (!supabase) return
   loading.value = true
   try {
-    const [{ data: notes, error: notesError }, { data: summaries, error: summariesError }, { data: clientData, error: clientsError }] = await Promise.all([
+    const [{ data: notes, error: notesError }, { data: summaries, error: summariesError }] = await Promise.all([
       supabase.from('private_reflections').select('*').order('created_at', { ascending: false }),
-      supabase.from('reflection_supervision_summaries').select('*').in('generation_status', ['saved']).order('created_at', { ascending: false }),
-      supabase.from('clients').select('id, display_name').eq('archived', false).order('display_name', { ascending: true })
+      supabase.from('reflection_supervision_summaries').select('*').in('generation_status', ['saved']).order('created_at', { ascending: false })
     ])
 
     if (notesError) console.error('[Reflections] Load error:', notesError)
@@ -268,9 +228,6 @@ async function load() {
         console.warn('PostgREST schema cache miss detected for summaries table.')
       }
     }
-    if (clientsError) console.error('[Clients] Load error:', clientsError)
-
-    clients.value = clientData || []
 
     const summaryByReflection = new Map()
     for (const summary of summaries || []) if (!summaryByReflection.has(summary.reflection_id)) summaryByReflection.set(summary.reflection_id, summary)
@@ -284,21 +241,22 @@ async function load() {
 
 async function saveReflection({ keepOpen = false } = {}) {
   if (!supabase || saving.value) return null
+  if (body.value.length > 20000) {
+    saveError.value = 'Reflection is too long. The maximum length is 20,000 characters.'
+    return null
+  }
   saving.value = true; saveError.value = ''
   const { data: auth } = await supabase.auth.getUser()
   if (!auth.user) { saving.value = false; saveError.value = 'Please sign in again before saving.'; return null }
   const { data, error } = await supabase.from('private_reflections').insert({
     user_id: auth.user.id,
-    body: body.value,
-    client_id: relationshipType.value === 'client' ? selectedClientId.value : null
+    body: body.value
   }).select().single()
   saving.value = false
   if (error || !data) { saveError.value = 'Your reflection could not be saved. Please try again.'; return null }
   reflections.value.unshift({ ...data, latestSummary: null })
   if (!keepOpen) {
     body.value = ''
-    relationshipType.value = 'personal'
-    selectedClientId.value = null
     showThresholdGuidance.value = false
   }
   return data
@@ -500,10 +458,6 @@ async function transcribe() {
   reader.readAsDataURL(blob)
 }
 function date(value) { return new Date(value).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }) }
-function clientDisplayName(id) {
-  const client = clients.value.find(c => c.id === id)
-  return client ? client.display_name : 'Unknown client'
-}
 
 function handleKeyDown(e) {
   if (e.key === 'Escape') {
