@@ -10,7 +10,7 @@ test('a reflection may be saved empty or short, while summary generation needs e
   assert.equal(canSummariseReflection(''), false)
   assert.equal(canSummariseReflection('short note'), false)
   assert.equal(canSummariseReflection('x'.repeat(SUPERVISION_SUMMARY_MINIMUM_CHARACTERS)), true)
-  assert.match(workspace, /:disabled="saving"/)
+  assert.match(workspace, /:disabled="saving/)
   assert.match(workspace, /minimumSummaryCharacters = 80/)
 })
 

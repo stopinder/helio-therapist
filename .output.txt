@@ -1,0 +1,192 @@
+✖ a reflection may be saved empty or short, while summary generation needs enough source material (9.8136ms)
+✔ the summary request is authenticated and delimits source writing (6.8021ms)
+✔ only a bounded, supported draft is accepted (0.7008ms)
+✔ regeneration versions summaries and never overwrites the original reflection (2.709ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 3
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 120.2928
+✖ failing tests:
+test at test\supervision-summary.test.js:6:1
+✖ a reflection may be saved empty or short, while summary generation needs enough source material (9.8136ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /:disabled="saving"/. Input:
+
+  '<template>\r\n' +
+    '  <section class="reflection-workspace">\r\n' +
+    `    <header v-if="localView === 'main'" class="reflection-introduction">\r\n` +
+    '      <h1>Reflections</h1>\r\n' +
+    '      <p>A private place to write or speak about your work.</p>\r\n' +
+    '    </header>\r\n' +
+    '    <header v-else class="reflection-introduction">\r\n' +
+    '      <div class="flex items-center gap-2">\r\n' +
+    `        <button type="button" class="text-ink-secondary hover:text-ink transition-colors" @click="localView = 'main'">← Back</button>\r\n` +
+    '        <h1>Archive</h1>\r\n' +
+    '      </div>\r\n' +
+    '      <p>Your complete history of private reflections.</p>\r\n' +
+    '    </header>\r\n' +
+    '\r\n' +
+    `    <p v-if="localView === 'main'" class="privacy-reassurance">Private reflection · Not part of a client’s clinical record.</p>\r\n` +
+    '\r\n' +
+    '    <!-- Editor (Primary focus on main screen) -->\r\n' +
+    `    <form v-if="localView === 'main'" class="journal" @submit.prevent="saveReflection">\r\n` +
+    '      <label class="sr-only" for="reflection-body">Reflection</label>\r\n' +
+    '      <section class="editor-surface">\r\n' +
+    '        <textarea id="reflection-body" ref="editor" v-model="body" class="reflection-editor" placeholder="Write or speak whatever feels important…" aria-label="Reflection" />\r\n' +
+    '      </section>\r\n' +
+    '\r\n' +
+    '      <section class="relationship-control mb-6">\r\n' +
+    '        <div class="flex flex-col gap-3">\r\n' +
+    '          <label class="type-overline text-ink-muted">Related to</label>\r\n' +
+    '          <div class="flex flex-wrap gap-4">\r\n' +
+    '            <label class="flex items-center gap-2 cursor-pointer group">\r\n' +
+    '              <input type="radio" v-model="relationshipType" value="personal" class="sr-only" />\r\n' +
+    `              <div class="h-5 w-5 rounded-pill border-2 flex items-center justify-center transition-colors" :class="relationshipType === 'personal' ? 'border-action-primary bg-action-primary' : 'border-border group-hover:border-ink-subtle'">\r\n` +
+    `                <div v-if="relationshipType === 'personal'" class="h-2 w-2 rounded-pill bg-white" />\r\n` +
+    '              </div>\r\n' +
+    `              <span class="type-body-sm" :class="relationshipType === 'personal' ? 'text-ink font-medium' : 'text-ink-secondary'">Personal / general practice</span>\r\n` +
+    '            </label>\r\n' +
+    '            <label class="flex items-center gap-2 cursor-pointer group">\r\n' +
+    '              <input type="radio" v-model="relationshipType" value="client" class="sr-only" />\r\n' +
+    `              <div class="h-5 w-5 rounded-pill border-2 flex items-center justify-center transition-colors" :class="relationshipType === 'client' ? 'border-action-primary bg-action-primary' : 'border-border group-hover:border-ink-subtle'">\r\n` +
+    `                <div v-if="relationshipType === 'client'" class="h-2 w-2 rounded-pill bg-white" />\r\n` +
+    '              </div>\r\n' +
+    `              <span class="type-body-sm" :class="relationshipType === 'client' ? 'text-ink font-medium' : 'text-ink-secondary'">Client</span>\r\n` +
+    '            </label>\r\n' +
+    '          </div>\r\n' +
+    '\r\n' +
+    `          <div v-if="relationshipType === 'client'" class="animate-in fade-in slide-in-from-top-1 duration-200">\r\n` +
+    '            <select \r\n' +
+    '              v-model="selectedClientId" \r\n' +
+    '              class="w-full max-w-md p-2 border border-border rounded-control bg-surface type-body-sm focus:border-action-primary focus:ring-1 focus:ring-action-primary outline-none"\r\n' +
+    '              aria-label="Select client"\r\n' +
+    '            >\r\n' +
+    '              <option :value="null" disabled>Choose a client…</option>\r\n' +
+    '              <option v-for="client in clients" :key="client.id" :value="client.id">{{ client.display_name }}</option>\r\n' +
+    '            </select>\r\n' +
+    '            <p v-if="!clients.length" class="type-caption text-state-error mt-1">No clients found. Add one in the Client Directory.</p>\r\n' +
+    '          </div>\r\n' +
+    '        </div>\r\n' +
+    '      </section>\r\n' +
+    '\r\n' +
+    '      <div class="action-bar">\r\n' +
+    '        <div class="voice-control">\r\n' +
+    `          <button v-if="!isRecording" type="button" class="secondary-action" :disabled="isTranscribing" @click="startRecording">{{ isTranscribing ? 'Adding to reflection…' : '🎙 Record voice' }}</button>\r\n` +
+    '          <template v-else>\r\n' +
+    '            <span class="recording-status" aria-live="polite"><span class="recording-indicator" aria-hidden="true" />Recording · {{ elapsed }}</span>\r\n' +
+    `            <button type="button" class="secondary-action" @click="togglePause">{{ isPaused ? 'Resume' : 'Pause' }}</button>\r\n` +
+    '            <button type="button" class="secondary-action" @click="stopRecording">Stop and add to reflection</button>\r\n' +
+    '          </template>\r\n' +
+    '        </div>\r\n' +
+    '        <div class="save-actions">\r\n' +
+    '          <button type="button" class="secondary-action" @click="summariseCurrentAttempt">\r\n' +
+    "            {{ generatingSummary ? 'Preparing draft…' : 'Summarise for supervision' }}\r\n" +
+    '          </button>\r\n' +
+    `          <button type="submit" class="primary-action" :disabled="saving || (relationshipType === 'client' && !selectedClientId)">{{ saving ? 'Saving…' : 'Save reflection' }}</button>\r\n` +
+    '        </div>\r\n' +
+    '      </div>\r\n' +
+    '      <p v-if="showThresholdGuidance && !canSummarise" id="summary-threshold" class="quiet threshold-note text-state-warning">\r\n' +
+    '        Write a little more to create a supervision summary (${minimumSummaryCharacters} characters).\r\n' +
+    '      </p>\r\n' +
+    '      <p v-if="saveError" class="error-message" role="alert">{{ saveError }}</p>\r\n' +
+    '    </form>\r\n' +
+    '\r\n' +
+    '    <!-- History List -->\r\n' +
+    `    <section class="reflection-history" :aria-labelledby="localView === 'main' ? 'recent-reflections-heading' : 'archive-heading'">\r\n` +
+    `      <h2 v-if="localView === 'main'" id="recent-reflections-heading">Recent reflections</h2>\r\n` +
+    '      <p v-if="loading" class="quiet">Opening your reflections…</p>\r\n' +
+    '      <p v-else-if="!reflections.length" class="quiet">Nothing here yet. This is a place to return to when something feels worth holding onto.</p>\r\n' +
+    '      \r\n' +
+    '      <div v-else class="compact-history divide-y divide-border border-y border-border mb-6">\r\n' +
+    '        <button \r\n' +
+    '          v-for="reflection in displayedReflections" \r\n' +
+    '          :key="reflection.id" \r\n' +
+    '          type="button"\r\n' +
+    '          class="w-full text-left px-inline-md py-stack-md hover:bg-surface-subtle focus-visible:ring-2 focus-visible:ring-action-primary transition-colors group"\r\n' +
+    '          @click="openDetail(reflection)"\r\n' +
+    '        >\r\n' +
+    '          <div class="flex justify-between items-baseline mb-1">\r\n' +
+    '            <span class="type-caption font-semibold text-ink-secondary">{{ date(reflection.created_at) }}</span>\r\n' +
+    '            <span class="type-caption text-action-link opacity-0 group-hover:opacity-100 transition-opacity">View</span>\r\n' +
+    '          </div>\r\n' +
+    `          <p class="type-body-sm text-ink-secondary line-clamp-2">{{ reflection.body || 'Empty reflection' }}</p>\r\n` +
+    '        </button>\r\n' +
+    '      </div>\r\n' +
+    '\r\n' +
+    `      <button v-if="localView === 'main' && reflections.length > 3" type="button" class="text-action-link hover:underline type-body-sm" @click="localView = 'archive'">\r\n` +
+    '        View all reflections\r\n' +
+    '      </button>\r\n' +
+    '    </section>\r\n' +
+    '\r\n' +
+    '    <!-- Detail View Modal -->\r\n' +
+    '    <div v-if="selectedReflection" class="modal-backdrop" @click.self="closeDetail">\r\n' +
+    '      <section class="detail-dialog" role="dialog" aria-modal="true" :aria-labelledby="`detail-title-${selectedReflection.id}`">\r\n' +
+    '        <header class="flex justify-between items-center mb-6">\r\n' +
+    '          <div class="flex flex-col">\r\n' +
+    '            <h2 :id="`detail-title-${selectedReflection.id}`" class="type-h3">{{ date(selectedReflection.created_at) }}</h2>\r\n' +
+    '            <div class="relationship-info mt-1">\r\n' +
+    '              <span class="type-caption text-ink-muted">\r\n' +
+    "                {{ selectedReflection.client_id ? `Privately linked to ${clientDisplayName(selectedReflection.client_id)}` : 'Personal / general practice' }}\r\n" +
+    '              </span>\r\n' +
+    '              <span class="type-caption text-ink-muted block mt-0.5">Not part of the client’s clinical record.</span>\r\n' +
+    '            </div>\r\n' +
+    '          </div>\r\n' +
+    '          <button type="button" class="close-button text-2xl" aria-label="Close" @click="closeDetail">×</button>\r\n' +
+    '        </header>\r\n' +
+    '        \r\n' +
+    '        <div class="detail-content space-y-8 overflow-y-auto max-h-[70vh]">\r\n' +
+    '          <div class="reflection-text whitespace-pre-wrap type-body">\r\n' +
+    '            {{ selectedReflection.body }}\r\n' +
+    '          </div>\r\n' +
+    '\r\n' +
+    '          <div class="summary-section border-t border-border pt-6">\r\n' +
+    '            <h3 class="type-overline mb-4">Supervision Summary</h3>\r\n' +
+    '            \r\n' +
+    '            <div v-if="selectedReflection.latestSummary" class="saved-summary-box bg-surface-muted p-4 rounded-control">\r\n' +
+    '              <p class="type-body mb-4">{{ selectedReflection.latestSummary.edited_content }}</p>\r\n' +
+    '              <div class="flex gap-2">\r\n' +
+    '                <button type="button" class="secondary-action" @click="openSummary(selectedReflection)">Edit summary</button>\r\n' +
+    '                <button type="button" class="secondary-action" @click="closeDetail">Close</button>\r\n' +
+    '              </div>\r\n' +
+    '            </div>\r\n' +
+    '\r\n' +
+    '            <div v-else class="summary-actions">\r\n' +
+    '              <button \r\n' +
+    '                type="button" \r\n' +
+    '                class="secondary-action" \r\n' +
+    '                :disabled="generatingSummary"\r\n' +
+    '                @click="summariseFromDetail(selectedReflection)"\r\n' +
+    '              >\r\n' +
+    "                {{ generatingSummary ? 'Preparing draft…' : 'Summarise for supervision' }}\r\n" +
+    '              </button>\r\n' +
+    '              <p v-if="!canSummariseText(selectedReflection.body)" class="type-caption text-ink-muted mt-2">\r\n' +
+    '                This reflection is too short to summarise.\r\n' +
+    '              </p>\r\n' +
+    '            </div>\r\n' +
+    '          </div>\r\n' +
+    '        </div>\r\n' +
+    '      </section>\r\n' +
+    '    </div>\r\n' +
+    '\r\n' +
+    '    <!-- Summary Editor Modal (Existing logic preserved) -->\r\n' +
+    '    <div v-if="summaryOpen" class="modal-backdrop" @click.self="closeSummary">\r\n' +
+    '      <section class="summary-dialog" role="dialog" aria-modal="true" aria-labelledby="summary-title">\r\n' +
+    '        <header>\r\n' +
+    '          <h2 id="summary-title">Supervision summary</h2>\r\n' +
+    '          <button type="button" class="close-button" aria-label="Close" @click="closeSummary">×</button>\r\n' +
+    '        </header>\r\n' +
+    '        <p class="quiet">A private, editable draft based only on this reflection. Use it as you choose in hum'... 17267 more characters
+
+      at TestContext.<anonymous> (file:///C:/Users/Rob/WebstormProjects/helio-therapist/test/supervision-summary.test.js:13:10)
+      at async Test.run (node:internal/test_runner/test:1054:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: '<template>\r\n  <section class="reflection-workspace">\r\n    <header v-if="localView === \'main\'" class="reflection-introduction">\r\n      <h1>Reflections</h1>\r\n      <p>A private place to write or speak about your work.</p>\r\n    </header>\r\n    <header v-else class="reflection-introduction">\r\n      <div class="flex items-center gap-2">\r\n        <button type="button" class="text-ink-secondary hover:text-ink transition-colors" @click="localView = \'main\'">← Back</button>\r\n        <h1>Archive</h1>\r\n      </div>\r\n      <p>Your complete history of private reflections.</p>\r\n    </header>\r\n\r\n    <p v-if="localView === \'main\'" class="privacy-reassurance">Private reflection · Not part of a client’s clinical record.</p>\r\n\r\n    <!-- Editor (Primary focus on main screen) -->\r\n    <form v-if="localView === \'main\'" class="journal" @submit.prevent="saveReflection">\r\n      <label class="sr-only" for="reflection-body">Reflection</label>\r\n      <section class="editor-surface">\r\n        <textarea id="reflection-body" ref="editor" v-model="body" class="reflection-editor" placeholder="Write or speak whatever feels important…" aria-label="Reflection" />\r\n      </section>\r\n\r\n      <section class="relationship-control mb-6">\r\n        <div class="flex flex-col gap-3">\r\n          <label class="type-overline text-ink-muted">Related to</label>\r\n          <div class="flex flex-wrap gap-4">\r\n            <label class="flex items-center gap-2 cursor-pointer group">\r\n              <input type="radio" v-model="relationshipType" value="personal" class="sr-only" />\r\n              <div class="h-5 w-5 rounded-pill border-2 flex items-center justify-center transition-colors" :class="relationshipType === \'personal\' ? \'border-action-primary bg-action-primary\' : \'border-border group-hover:border-ink-subtle\'">\r\n                <div v-if="relationshipType === \'personal\'" class="h-2 w-2 rounded-pill bg-white" />\r\n              </div>\r\n              <span class="type-body-sm" :class="relationshipType === \'personal\' ? \'text-ink font-medium\' : \'text-ink-secondary\'">Personal / general practice</span>\r\n            </label>\r\n            <label class="flex items-center gap-2 cursor-pointer group">\r\n              <input type="radio" v-model="relationshipType" value="client" class="sr-only" />\r\n              <div class="h-5 w-5 rounded-pill border-2 flex items-center justify-center transition-colors" :class="relationshipType === \'client\' ? \'border-action-primary bg-action-primary\' : \'border-border group-hover:border-ink-subtle\'">\r\n                <div v-if="relationshipType === \'client\'" class="h-2 w-2 rounded-pill bg-white" />\r\n              </div>\r\n              <span class="type-body-sm" :class="relationshipType === \'client\' ? \'text-ink font-medium\' : \'text-ink-secondary\'">Client</span>\r\n            </label>\r\n          </div>\r\n\r\n          <div v-if="relationshipType === \'client\'" class="animate-in fade-in slide-in-from-top-1 duration-200">\r\n            <select \r\n              v-model="selectedClientId" \r\n              class="w-full max-w-md p-2 border border-border rounded-control bg-surface type-body-sm focus:border-action-primary focus:ring-1 focus:ring-action-primary outline-none"\r\n              aria-label="Select client"\r\n            >\r\n              <option :value="null" disabled>Choose a client…</option>\r\n              <option v-for="client in clients" :key="client.id" :value="client.id">{{ client.display_name }}</option>\r\n            </select>\r\n            <p v-if="!clients.length" class="type-caption text-state-error mt-1">No clients found. Add one in the Client Directory.</p>\r\n          </div>\r\n        </div>\r\n      </section>\r\n\r\n      <div class="action-bar">\r\n        <div class="voice-control">\r\n          <button v-if="!isRecording" type="button" class="secondary-action" :disabled="isTranscribing" @click="startRecording">{{ isTranscribing ? \'Adding to reflection…\' : \'🎙 Record voice\' }}</button>\r\n          <template v-else>\r\n            <span class="recording-status" aria-live="polite"><span class="recording-indicator" aria-hidden="true" />Recording · {{ elapsed }}</span>\r\n            <button type="button" class="secondary-action" @click="togglePause">{{ isPaused ? \'Resume\' : \'Pause\' }}</button>\r\n            <button type="button" class="secondary-action" @click="stopRecording">Stop and add to reflection</button>\r\n          </template>\r\n        </div>\r\n        <div class="save-actions">\r\n          <button type="button" class="secondary-action" @click="summariseCurrentAttempt">\r\n            {{ generatingSummary ? \'Preparing draft…\' : \'Summarise for supervision\' }}\r\n          </button>\r\n          <button type="submit" class="primary-action" :disabled="saving || (relationshipType === \'client\' && !selectedClientId)">{{ saving ? \'Saving…\' : \'Save reflection\' }}</button>\r\n        </div>\r\n      </div>\r\n      <p v-if="showThresholdGuidance && !canSummarise" id="summary-threshold" class="quiet threshold-note text-state-warning">\r\n        Write a little more to create a supervision summary (${minimumSummaryCharacters} characters).\r\n      </p>\r\n      <p v-if="saveError" class="error-message" role="alert">{{ saveError }}</p>\r\n    </form>\r\n\r\n    <!-- History List -->\r\n    <section class="reflection-history" :aria-labelledby="localView === \'main\' ? \'recent-reflections-heading\' : \'archive-heading\'">\r\n      <h2 v-if="localView === \'main\'" id="recent-reflections-heading">Recent reflections</h2>\r\n      <p v-if="loading" class="quiet">Opening your reflections…</p>\r\n      <p v-else-if="!reflections.length" class="quiet">Nothing here yet. This is a place to return to when something feels worth holding onto.</p>\r\n      \r\n      <div v-else class="compact-history divide-y divide-border border-y border-border mb-6">\r\n        <button \r\n          v-for="reflection in displayedReflections" \r\n          :key="reflection.id" \r\n          type="button"\r\n          class="w-full text-left px-inline-md py-stack-md hover:bg-surface-subtle focus-visible:ring-2 focus-visible:ring-action-primary transition-colors group"\r\n          @click="openDetail(reflection)"\r\n        >\r\n          <div class="flex justify-between items-baseline mb-1">\r\n            <span class="type-caption font-semibold text-ink-secondary">{{ date(reflection.created_at) }}</span>\r\n            <span class="type-caption text-action-link opacity-0 group-hover:opacity-100 transition-opacity">View</span>\r\n          </div>\r\n          <p class="type-body-sm text-ink-secondary line-clamp-2">{{ reflection.body || \'Empty reflection\' }}</p>\r\n        </button>\r\n      </div>\r\n\r\n      <button v-if="localView === \'main\' && reflections.length > 3" type="button" class="text-action-link hover:underline type-body-sm" @click="localView = \'archive\'">\r\n        View all reflections\r\n      </button>\r\n    </section>\r\n\r\n    <!-- Detail View Modal -->\r\n    <div v-if="selectedReflection" class="modal-backdrop" @click.self="closeDetail">\r\n      <section class="detail-dialog" role="dialog" aria-modal="true" :aria-labelledby="`detail-title-${selectedReflection.id}`">\r\n        <header class="flex justify-between items-center mb-6">\r\n          <div class="flex flex-col">\r\n            <h2 :id="`detail-title-${selectedReflection.id}`" class="type-h3">{{ date(selectedReflection.created_at) }}</h2>\r\n            <div class="relationship-info mt-1">\r\n              <span class="type-caption text-ink-muted">\r\n                {{ selectedReflection.client_id ? `Privately linked to ${clientDisplayName(selectedReflection.client_id)}` : \'Personal / general practice\' }}\r\n              </span>\r\n              <span class="type-caption text-ink-muted block mt-0.5">Not part of the client’s clinical record.</span>\r\n            </div>\r\n          </div>\r\n          <button type="button" class="close-button text-2xl" aria-label="Close" @click="closeDetail">×</button>\r\n        </header>\r\n        \r\n        <div class="detail-content space-y-8 overflow-y-auto max-h-[70vh]">\r\n          <div class="reflection-text whitespace-pre-wrap type-body">\r\n            {{ selectedReflection.body }}\r\n          </div>\r\n\r\n          <div class="summary-section border-t border-border pt-6">\r\n            <h3 class="type-overline mb-4">Supervision Summary</h3>\r\n            \r\n            <div v-if="selectedReflection.latestSummary" class="saved-summary-box bg-surface-muted p-4 rounded-control">\r\n              <p class="type-body mb-4">{{ selectedReflection.latestSummary.edited_content }}</p>\r\n              <div class="flex gap-2">\r\n                <button type="button" class="secondary-action" @click="openSummary(selectedReflection)">Edit summary</button>\r\n                <button type="button" class="secondary-action" @click="closeDetail">Close</button>\r\n              </div>\r\n            </div>\r\n\r\n            <div v-else class="summary-actions">\r\n              <button \r\n                type="button" \r\n                class="secondary-action" \r\n                :disabled="generatingSummary"\r\n                @click="summariseFromDetail(selectedReflection)"\r\n              >\r\n                {{ generatingSummary ? \'Preparing draft…\' : \'Summarise for supervision\' }}\r\n              </button>\r\n              <p v-if="!canSummariseText(selectedReflection.body)" class="type-caption text-ink-muted mt-2">\r\n                This reflection is too short to summarise.\r\n              </p>\r\n            </div>\r\n          </div>\r\n        </div>\r\n      </section>\r\n    </div>\r\n\r\n    <!-- Summary Editor Modal (Existing logic preserved) -->\r\n    <div v-if="summaryOpen" class="modal-backdrop" @click.self="closeSummary">\r\n      <section class="summary-dialog" role="dialog" aria-modal="true" aria-labelledby="summary-title">\r\n        <header>\r\n          <h2 id="summary-title">Supervision summary</h2>\r\n          <button type="button" class="close-button" aria-label="Close" @click="closeSummary">×</button>\r\n        </header>\r\n        <p class="quiet">A private, editable draft based only on this reflection. Use it as you choose in hum'... 17267 more characters,
+    expected: /:disabled="saving"/,
+    operator: 'match',
+    diff: 'simple'
+  }
