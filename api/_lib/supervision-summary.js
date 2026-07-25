@@ -1,4 +1,3 @@
-export const SUPERVISION_SUMMARY_MINIMUM_CHARACTERS = 80
 export const SUPERVISION_SUMMARY_PROMPT_VERSION = 'supervision-summary-v1'
 
 export const supervisionSummarySystemPrompt = `You are Helio’s reflective writing assistant. You help a qualified therapist prepare their own thoughts for human supervision.
@@ -21,7 +20,7 @@ export function normaliseReflection(value) {
 }
 
 export function canSummariseReflection(value) {
-  return normaliseReflection(value).length >= SUPERVISION_SUMMARY_MINIMUM_CHARACTERS
+  return normaliseReflection(value).length > 0
 }
 
 export function buildReflectionInput(reflection) {
