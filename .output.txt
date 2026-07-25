@@ -1,0 +1,669 @@
+
+> helios-therapist@1.0.0 test
+> node --test test/**/*.test.js
+✔ calendar events open a Helio-controlled detail popover (10.3972ms)
+✔ keeps calendar recovery in the workspace rather than routing routine work to Settings (18.2419ms)
+✔ searches names and identifiers without requiring email to be displayed (2.1044ms)
+✔ only a single exact result is eligible for Enter-to-open (2.0402ms)
+✔ recent sorting prioritises recently opened clients and then uses name order (0.5385ms)
+✔ identifiers appear only when needed to distinguish duplicate names (0.6188ms)
+✔ client request model keeps one send action and independently managed items (16.1321ms)
+✔ clinical exchange labels preserve the distinct assignment lifecycle (1.8012ms)
+✔ clinical timeline presents clinical findings, not workflow activity (1.5909ms)
+✔ PHQ-9 only calculates complete valid answers and preserves item answers (2.2308ms)
+[Google Calendar] Refresh requires new consent: invalid_grant
+✔ refreshes an expired Google token and retries the calendar request silently (50.421ms)
+✔ only asks for reconnect when Google rejects the refresh token (2.8395ms)
+✔ Today has one focused before-session preparation state (11.8067ms)
+✖ frontend validation matches database constraints (12.828ms)
+✖ reflection saving has length validation and error handling (5.2475ms)
+✖ summary generation handles non-JSON responses safely (6.6868ms)
+✖ transcription also uses safe JSON parsing (5.4523ms)
+✔ resource picker separates resource selection from request configuration (10.1172ms)
+✔ semantic spacing tokens are defined once and exposed to Tailwind (12.587ms)
+✔ priority workspace surfaces use semantic spacing (5.4455ms)
+✔ semantic surface, border, and elevation tokens are defined once and exposed to Tailwind (3.7227ms)
+✔ semantic interaction and motion tokens are defined once and exposed to Tailwind (3.1011ms)
+✔ primary drawers use the shared keyboard focus trap (2.6044ms)
+✖ shared visual decisions have semantic tokens and templates do not use arbitrary colour utilities (9.2264ms)
+✔ a reflection may be saved empty or short, while summary generation needs enough source material (10.4255ms)
+✔ the summary request is authenticated and delimits source writing (2.6529ms)
+✔ only a bounded, supported draft is accepted (0.8124ms)
+✔ regeneration versions summaries and never overwrites the original reflection (3.2546ms)
+✔ downloads a transcript with an OAuth bearer token (33.5168ms)
+✔ follows a signed non-Zoom redirect without leaking the bearer token (2.3309ms)
+✔ uses a pre-expiry refreshed token before downloading (0.8482ms)
+✔ retries exactly once with a refreshed token after a 401 (0.937ms)
+✔ leaves a persistent 401 for the caller to record as a failure (0.728ms)
+ℹ tests 33
+ℹ suites 0
+ℹ pass 28
+ℹ fail 5
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 320.5489
+✖ failing tests:
+test at test\reflection-validation.test.js:5:1
+✖ frontend validation matches database constraints (12.828ms)
+  AssertionError [ERR_ASSERTION]: Workspace should define maxReflectionCharacters
+      at TestContext.<anonymous> (file:///C:/Users/Rob/WebstormProjects/helio-therapist/test/reflection-validation.test.js:16:10)
+      at async Test.run (node:internal/test_runner/test:1054:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: null,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+test at test\reflection-validation.test.js:23:1
+✖ reflection saving has length validation and error handling (5.2475ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /if \(!isBodyValid\.value\)/. Input:
+
+  '<template>\r\n' +
+    '  <section class="reflection-workspace">\r\n' +
+    `    <header v-if="localView === 'main'" class="reflection-introduction">\r\n` +
+    '      <h1>Reflections</h1>\r\n' +
+    '      <p>A private place to write or speak about your work.</p>\r\n' +
+    '    </header>\r\n' +
+    '    <header v-else class="reflection-introduction">\r\n' +
+    '      <div class="flex items-center gap-2">\r\n' +
+    `        <button type="button" class="text-ink-secondary hover:text-ink transition-colors" @click="localView = 'main'">← Back</button>\r\n` +
+    '        <h1>Archive</h1>\r\n' +
+    '      </div>\r\n' +
+    '      <p>Your complete history of private reflections.</p>\r\n' +
+    '    </header>\r\n' +
+    '\r\n' +
+    `    <p v-if="localView === 'main'" class="privacy-reassurance">Private reflection · Not part of a client’s clinical record.</p>\r\n` +
+    '\r\n' +
+    '    <!-- Editor (Primary focus on main screen) -->\r\n' +
+    `    <form v-if="localView === 'main'" class="journal" @submit.prevent="saveReflection">\r\n` +
+    '      <label class="sr-only" for="reflection-body">Reflection</label>\r\n' +
+    '      <section class="editor-surface">\r\n' +
+    '        <textarea id="reflection-body" ref="editor" v-model="body" class="reflection-editor" placeholder="Write or speak whatever feels important…" aria-label="Reflection" />\r\n' +
+    '      </section>\r\n' +
+    '      <div class="action-bar">\r\n' +
+    '        <div class="voice-control">\r\n' +
+    `          <button v-if="!isRecording" type="button" class="secondary-action" :disabled="isTranscribing" @click="startRecording">{{ isTranscribing ? 'Adding to reflection…' : '🎙 Record voice' }}</button>\r\n` +
+    '          <template v-else>\r\n' +
+    '            <span class="recording-status" aria-live="polite"><span class="recording-indicator" aria-hidden="true" />Recording · {{ elapsed }}</span>\r\n' +
+    `            <button type="button" class="secondary-action" @click="togglePause">{{ isPaused ? 'Resume' : 'Pause' }}</button>\r\n` +
+    '            <button type="button" class="secondary-action" @click="stopRecording">Stop and add to reflection</button>\r\n' +
+    '          </template>\r\n' +
+    '        </div>\r\n' +
+    '        <div class="save-actions">\r\n' +
+    '          <button type="button" class="secondary-action" @click="summariseCurrentAttempt">\r\n' +
+    "            {{ generatingSummary ? 'Preparing draft…' : 'Summarise for supervision' }}\r\n" +
+    '          </button>\r\n' +
+    `          <button type="submit" class="primary-action" :disabled="saving">{{ saving ? 'Saving…' : 'Save reflection' }}</button>\r\n` +
+    '        </div>\r\n' +
+    '      </div>\r\n' +
+    '      <p v-if="showThresholdGuidance && !canSummarise" id="summary-threshold" class="quiet threshold-note text-state-warning">\r\n' +
+    '        Write a little more to create a supervision summary (${minimumSummaryCharacters} characters).\r\n' +
+    '      </p>\r\n' +
+    '      <p v-if="saveError" class="error-message" role="alert">{{ saveError }}</p>\r\n' +
+    '    </form>\r\n' +
+    '\r\n' +
+    '    <!-- History List -->\r\n' +
+    `    <section class="reflection-history" :aria-labelledby="localView === 'main' ? 'recent-reflections-heading' : 'archive-heading'">\r\n` +
+    `      <h2 v-if="localView === 'main'" id="recent-reflections-heading">Recent reflections</h2>\r\n` +
+    '      <p v-if="loading" class="quiet">Opening your reflections…</p>\r\n' +
+    '      <p v-else-if="!reflections.length" class="quiet">Nothing here yet. This is a place to return to when something feels worth holding onto.</p>\r\n' +
+    '      \r\n' +
+    '      <div v-else class="compact-history divide-y divide-border border-y border-border mb-6">\r\n' +
+    '        <button \r\n' +
+    '          v-for="reflection in displayedReflections" \r\n' +
+    '          :key="reflection.id" \r\n' +
+    '          type="button"\r\n' +
+    '          class="w-full text-left px-inline-md py-stack-md hover:bg-surface-subtle focus-visible:ring-2 focus-visible:ring-action-primary transition-colors group"\r\n' +
+    '          @click="openDetail(reflection)"\r\n' +
+    '        >\r\n' +
+    '          <div class="flex justify-between items-baseline mb-1">\r\n' +
+    '            <span class="type-caption font-semibold text-ink-secondary">{{ date(reflection.created_at) }}</span>\r\n' +
+    '            <span class="type-caption text-action-link opacity-0 group-hover:opacity-100 transition-opacity">View</span>\r\n' +
+    '          </div>\r\n' +
+    `          <p class="type-body-sm text-ink-secondary line-clamp-2">{{ reflection.body || 'Empty reflection' }}</p>\r\n` +
+    '        </button>\r\n' +
+    '      </div>\r\n' +
+    '\r\n' +
+    `      <button v-if="localView === 'main' && reflections.length > 3" type="button" class="text-action-link hover:underline type-body-sm" @click="localView = 'archive'">\r\n` +
+    '        View all reflections\r\n' +
+    '      </button>\r\n' +
+    '    </section>\r\n' +
+    '\r\n' +
+    '    <!-- Detail View Modal -->\r\n' +
+    '    <div v-if="selectedReflection" class="modal-backdrop" @click.self="closeDetail">\r\n' +
+    '      <section class="detail-dialog" role="dialog" aria-modal="true" :aria-labelledby="`detail-title-${selectedReflection.id}`">\r\n' +
+    '        <header class="flex justify-between items-center mb-6">\r\n' +
+    '          <h2 :id="`detail-title-${selectedReflection.id}`" class="type-h3">{{ date(selectedReflection.created_at) }}</h2>\r\n' +
+    '          <button type="button" class="close-button text-2xl" aria-label="Close" @click="closeDetail">×</button>\r\n' +
+    '        </header>\r\n' +
+    '        \r\n' +
+    '        <div class="detail-content space-y-8 overflow-y-auto max-h-[70vh]">\r\n' +
+    '          <div class="reflection-text whitespace-pre-wrap type-body">\r\n' +
+    '            {{ selectedReflection.body }}\r\n' +
+    '          </div>\r\n' +
+    '\r\n' +
+    '          <div class="summary-section border-t border-border pt-6">\r\n' +
+    '            <h3 class="type-overline mb-4">Supervision Summary</h3>\r\n' +
+    '            \r\n' +
+    '            <div v-if="selectedReflection.latestSummary" class="saved-summary-box bg-surface-muted p-4 rounded-control">\r\n' +
+    '              <p class="type-body italic mb-4">{{ selectedReflection.latestSummary.edited_content }}</p>\r\n' +
+    '              <button type="button" class="secondary-action" @click="openSummary(selectedReflection)">Edit summary</button>\r\n' +
+    '            </div>\r\n' +
+    '\r\n' +
+    '            <div v-else class="summary-actions">\r\n' +
+    '              <button \r\n' +
+    '                type="button" \r\n' +
+    '                class="secondary-action" \r\n' +
+    '                :disabled="generatingSummary"\r\n' +
+    '                @click="summariseFromDetail(selectedReflection)"\r\n' +
+    '              >\r\n' +
+    "                {{ generatingSummary ? 'Preparing draft…' : 'Summarise for supervision' }}\r\n" +
+    '              </button>\r\n' +
+    '              <p v-if="!canSummariseText(selectedReflection.body)" class="type-caption text-ink-muted mt-2">\r\n' +
+    '                This reflection is too short to summarise.\r\n' +
+    '              </p>\r\n' +
+    '            </div>\r\n' +
+    '          </div>\r\n' +
+    '        </div>\r\n' +
+    '      </section>\r\n' +
+    '    </div>\r\n' +
+    '\r\n' +
+    '    <!-- Summary Editor Modal (Existing logic preserved) -->\r\n' +
+    '    <div v-if="summaryOpen" class="modal-backdrop" @click.self="closeSummary">\r\n' +
+    '      <section class="summary-dialog" role="dialog" aria-modal="true" aria-labelledby="summary-title">\r\n' +
+    '        <header>\r\n' +
+    '          <h2 id="summary-title">Supervision summary</h2>\r\n' +
+    '          <button type="button" class="close-button" aria-label="Close" @click="closeSummary">×</button>\r\n' +
+    '        </header>\r\n' +
+    '        <p class="quiet">A private, editable draft based only on this reflection. Use it as you choose in human supervision.</p>\r\n' +
+    '        <p v-if="summaryError" class="error-message" role="alert">{{ summaryError }} <button type="button" class="inline-action" @click="generateSummary">Try again</button></p>\r\n' +
+    '        <p v-else-if="generatingSummary" class="quiet" aria-live="polite">Preparing a draft from this reflection…</p>\r\n' +
+    '        <textarea v-else v-model="summaryDraft" aria-label="Supervision summary" class="w-full min-h-[200px] p-3 border border-border rounded-control bg-surface" />\r\n' +
+    '        <footer>\r\n' +
+    '          <button type="button" class="secondary-action" :disabled="generatingSummary" @click="generateSummary">Regenerate draft</button>\r\n' +
+    '          <button type="button" class="secondary-action" @click="closeSummary">Discard</button>\r\n' +
+    `          <button type="button" class="primary-action" :disabled="savingSummary || generatingSummary || !summaryDraft.trim()" @click="saveSummary">{{ savingSummary ? 'Saving…' : 'Save summary' }}</button>\r\n` +
+    '        </footer>\r\n' +
+    '      </section>\r\n' +
+    '    </div>\r\n' +
+    '  </section>\r\n' +
+    '</template>\r\n' +
+    '\r\n' +
+    '<script setup>\r\n' +
+    "import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'\r\n" +
+    "import { supabase } from '../lib/supabase.js'\r\n" +
+    "import { authenticatedFetch } from '../lib/api.js'\r\n" +
+    '\r\n' +
+    'const props = defineProps({\r\n' +
+    "  view: { type: String, default: 'main' }\r\n" +
+    '})\r\n' +
+    "const emit = defineEmits(['update:view'])\r\n" +
+    '\r\n' +
+    'const localView = computed({\r\n' +
+    '  get: () => props.view,\r\n' +
+    "  set: (val) => emit('update:view', val)\r\n" +
+    '})\r\n' +
+    '\r\n' +
+    '// A short paragraph, not a word count: enough material for a specific, grounded draft.\r\n' +
+    'const minimumSummaryCharacters = 80\r\n' +
+    'const reflections = ref([]), loading = ref(false), saving = ref(false), savingSummary = ref(false), generatingSummary = ref(false)\r\n' +
+    "const body = ref(''), saveError = ref(''), summaryOpen = ref(false), summaryDraft = ref(''), summaryReflection = ref(null), summaryError = ref('')\r\n" +
+    'const editor = ref(null), recorder = ref(null), audioChunks = ref([]), isRecording = ref(false), isPaused = ref(false), isTranscribing = ref(false), seconds = ref(0), timer = ref(null)\r\n' +
+    '\r\n' +
+    'const selectedReflection = ref(null)\r\n' +
+    'const showThresholdGuidance = ref(false)\r\n' +
+    '\r\n' +
+    "const elapsed = computed(() => `00:${String(seconds.value).padStart(2, '0')}`)\r\n" +
+    'const canSummarise = computed(() => canSummariseText(body.value))\r\n' +
+    "const canSummariseText = value => String(value || '').trim().length >= minimumSummaryCharacters\r\n" +
+    '\r\n' +
+    'const displayedReflections = computed(() => {\r\n' +
+    "  if (localView.value === 'main') {\r\n" +
+    '    return reflections.value.slice(0, 3)\r\n' +
+    '  }\r\n' +
+    '  return reflections.value\r\n' +
+    '})\r\n' +
+    '\r\n' +
+    'async function load() {\r\n' +
+    '  if (!supabase) return\r\n' +
+    '  loading.value = true\r\n' +
+    '  try {\r\n' +
+    '    const [{ data: notes, error: notesError }, { data: summaries, error: summariesError }] = await Promise.all([\r\n' +
+    "      supabase.from('private_reflections').select('*').order('created_at', { ascending: false }),\r\n" +
+    "      supabase.from('reflection_supervision_summaries').select('*').in('generation_status', ['saved']).order('created_at', { ascending: false })\r\n" +
+    '    ])\r\n' +
+    '\r\n' +
+    "    if (notesError) console.error('[Reflections] Load error:', notesError)\r\n" +
+    '    if (summariesError) {\r\n' +
+    "      console.error('[Summaries] Load error:', summariesError)\r\n" +
+    "      if (summariesError.code === 'PGRST205') "... 13020 more characters
+
+      at TestContext.<anonymous> (file:///C:/Users/Rob/WebstormProjects/helio-therapist/test/reflection-validation.test.js:27:10)
+      at async Test.run (node:internal/test_runner/test:1054:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:744:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: '<template>\r\n  <section class="reflection-workspace">\r\n    <header v-if="localView === \'main\'" class="reflection-introduction">\r\n      <h1>Reflections</h1>\r\n      <p>A private place to write or speak about your work.</p>\r\n    </header>\r\n    <header v-else class="reflection-introduction">\r\n      <div class="flex items-center gap-2">\r\n        <button type="button" class="text-ink-secondary hover:text-ink transition-colors" @click="localView = \'main\'">← Back</button>\r\n        <h1>Archive</h1>\r\n      </div>\r\n      <p>Your complete history of private reflections.</p>\r\n    </header>\r\n\r\n    <p v-if="localView === \'main\'" class="privacy-reassurance">Private reflection · Not part of a client’s clinical record.</p>\r\n\r\n    <!-- Editor (Primary focus on main screen) -->\r\n    <form v-if="localView === \'main\'" class="journal" @submit.prevent="saveReflection">\r\n      <label class="sr-only" for="reflection-body">Reflection</label>\r\n      <section class="editor-surface">\r\n        <textarea id="reflection-body" ref="editor" v-model="body" class="reflection-editor" placeholder="Write or speak whatever feels important…" aria-label="Reflection" />\r\n      </section>\r\n      <div class="action-bar">\r\n        <div class="voice-control">\r\n          <button v-if="!isRecording" type="button" class="secondary-action" :disabled="isTranscribing" @click="startRecording">{{ isTranscribing ? \'Adding to reflection…\' : \'🎙 Record voice\' }}</button>\r\n          <template v-else>\r\n            <span class="recording-status" aria-live="polite"><span class="recording-indicator" aria-hidden="true" />Recording · {{ elapsed }}</span>\r\n            <button type="button" class="secondary-action" @click="togglePause">{{ isPaused ? \'Resume\' : \'Pause\' }}</button>\r\n            <button type="button" class="secondary-action" @click="stopRecording">Stop and add to reflection</button>\r\n          </template>\r\n        </div>\r\n        <div class="save-actions">\r\n          <button type="button" class="secondary-action" @click="summariseCurrentAttempt">\r\n            {{ generatingSummary ? \'Preparing draft…\' : \'Summarise for supervision\' }}\r\n          </button>\r\n          <button type="submit" class="primary-action" :disabled="saving">{{ saving ? \'Saving…\' : \'Save reflection\' }}</button>\r\n        </div>\r\n      </div>\r\n      <p v-if="showThresholdGuidance && !canSummarise" id="summary-threshold" class="quiet threshold-note text-state-warning">\r\n        Write a little more to create a supervision summary (${minimumSummaryCharacters} characters).\r\n      </p>\r\n      <p v-if="saveError" class="error-message" role="alert">{{ saveError }}</p>\r\n    </form>\r\n\r\n    <!-- History List -->\r\n    <section class="reflection-history" :aria-labelledby="localView === \'main\' ? \'recent-reflections-heading\' : \'archive-heading\'">\r\n      <h2 v-if="localView === \'main\'" id="recent-reflections-heading">Recent reflections</h2>\r\n      <p v-if="loading" class="quiet">Opening your reflections…</p>\r\n      <p v-else-if="!reflections.length" class="quiet">Nothing here yet. This is a place to return to when something feels worth holding onto.</p>\r\n      \r\n      <div v-else class="compact-history divide-y divide-border border-y border-border mb-6">\r\n        <button \r\n          v-for="reflection in displayedReflections" \r\n          :key="reflection.id" \r\n          type="button"\r\n          class="w-full text-left px-inline-md py-stack-md hover:bg-surface-subtle focus-visible:ring-2 focus-visible:ring-action-primary transition-colors group"\r\n          @click="openDetail(reflection)"\r\n        >\r\n          <div class="flex justify-between items-baseline mb-1">\r\n            <span class="type-caption font-semibold text-ink-secondary">{{ date(reflection.created_at) }}</span>\r\n            <span class="type-caption text-action-link opacity-0 group-hover:opacity-100 transition-opacity">View</span>\r\n          </div>\r\n          <p class="type-body-sm text-ink-secondary line-clamp-2">{{ reflection.body || \'Empty reflection\' }}</p>\r\n        </button>\r\n      </div>\r\n\r\n      <button v-if="localView === \'main\' && reflections.length > 3" type="button" class="text-action-link hover:underline type-body-sm" @click="localView = \'archive\'">\r\n        View all reflections\r\n      </button>\r\n    </section>\r\n\r\n    <!-- Detail View Modal -->\r\n    <div v-if="selectedReflection" class="modal-backdrop" @click.self="closeDetail">\r\n      <section class="detail-dialog" role="dialog" aria-modal="true" :aria-labelledby="`detail-title-${selectedReflection.id}`">\r\n        <header class="flex justify-between items-center mb-6">\r\n          <h2 :id="`detail-title-${selectedReflection.id}`" class="type-h3">{{ date(selectedReflection.created_at) }}</h2>\r\n          <button type="button" class="close-button text-2xl" aria-label="Close" @click="closeDetail">×</button>\r\n        </header>\r\n        \r\n        <div class="detail-content space-y-8 overflow-y-auto max-h-[70vh]">\r\n          <div class="reflection-text whitespace-pre-wrap type-body">\r\n            {{ selectedReflection.body }}\r\n          </div>\r\n\r\n          <div class="summary-section border-t border-border pt-6">\r\n            <h3 class="type-overline mb-4">Supervision Summary</h3>\r\n            \r\n            <div v-if="selectedReflection.latestSummary" class="saved-summary-box bg-surface-muted p-4 rounded-control">\r\n              <p class="type-body italic mb-4">{{ selectedReflection.latestSummary.edited_content }}</p>\r\n              <button type="button" class="secondary-action" @click="openSummary(selectedReflection)">Edit summary</button>\r\n            </div>\r\n\r\n            <div v-else class="summary-actions">\r\n              <button \r\n                type="button" \r\n                class="secondary-action" \r\n                :disabled="generatingSummary"\r\n                @click="summariseFromDetail(selectedReflection)"\r\n              >\r\n                {{ generatingSummary ? \'Preparing draft…\' : \'Summarise for supervision\' }}\r\n              </button>\r\n              <p v-if="!canSummariseText(selectedReflection.body)" class="type-caption text-ink-muted mt-2">\r\n                This reflection is too short to summarise.\r\n              </p>\r\n            </div>\r\n          </div>\r\n        </div>\r\n      </section>\r\n    </div>\r\n\r\n    <!-- Summary Editor Modal (Existing logic preserved) -->\r\n    <div v-if="summaryOpen" class="modal-backdrop" @click.self="closeSummary">\r\n      <section class="summary-dialog" role="dialog" aria-modal="true" aria-labelledby="summary-title">\r\n        <header>\r\n          <h2 id="summary-title">Supervision summary</h2>\r\n          <button type="button" class="close-button" aria-label="Close" @click="closeSummary">×</button>\r\n        </header>\r\n        <p class="quiet">A private, editable draft based only on this reflection. Use it as you choose in human supervision.</p>\r\n        <p v-if="summaryError" class="error-message" role="alert">{{ summaryError }} <button type="button" class="inline-action" @click="generateSummary">Try again</button></p>\r\n        <p v-else-if="generatingSummary" class="quiet" aria-live="polite">Preparing a draft from this reflection…</p>\r\n        <textarea v-else v-model="summaryDraft" aria-label="Supervision summary" class="w-full min-h-[200px] p-3 border border-border rounded-control bg-surface" />\r\n        <footer>\r\n          <button type="button" class="secondary-action" :disabled="generatingSummary" @click="generateSummary">Regenerate draft</button>\r\n          <button type="button" class="secondary-action" @click="closeSummary">Discard</button>\r\n          <button type="button" class="primary-action" :disabled="savingSummary || generatingSummary || !summaryDraft.trim()" @click="saveSummary">{{ savingSummary ? \'Saving…\' : \'Save summary\' }}</button>\r\n        </footer>\r\n      </section>\r\n    </div>\r\n  </section>\r\n</template>\r\n\r\n<script setup>\r\nimport { computed, onBeforeUnmount, onMounted, ref, watch } from \'vue\'\r\nimport { supabase } from \'../lib/supabase.js\'\r\nimport { authenticatedFetch } from \'../lib/api.js\'\r\n\r\nconst props = defineProps({\r\n  view: { type: String, default: \'main\' }\r\n})\r\nconst emit = defineEmits([\'update:view\'])\r\n\r\nconst localView = computed({\r\n  get: () => props.view,\r\n  set: (val) => emit(\'update:view\', val)\r\n})\r\n\r\n// A short paragraph, not a word count: enough material for a specific, grounded draft.\r\nconst minimumSummaryCharacters = 80\r\nconst reflections = ref([]), loading = ref(false), saving = ref(false), savingSummary = ref(false), generatingSummary = ref(false)\r\nconst body = ref(\'\'), saveError = ref(\'\'), summaryOpen = ref(false), summaryDraft = ref(\'\'), summaryReflection = ref(null), summaryError = ref(\'\')\r\nconst editor = ref(null), recorder = ref(null), audioChunks = ref([]), isRecording = ref(false), isPaused = ref(false), isTranscribing = ref(false), seconds = ref(0), timer = ref(null)\r\n\r\nconst selectedReflection = ref(null)\r\nconst showThresholdGuidance = ref(false)\r\n\r\nconst elapsed = computed(() => `00:${String(seconds.value).padStart(2, \'0\')}`)\r\nconst canSummarise = computed(() => canSummariseText(body.value))\r\nconst canSummariseText = value => String(value || \'\').trim().length >= minimumSummaryCharacters\r\n\r\nconst displayedReflections = computed(() => {\r\n  if (localView.value === \'main\') {\r\n    return reflections.value.slice(0, 3)\r\n  }\r\n  return reflections.value\r\n})\r\n\r\nasync function load() {\r\n  if (!supabase) return\r\n  loading.value = true\r\n  try {\r\n    const [{ data: notes, error: notesError }, { data: summaries, error: summariesError }] = await Promise.all([\r\n      supabase.from(\'private_reflections\').select(\'*\').order(\'created_at\', { ascending: false }),\r\n      supabase.from(\'reflection_supervision_summaries\').select(\'*\').in(\'generation_status\', [\'saved\']).order(\'created_at\', { ascending: false })\r\n    ])\r\n\r\n    if (notesError) console.error(\'[Reflections] Load error:\', notesError)\r\n    if (summariesError) {\r\n      console.error(\'[Summaries] Load error:\', summariesError)\r\n      if (summariesError.code === \'PGRST205\') '... 13020 more characters,
+    expected: /if \(!isBodyValid\.value\)/,
+    operator: 'match',
+    diff: 'simple'
+  }
+test at test\reflection-validation.test.js:38:1
+✖ summary generation handles non-JSON responses safely (6.6868ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /async function safeParseJson\(response\)/. Input:
+
+  '<template>\r\n' +
+    '  <section class="reflection-workspace">\r\n' +
+    `    <header v-if="localView === 'main'" class="reflection-introduction">\r\n` +
+    '      <h1>Reflections</h1>\r\n' +
+    '      <p>A private place to write or speak about your work.</p>\r\n' +
+    '    </header>\r\n' +
+    '    <header v-else class="reflection-introduction">\r\n' +
+    '      <div class="flex items-center gap-2">\r\n' +
+    `        <button type="button" class="text-ink-secondary hover:text-ink transition-colors" @click="localView = 'main'">← Back</button>\r\n` +
+    '        <h1>Archive</h1>\r\n' +
+    '      </div>\r\n' +
+    '      <p>Your complete history of private reflections.</p>\r\n' +
+    '    </header>\r\n' +
+    '\r\n' +
+    `    <p v-if="localView === 'main'" class="privacy-reassurance">Private reflection · Not part of a client’s clinical record.</p>\r\n` +
+    '\r\n' +
+    '    <!-- Editor (Primary focus on main screen) -->\r\n' +
+    `    <form v-if="localView === 'main'" class="journal" @submit.prevent="saveReflection">\r\n` +
+    '      <label class="sr-only" for="reflection-body">Reflection</label>\r\n' +
+    '      <section class="editor-surface">\r\n' +
+    '        <textarea id="reflection-body" ref="editor" v-model="body" class="reflection-editor" placeholder="Write or speak whatever feels important…" aria-label="Reflection" />\r\n' +
+    '      </section>\r\n' +
+    '      <div class="action-bar">\r\n' +
+    '        <div class="voice-control">\r\n' +
+    `          <button v-if="!isRecording" type="button" class="secondary-action" :disabled="isTranscribing" @click="startRecording">{{ isTranscribing ? 'Adding to reflection…' : '🎙 Record voice' }}</button>\r\n` +
+    '          <template v-else>\r\n' +
+    '            <span class="recording-status" aria-live="polite"><span class="recording-indicator" aria-hidden="true" />Recording · {{ elapsed }}</span>\r\n' +
+    `            <button type="button" class="secondary-action" @click="togglePause">{{ isPaused ? 'Resume' : 'Pause' }}</button>\r\n` +
+    '            <button type="button" class="secondary-action" @click="stopRecording">Stop and add to reflection</button>\r\n' +
+    '          </template>\r\n' +
+    '        </div>\r\n' +
+    '        <div class="save-actions">\r\n' +
+    '          <button type="button" class="secondary-action" @click="summariseCurrentAttempt">\r\n' +
+    "            {{ generatingSummary ? 'Preparing draft…' : 'Summarise for supervision' }}\r\n" +
+    '          </button>\r\n' +
+    `          <button type="submit" class="primary-action" :disabled="saving">{{ saving ? 'Saving…' : 'Save reflection' }}</button>\r\n` +
+    '        </div>\r\n' +
+    '      </div>\r\n' +
+    '      <p v-if="showThresholdGuidance && !canSummarise" id="summary-threshold" class="quiet threshold-note text-state-warning">\r\n' +
+    '        Write a little more to create a supervision summary (${minimumSummaryCharacters} characters).\r\n' +
+    '      </p>\r\n' +
+    '      <p v-if="saveError" class="error-message" role="alert">{{ saveError }}</p>\r\n' +
+    '    </form>\r\n' +
+    '\r\n' +
+    '    <!-- History List -->\r\n' +
+    `    <section class="reflection-history" :aria-labelledby="localView === 'main' ? 'recent-reflections-heading' : 'archive-heading'">\r\n` +
+    `      <h2 v-if="localView === 'main'" id="recent-reflections-heading">Recent reflections</h2>\r\n` +
+    '      <p v-if="loading" class="quiet">Opening your reflections…</p>\r\n' +
+    '      <p v-else-if="!reflections.length" class="quiet">Nothing here yet. This is a place to return to when something feels worth holding onto.</p>\r\n' +
+    '      \r\n' +
+    '      <div v-else class="compact-history divide-y divide-border border-y border-border mb-6">\r\n' +
+    '        <button \r\n' +
+    '          v-for="reflection in displayedReflections" \r\n' +
+    '          :key="reflection.id" \r\n' +
+    '          type="button"\r\n' +
+    '          class="w-full text-left px-inline-md py-stack-md hover:bg-surface-subtle focus-visible:ring-2 focus-visible:ring-action-primary transition-colors group"\r\n' +
+    '          @click="openDetail(reflection)"\r\n' +
+    '        >\r\n' +
+    '          <div class="flex justify-between items-baseline mb-1">\r\n' +
+    '            <span class="type-caption font-semibold text-ink-secondary">{{ date(reflection.created_at) }}</span>\r\n' +
+    '            <span class="type-caption text-action-link opacity-0 group-hover:opacity-100 transition-opacity">View</span>\r\n' +
+    '          </div>\r\n' +
+    `          <p class="type-body-sm text-ink-secondary line-clamp-2">{{ reflection.body || 'Empty reflection' }}</p>\r\n` +
+    '        </button>\r\n' +
+    '      </div>\r\n' +
+    '\r\n' +
+    `      <button v-if="localView === 'main' && reflections.length > 3" type="button" class="text-action-link hover:underline type-body-sm" @click="localView = 'archive'">\r\n` +
+    '        View all reflections\r\n' +
+    '      </button>\r\n' +
+    '    </section>\r\n' +
+    '\r\n' +
+    '    <!-- Detail View Modal -->\r\n' +
+    '    <div v-if="selectedReflection" class="modal-backdrop" @click.self="closeDetail">\r\n' +
+    '      <section class="detail-dialog" role="dialog" aria-modal="true" :aria-labelledby="`detail-title-${selectedReflection.id}`">\r\n' +
+    '        <header class="flex justify-between items-center mb-6">\r\n' +
+    '          <h2 :id="`detail-title-${selectedReflection.id}`" class="type-h3">{{ date(selectedReflection.created_at) }}</h2>\r\n' +
+    '          <button type="button" class="close-button text-2xl" aria-label="Close" @click="closeDetail">×</button>\r\n' +
+    '        </header>\r\n' +
+    '        \r\n' +
+    '        <div class="detail-content space-y-8 overflow-y-auto max-h-[70vh]">\r\n' +
+    '          <div class="reflection-text whitespace-pre-wrap type-body">\r\n' +
+    '            {{ selectedReflection.body }}\r\n' +
+    '          </div>\r\n' +
+    '\r\n' +
+    '          <div class="summary-section border-t border-border pt-6">\r\n' +
+    '            <h3 class="type-overline mb-4">Supervision Summary</h3>\r\n' +
+    '            \r\n' +
+    '            <div v-if="selectedReflection.latestSummary" class="saved-summary-box bg-surface-muted p-4 rounded-control">\r\n' +
+    '              <p class="type-body italic mb-4">{{ selectedReflection.latestSummary.edited_content }}</p>\r\n' +
+    '              <button type="button" class="secondary-action" @click="openSummary(selectedReflection)">Edit summary</button>\r\n' +
+    '            </div>\r\n' +
+    '\r\n' +
+    '            <div v-else class="summary-actions">\r\n' +
+    '              <button \r\n' +
+    '                type="button" \r\n' +
+    '                class="secondary-action" \r\n' +
+    '                :disabled="generatingSummary"\r\n' +
+    '                @click="summariseFromDetail(selectedReflection)"\r\n' +
+    '              >\r\n' +
+    "                {{ generatingSummary ? 'Preparing draft…' : 'Summarise for supervision' }}\r\n" +
+    '              </button>\r\n' +
+    '              <p v-if="!canSummariseText(selectedReflection.body)" class="type-caption text-ink-muted mt-2">\r\n' +
+    '                This reflection is too short to summarise.\r\n' +
+    '              </p>\r\n' +
+    '            </div>\r\n' +
+    '          </div>\r\n' +
+    '        </div>\r\n' +
+    '      </section>\r\n' +
+    '    </div>\r\n' +
+    '\r\n' +
+    '    <!-- Summary Editor Modal (Existing logic preserved) -->\r\n' +
+    '    <div v-if="summaryOpen" class="modal-backdrop" @click.self="closeSummary">\r\n' +
+    '      <section class="summary-dialog" role="dialog" aria-modal="true" aria-labelledby="summary-title">\r\n' +
+    '        <header>\r\n' +
+    '          <h2 id="summary-title">Supervision summary</h2>\r\n' +
+    '          <button type="button" class="close-button" aria-label="Close" @click="closeSummary">×</button>\r\n' +
+    '        </header>\r\n' +
+    '        <p class="quiet">A private, editable draft based only on this reflection. Use it as you choose in human supervision.</p>\r\n' +
+    '        <p v-if="summaryError" class="error-message" role="alert">{{ summaryError }} <button type="button" class="inline-action" @click="generateSummary">Try again</button></p>\r\n' +
+    '        <p v-else-if="generatingSummary" class="quiet" aria-live="polite">Preparing a draft from this reflection…</p>\r\n' +
+    '        <textarea v-else v-model="summaryDraft" aria-label="Supervision summary" class="w-full min-h-[200px] p-3 border border-border rounded-control bg-surface" />\r\n' +
+    '        <footer>\r\n' +
+    '          <button type="button" class="secondary-action" :disabled="generatingSummary" @click="generateSummary">Regenerate draft</button>\r\n' +
+    '          <button type="button" class="secondary-action" @click="closeSummary">Discard</button>\r\n' +
+    `          <button type="button" class="primary-action" :disabled="savingSummary || generatingSummary || !summaryDraft.trim()" @click="saveSummary">{{ savingSummary ? 'Saving…' : 'Save summary' }}</button>\r\n` +
+    '        </footer>\r\n' +
+    '      </section>\r\n' +
+    '    </div>\r\n' +
+    '  </section>\r\n' +
+    '</template>\r\n' +
+    '\r\n' +
+    '<script setup>\r\n' +
+    "import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'\r\n" +
+    "import { supabase } from '../lib/supabase.js'\r\n" +
+    "import { authenticatedFetch } from '../lib/api.js'\r\n" +
+    '\r\n' +
+    'const props = defineProps({\r\n' +
+    "  view: { type: String, default: 'main' }\r\n" +
+    '})\r\n' +
+    "const emit = defineEmits(['update:view'])\r\n" +
+    '\r\n' +
+    'const localView = computed({\r\n' +
+    '  get: () => props.view,\r\n' +
+    "  set: (val) => emit('update:view', val)\r\n" +
+    '})\r\n' +
+    '\r\n' +
+    '// A short paragraph, not a word count: enough material for a specific, grounded draft.\r\n' +
+    'const minimumSummaryCharacters = 80\r\n' +
+    'const reflections = ref([]), loading = ref(false), saving = ref(false), savingSummary = ref(false), generatingSummary = ref(false)\r\n' +
+    "const body = ref(''), saveError = ref(''), summaryOpen = ref(false), summaryDraft = ref(''), summaryReflection = ref(null), summaryError = ref('')\r\n" +
+    'const editor = ref(null), recorder = ref(null), audioChunks = ref([]), isRecording = ref(false), isPaused = ref(false), isTranscribing = ref(false), seconds = ref(0), timer = ref(null)\r\n' +
+    '\r\n' +
+    'const selectedReflection = ref(null)\r\n' +
+    'const showThresholdGuidance = ref(false)\r\n' +
+    '\r\n' +
+    "const elapsed = computed(() => `00:${String(seconds.value).padStart(2, '0')}`)\r\n" +
+    'const canSummarise = computed(() => canSummariseText(body.value))\r\n' +
+    "const canSummariseText = value => String(value || '').trim().length >= minimumSummaryCharacters\r\n" +
+    '\r\n' +
+    'const displayedReflections = computed(() => {\r\n' +
+    "  if (localView.value === 'main') {\r\n" +
+    '    return reflections.value.slice(0, 3)\r\n' +
+    '  }\r\n' +
+    '  return reflections.value\r\n' +
+    '})\r\n' +
+    '\r\n' +
+    'async function load() {\r\n' +
+    '  if (!supabase) return\r\n' +
+    '  loading.value = true\r\n' +
+    '  try {\r\n' +
+    '    const [{ data: notes, error: notesError }, { data: summaries, error: summariesError }] = await Promise.all([\r\n' +
+    "      supabase.from('private_reflections').select('*').order('created_at', { ascending: false }),\r\n" +
+    "      supabase.from('reflection_supervision_summaries').select('*').in('generation_status', ['saved']).order('created_at', { ascending: false })\r\n" +
+    '    ])\r\n' +
+    '\r\n' +
+    "    if (notesError) console.error('[Reflections] Load error:', notesError)\r\n" +
+    '    if (summariesError) {\r\n' +
+    "      console.error('[Summaries] Load error:', summariesError)\r\n" +
+    "      if (summariesError.code === 'PGRST205') "... 13020 more characters
+
+      at TestContext.<anonymous> (file:///C:/Users/Rob/WebstormProjects/helio-therapist/test/reflection-validation.test.js:42:10)
+      at async Test.run (node:internal/test_runner/test:1054:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:744:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: '<template>\r\n  <section class="reflection-workspace">\r\n    <header v-if="localView === \'main\'" class="reflection-introduction">\r\n      <h1>Reflections</h1>\r\n      <p>A private place to write or speak about your work.</p>\r\n    </header>\r\n    <header v-else class="reflection-introduction">\r\n      <div class="flex items-center gap-2">\r\n        <button type="button" class="text-ink-secondary hover:text-ink transition-colors" @click="localView = \'main\'">← Back</button>\r\n        <h1>Archive</h1>\r\n      </div>\r\n      <p>Your complete history of private reflections.</p>\r\n    </header>\r\n\r\n    <p v-if="localView === \'main\'" class="privacy-reassurance">Private reflection · Not part of a client’s clinical record.</p>\r\n\r\n    <!-- Editor (Primary focus on main screen) -->\r\n    <form v-if="localView === \'main\'" class="journal" @submit.prevent="saveReflection">\r\n      <label class="sr-only" for="reflection-body">Reflection</label>\r\n      <section class="editor-surface">\r\n        <textarea id="reflection-body" ref="editor" v-model="body" class="reflection-editor" placeholder="Write or speak whatever feels important…" aria-label="Reflection" />\r\n      </section>\r\n      <div class="action-bar">\r\n        <div class="voice-control">\r\n          <button v-if="!isRecording" type="button" class="secondary-action" :disabled="isTranscribing" @click="startRecording">{{ isTranscribing ? \'Adding to reflection…\' : \'🎙 Record voice\' }}</button>\r\n          <template v-else>\r\n            <span class="recording-status" aria-live="polite"><span class="recording-indicator" aria-hidden="true" />Recording · {{ elapsed }}</span>\r\n            <button type="button" class="secondary-action" @click="togglePause">{{ isPaused ? \'Resume\' : \'Pause\' }}</button>\r\n            <button type="button" class="secondary-action" @click="stopRecording">Stop and add to reflection</button>\r\n          </template>\r\n        </div>\r\n        <div class="save-actions">\r\n          <button type="button" class="secondary-action" @click="summariseCurrentAttempt">\r\n            {{ generatingSummary ? \'Preparing draft…\' : \'Summarise for supervision\' }}\r\n          </button>\r\n          <button type="submit" class="primary-action" :disabled="saving">{{ saving ? \'Saving…\' : \'Save reflection\' }}</button>\r\n        </div>\r\n      </div>\r\n      <p v-if="showThresholdGuidance && !canSummarise" id="summary-threshold" class="quiet threshold-note text-state-warning">\r\n        Write a little more to create a supervision summary (${minimumSummaryCharacters} characters).\r\n      </p>\r\n      <p v-if="saveError" class="error-message" role="alert">{{ saveError }}</p>\r\n    </form>\r\n\r\n    <!-- History List -->\r\n    <section class="reflection-history" :aria-labelledby="localView === \'main\' ? \'recent-reflections-heading\' : \'archive-heading\'">\r\n      <h2 v-if="localView === \'main\'" id="recent-reflections-heading">Recent reflections</h2>\r\n      <p v-if="loading" class="quiet">Opening your reflections…</p>\r\n      <p v-else-if="!reflections.length" class="quiet">Nothing here yet. This is a place to return to when something feels worth holding onto.</p>\r\n      \r\n      <div v-else class="compact-history divide-y divide-border border-y border-border mb-6">\r\n        <button \r\n          v-for="reflection in displayedReflections" \r\n          :key="reflection.id" \r\n          type="button"\r\n          class="w-full text-left px-inline-md py-stack-md hover:bg-surface-subtle focus-visible:ring-2 focus-visible:ring-action-primary transition-colors group"\r\n          @click="openDetail(reflection)"\r\n        >\r\n          <div class="flex justify-between items-baseline mb-1">\r\n            <span class="type-caption font-semibold text-ink-secondary">{{ date(reflection.created_at) }}</span>\r\n            <span class="type-caption text-action-link opacity-0 group-hover:opacity-100 transition-opacity">View</span>\r\n          </div>\r\n          <p class="type-body-sm text-ink-secondary line-clamp-2">{{ reflection.body || \'Empty reflection\' }}</p>\r\n        </button>\r\n      </div>\r\n\r\n      <button v-if="localView === \'main\' && reflections.length > 3" type="button" class="text-action-link hover:underline type-body-sm" @click="localView = \'archive\'">\r\n        View all reflections\r\n      </button>\r\n    </section>\r\n\r\n    <!-- Detail View Modal -->\r\n    <div v-if="selectedReflection" class="modal-backdrop" @click.self="closeDetail">\r\n      <section class="detail-dialog" role="dialog" aria-modal="true" :aria-labelledby="`detail-title-${selectedReflection.id}`">\r\n        <header class="flex justify-between items-center mb-6">\r\n          <h2 :id="`detail-title-${selectedReflection.id}`" class="type-h3">{{ date(selectedReflection.created_at) }}</h2>\r\n          <button type="button" class="close-button text-2xl" aria-label="Close" @click="closeDetail">×</button>\r\n        </header>\r\n        \r\n        <div class="detail-content space-y-8 overflow-y-auto max-h-[70vh]">\r\n          <div class="reflection-text whitespace-pre-wrap type-body">\r\n            {{ selectedReflection.body }}\r\n          </div>\r\n\r\n          <div class="summary-section border-t border-border pt-6">\r\n            <h3 class="type-overline mb-4">Supervision Summary</h3>\r\n            \r\n            <div v-if="selectedReflection.latestSummary" class="saved-summary-box bg-surface-muted p-4 rounded-control">\r\n              <p class="type-body italic mb-4">{{ selectedReflection.latestSummary.edited_content }}</p>\r\n              <button type="button" class="secondary-action" @click="openSummary(selectedReflection)">Edit summary</button>\r\n            </div>\r\n\r\n            <div v-else class="summary-actions">\r\n              <button \r\n                type="button" \r\n                class="secondary-action" \r\n                :disabled="generatingSummary"\r\n                @click="summariseFromDetail(selectedReflection)"\r\n              >\r\n                {{ generatingSummary ? \'Preparing draft…\' : \'Summarise for supervision\' }}\r\n              </button>\r\n              <p v-if="!canSummariseText(selectedReflection.body)" class="type-caption text-ink-muted mt-2">\r\n                This reflection is too short to summarise.\r\n              </p>\r\n            </div>\r\n          </div>\r\n        </div>\r\n      </section>\r\n    </div>\r\n\r\n    <!-- Summary Editor Modal (Existing logic preserved) -->\r\n    <div v-if="summaryOpen" class="modal-backdrop" @click.self="closeSummary">\r\n      <section class="summary-dialog" role="dialog" aria-modal="true" aria-labelledby="summary-title">\r\n        <header>\r\n          <h2 id="summary-title">Supervision summary</h2>\r\n          <button type="button" class="close-button" aria-label="Close" @click="closeSummary">×</button>\r\n        </header>\r\n        <p class="quiet">A private, editable draft based only on this reflection. Use it as you choose in human supervision.</p>\r\n        <p v-if="summaryError" class="error-message" role="alert">{{ summaryError }} <button type="button" class="inline-action" @click="generateSummary">Try again</button></p>\r\n        <p v-else-if="generatingSummary" class="quiet" aria-live="polite">Preparing a draft from this reflection…</p>\r\n        <textarea v-else v-model="summaryDraft" aria-label="Supervision summary" class="w-full min-h-[200px] p-3 border border-border rounded-control bg-surface" />\r\n        <footer>\r\n          <button type="button" class="secondary-action" :disabled="generatingSummary" @click="generateSummary">Regenerate draft</button>\r\n          <button type="button" class="secondary-action" @click="closeSummary">Discard</button>\r\n          <button type="button" class="primary-action" :disabled="savingSummary || generatingSummary || !summaryDraft.trim()" @click="saveSummary">{{ savingSummary ? \'Saving…\' : \'Save summary\' }}</button>\r\n        </footer>\r\n      </section>\r\n    </div>\r\n  </section>\r\n</template>\r\n\r\n<script setup>\r\nimport { computed, onBeforeUnmount, onMounted, ref, watch } from \'vue\'\r\nimport { supabase } from \'../lib/supabase.js\'\r\nimport { authenticatedFetch } from \'../lib/api.js\'\r\n\r\nconst props = defineProps({\r\n  view: { type: String, default: \'main\' }\r\n})\r\nconst emit = defineEmits([\'update:view\'])\r\n\r\nconst localView = computed({\r\n  get: () => props.view,\r\n  set: (val) => emit(\'update:view\', val)\r\n})\r\n\r\n// A short paragraph, not a word count: enough material for a specific, grounded draft.\r\nconst minimumSummaryCharacters = 80\r\nconst reflections = ref([]), loading = ref(false), saving = ref(false), savingSummary = ref(false), generatingSummary = ref(false)\r\nconst body = ref(\'\'), saveError = ref(\'\'), summaryOpen = ref(false), summaryDraft = ref(\'\'), summaryReflection = ref(null), summaryError = ref(\'\')\r\nconst editor = ref(null), recorder = ref(null), audioChunks = ref([]), isRecording = ref(false), isPaused = ref(false), isTranscribing = ref(false), seconds = ref(0), timer = ref(null)\r\n\r\nconst selectedReflection = ref(null)\r\nconst showThresholdGuidance = ref(false)\r\n\r\nconst elapsed = computed(() => `00:${String(seconds.value).padStart(2, \'0\')}`)\r\nconst canSummarise = computed(() => canSummariseText(body.value))\r\nconst canSummariseText = value => String(value || \'\').trim().length >= minimumSummaryCharacters\r\n\r\nconst displayedReflections = computed(() => {\r\n  if (localView.value === \'main\') {\r\n    return reflections.value.slice(0, 3)\r\n  }\r\n  return reflections.value\r\n})\r\n\r\nasync function load() {\r\n  if (!supabase) return\r\n  loading.value = true\r\n  try {\r\n    const [{ data: notes, error: notesError }, { data: summaries, error: summariesError }] = await Promise.all([\r\n      supabase.from(\'private_reflections\').select(\'*\').order(\'created_at\', { ascending: false }),\r\n      supabase.from(\'reflection_supervision_summaries\').select(\'*\').in(\'generation_status\', [\'saved\']).order(\'created_at\', { ascending: false })\r\n    ])\r\n\r\n    if (notesError) console.error(\'[Reflections] Load error:\', notesError)\r\n    if (summariesError) {\r\n      console.error(\'[Summaries] Load error:\', summariesError)\r\n      if (summariesError.code === \'PGRST205\') '... 13020 more characters,
+    expected: /async function safeParseJson\(response\)/,
+    operator: 'match',
+    diff: 'simple'
+  }
+test at test\reflection-validation.test.js:50:1
+✖ transcription also uses safe JSON parsing (5.4523ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /async function transcribe\(\) \{.*await safeParseJson\(response\)/. Input:
+
+  '<template>\r\n' +
+    '  <section class="reflection-workspace">\r\n' +
+    `    <header v-if="localView === 'main'" class="reflection-introduction">\r\n` +
+    '      <h1>Reflections</h1>\r\n' +
+    '      <p>A private place to write or speak about your work.</p>\r\n' +
+    '    </header>\r\n' +
+    '    <header v-else class="reflection-introduction">\r\n' +
+    '      <div class="flex items-center gap-2">\r\n' +
+    `        <button type="button" class="text-ink-secondary hover:text-ink transition-colors" @click="localView = 'main'">← Back</button>\r\n` +
+    '        <h1>Archive</h1>\r\n' +
+    '      </div>\r\n' +
+    '      <p>Your complete history of private reflections.</p>\r\n' +
+    '    </header>\r\n' +
+    '\r\n' +
+    `    <p v-if="localView === 'main'" class="privacy-reassurance">Private reflection · Not part of a client’s clinical record.</p>\r\n` +
+    '\r\n' +
+    '    <!-- Editor (Primary focus on main screen) -->\r\n' +
+    `    <form v-if="localView === 'main'" class="journal" @submit.prevent="saveReflection">\r\n` +
+    '      <label class="sr-only" for="reflection-body">Reflection</label>\r\n' +
+    '      <section class="editor-surface">\r\n' +
+    '        <textarea id="reflection-body" ref="editor" v-model="body" class="reflection-editor" placeholder="Write or speak whatever feels important…" aria-label="Reflection" />\r\n' +
+    '      </section>\r\n' +
+    '      <div class="action-bar">\r\n' +
+    '        <div class="voice-control">\r\n' +
+    `          <button v-if="!isRecording" type="button" class="secondary-action" :disabled="isTranscribing" @click="startRecording">{{ isTranscribing ? 'Adding to reflection…' : '🎙 Record voice' }}</button>\r\n` +
+    '          <template v-else>\r\n' +
+    '            <span class="recording-status" aria-live="polite"><span class="recording-indicator" aria-hidden="true" />Recording · {{ elapsed }}</span>\r\n' +
+    `            <button type="button" class="secondary-action" @click="togglePause">{{ isPaused ? 'Resume' : 'Pause' }}</button>\r\n` +
+    '            <button type="button" class="secondary-action" @click="stopRecording">Stop and add to reflection</button>\r\n' +
+    '          </template>\r\n' +
+    '        </div>\r\n' +
+    '        <div class="save-actions">\r\n' +
+    '          <button type="button" class="secondary-action" @click="summariseCurrentAttempt">\r\n' +
+    "            {{ generatingSummary ? 'Preparing draft…' : 'Summarise for supervision' }}\r\n" +
+    '          </button>\r\n' +
+    `          <button type="submit" class="primary-action" :disabled="saving">{{ saving ? 'Saving…' : 'Save reflection' }}</button>\r\n` +
+    '        </div>\r\n' +
+    '      </div>\r\n' +
+    '      <p v-if="showThresholdGuidance && !canSummarise" id="summary-threshold" class="quiet threshold-note text-state-warning">\r\n' +
+    '        Write a little more to create a supervision summary (${minimumSummaryCharacters} characters).\r\n' +
+    '      </p>\r\n' +
+    '      <p v-if="saveError" class="error-message" role="alert">{{ saveError }}</p>\r\n' +
+    '    </form>\r\n' +
+    '\r\n' +
+    '    <!-- History List -->\r\n' +
+    `    <section class="reflection-history" :aria-labelledby="localView === 'main' ? 'recent-reflections-heading' : 'archive-heading'">\r\n` +
+    `      <h2 v-if="localView === 'main'" id="recent-reflections-heading">Recent reflections</h2>\r\n` +
+    '      <p v-if="loading" class="quiet">Opening your reflections…</p>\r\n' +
+    '      <p v-else-if="!reflections.length" class="quiet">Nothing here yet. This is a place to return to when something feels worth holding onto.</p>\r\n' +
+    '      \r\n' +
+    '      <div v-else class="compact-history divide-y divide-border border-y border-border mb-6">\r\n' +
+    '        <button \r\n' +
+    '          v-for="reflection in displayedReflections" \r\n' +
+    '          :key="reflection.id" \r\n' +
+    '          type="button"\r\n' +
+    '          class="w-full text-left px-inline-md py-stack-md hover:bg-surface-subtle focus-visible:ring-2 focus-visible:ring-action-primary transition-colors group"\r\n' +
+    '          @click="openDetail(reflection)"\r\n' +
+    '        >\r\n' +
+    '          <div class="flex justify-between items-baseline mb-1">\r\n' +
+    '            <span class="type-caption font-semibold text-ink-secondary">{{ date(reflection.created_at) }}</span>\r\n' +
+    '            <span class="type-caption text-action-link opacity-0 group-hover:opacity-100 transition-opacity">View</span>\r\n' +
+    '          </div>\r\n' +
+    `          <p class="type-body-sm text-ink-secondary line-clamp-2">{{ reflection.body || 'Empty reflection' }}</p>\r\n` +
+    '        </button>\r\n' +
+    '      </div>\r\n' +
+    '\r\n' +
+    `      <button v-if="localView === 'main' && reflections.length > 3" type="button" class="text-action-link hover:underline type-body-sm" @click="localView = 'archive'">\r\n` +
+    '        View all reflections\r\n' +
+    '      </button>\r\n' +
+    '    </section>\r\n' +
+    '\r\n' +
+    '    <!-- Detail View Modal -->\r\n' +
+    '    <div v-if="selectedReflection" class="modal-backdrop" @click.self="closeDetail">\r\n' +
+    '      <section class="detail-dialog" role="dialog" aria-modal="true" :aria-labelledby="`detail-title-${selectedReflection.id}`">\r\n' +
+    '        <header class="flex justify-between items-center mb-6">\r\n' +
+    '          <h2 :id="`detail-title-${selectedReflection.id}`" class="type-h3">{{ date(selectedReflection.created_at) }}</h2>\r\n' +
+    '          <button type="button" class="close-button text-2xl" aria-label="Close" @click="closeDetail">×</button>\r\n' +
+    '        </header>\r\n' +
+    '        \r\n' +
+    '        <div class="detail-content space-y-8 overflow-y-auto max-h-[70vh]">\r\n' +
+    '          <div class="reflection-text whitespace-pre-wrap type-body">\r\n' +
+    '            {{ selectedReflection.body }}\r\n' +
+    '          </div>\r\n' +
+    '\r\n' +
+    '          <div class="summary-section border-t border-border pt-6">\r\n' +
+    '            <h3 class="type-overline mb-4">Supervision Summary</h3>\r\n' +
+    '            \r\n' +
+    '            <div v-if="selectedReflection.latestSummary" class="saved-summary-box bg-surface-muted p-4 rounded-control">\r\n' +
+    '              <p class="type-body italic mb-4">{{ selectedReflection.latestSummary.edited_content }}</p>\r\n' +
+    '              <button type="button" class="secondary-action" @click="openSummary(selectedReflection)">Edit summary</button>\r\n' +
+    '            </div>\r\n' +
+    '\r\n' +
+    '            <div v-else class="summary-actions">\r\n' +
+    '              <button \r\n' +
+    '                type="button" \r\n' +
+    '                class="secondary-action" \r\n' +
+    '                :disabled="generatingSummary"\r\n' +
+    '                @click="summariseFromDetail(selectedReflection)"\r\n' +
+    '              >\r\n' +
+    "                {{ generatingSummary ? 'Preparing draft…' : 'Summarise for supervision' }}\r\n" +
+    '              </button>\r\n' +
+    '              <p v-if="!canSummariseText(selectedReflection.body)" class="type-caption text-ink-muted mt-2">\r\n' +
+    '                This reflection is too short to summarise.\r\n' +
+    '              </p>\r\n' +
+    '            </div>\r\n' +
+    '          </div>\r\n' +
+    '        </div>\r\n' +
+    '      </section>\r\n' +
+    '    </div>\r\n' +
+    '\r\n' +
+    '    <!-- Summary Editor Modal (Existing logic preserved) -->\r\n' +
+    '    <div v-if="summaryOpen" class="modal-backdrop" @click.self="closeSummary">\r\n' +
+    '      <section class="summary-dialog" role="dialog" aria-modal="true" aria-labelledby="summary-title">\r\n' +
+    '        <header>\r\n' +
+    '          <h2 id="summary-title">Supervision summary</h2>\r\n' +
+    '          <button type="button" class="close-button" aria-label="Close" @click="closeSummary">×</button>\r\n' +
+    '        </header>\r\n' +
+    '        <p class="quiet">A private, editable draft based only on this reflection. Use it as you choose in human supervision.</p>\r\n' +
+    '        <p v-if="summaryError" class="error-message" role="alert">{{ summaryError }} <button type="button" class="inline-action" @click="generateSummary">Try again</button></p>\r\n' +
+    '        <p v-else-if="generatingSummary" class="quiet" aria-live="polite">Preparing a draft from this reflection…</p>\r\n' +
+    '        <textarea v-else v-model="summaryDraft" aria-label="Supervision summary" class="w-full min-h-[200px] p-3 border border-border rounded-control bg-surface" />\r\n' +
+    '        <footer>\r\n' +
+    '          <button type="button" class="secondary-action" :disabled="generatingSummary" @click="generateSummary">Regenerate draft</button>\r\n' +
+    '          <button type="button" class="secondary-action" @click="closeSummary">Discard</button>\r\n' +
+    `          <button type="button" class="primary-action" :disabled="savingSummary || generatingSummary || !summaryDraft.trim()" @click="saveSummary">{{ savingSummary ? 'Saving…' : 'Save summary' }}</button>\r\n` +
+    '        </footer>\r\n' +
+    '      </section>\r\n' +
+    '    </div>\r\n' +
+    '  </section>\r\n' +
+    '</template>\r\n' +
+    '\r\n' +
+    '<script setup>\r\n' +
+    "import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'\r\n" +
+    "import { supabase } from '../lib/supabase.js'\r\n" +
+    "import { authenticatedFetch } from '../lib/api.js'\r\n" +
+    '\r\n' +
+    'const props = defineProps({\r\n' +
+    "  view: { type: String, default: 'main' }\r\n" +
+    '})\r\n' +
+    "const emit = defineEmits(['update:view'])\r\n" +
+    '\r\n' +
+    'const localView = computed({\r\n' +
+    '  get: () => props.view,\r\n' +
+    "  set: (val) => emit('update:view', val)\r\n" +
+    '})\r\n' +
+    '\r\n' +
+    '// A short paragraph, not a word count: enough material for a specific, grounded draft.\r\n' +
+    'const minimumSummaryCharacters = 80\r\n' +
+    'const reflections = ref([]), loading = ref(false), saving = ref(false), savingSummary = ref(false), generatingSummary = ref(false)\r\n' +
+    "const body = ref(''), saveError = ref(''), summaryOpen = ref(false), summaryDraft = ref(''), summaryReflection = ref(null), summaryError = ref('')\r\n" +
+    'const editor = ref(null), recorder = ref(null), audioChunks = ref([]), isRecording = ref(false), isPaused = ref(false), isTranscribing = ref(false), seconds = ref(0), timer = ref(null)\r\n' +
+    '\r\n' +
+    'const selectedReflection = ref(null)\r\n' +
+    'const showThresholdGuidance = ref(false)\r\n' +
+    '\r\n' +
+    "const elapsed = computed(() => `00:${String(seconds.value).padStart(2, '0')}`)\r\n" +
+    'const canSummarise = computed(() => canSummariseText(body.value))\r\n' +
+    "const canSummariseText = value => String(value || '').trim().length >= minimumSummaryCharacters\r\n" +
+    '\r\n' +
+    'const displayedReflections = computed(() => {\r\n' +
+    "  if (localView.value === 'main') {\r\n" +
+    '    return reflections.value.slice(0, 3)\r\n' +
+    '  }\r\n' +
+    '  return reflections.value\r\n' +
+    '})\r\n' +
+    '\r\n' +
+    'async function load() {\r\n' +
+    '  if (!supabase) return\r\n' +
+    '  loading.value = true\r\n' +
+    '  try {\r\n' +
+    '    const [{ data: notes, error: notesError }, { data: summaries, error: summariesError }] = await Promise.all([\r\n' +
+    "      supabase.from('private_reflections').select('*').order('created_at', { ascending: false }),\r\n" +
+    "      supabase.from('reflection_supervision_summaries').select('*').in('generation_status', ['saved']).order('created_at', { ascending: false })\r\n" +
+    '    ])\r\n' +
+    '\r\n' +
+    "    if (notesError) console.error('[Reflections] Load error:', notesError)\r\n" +
+    '    if (summariesError) {\r\n' +
+    "      console.error('[Summaries] Load error:', summariesError)\r\n" +
+    "      if (summariesError.code === 'PGRST205') "... 13020 more characters
+
+      at TestContext.<anonymous> (file:///C:/Users/Rob/WebstormProjects/helio-therapist/test/reflection-validation.test.js:52:10)
+      at async Test.run (node:internal/test_runner/test:1054:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:744:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: '<template>\r\n  <section class="reflection-workspace">\r\n    <header v-if="localView === \'main\'" class="reflection-introduction">\r\n      <h1>Reflections</h1>\r\n      <p>A private place to write or speak about your work.</p>\r\n    </header>\r\n    <header v-else class="reflection-introduction">\r\n      <div class="flex items-center gap-2">\r\n        <button type="button" class="text-ink-secondary hover:text-ink transition-colors" @click="localView = \'main\'">← Back</button>\r\n        <h1>Archive</h1>\r\n      </div>\r\n      <p>Your complete history of private reflections.</p>\r\n    </header>\r\n\r\n    <p v-if="localView === \'main\'" class="privacy-reassurance">Private reflection · Not part of a client’s clinical record.</p>\r\n\r\n    <!-- Editor (Primary focus on main screen) -->\r\n    <form v-if="localView === \'main\'" class="journal" @submit.prevent="saveReflection">\r\n      <label class="sr-only" for="reflection-body">Reflection</label>\r\n      <section class="editor-surface">\r\n        <textarea id="reflection-body" ref="editor" v-model="body" class="reflection-editor" placeholder="Write or speak whatever feels important…" aria-label="Reflection" />\r\n      </section>\r\n      <div class="action-bar">\r\n        <div class="voice-control">\r\n          <button v-if="!isRecording" type="button" class="secondary-action" :disabled="isTranscribing" @click="startRecording">{{ isTranscribing ? \'Adding to reflection…\' : \'🎙 Record voice\' }}</button>\r\n          <template v-else>\r\n            <span class="recording-status" aria-live="polite"><span class="recording-indicator" aria-hidden="true" />Recording · {{ elapsed }}</span>\r\n            <button type="button" class="secondary-action" @click="togglePause">{{ isPaused ? \'Resume\' : \'Pause\' }}</button>\r\n            <button type="button" class="secondary-action" @click="stopRecording">Stop and add to reflection</button>\r\n          </template>\r\n        </div>\r\n        <div class="save-actions">\r\n          <button type="button" class="secondary-action" @click="summariseCurrentAttempt">\r\n            {{ generatingSummary ? \'Preparing draft…\' : \'Summarise for supervision\' }}\r\n          </button>\r\n          <button type="submit" class="primary-action" :disabled="saving">{{ saving ? \'Saving…\' : \'Save reflection\' }}</button>\r\n        </div>\r\n      </div>\r\n      <p v-if="showThresholdGuidance && !canSummarise" id="summary-threshold" class="quiet threshold-note text-state-warning">\r\n        Write a little more to create a supervision summary (${minimumSummaryCharacters} characters).\r\n      </p>\r\n      <p v-if="saveError" class="error-message" role="alert">{{ saveError }}</p>\r\n    </form>\r\n\r\n    <!-- History List -->\r\n    <section class="reflection-history" :aria-labelledby="localView === \'main\' ? \'recent-reflections-heading\' : \'archive-heading\'">\r\n      <h2 v-if="localView === \'main\'" id="recent-reflections-heading">Recent reflections</h2>\r\n      <p v-if="loading" class="quiet">Opening your reflections…</p>\r\n      <p v-else-if="!reflections.length" class="quiet">Nothing here yet. This is a place to return to when something feels worth holding onto.</p>\r\n      \r\n      <div v-else class="compact-history divide-y divide-border border-y border-border mb-6">\r\n        <button \r\n          v-for="reflection in displayedReflections" \r\n          :key="reflection.id" \r\n          type="button"\r\n          class="w-full text-left px-inline-md py-stack-md hover:bg-surface-subtle focus-visible:ring-2 focus-visible:ring-action-primary transition-colors group"\r\n          @click="openDetail(reflection)"\r\n        >\r\n          <div class="flex justify-between items-baseline mb-1">\r\n            <span class="type-caption font-semibold text-ink-secondary">{{ date(reflection.created_at) }}</span>\r\n            <span class="type-caption text-action-link opacity-0 group-hover:opacity-100 transition-opacity">View</span>\r\n          </div>\r\n          <p class="type-body-sm text-ink-secondary line-clamp-2">{{ reflection.body || \'Empty reflection\' }}</p>\r\n        </button>\r\n      </div>\r\n\r\n      <button v-if="localView === \'main\' && reflections.length > 3" type="button" class="text-action-link hover:underline type-body-sm" @click="localView = \'archive\'">\r\n        View all reflections\r\n      </button>\r\n    </section>\r\n\r\n    <!-- Detail View Modal -->\r\n    <div v-if="selectedReflection" class="modal-backdrop" @click.self="closeDetail">\r\n      <section class="detail-dialog" role="dialog" aria-modal="true" :aria-labelledby="`detail-title-${selectedReflection.id}`">\r\n        <header class="flex justify-between items-center mb-6">\r\n          <h2 :id="`detail-title-${selectedReflection.id}`" class="type-h3">{{ date(selectedReflection.created_at) }}</h2>\r\n          <button type="button" class="close-button text-2xl" aria-label="Close" @click="closeDetail">×</button>\r\n        </header>\r\n        \r\n        <div class="detail-content space-y-8 overflow-y-auto max-h-[70vh]">\r\n          <div class="reflection-text whitespace-pre-wrap type-body">\r\n            {{ selectedReflection.body }}\r\n          </div>\r\n\r\n          <div class="summary-section border-t border-border pt-6">\r\n            <h3 class="type-overline mb-4">Supervision Summary</h3>\r\n            \r\n            <div v-if="selectedReflection.latestSummary" class="saved-summary-box bg-surface-muted p-4 rounded-control">\r\n              <p class="type-body italic mb-4">{{ selectedReflection.latestSummary.edited_content }}</p>\r\n              <button type="button" class="secondary-action" @click="openSummary(selectedReflection)">Edit summary</button>\r\n            </div>\r\n\r\n            <div v-else class="summary-actions">\r\n              <button \r\n                type="button" \r\n                class="secondary-action" \r\n                :disabled="generatingSummary"\r\n                @click="summariseFromDetail(selectedReflection)"\r\n              >\r\n                {{ generatingSummary ? \'Preparing draft…\' : \'Summarise for supervision\' }}\r\n              </button>\r\n              <p v-if="!canSummariseText(selectedReflection.body)" class="type-caption text-ink-muted mt-2">\r\n                This reflection is too short to summarise.\r\n              </p>\r\n            </div>\r\n          </div>\r\n        </div>\r\n      </section>\r\n    </div>\r\n\r\n    <!-- Summary Editor Modal (Existing logic preserved) -->\r\n    <div v-if="summaryOpen" class="modal-backdrop" @click.self="closeSummary">\r\n      <section class="summary-dialog" role="dialog" aria-modal="true" aria-labelledby="summary-title">\r\n        <header>\r\n          <h2 id="summary-title">Supervision summary</h2>\r\n          <button type="button" class="close-button" aria-label="Close" @click="closeSummary">×</button>\r\n        </header>\r\n        <p class="quiet">A private, editable draft based only on this reflection. Use it as you choose in human supervision.</p>\r\n        <p v-if="summaryError" class="error-message" role="alert">{{ summaryError }} <button type="button" class="inline-action" @click="generateSummary">Try again</button></p>\r\n        <p v-else-if="generatingSummary" class="quiet" aria-live="polite">Preparing a draft from this reflection…</p>\r\n        <textarea v-else v-model="summaryDraft" aria-label="Supervision summary" class="w-full min-h-[200px] p-3 border border-border rounded-control bg-surface" />\r\n        <footer>\r\n          <button type="button" class="secondary-action" :disabled="generatingSummary" @click="generateSummary">Regenerate draft</button>\r\n          <button type="button" class="secondary-action" @click="closeSummary">Discard</button>\r\n          <button type="button" class="primary-action" :disabled="savingSummary || generatingSummary || !summaryDraft.trim()" @click="saveSummary">{{ savingSummary ? \'Saving…\' : \'Save summary\' }}</button>\r\n        </footer>\r\n      </section>\r\n    </div>\r\n  </section>\r\n</template>\r\n\r\n<script setup>\r\nimport { computed, onBeforeUnmount, onMounted, ref, watch } from \'vue\'\r\nimport { supabase } from \'../lib/supabase.js\'\r\nimport { authenticatedFetch } from \'../lib/api.js\'\r\n\r\nconst props = defineProps({\r\n  view: { type: String, default: \'main\' }\r\n})\r\nconst emit = defineEmits([\'update:view\'])\r\n\r\nconst localView = computed({\r\n  get: () => props.view,\r\n  set: (val) => emit(\'update:view\', val)\r\n})\r\n\r\n// A short paragraph, not a word count: enough material for a specific, grounded draft.\r\nconst minimumSummaryCharacters = 80\r\nconst reflections = ref([]), loading = ref(false), saving = ref(false), savingSummary = ref(false), generatingSummary = ref(false)\r\nconst body = ref(\'\'), saveError = ref(\'\'), summaryOpen = ref(false), summaryDraft = ref(\'\'), summaryReflection = ref(null), summaryError = ref(\'\')\r\nconst editor = ref(null), recorder = ref(null), audioChunks = ref([]), isRecording = ref(false), isPaused = ref(false), isTranscribing = ref(false), seconds = ref(0), timer = ref(null)\r\n\r\nconst selectedReflection = ref(null)\r\nconst showThresholdGuidance = ref(false)\r\n\r\nconst elapsed = computed(() => `00:${String(seconds.value).padStart(2, \'0\')}`)\r\nconst canSummarise = computed(() => canSummariseText(body.value))\r\nconst canSummariseText = value => String(value || \'\').trim().length >= minimumSummaryCharacters\r\n\r\nconst displayedReflections = computed(() => {\r\n  if (localView.value === \'main\') {\r\n    return reflections.value.slice(0, 3)\r\n  }\r\n  return reflections.value\r\n})\r\n\r\nasync function load() {\r\n  if (!supabase) return\r\n  loading.value = true\r\n  try {\r\n    const [{ data: notes, error: notesError }, { data: summaries, error: summariesError }] = await Promise.all([\r\n      supabase.from(\'private_reflections\').select(\'*\').order(\'created_at\', { ascending: false }),\r\n      supabase.from(\'reflection_supervision_summaries\').select(\'*\').in(\'generation_status\', [\'saved\']).order(\'created_at\', { ascending: false })\r\n    ])\r\n\r\n    if (notesError) console.error(\'[Reflections] Load error:\', notesError)\r\n    if (summariesError) {\r\n      console.error(\'[Summaries] Load error:\', summariesError)\r\n      if (summariesError.code === \'PGRST205\') '... 13020 more characters,
+    expected: /async function transcribe\(\) \{.*await safeParseJson\(response\)/,
+    operator: 'match',
+    diff: 'simple'
+  }
+test at test\spacing-system.test.js:62:1
+✖ shared visual decisions have semantic tokens and templates do not use arbitrary colour utilities (9.2264ms)
+  Error: spawnSync rg ENOENT
+      at Object.spawnSync (node:internal/child_process:1120:20)
+      at spawnSync (node:child_process:902:24)
+      at Module.execFileSync (node:child_process:945:15)
+      at TestContext.<anonymous> (file:///C:/Users/Rob/WebstormProjects/helio-therapist/test/spacing-system.test.js:65:74)
+      at async Test.run (node:internal/test_runner/test:1054:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:744:7) {
+    errno: -4058,
+    code: 'ENOENT',
+    syscall: 'spawnSync rg',
+    path: 'rg',
+    spawnargs: [ '--files', 'src', '-g', '*.{vue,css}' ],
+    error: Error: spawnSync rg ENOENT
+        at Object.spawnSync (node:internal/child_process:1120:20)
+        at spawnSync (node:child_process:902:24)
+        at Module.execFileSync (node:child_process:945:15)
+        at TestContext.<anonymous> (file:///C:/Users/Rob/WebstormProjects/helio-therapist/test/spacing-system.test.js:65:74)
+        at async Test.run (node:internal/test_runner/test:1054:7)
+        at async Test.processPendingSubtests (node:internal/test_runner/test:744:7),
+    status: null,
+    signal: null,
+    output: null,
+    pid: 0,
+    stdout: undefined,
+    stderr: undefined
+  }

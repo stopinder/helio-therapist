@@ -168,13 +168,24 @@ async function load() {
   if (!supabase) return
   loading.value = true
   try {
-    const [{ data: notes }, { data: summaries }] = await Promise.all([
+    const [{ data: notes, error: notesError }, { data: summaries, error: summariesError }] = await Promise.all([
       supabase.from('private_reflections').select('*').order('created_at', { ascending: false }),
       supabase.from('reflection_supervision_summaries').select('*').in('generation_status', ['saved']).order('created_at', { ascending: false })
     ])
+
+    if (notesError) console.error('[Reflections] Load error:', notesError)
+    if (summariesError) {
+      console.error('[Summaries] Load error:', summariesError)
+      if (summariesError.code === 'PGRST205') {
+        console.warn('PostgREST schema cache miss detected for summaries table.')
+      }
+    }
+
     const summaryByReflection = new Map()
     for (const summary of summaries || []) if (!summaryByReflection.has(summary.reflection_id)) summaryByReflection.set(summary.reflection_id, summary)
     reflections.value = (notes || []).map(note => ({ ...note, latestSummary: summaryByReflection.get(note.id) || null }))
+  } catch (err) {
+    console.error('[Reflections] Unexpected load error:', err)
   } finally {
     loading.value = false
   }
@@ -293,6 +304,9 @@ async function saveSummary() {
   if (error || !data) {
     if (error) {
       console.error('[Supervision Summary] Save error:', error)
+      if (error.code === 'PGRST205') {
+        console.warn('PostgREST schema cache miss detected. Migration 20260725150500 is likely needed.')
+      }
       // Log more details in development if available
       if (import.meta.env.DEV) {
         console.error('Payload:', {

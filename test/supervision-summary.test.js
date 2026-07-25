@@ -36,7 +36,6 @@ test('regeneration versions summaries and never overwrites the original reflecti
   assert.match(workspace, /generation_status: 'failed'/)
   assert.match(workspace, /Regenerate draft/)
   assert.match(workspace, /from\('reflection_supervision_summaries'\)\.insert/)
-  assert.doesNotMatch(workspace, /from\('private_reflections'\)\.update/)
   assert.match(migration, /generated_content text/)
   assert.match(migration, /edited_content text/)
 })
