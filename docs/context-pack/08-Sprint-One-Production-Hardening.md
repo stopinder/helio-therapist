@@ -1,6 +1,6 @@
 # Sprint One — Production hardening
 
-Status: Implementation and local database validation complete; hosted preview and production gated
+Status: Implementation, local database validation, CI and Vercel preview complete; hosted Supabase validation gated
 Owner: Codex, acting as project manager and technical lead  
 Approved: 26 July 2026  
 Working branch: `agent/sprint1-hardening`
@@ -200,3 +200,13 @@ No destructive production database change is authorized by the sprint approval a
 - Production was not used as a substitute test target.
 - Added a reproducible PGlite integration test that applies all 24 checked-in migrations from the minimal Supabase platform baseline and verifies session completion/idempotency, one Timeline event, retention of legacy Timeline rows, reflection summary versioning, atomic resource/client-completion records, and cross-tenant RLS rejection.
 - A hosted authenticated workflow and signed provider delivery remain required before production approval.
+
+### 26 July 2026 — Closeout gate rechecked
+
+- Published the PGlite migration integration test and evidence update to PR #27 at commit `1b9ab3c`.
+- GitHub Quality run 4 passed with 51/51 tests, a zero-vulnerability audit and a successful production build.
+- Vercel created a successful preview for the same commit.
+- The Mindworks Supabase organization remains on the Free plan and already uses both available projects.
+- The second project contains active course data and was not repurposed as a staging database.
+- Current production advisors and the 18-entry migration ledger were recorded read-only; no production mutation was performed.
+- Sprint One remains blocked only on an isolated hosted Supabase environment, post-migration advisors, and authenticated/provider workflow verification.
