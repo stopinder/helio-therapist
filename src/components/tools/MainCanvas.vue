@@ -60,7 +60,26 @@
         <nav class="session-tabs" aria-label="Session material"><button v-for="tab in sessionTabs" :key="tab.id" :class="{ active: sessionWorkspaceTab === tab.id }" @click="sessionWorkspaceTab = tab.id">{{ tab.label }}</button></nav>
         <section v-if="sessionWorkspaceTab === 'overview'" class="session-overview"><section v-if="selectedClient.note" class="session-context"><p class="eyebrow">Current focus</p><p>{{ selectedClient.note }}</p></section><section class="session-summary-card"><p class="eyebrow">Session overview</p><h3>{{ sessionStatusLabel(editingSession) }}</h3><p>{{ sessionOverviewCopy(editingSession) }}</p><button class="secondary" @click="sessionWorkspaceTab = 'clinical-note'">Open clinical note</button></section></section>
         <section v-else-if="sessionWorkspaceTab === 'clinical-note'"><div class="note-label"><div><p class="eyebrow">Primary clinical record</p><label for="session-notes">Therapist-approved clinical note</label></div><button v-if="editingSession.status === 'in_progress'" class="dictate" :class="{ recording: isDictating }" :disabled="transcribing" @click="toggleDictation"><span class="record-dot" aria-hidden="true"></span>{{ isDictating ? 'Stop dictation' : transcribing ? 'Transcribing…' : 'Start dictation' }}</button></div><p class="note-guidance">Record the session in your own words. Review and save this note before relying on source material.</p><p v-if="editingSession.status === 'in_progress'" class="dictation-help" :class="{ recording: isDictating, error: dictationError }" role="status">{{ dictationMessage() }}</p><textarea id="session-notes" v-model="draftNotes" :disabled="editingSession.status !== 'in_progress'" placeholder="Record the session in your own words…"></textarea></section>
-        <section v-else-if="sessionWorkspaceTab === 'transcript'" class="source-material"><p class="eyebrow">Source material</p><h3>Transcript</h3><p>A transcript preserves what was said. It is not the approved clinical record and is never added without your review.</p><p class="quiet-copy">No transcript is available for this session yet.</p><button class="secondary" @click="sessionWorkspaceTab = 'clinical-note'">Return to clinical note</button></section>
+        <section v-else-if="sessionWorkspaceTab === 'transcript'" class="source-material">
+          <p class="eyebrow">Session artifacts</p>
+          <h3>Transcript and approved outputs</h3>
+          <p>The therapist note remains the primary clinical record. AI-derived outputs appear here only after explicit therapist approval, with their original source kept separate.</p>
+          <p v-if="sessionOutputsLoading" class="quiet-copy">Loading approved outputs…</p>
+          <div v-else-if="approvedSessionOutputs.length" class="approved-output-list">
+            <article v-for="output in approvedSessionOutputs" :key="output.id" class="approved-output">
+              <header>
+                <div><strong>{{ output.lensLabel }}</strong><small>Approved · Version {{ output.version }} · {{ formatDate(output.approvedAt) }}</small></div>
+                <button class="secondary" @click="openSourceTranscript(output.transcriptId)">Open source transcript</button>
+              </header>
+              <pre>{{ output.content }}</pre>
+            </article>
+          </div>
+          <div v-else class="empty-session-source">
+            <p class="quiet-copy">No approved AI-derived output is attached to this session.</p>
+            <button v-if="editingSession.workflowStatus !== 'no_further_action'" class="secondary" @click="openTranscriptInbox">Review transcript inbox</button>
+          </div>
+          <button class="secondary return-note" @click="sessionWorkspaceTab = 'clinical-note'">Return to clinical note</button>
+        </section>
         <section v-else-if="sessionWorkspaceTab === 'resources-actions'"><div class="session-actions"><span>Resources and actions</span><button class="secondary" @click="openPicker">Send to client</button></div><p class="quiet-copy">Resources shared, agreed actions and follow-up tasks will appear here for this session.</p></section>
         <p v-if="sessionError" class="session-error" role="alert">{{ sessionError }}</p>
         <footer><button class="secondary" :disabled="sessionSaving" @click="requestCloseEditor">Close</button><template v-if="editingSession.status === 'in_progress'"><button class="secondary" :disabled="sessionSaving || !notesDirty" @click="saveNotes">{{ sessionSaving ? 'Saving…' : 'Save notes' }}</button><button class="primary" :disabled="sessionSaving" @click="completeSession">{{ sessionSaving ? 'Completing…' : 'End session' }}</button></template></footer>
@@ -80,7 +99,7 @@ import { completeSessionRecord, createOrResumeSession, listSessions, migrateLega
 import ResourcePicker from './ResourcePicker.vue'
 
 const props = defineProps({ selectedClient: { type: Object, default: null } })
-const emit = defineEmits(['update-focus'])
+const emit = defineEmits(['update-focus', 'open-transcript', 'route-session'])
 const tabs = [{ id: 'timeline', label: 'Timeline' }, { id: 'sessions', label: 'Sessions' }]
 const activeTab = ref('timeline')
 const sessionTabs = [{ id: 'overview', label: 'Overview' }, { id: 'clinical-note', label: 'Clinical note' }, { id: 'transcript', label: 'Transcript' }, { id: 'resources-actions', label: 'Resources & actions' }]
@@ -102,6 +121,8 @@ const isDictating = ref(false)
 const transcribing = ref(false)
 const dictationError = ref('')
 const preparingFor = ref(null)
+const approvedSessionOutputs = ref([])
+const sessionOutputsLoading = ref(false)
 let recorder = null
 let chunks = []
 let recordingStream = null
@@ -190,7 +211,30 @@ function openZoomMeeting(session) {
 }
 function zoomMeetingLabel(session) { if (session.zoomState === 'preparing') return 'Preparing your Zoom meeting…'; if (session.zoomState === 'ready') return 'Zoom meeting ready'; return 'Zoom was not opened' }
 function zoomMeetingDescription(session) { if (session.zoomState === 'preparing') return 'Helio is creating a Zoom meeting and linking it to this session.'; if (session.zoomState === 'ready') return 'Zoom opens separately with its full meeting controls. Helio will use this link to route the transcript back to this session.'; return session.zoomError || 'You can continue taking therapist notes. Reconnect Zoom in Settings before the next session.' }
-function openSession(session) { editingSession.value = session; draftNotes.value = session.notes || ''; sessionWorkspaceTab.value = 'overview'; activeTab.value = 'sessions' }
+function openSession(session) {
+  editingSession.value = session
+  draftNotes.value = session.notes || ''
+  sessionWorkspaceTab.value = 'overview'
+  activeTab.value = 'sessions'
+  loadApprovedSessionOutputs(session.id)
+  emit('route-session', { clientId: session.clientId, sessionId: session.id })
+}
+async function loadApprovedSessionOutputs(sessionId) {
+  approvedSessionOutputs.value = []
+  sessionOutputsLoading.value = true
+  try {
+    const response = await authenticatedFetch(`/api/ai/transcript-output?sessionId=${encodeURIComponent(sessionId)}&approved=true`)
+    const data = await response.json().catch(() => ({}))
+    if (!response.ok) throw new Error(data.error?.message || data.error || 'Approved outputs could not be loaded.')
+    approvedSessionOutputs.value = data.outputs || []
+  } catch (error) {
+    sessionError.value = error?.message || 'Approved outputs could not be loaded.'
+  } finally {
+    sessionOutputsLoading.value = false
+  }
+}
+function openSourceTranscript(transcriptId) { emit('open-transcript', transcriptId) }
+function openTranscriptInbox() { emit('open-transcript', null) }
 function openPicker() { pickerOpen.value = true }
 async function handleResourceSent({ assignments, clientAccessTokens }) { pickerOpen.value = false; completionLinks.value = assignments.map((assignment, index) => ({ title: assignment.sent_snapshot?.title || 'Resource', url: assignmentCompletionUrl(clientAccessTokens[index]) })); await loadClinicalTimeline() }
 async function copyCompletionLinks() { try { await navigator.clipboard.writeText(completionLinks.value.map(item => `${item.title}: ${item.url}`).join('\n')); copyLabel.value = 'Copied'; setTimeout(() => { copyLabel.value = 'Copy links' }, 1600) } catch { copyLabel.value = 'Select and copy' } }
@@ -222,7 +266,14 @@ async function completeSession() {
     sessionSaving.value = false
   }
 }
-function closeEditor() { stopRecording(); editingSession.value = null; draftNotes.value = ''; dictationError.value = '' }
+function closeEditor(syncRoute = true) {
+  stopRecording()
+  editingSession.value = null
+  draftNotes.value = ''
+  dictationError.value = ''
+  approvedSessionOutputs.value = []
+  if (syncRoute && props.selectedClient?.id) emit('route-session', { clientId: props.selectedClient.id, sessionId: null })
+}
 function requestCloseEditor() {
   if (notesDirty.value && !window.confirm('Discard the unsaved changes to this session note?')) return
   closeEditor()
@@ -289,6 +340,7 @@ async function handleOpenSession(event) {
   )
   if (session) openSession(session)
 }
+function handleCloseSession() { if (editingSession.value) closeEditor(false) }
 function handlePrepareSession(event) {
   if (String(event.detail?.clientId) !== String(props.selectedClient?.id)) return
   preparingFor.value = event.detail.appointment || null
@@ -300,9 +352,9 @@ function preview(value, length = 90) { return value.length > length ? value.slic
 function timelineIcon(type) { return timelineEventPresentation(type).icon }
 function timelineDetail(type) { return timelineEventPresentation(type).detail }
 async function loadClinicalTimeline() { if (!props.selectedClient?.id) return; try { const response = await authenticatedFetch('/api/client-timeline?clientId=' + encodeURIComponent(props.selectedClient.id)); const data = await response.json().catch(() => ({})); clinicalTimelineEvents.value = response.ok ? (data.events || []) : [] } catch { clinicalTimelineEvents.value = [] } }
-watch(() => props.selectedClient?.id, () => { activeTab.value = 'timeline'; preparingFor.value = null; closeEditor(); cancelFocusEdit(); clinicalTimelineEvents.value = []; loadClinicalTimeline(); loadDurableSessions() }, { immediate: true })
-onMounted(() => { window.addEventListener('helio:open-session', handleOpenSession); window.addEventListener('helio:prepare-session', handlePrepareSession) })
-onUnmounted(() => { window.removeEventListener('helio:open-session', handleOpenSession); window.removeEventListener('helio:prepare-session', handlePrepareSession) })
+watch(() => props.selectedClient?.id, () => { activeTab.value = 'timeline'; preparingFor.value = null; closeEditor(false); cancelFocusEdit(); clinicalTimelineEvents.value = []; loadClinicalTimeline(); loadDurableSessions() }, { immediate: true })
+onMounted(() => { window.addEventListener('helio:open-session', handleOpenSession); window.addEventListener('helio:close-session', handleCloseSession); window.addEventListener('helio:prepare-session', handlePrepareSession) })
+onUnmounted(() => { window.removeEventListener('helio:open-session', handleOpenSession); window.removeEventListener('helio:close-session', handleCloseSession); window.removeEventListener('helio:prepare-session', handlePrepareSession) })
 </script>
 
 <style scoped>
@@ -314,6 +366,7 @@ onUnmounted(() => { window.removeEventListener('helio:open-session', handleOpenS
 .share-link{width:min(35rem,100%);background:var(--surface-elevated);border-radius:1rem;padding:1.3rem}.share-link h2{margin:.2rem 0 .5rem}.share-link p{color:var(--text-muted);line-height:1.5}.share-link label{display:block;margin:.75rem 0;color:var(--text-secondary);font-size:.85rem}.share-link label strong{display:block;margin-bottom:.35rem}.share-link input{box-sizing:border-box;width:100%;padding:.75rem;border:1px solid var(--border);border-radius:.6rem;font:inherit}.share-link div{display:flex;justify-content:flex-end;gap:.5rem;margin-top:1rem}
 .session-context{background:var(--surface-muted);border:1px solid var(--border-muted);border-radius:.65rem;padding:.8rem;margin:0 0 .85rem}.session-context p:last-child{white-space:pre-wrap;color:var(--text-secondary);line-height:1.5;margin:.25rem 0 0}.preparation-carry-forward{padding-top:.55rem;border-top:1px solid var(--state-selected)}.preparation-carry-forward span{color:var(--text-muted)}
 .session-error{margin:.75rem 0;color:var(--state-danger);font-size:.85rem;font-weight:600}
+.approved-output-list{display:grid;gap:.8rem;margin-top:.9rem}.approved-output{padding:.85rem;border:1px solid var(--state-success);border-radius:.65rem;background:var(--surface-elevated)}.approved-output header{display:flex;align-items:flex-start;justify-content:space-between;gap:1rem}.approved-output strong,.approved-output small{display:block}.approved-output small{margin-top:.2rem;color:var(--text-muted);font-size:.75rem}.approved-output header .secondary{font-size:.75rem;padding:.45rem .6rem}.approved-output pre{max-height:22rem;overflow:auto;white-space:pre-wrap;word-break:break-word;margin:.8rem 0 0;padding:.8rem;border-radius:.55rem;background:var(--surface-muted);color:var(--text-secondary);font:inherit;line-height:1.55}.empty-session-source{margin:.8rem 0}.return-note{margin-top:.9rem}@media(max-width:700px){.approved-output header{flex-direction:column}.approved-output header .secondary{width:100%}}
 
 /* The record stays a continuous working surface; panels mark real tasks only. */
 .record-header,.focus-card,.latest-card,.appointment-card,.recent-card,.section-card,.timeline-card{background:var(--surface);border-color:var(--border-muted);box-shadow:none}.record-tabs{border-color:var(--border-muted)}.secondary{background:var(--surface-elevated);border-color:var(--border);}.secondary:hover{background:var(--surface-subtle);border-color:var(--border-strong)}.primary:focus-visible,.secondary:focus-visible,.text-action:focus-visible{outline:2px solid var(--action-link);outline-offset:2px}.focus-card textarea,.session-editor textarea{background:var(--surface-elevated);border-color:var(--border)}.focus-card textarea:focus,.session-editor textarea:focus{border-color:var(--border-strong);box-shadow:0 0 0 3px var(--state-selected)}.continuity-link,.session-context{background:var(--surface-muted);border-color:var(--border-muted)}.session-row,.timeline-event{background:transparent;border-color:var(--border-muted)}.timeline-event:hover{background:var(--surface-subtle)}.timeline-marker{background:var(--surface-muted)}.session-actions,.empty-inline{border-color:var(--border-muted)}.modal-backdrop{background:rgb(24 32 28 / .28)}.session-editor,.share-link{background:var(--surface-overlay);border:1px solid var(--border);box-shadow:var(--shadow-overlay)}.ai-boundary{background:var(--surface-muted);border-color:var(--border-muted)}
