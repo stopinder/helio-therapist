@@ -1,6 +1,10 @@
 # Current state
 
-Last updated: 24 July 2026. This is a working implementation record; it distinguishes code present in this checkout from production and integration verification.
+Last updated: 26 July 2026. This is a working implementation record; it distinguishes code present in this checkout from production and integration verification.
+
+## Implementation roadmap
+
+The screenshot-led implementation blueprint and release sequence are recorded in [Helio implementation roadmap](07-Implementation-Roadmap.md). It treats the supplied interface captures as target behaviour and keeps repository, live-schema, RLS, integration and deployment verification as the first delivery gate.
 
 ## Built in this repository
 
