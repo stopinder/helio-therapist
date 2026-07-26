@@ -10,6 +10,8 @@ Sprint One production hardening is deployed and tracked in [Sprint One — Produ
 
 Sprint One was squash-merged in [PR #27](https://github.com/stopinder/helio-therapist/pull/27) and deployed to production: clean tests/build/audit, durable Supabase sessions, transactional multi-record writes, signed/replay-safe Zoom webhook intake, stronger tenant RLS, repository dependency cleanup and CI. The production migration ledger now matches all 26 repository migrations.
 
+Sprint Two is approved and being implemented on an isolated branch; production has not changed. Scope, evidence, clinical boundaries, acceptance criteria and the production gate are recorded in [Sprint Two — Clinical output flow](09-Sprint-Two-Clinical-Output-Flow.md).
+
 ## Built in this repository
 
 - Supabase-backed client records and authentication scaffolding.
@@ -29,7 +31,7 @@ The application currently exposes **Today**, **Clients**, **Inbox**, **Reflectio
 
 - All 26 checked-in migrations are recorded in production. Rollback-only production checks passed for sessions, Timeline uniqueness, resources, requests, client completion, outcome results, reflection summary versioning and cross-tenant RLS.
 - The Zoom start-session flow still requires the connected Zoom account to retain `meeting:write:meeting` consent.
-- Zoom cloud transcript import requires the webhook configuration, valid credentials, and an actual recorded/transcribed meeting test.
+- Zoom cloud transcript import passed a real recorded/transcribed meeting test on 26 July 2026: the transcript returned and was stored. Sprint Two addresses the remaining generate/edit/approve user flow.
 - Dictation needs a real browser microphone permission and authenticated transcription endpoint test with normal browser audio.
 - Google Calendar/Calendly need a signed-in user with a valid connected integration; verify the Google silent-refresh and reconnect-only-on-revocation paths from the deployed app.
 - Selecting a calendar appointment opens preparation only if its title matches exactly one Helio client; no durable calendar-event-to-client link exists yet.
@@ -56,5 +58,5 @@ PHQ-9 can be added as a structured outcome-measure template, sent through the sa
 ## Known implementation limitations
 
 - Production sessions are now durable and user-scoped in Supabase, with a verified one-time browser import and optimistic note-version checks.
-- Formal URL routing and browser Back/deep-link support remain deferred.
+- The Sprint Two branch adds recoverable transcript, session and reflection hash URLs with browser Back support. A full `vue-router` shell decomposition remains deferred.
 - Full persistence of every CBT, EMDR and IFS tool remains deferred.

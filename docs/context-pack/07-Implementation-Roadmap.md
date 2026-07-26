@@ -13,6 +13,7 @@ Related notes:
 - [Clinical exchange architecture](05-Clinical-Exchange-Architecture.md)
 - [Phase Two — Client workspace sprint](06-Phase-Two-Client-Workspace-Sprint.md)
 - [Sprint One — Production hardening](08-Sprint-One-Production-Hardening.md)
+- [Sprint Two — Clinical output flow](09-Sprint-Two-Clinical-Output-Flow.md)
 
 ## Executive recommendation
 

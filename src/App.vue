@@ -90,7 +90,7 @@
           <button
               class="h-9 w-9 flex items-center justify-center rounded-control border border-border text-ink-secondary interaction-control type-body focus-visible:outline-none"
               aria-label="Calendar"
-              @click="selectedNav = 'Today'"
+              @click="handleNavChange('Today')"
           >
             🗓
           </button>
@@ -98,7 +98,7 @@
           <button
               class="h-9 w-9 flex items-center justify-center rounded-control border border-border text-ink-secondary interaction-control type-body focus-visible:outline-none"
               :class="{ 'state-selected font-semibold border-border-strong': selectedNav === 'Settings' }"
-              @click="selectedNav = 'Settings'"
+              @click="handleNavChange('Settings')"
               aria-label="Settings"
           >
             ⚙️
@@ -126,7 +126,7 @@
               <CalendarSchedule
                 :clients="clients"
                 reference-view
-                @open-settings="selectedNav = 'Settings'"
+                @open-settings="handleNavChange('Settings')"
                 @select-appointment="openAppointmentPreparation"
                 @next-appointment="nextMatchedAppointment = $event"
             />
@@ -136,7 +136,7 @@
           <NeedsAttention
               v-else-if="selectedNav === 'Inbox' && !queuedTranscriptId"
               :clients="clients"
-              @open-settings="selectedNav = 'Settings'"
+              @open-settings="handleNavChange('Settings')"
               @open-transcript="openTranscriptFromQueue"
               @open-session="openSessionFromQueue"
               @select-appointment="openAppointmentPreparation"
@@ -150,18 +150,33 @@
                 @add-client="handleAddClient"
             />
 
-            <TranscriptInbox v-else-if="selectedNav === 'Inbox'" :clients="clients" :open-transcript-id="queuedTranscriptId" />
+            <TranscriptInbox
+                v-else-if="selectedNav === 'Inbox'"
+                :clients="clients"
+                :open-transcript-id="queuedTranscriptId"
+                @open-session="openSessionFromQueue"
+                @route-transcript="routeTranscript"
+            />
 
             <ReflectionWorkspace
                 v-else-if="selectedNav === 'Reflections'"
                 :clients="clients"
                 :view="reflectionView"
+                :open-reflection-id="queuedReflectionId"
                 @update:view="reflectionView = $event"
+                @route-reflection="routeReflection"
             />
 
             <Settings v-else-if="selectedNav === 'Settings'" />
 
-          <MainCanvas ref="clientWorkspace" v-else :selected-client="selectedClient" @update-focus="handleUpdateClientFocus" />
+          <MainCanvas
+              ref="clientWorkspace"
+              v-else
+              :selected-client="selectedClient"
+              @update-focus="handleUpdateClientFocus"
+              @open-transcript="openTranscriptById"
+              @route-session="routeSession"
+          />
         </main>
       </div>
 
@@ -188,7 +203,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch, nextTick } from "vue"
+import { ref, computed, onBeforeUnmount, onMounted, watch, nextTick } from "vue"
 import AIInsightDrawer from "./components/AIInsightDrawer.vue"
 import ClientContextDrawer from "./components/tools/ClientContextDrawer.vue"
 import EMDRToolLoader from "./components/tools/EMDRToolLoader.vue"
@@ -208,6 +223,7 @@ import TranscriptInbox from "./components/TranscriptInbox.vue"
 import CalendarSchedule from "./components/CalendarSchedule.vue"
 import NextSessionPreparation from "./components/NextSessionPreparation.vue"
 import { supabase } from "./lib/supabase.js"
+import { buildWorkspaceHash, parseWorkspaceHash } from "./lib/workspaceRoute.js"
 
 // --- State ---
 const isSidebarOpen = ref(true)
@@ -218,6 +234,7 @@ const isSyncing = ref(false)
 const activeView = ref("main")
 const selectedNav = ref("Today")
 const queuedTranscriptId = ref(null)
+const queuedReflectionId = ref(null)
 const nextMatchedAppointment = ref(null)
 const activeTool = ref(null)
 const activeTemplate = ref(null)
@@ -396,19 +413,55 @@ const handleSelectClient = (client) => {
   selectedNav.value = "Client Workspace"
   showClientDrawer.value = true
   isSidebarOpen.value = false
+  pushWorkspaceRoute({ nav: 'Client Workspace', clientId: client.id })
 }
 
 const openTranscriptFromQueue = (item) => {
   queuedTranscriptId.value = item.transcriptId
   selectedNav.value = 'Inbox'
+  pushWorkspaceRoute({ transcriptId: item.transcriptId })
 }
 
 const openSessionFromQueue = async (item) => {
   const client = clients.value.find(candidate => String(candidate.id) === String(item.clientId))
   if (!client) return
-  handleSelectClient(client)
+  selectedClient.value = client
+  localStorage.setItem("helio_selectedClient", JSON.stringify(client))
+  selectedNav.value = "Client Workspace"
+  queuedTranscriptId.value = null
+  showClientDrawer.value = false
+  isSidebarOpen.value = false
+  pushWorkspaceRoute({ clientId: item.clientId, sessionId: item.sessionId })
   await nextTick()
-  window.dispatchEvent(new CustomEvent('helio:open-session', { detail: { sessionId: item.sessionId, clientId: item.clientId } }))
+  window.dispatchEvent(new CustomEvent('helio:open-session', {
+    detail: {
+      sessionId: item.sessionId,
+      clientId: item.clientId,
+      tab: item.tab || 'overview',
+      outputId: item.outputId || null
+    }
+  }))
+}
+
+const openTranscriptById = (transcriptId) => {
+  queuedTranscriptId.value = transcriptId || null
+  selectedNav.value = 'Inbox'
+  pushWorkspaceRoute(transcriptId ? { transcriptId } : { nav: 'Inbox' })
+}
+
+const routeTranscript = (transcriptId) => {
+  queuedTranscriptId.value = transcriptId || null
+  pushWorkspaceRoute(transcriptId ? { transcriptId } : { nav: 'Inbox' })
+}
+
+const routeSession = ({ clientId, sessionId } = {}) => {
+  if (!clientId) return
+  pushWorkspaceRoute(sessionId ? { clientId, sessionId } : { clientId })
+}
+
+const routeReflection = (reflectionId) => {
+  queuedReflectionId.value = reflectionId || null
+  pushWorkspaceRoute(reflectionId ? { reflectionId } : { nav: 'Reflections' })
 }
 
 const openAppointmentPreparation = async (appointment) => {
@@ -451,7 +504,11 @@ const startClientSession = () => {
 const handleNavChange = (nav) => {
   selectedNav.value = nav
   if (nav !== 'Inbox') queuedTranscriptId.value = null
+  if (nav !== 'Reflections') queuedReflectionId.value = null
   isSidebarOpen.value = false
+  pushWorkspaceRoute(nav === 'Client Workspace' && selectedClient.value
+    ? { nav, clientId: selectedClient.value.id }
+    : { nav })
 }
 
 const openTool = (payload) => {
@@ -524,14 +581,53 @@ const updateScreen = () => {
     isSidebarOpen.value = false
   }
 }
-onMounted(() => {
-  loadClients()
+function pushWorkspaceRoute(route, { replace = false } = {}) {
+  const hash = buildWorkspaceHash(route)
+  if (window.location.hash === hash) return
+  window.history[replace ? 'replaceState' : 'pushState']({}, '', hash)
+}
+
+async function applyWorkspaceRoute() {
+  const route = parseWorkspaceHash(window.location.hash)
+  queuedTranscriptId.value = route.transcriptId || null
+  queuedReflectionId.value = route.reflectionId || null
+  selectedNav.value = route.nav
+
+  if (route.clientId) {
+    const client = clients.value.find(candidate => String(candidate.id) === String(route.clientId))
+    if (!client) {
+      selectedNav.value = 'Clients'
+      pushWorkspaceRoute({ nav: 'Clients' }, { replace: true })
+      return
+    }
+    selectedClient.value = client
+    localStorage.setItem("helio_selectedClient", JSON.stringify(client))
+    await nextTick()
+    if (route.sessionId) {
+      window.dispatchEvent(new CustomEvent('helio:open-session', {
+        detail: { sessionId: route.sessionId, clientId: route.clientId }
+      }))
+    } else {
+      window.dispatchEvent(new CustomEvent('helio:close-session'))
+    }
+  }
+}
+
+onMounted(async () => {
+  await loadClients()
+  if (!window.location.hash) pushWorkspaceRoute({ nav: 'Today' }, { replace: true })
+  await applyWorkspaceRoute()
   updateScreen()
   window.addEventListener("resize", updateScreen)
+  window.addEventListener("popstate", applyWorkspaceRoute)
   window.addEventListener("tool-saved", () => {
     isRightPanelOpen.value = false
     nextTick(() => { isRightPanelOpen.value = true })
   })
+})
+onBeforeUnmount(() => {
+  window.removeEventListener("resize", updateScreen)
+  window.removeEventListener("popstate", applyWorkspaceRoute)
 })
 </script>
 

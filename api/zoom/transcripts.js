@@ -2,7 +2,7 @@ import { requireAuthenticatedUser } from '../_lib/supabase.js';
 
 const transcriptFields = 'id, zoom_meeting_id, zoom_meeting_uuid, original_format, original_transcript, status, client_id, session_ref, received_at, updated_at, requested_lens, source_retention, review_choices_saved_at, completed_at';
 
-function serialiseTranscript(row) {
+function serialiseTranscript(row, latestOutput = null) {
   return {
     id: row.id,
     meetingId: row.zoom_meeting_id,
@@ -17,7 +17,11 @@ function serialiseTranscript(row) {
     requestedLens: row.requested_lens,
     sourceRetention: row.source_retention,
     reviewChoicesSavedAt: row.review_choices_saved_at,
-    completedAt: row.completed_at
+    completedAt: row.completed_at,
+    latestOutputId: latestOutput?.id || null,
+    latestOutputStatus: latestOutput?.generation_status || null,
+    latestOutputLens: latestOutput?.lens || null,
+    latestOutputVersion: latestOutput?.version || null
   };
 }
 
@@ -35,12 +39,35 @@ export default async function handler(req, res) {
         .order('received_at', { ascending: false });
 
       if (error) throw error;
-      return res.status(200).json({ transcripts: (data || []).map(serialiseTranscript) });
+
+      const transcriptIds = (data || []).map(item => item.id);
+      let outputs = [];
+      if (transcriptIds.length) {
+        const { data: outputRows, error: outputError } = await supabase
+          .from('transcript_clinical_outputs')
+          .select('id, transcript_id, lens, version, generation_status, created_at')
+          .eq('therapist_user_id', user.id)
+          .in('transcript_id', transcriptIds)
+          .in('generation_status', ['draft', 'approved', 'failed'])
+          .order('created_at', { ascending: false });
+        if (outputError) throw outputError;
+        outputs = outputRows || [];
+      }
+      const latestByTranscript = new Map();
+      outputs.forEach(output => {
+        if (!latestByTranscript.has(output.transcript_id)) {
+          latestByTranscript.set(output.transcript_id, output);
+        }
+      });
+
+      return res.status(200).json({
+        transcripts: (data || []).map(row => serialiseTranscript(row, latestByTranscript.get(row.id)))
+      });
     }
 
     if (req.method === 'PATCH') {
       const { id, clientId, sessionRef, requestedLens, sourceRetention, reviewChoicesSaved, markComplete } = req.body || {};
-      const allowedLenses = new Set(['clinical_summary', 'draft_note', 'cbt']);
+      const allowedLenses = new Set(['clinical_summary', 'draft_note', 'cbt', 'ifs', 'emdr']);
       const allowedRetention = new Set(['keep_until_review', 'delete_after_approved_output']);
 
       if (!id || typeof id !== 'string') {
@@ -89,6 +116,21 @@ export default async function handler(req, res) {
 
       const update = { updated_at: new Date().toISOString() };
       const clientChanged = clientId !== undefined && clientId !== existing.client_id;
+      const sessionChanged = sessionRef !== undefined && sessionRef !== existing.session_ref;
+
+      if (clientChanged || sessionChanged) {
+        const { count, error: outputError } = await supabase
+          .from('transcript_clinical_outputs')
+          .select('id', { count: 'exact', head: true })
+          .eq('transcript_id', id)
+          .eq('therapist_user_id', user.id);
+        if (outputError) throw outputError;
+        if (count) {
+          return res.status(409).json({
+            error: 'This client and session are locked because a clinical draft has already been created.'
+          });
+        }
+      }
 
       if (clientId !== undefined) {
         update.client_id = clientId || null;
