@@ -8,7 +8,7 @@ The screenshot-led implementation blueprint and release sequence are recorded in
 
 Sprint One production hardening is approved and tracked in [Sprint One — Production hardening](08-Sprint-One-Production-Hardening.md). That note is the current source for scope, acceptance criteria, risks, evidence and production approval gates.
 
-Sprint One implementation is complete on `agent/sprint1-hardening`: clean tests/build, durable Supabase sessions, transactional multi-record writes, signed/replay-safe Zoom webhook intake, stronger tenant RLS, repository dependency cleanup and CI. It is not production state. The forward migration, preview verification, hosted leaked-password setting and production promotion remain behind the approval gate in the sprint note.
+Sprint One implementation is complete on `agent/sprint1-hardening` and reviewable in draft PR [#27](https://github.com/stopinder/helio-therapist/pull/27): clean tests/build/audit, durable Supabase sessions, transactional multi-record writes, signed/replay-safe Zoom webhook intake, stronger tenant RLS, repository dependency cleanup and CI. It is not production state. Vercel created an automatic PR preview, but the forward migration, database-backed preview workflow, hosted leaked-password setting and production promotion remain behind the approval gate in the sprint note.
 
 ## Built in this repository
 
