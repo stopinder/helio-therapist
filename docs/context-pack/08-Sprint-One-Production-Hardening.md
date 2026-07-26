@@ -189,5 +189,6 @@ No destructive production database change is authorized by the sprint approval a
 - Removed unused `jspdf`, upgraded the supported Vite toolchain, and pinned compatible patched transitive packages. Full `npm audit` reports zero known vulnerabilities.
 - Replaced an existing test's workstation-only `rg` dependency after the first clean GitHub runner exposed it.
 - Clean gate: 50/50 automated tests pass, the Vite 8.1.5 production build succeeds, and the PostgreSQL 17 parser accepts the migration.
+- GitHub Actions clean install, dependency audit, test and production-build gate passes on the draft PR.
 - Draft PR [#27](https://github.com/stopinder/helio-therapist/pull/27) is open. The existing Git integration created a successful Vercel PR preview status automatically; clinical preview verification is still blocked on an approved Supabase preview branch and migration.
 - No Supabase migration, hosted Auth change, Vercel production deployment or production promotion performed.
