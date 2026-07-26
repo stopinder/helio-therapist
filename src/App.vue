@@ -433,7 +433,14 @@ const openSessionFromQueue = async (item) => {
   isSidebarOpen.value = false
   pushWorkspaceRoute({ clientId: item.clientId, sessionId: item.sessionId })
   await nextTick()
-  window.dispatchEvent(new CustomEvent('helio:open-session', { detail: { sessionId: item.sessionId, clientId: item.clientId } }))
+  window.dispatchEvent(new CustomEvent('helio:open-session', {
+    detail: {
+      sessionId: item.sessionId,
+      clientId: item.clientId,
+      tab: item.tab || 'overview',
+      outputId: item.outputId || null
+    }
+  }))
 }
 
 const openTranscriptById = (transcriptId) => {
