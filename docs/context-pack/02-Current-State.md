@@ -1,14 +1,14 @@
 # Current state
 
-Last updated: 26 July 2026. This is a working implementation record; it distinguishes code present in this checkout from production and integration verification.
+Last updated: 26 July 2026. This is a working implementation record of the production application and the remaining integration checks.
 
 ## Implementation roadmap
 
 The screenshot-led implementation blueprint and release sequence are recorded in [Helio implementation roadmap](07-Implementation-Roadmap.md). It treats the supplied interface captures as target behaviour and keeps repository, live-schema, RLS, integration and deployment verification as the first delivery gate.
 
-Sprint One production hardening is approved and tracked in [Sprint One — Production hardening](08-Sprint-One-Production-Hardening.md). That note is the current source for scope, acceptance criteria, risks, evidence and production approval gates.
+Sprint One production hardening is deployed and tracked in [Sprint One — Production hardening](08-Sprint-One-Production-Hardening.md). That note is the source for scope, acceptance criteria, risks, migration evidence and rollout verification.
 
-Sprint One implementation is complete on `agent/sprint1-hardening` and reviewable in draft PR [#27](https://github.com/stopinder/helio-therapist/pull/27): clean tests/build/audit, durable Supabase sessions, transactional multi-record writes, signed/replay-safe Zoom webhook intake, stronger tenant RLS, repository dependency cleanup and CI. It is not production state. Vercel created an automatic PR preview, but the forward migration, database-backed preview workflow, hosted leaked-password setting and production promotion remain behind the approval gate in the sprint note.
+Sprint One was squash-merged in [PR #27](https://github.com/stopinder/helio-therapist/pull/27) and deployed to production: clean tests/build/audit, durable Supabase sessions, transactional multi-record writes, signed/replay-safe Zoom webhook intake, stronger tenant RLS, repository dependency cleanup and CI. The production migration ledger now matches all 26 repository migrations.
 
 ## Built in this repository
 
@@ -25,16 +25,16 @@ Sprint One implementation is complete on `agent/sprint1-hardening` and reviewabl
 
 The application currently exposes **Today**, **Clients**, **Inbox**, **Reflections**, and **Settings**. Transcripts are Inbox items, not a top-level navigation destination. Supervision is an optional action on a saved reflection, not a navigation destination. Reports and Messages are not top-level navigation items.
 
-## Requires deployment, migration or environment verification
+## Remaining environment and integration verification
 
-- The multi-item client-request implementation is published to `main`. Its production database migration `20260722100000_add_client_requests_and_request_items.sql` still requires confirmation in Supabase before the multi-item request path can be treated as production-ready.
-- The Zoom start-session flow requires the Zoom `meeting:write:meeting` scope, re-consent after adding it, and the Zoom session-link database migration applied to Supabase.
+- All 26 checked-in migrations are recorded in production. Rollback-only production checks passed for sessions, Timeline uniqueness, resources, requests, client completion, outcome results, reflection summary versioning and cross-tenant RLS.
+- The Zoom start-session flow still requires the connected Zoom account to retain `meeting:write:meeting` consent.
 - Zoom cloud transcript import requires the webhook configuration, valid credentials, and an actual recorded/transcribed meeting test.
 - Dictation needs a real browser microphone permission and authenticated transcription endpoint test with normal browser audio.
 - Google Calendar/Calendly need a signed-in user with a valid connected integration; verify the Google silent-refresh and reconnect-only-on-revocation paths from the deployed app.
 - Selecting a calendar appointment opens preparation only if its title matches exactly one Helio client; no durable calendar-event-to-client link exists yet.
-- Production code for secure PHQ-9 completion was published on 21 July 2026 (`29b6019`, followed by `ac4f017`). Migration `20260721153000_add_client_completion_links.sql` was confirmed local-only and ready to apply; do not treat the client completion route as database-ready until `npx supabase db push` succeeds and the migration appears on both sides of `supabase migration list`.
-- The Reflections AI slice requires `20260724110000_add_reflection_summary_artifacts.sql` and `20260724110500_allow_empty_private_reflections.sql` in Supabase before generated summary artefacts and empty saves can be treated as production-ready. It also requires `OPENAI_API_KEY` in Vercel and deployed-app verification with an authenticated therapist account. `20260724090000_add_reflection_supervision_summaries.sql` is retained for migration compatibility but is not used by the current summary flow.
+- Supabase leaked-password protection remains disabled. This hosted Auth setting should be enabled as a separate sign-up policy decision.
+- Vercel production serves the deployed app successfully with no observed runtime errors. Node 24 is pinned in the repository and CI so new deployments do not depend on the deprecated Node 20 runtime.
 
 ## Built clinical-exchange foundation
 
@@ -42,9 +42,9 @@ The application currently exposes **Today**, **Clients**, **Inbox**, **Reflectio
 - Therapists can create a basic reusable resource, select one or more items in the shared contextual picker, and send one client request with shared optional instruction and due date. Each sent item has an independent completion/review lifecycle.
 - The reserved clinical-exchange schema has been applied to the Helio Supabase project: resources, immutable versions, assignments, responses, response files, measure results and clinically meaningful timeline events have dedicated records.
 
-After migration `20260721153000` is applied, PHQ-9 can be added as a structured outcome-measure template, sent through the same picker and completed on a mobile device through a one-item, expiring completion link. Submission preserves item answers, calculates the total, records the score as a clinical Timeline event, and places the item in Today for therapist review. The therapist can open that result, see the answers and total with a clear non-diagnostic boundary, then explicitly mark it reviewed; the review state stays in workflow rather than the Timeline. The token is stored only as a hash. A non-zero answer to item 9 shows immediate urgent-support guidance in the client form; it does not replace emergency support or therapist judgement. Delivery is currently copy-link rather than email, and uploads, other form types, measure trends, and a distinct in-context response view remain unavailable.
+PHQ-9 can be added as a structured outcome-measure template, sent through the same picker and completed on a mobile device through a one-item, expiring completion link. Submission preserves item answers, calculates the total, records the score as a clinical Timeline event, and places the item in Today for therapist review. The therapist can open that result, see the answers and total with a clear non-diagnostic boundary, then explicitly mark it reviewed; the review state stays in workflow rather than the Timeline. The token is stored only as a hash. A non-zero answer to item 9 shows immediate urgent-support guidance in the client form; it does not replace emergency support or therapist judgement. Delivery is currently copy-link rather than email, and uploads, other form types, measure trends, and a distinct in-context response view remain unavailable.
 
-- Migration `20260722100000_add_client_requests_and_request_items.sql` is required before the multi-selection request model can be used in production. It creates the shared request envelope, evolves assignments into independently progressing request items, and preserves prior clinical records and their links.
+- Migration `20260722100000_add_client_requests_and_request_items.sql` is applied in production. It creates the shared request envelope, evolves assignments into independently progressing request items, and preserves prior clinical records and their links.
 
 ## Deliberately deferred
 
@@ -53,6 +53,8 @@ After migration `20260721153000` is applied, PHQ-9 can be added as a structured 
 - Multi-practice/multi-clinic architecture and organisation-level pricing.
 - Automatic pattern recognition, longitudinal continuity generation, and any clinical output engine beyond therapist-controlled, reviewable drafting.
 
-## Known implementation limitation
+## Known implementation limitations
 
-The deployed production application still uses browser-local session state. The Sprint One branch replaces that path with durable, user-scoped Supabase sessions and a verified one-time browser import, but it must not be treated as production behavior until the forward migration and application commit pass preview and production promotion.
+- Production sessions are now durable and user-scoped in Supabase, with a verified one-time browser import and optimistic note-version checks.
+- Formal URL routing and browser Back/deep-link support remain deferred.
+- Full persistence of every CBT, EMDR and IFS tool remains deferred.
