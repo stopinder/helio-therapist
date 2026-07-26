@@ -12,6 +12,7 @@ Related notes:
 - [Working rules](03-Working-Rules.md)
 - [Clinical exchange architecture](05-Clinical-Exchange-Architecture.md)
 - [Phase Two — Client workspace sprint](06-Phase-Two-Client-Workspace-Sprint.md)
+- [Sprint One — Production hardening](08-Sprint-One-Production-Hardening.md)
 
 ## Executive recommendation
 

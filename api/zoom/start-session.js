@@ -44,6 +44,18 @@ export default async function handler(req, res) {
     if (clientError) throw clientError;
     if (!client) throw requestError('That client is not available for this session.', 404);
 
+    const { data: session, error: sessionError } = await supabase
+      .from('sessions')
+      .select('id')
+      .eq('id', sessionRef)
+      .eq('client_id', client.id)
+      .eq('user_id', user.id)
+      .eq('status', 'in_progress')
+      .maybeSingle();
+
+    if (sessionError) throw sessionError;
+    if (!session) throw requestError('That session is not available to start.', 404);
+
     const integrationFields = 'user_id, encrypted_access_token, encrypted_refresh_token, expires_at, token_type, scope';
     const { data: integration, error: integrationError } = await supabase
       .from('integrations')
@@ -89,7 +101,7 @@ export default async function handler(req, res) {
       .upsert({
         therapist_user_id: user.id,
         client_id: client.id,
-        session_ref: String(sessionRef),
+        session_ref: String(session.id),
         zoom_meeting_id: String(meeting.id),
         zoom_meeting_uuid: meeting.uuid ? String(meeting.uuid) : null,
         status: 'started',

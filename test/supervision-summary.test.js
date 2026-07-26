@@ -31,11 +31,12 @@ test('only a bounded, supported draft is accepted', () => {
 
 test('regeneration versions summaries and never overwrites the original reflection', async () => {
   const workspace = await readFile(new URL('../src/components/ReflectionWorkspace.vue', import.meta.url), 'utf8')
-  const migration = await readFile(new URL('../supabase/migrations/20260724110000_add_reflection_summary_artifacts.sql', import.meta.url), 'utf8')
-  assert.match(workspace, /generation_status: 'superseded'/)
+  const migration = await readFile(new URL('../supabase/migrations/20260726113823_sprint_one_hardening.sql', import.meta.url), 'utf8')
+  assert.match(workspace, /rpc\('save_reflection_supervision_summary'/)
   assert.match(workspace, /generation_status: 'failed'/)
   assert.match(workspace, /Regenerate draft/)
-  assert.match(workspace, /from\('reflection_supervision_summaries'\)\.insert/)
+  assert.doesNotMatch(workspace, /supervision_summary:/)
+  assert.match(migration, /generation_status = 'superseded'/)
   assert.match(migration, /generated_content text/)
   assert.match(migration, /edited_content text/)
 })

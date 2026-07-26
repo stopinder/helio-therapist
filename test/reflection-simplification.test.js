@@ -22,7 +22,9 @@ test('ReflectionWorkspace.vue has 20,000 character validation', async () => {
   const content = await readFile(new URL('../src/components/ReflectionWorkspace.vue', import.meta.url), 'utf8')
   
   // Verify 20,000 char validation exists
-  assert.match(content, /if \(body\.value\.length > 20000\)/)
+  assert.match(content, /const maxReflectionCharacters = 20000/)
+  assert.match(content, /const isBodyValid = computed\(\(\) => \(body\.value \|\| ''\)\.length <= maxReflectionCharacters\)/)
+  assert.match(content, /if \(!isBodyValid\.value\)/)
   assert.match(content, /Reflection is too long\. The maximum length is 20,000 characters\./)
   
   // Verify empty reflections allowed (check constraint 1 to 20000 was removed in migration)

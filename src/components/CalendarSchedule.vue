@@ -64,6 +64,7 @@
 <script setup>
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { authenticatedFetch } from '../lib/api.js'
+import { listSessions } from '../lib/sessions.js'
 
 const props = defineProps({
   clients: { type: Array, default: () => [] },
@@ -83,6 +84,7 @@ const hasLoadedOnce = ref(false)
 const googleService = ref({ state: 'checking', lastSyncedAt: null })
 const automaticRetries = ref(0)
 const nextAppointmentEvents = ref([])
+const sessionRecords = ref([])
 let retryTimer = null
 
 function startDay(date) { const d = new Date(date); d.setHours(0, 0, 0, 0); return d }
@@ -167,12 +169,9 @@ function emitNextMatchedAppointment(calendarEvents) {
 function appointmentStatus(event) {
   const client = matchedClient(event)
   if (!client) return ''
-  try {
-    const sessions = JSON.parse(localStorage.getItem('helio_sessions') || '[]')
-    const session = sessions.find(candidate => String(candidate.clientId) === String(client.id) && (candidate.status === 'in_progress' || ['needs_review', 'drafts_awaiting_review'].includes(candidate.workflowStatus)))
-    if (!session) return 'Session scheduled'
-    return session.status === 'in_progress' ? 'Notes incomplete' : 'Session review waiting'
-  } catch { return '' }
+  const session = sessionRecords.value.find(candidate => String(candidate.clientId) === String(client.id) && (candidate.status === 'in_progress' || ['needs_review', 'drafts_awaiting_review'].includes(candidate.workflowStatus)))
+  if (!session) return 'Session scheduled'
+  return session.status === 'in_progress' ? 'Notes incomplete' : 'Session review waiting'
 }
 function openClientWorkspace(event) {
   emit('select-appointment', event)
@@ -237,7 +236,10 @@ async function loadNextMatchedAppointment() {
     emit('upcoming-appointments', [])
   }
 }
-function refreshCalendar() { loadEvents(); loadNextMatchedAppointment() }
+async function loadSessionRecords() {
+  try { sessionRecords.value = await listSessions() } catch { sessionRecords.value = [] }
+}
+function refreshCalendar() { loadEvents(); loadNextMatchedAppointment(); loadSessionRecords() }
 async function reconnectGoogle() {
   try {
     const response = await authenticatedFetch('/api/google/authorize', { method: 'POST' })

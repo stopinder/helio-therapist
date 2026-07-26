@@ -28,6 +28,7 @@
 <script setup>
 import { computed, ref, watch } from 'vue'
 import { authenticatedFetch } from '../lib/api.js'
+import { listSessions } from '../lib/sessions.js'
 
 const props = defineProps({
   appointment: { type: Object, default: null },
@@ -38,13 +39,14 @@ defineEmits(['prepare'])
 const loading = ref(false)
 const timeline = ref([])
 const assignments = ref([])
+const sessions = ref([])
 
 const appointmentTime = computed(() => new Date(props.appointment?.start).toLocaleString(undefined, {
   weekday: 'short', hour: 'numeric', minute: '2-digit'
 }))
 const lastDevelopment = computed(() => timeline.value[0] || null)
 const preparationItem = computed(() => {
-  const openSession = loadSessions().find(session => String(session.clientId) === String(props.client?.id)
+  const openSession = sessions.value.find(session => String(session.clientId) === String(props.client?.id)
     && (session.status === 'in_progress' || ['needs_review', 'drafts_awaiting_review'].includes(session.workflowStatus)))
   if (openSession) return openSession.status === 'in_progress' ? 'Finish the open session note.' : 'Review the outstanding session work.'
 
@@ -54,22 +56,24 @@ const preparationItem = computed(() => {
   return `${title} returned — review before the session.`
 })
 
-function loadSessions() { try { return JSON.parse(localStorage.getItem('helio_sessions') || '[]') } catch { return [] } }
 async function loadPreparation() {
-  if (!props.client?.id) { timeline.value = []; assignments.value = []; return }
+  if (!props.client?.id) { timeline.value = []; assignments.value = []; sessions.value = []; return }
   loading.value = true
   try {
-    const [timelineResponse, assignmentResponse] = await Promise.all([
+    const [timelineResponse, assignmentResponse, sessionData] = await Promise.all([
       authenticatedFetch('/api/client-timeline?clientId=' + encodeURIComponent(props.client.id)),
-      authenticatedFetch('/api/resource-assignments?needsAttention=true')
+      authenticatedFetch('/api/resource-assignments?needsAttention=true'),
+      listSessions({ clientId: props.client.id })
     ])
     const timelineData = await timelineResponse.json().catch(() => ({}))
     const assignmentData = await assignmentResponse.json().catch(() => ({}))
     timeline.value = timelineResponse.ok ? (timelineData.events || []) : []
     assignments.value = assignmentResponse.ok ? (assignmentData.assignments || []) : []
+    sessions.value = sessionData
   } catch {
     timeline.value = []
     assignments.value = []
+    sessions.value = []
   } finally {
     loading.value = false
   }

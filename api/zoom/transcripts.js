@@ -107,6 +107,17 @@ export default async function handler(req, res) {
         if (sessionRef && !effectiveClientId) {
           return res.status(400).json({ error: 'Assign a client before linking a session.' });
         }
+        if (sessionRef) {
+          const { data: session, error: sessionError } = await supabase
+            .from('sessions')
+            .select('id')
+            .eq('id', sessionRef)
+            .eq('client_id', effectiveClientId)
+            .eq('user_id', user.id)
+            .maybeSingle();
+          if (sessionError) throw sessionError;
+          if (!session) return res.status(404).json({ error: 'That session was not found for this client.' });
+        }
         update.session_ref = sessionRef || null;
         update.review_choices_saved_at = null;
         update.completed_at = null;

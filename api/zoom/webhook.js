@@ -2,17 +2,38 @@ import crypto from 'crypto';
 import { getSupabaseClient } from '../_lib/supabase.js';
 import { getZoomAccessTokenContext } from '../_lib/zoom-oauth.js';
 import { downloadZoomTranscriptWithRetry } from '../_lib/zoom-download.js';
+import { safeZoomWebhookPayload, verifyZoomWebhookRequest } from '../_lib/zoom-webhook.js';
 
-function getBody(req) {
-  if (!req.body) return {};
-  if (typeof req.body === 'string') {
-    try {
-      return JSON.parse(req.body);
-    } catch {
-      return {};
-    }
+export const config = {
+  api: {
+    bodyParser: false
   }
-  return req.body;
+};
+
+async function readWebhookBody(req) {
+  if (Buffer.isBuffer(req.body) || typeof req.body === 'string') {
+    const rawBody = Buffer.isBuffer(req.body) ? req.body : Buffer.from(req.body, 'utf8');
+    return { body: JSON.parse(rawBody.toString('utf8')), rawBody };
+  }
+  if (req.body && typeof req.body === 'object') {
+    const rawBody = Buffer.from(JSON.stringify(req.body), 'utf8');
+    return { body: req.body, rawBody };
+  }
+
+  const chunks = [];
+  let size = 0;
+  for await (const chunk of req) {
+    const buffer = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
+    size += buffer.length;
+    if (size > 1_000_000) {
+      const error = new Error('Webhook payload is too large');
+      error.status = 413;
+      throw error;
+    }
+    chunks.push(buffer);
+  }
+  const rawBody = Buffer.concat(chunks);
+  return { body: JSON.parse(rawBody.toString('utf8')), rawBody };
 }
 
 function transcriptFile(recording) {
@@ -62,7 +83,13 @@ export default async function handler(req, res) {
     return res.status(503).json({ error: 'Webhook configuration missing' });
   }
 
-  const body = getBody(req);
+  let body;
+  let rawBody;
+  try {
+    ({ body, rawBody } = await readWebhookBody(req));
+  } catch (error) {
+    return res.status(error.status || 400).json({ error: error.message || 'Invalid webhook payload' });
+  }
 
   // Zoom calls this when the endpoint is saved. It proves Helio controls the URL.
   if (body.event === 'endpoint.url_validation') {
@@ -75,6 +102,19 @@ export default async function handler(req, res) {
       .digest('hex');
 
     return res.status(200).json({ plainToken, encryptedToken });
+  }
+
+  const verification = verifyZoomWebhookRequest({
+    headers: req.headers,
+    body,
+    rawBody,
+    secret
+  });
+  if (!verification.valid) {
+    console.warn('[Zoom Webhook] Rejected unauthenticated event', {
+      reason: verification.reason
+    });
+    return res.status(401).json({ error: 'Invalid webhook signature' });
   }
 
   const recording = body.payload?.object || {};
@@ -93,14 +133,19 @@ export default async function handler(req, res) {
     const { data: intakeEvent, error: intakeError } = await supabase
       .from('zoom_webhook_events')
       .insert({
+        delivery_key: verification.deliveryKey,
         event_type: eventType,
         zoom_meeting_id: meetingId,
         zoom_host_id: hostId,
-        payload: body
+        payload: safeZoomWebhookPayload(body)
       })
       .select('id')
       .single();
 
+    if (intakeError?.code === '23505') {
+      console.info('[Zoom Webhook] Duplicate delivery acknowledged', { meetingId, eventType });
+      return res.status(200).json({ received: true, duplicate: true });
+    }
     if (intakeError) throw intakeError;
 
     // Zoom reliably sends recording.completed. Some accounts do not send a
