@@ -41,16 +41,23 @@ export default async function handler(req, res) {
     const audience = isPhq9 ? 'client' : clean(req.body?.audience, 20) || 'client'
     if (!title || !KINDS.has(kind) || !MODES.has(completionMode) || !AUDIENCES.has(audience)) return res.status(400).json({ error: 'A title, valid resource type, audience, and completion method are required.' })
     const description = isPhq9 ? 'A brief questionnaire about mood over the last two weeks.' : clean(req.body?.description, 1200)
-    const { data: resource, error: resourceError } = await supabase
-      .from('resource_library_items')
-      .insert({ user_id: user.id, title, resource_kind: kind, content_type: kind === 'document' ? 'document' : kind === 'psychoeducation' ? 'psychoeducation' : 'worksheet', category: kind, audience, description })
-      .select().single()
-    if (resourceError) throw resourceError
-    const { data: version, error: versionError } = await supabase
-      .from('resource_versions')
-      .insert({ resource_id: resource.id, user_id: user.id, version_number: 1, completion_mode: completionMode, client_title: title, client_description: description, form_definition: isPhq9 ? phq9Definition() : {}, scoring_definition: isPhq9 ? { calculation: 'sum', calculationVersion: 'phq-9-v1' } : {}, published_at: new Date().toISOString() })
-      .select().single()
-    if (versionError) throw versionError
+    const { data: created, error } = await supabase.rpc('create_resource_with_version', {
+      p_user_id: user.id,
+      p_title: title,
+      p_resource_kind: kind,
+      p_content_type: kind === 'document' ? 'document' : kind === 'psychoeducation' ? 'psychoeducation' : 'worksheet',
+      p_category: kind,
+      p_audience: audience,
+      p_description: description,
+      p_completion_mode: completionMode,
+      p_form_definition: isPhq9 ? phq9Definition() : {},
+      p_scoring_definition: isPhq9 ? { calculation: 'sum', calculationVersion: 'phq-9-v1' } : {},
+      p_published_at: new Date().toISOString()
+    })
+    if (error) throw error
+    const resource = created?.resource
+    const version = created?.version
+    if (!resource || !version) throw new Error('Resource transaction returned an invalid result.')
     return res.status(201).json({ resource: { key: `resource:${resource.id}`, id: resource.id, type: kind === 'outcome_measure' ? 'outcome_measure' : 'resource', title: resource.title, subtitle: resource.description || null, category: resource.category || kind, completionMode: version.completion_mode, audience: resource.audience, canSendToClient: audience !== 'therapist', version, resource_kind: kind } })
   } catch (error) {
     console.error('[Resources]', error)

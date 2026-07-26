@@ -34,7 +34,7 @@
           <button type="button" class="secondary-action" @click="summariseCurrentAttempt">
             {{ generatingSummary ? 'Preparing draft...' : 'Summarise for supervision' }}
           </button>
-          <button type="submit" class="primary-action" :disabled="saving">{{ saving ? 'Saving...' : 'Save reflection' }}</button>
+          <button type="submit" class="primary-action" :disabled="saving || !isBodyValid">{{ saving ? 'Saving...' : 'Save reflection' }}</button>
         </div>
       </div>
       <p v-if="showThresholdGuidance && !canSummarise" id="summary-threshold" class="quiet threshold-note text-state-warning">
@@ -193,8 +193,10 @@ const localView = computed({
 
 // A short paragraph, not a word count: enough material for a specific, grounded draft.
 const minimumSummaryCharacters = 80
+const maxReflectionCharacters = 20000
 const reflections = ref([]), loading = ref(false), saving = ref(false), savingSummary = ref(false), generatingSummary = ref(false)
 const body = ref(''), saveError = ref(''), summaryDraft = ref(''), summaryReflection = ref(null), summaryError = ref('')
+const summaryGeneratedContent = ref('')
 const detailStage = ref('reflection') // reflection, generating, summary
 const editor = ref(null), recorder = ref(null), audioChunks = ref([]), isRecording = ref(false), isPaused = ref(false), isTranscribing = ref(false), seconds = ref(0), timer = ref(null)
 
@@ -202,6 +204,7 @@ const selectedReflection = ref(null)
 const showThresholdGuidance = ref(false)
 
 const elapsed = computed(() => `00:${String(seconds.value).padStart(2, '0')}`)
+const isBodyValid = computed(() => (body.value || '').length <= maxReflectionCharacters)
 const canSummarise = computed(() => canSummariseText(body.value))
 const canSummariseText = value => String(value || '').trim().length >= minimumSummaryCharacters
 
@@ -241,7 +244,7 @@ async function load() {
 
 async function saveReflection({ keepOpen = false } = {}) {
   if (!supabase || saving.value) return null
-  if (body.value.length > 20000) {
+  if (!isBodyValid.value) {
     saveError.value = 'Reflection is too long. The maximum length is 20,000 characters.'
     return null
   }
@@ -253,7 +256,12 @@ async function saveReflection({ keepOpen = false } = {}) {
     body: body.value
   }).select().single()
   saving.value = false
-  if (error || !data) { saveError.value = 'Your reflection could not be saved. Please try again.'; return null }
+  if (error || !data) {
+    saveError.value = error?.code === '23514'
+      ? 'Your reflection is too long to be saved.'
+      : 'Your reflection could not be saved. Please try again.'
+    return null
+  }
   reflections.value.unshift({ ...data, latestSummary: null })
   if (!keepOpen) {
     body.value = ''
@@ -295,6 +303,7 @@ function closeDetail() {
   selectedReflection.value = null
   summaryReflection.value = null
   summaryDraft.value = ''
+  summaryGeneratedContent.value = ''
   summaryError.value = ''
   detailStage.value = 'reflection'
   document.body.style.overflow = ''
@@ -303,6 +312,16 @@ function closeDetail() {
 function openSummary(reflection, generate = false) {
   summaryReflection.value = reflection; summaryDraft.value = reflection.latestSummary?.edited_content || ''; summaryError.value = '';
   if (generate || !summaryDraft.value) generateSummary()
+}
+
+async function safeParseJson(response) {
+  const contentType = response.headers.get('content-type') || ''
+  if (!(contentType && contentType.includes('application/json'))) return null
+  try {
+    return await response.json()
+  } catch {
+    return null
+  }
 }
 
 async function generateSummary() {
@@ -316,28 +335,17 @@ async function generateSummary() {
       body: JSON.stringify({ reflection: summaryReflection.value.body })
     })
 
-    const contentType = response.headers.get('content-type') || ''
-    const rawBody = await response.text()
-    let data = null
-
-    if (contentType.includes('application/json') && rawBody) {
-      try {
-        data = JSON.parse(rawBody)
-      } catch (e) {
-        console.error('[Supervision Summary] JSON parse error', e)
-        throw new Error('The server returned malformed JSON.')
-      }
-    }
+    const data = await safeParseJson(response)
 
     if (!response.ok) {
-      const safeMessage = data?.error?.message || 'We could not generate the supervision summary. Please try again.'
-      throw new Error(safeMessage)
+      throw new Error(data?.error || `Server error (${response.status}). Please try again later.`)
     }
 
     if (!data?.success || typeof data.summary !== 'string') {
       throw new Error('The server returned an invalid summary response.')
     }
 
+    summaryGeneratedContent.value = data.summary
     summaryDraft.value = data.summary
     summaryReflection.value.pendingMetadata = { model: data.model, promptVersion: data.promptVersion }
     detailStage.value = 'summary'
@@ -352,27 +360,23 @@ async function saveSummary() {
   if (!supabase || !summaryReflection.value || savingSummary.value) return
   savingSummary.value = true
   const { data: auth } = await supabase.auth.getUser()
-  const previous = summaryReflection.value.latestSummary
-  if (previous) await supabase.from('reflection_supervision_summaries').update({ generation_status: 'superseded', superseded_at: new Date().toISOString() }).eq('id', previous.id)
-  const { data, error } = await supabase.from('reflection_supervision_summaries').insert({
-    reflection_id: summaryReflection.value.id,
-    user_id: auth.user.id,
-    generated_content: summaryDraft.value.trim(),
-    edited_content: summaryDraft.value.trim(),
-    generation_status: 'saved',
-    model: summaryReflection.value.pendingMetadata?.model || null,
-    prompt_version: summaryReflection.value.pendingMetadata?.promptVersion || null,
-    generated_at: new Date().toISOString(),
-    saved_at: new Date().toISOString()
-  }).select().single()
-
-  if (!error && data) {
-    await supabase.from('private_reflections').update({
-      supervision_summary: summaryDraft.value.trim()
-    }).eq('id', summaryReflection.value.id)
+  if (!auth.user) {
+    savingSummary.value = false
+    summaryError.value = 'Please sign in again before saving.'
+    return
   }
+  const generatedAt = new Date().toISOString()
+  const { data, error } = await supabase.rpc('save_reflection_supervision_summary', {
+    p_reflection_id: summaryReflection.value.id,
+    p_generated_content: summaryGeneratedContent.value || summaryDraft.value.trim(),
+    p_edited_content: summaryDraft.value.trim(),
+    p_model: summaryReflection.value.pendingMetadata?.model || null,
+    p_prompt_version: summaryReflection.value.pendingMetadata?.promptVersion || null,
+    p_generated_at: generatedAt
+  })
   savingSummary.value = false
-  if (error || !data) {
+  const savedSummary = Array.isArray(data) ? data[0] : data
+  if (error || !savedSummary) {
     if (error) {
       console.error('[Supervision Summary] Save error:', error)
       if (error.code === 'PGRST205') {
@@ -391,7 +395,7 @@ async function saveSummary() {
     return
   }
   
-  const updatedReflection = { ...summaryReflection.value, latestSummary: data }
+  const updatedReflection = { ...summaryReflection.value, latestSummary: savedSummary }
   reflections.value = reflections.value.map(item => item.id === summaryReflection.value.id ? updatedReflection : item)
   
   if (selectedReflection.value && selectedReflection.value.id === summaryReflection.value.id) {
@@ -404,6 +408,7 @@ async function saveSummary() {
 function discardDraft() {
   detailStage.value = 'reflection'
   summaryDraft.value = ''
+  summaryGeneratedContent.value = ''
   summaryError.value = ''
 }
 
@@ -427,22 +432,10 @@ async function transcribe() {
         body: JSON.stringify({ audio: reader.result })
       });
 
-      const contentType = response.headers.get('content-type') || ''
-      const rawBody = await response.text()
-      let data = null
-
-      if (contentType.includes('application/json') && rawBody) {
-        try {
-          data = JSON.parse(rawBody)
-        } catch (e) {
-          console.error('[Dictation] JSON parse error', e)
-          throw new Error('The server returned malformed JSON.')
-        }
-      }
+      const data = await safeParseJson(response)
 
       if (!response.ok) {
-        const safeMessage = data?.error?.message || 'We could not transcribe your recording. Please try again.'
-        throw new Error(safeMessage)
+        throw new Error(data?.error || `Server error (${response.status}). Please try again later.`)
       }
 
       if (data?.text) {
@@ -680,4 +673,3 @@ onBeforeUnmount(() => {
   }
 }
 </style>
-

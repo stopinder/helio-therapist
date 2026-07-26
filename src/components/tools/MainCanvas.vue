@@ -6,7 +6,7 @@
         <h1>{{ selectedClient.name }}</h1>
         <span class="status">{{ selectedClient.archived ? 'Archived' : 'Active' }}</span>
       </div>
-      <button class="primary start-session" :disabled="startingSession" @click="startSession">{{ startingSession ? 'Preparing Zoom…' : 'Start session' }}</button>
+      <button class="primary start-session" :disabled="startingSession || sessionsLoading" @click="startSession">{{ startingSession ? 'Preparing Zoom…' : 'Start session' }}</button>
     </header>
 
     <nav class="record-tabs" aria-label="Client workspaces">
@@ -44,23 +44,26 @@
 
     <section v-else-if="activeTab === 'sessions'" class="section-card">
       <div class="section-heading"><div><p class="eyebrow">Sessions</p><h2>Therapeutic encounters</h2><p>Open a session to review its notes, source material and approved outputs.</p></div></div>
-      <div v-if="!sessions.length" class="empty-state"><div>📝</div><h3>No sessions recorded</h3><p>Start a session when you are ready to take notes.</p></div>
+      <p v-if="sessionError" class="session-error" role="alert">{{ sessionError }}</p>
+      <div v-if="sessionsLoading" class="empty-state"><p>Loading sessions…</p></div>
+      <div v-else-if="!sessions.length" class="empty-state"><div>📝</div><h3>No sessions recorded</h3><p>Start a session when you are ready to take notes.</p></div>
       <button v-for="session in sessions" :key="session.id" class="session-row" @click="openSession(session)"><span><strong>{{ formatDate(session.startedAt) }}</strong><small>{{ sessionListMeta(session) }}</small><small v-if="session.notes">{{ preview(session.notes, 90) }}</small></span><span>Open ›</span></button>
     </section>
 
-    <div v-if="editingSession" class="modal-backdrop" @click.self="closeEditor">
+    <div v-if="editingSession" class="modal-backdrop" @click.self="requestCloseEditor">
       <article class="session-editor" role="dialog" aria-modal="true" aria-labelledby="session-title">
-        <header><div><p class="eyebrow">{{ sessionStatusLabel(editingSession) === 'Closed' ? 'Closed session' : editingSession.status === 'completed' ? 'Session complete' : 'Active session' }}</p><h2 id="session-title">{{ formatDate(editingSession.startedAt) }}</h2></div><button class="close" @click="closeEditor" aria-label="Close">×</button></header>
+        <header><div><p class="eyebrow">{{ sessionStatusLabel(editingSession) === 'Closed' ? 'Closed session' : editingSession.status === 'completed' ? 'Session complete' : 'Active session' }}</p><h2 id="session-title">{{ formatDate(editingSession.startedAt) }}</h2></div><button class="close" @click="requestCloseEditor" aria-label="Close">×</button></header>
         <section v-if="editingSession.zoomState" class="zoom-session" :class="{ warn: editingSession.zoomState === 'unavailable' }">
           <div><p class="eyebrow">Zoom</p><strong>{{ zoomMeetingLabel(editingSession) }}</strong><small>{{ zoomMeetingDescription(editingSession) }}</small></div>
           <button v-if="editingSession.zoomStartUrl" class="secondary" @click="openZoomMeeting(editingSession)">Open Zoom</button>
         </section>
         <nav class="session-tabs" aria-label="Session material"><button v-for="tab in sessionTabs" :key="tab.id" :class="{ active: sessionWorkspaceTab === tab.id }" @click="sessionWorkspaceTab = tab.id">{{ tab.label }}</button></nav>
         <section v-if="sessionWorkspaceTab === 'overview'" class="session-overview"><section v-if="selectedClient.note" class="session-context"><p class="eyebrow">Current focus</p><p>{{ selectedClient.note }}</p></section><section class="session-summary-card"><p class="eyebrow">Session overview</p><h3>{{ sessionStatusLabel(editingSession) }}</h3><p>{{ sessionOverviewCopy(editingSession) }}</p><button class="secondary" @click="sessionWorkspaceTab = 'clinical-note'">Open clinical note</button></section></section>
-        <section v-else-if="sessionWorkspaceTab === 'clinical-note'"><div class="note-label"><div><p class="eyebrow">Primary clinical record</p><label for="session-notes">Therapist-approved clinical note</label></div><button v-if="editingSession.status !== 'closed'" class="dictate" :class="{ recording: isDictating }" :disabled="transcribing" @click="toggleDictation"><span class="record-dot" aria-hidden="true"></span>{{ isDictating ? 'Stop dictation' : transcribing ? 'Transcribing…' : 'Start dictation' }}</button></div><p class="note-guidance">Record the session in your own words. Review and save this note before relying on source material.</p><p v-if="editingSession.status !== 'closed'" class="dictation-help" :class="{ recording: isDictating, error: dictationError }" role="status">{{ dictationMessage() }}</p><textarea id="session-notes" v-model="draftNotes" :disabled="editingSession.status === 'closed'" placeholder="Record the session in your own words…"></textarea></section>
+        <section v-else-if="sessionWorkspaceTab === 'clinical-note'"><div class="note-label"><div><p class="eyebrow">Primary clinical record</p><label for="session-notes">Therapist-approved clinical note</label></div><button v-if="editingSession.status === 'in_progress'" class="dictate" :class="{ recording: isDictating }" :disabled="transcribing" @click="toggleDictation"><span class="record-dot" aria-hidden="true"></span>{{ isDictating ? 'Stop dictation' : transcribing ? 'Transcribing…' : 'Start dictation' }}</button></div><p class="note-guidance">Record the session in your own words. Review and save this note before relying on source material.</p><p v-if="editingSession.status === 'in_progress'" class="dictation-help" :class="{ recording: isDictating, error: dictationError }" role="status">{{ dictationMessage() }}</p><textarea id="session-notes" v-model="draftNotes" :disabled="editingSession.status !== 'in_progress'" placeholder="Record the session in your own words…"></textarea></section>
         <section v-else-if="sessionWorkspaceTab === 'transcript'" class="source-material"><p class="eyebrow">Source material</p><h3>Transcript</h3><p>A transcript preserves what was said. It is not the approved clinical record and is never added without your review.</p><p class="quiet-copy">No transcript is available for this session yet.</p><button class="secondary" @click="sessionWorkspaceTab = 'clinical-note'">Return to clinical note</button></section>
         <section v-else-if="sessionWorkspaceTab === 'resources-actions'"><div class="session-actions"><span>Resources and actions</span><button class="secondary" @click="openPicker">Send to client</button></div><p class="quiet-copy">Resources shared, agreed actions and follow-up tasks will appear here for this session.</p></section>
-        <footer><button class="secondary" @click="closeEditor">Close</button><template v-if="editingSession.status !== 'closed'"><button class="secondary" @click="saveNotes">Save notes</button><button v-if="editingSession.status !== 'completed'" class="primary" @click="completeSession">End session</button><button v-else class="primary" @click="closeSession">Close session</button></template></footer>
+        <p v-if="sessionError" class="session-error" role="alert">{{ sessionError }}</p>
+        <footer><button class="secondary" :disabled="sessionSaving" @click="requestCloseEditor">Close</button><template v-if="editingSession.status === 'in_progress'"><button class="secondary" :disabled="sessionSaving || !notesDirty" @click="saveNotes">{{ sessionSaving ? 'Saving…' : 'Save notes' }}</button><button class="primary" :disabled="sessionSaving" @click="completeSession">{{ sessionSaving ? 'Completing…' : 'End session' }}</button></template></footer>
       </article>
     </div>
     <ResourcePicker v-if="pickerOpen" :client="selectedClient" @close="pickerOpen = false" @sent="handleResourceSent" />
@@ -73,6 +76,7 @@
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { authenticatedFetch } from '../../lib/api.js'
 import { assignmentCompletionUrl, timelineEventPresentation } from '../../lib/clinicalExchange.js'
+import { completeSessionRecord, createOrResumeSession, listSessions, migrateLegacySessions, saveSessionDraft } from '../../lib/sessions.js'
 import ResourcePicker from './ResourcePicker.vue'
 
 const props = defineProps({ selectedClient: { type: Object, default: null } })
@@ -85,8 +89,11 @@ const editingSession = ref(null)
 const draftNotes = ref('')
 const editingFocus = ref(false)
 const draftFocus = ref('')
-const allSessions = ref(loadSessions())
+const allSessions = ref([])
 const startingSession = ref(false)
+const sessionsLoading = ref(false)
+const sessionSaving = ref(false)
+const sessionError = ref('')
 const clinicalTimelineEvents = ref([])
 const pickerOpen = ref(false)
 const completionLinks = ref([])
@@ -99,38 +106,79 @@ let recorder = null
 let chunks = []
 let recordingStream = null
 
-const sessions = computed(() => allSessions.value.filter(item => item.clientId === props.selectedClient?.id).sort((a, b) => new Date(b.startedAt) - new Date(a.startedAt)))
-const completedSessions = computed(() => sessions.value.filter(session => ['completed', 'closed'].includes(session.status)))
-// No AI approval state exists in this pass; keep the Continuity entry point hidden until it does.
-const approvedSessions = computed(() => [])
-const lastCompletedSession = computed(() => completedSessions.value[0] || null)
-const timelineEvents = computed(() => [...completedSessions.value.map(session => ({
-  id: `session-${session.id}`, date: session.closedAt || session.completedAt || session.updatedAt || session.startedAt, session, icon: '◷',
-  title: 'Session completed',
-  detail: sessionProgressLabel(session) + (session.notes ? ' · Therapist notes saved' : '')
-})), ...clinicalTimelineEvents.value.map(event => ({
-  id: `clinical-${event.id}`, date: event.occurred_at, icon: timelineIcon(event.event_type), title: event.summary, detail: timelineDetail(event.event_type)
-}))].sort((a, b) => new Date(b.date) - new Date(a.date)))
+const sessions = computed(() => allSessions.value.filter(item => String(item.clientId) === String(props.selectedClient?.id)).sort((a, b) => new Date(b.startedAt) - new Date(a.startedAt)))
+const notesDirty = computed(() => Boolean(
+  editingSession.value?.status === 'in_progress'
+  && draftNotes.value !== (editingSession.value?.notes || '')
+))
+const timelineEvents = computed(() => clinicalTimelineEvents.value.map(event => ({
+  id: `clinical-${event.id}`,
+  date: event.occurred_at,
+  session: event.session_id ? sessions.value.find(session => String(session.id) === String(event.session_id)) : null,
+  icon: timelineIcon(event.event_type),
+  title: event.summary,
+  detail: timelineDetail(event.event_type)
+})).sort((a, b) => new Date(b.date) - new Date(a.date)))
 const lastMeaningfulEvent = computed(() => timelineEvents.value[0] || null)
 
-function loadSessions() { try { return JSON.parse(localStorage.getItem('helio_sessions') || '[]') } catch { return [] } }
-function persist() { localStorage.setItem('helio_sessions', JSON.stringify(allSessions.value)) }
+async function loadDurableSessions() {
+  sessionsLoading.value = true
+  sessionError.value = ''
+  try {
+    await migrateLegacySessions()
+    allSessions.value = await listSessions()
+  } catch (error) {
+    sessionError.value = error?.message || 'Sessions could not be loaded.'
+  } finally {
+    sessionsLoading.value = false
+  }
+}
+function replaceSession(updated) {
+  const index = allSessions.value.findIndex(session => session.id === updated.id)
+  if (index >= 0) allSessions.value[index] = updated
+  else allSessions.value.unshift(updated)
+  if (editingSession.value?.id === updated.id) editingSession.value = updated
+}
 async function startSession() {
   if (!props.selectedClient || startingSession.value) return
-  const session = { id: String(Date.now()), clientId: props.selectedClient.id, startedAt: new Date().toISOString(), status: 'in_progress', workflowStatus: 'no_further_action', notes: '', notesStatus: 'draft', zoomState: 'preparing', zoomMeetingId: null, zoomStartUrl: null, zoomError: '' }
-  allSessions.value.push(session); persist(); openSession(session)
+  sessionError.value = ''
+  startingSession.value = true
+  let session
+  let resumed
+  try {
+    const result = await createOrResumeSession(props.selectedClient.id)
+    session = result.session
+    resumed = result.resumed
+    replaceSession(session)
+    openSession(session)
+    if (resumed) return
+  } catch (error) {
+    sessionError.value = error?.message || 'The session could not be started.'
+    return
+  } finally {
+    if (resumed || !session) startingSession.value = false
+  }
   let zoomWindow = null
   try { zoomWindow = window.open('', '_blank'); if (zoomWindow) zoomWindow.opener = null } catch {}
-  startingSession.value = true
   try {
     const response = await authenticatedFetch('/api/zoom/start-session', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ clientId: String(session.clientId), sessionRef: String(session.id) }) })
     const data = await response.json().catch(() => ({}))
     if (!response.ok) throw new Error(data.error || 'Zoom could not prepare a meeting for this session.')
-    session.zoomState = 'ready'; session.zoomMeetingId = data.meetingId; session.zoomStartUrl = data.startUrl; session.zoomError = ''; persist()
+    session = await saveSessionDraft(session, draftNotes.value, { state: 'ready', meetingId: data.meetingId, error: '' })
+    session.zoomStartUrl = data.startUrl
+    replaceSession(session)
     if (zoomWindow) zoomWindow.location.replace(data.startUrl); else openZoomMeeting(session)
   } catch (error) {
     if (zoomWindow && !zoomWindow.closed) zoomWindow.close()
-    session.zoomState = 'unavailable'; session.zoomError = error?.message || 'Zoom could not be opened. You can continue with your notes and try Zoom again from Settings.'; persist()
+    const message = error?.message || 'Zoom could not be opened. You can continue with your notes and try Zoom again from Settings.'
+    try {
+      session = await saveSessionDraft(session, draftNotes.value, { state: 'unavailable', error: message })
+      replaceSession(session)
+    } catch {
+      session.zoomState = 'unavailable'
+      session.zoomError = message
+      replaceSession(session)
+    }
   } finally { startingSession.value = false }
 }
 defineExpose({ startSession })
@@ -138,7 +186,7 @@ function openZoomMeeting(session) {
   if (!session?.zoomStartUrl) return
   const popup = window.open(session.zoomStartUrl, '_blank')
   if (popup) popup.opener = null
-  else { session.zoomError = 'Your browser blocked Zoom. Allow pop-ups, then select Open Zoom.'; persist() }
+  else { session.zoomError = 'Your browser blocked Zoom. Allow pop-ups, then select Open Zoom.' }
 }
 function zoomMeetingLabel(session) { if (session.zoomState === 'preparing') return 'Preparing your Zoom meeting…'; if (session.zoomState === 'ready') return 'Zoom meeting ready'; return 'Zoom was not opened' }
 function zoomMeetingDescription(session) { if (session.zoomState === 'preparing') return 'Helio is creating a Zoom meeting and linking it to this session.'; if (session.zoomState === 'ready') return 'Zoom opens separately with its full meeting controls. Helio will use this link to route the transcript back to this session.'; return session.zoomError || 'You can continue taking therapist notes. Reconnect Zoom in Settings before the next session.' }
@@ -146,10 +194,39 @@ function openSession(session) { editingSession.value = session; draftNotes.value
 function openPicker() { pickerOpen.value = true }
 async function handleResourceSent({ assignments, clientAccessTokens }) { pickerOpen.value = false; completionLinks.value = assignments.map((assignment, index) => ({ title: assignment.sent_snapshot?.title || 'Resource', url: assignmentCompletionUrl(clientAccessTokens[index]) })); await loadClinicalTimeline() }
 async function copyCompletionLinks() { try { await navigator.clipboard.writeText(completionLinks.value.map(item => `${item.title}: ${item.url}`).join('\n')); copyLabel.value = 'Copied'; setTimeout(() => { copyLabel.value = 'Copy links' }, 1600) } catch { copyLabel.value = 'Select and copy' } }
-function saveNotes() { editingSession.value.notes = draftNotes.value; editingSession.value.notesStatus = 'saved'; editingSession.value.updatedAt = new Date().toISOString(); persist() }
-function completeSession() { saveNotes(); editingSession.value.status = 'completed'; editingSession.value.workflowStatus = editingSession.value.zoomMeetingId ? 'awaiting_transcript' : 'no_further_action'; editingSession.value.completedAt = new Date().toISOString(); editingSession.value.endedAt = editingSession.value.completedAt; persist(); closeEditor() }
-function closeSession() { saveNotes(); editingSession.value.status = 'closed'; editingSession.value.workflowStatus = editingSession.value.zoomMeetingId ? 'awaiting_transcript' : 'no_further_action'; editingSession.value.closedAt = new Date().toISOString(); editingSession.value.endedAt = editingSession.value.closedAt; persist(); closeEditor() }
+async function saveNotes() {
+  if (!editingSession.value || sessionSaving.value) return
+  sessionSaving.value = true
+  sessionError.value = ''
+  try {
+    const saved = await saveSessionDraft(editingSession.value, draftNotes.value)
+    replaceSession(saved)
+  } catch (error) {
+    sessionError.value = error?.message || 'The session note could not be saved.'
+  } finally {
+    sessionSaving.value = false
+  }
+}
+async function completeSession() {
+  if (!editingSession.value || sessionSaving.value) return
+  sessionSaving.value = true
+  sessionError.value = ''
+  try {
+    const completed = await completeSessionRecord(editingSession.value, draftNotes.value)
+    replaceSession(completed)
+    await loadClinicalTimeline()
+    closeEditor()
+  } catch (error) {
+    sessionError.value = error?.message || 'The session could not be completed.'
+  } finally {
+    sessionSaving.value = false
+  }
+}
 function closeEditor() { stopRecording(); editingSession.value = null; draftNotes.value = ''; dictationError.value = '' }
+function requestCloseEditor() {
+  if (notesDirty.value && !window.confirm('Discard the unsaved changes to this session note?')) return
+  closeEditor()
+}
 function beginEditFocus() { draftFocus.value = props.selectedClient?.note || ''; editingFocus.value = true }
 function cancelFocusEdit() { editingFocus.value = false; draftFocus.value = '' }
 function saveFocus() { emit('update-focus', draftFocus.value.trim()); editingFocus.value = false }
@@ -195,14 +272,23 @@ async function toggleDictation() {
     dictationError.value = microphoneError(error)
   }
 }
-function sessionStatusLabel(session) { return ({ draft: 'In progress', planned: 'Planned', in_progress: 'In progress', completed: 'Completed', closed: 'Closed' })[session?.status] || 'Completed' }
+function sessionStatusLabel(session) { return ({ draft: 'In progress', planned: 'Planned', in_progress: 'In progress', completed: 'Completed', closed: 'Completed' })[session?.status] || 'Completed' }
 function workflowStatusLabel(status) { return ({ awaiting_transcript: 'Awaiting transcript', transcript_received: 'Transcript received', needs_review: 'Needs review', review_choices_saved: 'Review choices saved', drafts_awaiting_review: 'Drafts awaiting review', approved: 'Approved', no_further_action: 'No further action' })[status] || 'No further action' }
 function sessionProgressLabel(session) { const workflow = workflowStatusLabel(session?.workflowStatus); return workflow === 'No further action' ? sessionStatusLabel(session) : sessionStatusLabel(session) + ' · ' + workflow }
 function sessionDurationLabel(session) { if (!session?.endedAt || !session?.startedAt) return ''; const minutes = Math.max(1, Math.round((new Date(session.endedAt) - new Date(session.startedAt)) / 60000)); return minutes + ' min' }
 function sessionListMeta(session) { return [sessionDurationLabel(session), sessionStatusLabel(session), noteIndicator(session), session?.workflowStatus && session.workflowStatus !== 'no_further_action' ? workflowStatusLabel(session.workflowStatus) : ''].filter(Boolean).join(' · ') }
 function sessionOverviewCopy(session) { return session.notes ? 'A clinical note has been started for this encounter. Review it before opening source material.' : 'Use the clinical note to create the therapist-approved record for this encounter.' }
 function noteIndicator(session) { if (!session?.notes) return ''; return session.notesStatus === 'draft' && session.status === 'in_progress' ? 'Therapist notes: Draft' : 'Therapist notes: Saved' }
-function handleOpenSession(event) { const sessionId = String(event.detail?.sessionId || ''); if (!sessionId) return; allSessions.value = loadSessions(); const session = allSessions.value.find(item => String(item.id) === sessionId && item.clientId === props.selectedClient?.id); if (session) openSession(session) }
+async function handleOpenSession(event) {
+  const sessionId = String(event.detail?.sessionId || '')
+  if (!sessionId) return
+  if (!allSessions.value.length) await loadDurableSessions()
+  const session = allSessions.value.find(item =>
+    (String(item.id) === sessionId || String(item.legacyRef || '') === sessionId)
+    && String(item.clientId) === String(props.selectedClient?.id)
+  )
+  if (session) openSession(session)
+}
 function handlePrepareSession(event) {
   if (String(event.detail?.clientId) !== String(props.selectedClient?.id)) return
   preparingFor.value = event.detail.appointment || null
@@ -214,7 +300,7 @@ function preview(value, length = 90) { return value.length > length ? value.slic
 function timelineIcon(type) { return timelineEventPresentation(type).icon }
 function timelineDetail(type) { return timelineEventPresentation(type).detail }
 async function loadClinicalTimeline() { if (!props.selectedClient?.id) return; try { const response = await authenticatedFetch('/api/client-timeline?clientId=' + encodeURIComponent(props.selectedClient.id)); const data = await response.json().catch(() => ({})); clinicalTimelineEvents.value = response.ok ? (data.events || []) : [] } catch { clinicalTimelineEvents.value = [] } }
-watch(() => props.selectedClient?.id, () => { activeTab.value = 'timeline'; preparingFor.value = null; closeEditor(); cancelFocusEdit(); clinicalTimelineEvents.value = []; loadClinicalTimeline() }, { immediate: true })
+watch(() => props.selectedClient?.id, () => { activeTab.value = 'timeline'; preparingFor.value = null; closeEditor(); cancelFocusEdit(); clinicalTimelineEvents.value = []; loadClinicalTimeline(); loadDurableSessions() }, { immediate: true })
 onMounted(() => { window.addEventListener('helio:open-session', handleOpenSession); window.addEventListener('helio:prepare-session', handlePrepareSession) })
 onUnmounted(() => { window.removeEventListener('helio:open-session', handleOpenSession); window.removeEventListener('helio:prepare-session', handlePrepareSession) })
 </script>
@@ -227,6 +313,7 @@ onUnmounted(() => { window.removeEventListener('helio:open-session', handleOpenS
 .preparation-card{display:flex;align-items:center;justify-content:space-between;gap:1rem;margin-bottom:.8rem;padding:1.1rem 1.2rem;background:var(--surface-muted);border:1px solid var(--border-muted);border-radius:.8rem}.preparation-card h2{font-size:1.05rem;margin:.2rem 0}.preparation-card p:last-child{margin:.35rem 0 0;color:var(--text-muted);line-height:1.45}@media(max-width:700px){.preparation-card{flex-direction:column;align-items:stretch}.preparation-card .primary{width:100%}}
 .share-link{width:min(35rem,100%);background:var(--surface-elevated);border-radius:1rem;padding:1.3rem}.share-link h2{margin:.2rem 0 .5rem}.share-link p{color:var(--text-muted);line-height:1.5}.share-link label{display:block;margin:.75rem 0;color:var(--text-secondary);font-size:.85rem}.share-link label strong{display:block;margin-bottom:.35rem}.share-link input{box-sizing:border-box;width:100%;padding:.75rem;border:1px solid var(--border);border-radius:.6rem;font:inherit}.share-link div{display:flex;justify-content:flex-end;gap:.5rem;margin-top:1rem}
 .session-context{background:var(--surface-muted);border:1px solid var(--border-muted);border-radius:.65rem;padding:.8rem;margin:0 0 .85rem}.session-context p:last-child{white-space:pre-wrap;color:var(--text-secondary);line-height:1.5;margin:.25rem 0 0}.preparation-carry-forward{padding-top:.55rem;border-top:1px solid var(--state-selected)}.preparation-carry-forward span{color:var(--text-muted)}
+.session-error{margin:.75rem 0;color:var(--state-danger);font-size:.85rem;font-weight:600}
 
 /* The record stays a continuous working surface; panels mark real tasks only. */
 .record-header,.focus-card,.latest-card,.appointment-card,.recent-card,.section-card,.timeline-card{background:var(--surface);border-color:var(--border-muted);box-shadow:none}.record-tabs{border-color:var(--border-muted)}.secondary{background:var(--surface-elevated);border-color:var(--border);}.secondary:hover{background:var(--surface-subtle);border-color:var(--border-strong)}.primary:focus-visible,.secondary:focus-visible,.text-action:focus-visible{outline:2px solid var(--action-link);outline-offset:2px}.focus-card textarea,.session-editor textarea{background:var(--surface-elevated);border-color:var(--border)}.focus-card textarea:focus,.session-editor textarea:focus{border-color:var(--border-strong);box-shadow:0 0 0 3px var(--state-selected)}.continuity-link,.session-context{background:var(--surface-muted);border-color:var(--border-muted)}.session-row,.timeline-event{background:transparent;border-color:var(--border-muted)}.timeline-event:hover{background:var(--surface-subtle)}.timeline-marker{background:var(--surface-muted)}.session-actions,.empty-inline{border-color:var(--border-muted)}.modal-backdrop{background:rgb(24 32 28 / .28)}.session-editor,.share-link{background:var(--surface-overlay);border:1px solid var(--border);box-shadow:var(--shadow-overlay)}.ai-boundary{background:var(--surface-muted);border-color:var(--border-muted)}

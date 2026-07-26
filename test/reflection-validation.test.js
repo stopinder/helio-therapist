@@ -49,5 +49,5 @@ test('summary generation handles non-JSON responses safely', async () => {
 
 test('transcription also uses safe JSON parsing', async () => {
   const workspace = await readFile(new URL('../src/components/ReflectionWorkspace.vue', import.meta.url), 'utf8')
-  assert.match(workspace, /async function transcribe\(\) \{.*await safeParseJson\(response\)/)
+  assert.match(workspace, /async function transcribe\(\) \{[\s\S]*await safeParseJson\(response\)/)
 })

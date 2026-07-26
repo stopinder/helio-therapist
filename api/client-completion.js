@@ -32,15 +32,16 @@ export default async function handler(req, res) {
     const score = calculatePhq9(req.body?.answers)
     if (!score) return res.status(400).json({ error: 'Please answer every question before submitting.' })
     const submittedAt = new Date().toISOString()
-    const { data: response, error: responseError } = await supabase.from('client_resource_responses').insert({ assignment_id: assignment.id, user_id: assignment.user_id, response_kind: 'structured', structured_answers: req.body.answers, submitted_at: submittedAt }).select().single()
-    if (responseError) throw responseError
-    const { error: updateError } = await supabase.from('client_request_items').update({ status: 'awaiting_review', completed_at: submittedAt }).eq('id', assignment.id)
-    if (updateError) throw updateError
-    const { data: measureResult, error: resultError } = await supabase.from('outcome_measure_results').insert({ assignment_id: assignment.id, response_id: response.id, user_id: assignment.user_id, client_id: assignment.client_id, resource_id: assignment.resource_versions.resource_id, resource_version_id: assignment.resource_version_id, calculation_version: score.calculationVersion, scores: { total: score.total, itemScores: score.itemScores }, completed_at: submittedAt }).select('id').single()
-    if (resultError) throw resultError
-    // Completion is workflow state. The score is the clinical information worth carrying forward.
-    const { error: eventError } = await supabase.from('client_timeline_events').insert({ user_id: assignment.user_id, client_id: assignment.client_id, client_request_id: assignment.client_request_id, client_request_item_id: assignment.id, event_type: 'outcome_measure_recorded', subject_type: 'measure_result', subject_id: measureResult.id, occurred_at: submittedAt, summary: `${present(assignment).title} score: ${score.total}` })
-    if (eventError) throw eventError
+    const { data, error } = await supabase.rpc('submit_client_completion', {
+      p_assignment_id: assignment.id,
+      p_answers: req.body.answers,
+      p_scores: { total: score.total, itemScores: score.itemScores },
+      p_calculation_version: score.calculationVersion,
+      p_submitted_at: submittedAt
+    })
+    if (error?.code === '23505') return res.status(409).json({ error: 'This item has already been submitted.' })
+    if (error) throw error
+    if (!data?.submitted) throw new Error('Completion transaction returned an invalid result.')
     return res.status(201).json({ submitted: true })
   } catch (error) {
     console.error('[Client completion]', error)

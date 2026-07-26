@@ -14,6 +14,7 @@ export function completionModeLabel(mode) {
 
 export function timelineEventPresentation(type) {
   return ({
+    session_completed: { icon: '◷', detail: 'Therapeutic encounter' },
     outcome_measure_recorded: { icon: '✓', detail: 'Outcome measure' },
     risk_assessment_recorded: { icon: '!', detail: 'Risk assessment' },
     diagnosis_updated: { icon: '•', detail: 'Diagnosis updated' },

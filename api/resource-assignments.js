@@ -62,23 +62,29 @@ export default async function handler(req, res) {
     if ((versions || []).length !== resourceVersionIds.length) return res.status(404).json({ error: 'One or more resources could not be found.' })
     if (versions.some(version => version.resource_library_items?.audience === 'therapist')) return res.status(403).json({ error: 'Therapist-only resources cannot be sent to a client.' })
     const instruction = clean(req.body?.instruction), dueAt = req.body?.dueAt || null
-    if (requestKey) {
-      const { data: existing, error: existingError } = await supabase.from('client_requests').select('*,client_request_items(*)').eq('user_id', user.id).eq('idempotency_key', requestKey).maybeSingle()
-      if (existingError) throw existingError
-      if (existing) return res.status(200).json({ request: existing, assignments: existing.client_request_items, duplicate: true })
-    }
-    const { data: request, error: requestError } = await supabase.from('client_requests').insert({ user_id: user.id, client_id: clientId, therapist_instruction: instruction, due_at: dueAt, delivery_channel: 'copy_link', idempotency_key: requestKey || null }).select().single()
-    if (requestError) throw requestError
     const tokens = versions.map(() => crypto.randomBytes(32).toString('base64url'))
     const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
-    const itemsToInsert = versions.map((version, index) => ({
-      user_id: user.id, client_id: clientId, client_request_id: request.id, resource_version_id: version.id,
-      sent_snapshot: { title: version.client_title, description: version.client_description, completionMode: version.completion_mode, resourceVersionId: version.id },
-      client_access_token_hash: tokenHash(tokens[index]), client_access_expires_at: expiresAt
-    }))
-    const { data: assignments, error } = await supabase.from('client_request_items').insert(itemsToInsert).select()
-    if (error) { await supabase.from('client_requests').delete().eq('id', request.id).eq('user_id', user.id); throw error }
-    return res.status(201).json({ request, assignments, clientAccessTokens: tokens })
+    const tokenHashes = tokens.map(tokenHash)
+    const { data: transaction, error } = await supabase.rpc('create_client_request_with_items', {
+      p_user_id: user.id,
+      p_client_id: clientId,
+      p_resource_version_ids: resourceVersionIds,
+      p_token_hashes: tokenHashes,
+      p_instruction: instruction,
+      p_due_at: dueAt,
+      p_idempotency_key: requestKey || null,
+      p_expires_at: expiresAt
+    })
+    if (error) throw error
+    if (!transaction?.request || !Array.isArray(transaction?.assignments)) {
+      throw new Error('Client request transaction returned an invalid result.')
+    }
+    return res.status(transaction.duplicate ? 200 : 201).json({
+      request: transaction.request,
+      assignments: transaction.assignments,
+      clientAccessTokens: transaction.duplicate ? [] : tokens,
+      duplicate: Boolean(transaction.duplicate)
+    })
   } catch (error) {
     console.error('[Resource assignments]', error)
     return res.status(error.status || 500).json({ error: error.message || 'Resource assignment request failed' })

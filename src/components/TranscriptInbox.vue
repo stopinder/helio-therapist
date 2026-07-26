@@ -189,6 +189,7 @@
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue'
 import { authenticatedFetch } from '../lib/api.js'
+import { createSessionFromTranscript as createTranscriptSession, listSessions } from '../lib/sessions.js'
 
 const props = defineProps({ clients: { type: Array, default: () => [] }, openTranscriptId: { type: [String, Number], default: null } })
 const transcripts = ref([])
@@ -207,7 +208,7 @@ const loading = ref(true)
 const saving = ref(false)
 const errorMessage = ref('')
 const successMessage = ref('')
-const localSessions = ref([])
+const sessionRecords = ref([])
 
 const filters = [
   { id: 'attention', label: 'Needs attention' },
@@ -217,7 +218,7 @@ const filters = [
 
 const actionableCount = computed(() => transcripts.value.filter(item => workflowState(item).id !== 'complete').length)
 const actionableSummary = computed(() => `${actionableCount.value} need${actionableCount.value === 1 ? 's' : ''} attention`)
-const sessionsForClient = computed(() => localSessions.value
+const sessionsForClient = computed(() => sessionRecords.value
   .filter(session => String(session.clientId) === String(selected.value?.clientId))
   .sort((a, b) => new Date(b.startedAt || b.createdAt || 0) - new Date(a.startedAt || a.createdAt || 0)))
 
@@ -254,10 +255,14 @@ function sessionOptionLabel(session) {
   const state = ({ planned: 'Planned', in_progress: 'In progress', completed: 'Completed', closed: 'Closed' })[session.status] || 'Completed'
   return `${formatDate(session.startedAt || session.createdAt)} · ${state}`
 }
-function loadLocalSessions() {
-  try { localSessions.value = JSON.parse(localStorage.getItem('helio_sessions') || '[]') } catch { localSessions.value = [] }
+async function loadSessionRecords() {
+  try {
+    sessionRecords.value = await listSessions()
+  } catch (error) {
+    errorMessage.value = error?.message || 'Unable to load sessions.'
+    sessionRecords.value = []
+  }
 }
-function persistLocalSessions() { localStorage.setItem('helio_sessions', JSON.stringify(localSessions.value)) }
 function replaceTranscript(transcript) {
   const index = transcripts.value.findIndex(item => item.id === transcript.id)
   if (index >= 0) transcripts.value[index] = transcript
@@ -266,13 +271,17 @@ function replaceTranscript(transcript) {
 function openTranscript(transcript) {
   selected.value = transcript
   selectedClientId.value = transcript.clientId || ''
-  selectedSessionRef.value = transcript.sessionRef || ''
+  const linkedSession = sessionRecords.value.find(session =>
+    String(session.id) === String(transcript.sessionRef)
+    || String(session.legacyRef || '') === String(transcript.sessionRef)
+  )
+  selectedSessionRef.value = linkedSession?.id || transcript.sessionRef || ''
   selectedLens.value = transcript.requestedLens || ''
   sourceRetention.value = transcript.sourceRetention || 'keep_until_review'
   errorMessage.value = ''
   successMessage.value = ''
   showRaw.value = false
-  loadLocalSessions()
+  loadSessionRecords()
 }
 async function load() {
   loading.value = true
@@ -329,21 +338,18 @@ async function saveSessionLink() {
 }
 async function createSessionFromTranscript() {
   if (!selected.value?.clientId) return
-  const newSession = {
-    id: `zoom-${selected.value.meetingId || selected.value.id}-${Date.now()}`,
-    clientId: selected.value.clientId,
-    startedAt: selected.value.receivedAt,
-    createdAt: new Date().toISOString(),
-    status: 'completed',
-    workflowStatus: 'needs_review',
-    notes: '',
-    notesStatus: 'saved',
-    createdFromTranscript: true
+  saving.value = true
+  errorMessage.value = ''
+  try {
+    const newSession = await createTranscriptSession(selected.value.clientId, selected.value.receivedAt)
+    sessionRecords.value = [newSession, ...sessionRecords.value.filter(session => session.id !== newSession.id)]
+    selectedSessionRef.value = String(newSession.id)
+    await saveSessionLink()
+  } catch (error) {
+    errorMessage.value = error?.message || 'Unable to create a session from this transcript.'
+  } finally {
+    saving.value = false
   }
-  localSessions.value = [newSession, ...localSessions.value]
-  persistLocalSessions()
-  selectedSessionRef.value = String(newSession.id)
-  await saveSessionLink()
 }
 async function saveReviewChoices() {
   const transcript = await patchTranscript({
@@ -384,7 +390,7 @@ async function openQueuedTranscript(id) {
   if (transcript) openTranscript(transcript)
 }
 watch(() => props.openTranscriptId, openQueuedTranscript)
-onMounted(async () => { await load(); loadLocalSessions(); openQueuedTranscript(props.openTranscriptId) })
+onMounted(async () => { await Promise.all([load(), loadSessionRecords()]); openQueuedTranscript(props.openTranscriptId) })
 </script>
 
 <style scoped>

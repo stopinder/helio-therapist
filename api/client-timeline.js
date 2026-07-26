@@ -5,6 +5,7 @@ const clean = (value, maximum = 80) => String(value || '').trim().slice(0, maxim
 // workflow events remain available to audit/workflow surfaces but are never
 // presented as part of a client's clinical story.
 const clinicalEventTypes = [
+  'session_completed',
   'outcome_measure_recorded', 'risk_assessment_recorded', 'diagnosis_updated',
   'treatment_plan_updated', 'goal_updated', 'referral_recorded',
   'medication_changed', 'client_life_event', 'clinical_milestone'

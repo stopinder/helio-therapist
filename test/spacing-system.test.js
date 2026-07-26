@@ -1,6 +1,16 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { readFile } from 'node:fs/promises'
+import { readdir, readFile } from 'node:fs/promises'
+import { join } from 'node:path'
+import { fileURLToPath } from 'node:url'
+
+async function sourceFiles(directory) {
+  const entries = await readdir(directory, { withFileTypes: true })
+  return (await Promise.all(entries.map(entry => {
+    const path = join(directory, entry.name)
+    return entry.isDirectory() ? sourceFiles(path) : [path]
+  }))).flat()
+}
 
 test('semantic spacing tokens are defined once and exposed to Tailwind', async () => {
   const css = await readFile(new URL('../src/main.css', import.meta.url), 'utf8')
@@ -62,8 +72,10 @@ test('primary drawers use the shared keyboard focus trap', async () => {
 test('shared visual decisions have semantic tokens and templates do not use arbitrary colour utilities', async () => {
   const css = await readFile(new URL('../src/main.css', import.meta.url), 'utf8')
   const config = await readFile(new URL('../tailwind.config.js', import.meta.url), 'utf8')
-  const sources = await Promise.all((await import('node:child_process')).execFileSync('rg', ['--files', 'src', '-g', '*.{vue,css}'], { encoding: 'utf8' })
-    .trim().split('\n').map(path => readFile(new URL(`../${path}`, import.meta.url), 'utf8')))
+  const sourceRoot = fileURLToPath(new URL('../src/', import.meta.url))
+  const sources = await Promise.all((await sourceFiles(sourceRoot))
+    .filter(path => path.endsWith('.vue') || path.endsWith('.css'))
+    .map(path => readFile(path, 'utf8')))
 
   for (const token of ['text-primary', 'text-secondary', 'text-muted', 'action-primary', 'action-link', 'radius-control', 'radius-panel', 'control-target']) {
     assert.match(css, new RegExp(`--${token}:`))
