@@ -1,6 +1,6 @@
 # Sprint One — Production hardening
 
-Status: Implementation and hosted validation complete; production migration and promotion gated
+Status: Sprint One engineering complete; production migration and promotion require explicit approval
 Owner: Codex, acting as project manager and technical lead  
 Approved: 26 July 2026  
 Working branch: `agent/sprint1-hardening`
@@ -188,7 +188,7 @@ No destructive production database change is authorized by the sprint approval a
 - PostgreSQL 17 parser accepted all 117 migration statements.
 - Removed unused `jspdf`, upgraded the supported Vite toolchain, and pinned compatible patched transitive packages. Full `npm audit` reports zero known vulnerabilities.
 - Replaced an existing test's workstation-only `rg` dependency after the first clean GitHub runner exposed it.
-- Clean gate: 51/51 automated tests pass, including a full 24-migration ephemeral PostgreSQL integration test; the Vite 8.1.5 production build succeeds, and the PostgreSQL 17 parser accepts the migration.
+- Clean gate: 51/51 automated tests pass, including a full 26-migration ephemeral PostgreSQL integration test; the Vite 8.1.5 production build succeeds, and the PostgreSQL 17 parser accepts the migration.
 - GitHub Actions clean install, dependency audit, test and production-build gate passes on the draft PR.
 - Draft PR [#27](https://github.com/stopinder/helio-therapist/pull/27) is open. The existing Git integration created a successful Vercel PR preview status automatically; clinical preview verification is still blocked on an approved Supabase preview branch and migration.
 - No Supabase migration, hosted Auth change, Vercel production deployment or production promotion performed.
@@ -206,10 +206,10 @@ No destructive production database change is authorized by the sprint approval a
 - Published the PGlite migration integration test and evidence update to PR #27 at commit `1b9ab3c`.
 - GitHub Quality run 4 passed with 51/51 tests, a zero-vulnerability audit and a successful production build.
 - Vercel created a successful preview for the same commit.
-- The Mindworks Supabase organization remains on the Free plan and already uses both available projects.
+- At that checkpoint, the Mindworks Supabase organization remained on the Free plan and already used both available projects.
 - The second project contains active course data and was not repurposed as a staging database.
 - Current production advisors and the 18-entry migration ledger were recorded read-only; no production mutation was performed.
-- Sprint One remains blocked only on an isolated hosted Supabase environment, post-migration advisors, and authenticated/provider workflow verification.
+- At that checkpoint, Sprint One remained blocked on an isolated hosted Supabase environment, post-migration advisors, and authenticated/provider workflow verification.
 
 ### 26 July 2026 — Hosted branch validation
 
@@ -223,3 +223,12 @@ No destructive production database change is authorized by the sprint approval a
 - Reapplied the advisors after that repair: zero security or performance warnings. Remaining notices are informational service-only RLS tables, unused indexes expected on a data-free branch, and the branch Auth connection-allocation setting.
 - Passed a rollback-only hosted clinical smoke test covering idempotent session completion and one Timeline event, reflection summary versioning, atomic resource/request/completion/result/Timeline writes, tenant-filtered reads, and rejection of a cross-tenant resource-version insert.
 - No synthetic therapist or client data was retained.
+
+### 26 July 2026 — Sprint One engineering gate closed
+
+- Published the final index repair and hosted-validation evidence to PR #27 at commit `f293d2f`.
+- GitHub Quality run 7 passed with 51/51 tests, a zero-vulnerability audit and a successful production build.
+- Vercel created a successful preview for the same commit.
+- Confirmed all 26 migrations were applied on the isolated Supabase branch and all sampled Auth and clinical tables remained at zero rows after the rollback-only tests.
+- Deleted the preview branch after validation, stopping its hourly charge.
+- Production remains unchanged. Migration-ledger reconciliation, production migration, a real signed Zoom delivery and production promotion remain inside the explicit production approval gate rather than the completed engineering sprint.
