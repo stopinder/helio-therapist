@@ -1,6 +1,6 @@
 # Sprint One — Production hardening
 
-Status: Sprint One engineering complete; production migration and promotion require explicit approval
+Status: Sprint One deployed to production; post-release observation active
 Owner: Codex, acting as project manager and technical lead  
 Approved: 26 July 2026  
 Working branch: `agent/sprint1-hardening`
@@ -231,4 +231,16 @@ No destructive production database change is authorized by the sprint approval a
 - Vercel created a successful preview for the same commit.
 - Confirmed all 26 migrations were applied on the isolated Supabase branch and all sampled Auth and clinical tables remained at zero rows after the rollback-only tests.
 - Deleted the preview branch after validation, stopping its hourly charge.
-- Production remains unchanged. Migration-ledger reconciliation, production migration, a real signed Zoom delivery and production promotion remain inside the explicit production approval gate rather than the completed engineering sprint.
+- At that checkpoint, production remained unchanged. Migration-ledger reconciliation, production migration, a real signed Zoom delivery and production promotion remained inside the explicit production approval gate.
+
+### 26 July 2026 — Production rollout completed
+
+- Received explicit production approval after the Supabase organization upgrade.
+- Recorded preflight row counts, confirmed no long-running transactions and verified that existing production data satisfied the new constraints.
+- Reconciled three migrations whose schema was already present, applied the five outstanding forward migrations, and normalized the ledger to the exact 26 repository timestamps.
+- Ran rollback-only production workflow checks for session save/completion/idempotency, one canonical Timeline event, reflection summary versioning, atomic resource/request/client-completion writes, outcome results and cross-tenant RLS rejection. No synthetic records were retained.
+- Confirmed post-migration row counts were unchanged and all expected columns, constraints, indexes, functions, grants and RLS policies were present.
+- Supabase reported zero performance warnings. The remaining security warning is the separately controlled hosted Auth setting for leaked-password protection; the service-owned ingestion tables have informational RLS notices only.
+- Squash-merged [PR #27](https://github.com/stopinder/helio-therapist/pull/27) as `25df53a` and verified the automatic Vercel production deployment reached `READY`, served HTTP 200 and had no observed runtime errors.
+- The release build exposed Vercel's Node 20 deprecation warning. The repository and CI are now pinned to Node 24; a clean Node 24 install, zero-vulnerability audit, all 51 tests and the production build pass.
+- The first natural signed Zoom provider delivery remains an observation item because it requires a real recorded meeting; invalid-signature rejection and signed-request verification are covered by automated and hosted rollback-only checks.
