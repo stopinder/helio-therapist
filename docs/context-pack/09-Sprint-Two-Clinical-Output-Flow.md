@@ -2,7 +2,7 @@
 
 Last updated: 26 July 2026.
 
-Status: **Preview-ready on `agent/sprint2-clinical-output-flow` in draft PR #29. Not deployed to production.**
+Status: **Corrective preview iteration on `agent/sprint2-clinical-output-flow` in draft PR #29. Not deployed to production.**
 
 Preview transcript processing through OpenAI was explicitly approved on 26 July
 2026 for Sprint Two validation only. That approval does not authorize production
@@ -86,3 +86,19 @@ Production remains unchanged until all of the following pass:
 The Supabase preview branch is temporary and billed at **$0.01344 per hour**
 until it is removed. The preview should remain open only for the manual
 acceptance checks above.
+
+## Preview finding — output handoff
+
+The first therapist review failed acceptance because an approved clinical
+summary was hidden behind the session's generic Transcript tab. The interface
+reported that the output had been attached, then opened the session Overview
+without showing the result.
+
+The corrective iteration:
+
+- opens the exact session directly on **Transcript and approved outputs** after
+  approval;
+- labels the action **View [lens] in session**;
+- shows a prominent approved-output card on the session Overview;
+- identifies the attached lens and provides one action to open its full text;
+- highlights the output selected from the transcript workflow.
