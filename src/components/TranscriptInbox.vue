@@ -191,7 +191,9 @@
               <button class="secondary" :disabled="busy || !draftDirty" @click="saveDraft">{{ savingOutput ? 'Saving…' : 'Save draft' }}</button>
               <button class="primary" :disabled="busy || !draftContent.trim()" @click="approveDraft">{{ savingOutput ? 'Approving…' : 'Approve and attach to session' }}</button>
             </template>
-            <button v-else class="primary" @click="openLinkedSession">Open linked session</button>
+            <button v-else class="primary" @click="openLinkedSession">
+              View {{ activeOutput.lensLabel }} in session
+            </button>
           </div>
         </div>
 
@@ -514,7 +516,7 @@ async function updateDraft(action) {
       )
       selected.value.completedAt = new Date().toISOString()
       selected.value.latestOutputStatus = 'approved'
-      successMessage.value = 'Approved draft attached to the linked session.'
+      successMessage.value = `${data.output.lensLabel} approved and attached. Open the session to see the full output.`
     } else {
       successMessage.value = 'Draft saved.'
     }
@@ -540,7 +542,12 @@ async function completeWithoutDraft() {
 }
 function openLinkedSession() {
   if (!selected.value?.sessionRef) return
-  emit('open-session', { sessionId: selected.value.sessionRef, clientId: selected.value.clientId })
+  emit('open-session', {
+    sessionId: selected.value.sessionRef,
+    clientId: selected.value.clientId,
+    tab: activeOutput.value?.status === 'approved' ? 'transcript' : 'overview',
+    outputId: activeOutput.value?.status === 'approved' ? activeOutput.value.id : null
+  })
 }
 function downloadRaw(transcript) {
   const blob = new Blob([transcript.text], { type: 'text/plain;charset=utf-8' })
