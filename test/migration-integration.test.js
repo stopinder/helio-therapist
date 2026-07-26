@@ -74,7 +74,7 @@ test('the full migration chain preserves clinical invariants', async () => {
     }
 
     assert.equal(migrations[0], '20260717120000_bootstrap_legacy_integrations.sql')
-    assert.equal(migrations.at(-1), '20260726113823_sprint_one_hardening.sql')
+    assert.equal(migrations.at(-1), '20260726125500_remove_duplicate_timeline_index.sql')
 
     const integrationsColumns = await database.query(`
       select column_name
@@ -99,6 +99,21 @@ test('the full migration chain preserves clinical invariants', async () => {
       'encrypted_refresh_token',
       'provider_account_id',
       'last_synced_at'
+    ])
+
+    const timelineIndexes = await database.query(`
+      select indexname
+      from pg_indexes
+      where schemaname = 'public'
+        and tablename = 'client_timeline_events'
+        and indexname in (
+          'client_timeline_events_client_time_idx',
+          'client_timeline_events_client_occurred_idx'
+        )
+      order by indexname
+    `)
+    assert.deepEqual(timelineIndexes.rows, [
+      { indexname: 'client_timeline_events_client_time_idx' }
     ])
 
     await database.exec(`select set_config('request.jwt.claim.sub', '${userOne}', false);`)

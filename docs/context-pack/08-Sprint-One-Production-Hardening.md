@@ -1,6 +1,6 @@
 # Sprint One — Production hardening
 
-Status: Implementation, local database validation, CI and Vercel preview complete; hosted Supabase validation in progress
+Status: Implementation and hosted validation complete; production migration and promotion gated
 Owner: Codex, acting as project manager and technical lead  
 Approved: 26 July 2026  
 Working branch: `agent/sprint1-hardening`
@@ -217,3 +217,9 @@ No destructive production database change is authorized by the sprint approval a
 - The first hosted migration run exposed a missing historical dependency: `public.integrations` had been created manually before the repository's migration history began.
 - Added an idempotent, backfilled baseline migration immediately before the first tracked integrations migration.
 - Removed the test-only integrations bootstrap so the local integration suite now proves that the repository itself can build the application schema from a clean Supabase platform baseline.
+- Applied all repository migrations in order to the isolated hosted branch.
+- The post-migration security advisor reported no warnings; its informational no-policy notices apply only to deliberately service-owned integration and Zoom ingestion tables.
+- The performance advisor exposed one equivalent Timeline index; added a forward migration that retains the older index and removes the duplicate.
+- Reapplied the advisors after that repair: zero security or performance warnings. Remaining notices are informational service-only RLS tables, unused indexes expected on a data-free branch, and the branch Auth connection-allocation setting.
+- Passed a rollback-only hosted clinical smoke test covering idempotent session completion and one Timeline event, reflection summary versioning, atomic resource/request/completion/result/Timeline writes, tenant-filtered reads, and rejection of a cross-tenant resource-version insert.
+- No synthetic therapist or client data was retained.
