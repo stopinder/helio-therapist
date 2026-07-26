@@ -1,5 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
+import { readFileSync } from 'node:fs'
 import {
   MAX_OUTPUT_CHARACTERS,
   MAX_TRANSCRIPT_CHARACTERS,
@@ -45,4 +46,17 @@ test('source and output validation reject empty or oversized content', () => {
   assert.equal(validateTranscriptSource('A valid transcript').valid, true)
   assert.equal(validateTranscriptClinicalOutput('  Draft  '), 'Draft')
   assert.equal(validateTranscriptClinicalOutput('A'.repeat(MAX_OUTPUT_CHARACTERS + 1)), '')
+})
+
+test('approval handoff opens the visible session output instead of the overview', () => {
+  const inbox = readFileSync(new URL('../src/components/TranscriptInbox.vue', import.meta.url), 'utf8')
+  const app = readFileSync(new URL('../src/App.vue', import.meta.url), 'utf8')
+  const canvas = readFileSync(new URL('../src/components/tools/MainCanvas.vue', import.meta.url), 'utf8')
+
+  assert.match(inbox, /View \{\{ activeOutput\.lensLabel \}\} in session/)
+  assert.match(inbox, /tab: activeOutput\.value\?\.status === 'approved' \? 'transcript' : 'overview'/)
+  assert.match(app, /tab: item\.tab \|\| 'overview'/)
+  assert.match(canvas, /sessionWorkspaceTab\.value = tab === 'transcript' \? 'transcript' : 'overview'/)
+  assert.match(canvas, /Approved AI-derived session output/)
+  assert.match(canvas, /View approved \{\{ approvedSessionOutputs\.length === 1 \? 'output' : 'outputs' \}\}/)
 })
