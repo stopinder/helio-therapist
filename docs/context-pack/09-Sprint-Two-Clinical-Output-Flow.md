@@ -2,7 +2,11 @@
 
 Last updated: 26 July 2026.
 
-Status: **Approved and in implementation on `agent/sprint2-clinical-output-flow`. Not deployed to production.**
+Status: **Preview-ready on `agent/sprint2-clinical-output-flow` in draft PR #29. Not deployed to production.**
+
+Preview transcript processing through OpenAI was explicitly approved on 26 July
+2026 for Sprint Two validation only. That approval does not authorize production
+promotion.
 
 ## Why this sprint exists
 
@@ -70,10 +74,15 @@ This delivers deep links, refresh recovery, and browser Back without a high-risk
 
 Production remains unchanged until all of the following pass:
 
-- full migration-chain integration test;
-- unit and workflow tests;
-- clean production build and dependency audit;
-- Supabase branch migration and RLS verification;
-- authenticated preview generation, edit, regeneration, approval, and session display;
-- first-use flow review against the 30-second target;
-- explicit production promotion decision.
+- [x] full migration-chain integration test;
+- [x] unit and workflow tests;
+- [x] clean production build and dependency audit;
+- [x] Supabase branch migration, RLS, lifecycle, and index verification;
+- [x] GitHub Quality workflow and Vercel preview deployment;
+- [ ] therapist preview generation, edit, regeneration, approval, and session display;
+- [ ] first-use flow review against the 30-second target;
+- [ ] explicit production promotion decision.
+
+The Supabase preview branch is temporary and billed at **$0.01344 per hour**
+until it is removed. The preview should remain open only for the manual
+acceptance checks above.
