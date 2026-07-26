@@ -32,7 +32,7 @@
         </div>
         <div class="save-actions">
           <button type="button" class="secondary-action" @click="summariseCurrentAttempt">
-            {{ generatingSummary ? 'Preparing draft...' : 'Summarise for supervision' }}
+            {{ generatingSummary ? 'Preparing summary...' : 'Save & create supervision summary' }}
           </button>
           <button type="submit" class="primary-action" :disabled="saving || !isBodyValid">{{ saving ? 'Saving...' : 'Save reflection' }}</button>
         </div>
@@ -40,6 +40,7 @@
       <p v-if="showThresholdGuidance && !canSummarise" id="summary-threshold" class="quiet threshold-note text-state-warning">
         Write a little more to create a supervision summary ({{ minimumSummaryCharacters }} characters).
       </p>
+      <p class="summary-guidance">Need a supervision summary? Write at least {{ minimumSummaryCharacters }} characters, then choose <strong>Save & create supervision summary</strong>. You will review the draft before saving it.</p>
       <p v-if="saveError" class="error-message" role="alert">{{ saveError }}</p>
     </form>
 
@@ -59,7 +60,7 @@
         >
           <div class="flex justify-between items-baseline mb-1">
             <span class="type-caption font-semibold text-ink-secondary">{{ date(reflection.created_at) }}</span>
-            <span class="type-caption text-action-link opacity-0 group-hover:opacity-100 transition-opacity">View</span>
+            <span class="type-caption text-action-link">{{ reflection.latestSummary ? 'Summary ready' : 'Open · create summary' }}</span>
           </div>
           <p class="type-body-sm text-ink-secondary line-clamp-2">{{ reflection.body || 'Empty reflection' }}</p>
         </button>
@@ -108,7 +109,7 @@
                   :disabled="!canSummariseText(selectedReflection.body)"
                   @click="summariseFromDetail(selectedReflection)"
                 >
-                  Summarise for supervision
+                  Create supervision summary
                 </button>
                 <p v-if="!canSummariseText(selectedReflection.body)" class="type-caption text-state-warning mt-2">
                   This reflection needs at least {{ minimumSummaryCharacters }} characters before a useful summary can be prepared.
@@ -182,9 +183,10 @@ import { supabase } from '../lib/supabase.js'
 import { authenticatedFetch } from '../lib/api.js'
 
 const props = defineProps({
-  view: { type: String, default: 'main' }
+  view: { type: String, default: 'main' },
+  openReflectionId: { type: [String, Number], default: null }
 })
-const emit = defineEmits(['update:view'])
+const emit = defineEmits(['update:view', 'route-reflection'])
 
 const localView = computed({
   get: () => props.view,
@@ -235,6 +237,7 @@ async function load() {
     const summaryByReflection = new Map()
     for (const summary of summaries || []) if (!summaryByReflection.has(summary.reflection_id)) summaryByReflection.set(summary.reflection_id, summary)
     reflections.value = (notes || []).map(note => ({ ...note, latestSummary: summaryByReflection.get(note.id) || null }))
+    openQueuedReflection(props.openReflectionId)
   } catch (err) {
     console.error('[Reflections] Unexpected load error:', err)
   } finally {
@@ -297,9 +300,10 @@ function openDetail(reflection) {
   selectedReflection.value = reflection
   detailStage.value = 'reflection'
   document.body.style.overflow = 'hidden'
+  emit('route-reflection', reflection.id)
 }
 
-function closeDetail() {
+function closeDetail(syncRoute = true) {
   selectedReflection.value = null
   summaryReflection.value = null
   summaryDraft.value = ''
@@ -307,6 +311,17 @@ function closeDetail() {
   summaryError.value = ''
   detailStage.value = 'reflection'
   document.body.style.overflow = ''
+  if (syncRoute) emit('route-reflection', null)
+}
+
+function openQueuedReflection(id) {
+  if (!id) {
+    if (selectedReflection.value) closeDetail(false)
+    return
+  }
+  if (!reflections.value.length) return
+  const reflection = reflections.value.find(item => String(item.id) === String(id))
+  if (reflection) openDetail(reflection)
 }
 
 function openSummary(reflection, generate = false) {
@@ -338,7 +353,7 @@ async function generateSummary() {
     const data = await safeParseJson(response)
 
     if (!response.ok) {
-      throw new Error(data?.error || `Server error (${response.status}). Please try again later.`)
+      throw new Error(data?.error?.message || data?.error || `Server error (${response.status}). Please try again later.`)
     }
 
     if (!data?.success || typeof data.summary !== 'string') {
@@ -465,6 +480,8 @@ onMounted(() => {
   window.addEventListener('keydown', handleKeyDown)
 })
 
+watch(() => props.openReflectionId, openQueuedReflection)
+
 onBeforeUnmount(() => {
   window.clearInterval(timer.value)
   window.removeEventListener('keydown', handleKeyDown)
@@ -507,6 +524,15 @@ onBeforeUnmount(() => {
 }
 .journal {
   margin-bottom: 3rem;
+}
+.summary-guidance {
+  margin: 0.75rem 0 0;
+  padding: 0.75rem 0.9rem;
+  border-left: 3px solid var(--action-primary);
+  background: var(--surface-subtle);
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  line-height: 1.45;
 }
 .editor-surface {
   background: var(--surface);
