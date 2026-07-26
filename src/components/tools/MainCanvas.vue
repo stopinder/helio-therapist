@@ -58,7 +58,17 @@
           <button v-if="editingSession.zoomStartUrl" class="secondary" @click="openZoomMeeting(editingSession)">Open Zoom</button>
         </section>
         <nav class="session-tabs" aria-label="Session material"><button v-for="tab in sessionTabs" :key="tab.id" :class="{ active: sessionWorkspaceTab === tab.id }" @click="sessionWorkspaceTab = tab.id">{{ tab.label }}</button></nav>
-        <section v-if="sessionWorkspaceTab === 'overview'" class="session-overview"><section v-if="selectedClient.note" class="session-context"><p class="eyebrow">Current focus</p><p>{{ selectedClient.note }}</p></section><section class="session-summary-card"><p class="eyebrow">Session overview</p><h3>{{ sessionStatusLabel(editingSession) }}</h3><p>{{ sessionOverviewCopy(editingSession) }}</p><button class="secondary" @click="sessionWorkspaceTab = 'clinical-note'">Open clinical note</button></section></section>
+        <section v-if="sessionWorkspaceTab === 'overview'" class="session-overview">
+          <section v-if="selectedClient.note" class="session-context"><p class="eyebrow">Current focus</p><p>{{ selectedClient.note }}</p></section>
+          <section v-if="sessionOutputsLoading" class="approved-output-summary"><p class="eyebrow">AI-derived session output</p><p>Checking for approved outputs…</p></section>
+          <section v-else-if="approvedSessionOutputs.length" class="approved-output-summary">
+            <p class="eyebrow">Approved AI-derived session output</p>
+            <h3>{{ approvedOutputSummary }}</h3>
+            <p>{{ approvedSessionOutputs.length === 1 ? 'This reviewed output is attached to the session and kept separate from the therapist-authored clinical note.' : `${approvedSessionOutputs.length} reviewed outputs are attached to this session and kept separate from the therapist-authored clinical note.` }}</p>
+            <button class="primary" @click="showApprovedOutputs">View approved {{ approvedSessionOutputs.length === 1 ? 'output' : 'outputs' }}</button>
+          </section>
+          <section class="session-summary-card"><p class="eyebrow">Session overview</p><h3>{{ sessionStatusLabel(editingSession) }}</h3><p>{{ sessionOverviewCopy(editingSession) }}</p><button class="secondary" @click="sessionWorkspaceTab = 'clinical-note'">Open clinical note</button></section>
+        </section>
         <section v-else-if="sessionWorkspaceTab === 'clinical-note'"><div class="note-label"><div><p class="eyebrow">Primary clinical record</p><label for="session-notes">Therapist-approved clinical note</label></div><button v-if="editingSession.status === 'in_progress'" class="dictate" :class="{ recording: isDictating }" :disabled="transcribing" @click="toggleDictation"><span class="record-dot" aria-hidden="true"></span>{{ isDictating ? 'Stop dictation' : transcribing ? 'Transcribing…' : 'Start dictation' }}</button></div><p class="note-guidance">Record the session in your own words. Review and save this note before relying on source material.</p><p v-if="editingSession.status === 'in_progress'" class="dictation-help" :class="{ recording: isDictating, error: dictationError }" role="status">{{ dictationMessage() }}</p><textarea id="session-notes" v-model="draftNotes" :disabled="editingSession.status !== 'in_progress'" placeholder="Record the session in your own words…"></textarea></section>
         <section v-else-if="sessionWorkspaceTab === 'transcript'" class="source-material">
           <p class="eyebrow">Session artifacts</p>
@@ -66,7 +76,13 @@
           <p>The therapist note remains the primary clinical record. AI-derived outputs appear here only after explicit therapist approval, with their original source kept separate.</p>
           <p v-if="sessionOutputsLoading" class="quiet-copy">Loading approved outputs…</p>
           <div v-else-if="approvedSessionOutputs.length" class="approved-output-list">
-            <article v-for="output in approvedSessionOutputs" :key="output.id" class="approved-output">
+            <article
+              v-for="output in approvedSessionOutputs"
+              :id="`approved-output-${output.id}`"
+              :key="output.id"
+              class="approved-output"
+              :class="{ focused: String(output.id) === String(focusedOutputId) }"
+            >
               <header>
                 <div><strong>{{ output.lensLabel }}</strong><small>Approved · Version {{ output.version }} · {{ formatDate(output.approvedAt) }}</small></div>
                 <button class="secondary" @click="openSourceTranscript(output.transcriptId)">Open source transcript</button>
@@ -123,6 +139,7 @@ const dictationError = ref('')
 const preparingFor = ref(null)
 const approvedSessionOutputs = ref([])
 const sessionOutputsLoading = ref(false)
+const focusedOutputId = ref(null)
 let recorder = null
 let chunks = []
 let recordingStream = null
@@ -141,6 +158,11 @@ const timelineEvents = computed(() => clinicalTimelineEvents.value.map(event => 
   detail: timelineDetail(event.event_type)
 })).sort((a, b) => new Date(b.date) - new Date(a.date)))
 const lastMeaningfulEvent = computed(() => timelineEvents.value[0] || null)
+const approvedOutputSummary = computed(() => {
+  const labels = approvedSessionOutputs.value.map(output => output.lensLabel)
+  if (labels.length === 1) return `${labels[0]} is attached`
+  return `${labels.length} approved outputs are attached`
+})
 
 async function loadDurableSessions() {
   sessionsLoading.value = true
@@ -211,10 +233,11 @@ function openZoomMeeting(session) {
 }
 function zoomMeetingLabel(session) { if (session.zoomState === 'preparing') return 'Preparing your Zoom meeting…'; if (session.zoomState === 'ready') return 'Zoom meeting ready'; return 'Zoom was not opened' }
 function zoomMeetingDescription(session) { if (session.zoomState === 'preparing') return 'Helio is creating a Zoom meeting and linking it to this session.'; if (session.zoomState === 'ready') return 'Zoom opens separately with its full meeting controls. Helio will use this link to route the transcript back to this session.'; return session.zoomError || 'You can continue taking therapist notes. Reconnect Zoom in Settings before the next session.' }
-function openSession(session) {
+function openSession(session, { tab = 'overview', outputId = null } = {}) {
   editingSession.value = session
   draftNotes.value = session.notes || ''
-  sessionWorkspaceTab.value = 'overview'
+  sessionWorkspaceTab.value = tab === 'transcript' ? 'transcript' : 'overview'
+  focusedOutputId.value = outputId
   activeTab.value = 'sessions'
   loadApprovedSessionOutputs(session.id)
   emit('route-session', { clientId: session.clientId, sessionId: session.id })
@@ -235,6 +258,10 @@ async function loadApprovedSessionOutputs(sessionId) {
 }
 function openSourceTranscript(transcriptId) { emit('open-transcript', transcriptId) }
 function openTranscriptInbox() { emit('open-transcript', null) }
+function showApprovedOutputs() {
+  focusedOutputId.value = approvedSessionOutputs.value[0]?.id || null
+  sessionWorkspaceTab.value = 'transcript'
+}
 function openPicker() { pickerOpen.value = true }
 async function handleResourceSent({ assignments, clientAccessTokens }) { pickerOpen.value = false; completionLinks.value = assignments.map((assignment, index) => ({ title: assignment.sent_snapshot?.title || 'Resource', url: assignmentCompletionUrl(clientAccessTokens[index]) })); await loadClinicalTimeline() }
 async function copyCompletionLinks() { try { await navigator.clipboard.writeText(completionLinks.value.map(item => `${item.title}: ${item.url}`).join('\n')); copyLabel.value = 'Copied'; setTimeout(() => { copyLabel.value = 'Copy links' }, 1600) } catch { copyLabel.value = 'Select and copy' } }
@@ -272,6 +299,7 @@ function closeEditor(syncRoute = true) {
   draftNotes.value = ''
   dictationError.value = ''
   approvedSessionOutputs.value = []
+  focusedOutputId.value = null
   if (syncRoute && props.selectedClient?.id) emit('route-session', { clientId: props.selectedClient.id, sessionId: null })
 }
 function requestCloseEditor() {
@@ -338,7 +366,12 @@ async function handleOpenSession(event) {
     (String(item.id) === sessionId || String(item.legacyRef || '') === sessionId)
     && String(item.clientId) === String(props.selectedClient?.id)
   )
-  if (session) openSession(session)
+  if (session) {
+    openSession(session, {
+      tab: event.detail?.tab,
+      outputId: event.detail?.outputId
+    })
+  }
 }
 function handleCloseSession() { if (editingSession.value) closeEditor(false) }
 function handlePrepareSession(event) {
@@ -366,7 +399,7 @@ onUnmounted(() => { window.removeEventListener('helio:open-session', handleOpenS
 .share-link{width:min(35rem,100%);background:var(--surface-elevated);border-radius:1rem;padding:1.3rem}.share-link h2{margin:.2rem 0 .5rem}.share-link p{color:var(--text-muted);line-height:1.5}.share-link label{display:block;margin:.75rem 0;color:var(--text-secondary);font-size:.85rem}.share-link label strong{display:block;margin-bottom:.35rem}.share-link input{box-sizing:border-box;width:100%;padding:.75rem;border:1px solid var(--border);border-radius:.6rem;font:inherit}.share-link div{display:flex;justify-content:flex-end;gap:.5rem;margin-top:1rem}
 .session-context{background:var(--surface-muted);border:1px solid var(--border-muted);border-radius:.65rem;padding:.8rem;margin:0 0 .85rem}.session-context p:last-child{white-space:pre-wrap;color:var(--text-secondary);line-height:1.5;margin:.25rem 0 0}.preparation-carry-forward{padding-top:.55rem;border-top:1px solid var(--state-selected)}.preparation-carry-forward span{color:var(--text-muted)}
 .session-error{margin:.75rem 0;color:var(--state-danger);font-size:.85rem;font-weight:600}
-.approved-output-list{display:grid;gap:.8rem;margin-top:.9rem}.approved-output{padding:.85rem;border:1px solid var(--state-success);border-radius:.65rem;background:var(--surface-elevated)}.approved-output header{display:flex;align-items:flex-start;justify-content:space-between;gap:1rem}.approved-output strong,.approved-output small{display:block}.approved-output small{margin-top:.2rem;color:var(--text-muted);font-size:.75rem}.approved-output header .secondary{font-size:.75rem;padding:.45rem .6rem}.approved-output pre{max-height:22rem;overflow:auto;white-space:pre-wrap;word-break:break-word;margin:.8rem 0 0;padding:.8rem;border-radius:.55rem;background:var(--surface-muted);color:var(--text-secondary);font:inherit;line-height:1.55}.empty-session-source{margin:.8rem 0}.return-note{margin-top:.9rem}@media(max-width:700px){.approved-output header{flex-direction:column}.approved-output header .secondary{width:100%}}
+.approved-output-summary{margin-bottom:.8rem;padding:1rem;border:2px solid var(--state-success);border-radius:.75rem;background:var(--state-success-surface)}.approved-output-summary h3{margin:.15rem 0 .35rem}.approved-output-summary p:not(.eyebrow){margin:.25rem 0 .8rem;color:var(--text-secondary);line-height:1.5}.approved-output-list{display:grid;gap:.8rem;margin-top:.9rem}.approved-output{padding:.85rem;border:1px solid var(--state-success);border-radius:.65rem;background:var(--surface-elevated)}.approved-output.focused{border-width:2px;box-shadow:0 0 0 3px var(--state-selected)}.approved-output header{display:flex;align-items:flex-start;justify-content:space-between;gap:1rem}.approved-output strong,.approved-output small{display:block}.approved-output small{margin-top:.2rem;color:var(--text-muted);font-size:.75rem}.approved-output header .secondary{font-size:.75rem;padding:.45rem .6rem}.approved-output pre{max-height:22rem;overflow:auto;white-space:pre-wrap;word-break:break-word;margin:.8rem 0 0;padding:.8rem;border-radius:.55rem;background:var(--surface-muted);color:var(--text-secondary);font:inherit;line-height:1.55}.empty-session-source{margin:.8rem 0}.return-note{margin-top:.9rem}@media(max-width:700px){.approved-output header{flex-direction:column}.approved-output header .secondary{width:100%}}
 
 /* The record stays a continuous working surface; panels mark real tasks only. */
 .record-header,.focus-card,.latest-card,.appointment-card,.recent-card,.section-card,.timeline-card{background:var(--surface);border-color:var(--border-muted);box-shadow:none}.record-tabs{border-color:var(--border-muted)}.secondary{background:var(--surface-elevated);border-color:var(--border);}.secondary:hover{background:var(--surface-subtle);border-color:var(--border-strong)}.primary:focus-visible,.secondary:focus-visible,.text-action:focus-visible{outline:2px solid var(--action-link);outline-offset:2px}.focus-card textarea,.session-editor textarea{background:var(--surface-elevated);border-color:var(--border)}.focus-card textarea:focus,.session-editor textarea:focus{border-color:var(--border-strong);box-shadow:0 0 0 3px var(--state-selected)}.continuity-link,.session-context{background:var(--surface-muted);border-color:var(--border-muted)}.session-row,.timeline-event{background:transparent;border-color:var(--border-muted)}.timeline-event:hover{background:var(--surface-subtle)}.timeline-marker{background:var(--surface-muted)}.session-actions,.empty-inline{border-color:var(--border-muted)}.modal-backdrop{background:rgb(24 32 28 / .28)}.session-editor,.share-link{background:var(--surface-overlay);border:1px solid var(--border);box-shadow:var(--shadow-overlay)}.ai-boundary{background:var(--surface-muted);border-color:var(--border-muted)}
