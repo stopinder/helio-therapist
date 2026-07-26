@@ -1,6 +1,6 @@
 # Sprint One — Production hardening
 
-Status: Implementation complete; preview and production approval gated  
+Status: Implementation and local database validation complete; hosted preview and production gated
 Owner: Codex, acting as project manager and technical lead  
 Approved: 26 July 2026  
 Working branch: `agent/sprint1-hardening`
@@ -145,7 +145,7 @@ No destructive production database change is authorized by the sprint approval a
 
 ### Preview
 
-1. Create a Supabase preview branch only after its hourly cost is explicitly approved.
+1. Supply an isolated Supabase preview environment. The current organization is not eligible for branches without upgrading to Pro; use a branch after an approved upgrade or an explicitly approved alternative staging project.
 2. Reconcile the preview migration ledger with the verified live-schema objects.
 3. Apply `20260726113823_sprint_one_hardening.sql`.
 4. Run Supabase security and performance advisors.
@@ -188,7 +188,15 @@ No destructive production database change is authorized by the sprint approval a
 - PostgreSQL 17 parser accepted all 117 migration statements.
 - Removed unused `jspdf`, upgraded the supported Vite toolchain, and pinned compatible patched transitive packages. Full `npm audit` reports zero known vulnerabilities.
 - Replaced an existing test's workstation-only `rg` dependency after the first clean GitHub runner exposed it.
-- Clean gate: 50/50 automated tests pass, the Vite 8.1.5 production build succeeds, and the PostgreSQL 17 parser accepts the migration.
+- Clean gate: 51/51 automated tests pass, including a full 24-migration ephemeral PostgreSQL integration test; the Vite 8.1.5 production build succeeds, and the PostgreSQL 17 parser accepts the migration.
 - GitHub Actions clean install, dependency audit, test and production-build gate passes on the draft PR.
 - Draft PR [#27](https://github.com/stopinder/helio-therapist/pull/27) is open. The existing Git integration created a successful Vercel PR preview status automatically; clinical preview verification is still blocked on an approved Supabase preview branch and migration.
 - No Supabase migration, hosted Auth change, Vercel production deployment or production promotion performed.
+
+### 26 July 2026 — Hosted preview limitation recorded
+
+- Supabase quoted `$0.01344/hour` for a preview branch and cost confirmation was accepted.
+- Branch creation was rejected because branching requires the Pro plan; no preview branch was created and no branch charge was incurred.
+- Production was not used as a substitute test target.
+- Added a reproducible PGlite integration test that applies all 24 checked-in migrations from the minimal Supabase platform baseline and verifies session completion/idempotency, one Timeline event, retention of legacy Timeline rows, reflection summary versioning, atomic resource/client-completion records, and cross-tenant RLS rejection.
+- A hosted authenticated workflow and signed provider delivery remain required before production approval.
