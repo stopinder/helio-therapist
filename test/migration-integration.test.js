@@ -44,17 +44,6 @@ test('the full migration chain preserves clinical invariants', async () => {
         file_size_limit bigint,
         allowed_mime_types text[]
       );
-
-      create table public.integrations (
-        id uuid primary key default gen_random_uuid(),
-        user_id uuid,
-        provider text not null unique,
-        access_token text not null,
-        refresh_token text not null,
-        expires_at timestamptz not null,
-        created_at timestamptz not null default now(),
-        updated_at timestamptz not null default now()
-      );
     `)
 
     const migrations = (await readdir(migrationDirectory))
@@ -84,7 +73,34 @@ test('the full migration chain preserves clinical invariants', async () => {
       await database.exec(await readFile(join(migrationDirectory, migration), 'utf8'))
     }
 
+    assert.equal(migrations[0], '20260717120000_bootstrap_legacy_integrations.sql')
     assert.equal(migrations.at(-1), '20260726113823_sprint_one_hardening.sql')
+
+    const integrationsColumns = await database.query(`
+      select column_name
+      from information_schema.columns
+      where table_schema = 'public' and table_name = 'integrations'
+      order by ordinal_position
+    `)
+    assert.deepEqual(integrationsColumns.rows.map(column => column.column_name), [
+      'id',
+      'user_id',
+      'provider',
+      'provider_user_id',
+      'provider_email',
+      'access_token',
+      'refresh_token',
+      'expires_at',
+      'connected_at',
+      'updated_at',
+      'token_type',
+      'scope',
+      'encrypted_access_token',
+      'encrypted_refresh_token',
+      'provider_account_id',
+      'last_synced_at'
+    ])
+
     await database.exec(`select set_config('request.jwt.claim.sub', '${userOne}', false);`)
 
     const sessionId = 'dddddddd-dddd-4ddd-8ddd-dddddddddddd'

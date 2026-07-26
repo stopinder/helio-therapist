@@ -1,6 +1,6 @@
 # Sprint One — Production hardening
 
-Status: Implementation, local database validation, CI and Vercel preview complete; hosted Supabase validation gated
+Status: Implementation, local database validation, CI and Vercel preview complete; hosted Supabase validation in progress
 Owner: Codex, acting as project manager and technical lead  
 Approved: 26 July 2026  
 Working branch: `agent/sprint1-hardening`
@@ -198,7 +198,7 @@ No destructive production database change is authorized by the sprint approval a
 - Supabase quoted `$0.01344/hour` for a preview branch and cost confirmation was accepted.
 - Branch creation was rejected because branching requires the Pro plan; no preview branch was created and no branch charge was incurred.
 - Production was not used as a substitute test target.
-- Added a reproducible PGlite integration test that applies all 24 checked-in migrations from the minimal Supabase platform baseline and verifies session completion/idempotency, one Timeline event, retention of legacy Timeline rows, reflection summary versioning, atomic resource/client-completion records, and cross-tenant RLS rejection.
+- Added a reproducible PGlite integration test that applies all checked-in migrations from the minimal Supabase platform baseline and verifies session completion/idempotency, one Timeline event, retention of legacy Timeline rows, reflection summary versioning, atomic resource/client-completion records, and cross-tenant RLS rejection.
 - A hosted authenticated workflow and signed provider delivery remain required before production approval.
 
 ### 26 July 2026 — Closeout gate rechecked
@@ -210,3 +210,10 @@ No destructive production database change is authorized by the sprint approval a
 - The second project contains active course data and was not repurposed as a staging database.
 - Current production advisors and the 18-entry migration ledger were recorded read-only; no production mutation was performed.
 - Sprint One remains blocked only on an isolated hosted Supabase environment, post-migration advisors, and authenticated/provider workflow verification.
+
+### 26 July 2026 — Hosted branch validation
+
+- Upgraded the Mindworks Supabase organization to Pro and created a data-free development branch.
+- The first hosted migration run exposed a missing historical dependency: `public.integrations` had been created manually before the repository's migration history began.
+- Added an idempotent, backfilled baseline migration immediately before the first tracked integrations migration.
+- Removed the test-only integrations bootstrap so the local integration suite now proves that the repository itself can build the application schema from a clean Supabase platform baseline.
