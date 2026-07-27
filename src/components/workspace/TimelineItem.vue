@@ -49,13 +49,13 @@ const props = defineProps({
 const typeClasses = computed(() => {
   const t = props.type.toLowerCase();
   if (t.includes('session')) {
-    return { emoji: '👤', icon: 'bg-action-link-surface text-action-link border-action-link/20' };
+    return { emoji: '👤', icon: 'bg-state-success-surface text-state-success border-state-success/20' };
   } else if (t.includes('summary')) {
-    return { emoji: '📋', icon: 'bg-state-success-surface text-state-success border-state-success/20' };
+    return { emoji: '📋', icon: 'bg-state-selected text-action-link border-action-link/20' };
   } else if (t.includes('document') || t.includes('amended')) {
     return { emoji: '📄', icon: 'bg-surface-subtle text-ink-secondary border-border' };
   } else if (t.includes('supervision')) {
-    return { emoji: '✨', icon: 'bg-state-danger-surface text-state-danger border-state-danger/20' };
+    return { emoji: '✨', icon: 'bg-surface-muted text-ink-secondary border-border' };
   } else if (t.includes('measure')) {
     return { emoji: '📊', icon: 'bg-state-warning-surface text-state-warning border-state-warning/20' };
   }

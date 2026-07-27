@@ -9,6 +9,12 @@ export const mockClient = {
   outstanding_homework: 'Values exploration worksheet',
   supervision_actions: 'Discuss countertransference in next session',
   docs_awaiting_review: 0,
+  attention_items: [
+    { id: 1, label: 'Next Session', status: 'upcoming', description: 'Tomorrow 2:00 PM', priority: null, due: null },
+    { id: 2, label: 'Homework Outstanding', status: 'homework', description: 'Review worksheet', priority: null, due: 'Due today' },
+    { id: 3, label: 'PHQ-9 Improving', status: 'measure', description: 'Mild symptoms decreasing', priority: null, due: null },
+    { id: 4, label: 'Supervision Action', status: 'supervision', description: 'Review formulation', priority: 'High', due: 'By Friday' }
+  ],
   recent_sessions: [
     { id: 1, date: '2026-07-21', type: 'Individual Therapy', note: 'Explored core beliefs.' },
     { id: 2, date: '2026-07-14', type: 'Individual Therapy', note: 'Initial assessment completed.' }

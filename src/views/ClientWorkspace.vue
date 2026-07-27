@@ -42,7 +42,7 @@
                     <span class="text-xl">{{ goal.status === 'Completed' ? '✅' : '🎯' }}</span>
                     <div class="flex-1">
                       <p class="text-body-sm text-ink" :class="{ 'line-through text-ink-muted': goal.status === 'Completed' }">{{ goal.text }}</p>
-                      <span class="text-caption" :class="goal.status === 'Completed' ? 'text-state-success' : 'text-state-warning'">{{ goal.status }}</span>
+                      <StatusBadge :status="goal.status === 'Completed' ? 'success' : 'pending'" :label="goal.status" />
                     </div>
                   </div>
                 </div>
@@ -53,12 +53,19 @@
                 <section class="bg-surface-elevated border border-border-muted rounded-panel p-inline-lg">
                   <h3 class="text-h3 font-semibold text-ink mb-stack-md pt-stack-md">Recent Documents</h3>
                   <div class="space-y-stack-sm pb-stack-md">
-                    <div v-for="doc in mockClient.recent_documents" :key="doc.id" class="flex items-center justify-between p-inline-md border border-border rounded-control bg-surface hover:border-action-link transition-colors cursor-pointer group">
-                      <div class="flex flex-col min-w-0">
-                        <span class="text-body-sm text-ink truncate group-hover:text-action-link font-medium">{{ doc.name }}</span>
-                        <span class="text-caption text-ink-muted">{{ doc.date }}</span>
+                    <div v-for="doc in mockClient.recent_documents" :key="doc.id" 
+                         class="flex items-center justify-between p-inline-md border border-border rounded-control bg-surface hover:border-action-link transition-colors cursor-pointer group"
+                         tabindex="0"
+                         role="button"
+                         :aria-label="`Open document ${doc.name}`">
+                      <div class="flex flex-col min-w-0 flex-1">
+                        <div class="flex items-center gap-inline-sm flex-wrap">
+                          <span class="text-body-sm text-ink truncate group-hover:text-action-link font-medium">{{ doc.name }}</span>
+                          <StatusBadge :status="doc.status" />
+                        </div>
+                        <span class="text-caption text-ink-muted mt-0.5">{{ doc.date }}</span>
                       </div>
-                      <StatusBadge :status="doc.status" />
+                      <span class="text-ink-subtle group-hover:text-action-link ml-2">→</span>
                     </div>
                   </div>
                 </section>
