@@ -19,7 +19,8 @@
     "openai": "^6.15.0",
     "pinia": "^2.1.7",
     "serialize-javascript": "^7.0.7",
-    "vue": "^3.4.0"
+    "vue": "^3.4.0",
+    "vue-router": "^4.6.4"
   },
   "devDependencies": {
     "@electric-sql/pglite": "^0.5.4",

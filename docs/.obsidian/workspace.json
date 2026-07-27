@@ -185,8 +185,12 @@
   },
   "active": "904328b0830fe85b",
   "lastOpenFiles": [
-    "context-pack/01-Architecture-Decisions.md",
+    "context-pack/07-Implementation-Roadmap.md",
+    "context-pack/08-Sprint-One-Production-Hardening.md",
     "context-pack/02-Current-State.md",
+    "design/04-Interaction-States-and-Focus.md",
+    "context-pack/06-Phase-Two-Client-Workspace-Sprint.md",
+    "context-pack/01-Architecture-Decisions.md",
     "zoom-local-test-setup.md",
     "supabase-auth-rollout.md",
     "calendly-setup.md",

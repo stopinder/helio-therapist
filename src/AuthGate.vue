@@ -40,7 +40,9 @@
 
   <ClientCompletion v-else-if="isClientCompletion" />
 
-  <App v-else-if="session" />
+  <AppShell v-else-if="session">
+    <router-view />
+  </AppShell>
 
   <main v-else class="min-h-screen bg-surface-muted flex items-center justify-center px-4 py-8 sm:p-6">
     <section class="w-full max-w-md rounded-panel bg-surface-elevated border border-border-muted  p-6 sm:p-8">
@@ -144,7 +146,7 @@
 
 <script setup>
 import { onMounted, onUnmounted, ref } from 'vue'
-import App from './App.vue'
+import AppShell from './layouts/AppShell.vue'
 import ClientCompletion from './components/ClientCompletion.vue'
 import { supabase } from './lib/supabase.js'
 
