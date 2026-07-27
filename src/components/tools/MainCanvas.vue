@@ -103,12 +103,21 @@ const editingFocus = ref(false)
 const draftFocus = ref('')
 const allSessions = ref([])
 const startingSession = ref(false)
-const openSessionWorkspace = () => {
+const openSessionWorkspace = async () => {
   if (props.selectedClient) {
-    router.push({
-      name: 'SessionWorkspace',
-      params: { clientId: props.selectedClient.id, sessionId: 's123' }
-    })
+    startingSession.value = true
+    sessionError.value = ''
+    try {
+      const { session } = await createOrResumeSession(props.selectedClient.id)
+      router.push({
+        name: 'SessionWorkspace',
+        params: { clientId: props.selectedClient.id, sessionId: session.id }
+      })
+    } catch (error) {
+      sessionError.value = error?.message || 'The session workspace could not be opened.'
+    } finally {
+      startingSession.value = false
+    }
   }
 }
 
