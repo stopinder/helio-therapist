@@ -26,14 +26,19 @@ const displayLabel = computed(() => props.label || props.status);
 const statusClasses = computed(() => {
   const s = props.status.toLowerCase();
   switch (s) {
-    // Workflow Status
-    case 'not started':
+    // Clinical Record Workflow
+    case 'not_started':
       return 'bg-surface-muted text-ink-subtle border-border opacity-60';
-    case 'in progress':
+    case 'draft':
+    case 'amendment_draft':
+      return 'bg-surface-muted text-ink-secondary border-border';
+    case 'ready_for_review':
+    case 'amendment_ready_for_review':
       return 'bg-state-selected text-action-link border-action-link/20 animate-pulse';
-    case 'complete':
+    case 'approved_record':
+    case 'amendment_approved':
       return 'bg-state-success-surface text-state-success border-state-success/20';
-    
+
     // Client Status
     case 'active':
       return 'bg-state-success-surface text-state-success border-state-success/20';
