@@ -62,9 +62,9 @@
     <div v-if="editingSession" class="modal-backdrop" @click.self="requestCloseEditor">
       <article class="session-editor" role="dialog" aria-modal="true" aria-labelledby="session-title">
         <header><div><p class="eyebrow">{{ sessionStatusLabel(editingSession) === 'Closed' ? 'Closed session' : editingSession.status === 'completed' ? 'Session complete' : 'Active session' }}</p><h2 id="session-title">{{ formatDate(editingSession.startedAt) }}</h2></div><button class="close" @click="requestCloseEditor" aria-label="Close">×</button></header>
-        <section v-if="editingSession.zoomState" class="zoom-session" :class="{ warn: editingSession.zoomState === 'unavailable' }">
-          <div><p class="eyebrow">Zoom</p><strong>{{ zoomMeetingLabel(editingSession) }}</strong><small>{{ zoomMeetingDescription(editingSession) }}</small></div>
-          <button v-if="editingSession.zoomStartUrl" class="secondary" @click="openZoomMeeting(editingSession)">Open Zoom</button>
+        <section v-if="editingSession.videoState" class="video-session" :class="{ warn: editingSession.videoState === 'unavailable' }">
+          <div><p class="eyebrow">{{ videoProviderLabel(editingSession) }}</p><strong>{{ videoMeetingLabel(editingSession) }}</strong><small>{{ videoMeetingDescription(editingSession) }}</small></div>
+          <button v-if="editingSession.meetingUrl" class="secondary" @click="openVideoMeeting(editingSession)">Open {{ videoProviderLabel(editingSession) }}</button>
         </section>
         <nav class="session-tabs" aria-label="Session material"><button v-for="tab in sessionTabs" :key="tab.id" :class="{ active: sessionWorkspaceTab === tab.id }" @click="sessionWorkspaceTab = tab.id">{{ tab.label }}</button></nav>
         <section v-if="sessionWorkspaceTab === 'overview'" class="session-overview"><section v-if="selectedClient.note" class="session-context"><p class="eyebrow">Current focus</p><p>{{ selectedClient.note }}</p></section><section class="session-summary-card"><p class="eyebrow">Session overview</p><h3>{{ sessionStatusLabel(editingSession) }}</h3><p>{{ sessionOverviewCopy(editingSession) }}</p><button class="secondary" @click="sessionWorkspaceTab = 'clinical-note'">Open clinical note</button></section></section>
@@ -87,7 +87,7 @@ import { useRouter } from 'vue-router'
 import { authenticatedFetch } from '../../lib/api.js'
 import { assignmentCompletionUrl, timelineEventPresentation } from '../../lib/clinicalExchange.js'
 import { completeSessionRecord, createOrResumeSession, listSessions, migrateLegacySessions, saveSessionDraft } from '../../lib/sessions.js'
-import { VIDEO_PROVIDERS } from '../../mocks/sessionWorkspaceData.js'
+import { videoProviderService } from '../../lib/videoProvider.js'
 import ResourcePicker from './ResourcePicker.vue'
 
 const props = defineProps({ selectedClient: { type: Object, default: null } })
@@ -113,14 +113,14 @@ const openSessionWorkspace = () => {
 }
 
 const joinVideo = (appointment) => {
-  if (appointment?.meetingLink) {
-    window.open(appointment.meetingLink, '_blank', 'noopener,noreferrer')
-  }
+  videoProviderService.openMeeting({
+    videoProvider: appointment?.videoProvider || 'custom',
+    meetingUrl: appointment?.meetingLink
+  })
 }
 
 const videoProviderLabel = (appointment) => {
-  const provider = appointment?.videoProvider || 'custom'
-  return VIDEO_PROVIDERS[provider] || 'Video'
+  return videoProviderService.getProviderLabel(appointment?.videoProvider || 'custom')
 }
 const sessionsLoading = ref(false)
 const sessionSaving = ref(false)
@@ -189,38 +189,45 @@ async function startSession() {
   } finally {
     if (resumed || !session) startingSession.value = false
   }
-  let zoomWindow = null
-  try { zoomWindow = window.open('', '_blank'); if (zoomWindow) zoomWindow.opener = null } catch {}
+  let videoWindow = null
+  try { videoWindow = window.open('', '_blank'); if (videoWindow) videoWindow.opener = null } catch {}
   try {
-    const response = await authenticatedFetch('/api/zoom/start-session', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ clientId: String(session.clientId), sessionRef: String(session.id) }) })
+    const response = await authenticatedFetch('/api/video/start-session', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ clientId: String(session.clientId), sessionRef: String(session.id) }) })
     const data = await response.json().catch(() => ({}))
-    if (!response.ok) throw new Error(data.error || 'Zoom could not prepare a meeting for this session.')
+    if (!response.ok) throw new Error(data.error || 'The video consultation could not be prepared for this session.')
     session = await saveSessionDraft(session, draftNotes.value, { state: 'ready', meetingId: data.meetingId, error: '' })
-    session.zoomStartUrl = data.startUrl
+    session.meetingUrl = data.startUrl
     replaceSession(session)
-    if (zoomWindow) zoomWindow.location.replace(data.startUrl); else openZoomMeeting(session)
+    if (videoWindow) videoWindow.location.replace(data.startUrl); else openVideoMeeting(session)
   } catch (error) {
-    if (zoomWindow && !zoomWindow.closed) zoomWindow.close()
-    const message = error?.message || 'Zoom could not be opened. You can continue with your notes and try Zoom again from Settings.'
+    if (videoWindow && !videoWindow.closed) videoWindow.close()
+    const message = error?.message || 'The video session could not be opened. You can continue with your notes and try joining again from the header.'
     try {
       session = await saveSessionDraft(session, draftNotes.value, { state: 'unavailable', error: message })
       replaceSession(session)
     } catch {
-      session.zoomState = 'unavailable'
-      session.zoomError = message
+      session.videoState = 'unavailable'
+      session.videoError = message
       replaceSession(session)
     }
   } finally { startingSession.value = false }
 }
 defineExpose({ startSession })
-function openZoomMeeting(session) {
-  if (!session?.zoomStartUrl) return
-  const popup = window.open(session.zoomStartUrl, '_blank')
-  if (popup) popup.opener = null
-  else { session.zoomError = 'Your browser blocked Zoom. Allow pop-ups, then select Open Zoom.' }
+function openVideoMeeting(session) {
+  videoProviderService.openMeeting(session)
 }
-function zoomMeetingLabel(session) { if (session.zoomState === 'preparing') return 'Preparing your Zoom meeting…'; if (session.zoomState === 'ready') return 'Zoom meeting ready'; return 'Zoom was not opened' }
-function zoomMeetingDescription(session) { if (session.zoomState === 'preparing') return 'Helio is creating a Zoom meeting and linking it to this session.'; if (session.zoomState === 'ready') return 'Zoom opens separately with its full meeting controls. Helio will use this link to route the transcript back to this session.'; return session.zoomError || 'You can continue taking therapist notes. Reconnect Zoom in Settings before the next session.' }
+function videoMeetingLabel(session) { 
+  const provider = videoProviderLabel(session)
+  if (session.videoState === 'preparing') return `Preparing your ${provider} meeting…`; 
+  if (session.videoState === 'ready') return `${provider} meeting ready`; 
+  return `${provider} was not opened` 
+}
+function videoMeetingDescription(session) { 
+  const provider = videoProviderLabel(session)
+  if (session.videoState === 'preparing') return `Helio is creating a ${provider} meeting and linking it to this session.`; 
+  if (session.videoState === 'ready') return `${provider} opens separately with its full meeting controls. Helio will use this link to route the transcript back to this session.`; 
+  return session.videoError || `You can continue taking therapist notes. Reconnect your ${provider} account in Settings before the next session.` 
+}
 function openSession(session) { editingSession.value = session; draftNotes.value = session.notes || ''; sessionWorkspaceTab.value = 'overview'; activeTab.value = 'sessions' }
 function openPicker() { pickerOpen.value = true }
 async function handleResourceSent({ assignments, clientAccessTokens }) { pickerOpen.value = false; completionLinks.value = assignments.map((assignment, index) => ({ title: assignment.sent_snapshot?.title || 'Resource', url: assignmentCompletionUrl(clientAccessTokens[index]) })); await loadClinicalTimeline() }
@@ -340,7 +347,7 @@ onUnmounted(() => { window.removeEventListener('helio:open-session', handleOpenS
 .client-record{max-width:68rem;margin:0 auto;color:var(--text-primary)}.record-header{display:flex;align-items:center;justify-content:space-between;gap:1rem;background:var(--surface-elevated);border:1px solid var(--border-muted);border-radius:.9rem;padding:1.2rem 1.4rem}.eyebrow{text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);font-size:.7rem;font-weight:700;margin:0 0 .25rem}.record-header h1{display:inline;font-size:1.6rem;margin:0}.status{display:inline-block;margin-left:.65rem;background:var(--state-success-surface);color:var(--state-success);border-radius:999px;padding:.2rem .5rem;font-size:.7rem;font-weight:700}.primary,.secondary,.text-action{border-radius:.55rem;padding:.6rem .9rem;font-weight:600}.primary{border:1px solid var(--action-link);background:var(--action-link);color:var(--surface-elevated)}.secondary{border:1px solid var(--border);background:var(--surface-elevated);color:var(--text-secondary)}.start-session{padding:.75rem 1rem}.text-action{border:0;background:transparent;color:var(--action-link);padding:.25rem .1rem}.record-tabs{display:flex;gap:.25rem;border-bottom:1px solid var(--border-muted);margin:1rem 0}.session-tabs{display:flex;gap:.25rem;overflow:auto;border-bottom:1px solid var(--border-muted);margin:1rem 0}.session-tabs button{border:0;background:transparent;padding:.6rem .7rem;color:var(--text-muted);font-weight:600;border-bottom:2px solid transparent;white-space:nowrap}.session-tabs button.active{color:var(--action-link-hover);border-color:var(--action-link)}.record-tabs button{border:0;background:transparent;padding:.7rem .9rem;color:var(--text-muted);font-weight:600;border-bottom:2px solid transparent}.record-tabs button.active{color:var(--action-link-hover);border-color:var(--action-link)}.focus-card,.latest-card,.appointment-card,.recent-card,.section-card{background:var(--surface-elevated);border:1px solid var(--border-muted);border-radius:.8rem;padding:1.2rem}.card-heading,.section-heading{display:flex;justify-content:space-between;align-items:flex-start;gap:1rem}.card-heading h2,.section-heading h2{margin:0;font-size:1.15rem}.focus-copy,.summary-copy{white-space:pre-wrap;line-height:1.6;margin:.85rem 0 0}.quiet-copy{color:var(--text-muted);margin:.75rem 0 0}.focus-card textarea,.session-editor textarea{width:100%;min-height:7rem;resize:vertical;border:1px solid var(--border);border-radius:.65rem;padding:.8rem;outline:none}.focus-card textarea:focus,.session-editor textarea:focus{border-color:var(--border-strong);box-shadow:0 0 0 3px var(--state-selected)}.inline-actions{display:flex;justify-content:flex-end;gap:.5rem;margin-top:.7rem}.overview-grid{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(14rem,.8fr);gap:.8rem;margin-top:.8rem}.session-status{color:var(--state-success);font-size:.8rem;font-weight:700;margin:.75rem 0 .3rem}.appointment-card h2{font-size:1rem;margin:.45rem 0;color:var(--text-secondary)}.continuity-link{margin-top:.8rem;display:flex;justify-content:space-between;align-items:center;gap:1rem;width:100%;text-align:left;background:var(--surface-muted);border:1px solid var(--state-selected);border-radius:.8rem;padding:1rem;color:var(--text-primary)}.continuity-link span:first-child{display:flex;flex-direction:column}.continuity-link small{color:var(--text-muted);margin-top:.2rem}.recent-card{margin-top:.8rem}.section-heading p{margin:.25rem 0 1rem;color:var(--text-muted);font-size:.85rem}.session-row{display:flex;justify-content:space-between;align-items:center;width:100%;border:0;border-top:1px solid var(--border-muted);background:var(--surface-elevated);padding:.85rem .2rem;text-align:left;color:var(--text-secondary)}.session-row span:first-child{display:flex;flex-direction:column}.session-row small{color:var(--text-muted);margin-top:.15rem}.empty-inline{border-top:1px solid var(--border-muted);padding:1rem 0;color:var(--text-muted)}.empty-state{text-align:center;color:var(--text-muted);padding:2.2rem}.empty-state div{font-size:2rem}.empty-state h2,.empty-state h3{color:var(--text-secondary);margin:.5rem}.empty-state p{max-width:38rem;margin:.4rem auto;line-height:1.55}.large{min-height:24rem;display:flex;flex-direction:column;justify-content:center;align-items:center}.modal-backdrop{position:fixed;inset:0;z-index:80;background:var(--surface-backdrop);display:flex;align-items:center;justify-content:center;padding:1rem}.session-editor{width:min(46rem,100%);max-height:90vh;overflow:auto;background:var(--surface-elevated);border-radius:1rem;padding:1.3rem;box-shadow:0 20px 60px rgb(24 32 28 / 0.12)}.session-editor header{display:flex;justify-content:space-between}.session-editor h2{margin:.1rem 0 1rem}.close{border:0;background:transparent;font-size:1.7rem;color:var(--text-muted)}.session-editor label{display:block;font-weight:700;margin-bottom:.4rem}.session-editor textarea{min-height:15rem}.session-overview,.source-material,.session-summary-card{padding:.95rem;background:var(--surface-muted);border:1px solid var(--border-muted);border-radius:.7rem}.session-summary-card h3,.source-material h3{margin:.15rem 0 .45rem}.session-summary-card p,.source-material p{line-height:1.5;color:var(--text-secondary)}.note-guidance{margin:.3rem 0 .7rem;color:var(--text-muted);font-size:.85rem}.ai-boundary{background:var(--surface-muted);border:1px solid var(--border-muted);border-radius:.65rem;padding:.8rem;margin-top:.8rem}.ai-boundary strong{font-size:.8rem}.ai-boundary p{font-size:.78rem;color:var(--text-muted);margin:.25rem 0}.session-editor footer{display:flex;justify-content:flex-end;gap:.5rem;margin-top:1rem}.note-label{display:flex;align-items:center;justify-content:space-between;gap:1rem}.dictate{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;min-height:2.75rem;padding:.7rem 1rem;border:1px solid var(--state-danger);border-radius:.65rem;background:var(--state-danger);color:var(--surface-elevated);font-weight:700;box-shadow:0 1px 2px rgb(24 32 28 / 0.05)}.dictate:disabled{opacity:.65;cursor:wait}.dictate.recording{background:var(--state-danger);border-color:var(--state-danger)}.record-dot{width:.75rem;height:.75rem;border-radius:50%;background:currentColor;box-shadow:0 0 0 0 transparent}.dictate.recording .record-dot{animation:pulse 1.25s infinite}.dictation-help{margin:.45rem 0 .7rem;font-size:.78rem;color:var(--text-muted);line-height:1.4}.dictation-help.recording,.dictation-help.error{color:var(--state-danger);font-weight:600}@keyframes pulse{50%{box-shadow:0 0 0 .45rem transparent}}.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}@media(max-width:700px){.record-header{align-items:flex-start}.record-header h1{font-size:1.35rem}.record-tabs{overflow:auto}.record-tabs button{padding:.65rem .7rem;white-space:nowrap}.overview-grid{grid-template-columns:1fr}.card-heading,.section-heading{flex-direction:column}.modal-backdrop{padding:0;align-items:flex-end}.session-editor{border-radius:1rem 1rem 0 0;max-height:94vh}.session-editor footer{flex-wrap:wrap}.session-editor footer button{flex:1}.note-label{align-items:flex-start;flex-direction:column}.dictate{width:100%}}
 .timeline-card{margin-top:.8rem;background:var(--surface-elevated);border:1px solid var(--border-muted);border-radius:.8rem;padding:1.2rem}.timeline-event{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:.75rem;width:100%;border:0;border-top:1px solid var(--border-muted);background:var(--surface-elevated);padding:.9rem 0;text-align:left;color:var(--text-secondary)}.timeline-event:hover{background:var(--surface-muted)}.timeline-event span:nth-child(2){display:flex;flex-direction:column}.timeline-event small{color:var(--text-muted);margin-top:.15rem}.timeline-marker{display:grid;place-items:center;width:2rem;height:2rem;border-radius:50%;background:var(--state-selected);color:var(--action-link-hover)}
 .timeline-actions,.session-actions{display:flex;flex-wrap:wrap;gap:.45rem}.timeline-actions{justify-content:flex-end}.timeline-actions .secondary,.session-actions .secondary{font-size:.78rem;padding:.5rem .65rem}.session-actions{align-items:center;margin:.8rem 0;padding:.7rem 0;border-top:1px solid var(--border-muted);border-bottom:1px solid var(--border-muted)}.session-actions span{width:100%;font-size:.72rem;text-transform:uppercase;letter-spacing:.07em;font-weight:700;color:var(--text-muted)}
-.zoom-session{display:flex;justify-content:space-between;align-items:center;gap:1rem;margin:0 0 1rem;padding:.9rem 1rem;border:1px solid var(--state-selected);border-radius:.7rem;background:var(--surface-muted)}.zoom-session.warn{border-color:var(--state-danger);background:var(--state-danger-surface)}.zoom-session strong,.zoom-session small{display:block}.zoom-session small{margin-top:.25rem;color:var(--text-muted);font-size:.8rem;line-height:1.4}.zoom-session.warn small{color:var(--state-danger)}.zoom-session .secondary{flex:0 0 auto;white-space:nowrap}@media(max-width:700px){.zoom-session{align-items:stretch;flex-direction:column}.zoom-session .secondary{width:100%}}
+.video-session{display:flex;justify-content:space-between;align-items:center;gap:1rem;margin:0 0 1rem;padding:.9rem 1rem;border:1px solid var(--state-selected);border-radius:.7rem;background:var(--surface-muted)}.video-session.warn{border-color:var(--state-danger);background:var(--state-danger-surface)}.video-session strong,.video-session small{display:block}.video-session small{margin-top:.25rem;color:var(--text-muted);font-size:.8rem;line-height:1.4}.video-session.warn small{color:var(--state-danger)}.video-session .secondary{flex:0 0 auto;white-space:nowrap}@media(max-width:700px){.video-session{align-items:stretch;flex-direction:column}.video-session .secondary{width:100%}}
 .preparation-card{display:flex;align-items:center;justify-content:space-between;gap:1rem;margin-bottom:.8rem;padding:1.1rem 1.2rem;background:var(--surface-muted);border:1px solid var(--border-muted);border-radius:.8rem}.preparation-card h2{font-size:1.05rem;margin:.2rem 0}.preparation-card p:last-child{margin:.35rem 0 0;color:var(--text-muted);line-height:1.45}@media(max-width:700px){.preparation-card{flex-direction:column;align-items:stretch}.preparation-card .primary{width:100%}}
 .share-link{width:min(35rem,100%);background:var(--surface-elevated);border-radius:1rem;padding:1.3rem}.share-link h2{margin:.2rem 0 .5rem}.share-link p{color:var(--text-muted);line-height:1.5}.share-link label{display:block;margin:.75rem 0;color:var(--text-secondary);font-size:.85rem}.share-link label strong{display:block;margin-bottom:.35rem}.share-link input{box-sizing:border-box;width:100%;padding:.75rem;border:1px solid var(--border);border-radius:.6rem;font:inherit}.share-link div{display:flex;justify-content:flex-end;gap:.5rem;margin-top:1rem}
 .session-context{background:var(--surface-muted);border:1px solid var(--border-muted);border-radius:.65rem;padding:.8rem;margin:0 0 .85rem}.session-context p:last-child{white-space:pre-wrap;color:var(--text-secondary);line-height:1.5;margin:.25rem 0 0}.preparation-carry-forward{padding-top:.55rem;border-top:1px solid var(--state-selected)}.preparation-carry-forward span{color:var(--text-muted)}

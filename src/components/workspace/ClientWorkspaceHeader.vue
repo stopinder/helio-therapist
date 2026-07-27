@@ -41,6 +41,7 @@
           <span v-else>{{ videoLabel }}</span>
         </button>
         <button 
+          v-if="!isSessionWorkspace"
           @click="openSession"
           class="px-inline-md py-stack-xs bg-action-link text-body-sm font-medium text-on-action rounded-control hover:bg-action-link-hover transition-colors shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-state-selected ring-offset-2"
         >
@@ -53,9 +54,10 @@
 
 <script setup>
 import { computed } from 'vue';
-import { useRouter } from 'vue-router';
+import { useRouter, useRoute } from 'vue-router';
 import StatusBadge from './StatusBadge.vue';
-import { mockSession, VIDEO_PROVIDERS } from '../../mocks/sessionWorkspaceData.js';
+import { mockSession } from '../../mocks/sessionWorkspaceData.js';
+import { videoProviderService } from '../../lib/videoProvider.js';
 
 const props = defineProps({
   client: {
@@ -65,6 +67,9 @@ const props = defineProps({
 });
 
 const router = useRouter();
+const route = useRoute();
+
+const isSessionWorkspace = computed(() => route.name === 'SessionWorkspace');
 
 const openSession = () => {
   router.push({
@@ -77,16 +82,11 @@ const openSession = () => {
 };
 
 const joinMeeting = () => {
-  if (mockSession.meetingUrl) {
-    window.open(mockSession.meetingUrl, '_blank', 'noopener,noreferrer');
-  }
+  videoProviderService.openMeeting(mockSession);
 };
 
 const videoLabel = computed(() => {
-  const provider = mockSession.videoProvider || 'custom';
-  const providerName = VIDEO_PROVIDERS[provider] || 'Video';
-  const action = mockSession.status === 'In Progress' ? 'Return to' : 'Join';
-  return `${action} ${providerName} Session`;
+  return videoProviderService.getVideoActionLabel(mockSession);
 });
 
 const clientInitials = computed(() => {

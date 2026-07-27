@@ -82,7 +82,7 @@ import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { authenticatedFetch } from '../lib/api.js'
 import { listSessions } from '../lib/sessions.js'
-import { VIDEO_PROVIDERS } from '../mocks/sessionWorkspaceData.js'
+import { videoProviderService } from '../lib/videoProvider.js'
 
 const props = defineProps({
   clients: { type: Array, default: () => [] },
@@ -203,15 +203,18 @@ function openClientWorkspace(event) {
 }
 
 const joinVideo = (event) => {
-  if (event.meetingLink) {
-    window.open(event.meetingLink, '_blank', 'noopener,noreferrer')
-  }
+  videoProviderService.openMeeting({
+    videoProvider: event.videoProvider || 'custom',
+    meetingUrl: event.meetingLink
+  })
 }
 
 const videoActionLabel = (event) => {
-  const provider = event.videoProvider || 'custom'
-  const providerName = VIDEO_PROVIDERS[provider] || 'Video'
-  return `Join ${providerName} Session`
+  return videoProviderService.getVideoActionLabel({
+    videoProvider: event.videoProvider || 'custom',
+    meetingUrl: event.meetingLink,
+    status: 'Scheduled' // Default for calendar events
+  })
 }
 function closeEventPopover() { selectedEvent.value = null; eventPopoverStyle.value = {} }
 function positionEventPopover(trigger) {

@@ -76,22 +76,22 @@
             </div>
           </div>
 
-          <!-- Zoom Session Controls -->
+          <!-- Session Controls -->
           <div class="mt-4 border-t border-border-muted pt-3 px-2 space-y-2">
             <div class="text-caption font-semibold text-ink-secondary uppercase tracking-wide">
               Session Controls
             </div>
             <button
                 v-if="!isInSession"
-                class="w-full text-body-sm px-3 py-1.5 rounded-control border border-border text-on-action bg-action-link hover:bg-action-link-hover transition-colors duration-standard ease-out"
-                @click="$emit('join-zoom')"
+                class="w-full text-body-sm px-3 py-1.5 rounded-control border border-border text-on-action bg-action-link hover:bg-action-link-hover transition-colors duration-standard ease-out focus-visible:ring-2 focus-visible:ring-state-focus-ring"
+                @click="$emit('open-session')"
             >
-              Join Zoom Session
+              Open Session Workspace
             </button>
             <button
                 v-else
-                class="w-full text-body-sm px-3 py-1.5 rounded-control border border-border text-on-action bg-state-danger hover:bg-state-danger transition-colors duration-standard ease-out"
-                @click="$emit('end-zoom')"
+                class="w-full text-body-sm px-3 py-1.5 rounded-control border border-border text-on-action bg-state-danger hover:bg-state-danger transition-colors duration-standard ease-out focus-visible:ring-2 focus-visible:ring-state-danger"
+                @click="$emit('end-session')"
             >
               End Session
             </button>

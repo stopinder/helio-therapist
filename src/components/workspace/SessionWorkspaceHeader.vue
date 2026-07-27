@@ -56,7 +56,7 @@
 import { ref, onMounted, onUnmounted, computed } from 'vue';
 import { RouterLink } from 'vue-router';
 import StatusBadge from './StatusBadge.vue';
-import { VIDEO_PROVIDERS } from '../../mocks/sessionWorkspaceData.js';
+import { videoProviderService } from '../../lib/videoProvider.js';
 
 const props = defineProps({
   session: {
@@ -82,16 +82,11 @@ const incrementTimer = () => {
 };
 
 const joinMeeting = () => {
-  if (props.session.meetingUrl) {
-    window.open(props.session.meetingUrl, '_blank', 'noopener,noreferrer');
-  }
+  videoProviderService.openMeeting(props.session);
 };
 
 const videoLabel = computed(() => {
-  const provider = props.session.videoProvider || 'custom';
-  const providerName = VIDEO_PROVIDERS[provider] || 'Video';
-  const action = props.session.status === 'In Progress' ? 'Return to' : 'Join';
-  return `${action} ${providerName} Session`;
+  return videoProviderService.getVideoActionLabel(props.session);
 });
 
 onMounted(() => {

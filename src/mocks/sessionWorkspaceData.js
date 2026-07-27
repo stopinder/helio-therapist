@@ -10,6 +10,8 @@ export const mockSession = {
   meetingUrl: 'https://zoom.us/j/123456789',
   isInPerson: false,
   elapsedTime: '00:42:15',
+  videoState: 'ready',
+  videoError: '',
   transcript: [
     { id: 1, speaker: 'Therapist', timestamp: '00:00:05', text: 'Good afternoon, Alex. How are you feeling today?' },
     { id: 2, speaker: 'Client', timestamp: '00:00:12', text: 'I\'m okay, I guess. A bit anxious about the meeting tomorrow.' },

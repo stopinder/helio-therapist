@@ -13,8 +13,8 @@
           :is-syncing="isSyncing"
           :active-template="activeTemplate"
           @select-client="handleSelectClient"
-          @join-zoom="joinZoom"
-          @end-zoom="endZoom"
+          @open-session="openSession"
+          @end-session="endSession"
           @sync-transcript="syncTranscript"
           @open-tool="openTool"
           @open-reflection="openReflection"
@@ -472,8 +472,8 @@ const openTool = (payload) => {
   }
 }
 
-const joinZoom = () => (isInSession.value = true)
-const endZoom = () => (isInSession.value = false)
+const openSession = () => (isInSession.value = true)
+const endSession = () => (isInSession.value = false)
 
 const syncTranscript = async () => {
   if (!isInSession.value) return

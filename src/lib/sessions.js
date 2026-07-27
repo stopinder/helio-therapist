@@ -28,10 +28,10 @@ export function presentSession(row) {
     notesStatus: row.notes_status,
     version: row.version,
     legacyRef: row.legacy_ref,
-    zoomState: row.zoom_state,
-    zoomMeetingId: row.zoom_meeting_id,
-    zoomError: row.zoom_error || '',
-    zoomStartUrl: null
+    videoState: row.zoom_state,
+    videoMeetingId: row.zoom_meeting_id,
+    videoError: row.zoom_error || '',
+    meetingUrl: null
   }
 }
 
@@ -73,8 +73,7 @@ export async function createOrResumeSession(clientId) {
       status: 'in_progress',
       workflow_status: 'no_further_action',
       notes: '',
-      notes_status: 'draft',
-      zoom_state: 'preparing'
+      notes_status: 'draft'
     })
     .select(fields)
     .single()
@@ -93,15 +92,15 @@ export async function createOrResumeSession(clientId) {
   return { session: presentSession(data), resumed: false }
 }
 
-export async function saveSessionDraft(session, notes, zoom = {}) {
+export async function saveSessionDraft(session, notes, video = {}) {
   const client = requireSupabase()
   const { data, error } = await client.rpc('save_session_draft', {
     p_session_id: session.id,
     p_notes: notes || '',
     p_expected_version: session.version,
-    p_zoom_state: zoom.state || null,
-    p_zoom_meeting_id: zoom.meetingId || null,
-    p_zoom_error: zoom.error ?? null
+    p_zoom_state: video.state || null,
+    p_zoom_meeting_id: video.meetingId || null,
+    p_zoom_error: video.error ?? null
   })
   if (error?.code === '40001') {
     const conflict = new Error('This session changed in another tab. Reopen it before saving again.')

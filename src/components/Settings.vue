@@ -99,37 +99,36 @@
           </div>
         </div>
 
-        <!-- Zoom -->
+        <!-- Microsoft Teams (Mock) -->
         <div class="flex flex-col sm:flex-row sm:items-center justify-between p-4 border-b border-border-muted gap-4">
           <div class="flex items-start sm:items-center gap-4">
-            <div class="flex-shrink-0 w-10 h-10 rounded-panel bg-state-selected flex items-center justify-center border border-state-selected">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M15 13.5V10C15 8.89543 14.1046 8 13 8H5C3.89543 8 3 8.89543 3 10V16C3 17.1046 3.89543 18 5 18H13C14.1046 18 15 17.1046 15 16V14.5L19.5 18V10L15 13.5Z" fill="#2D8CFF"/>
-              </svg>
+            <div class="flex-shrink-0 w-10 h-10 rounded-panel bg-surface-subtle flex items-center justify-center border border-border-muted">
+              <span class="text-h2" aria-hidden="true">👥</span>
             </div>
             <div class="min-w-0 flex-1">
-              <div class="text-body font-medium text-ink break-words">Zoom</div>
-              <div class="text-body-sm break-words" :class="zoomStatus === 'Connected' ? 'text-state-success' : 'text-ink-subtle'">
-                {{ zoomStatus }}
-              </div>
+              <div class="text-body font-medium text-ink break-words">Microsoft Teams</div>
+              <div class="text-body-sm text-ink-subtle break-words">Not connected</div>
             </div>
           </div>
-          <div class="flex items-center gap-2 w-full sm:w-auto">
-            <template v-if="zoomStatus === 'Connected'">
-              <button @click="disconnectZoom" class="w-full sm:w-auto min-h-touch sm:min-h-0 px-4 py-2 sm:py-1.5 text-body-sm font-medium text-ink-muted hover:text-state-danger transition-colors duration-standard ease-out text-center">
-                Disconnect
-              </button>
-            </template>
-            <template v-else>
-              <button 
-                @click="connectZoom" 
-                :disabled="isConnecting"
-                class="w-full sm:w-auto min-h-touch sm:min-h-0 px-4 py-2 sm:py-1.5 text-body-sm font-medium text-action-link hover:bg-state-selected rounded-control transition-colors duration-standard ease-out border border-transparent hover:border-state-selected disabled:opacity-50 text-center"
-              >
-                {{ isConnecting ? 'Connecting...' : 'Connect' }}
-              </button>
-            </template>
+          <button class="w-full sm:w-auto min-h-touch sm:min-h-0 px-4 py-2 sm:py-1.5 text-body-sm font-medium text-action-link hover:bg-state-selected rounded-control transition-colors duration-standard ease-out border border-transparent hover:border-state-selected text-center" aria-label="Connect Microsoft Teams">
+            Connect
+          </button>
+        </div>
+
+        <!-- Google Meet (Mock) -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between p-4 border-b border-border-muted gap-4">
+          <div class="flex items-start sm:items-center gap-4">
+            <div class="flex-shrink-0 w-10 h-10 rounded-panel bg-surface-subtle flex items-center justify-center border border-border-muted">
+              <span class="text-h2" aria-hidden="true">🎥</span>
+            </div>
+            <div class="min-w-0 flex-1">
+              <div class="text-body font-medium text-ink break-words">Google Meet</div>
+              <div class="text-body-sm text-ink-subtle break-words">Not connected</div>
+            </div>
           </div>
+          <button class="w-full sm:w-auto min-h-touch sm:min-h-0 px-4 py-2 sm:py-1.5 text-body-sm font-medium text-action-link hover:bg-state-selected rounded-control transition-colors duration-standard ease-out border border-transparent hover:border-state-selected text-center" aria-label="Connect Google Meet">
+            Connect
+          </button>
         </div>
 
         <!-- Outlook Calendar -->
@@ -305,8 +304,6 @@ import { ref, onMounted } from 'vue'
 import { authenticatedFetch } from '../lib/api.js'
 import { supabase } from '../lib/supabase.js'
 
-const zoomStatus = ref('Not connected')
-const isConnecting = ref(false)
 const googleStatus = ref('Not connected')
 const googleEmail = ref('')
 const lastSyncedGoogle = ref('Not synced yet')
@@ -335,17 +332,16 @@ onMounted(async () => {
     cleanupUrl()
   }
 
-  await Promise.all([fetchGoogleStatus(), fetchCalendlyStatus(), fetchZoomStatus()])
+  await Promise.all([fetchGoogleStatus(), fetchCalendlyStatus()])
   
-  if (params.get('zoom') === 'success') {
-    await fetchZoomStatus()
-    successMessage.value = 'Zoom connected successfully'
+  if (params.get('video') === 'success') {
+    successMessage.value = 'Video provider connected successfully'
     showSuccess.value = true
     cleanupUrl()
   }
 
-  if (params.get('zoom') === 'error') {
-    alert(params.get('message') || 'Zoom connection failed')
+  if (params.get('video') === 'error') {
+    alert(params.get('message') || 'Video connection failed')
     cleanupUrl()
   }
   

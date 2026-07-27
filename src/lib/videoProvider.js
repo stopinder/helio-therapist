@@ -25,6 +25,17 @@ export const videoProviderService = {
   },
 
   /**
+   * Returns the appropriate action label (Join/Return) for a session.
+   * @param {Object} session - The session object.
+   * @returns {string}
+   */
+  getVideoActionLabel(session) {
+    if (!session) return 'Join Video Session';
+    const action = session.status === 'In Progress' ? 'Return to' : 'Join';
+    return `${action} Video Session`;
+  },
+
+  /**
    * Determines if a session can be joined via video.
    * @param {Object} session - The session object.
    * @returns {boolean}
