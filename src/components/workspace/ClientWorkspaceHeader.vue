@@ -31,7 +31,10 @@
         <button class="px-inline-md py-stack-xs bg-surface-elevated border border-border text-body-sm font-medium text-ink rounded-control hover:bg-surface-subtle transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-state-selected">
           Create Document
         </button>
-        <button class="px-inline-md py-stack-xs bg-action-link text-body-sm font-medium text-on-action rounded-control hover:bg-action-link-hover transition-colors shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-state-selected ring-offset-2">
+        <button 
+          @click="openSession"
+          class="px-inline-md py-stack-xs bg-action-link text-body-sm font-medium text-on-action rounded-control hover:bg-action-link-hover transition-colors shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-state-selected ring-offset-2"
+        >
           Open Session
         </button>
       </div>
@@ -41,6 +44,7 @@
 
 <script setup>
 import { computed } from 'vue';
+import { useRouter } from 'vue-router';
 import StatusBadge from './StatusBadge.vue';
 
 const props = defineProps({
@@ -49,6 +53,18 @@ const props = defineProps({
     required: true
   }
 });
+
+const router = useRouter();
+
+const openSession = () => {
+  router.push({
+    name: 'SessionWorkspace',
+    params: {
+      clientId: props.client.id,
+      sessionId: 's123' // Mock session ID
+    }
+  });
+};
 
 const clientInitials = computed(() => {
   if (!props.client.display_name) return '??';
