@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import Overview from '../views/Overview.vue'
 import Calendar from '../views/Calendar.vue'
 import Clients from '../views/Clients.vue'
+import ClientWorkspace from '../views/ClientWorkspace.vue'
 import Transcripts from '../views/Transcripts.vue'
 import Supervision from '../views/Supervision.vue'
 import Settings from '../views/Settings.vue'
@@ -21,6 +22,11 @@ const routes = [
     path: '/clients',
     name: 'Clients',
     component: Clients
+  },
+  {
+    path: '/clients/:clientId',
+    name: 'ClientWorkspace',
+    component: ClientWorkspace
   },
   {
     path: '/transcripts',
