@@ -1,17 +1,24 @@
 <template>
-  <div class="bg-surface-elevated border border-border-muted rounded-panel overflow-hidden">
-    <div class="px-inline-lg py-stack-md border-b border-border-muted bg-surface-subtle">
-      <h3 class="text-h3 font-semibold text-ink">Clinical Attention</h3>
+  <div class="bg-surface-subtle border-l-4 border-l-action-link border-y border-r border-border-muted rounded-panel overflow-hidden shadow-sm">
+    <div class="px-inline-lg py-stack-sm border-b border-border-muted bg-surface/50">
+      <h3 class="text-body font-bold text-ink flex items-center gap-2">
+        <span class="text-action-link">✨</span> Clinical Attention
+      </h3>
     </div>
-    <div class="p-inline-lg space-y-stack-md">
-      <div v-for="item in attentionItems" :key="item.label" class="flex justify-between items-start gap-4">
-        <div class="flex flex-col">
-          <span class="text-caption font-medium text-ink-muted uppercase tracking-wider">{{ item.label }}</span>
-          <span class="text-body text-ink mt-0.5" :class="{ 'text-state-danger font-medium': item.urgent }">
+    <div class="p-inline-lg grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-inline-lg gap-y-stack-md">
+      <div v-for="item in attentionItems" :key="item.label" class="flex justify-between items-start group">
+        <div class="flex flex-col min-w-0">
+          <span class="text-[10px] font-bold text-ink-subtle uppercase tracking-widest">{{ item.label }}</span>
+          <span class="text-body-sm text-ink mt-0.5 truncate" :class="{ 'text-state-danger font-semibold': item.urgent }">
             {{ item.value }}
           </span>
         </div>
-        <div v-if="item.urgent" class="shrink-0 h-2 w-2 rounded-pill bg-state-danger mt-6"></div>
+        <div 
+          v-if="item.urgent" 
+          class="shrink-0 flex items-center gap-1 px-1.5 py-0.5 rounded-pill bg-state-danger-surface text-[10px] font-bold text-state-danger border border-state-danger/20"
+        >
+          Priority
+        </div>
       </div>
     </div>
   </div>
