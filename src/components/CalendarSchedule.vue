@@ -56,21 +56,40 @@
       <header class="event-popover-header"><div><p class="event-eyebrow">{{ selectedEvent.provider || 'Calendar' }}</p><h2 id="event-title">{{ selectedEvent.summary }}</h2></div><button class="close-button" @click="closeEventPopover" aria-label="Close event details">×</button></header>
       <dl class="event-details"><div><dt>When</dt><dd>{{ fullEventDate(selectedEvent) }}</dd></div><div v-if="selectedEvent.location"><dt>Where</dt><dd>{{ selectedEvent.location }}</dd></div></dl>
       <p v-if="selectedEvent.description" class="event-description">{{ selectedEvent.description }}</p>
-      <footer class="event-actions"><button v-if="matchedClient(selectedEvent)" class="open-client-action" @click="openClientWorkspace(selectedEvent)">Open client workspace</button><a v-if="selectedEvent.link" :href="selectedEvent.link" target="_blank" rel="noopener">Open in Google Calendar ↗</a><a v-if="selectedEvent.meetingLink" class="primary-event-action" :href="selectedEvent.meetingLink" target="_blank" rel="noopener">Join video call ↗</a></footer>
+      <footer class="event-actions">
+        <button v-if="matchedClient(selectedEvent)" class="open-client-action" @click="openClientWorkspace(selectedEvent)">Open Session Workspace</button>
+        <a v-if="selectedEvent.link" :href="selectedEvent.link" target="_blank" rel="noopener">Open in Google Calendar ↗</a>
+        <template v-if="selectedEvent.videoProvider === 'in_person' || selectedEvent.isInPerson">
+          <span class="in-person-notice">In-person session</span>
+        </template>
+        <template v-else>
+          <button 
+            class="primary-event-action" 
+            :disabled="!selectedEvent.meetingLink"
+            @click="joinVideo(selectedEvent)"
+            :title="!selectedEvent.meetingLink ? 'No video link configured' : ''"
+          >
+            {{ videoActionLabel(selectedEvent) }} ↗
+          </button>
+        </template>
+      </footer>
     </article>
   </section>
 </template>
 
 <script setup>
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
+import { useRouter } from 'vue-router'
 import { authenticatedFetch } from '../lib/api.js'
 import { listSessions } from '../lib/sessions.js'
+import { VIDEO_PROVIDERS } from '../mocks/sessionWorkspaceData.js'
 
 const props = defineProps({
   clients: { type: Array, default: () => [] },
   referenceView: { type: Boolean, default: false }
 })
 const emit = defineEmits(['open-settings', 'select-appointment', 'next-appointment', 'upcoming-appointments'])
+const router = useRouter()
 const views = [{ id: 'day', label: 'Day' }, { id: 'week', label: 'Week' }, { id: 'month', label: 'Month' }]
 const weekdayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 const savedView = localStorage.getItem('helio_calendar_view')
@@ -174,8 +193,25 @@ function appointmentStatus(event) {
   return session.status === 'in_progress' ? 'Notes incomplete' : 'Session review waiting'
 }
 function openClientWorkspace(event) {
-  emit('select-appointment', event)
-  closeEventPopover()
+  const client = matchedClient(event)
+  if (client) {
+    router.push({
+      name: 'SessionWorkspace',
+      params: { clientId: client.id, sessionId: 's123' }
+    })
+  }
+}
+
+const joinVideo = (event) => {
+  if (event.meetingLink) {
+    window.open(event.meetingLink, '_blank', 'noopener,noreferrer')
+  }
+}
+
+const videoActionLabel = (event) => {
+  const provider = event.videoProvider || 'custom'
+  const providerName = VIDEO_PROVIDERS[provider] || 'Video'
+  return `Join ${providerName} Session`
 }
 function closeEventPopover() { selectedEvent.value = null; eventPopoverStyle.value = {} }
 function positionEventPopover(trigger) {

@@ -6,6 +6,9 @@ export const mockSession = {
   date: 'July 27, 2026',
   time: '3:00 PM',
   status: 'In Progress',
+  videoProvider: 'zoom', // zoom, microsoft_teams, google_meet, custom, in_person
+  meetingUrl: 'https://zoom.us/j/123456789',
+  isInPerson: false,
   elapsedTime: '00:42:15',
   transcript: [
     { id: 1, speaker: 'Therapist', timestamp: '00:00:05', text: 'Good afternoon, Alex. How are you feeling today?' },
@@ -17,4 +20,12 @@ export const mockSession = {
     { id: 1, time: '00:05:20', label: 'Anxiety Trigger' },
     { id: 2, time: '00:15:45', label: 'Core Belief Identified' }
   ]
+};
+
+export const VIDEO_PROVIDERS = {
+  zoom: 'Zoom',
+  microsoft_teams: 'Microsoft Teams',
+  google_meet: 'Google Meet',
+  custom: 'Custom link',
+  in_person: 'In person'
 };

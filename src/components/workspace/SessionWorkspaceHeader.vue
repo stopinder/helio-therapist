@@ -29,6 +29,15 @@
           <span class="w-2 h-2 rounded-full bg-state-success animate-pulse"></span>
           <span class="text-caption text-state-success font-semibold tracking-wide uppercase">Listening…</span>
         </div>
+        <button 
+          @click="joinMeeting"
+          :disabled="isInPerson || !session.meetingUrl"
+          :title="isInPerson ? 'In-person session' : (!session.meetingUrl ? 'No video meeting link has been added.' : '')"
+          class="px-inline-md py-stack-xs bg-surface-elevated border border-border text-caption font-medium text-ink-secondary rounded-control hover:bg-surface-subtle transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-state-selected disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          <span v-if="isInPerson">In-person session</span>
+          <span v-else>{{ videoLabel }}</span>
+        </button>
         <button class="px-inline-md py-stack-xs bg-surface-elevated border border-border text-caption font-medium text-ink-secondary rounded-control hover:bg-surface-subtle transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-state-selected">
           Add to Supervision
         </button>
@@ -44,9 +53,10 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, onMounted, onUnmounted, computed } from 'vue';
 import { RouterLink } from 'vue-router';
 import StatusBadge from './StatusBadge.vue';
+import { VIDEO_PROVIDERS } from '../../mocks/sessionWorkspaceData.js';
 
 const props = defineProps({
   session: {
@@ -54,6 +64,8 @@ const props = defineProps({
     required: true
   }
 });
+
+const isInPerson = computed(() => props.session.isInPerson || props.session.videoProvider === 'in_person');
 
 const displayTime = ref(props.session.elapsedTime || '45:00');
 let timerInterval = null;
@@ -68,6 +80,19 @@ const incrementTimer = () => {
   }
   displayTime.value = `${String(newMins).padStart(2, '0')}:${String(newSecs).padStart(2, '0')}`;
 };
+
+const joinMeeting = () => {
+  if (props.session.meetingUrl) {
+    window.open(props.session.meetingUrl, '_blank', 'noopener,noreferrer');
+  }
+};
+
+const videoLabel = computed(() => {
+  const provider = props.session.videoProvider || 'custom';
+  const providerName = VIDEO_PROVIDERS[provider] || 'Video';
+  const action = props.session.status === 'In Progress' ? 'Return to' : 'Join';
+  return `${action} ${providerName} Session`;
+});
 
 onMounted(() => {
   timerInterval = setInterval(incrementTimer, 1000);

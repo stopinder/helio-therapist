@@ -7,7 +7,7 @@ test('calendar events open a Helio-controlled detail popover', async () => {
 
   assert.match(calendar, /data-testid="helio-event-popover"/)
   assert.match(calendar, /Open in Google Calendar ↗/)
-  assert.match(calendar, /Join video call ↗/)
+  assert.match(calendar, /videoActionLabel\(selectedEvent\)/)
   assert.match(calendar, /function positionEventPopover/)
   assert.match(calendar, /function closeEventPopover/)
   assert.doesNotMatch(calendar, /class="modal-backdrop"/)

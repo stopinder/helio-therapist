@@ -152,6 +152,59 @@
 
     <section class="mb-12">
       <h2 class="text-caption sm:text-body-sm font-semibold uppercase tracking-wider text-ink-muted mb-4 px-1">
+        Video Consultation
+      </h2>
+      <div class="bg-surface-elevated border border-border-muted rounded-panel p-6">
+        <div class="max-w-md">
+          <label for="default-video-provider" class="block text-body-sm font-medium text-ink-secondary mb-2">
+            Default Video Provider
+          </label>
+          <select 
+            id="default-video-provider"
+            v-model="defaultVideoProvider"
+            class="w-full min-h-touch rounded-panel border border-border px-3 text-body outline-none focus:ring-2 focus:ring-state-focus-ring focus:border-action-link bg-surface"
+          >
+            <option value="zoom">Zoom</option>
+            <option value="microsoft_teams">Microsoft Teams</option>
+            <option value="google_meet">Google Meet</option>
+            <option value="custom">Custom meeting link</option>
+            <option value="in_person">In person</option>
+          </select>
+
+          <div v-if="defaultVideoProvider === 'custom'" class="mt-4">
+            <label for="default-meeting-link" class="block text-body-sm font-medium text-ink-secondary mb-2">
+              Default Meeting Link
+            </label>
+            <input 
+              id="default-meeting-link"
+              type="url"
+              v-model="defaultMeetingLink"
+              placeholder="https://..."
+              class="w-full min-h-touch rounded-panel border border-border px-3 text-body outline-none focus:ring-2 focus:ring-state-focus-ring focus:border-action-link"
+            />
+          </div>
+
+          <div class="mt-6 p-4 bg-surface-subtle border border-border-muted rounded-panel">
+            <p class="text-body-sm text-ink-muted italic">
+              "These settings are stored only in local demonstration state."
+            </p>
+          </div>
+
+          <div class="mt-4 space-y-3">
+            <p class="text-caption text-ink-subtle">Future integration notices:</p>
+            <ul class="text-caption text-ink-subtle list-disc list-inside space-y-1">
+              <li>Microsoft Teams may later connect through Microsoft 365 / Outlook.</li>
+              <li>Google Meet may later connect through Google Workspace.</li>
+              <li>Zoom may later connect through Zoom OAuth.</li>
+              <li>Custom links may be entered manually.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="mb-12">
+      <h2 class="text-caption sm:text-body-sm font-semibold uppercase tracking-wider text-ink-muted mb-4 px-1">
         Account
       </h2>
       <div class="bg-surface-elevated border border-border-muted rounded-panel p-4  flex items-center justify-between gap-4">
@@ -267,6 +320,10 @@ const showCalendlyTokenValue = ref(false)
 const calendlyToken = ref('')
 const showSuccess = ref(false)
 const successMessage = ref('')
+
+// Provider-neutral video consultation settings (Local state only)
+const defaultVideoProvider = ref('zoom')
+const defaultMeetingLink = ref('')
 
 onMounted(async () => {
   // Check if we returned from OAuth with success

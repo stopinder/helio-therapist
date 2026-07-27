@@ -6,7 +6,7 @@
         <h1>{{ selectedClient.name }}</h1>
         <span class="status">{{ selectedClient.archived ? 'Archived' : 'Active' }}</span>
       </div>
-      <button class="primary start-session" :disabled="startingSession || sessionsLoading" @click="startSession">{{ startingSession ? 'Preparing Zoom…' : 'Start session' }}</button>
+      <button class="primary start-session" :disabled="startingSession || sessionsLoading" @click="openSessionWorkspace">{{ startingSession ? 'Preparing Workspace…' : 'Open Session Workspace' }}</button>
     </header>
 
     <nav class="record-tabs" aria-label="Client workspaces">
@@ -16,7 +16,16 @@
     <main v-if="activeTab === 'timeline'" class="overview">
       <article v-if="preparingFor" class="preparation-card">
         <div><p class="eyebrow">Upcoming appointment</p><h2>{{ preparingFor.summary || 'Session preparation' }}</h2><p>{{ appointmentTime(preparingFor) }}. Review the current focus and one recent clinical event before opening the session.</p><p v-if="lastMeaningfulEvent" class="preparation-carry-forward"><strong>Carry forward:</strong> {{ lastMeaningfulEvent.title }} <span>· {{ formatDate(lastMeaningfulEvent.date) }}</span></p></div>
-        <button class="primary" :disabled="startingSession" @click="startSession">{{ startingSession ? 'Preparing Zoom…' : 'Start session' }}</button>
+        <div class="preparation-actions">
+          <button class="primary" :disabled="startingSession" @click="openSessionWorkspace">{{ startingSession ? 'Preparing Workspace…' : 'Open Session Workspace' }}</button>
+          <button 
+            v-if="preparingFor.meetingLink" 
+            class="secondary" 
+            @click="joinVideo(preparingFor)"
+          >
+            Join {{ videoProviderLabel(preparingFor) }} ↗
+          </button>
+        </div>
       </article>
       <article class="focus-card">
         <div class="card-heading">
@@ -47,7 +56,7 @@
       <p v-if="sessionError" class="session-error" role="alert">{{ sessionError }}</p>
       <div v-if="sessionsLoading" class="empty-state"><p>Loading sessions…</p></div>
       <div v-else-if="!sessions.length" class="empty-state"><div>📝</div><h3>No sessions recorded</h3><p>Start a session when you are ready to take notes.</p></div>
-      <button v-for="session in sessions" :key="session.id" class="session-row" @click="openSession(session)"><span><strong>{{ formatDate(session.startedAt) }}</strong><small>{{ sessionListMeta(session) }}</small><small v-if="session.notes">{{ preview(session.notes, 90) }}</small></span><span>Open ›</span></button>
+      <button v-for="session in sessions" :key="session.id" class="session-row" @click="openSession(session)"><span><strong>{{ formatDate(session.startedAt) }}</strong><small>{{ sessionListMeta(session) }}</small><small v-if="session.notes">{{ preview(session.notes, 90) }}</small></span><span>Open Workspace ›</span></button>
     </section>
 
     <div v-if="editingSession" class="modal-backdrop" @click.self="requestCloseEditor">
@@ -74,13 +83,16 @@
 
 <script setup>
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
+import { useRouter } from 'vue-router'
 import { authenticatedFetch } from '../../lib/api.js'
 import { assignmentCompletionUrl, timelineEventPresentation } from '../../lib/clinicalExchange.js'
 import { completeSessionRecord, createOrResumeSession, listSessions, migrateLegacySessions, saveSessionDraft } from '../../lib/sessions.js'
+import { VIDEO_PROVIDERS } from '../../mocks/sessionWorkspaceData.js'
 import ResourcePicker from './ResourcePicker.vue'
 
 const props = defineProps({ selectedClient: { type: Object, default: null } })
 const emit = defineEmits(['update-focus'])
+const router = useRouter()
 const tabs = [{ id: 'timeline', label: 'Timeline' }, { id: 'sessions', label: 'Sessions' }]
 const activeTab = ref('timeline')
 const sessionTabs = [{ id: 'overview', label: 'Overview' }, { id: 'clinical-note', label: 'Clinical note' }, { id: 'transcript', label: 'Transcript' }, { id: 'resources-actions', label: 'Resources & actions' }]
@@ -91,6 +103,25 @@ const editingFocus = ref(false)
 const draftFocus = ref('')
 const allSessions = ref([])
 const startingSession = ref(false)
+const openSessionWorkspace = () => {
+  if (props.selectedClient) {
+    router.push({
+      name: 'SessionWorkspace',
+      params: { clientId: props.selectedClient.id, sessionId: 's123' }
+    })
+  }
+}
+
+const joinVideo = (appointment) => {
+  if (appointment?.meetingLink) {
+    window.open(appointment.meetingLink, '_blank', 'noopener,noreferrer')
+  }
+}
+
+const videoProviderLabel = (appointment) => {
+  const provider = appointment?.videoProvider || 'custom'
+  return VIDEO_PROVIDERS[provider] || 'Video'
+}
 const sessionsLoading = ref(false)
 const sessionSaving = ref(false)
 const sessionError = ref('')

@@ -32,10 +32,19 @@
           Create Document
         </button>
         <button 
+          @click="joinMeeting"
+          :disabled="mockSession.isInPerson || !mockSession.meetingUrl"
+          :title="mockSession.isInPerson ? 'In-person session' : (!mockSession.meetingUrl ? 'No video meeting link has been added.' : '')"
+          class="px-inline-md py-stack-xs bg-surface-elevated border border-border text-caption font-medium text-ink-secondary rounded-control hover:bg-surface-subtle transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-state-selected disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          <span v-if="mockSession.isInPerson">In-person session</span>
+          <span v-else>{{ videoLabel }}</span>
+        </button>
+        <button 
           @click="openSession"
           class="px-inline-md py-stack-xs bg-action-link text-body-sm font-medium text-on-action rounded-control hover:bg-action-link-hover transition-colors shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-state-selected ring-offset-2"
         >
-          Open Session
+          Open Session Workspace
         </button>
       </div>
     </div>
@@ -46,6 +55,7 @@
 import { computed } from 'vue';
 import { useRouter } from 'vue-router';
 import StatusBadge from './StatusBadge.vue';
+import { mockSession, VIDEO_PROVIDERS } from '../../mocks/sessionWorkspaceData.js';
 
 const props = defineProps({
   client: {
@@ -65,6 +75,19 @@ const openSession = () => {
     }
   });
 };
+
+const joinMeeting = () => {
+  if (mockSession.meetingUrl) {
+    window.open(mockSession.meetingUrl, '_blank', 'noopener,noreferrer');
+  }
+};
+
+const videoLabel = computed(() => {
+  const provider = mockSession.videoProvider || 'custom';
+  const providerName = VIDEO_PROVIDERS[provider] || 'Video';
+  const action = mockSession.status === 'In Progress' ? 'Return to' : 'Join';
+  return `${action} ${providerName} Session`;
+});
 
 const clientInitials = computed(() => {
   if (!props.client.display_name) return '??';
