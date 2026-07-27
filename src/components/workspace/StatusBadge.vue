@@ -18,13 +18,35 @@ const props = defineProps({
 });
 
 const statusClasses = computed(() => {
-  switch (props.status.toLowerCase()) {
+  const s = props.status.toLowerCase();
+  switch (s) {
+    // Client Status
     case 'active':
       return 'bg-state-success-surface text-state-success border-state-success/20';
     case 'inactive':
       return 'bg-surface-muted text-ink-muted border-border';
     case 'pending':
       return 'bg-state-warning-surface text-state-warning border-state-warning/20';
+    
+    // Document Status
+    case 'draft':
+      return 'bg-surface-muted text-ink-secondary border-border';
+    case 'final':
+      return 'bg-state-success-surface text-state-success border-state-success/10';
+    case 'superseded':
+      return 'bg-surface-subtle text-ink-muted border-border italic opacity-70';
+    case 'amended':
+      return 'bg-action-link-surface text-action-link border-action-link/20';
+    
+    // Priority / Clinical Attention
+    case 'priority':
+    case 'high':
+      return 'bg-state-danger-surface text-state-danger border-state-danger/20 font-bold';
+    case 'medium':
+      return 'bg-state-warning-surface text-state-warning border-state-warning/20';
+    case 'low':
+      return 'bg-state-success-surface text-state-success border-state-success/10';
+      
     default:
       return 'bg-surface-subtle text-ink-secondary border-border';
   }

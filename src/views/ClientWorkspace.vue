@@ -53,9 +53,12 @@
                 <section class="bg-surface-elevated border border-border-muted rounded-panel p-inline-lg">
                   <h3 class="text-h3 font-semibold text-ink mb-stack-md pt-stack-md">Recent Documents</h3>
                   <div class="space-y-stack-sm pb-stack-md">
-                    <div v-for="doc in mockClient.recent_documents" :key="doc.id" class="flex items-center justify-between p-inline-md border border-border rounded-control bg-surface">
-                      <span class="text-body-sm text-ink truncate">{{ doc.name }}</span>
-                      <span class="text-caption text-ink-muted">{{ doc.date }}</span>
+                    <div v-for="doc in mockClient.recent_documents" :key="doc.id" class="flex items-center justify-between p-inline-md border border-border rounded-control bg-surface hover:border-action-link transition-colors cursor-pointer group">
+                      <div class="flex flex-col min-w-0">
+                        <span class="text-body-sm text-ink truncate group-hover:text-action-link font-medium">{{ doc.name }}</span>
+                        <span class="text-caption text-ink-muted">{{ doc.date }}</span>
+                      </div>
+                      <StatusBadge :status="doc.status" />
                     </div>
                   </div>
                 </section>
@@ -90,7 +93,22 @@
 
         <!-- Other Tabs Placeholders -->
         <div v-else>
+          <div v-if="activeTab === 'Timeline'" class="bg-surface-elevated border border-border-muted rounded-panel p-inline-lg max-w-2xl mx-auto">
+            <h3 class="text-h3 font-semibold text-ink mb-stack-lg pt-stack-md">Client Timeline</h3>
+            <div class="space-y-0">
+              <TimelineItem 
+                v-for="(event, index) in mockClient.timeline_events" 
+                :key="event.id"
+                :type="event.type"
+                :date="event.date"
+                :description="event.description"
+                :is-last="index === mockClient.timeline_events.length - 1"
+              />
+            </div>
+          </div>
+
           <EmptyState
+            v-else
             :title="activeTab"
             :description="`The ${activeTab} module will provide detailed clinical information and management tools for this client's care journey.`"
             icon="🛠️"
@@ -114,6 +132,8 @@ import { mockClient } from '../mocks/clientWorkspaceData.js';
 import ClientWorkspaceHeader from '../components/workspace/ClientWorkspaceHeader.vue';
 import ClientWorkspaceTabs from '../components/workspace/ClientWorkspaceTabs.vue';
 import ClinicalAttentionPanel from '../components/workspace/ClinicalAttentionPanel.vue';
+import StatusBadge from '../components/workspace/StatusBadge.vue';
+import TimelineItem from '../components/workspace/TimelineItem.vue';
 import EmptyState from '../components/workspace/EmptyState.vue';
 
 const route = useRoute();

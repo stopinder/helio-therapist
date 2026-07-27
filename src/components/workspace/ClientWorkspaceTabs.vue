@@ -16,7 +16,7 @@
         <!-- Count Badge -->
         <span 
           v-if="getTabProp(tab, 'count')" 
-          class="px-1.5 py-0.5 text-[10px] font-bold rounded-pill bg-surface-muted border border-border-muted text-ink-muted group-hover:text-ink transition-colors"
+          class="px-1.5 py-0.5 text-caption font-bold rounded-pill bg-surface-muted border border-border-muted text-ink-muted group-hover:text-ink transition-colors"
           :class="{ 'bg-action-link/10 border-action-link/20 text-action-link': isActive(tab) }"
         >
           {{ getTabProp(tab, 'count') }}
@@ -32,7 +32,7 @@
         <!-- Unsaved Draft Indicator -->
         <span 
           v-if="getTabProp(tab, 'isDraft')" 
-          class="text-[10px] text-state-warning italic"
+          class="text-caption text-state-warning italic"
         >
           (Draft)
         </span>

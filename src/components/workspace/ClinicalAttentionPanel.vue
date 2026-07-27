@@ -6,18 +6,15 @@
       </h3>
     </div>
     <div class="p-inline-lg grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-inline-lg gap-y-stack-md">
-      <div v-for="item in attentionItems" :key="item.label" class="flex justify-between items-start group">
+      <div v-for="item in attentionItems" :key="item.label" class="flex justify-between items-start group py-1">
         <div class="flex flex-col min-w-0">
-          <span class="text-[10px] font-bold text-ink-subtle uppercase tracking-widest">{{ item.label }}</span>
+          <span class="text-caption font-bold text-ink-subtle uppercase tracking-widest">{{ item.label }}</span>
           <span class="text-body-sm text-ink mt-0.5 truncate" :class="{ 'text-state-danger font-semibold': item.urgent }">
             {{ item.value }}
           </span>
         </div>
-        <div 
-          v-if="item.urgent" 
-          class="shrink-0 flex items-center gap-1 px-1.5 py-0.5 rounded-pill bg-state-danger-surface text-[10px] font-bold text-state-danger border border-state-danger/20"
-        >
-          Priority
+        <div v-if="item.badge" class="shrink-0 flex items-center ml-2">
+          <StatusBadge :status="item.badge" />
         </div>
       </div>
     </div>
@@ -26,6 +23,7 @@
 
 <script setup>
 import { computed } from 'vue';
+import StatusBadge from './StatusBadge.vue';
 
 const props = defineProps({
   client: {
@@ -35,11 +33,11 @@ const props = defineProps({
 });
 
 const attentionItems = computed(() => [
-  { label: 'Next Appointment', value: props.client.next_appointment, urgent: false },
-  { label: 'Latest Measures', value: props.client.latest_measures, urgent: false },
-  { label: 'Outstanding Homework', value: props.client.outstanding_homework, urgent: false },
-  { label: 'Open Supervision Actions', value: props.client.supervision_actions, urgent: true },
-  { label: 'Risk Review Status', value: props.client.risk_status, urgent: false },
-  { label: 'Documents Awaiting Review', value: props.client.docs_awaiting_review === 0 ? 'None' : `${props.client.docs_awaiting_review} pending`, urgent: props.client.docs_awaiting_review > 0 }
+  { label: 'Next Appointment', value: props.client.next_appointment, badge: null, urgent: false },
+  { label: 'Latest Measures', value: props.client.latest_measures, badge: 'Medium', urgent: false },
+  { label: 'Outstanding Homework', value: props.client.outstanding_homework, badge: null, urgent: false },
+  { label: 'Open Supervision Actions', value: props.client.supervision_actions, badge: 'Priority', urgent: true },
+  { label: 'Risk Review Status', value: props.client.risk_status, badge: props.client.risk_status, urgent: false },
+  { label: 'Documents Awaiting Review', value: props.client.docs_awaiting_review === 0 ? 'None' : `${props.client.docs_awaiting_review} pending`, badge: props.client.docs_awaiting_review > 0 ? 'Medium' : null, urgent: props.client.docs_awaiting_review > 0 }
 ]);
 </script>
