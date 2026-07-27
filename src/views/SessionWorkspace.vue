@@ -3,6 +3,9 @@
     <!-- Header -->
     <SessionWorkspaceHeader :session="mockSession" />
 
+    <!-- Workflow Indicator -->
+    <WorkflowIndicator :activeStage="activeTab" />
+
     <!-- Tabs -->
     <SessionWorkspaceTabs
       :tabs="tabs"
@@ -16,6 +19,7 @@
           v-if="activeTab === 'Transcript'" 
           :transcript="mockSession.transcript"
           :markers="mockSession.markers"
+          :activeTab="activeTab"
         />
         <TherapistNotesTab v-else-if="activeTab === 'Therapist Notes'" />
         <ReflectionTab v-else-if="activeTab === 'Reflection'" />
@@ -31,6 +35,7 @@ import { ref } from 'vue';
 import { mockSession } from '../mocks/sessionWorkspaceData.js';
 import SessionWorkspaceHeader from '../components/workspace/SessionWorkspaceHeader.vue';
 import SessionWorkspaceTabs from '../components/workspace/SessionWorkspaceTabs.vue';
+import WorkflowIndicator from '../components/workspace/WorkflowIndicator.vue';
 import TranscriptTab from '../components/workspace/TranscriptTab.vue';
 import TherapistNotesTab from '../components/workspace/TherapistNotesTab.vue';
 import ReflectionTab from '../components/workspace/ReflectionTab.vue';

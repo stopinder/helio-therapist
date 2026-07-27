@@ -26,6 +26,14 @@ const displayLabel = computed(() => props.label || props.status);
 const statusClasses = computed(() => {
   const s = props.status.toLowerCase();
   switch (s) {
+    // Workflow Status
+    case 'not started':
+      return 'bg-surface-muted text-ink-subtle border-border opacity-60';
+    case 'in progress':
+      return 'bg-state-selected text-action-link border-action-link/20 animate-pulse';
+    case 'complete':
+      return 'bg-state-success-surface text-state-success border-state-success/20';
+    
     // Client Status
     case 'active':
       return 'bg-state-success-surface text-state-success border-state-success/20';

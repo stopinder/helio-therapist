@@ -12,31 +12,20 @@
         <h3 class="text-h3 font-semibold text-ink">Timeline</h3>
         <div class="space-y-3">
           <TranscriptEntry 
-            v-for="entry in transcript" 
+            v-for="(entry, index) in transcript" 
             :key="entry.id"
             v-bind="entry"
+            :isActive="index === transcript.length - 1"
           />
         </div>
       </div>
 
       <!-- Side Panel -->
       <div class="w-full lg:w-72 space-y-6">
-        <section class="p-4 bg-surface border border-border rounded-panel">
-          <h4 class="text-body-sm font-bold text-ink uppercase tracking-wider mb-4">Session Status</h4>
-          <div class="space-y-4">
-            <div>
-              <p class="text-caption text-ink-muted uppercase font-bold mb-1">Recording</p>
-              <div class="flex items-center gap-2 text-body-sm text-ink">
-                <span class="w-2 h-2 rounded-full bg-state-danger animate-pulse"></span>
-                Active
-              </div>
-            </div>
-            <div>
-              <p class="text-caption text-ink-muted uppercase font-bold mb-1">Processing</p>
-              <div class="text-body-sm text-ink-muted italic">Ready for markers...</div>
-            </div>
-          </div>
-        </section>
+        <WorkflowStatusPanel 
+          :workflowItems="workflowProgress" 
+          :activeStage="activeTab"
+        />
 
         <section class="p-4 bg-surface border border-border rounded-panel">
           <h4 class="text-body-sm font-bold text-ink uppercase tracking-wider mb-4">Markers</h4>
@@ -68,9 +57,20 @@
 
 <script setup>
 import TranscriptEntry from './TranscriptEntry.vue';
+import WorkflowStatusPanel from './WorkflowStatusPanel.vue';
 
 defineProps({
   transcript: Array,
-  markers: Array
+  markers: Array,
+  activeTab: String
 });
+
+const workflowProgress = [
+  { label: 'Recording', status: 'In Progress' },
+  { label: 'Transcript', status: 'In Progress' },
+  { label: 'Notes', status: 'Not Started' },
+  { label: 'Reflection', status: 'Not Started' },
+  { label: 'Clinical Summary', status: 'Not Started' },
+  { label: 'Supervision', status: 'Not Started' }
+];
 </script>
