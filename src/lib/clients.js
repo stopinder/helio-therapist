@@ -7,7 +7,7 @@ export async function getClient({ clientId }) {
 
   const { data, error } = await supabase
     .from('clients')
-    .select('*')
+    .select('id, user_id, display_name, reference, current_focus, archived, created_at, updated_at')
     .eq('id', clientId)
     .single()
 
@@ -29,8 +29,8 @@ export async function listClients() {
 
   const { data, error } = await supabase
     .from('clients')
-    .select('*')
-    .neq('status', 'archived')
+    .select('id, user_id, display_name, reference, current_focus, archived, created_at, updated_at')
+    .eq('archived', false)
     .order('display_name', { ascending: true })
 
   if (error) {

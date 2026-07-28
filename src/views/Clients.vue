@@ -50,10 +50,10 @@
               <div class="text-caption text-ink-muted">ID: {{ client.id.substring(0, 8) }}...</div>
             </td>
             <td class="px-inline-lg py-stack-md">
-              <StatusBadge :status="client.status" />
+              <StatusBadge :status="client.archived ? 'archived' : 'active'" />
             </td>
             <td class="px-inline-lg py-stack-md text-body-sm text-ink-secondary">
-              {{ client.next_appointment || 'Not scheduled' }}
+              Not scheduled
             </td>
             <td class="px-inline-lg py-stack-md text-right">
               <router-link
