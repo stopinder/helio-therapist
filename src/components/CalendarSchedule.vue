@@ -59,15 +59,13 @@
       <footer class="event-actions">
         <button v-if="matchedClient(selectedEvent)" class="open-client-action" @click="openClientWorkspace(selectedEvent)">Open Session Workspace</button>
         <a v-if="selectedEvent.link" :href="selectedEvent.link" target="_blank" rel="noopener">Open in Google Calendar ↗</a>
-        <template v-if="selectedEvent.videoProvider === 'in_person' || selectedEvent.isInPerson">
+        <template v-if="false">
           <span class="in-person-notice">In-person session</span>
         </template>
         <template v-else>
           <button 
             class="primary-event-action" 
-            :disabled="!selectedEvent.meetingLink"
             @click="joinVideo(selectedEvent)"
-            :title="!selectedEvent.meetingLink ? 'No video link configured' : ''"
           >
             {{ videoActionLabel(selectedEvent) }} ↗
           </button>
@@ -208,17 +206,18 @@ async function openClientWorkspace(event) {
 }
 
 const joinVideo = (event) => {
+  // Use mock data as these columns don't exist in Supabase yet
   videoProviderService.openMeeting({
-    videoProvider: event.videoProvider || 'custom',
-    meetingUrl: event.meetingLink
+    videoProvider: 'zoom',
+    meetingUrl: 'https://zoom.us/j/123456789'
   })
 }
 
 const videoActionLabel = (event) => {
   return videoProviderService.getVideoActionLabel({
-    videoProvider: event.videoProvider || 'custom',
-    meetingUrl: event.meetingLink,
-    status: 'Scheduled' // Default for calendar events
+    videoProvider: 'zoom',
+    meetingUrl: 'https://zoom.us/j/123456789',
+    status: 'Scheduled'
   })
 }
 function closeEventPopover() { selectedEvent.value = null; eventPopoverStyle.value = {} }

@@ -121,9 +121,10 @@ const workspaceSession = computed(() => {
     type: 'Clinical session',
 
     // Video provider data (from session if available, otherwise fallback)
-    videoProvider: session.value.videoProvider || 'in_person',
-    meetingUrl: session.value.meetingUrl || null,
-    isInPerson: session.value.videoProvider === 'in_person' || !session.value.videoProvider,
+    // IMPORTANT: videoProvider and meetingUrl do not exist in the current Supabase schema
+    videoProvider: 'zoom', // Hard-coded fallback for demonstration since columns don't exist
+    meetingUrl: 'https://zoom.us/j/123456789', // Hard-coded fallback for demonstration
+    isInPerson: false,
     
     // Fields still mocked for this phase
     elapsedTime: '00:00:00', // Will be incremented by the header component

@@ -30,9 +30,7 @@ export function presentSession(row) {
     legacyRef: row.legacy_ref,
     videoState: row.zoom_state,
     videoMeetingId: row.zoom_meeting_id,
-    videoError: row.zoom_error || '',
-    videoProvider: row.video_provider || null,
-    meetingUrl: row.meeting_url || null
+    videoError: row.zoom_error || ''
   }
 }
 
@@ -40,7 +38,7 @@ export async function listSessions({ clientId } = {}) {
   const client = requireSupabase()
   let query = client
     .from('sessions')
-    .select('id,client_id,occurred_at,status,notes,created_at,updated_at,completed_at,ended_at,workflow_status,notes_status,version,legacy_ref,zoom_state,zoom_meeting_id,zoom_error,video_provider,meeting_url')
+    .select('id,client_id,occurred_at,status,notes,created_at,updated_at,completed_at,ended_at,workflow_status,notes_status,version,legacy_ref,zoom_state,zoom_meeting_id,zoom_error')
     .order('occurred_at', { ascending: false })
   if (clientId) query = query.eq('client_id', clientId)
   const { data, error } = await query
@@ -50,7 +48,7 @@ export async function listSessions({ clientId } = {}) {
 
 export async function getSession({ clientId, sessionId }) {
   const client = requireSupabase()
-  const fields = 'id,client_id,occurred_at,status,notes,created_at,updated_at,completed_at,ended_at,workflow_status,notes_status,version,legacy_ref,zoom_state,zoom_meeting_id,zoom_error,video_provider,meeting_url'
+  const fields = 'id,client_id,occurred_at,status,notes,created_at,updated_at,completed_at,ended_at,workflow_status,notes_status,version,legacy_ref,zoom_state,zoom_meeting_id,zoom_error'
   const { data, error } = await client
     .from('sessions')
     .select(fields)
@@ -67,7 +65,7 @@ export async function createOrResumeSession(clientId) {
   if (authError) throw authError
   if (!auth.user) throw new Error('Please sign in again')
 
-  const fields = 'id,client_id,occurred_at,status,notes,created_at,updated_at,completed_at,ended_at,workflow_status,notes_status,version,legacy_ref,zoom_state,zoom_meeting_id,zoom_error,video_provider,meeting_url'
+  const fields = 'id,client_id,occurred_at,status,notes,created_at,updated_at,completed_at,ended_at,workflow_status,notes_status,version,legacy_ref,zoom_state,zoom_meeting_id,zoom_error'
   const { data: existing, error: existingError } = await client
     .from('sessions')
     .select(fields)

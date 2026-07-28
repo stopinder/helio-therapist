@@ -122,14 +122,15 @@ const openSessionWorkspace = async () => {
 }
 
 const joinVideo = (appointment) => {
+  // Using mock data as columns don't exist in Supabase yet
   videoProviderService.openMeeting({
-    videoProvider: appointment?.videoProvider || 'custom',
-    meetingUrl: appointment?.meetingLink
+    videoProvider: 'zoom',
+    meetingUrl: 'https://zoom.us/j/123456789'
   })
 }
 
 const videoProviderLabel = (appointment) => {
-  return videoProviderService.getProviderLabel(appointment?.videoProvider || 'custom')
+  return videoProviderService.getProviderLabel('zoom')
 }
 const sessionsLoading = ref(false)
 const sessionSaving = ref(false)

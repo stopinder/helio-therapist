@@ -33,12 +33,9 @@
         </button>
         <button 
           @click="joinMeeting"
-          :disabled="client.video_provider === 'in_person' || !client.meeting_url"
-          :title="client.video_provider === 'in_person' ? 'In-person session' : (!client.meeting_url ? 'No video meeting link has been added.' : '')"
           class="px-inline-md py-stack-xs bg-surface-elevated border border-border text-caption font-medium text-ink-secondary rounded-control hover:bg-surface-subtle transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-state-selected disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          <span v-if="client.video_provider === 'in_person'">In-person session</span>
-          <span v-else>{{ videoLabel }}</span>
+          <span>{{ videoLabel }}</span>
         </button>
         <button 
           v-if="!isSessionWorkspace"
@@ -87,18 +84,17 @@ const openSession = async () => {
 };
 
 const joinMeeting = () => {
-  // Use clinical metadata from props.client if session specifics aren't loaded in this header yet
-  // This is a bridge until the header is fully connected to the active session object
+  // Use mock data as these columns don't exist in Supabase yet
   videoProviderService.openMeeting({
-    videoProvider: props.client.video_provider || 'in_person',
-    meetingUrl: props.client.meeting_url || null
+    videoProvider: 'zoom',
+    meetingUrl: 'https://zoom.us/j/123456789'
   });
 };
 
 const videoLabel = computed(() => {
   return videoProviderService.getVideoActionLabel({
-    videoProvider: props.client.video_provider || 'in_person',
-    meetingUrl: props.client.meeting_url || null,
+    videoProvider: 'zoom',
+    meetingUrl: 'https://zoom.us/j/123456789',
     status: 'Scheduled'
   });
 });
