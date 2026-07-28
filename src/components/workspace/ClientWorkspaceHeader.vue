@@ -8,7 +8,7 @@
         <div class="flex flex-col min-w-0">
           <div class="flex items-center gap-inline-sm flex-wrap">
             <h1 class="text-h2 font-semibold text-ink truncate">{{ client.display_name }}</h1>
-            <StatusBadge :status="client.status" />
+            <StatusBadge :status="client?.status || 'unknown'" />
           </div>
           <div class="flex flex-wrap items-center gap-x-inline-md gap-y-0 text-caption text-ink-muted">
             <span class="flex items-center gap-1">

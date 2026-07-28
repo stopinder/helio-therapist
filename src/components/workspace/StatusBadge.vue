@@ -13,7 +13,7 @@ import { computed } from 'vue';
 const props = defineProps({
   status: {
     type: String,
-    required: true
+    default: 'unknown'
   },
   label: {
     type: String,
@@ -24,7 +24,7 @@ const props = defineProps({
 const displayLabel = computed(() => props.label || props.status);
 
 const statusClasses = computed(() => {
-  const s = props.status.toLowerCase();
+  const s = String(props.status || 'unknown').toLowerCase();
   switch (s) {
     // Clinical Record Workflow
     case 'not_started':

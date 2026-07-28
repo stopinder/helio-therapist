@@ -4,3 +4,10 @@ dist
 .vercel
 .idea
 *.log
+
+# Playwright
+playwright-report/
+test-results/
+.env.e2e.local
+.playwright-auth.json
+.env*
