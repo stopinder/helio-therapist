@@ -33,11 +33,11 @@
         </button>
         <button 
           @click="joinMeeting"
-          :disabled="mockSession.isInPerson || !mockSession.meetingUrl"
-          :title="mockSession.isInPerson ? 'In-person session' : (!mockSession.meetingUrl ? 'No video meeting link has been added.' : '')"
+          :disabled="client.video_provider === 'in_person' || !client.meeting_url"
+          :title="client.video_provider === 'in_person' ? 'In-person session' : (!client.meeting_url ? 'No video meeting link has been added.' : '')"
           class="px-inline-md py-stack-xs bg-surface-elevated border border-border text-caption font-medium text-ink-secondary rounded-control hover:bg-surface-subtle transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-state-selected disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          <span v-if="mockSession.isInPerson">In-person session</span>
+          <span v-if="client.video_provider === 'in_person'">In-person session</span>
           <span v-else>{{ videoLabel }}</span>
         </button>
         <button 
@@ -56,7 +56,7 @@
 import { computed } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import StatusBadge from './StatusBadge.vue';
-import { mockSession } from '../../mocks/sessionWorkspaceData.js';
+import { listSessions, createOrResumeSession } from '../../lib/sessions.js';
 import { videoProviderService } from '../../lib/videoProvider.js';
 
 const props = defineProps({
@@ -71,22 +71,36 @@ const route = useRoute();
 
 const isSessionWorkspace = computed(() => route.name === 'SessionWorkspace');
 
-const openSession = () => {
-  router.push({
-    name: 'SessionWorkspace',
-    params: {
-      clientId: props.client.id,
-      sessionId: 's123' // Mock session ID
-    }
-  });
+const openSession = async () => {
+  try {
+    const { session } = await createOrResumeSession(props.client.id);
+    router.push({
+      name: 'SessionWorkspace',
+      params: {
+        clientId: props.client.id,
+        sessionId: session.id
+      }
+    });
+  } catch (error) {
+    console.error('Failed to open session workspace:', error);
+  }
 };
 
 const joinMeeting = () => {
-  videoProviderService.openMeeting(mockSession);
+  // Use clinical metadata from props.client if session specifics aren't loaded in this header yet
+  // This is a bridge until the header is fully connected to the active session object
+  videoProviderService.openMeeting({
+    videoProvider: props.client.video_provider || 'in_person',
+    meetingUrl: props.client.meeting_url || null
+  });
 };
 
 const videoLabel = computed(() => {
-  return videoProviderService.getVideoActionLabel(mockSession);
+  return videoProviderService.getVideoActionLabel({
+    videoProvider: props.client.video_provider || 'in_person',
+    meetingUrl: props.client.meeting_url || null,
+    status: 'Scheduled'
+  });
 });
 
 const clientInitials = computed(() => {

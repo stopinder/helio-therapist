@@ -81,7 +81,7 @@
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { authenticatedFetch } from '../lib/api.js'
-import { listSessions } from '../lib/sessions.js'
+import { listSessions, createOrResumeSession } from '../lib/sessions.js'
 import { videoProviderService } from '../lib/videoProvider.js'
 
 const props = defineProps({
@@ -192,13 +192,18 @@ function appointmentStatus(event) {
   if (!session) return 'Session scheduled'
   return session.status === 'in_progress' ? 'Notes incomplete' : 'Session review waiting'
 }
-function openClientWorkspace(event) {
+async function openClientWorkspace(event) {
   const client = matchedClient(event)
   if (client) {
-    router.push({
-      name: 'SessionWorkspace',
-      params: { clientId: client.id, sessionId: 's123' }
-    })
+    try {
+      const { session } = await createOrResumeSession(client.id)
+      router.push({
+        name: 'SessionWorkspace',
+        params: { clientId: client.id, sessionId: session.id }
+      })
+    } catch (error) {
+      console.error('Failed to open session workspace from calendar:', error)
+    }
   }
 }
 
