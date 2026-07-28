@@ -102,10 +102,10 @@
             <div class="flex gap-3">
               <button 
                 @click="openApprovalDialog"
-                :disabled="!reviewConfirmed"
+                disabled
                 class="px-inline-lg py-3 bg-action-primary text-on-action text-body-sm font-bold rounded-control hover:bg-action-primary-hover transition-all disabled:opacity-50 shadow-sm"
               >
-                Approve Clinical Record
+                Approve (Coming Soon)
               </button>
               <button 
                 @click="status = 'draft'"
@@ -133,10 +133,18 @@
           </div>
         </div>
 
+        <!-- Legacy Plain Text Display in Editor -->
+        <div v-if="legacyNotes" class="mt-8 pt-8 border-t border-border">
+          <h4 class="text-caption font-bold text-ink-muted uppercase tracking-wider mb-4">Legacy Session Notes</h4>
+          <div class="p-4 rounded-control border border-border bg-surface-muted text-body-sm text-ink whitespace-pre-wrap leading-relaxed">
+            {{ legacyNotes }}
+          </div>
+        </div>
+
         <!-- Local persistence notice -->
         <NoticeBanner 
           class="mt-8 mb-0"
-          message="This demonstration draft is stored only in local UI state and will reset when the page is refreshed."
+          message="Your changes are saved as a draft on the session record."
           icon="📋"
         />
 
@@ -178,6 +186,14 @@
             :fields="summaryFields"
             :data="approvedRecord.content"
           />
+
+          <!-- Legacy Plain Text Display -->
+          <div v-if="legacyNotes" class="mt-8 pt-8 border-t border-border">
+            <h4 class="text-caption font-bold text-ink-muted uppercase tracking-wider mb-4">Legacy Session Notes</h4>
+            <div class="p-4 rounded-control border border-border bg-surface-muted text-body-sm text-ink whitespace-pre-wrap leading-relaxed">
+              {{ legacyNotes }}
+            </div>
+          </div>
 
           <!-- Amendment display when approved -->
           <div v-if="status === 'amendment_approved'" class="mt-8 pt-8 border-t-2 border-dashed border-border-muted">
@@ -315,7 +331,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, nextTick } from 'vue';
+import { ref, reactive, computed, nextTick, watch, onMounted } from 'vue';
 import StatusBadge from './StatusBadge.vue';
 import ClinicalWorkflowIndicator from './ClinicalWorkflowIndicator.vue';
 import ClinicalRecordMetadata from './ClinicalRecordMetadata.vue';
@@ -323,6 +339,16 @@ import RecordHistoryPanel from './RecordHistoryPanel.vue';
 import ApprovalConfirmationDialog from './ApprovalConfirmationDialog.vue';
 import ApprovedClinicalRecordView from './ApprovedClinicalRecordView.vue';
 import NoticeBanner from './NoticeBanner.vue';
+import { saveSessionDraft } from '../../lib/sessions.js';
+
+const props = defineProps({
+  session: {
+    type: Object,
+    required: true
+  }
+});
+
+const emit = defineEmits(['update:session']);
 
 const status = ref('not_started');
 const saveMessage = ref('');
@@ -330,6 +356,8 @@ const firstField = ref(null);
 const mainHeading = ref(null);
 const reviewConfirmed = ref(false);
 const isApprovalDialogOpen = ref(false);
+const submitting = ref(false);
+const legacyNotes = ref('');
 
 const checklist = [
   { id: 1, label: 'Session Transcript', available: true, required: true },
@@ -356,6 +384,42 @@ const summaryData = reactive({
   riskSafeguarding: '',
   progressGoals: '',
   planNextSession: ''
+});
+
+onMounted(() => {
+  loadFromSession();
+});
+
+const loadFromSession = () => {
+  if (!props.session?.notes) return;
+
+  try {
+    const parsed = JSON.parse(props.session.notes);
+    if (parsed && typeof parsed === 'object') {
+      Object.keys(summaryData).forEach(key => {
+        if (parsed[key] !== undefined) {
+          summaryData[key] = parsed[key];
+        }
+      });
+      // If we have content, move to draft state automatically if it was not_started
+      if (status.value === 'not_started' && Object.values(summaryData).some(v => v)) {
+        status.value = 'draft';
+      }
+      legacyNotes.value = parsed.legacyNotes || '';
+    } else {
+      legacyNotes.value = props.session.notes;
+    }
+  } catch (e) {
+    // Plain text or invalid JSON
+    legacyNotes.value = props.session.notes;
+  }
+};
+
+// Re-load if session changes externally (e.g. from another tab/component)
+watch(() => props.session?.notes, (newNotes, oldNotes) => {
+  if (newNotes !== oldNotes) {
+    loadFromSession();
+  }
 });
 
 const amendmentData = reactive({
@@ -456,26 +520,53 @@ const pageTitle = computed(() => {
   }
 });
 
-const prepareDraft = () => {
+const prepareDraft = async () => {
   status.value = 'draft';
   
-  // Populate with mock demonstration content
-  summaryData.presentingConcerns = '[DEMO] Client expressed anxiety regarding upcoming performance review at work.';
-  summaryData.sessionThemes = '[DEMO] Professional competence, self-criticism, fear of failure.';
-  summaryData.interventionsUsed = '[DEMO] Cognitive restructuring, socratic questioning regarding "worst case scenario".';
-  summaryData.clientResponse = '[DEMO] Engaged, able to identify two cognitive distortions.';
-  summaryData.riskSafeguarding = '[DEMO] No new risk concerns identified. Protective factors remain stable.';
-  summaryData.progressGoals = '[DEMO] Working towards reducing workplace anxiety. Progress is consistent.';
-  summaryData.planNextSession = '[DEMO] Behavioral experiment review and deepening work on self-compassion.';
+  // Populate with mock demonstration content if empty
+  if (!Object.values(summaryData).some(v => v)) {
+    summaryData.presentingConcerns = '[DEMO] Client expressed anxiety regarding upcoming performance review at work.';
+    summaryData.sessionThemes = '[DEMO] Professional competence, self-criticism, fear of failure.';
+    summaryData.interventionsUsed = '[DEMO] Cognitive restructuring, socratic questioning regarding "worst case scenario".';
+    summaryData.clientResponse = '[DEMO] Engaged, able to identify two cognitive distortions.';
+    summaryData.riskSafeguarding = '[DEMO] No new risk concerns identified. Protective factors remain stable.';
+    summaryData.progressGoals = '[DEMO] Working towards reducing workplace anxiety. Progress is consistent.';
+    summaryData.planNextSession = '[DEMO] Behavioral experiment review and deepening work on self-compassion.';
+  }
 
   scrollAndFocus();
+  await saveDraft();
 };
 
-const saveDraft = () => {
-  saveMessage.value = 'Draft saved in local demonstration state.';
-  setTimeout(() => {
-    saveMessage.value = '';
-  }, 3000);
+const saveDraft = async () => {
+  if (submitting.value) return;
+  submitting.value = true;
+  saveMessage.value = 'Saving…';
+  
+  try {
+    const payload = {
+      ...summaryData,
+      legacyNotes: legacyNotes.value
+    };
+    
+    const updatedSession = await saveSessionDraft(
+      props.session,
+      JSON.stringify(payload)
+    );
+    
+    emit('update:session', updatedSession);
+    saveMessage.value = 'Draft saved.';
+  } catch (error) {
+    console.error('Failed to save clinical summary draft:', error);
+    saveMessage.value = 'Failed to save.';
+  } finally {
+    submitting.value = false;
+    setTimeout(() => {
+      if (saveMessage.value !== 'Saving…') {
+        saveMessage.value = '';
+      }
+    }, 3000);
+  }
 };
 
 const markReady = () => {

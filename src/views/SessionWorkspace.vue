@@ -42,7 +42,11 @@
           />
           <TherapistNotesTab v-else-if="activeTab === 'Therapist Notes'" />
           <ReflectionTab v-else-if="activeTab === 'Reflection'" />
-          <ClinicalSummaryTab v-else-if="activeTab === 'Clinical Summary'" />
+          <ClinicalSummaryTab 
+            v-else-if="activeTab === 'Clinical Summary'" 
+            :session="session"
+            @update:session="session = $event"
+          />
           <SupervisionSummaryTab v-else-if="activeTab === 'Supervision Summary'" />
         </div>
       </div>
