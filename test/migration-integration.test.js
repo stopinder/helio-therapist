@@ -74,7 +74,7 @@ test('the full migration chain preserves clinical invariants', async () => {
     }
 
     assert.equal(migrations[0], '20260717120000_bootstrap_legacy_integrations.sql')
-    assert.equal(migrations.at(-1), '20260729140500_add_document_timeline_events.sql')
+    assert.equal(migrations.at(-1), '20260729161000_persist_clinical_record_amendments.sql')
 
     const integrationsColumns = await database.query(`
       select column_name
@@ -418,6 +418,84 @@ test('the full migration chain preserves clinical invariants', async () => {
         'read_only', 'Cross tenant', ''
       );
     `), /row-level security policy/)
+
+    // Amendment Tests
+    await database.exec(`reset role;`)
+    await database.exec(`select set_config('request.jwt.claim.sub', '${userOne}', false);`)
+
+    // 1. Owner can approve an amendment for their completed session
+    const amendmentResult = await database.query(`
+      select * from public.approve_clinical_record_amendment(
+        '${sessionId}', 'Factual correction', 'Corrected content'
+      )
+    `)
+    assert.ok(amendmentResult.rows[0].id)
+    assert.equal(amendmentResult.rows[0].sequence_number, 1)
+    assert.equal(amendmentResult.rows[0].reason, 'Factual correction')
+    assert.equal(amendmentResult.rows[0].content, 'Corrected content')
+
+    // 2. Original session notes remain unchanged
+    const sessionNotesCheck = await database.query(`
+      select notes from public.sessions where id = '${sessionId}'
+    `)
+    assert.equal(sessionNotesCheck.rows[0].notes, 'Approved note')
+
+    // 3. Sequence numbers increment
+    const secondAmendment = await database.query(`
+      select * from public.approve_clinical_record_amendment(
+        '${sessionId}', 'More context', 'Even more content'
+      )
+    `)
+    assert.equal(secondAmendment.rows[0].sequence_number, 2)
+
+    // 4. Blank reason fails
+    await assert.rejects(database.exec(`
+      select public.approve_clinical_record_amendment('${sessionId}', ' ', 'content')
+    `), /Amendment reason is required/)
+
+    // 5. Blank content fails
+    await assert.rejects(database.exec(`
+      select public.approve_clinical_record_amendment('${sessionId}', 'reason', '')
+    `), /Amendment content is required/)
+
+    // 6. Non-owner cannot approve an amendment
+    await database.exec(`select set_config('request.jwt.claim.sub', '${userTwo}', false);`)
+    await assert.rejects(database.exec(`
+      select public.approve_clinical_record_amendment('${sessionId}', 'Steal', 'Content')
+    `), /Session not found/)
+
+    // 7. Amendment cannot be added to an incomplete session
+    const draftSessionId = 'd1111111-1111-4111-8111-111111111111'
+    await database.exec(`reset role;`) // Back to superuser for setup
+    await database.exec(`
+      insert into public.sessions (id, user_id, client_id, occurred_at, status, notes_status)
+      values ('${draftSessionId}', '${userOne}', '${clientOne}', now(), 'in_progress', 'draft');
+    `)
+    await database.exec(`select set_config('request.jwt.claim.sub', '${userOne}', false);`)
+    await assert.rejects(database.exec(`
+      select public.approve_clinical_record_amendment('${draftSessionId}', 'Premature', 'Content')
+    `), /Only approved clinical records can be amended/)
+
+    // 8. RLS hides another therapist’s amendments
+    await database.exec(`reset role; set role authenticated;`)
+    await database.exec(`select set_config('request.jwt.claim.sub', '${userTwo}', false);`)
+    const userTwoView = await database.query(`
+      select count(*)::integer from public.clinical_record_amendments where session_id = '${sessionId}'
+    `)
+    assert.equal(userTwoView.rows[0].count, 0)
+
+    // 9. Update fails (Immutability)
+    await database.exec(`reset role;`)
+    const amendmentId = amendmentResult.rows[0].id
+    await assert.rejects(database.exec(`
+      update public.clinical_record_amendments set reason = 'Changed' where id = '${amendmentId}'
+    `), /Approved clinical record amendments are immutable/)
+
+    // 10. Delete fails (Immutability)
+    await assert.rejects(database.exec(`
+      delete from public.clinical_record_amendments where id = '${amendmentId}'
+    `), /Approved clinical record amendments are immutable/)
+
     await database.exec('reset role;')
   } finally {
     await database.close()

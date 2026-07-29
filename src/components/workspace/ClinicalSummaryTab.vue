@@ -197,26 +197,26 @@
           </div>
 
           <!-- Amendment display when approved -->
-          <div v-if="status === 'amendment_approved'" class="mt-8 pt-8 border-t-2 border-dashed border-border-muted">
+          <div v-for="amendment in amendments" :key="amendment.id" class="mt-8 pt-8 border-t-2 border-dashed border-border-muted">
             <h4 class="text-h3 font-semibold text-ink mb-6 flex items-center gap-2">
-              <span class="text-action-link">⟳</span> Record Amendment 1
+              <span class="text-action-link">⟳</span> Record Amendment {{ amendment.sequenceNumber }}
             </h4>
             <div class="space-y-6">
               <div class="space-y-2">
                 <h5 class="text-caption font-bold text-ink-muted uppercase tracking-wider">Amendment Reason</h5>
                 <div class="p-4 rounded-control border border-border-muted bg-surface-reflection italic text-body-sm text-ink">
-                  {{ approvedAmendment.reason }}
+                  {{ amendment.reason }}
                 </div>
               </div>
               <div class="space-y-2">
                 <h5 class="text-caption font-bold text-ink-muted uppercase tracking-wider">Amendment Content</h5>
                 <div class="p-4 rounded-control border border-border-muted bg-surface-subtle text-body-sm text-ink leading-relaxed">
-                  {{ approvedAmendment.content }}
+                  {{ amendment.content }}
                 </div>
               </div>
             </div>
             <div class="mt-6 text-caption text-ink-muted">
-              Approved by: Robert Ormiston (Mock) • {{ approvedAmendment.timestamp }}
+              Approved by therapist • {{ new Date(amendment.approvedAt).toLocaleString() }}
             </div>
           </div>
 
@@ -255,21 +255,25 @@
                   I have reviewed this amendment and confirm it should be appended to the clinical record.
                 </span>
               </label>
-              <div class="flex gap-3">
-                <button 
-                  @click="approveAmendment"
-                  :disabled="!reviewConfirmed"
-                  class="px-inline-lg py-3 bg-action-primary text-on-action text-body-sm font-bold rounded-control hover:bg-action-primary-hover transition-all disabled:opacity-50 shadow-sm"
-                >
-                  Approve Amendment
-                </button>
-                <button 
-                  @click="status = 'amendment_draft'"
-                  class="px-inline-lg py-3 bg-surface border border-border text-body-sm font-medium text-ink rounded-control hover:bg-state-hover transition-colors"
-                >
-                  Return to Amendment Draft
-                </button>
-              </div>
+            <div class="flex gap-3">
+              <button 
+                @click="approveAmendment"
+                :disabled="submitting || !reviewConfirmed"
+                class="px-inline-lg py-3 bg-action-primary text-on-action text-body-sm font-bold rounded-control hover:bg-action-primary-hover transition-all disabled:opacity-50 shadow-sm"
+              >
+                {{ submitting ? 'Processing...' : 'Approve Amendment' }}
+              </button>
+              <button 
+                @click="status = 'amendment_draft'"
+                :disabled="submitting"
+                class="px-inline-lg py-3 bg-surface border border-border text-body-sm font-medium text-ink rounded-control hover:bg-state-hover transition-colors disabled:opacity-50"
+              >
+                Return to Amendment Draft
+              </button>
+            </div>
+            <p v-if="errorMessage" class="mt-4 text-body-sm text-state-danger" role="alert">
+              {{ errorMessage }}
+            </p>
             </div>
           </div>
 
@@ -307,12 +311,15 @@
             </button>
             <button 
               v-if="status === 'amendment_draft'"
-              @click="status = 'amendment_ready_for_review'"
+              @click="markAmendmentReady"
               class="px-inline-lg py-stack-sm bg-action-link text-on-action text-body-sm font-medium rounded-control hover:bg-action-link-hover transition-colors shadow-sm"
             >
               Mark Amendment Ready for Review
             </button>
           </div>
+          <p v-if="errorMessage && status === 'amendment_draft'" class="mt-4 text-body-sm text-state-danger text-right" role="alert">
+            {{ errorMessage }}
+          </p>
         </div>
 
         <!-- Record History -->
@@ -340,7 +347,7 @@ import RecordHistoryPanel from './RecordHistoryPanel.vue';
 import ApprovalConfirmationDialog from './ApprovalConfirmationDialog.vue';
 import ApprovedClinicalRecordView from './ApprovedClinicalRecordView.vue';
 import NoticeBanner from './NoticeBanner.vue';
-import { saveSessionDraft, completeSessionRecord } from '../../lib/sessions.js';
+import { saveSessionDraft, completeSessionRecord, listClinicalRecordAmendments, approveClinicalRecordAmendment } from '../../lib/sessions.js';
 
 const props = defineProps({
   session: {
@@ -359,6 +366,8 @@ const reviewConfirmed = ref(false);
 const isApprovalDialogOpen = ref(false);
 const submitting = ref(false);
 const legacyNotes = ref('');
+const amendments = ref([]);
+const errorMessage = ref('');
 
 const checklist = [
   { id: 1, label: 'Session Transcript', available: true, required: true },
@@ -387,8 +396,9 @@ const summaryData = reactive({
   planNextSession: ''
 });
 
-onMounted(() => {
+onMounted(async () => {
   loadFromSession();
+  await fetchAmendments();
 });
 
 const loadFromSession = () => {
@@ -445,11 +455,28 @@ const loadFromSession = () => {
 };
 
 // Re-load if session changes externally (e.g. from another tab/component)
+watch(() => props.session?.id, async () => {
+  loadFromSession();
+  await fetchAmendments();
+});
+
 watch(() => props.session?.notes, (newNotes, oldNotes) => {
   if (newNotes !== oldNotes) {
     loadFromSession();
   }
 });
+
+const fetchAmendments = async () => {
+  if (!props.session?.id || props.session.status !== 'completed') {
+    amendments.value = [];
+    return;
+  }
+  try {
+    amendments.value = await listClinicalRecordAmendments(props.session.id);
+  } catch (e) {
+    console.error('Failed to load amendments:', e);
+  }
+};
 
 const amendmentData = reactive({
   reason: '',
@@ -471,40 +498,42 @@ const approvedAmendment = reactive({
 const recordHistory = computed(() => {
   const history = [];
   
-  if (status.value === 'approved_record' || status.value === 'amendment_draft' || status.value === 'amendment_ready_for_review' || status.value === 'amendment_approved') {
+  if (status.value === 'approved_record' || status.value.startsWith('amendment_')) {
     history.push({
       title: 'Version 1',
       status: 'approved_record',
       statusLabel: 'Approved',
-      author: 'Robert Ormiston',
+      author: 'Therapist',
       approvedDate: approvedRecord.timestamp
     });
   }
 
+  amendments.value.forEach(amendment => {
+    history.push({
+      title: `Amendment ${amendment.sequenceNumber}`,
+      status: 'amendment_approved',
+      statusLabel: 'Approved',
+      author: 'Therapist',
+      approvedDate: new Date(amendment.approvedAt).toLocaleString(),
+      reason: amendment.reason
+    });
+  });
+
   if (status.value === 'amendment_draft') {
     history.push({
-      title: 'Amendment 1',
+      title: `Amendment ${amendments.value.length + 1}`,
       status: 'amendment_draft',
       statusLabel: 'Draft',
-      author: 'Robert Ormiston',
+      author: 'Therapist',
       createdDate: new Date().toLocaleString()
     });
   } else if (status.value === 'amendment_ready_for_review') {
     history.push({
-      title: 'Amendment 1',
+      title: `Amendment ${amendments.value.length + 1}`,
       status: 'amendment_ready_for_review',
       statusLabel: 'Ready for Review',
-      author: 'Robert Ormiston',
+      author: 'Therapist',
       createdDate: new Date().toLocaleString()
-    });
-  } else if (status.value === 'amendment_approved') {
-    history.push({
-      title: 'Amendment 1',
-      status: 'amendment_approved',
-      statusLabel: 'Approved',
-      author: 'Robert Ormiston',
-      approvedDate: approvedAmendment.timestamp,
-      reason: approvedAmendment.reason
     });
   }
 
@@ -650,16 +679,52 @@ const confirmApproval = async () => {
 const startAmendment = () => {
   status.value = 'amendment_draft';
   reviewConfirmed.value = false;
+  errorMessage.value = '';
   scrollAndFocus();
 };
 
-const approveAmendment = () => {
-  approvedAmendment.timestamp = new Date().toLocaleString();
-  approvedAmendment.reason = amendmentData.reason;
-  approvedAmendment.content = amendmentData.content;
-  
-  status.value = 'amendment_approved';
+const markAmendmentReady = () => {
+  if (!amendmentData.reason.trim() || !amendmentData.content.trim()) {
+    errorMessage.value = 'Reason and content are required.';
+    return;
+  }
+  errorMessage.value = '';
+  status.value = 'amendment_ready_for_review';
   scrollAndFocus();
+};
+
+const approveAmendment = async () => {
+  if (submitting.value || !reviewConfirmed.value) return;
+  if (!amendmentData.reason.trim() || !amendmentData.content.trim()) {
+    errorMessage.value = 'Reason and content are required.';
+    return;
+  }
+  
+  submitting.value = true;
+  errorMessage.value = '';
+  
+  try {
+    const newAmendment = await approveClinicalRecordAmendment({
+      sessionId: props.session.id,
+      reason: amendmentData.reason,
+      content: amendmentData.content
+    });
+    
+    amendments.value.push(newAmendment);
+    
+    // Reset form
+    amendmentData.reason = '';
+    amendmentData.content = '';
+    reviewConfirmed.value = false;
+    
+    status.value = 'approved_record';
+    scrollAndFocus();
+  } catch (error) {
+    console.error('Failed to approve amendment:', error);
+    errorMessage.value = 'Failed to approve amendment. Please try again.';
+  } finally {
+    submitting.value = false;
+  }
 };
 
 const scrollAndFocus = () => {

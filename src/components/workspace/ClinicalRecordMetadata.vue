@@ -6,7 +6,7 @@
     </div>
     <div class="flex items-center gap-1.5">
       <span class="font-semibold text-ink-secondary uppercase tracking-tight">Approved by:</span>
-      <span>{{ author }} (Mock)</span>
+      <span>{{ author }}</span>
     </div>
     <div class="flex items-center gap-1.5">
       <span class="font-semibold text-ink-secondary uppercase tracking-tight">Timestamp:</span>
@@ -22,7 +22,7 @@
 <script setup>
 defineProps({
   version: { type: [String, Number], default: 1 },
-  author: { type: String, default: 'Robert Ormiston' },
+  author: { type: String, default: 'Therapist' },
   timestamp: { type: String, required: true }
 });
 </script>
