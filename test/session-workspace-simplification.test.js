@@ -63,7 +63,10 @@ test('SessionWorkspace simplification: End Session confirmation wiring', async (
   const workspace = await readFile(new URL('../src/views/SessionWorkspace.vue', import.meta.url), 'utf8')
 
   // Header emits end-session
-  assert.match(header, /defineEmits\(\['end-session', 'pause-work', 'resume-work'\]\)/)
+  assert.match(header, /'end-session'/)
+  assert.match(header, /'pause-work'/)
+  assert.match(header, /'resume-work'/)
+  assert.match(header, /'add-to-supervision'/)
   assert.match(header, /@click="emit\('end-session'\)"/)
 
   // Workspace has confirmation dialog

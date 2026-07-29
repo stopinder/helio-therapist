@@ -1,0 +1,260 @@
+
+> helios-therapist@1.0.0 test
+> node --test test/**/*.test.js
+✔ ClinicalSummaryTab.vue handles amendment drafts correctly (308.9645ms)
+✔ ClientWorkspace.vue resolves EmptyState component (89.9959ms)
+✔ calendar events open a Helio-controlled detail popover (194.3216ms)
+✔ keeps calendar recovery in the workspace rather than routing routine work to Settings (162.799ms)
+✔ lib/clients.js includes createClient with authenticated user check (177.3975ms)
+✔ Clients.vue integrates AddClientModal correctly (145.4708ms)
+✔ App.vue reuses createClient helper (42.2437ms)
+✔ searches names and identifiers without requiring email to be displayed (2.8214ms)
+✔ only a single exact result is eligible for Enter-to-open (40.0828ms)
+✔ recent sorting prioritises recently opened clients and then uses name order (4.0137ms)
+✔ identifiers appear only when needed to distinguish duplicate names (3.5881ms)
+✔ client request model keeps one send action and independently managed items (223.1814ms)
+✔ Clients page uses live Supabase clients and standard UI patterns (89.744ms)
+✔ clinical exchange labels preserve the distinct assignment lifecycle (5.0011ms)
+✔ clinical timeline presents clinical findings, not workflow activity (42.4136ms)
+✔ PHQ-9 only calculates complete valid answers and preserves item answers (5.8528ms)
+✔ Clinical Summary Approval: draft session displays as draft (4.5459ms)
+✔ Clinical Summary Approval: completed session displays as approved_record (0.7752ms)
+✔ Clinical Summary Approval: parses notes correctly for approved record (1.1892ms)
+✔ Clinical Summary Approval: handles legacy plain text after approval (25.7616ms)
+✔ Clinical Summary: parses valid JSON notes (17.9194ms)
+✔ Clinical Summary: handles plain text as legacy notes (5.2105ms)
+✔ Clinical Summary: handles invalid JSON as legacy notes (0.9295ms)
+✔ Clinical Summary: formats data as JSON string (1.2896ms)
+✔ clinical session state is server-backed with a one-time retained legacy import (168.9677ms)
+✔ session save and completion use concurrency and transactional RPC boundaries (154.6078ms)
+✔ Zoom session operations validate the durable session belongs to the therapist and client (84.3343ms)
+[Google Calendar] Refresh requires new consent: invalid_grant
+✔ refreshes an expired Google token and retries the calendar request silently (449.4382ms)
+✔ only asks for reconnect when Google rejects the refresh token (15.978ms)
+✔ the full migration chain preserves clinical invariants (15463.7542ms)
+✔ ReflectionWorkspace.vue implements single modal with internal stages (196.8863ms)
+✔ ReflectionWorkspace prevents background scroll when modal is open (95.4698ms)
+✔ Today has one focused before-session preparation state (240.4473ms)
+✔ the reflection workspace preserves its private therapist-only boundary (180.8532ms)
+✔ Sprint One keeps reflection and summary ownership explicit in RLS (114.768ms)
+✔ frontend ReflectionWorkspace.vue does NOT contain relationship controls (116.9106ms)
+✔ ReflectionWorkspace.vue has 20,000 character validation (29.0458ms)
+✔ ReflectionWorkspace.vue detail modal is simplified (68.4974ms)
+✔ frontend validation matches database constraints (281.6521ms)
+✔ reflection saving has length validation and error handling (46.9598ms)
+✔ summary generation handles non-JSON responses safely (18.2385ms)
+✔ transcription also uses safe JSON parsing (81.1278ms)
+✔ resource picker separates resource selection from request configuration (252.6211ms)
+✔ SessionWorkspace simplification: UI elements removed (284.8683ms)
+✔ SessionWorkspace: Header and layout cleanup (183.3444ms)
+✔ SessionWorkspace: Navigation labels updated (196.2188ms)
+✖ SessionWorkspace simplification: End Session confirmation wiring (272.972ms)
+✔ semantic spacing tokens are defined once and exposed to Tailwind (288.46ms)
+✔ priority workspace surfaces use semantic spacing (66.2322ms)
+✔ semantic surface, border, and elevation tokens are defined once and exposed to Tailwind (112.5249ms)
+✔ semantic interaction and motion tokens are defined once and exposed to Tailwind (196.3075ms)
+✔ primary drawers use the shared keyboard focus trap (175.5727ms)
+✔ shared visual decisions have semantic tokens and templates do not use arbitrary colour utilities (744.7456ms)
+✔ createSupervisionReflection success (45.1037ms)
+✔ createSupervisionReflection unauthenticated error (7.3645ms)
+✔ a reflection may be saved empty or short, while summary generation needs enough source material (108.7198ms)
+✔ the summary request is authenticated and delimits source writing (24.1574ms)
+✔ only a bounded, supported draft is accepted (2.3417ms)
+✔ regeneration versions summaries and never overwrites the original reflection (140.0749ms)
+✔ ClientWorkspace.vue integrates live timeline (160.5264ms)
+✔ TimelineItem.vue handles navigation and event-driven presentation (133.8133ms)
+✔ lib/clients.js includes getTimelineEvents helper (26.3664ms)
+✔ multi-record resource and completion workflows call database transactions (132.3809ms)
+✔ privileged transactional functions are not executable by browser roles (79.9994ms)
+✔ tenant policies validate the owner of referenced clinical records (71.4347ms)
+✔ videoProviderService returns provider-neutral labels (89.0039ms)
+✔ videoProviderService does not include provider names in labels (0.6983ms)
+✔ work tracking service exports (2.7208ms)
+✔ historical session with no segments behavior (0.9969ms)
+✔ recorded time rounding and billable logic expectations (27.0282ms)
+✔ downloads a transcript with an OAuth bearer token (267.7279ms)
+✔ follows a signed non-Zoom redirect without leaking the bearer token (38.5919ms)
+✔ uses a pre-expiry refreshed token before downloading (2.1163ms)
+✔ retries exactly once with a refreshed token after a 401 (3.687ms)
+✔ leaves a persistent 401 for the caller to record as a failure (15.6894ms)
+✔ accepts a current Zoom webhook with a matching signature (35.6075ms)
+✔ rejects missing, mismatched and stale Zoom webhook signatures (2.0135ms)
+✔ verifies the exact raw Zoom payload without reserialising JSON (2.0764ms)
+✔ uses a stable delivery key and stores only bounded webhook metadata (3.4237ms)
+ℹ tests 79
+ℹ suites 0
+ℹ pass 78
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 19193.4707
+✖ failing tests:
+test at test\session-workspace-simplification.test.js:61:1
+✖ SessionWorkspace simplification: End Session confirmation wiring (272.972ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /defineEmits\(\['end-session', 'pause-work', 'resume-work'\]\)/. Input:
+
+  '<template>\r\n' +
+    '  <header class="bg-surface border-b border-border-muted px-inline-lg py-stack-md">\r\n' +
+    '    <div class="flex flex-col md:flex-row md:items-center justify-between gap-stack-md">\r\n' +
+    '      <div class="flex items-center gap-inline-md">\r\n' +
+    '        <RouterLink \r\n' +
+    '          :to="`/clients/${session.clientId}`"\r\n' +
+    '          class="h-10 w-10 rounded-pill bg-avatar flex items-center justify-center text-h3 font-semibold text-ink shrink-0 hover:bg-avatar-hover transition-colors"\r\n' +
+    '          title="Back to Client Record"\r\n' +
+    '        >\r\n' +
+    '          ←\r\n' +
+    '        </RouterLink>\r\n' +
+    '        <div class="flex flex-col min-w-0">\r\n' +
+    '          <div class="flex items-center gap-inline-sm flex-wrap">\r\n' +
+    '            <h1 class="text-h2 font-semibold text-ink truncate">{{ session.clientName }}</h1>\r\n' +
+    `            <StatusBadge :status="session.status.toLowerCase().includes('completed') ? 'success' : 'active'" :label="session.status" />\r\n` +
+    '          </div>\r\n' +
+    '          <div class="flex flex-wrap items-center gap-x-inline-md gap-y-0 text-caption text-ink-muted">\r\n' +
+    '            <span class="font-medium">{{ session.type }}</span>\r\n' +
+    '            <span>{{ session.date }} at {{ session.time }}</span>\r\n' +
+    '          </div>\r\n' +
+    '        </div>\r\n' +
+    '      </div>\r\n' +
+    '\r\n' +
+    '      <div class="flex items-center gap-inline-sm flex-wrap">\r\n' +
+    '        <div class="flex items-center gap-inline-md mr-inline-md">\r\n' +
+    '          <div class="flex flex-col items-end">\r\n' +
+    '            <span class="text-caption font-semibold text-ink">{{ workStatusLabel }}</span>\r\n' +
+    '            <span class="text-caption text-ink-muted">{{ recordedTimeLabel }}</span>\r\n' +
+    '          </div>\r\n' +
+    '          <div v-if="!isCompleted" class="flex items-center gap-inline-sm">\r\n' +
+    '            <button \r\n' +
+    `              v-if="workState?.tracking_state === 'running'"\r\n` +
+    `              @click="emit('pause-work')"\r\n` +
+    '              class="p-1.5 rounded-pill bg-surface border border-border text-ink-secondary hover:bg-surface-subtle transition-colors"\r\n' +
+    '              title="Pause Work"\r\n' +
+    '            >\r\n' +
+    '              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4">\r\n' +
+    '                <path d="M5.75 3a.75.75 0 00-.75.75v12.5c0 .414.336.75.75.75h1.5a.75.75 0 00.75-.75V3.75A.75.75 0 007.25 3h-1.5zM12.75 3a.75.75 0 00-.75.75v12.5c0 .414.336.75.75.75h1.5a.75.75 0 00.75-.75V3.75a.75.75 0 00-.75-.75h-1.5z" />\r\n' +
+    '              </svg>\r\n' +
+    '            </button>\r\n' +
+    '            <button \r\n' +
+    '              v-else\r\n' +
+    `              @click="emit('resume-work')"\r\n` +
+    '              class="p-1.5 rounded-pill bg-surface border border-border text-ink-secondary hover:bg-surface-subtle transition-colors"\r\n' +
+    '              title="Resume Work"\r\n' +
+    '            >\r\n' +
+    '              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4">\r\n' +
+    '                <path d="M6.3 2.841A.75.75 0 017 3.5v13a.75.75 0 01-1.144.644L1.856 14.634A.75.75 0 011.5 14V6a.75.75 0 01.356-.634l4-2.525zM10.8 2.841A.75.75 0 0111.5 3.5v13a.75.75 0 01-1.144.644L6.356 14.634A.75.75 0 016 14V6a.75.75 0 01.356-.634l4-2.525z" />\r\n' +
+    '              </svg>\r\n' +
+    '            </button>\r\n' +
+    '          </div>\r\n' +
+    '        </div>\r\n' +
+    '\r\n' +
+    '        <div \r\n' +
+    '          v-if="isInPerson"\r\n' +
+    '          class="px-inline-md py-stack-xs bg-surface-subtle border border-border text-caption font-medium text-ink-secondary rounded-control"\r\n' +
+    '        >\r\n' +
+    '          Session type: In-person\r\n' +
+    '        </div>\r\n' +
+    '        <button \r\n' +
+    '          v-else\r\n' +
+    '          @click="joinMeeting"\r\n' +
+    '          :disabled="!session.meetingUrl"\r\n' +
+    `          :title="!session.meetingUrl ? 'No video meeting link has been added.' : ''"\r\n` +
+    '          class="px-inline-md py-stack-xs bg-surface-elevated border border-border text-caption font-medium text-ink-secondary rounded-control hover:bg-surface-subtle transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-state-selected disabled:opacity-50 disabled:cursor-not-allowed"\r\n' +
+    '        >\r\n' +
+    '          {{ videoLabel }}\r\n' +
+    '        </button>\r\n' +
+    '        <button \r\n' +
+    `          @click="emit('add-to-supervision')"\r\n` +
+    '          class="px-inline-md py-stack-xs bg-surface-elevated border border-border text-caption font-medium text-ink-secondary rounded-control hover:bg-surface-subtle transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-state-selected"\r\n' +
+    '        >\r\n' +
+    '          Add to Supervision\r\n' +
+    '        </button>\r\n' +
+    '        <button \r\n' +
+    '          class="px-inline-md py-stack-xs bg-surface-elevated border border-border text-caption font-medium text-ink-secondary rounded-control hover:bg-surface-subtle transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-state-selected"\r\n' +
+    '          disabled\r\n' +
+    '          title="Autosave is not currently active for notes."\r\n' +
+    '        >\r\n' +
+    '          Save Notes\r\n' +
+    '        </button>\r\n' +
+    '        <button \r\n' +
+    '          v-if="!isCompleted"\r\n' +
+    `          @click="emit('end-session')"\r\n` +
+    '          :disabled="ending"\r\n' +
+    '          class="px-inline-md py-stack-xs bg-state-danger text-body-sm font-medium text-white rounded-control hover:opacity-90 transition-colors shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-state-danger ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"\r\n' +
+    '        >\r\n' +
+    "          {{ ending ? 'Ending Session…' : 'End Session' }}\r\n" +
+    '        </button>\r\n' +
+    '      </div>\r\n' +
+    '    </div>\r\n' +
+    '  </header>\r\n' +
+    '</template>\r\n' +
+    '\r\n' +
+    '<script setup>\r\n' +
+    "import { ref, computed } from 'vue';\r\n" +
+    "import { RouterLink } from 'vue-router';\r\n" +
+    "import StatusBadge from './StatusBadge.vue';\r\n" +
+    "import { videoProviderService } from '../../lib/videoProvider.js';\r\n" +
+    '\r\n' +
+    'const props = defineProps({\r\n' +
+    '  session: {\r\n' +
+    '    type: Object,\r\n' +
+    '    required: true\r\n' +
+    '  },\r\n' +
+    '  ending: {\r\n' +
+    '    type: Boolean,\r\n' +
+    '    default: false\r\n' +
+    '  },\r\n' +
+    '  workState: {\r\n' +
+    '    type: Object,\r\n' +
+    "    default: () => ({ tracking_state: 'not_started', recorded_minutes: 0 })\r\n" +
+    '  }\r\n' +
+    '});\r\n' +
+    '\r\n' +
+    "const emit = defineEmits(['end-session', 'pause-work', 'resume-work', 'add-to-supervision']);\r\n" +
+    '\r\n' +
+    "const isInPerson = computed(() => true); // Columns don't exist in Supabase yet, defaulting to safe in-person logic for UI\r\n" +
+    '\r\n' +
+    "const isCompleted = computed(() => props.session.status === 'Completed' || props.session.status === 'completed');\r\n" +
+    '\r\n' +
+    'const workStatusLabel = computed(() => {\r\n' +
+    "  if (isCompleted.value) return 'Work completed';\r\n" +
+    '  switch (props.workState?.tracking_state) {\r\n' +
+    "    case 'running': return 'Work time active';\r\n" +
+    "    case 'paused': return 'Work paused';\r\n" +
+    "    default: return 'Work not started';\r\n" +
+    '  }\r\n' +
+    '});\r\n' +
+    '\r\n' +
+    'const recordedTimeLabel = computed(() => {\r\n' +
+    "  if (!props.workState) return '';\r\n" +
+    "  if (props.workState.tracking_state === 'not_tracked') return 'Recorded: Not tracked';\r\n" +
+    "  if (props.workState.recorded_minutes === undefined || props.workState.recorded_minutes === null) return '';\r\n" +
+    '  return `Recorded: ${props.workState.recorded_minutes} min`;\r\n' +
+    '});\r\n' +
+    '\r\n' +
+    'const joinMeeting = () => {\r\n' +
+    "  // Use mock data as these columns don't exist in Supabase yet\r\n" +
+    '  videoProviderService.openMeeting({\r\n' +
+    "    videoProvider: 'zoom',\r\n" +
+    "    meetingUrl: 'https://zoom.us/j/123456789'\r\n" +
+    '  });\r\n' +
+    '};\r\n' +
+    '\r\n' +
+    'const videoLabel = computed(() => {\r\n' +
+    '  return videoProviderService.getVideoActionLabel({\r\n' +
+    "    videoProvider: 'zoom',\r\n" +
+    "    meetingUrl: 'https://zoom.us/j/123456789',\r\n" +
+    "    status: 'Scheduled'\r\n" +
+    '  });\r\n' +
+    '});\r\n' +
+    '</script>\r\n'
+
+      at TestContext.<anonymous> (file:///C:/Users/Rob/WebstormProjects/helio-therapist/test/session-workspace-simplification.test.js:66:10)
+      at async Test.run (node:internal/test_runner/test:1054:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:744:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: '<template>\r\n  <header class="bg-surface border-b border-border-muted px-inline-lg py-stack-md">\r\n    <div class="flex flex-col md:flex-row md:items-center justify-between gap-stack-md">\r\n      <div class="flex items-center gap-inline-md">\r\n        <RouterLink \r\n          :to="`/clients/${session.clientId}`"\r\n          class="h-10 w-10 rounded-pill bg-avatar flex items-center justify-center text-h3 font-semibold text-ink shrink-0 hover:bg-avatar-hover transition-colors"\r\n          title="Back to Client Record"\r\n        >\r\n          ←\r\n        </RouterLink>\r\n        <div class="flex flex-col min-w-0">\r\n          <div class="flex items-center gap-inline-sm flex-wrap">\r\n            <h1 class="text-h2 font-semibold text-ink truncate">{{ session.clientName }}</h1>\r\n            <StatusBadge :status="session.status.toLowerCase().includes(\'completed\') ? \'success\' : \'active\'" :label="session.status" />\r\n          </div>\r\n          <div class="flex flex-wrap items-center gap-x-inline-md gap-y-0 text-caption text-ink-muted">\r\n            <span class="font-medium">{{ session.type }}</span>\r\n            <span>{{ session.date }} at {{ session.time }}</span>\r\n          </div>\r\n        </div>\r\n      </div>\r\n\r\n      <div class="flex items-center gap-inline-sm flex-wrap">\r\n        <div class="flex items-center gap-inline-md mr-inline-md">\r\n          <div class="flex flex-col items-end">\r\n            <span class="text-caption font-semibold text-ink">{{ workStatusLabel }}</span>\r\n            <span class="text-caption text-ink-muted">{{ recordedTimeLabel }}</span>\r\n          </div>\r\n          <div v-if="!isCompleted" class="flex items-center gap-inline-sm">\r\n            <button \r\n              v-if="workState?.tracking_state === \'running\'"\r\n              @click="emit(\'pause-work\')"\r\n              class="p-1.5 rounded-pill bg-surface border border-border text-ink-secondary hover:bg-surface-subtle transition-colors"\r\n              title="Pause Work"\r\n            >\r\n              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4">\r\n                <path d="M5.75 3a.75.75 0 00-.75.75v12.5c0 .414.336.75.75.75h1.5a.75.75 0 00.75-.75V3.75A.75.75 0 007.25 3h-1.5zM12.75 3a.75.75 0 00-.75.75v12.5c0 .414.336.75.75.75h1.5a.75.75 0 00.75-.75V3.75a.75.75 0 00-.75-.75h-1.5z" />\r\n              </svg>\r\n            </button>\r\n            <button \r\n              v-else\r\n              @click="emit(\'resume-work\')"\r\n              class="p-1.5 rounded-pill bg-surface border border-border text-ink-secondary hover:bg-surface-subtle transition-colors"\r\n              title="Resume Work"\r\n            >\r\n              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4">\r\n                <path d="M6.3 2.841A.75.75 0 017 3.5v13a.75.75 0 01-1.144.644L1.856 14.634A.75.75 0 011.5 14V6a.75.75 0 01.356-.634l4-2.525zM10.8 2.841A.75.75 0 0111.5 3.5v13a.75.75 0 01-1.144.644L6.356 14.634A.75.75 0 016 14V6a.75.75 0 01.356-.634l4-2.525z" />\r\n              </svg>\r\n            </button>\r\n          </div>\r\n        </div>\r\n\r\n        <div \r\n          v-if="isInPerson"\r\n          class="px-inline-md py-stack-xs bg-surface-subtle border border-border text-caption font-medium text-ink-secondary rounded-control"\r\n        >\r\n          Session type: In-person\r\n        </div>\r\n        <button \r\n          v-else\r\n          @click="joinMeeting"\r\n          :disabled="!session.meetingUrl"\r\n          :title="!session.meetingUrl ? \'No video meeting link has been added.\' : \'\'"\r\n          class="px-inline-md py-stack-xs bg-surface-elevated border border-border text-caption font-medium text-ink-secondary rounded-control hover:bg-surface-subtle transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-state-selected disabled:opacity-50 disabled:cursor-not-allowed"\r\n        >\r\n          {{ videoLabel }}\r\n        </button>\r\n        <button \r\n          @click="emit(\'add-to-supervision\')"\r\n          class="px-inline-md py-stack-xs bg-surface-elevated border border-border text-caption font-medium text-ink-secondary rounded-control hover:bg-surface-subtle transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-state-selected"\r\n        >\r\n          Add to Supervision\r\n        </button>\r\n        <button \r\n          class="px-inline-md py-stack-xs bg-surface-elevated border border-border text-caption font-medium text-ink-secondary rounded-control hover:bg-surface-subtle transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-state-selected"\r\n          disabled\r\n          title="Autosave is not currently active for notes."\r\n        >\r\n          Save Notes\r\n        </button>\r\n        <button \r\n          v-if="!isCompleted"\r\n          @click="emit(\'end-session\')"\r\n          :disabled="ending"\r\n          class="px-inline-md py-stack-xs bg-state-danger text-body-sm font-medium text-white rounded-control hover:opacity-90 transition-colors shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-state-danger ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"\r\n        >\r\n          {{ ending ? \'Ending Session…\' : \'End Session\' }}\r\n        </button>\r\n      </div>\r\n    </div>\r\n  </header>\r\n</template>\r\n\r\n<script setup>\r\nimport { ref, computed } from \'vue\';\r\nimport { RouterLink } from \'vue-router\';\r\nimport StatusBadge from \'./StatusBadge.vue\';\r\nimport { videoProviderService } from \'../../lib/videoProvider.js\';\r\n\r\nconst props = defineProps({\r\n  session: {\r\n    type: Object,\r\n    required: true\r\n  },\r\n  ending: {\r\n    type: Boolean,\r\n    default: false\r\n  },\r\n  workState: {\r\n    type: Object,\r\n    default: () => ({ tracking_state: \'not_started\', recorded_minutes: 0 })\r\n  }\r\n});\r\n\r\nconst emit = defineEmits([\'end-session\', \'pause-work\', \'resume-work\', \'add-to-supervision\']);\r\n\r\nconst isInPerson = computed(() => true); // Columns don\'t exist in Supabase yet, defaulting to safe in-person logic for UI\r\n\r\nconst isCompleted = computed(() => props.session.status === \'Completed\' || props.session.status === \'completed\');\r\n\r\nconst workStatusLabel = computed(() => {\r\n  if (isCompleted.value) return \'Work completed\';\r\n  switch (props.workState?.tracking_state) {\r\n    case \'running\': return \'Work time active\';\r\n    case \'paused\': return \'Work paused\';\r\n    default: return \'Work not started\';\r\n  }\r\n});\r\n\r\nconst recordedTimeLabel = computed(() => {\r\n  if (!props.workState) return \'\';\r\n  if (props.workState.tracking_state === \'not_tracked\') return \'Recorded: Not tracked\';\r\n  if (props.workState.recorded_minutes === undefined || props.workState.recorded_minutes === null) return \'\';\r\n  return `Recorded: ${props.workState.recorded_minutes} min`;\r\n});\r\n\r\nconst joinMeeting = () => {\r\n  // Use mock data as these columns don\'t exist in Supabase yet\r\n  videoProviderService.openMeeting({\r\n    videoProvider: \'zoom\',\r\n    meetingUrl: \'https://zoom.us/j/123456789\'\r\n  });\r\n};\r\n\r\nconst videoLabel = computed(() => {\r\n  return videoProviderService.getVideoActionLabel({\r\n    videoProvider: \'zoom\',\r\n    meetingUrl: \'https://zoom.us/j/123456789\',\r\n    status: \'Scheduled\'\r\n  });\r\n});\r\n</script>\r\n',
+    expected: /defineEmits\(\['end-session', 'pause-work', 'resume-work'\]\)/,
+    operator: 'match',
+    diff: 'simple'
+  }

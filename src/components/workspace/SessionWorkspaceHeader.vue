@@ -66,7 +66,10 @@
         >
           {{ videoLabel }}
         </button>
-        <button class="px-inline-md py-stack-xs bg-surface-elevated border border-border text-caption font-medium text-ink-secondary rounded-control hover:bg-surface-subtle transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-state-selected">
+        <button 
+          @click="emit('add-to-supervision')"
+          class="px-inline-md py-stack-xs bg-surface-elevated border border-border text-caption font-medium text-ink-secondary rounded-control hover:bg-surface-subtle transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-state-selected"
+        >
           Add to Supervision
         </button>
         <button 
@@ -110,7 +113,7 @@ const props = defineProps({
   }
 });
 
-const emit = defineEmits(['end-session', 'pause-work', 'resume-work']);
+const emit = defineEmits(['end-session', 'pause-work', 'resume-work', 'add-to-supervision']);
 
 const isInPerson = computed(() => true); // Columns don't exist in Supabase yet, defaulting to safe in-person logic for UI
 

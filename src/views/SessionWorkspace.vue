@@ -27,7 +27,86 @@
         @end-session="confirmEndSession"
         @pause-work="handlePauseWork"
         @resume-work="handleResumeWork"
+        @add-to-supervision="openSupervisionModal"
       />
+
+      <!-- Add to Supervision Modal -->
+      <div v-if="showSupervisionModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-ink/50 backdrop-blur-sm">
+        <div class="bg-surface max-w-lg w-full rounded-panel shadow-xl border border-border overflow-hidden">
+          <div class="p-6">
+            <h3 class="text-h3 font-semibold text-ink mb-2">Add to Supervision</h3>
+            <p class="text-body-sm text-ink-secondary mb-6">
+              This creates private supervision material. It does not change the client’s Clinical Record.
+            </p>
+            
+            <div class="space-y-4">
+              <div class="space-y-1">
+                <label for="supervision-note" class="text-body-sm font-medium text-ink">Supervision question or note</label>
+                <textarea 
+                  id="supervision-note"
+                  v-model="supervisionForm.note"
+                  rows="4"
+                  class="w-full p-3 border border-border rounded-control bg-surface text-ink focus:ring-2 focus:ring-state-selected focus:border-state-selected outline-none text-body-sm"
+                  placeholder="Type your question or note here..."
+                  :disabled="isSavingSupervision"
+                ></textarea>
+                <p v-if="supervisionValidation.note" class="text-caption text-state-danger">{{ supervisionValidation.note }}</p>
+              </div>
+
+              <div class="grid grid-cols-2 gap-4">
+                <div class="space-y-1">
+                  <label for="supervision-theme" class="text-body-sm font-medium text-ink">Theme (optional)</label>
+                  <input 
+                    id="supervision-theme"
+                    v-model="supervisionForm.theme"
+                    type="text"
+                    class="w-full p-2 border border-border rounded-control bg-surface text-ink focus:ring-2 focus:ring-state-selected focus:border-state-selected outline-none text-body-sm"
+                    placeholder="e.g. Countertransference"
+                    :disabled="isSavingSupervision"
+                  >
+                </div>
+                <div class="space-y-1">
+                  <label for="supervision-urgency" class="text-body-sm font-medium text-ink">Urgency</label>
+                  <select 
+                    id="supervision-urgency"
+                    v-model="supervisionForm.urgency"
+                    class="w-full p-2 border border-border rounded-control bg-surface text-ink focus:ring-2 focus:ring-state-selected focus:border-state-selected outline-none text-body-sm"
+                    :disabled="isSavingSupervision"
+                  >
+                    <option value="normal">Normal</option>
+                    <option value="soon">Soon</option>
+                    <option value="urgent">Urgent</option>
+                  </select>
+                </div>
+              </div>
+
+              <div v-if="supervisionError" class="p-3 bg-state-danger-surface border border-state-danger/20 rounded text-state-danger text-caption">
+                {{ supervisionError }}
+              </div>
+              <div v-if="supervisionSuccess" class="p-3 bg-state-success-surface border border-state-success/20 rounded text-state-success text-caption">
+                Added to supervision
+              </div>
+            </div>
+          </div>
+          <div class="flex items-center justify-end gap-inline-md p-4 bg-surface-subtle border-t border-border">
+            <button 
+              @click="closeSupervisionModal"
+              :disabled="isSavingSupervision"
+              class="px-inline-md py-stack-sm text-body-sm font-medium text-ink-secondary hover:text-ink transition-colors disabled:opacity-50"
+            >
+              Cancel
+            </button>
+            <button 
+              @click="handleSaveSupervision"
+              :disabled="isSavingSupervision"
+              class="px-inline-md py-stack-sm bg-state-selected text-white text-body-sm font-medium rounded-control hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center gap-2"
+            >
+              <span v-if="isSavingSupervision" class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+              {{ isSavingSupervision ? 'Adding…' : 'Add to Supervision' }}
+            </button>
+          </div>
+        </div>
+      </div>
 
       <!-- End Session Confirmation Dialog -->
       <div v-if="showEndSessionConfirmation" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-ink/50 backdrop-blur-sm">
@@ -164,6 +243,7 @@ import {
   getSessionWorkSummary,
   confirmSessionBillableTime
 } from '../lib/sessions.js';
+import { createSupervisionReflection } from '../lib/reflections.js';
 import { getClient } from '../lib/clients.js';
 import { mockSession } from '../mocks/sessionWorkspaceData.js';
 import SessionWorkspaceHeader from '../components/workspace/SessionWorkspaceHeader.vue';
@@ -191,6 +271,20 @@ const billableMinutes = ref(0);
 const adjustmentReason = ref('');
 const isConfirmingBilling = ref(false);
 const summaryInterval = ref(null);
+
+// Supervision state
+const showSupervisionModal = ref(false);
+const isSavingSupervision = ref(false);
+const supervisionError = ref('');
+const supervisionSuccess = ref(false);
+const supervisionForm = ref({
+  note: '',
+  theme: '',
+  urgency: 'normal'
+});
+const supervisionValidation = ref({
+  note: ''
+});
 
 const tabs = [
   'Transcript',
@@ -326,6 +420,58 @@ async function handleConfirmBilling() {
     console.error('Failed to confirm billing:', e);
     error.value = e.message || 'Failed to confirm billing. Please try again.';
     isConfirmingBilling.value = false;
+  }
+}
+
+function openSupervisionModal() {
+  supervisionForm.value = {
+    note: '',
+    theme: '',
+    urgency: 'normal'
+  };
+  supervisionValidation.value.note = '';
+  supervisionError.value = '';
+  supervisionSuccess.value = false;
+  showSupervisionModal.value = true;
+}
+
+function closeSupervisionModal() {
+  if (isSavingSupervision.value) return;
+  showSupervisionModal.value = false;
+}
+
+async function handleSaveSupervision() {
+  if (isSavingSupervision.value || !session.value) return;
+
+  supervisionValidation.value.note = '';
+  if (!supervisionForm.value.note.trim()) {
+    supervisionValidation.value.note = 'Supervision question or note is required';
+    return;
+  }
+
+  isSavingSupervision.value = true;
+  supervisionError.value = '';
+  supervisionSuccess.value = false;
+
+  try {
+    await createSupervisionReflection({
+      clientId: session.value.clientId,
+      sessionId: session.value.id,
+      body: supervisionForm.value.note,
+      supervisionQuestion: supervisionForm.value.note,
+      theme: supervisionForm.value.theme,
+      urgency: supervisionForm.value.urgency
+    });
+
+    supervisionSuccess.value = true;
+    setTimeout(() => {
+      closeSupervisionModal();
+    }, 1500);
+  } catch (e) {
+    console.error('Failed to save supervision note:', e);
+    supervisionError.value = e.message || 'Failed to save supervision note. Please try again.';
+  } finally {
+    isSavingSupervision.value = false;
   }
 }
 

@@ -83,6 +83,34 @@ test.describe('Authenticated Therapist Workflow', () => {
     await expect(page.getByText(/Work time active/i)).toBeVisible();
     await expect(page.getByText(/Recorded: 0 min/i)).toBeVisible();
 
+    // 10a. Add to Supervision
+    const addToSupervisionButton = page.getByRole('button', { name: /Add to Supervision/i });
+    await expect(addToSupervisionButton).toBeVisible();
+    await addToSupervisionButton.click();
+
+    // Verify modal
+    const supervisionHeading = page.getByRole('heading', { name: /Add to Supervision/i });
+    await expect(supervisionHeading).toBeVisible();
+    await expect(page.getByText(/This creates private supervision material/i)).toBeVisible();
+
+    // Try to save empty
+    const saveSupervisionButton = page.locator('div').filter({ hasText: /^Add to Supervision$/ }).locator('..').getByRole('button', { name: 'Add to Supervision' });
+    await saveSupervisionButton.click();
+    await expect(page.getByText(/Supervision question or note is required/i)).toBeVisible();
+
+    // Fill and save
+    await page.getByLabel(/Supervision question or note/i).fill('How to handle countertransference?');
+    await page.getByLabel(/Theme/i).fill('Clinical Ethics');
+    await page.getByLabel(/Urgency/i).selectOption('soon');
+    
+    await saveSupervisionButton.click();
+    
+    // Success message
+    await expect(page.getByText(/Added to supervision/i)).toBeVisible();
+    
+    // Modal should close
+    await expect(supervisionHeading).not.toBeVisible({ timeout: 5000 });
+
     // Pause
     await page.getByTitle('Pause Work').click();
     await expect(page.getByText(/Work paused/i)).toBeVisible();
