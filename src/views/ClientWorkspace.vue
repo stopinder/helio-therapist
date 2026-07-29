@@ -176,6 +176,7 @@ import ClientWorkspaceTabs from '../components/workspace/ClientWorkspaceTabs.vue
 import ClinicalAttentionPanel from '../components/workspace/ClinicalAttentionPanel.vue';
 import StatusBadge from '../components/workspace/StatusBadge.vue';
 import TimelineItem from '../components/workspace/TimelineItem.vue';
+import EmptyState from '../components/workspace/EmptyState.vue';
 import ClientDetails from './ClientDetails.vue';
 
 const route = useRoute();

@@ -23,11 +23,21 @@ export async function getClient({ clientId }) {
 }
 
 export async function getTimelineEvents({ clientId }) {
-  const { authenticatedFetch } = await import('./api.js')
-  const response = await authenticatedFetch(`/api/client-timeline?clientId=${encodeURIComponent(clientId)}`)
-  const data = await response.json()
-  if (!response.ok) throw new Error(data.error || 'Failed to load timeline')
-  return data.events || []
+  if (!supabase) {
+    throw new Error('Supabase is not configured')
+  }
+
+  const { data, error } = await supabase
+    .from('client_timeline_events')
+    .select('id, event_type, occurred_at, summary, subject_type, subject_id, session_id')
+    .eq('client_id', clientId)
+    .order('occurred_at', { ascending: false })
+
+  if (error) {
+    throw new Error(error.message || 'Failed to load timeline')
+  }
+
+  return data || []
 }
 
 export async function updateClient({ clientId, ...updates }) {

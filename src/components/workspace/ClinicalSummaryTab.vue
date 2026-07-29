@@ -302,20 +302,19 @@
             </div>
           </div>
 
-          <div class="mt-8 pt-6 border-t border-border flex justify-end gap-3">
-            <button 
-              @click="saveDraft"
-              class="px-inline-lg py-stack-sm bg-surface-elevated border border-border text-body-sm font-medium text-ink rounded-control hover:bg-surface-subtle transition-colors"
-            >
-              Save Amendment Draft
-            </button>
-            <button 
-              v-if="status === 'amendment_draft'"
-              @click="markAmendmentReady"
-              class="px-inline-lg py-stack-sm bg-action-link text-on-action text-body-sm font-medium rounded-control hover:bg-action-link-hover transition-colors shadow-sm"
-            >
-              Mark Amendment Ready for Review
-            </button>
+          <div class="mt-8 pt-6 border-t border-border flex justify-between items-center">
+            <div class="flex items-center gap-2 text-ink-muted">
+              <span class="text-caption italic">Drafts are local-only and not saved until approved.</span>
+            </div>
+            <div class="flex gap-3">
+              <button 
+                v-if="status === 'amendment_draft'"
+                @click="markAmendmentReady"
+                class="px-inline-lg py-stack-sm bg-action-link text-on-action text-body-sm font-medium rounded-control hover:bg-action-link-hover transition-colors shadow-sm"
+              >
+                Mark Amendment Ready for Review
+              </button>
+            </div>
           </div>
           <p v-if="errorMessage && status === 'amendment_draft'" class="mt-4 text-body-sm text-state-danger text-right" role="alert">
             {{ errorMessage }}
@@ -602,6 +601,10 @@ const saveDraft = async () => {
   saveMessage.value = 'Saving…';
   
   try {
+    if (props.session.status === 'completed') {
+      saveMessage.value = '';
+      return; // Do not save session drafts for completed sessions
+    }
     const payload = {
       ...summaryData,
       legacyNotes: legacyNotes.value

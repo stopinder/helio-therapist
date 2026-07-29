@@ -39,5 +39,8 @@ test('lib/clients.js includes getTimelineEvents helper', async () => {
   const content = await readFile(new URL('../src/lib/clients.js', import.meta.url), 'utf8')
   
   assert.match(content, /export async function getTimelineEvents\({ clientId }\)/)
-  assert.match(content, /authenticatedFetch\(`\/api\/client-timeline\?clientId=\${encodeURIComponent\(clientId\)}`\)/)
+  assert.match(content, /\.from\(['"]client_timeline_events['"]\)/)
+  assert.match(content, /\.select\(['"]id, event_type, occurred_at, summary, subject_type, subject_id, session_id['"]\)/)
+  assert.match(content, /\.eq\(['"]client_id['"], clientId\)/)
+  assert.match(content, /\.order\(['"]occurred_at['"], { ascending: false }\)/)
 })
