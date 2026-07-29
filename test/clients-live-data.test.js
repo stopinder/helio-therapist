@@ -12,7 +12,7 @@ test('Clients page uses live Supabase clients and standard UI patterns', async (
   assert.match(clientsLib, /\.eq\('archived', false\)/)
   assert.match(clientsLib, /\.order\('display_name', { ascending: true }\)/)
 
-  assert.match(clientsView, /import { listClients } from '\.\.\/lib\/clients\.js'/)
+  assert.match(clientsView, /import { listClients, createClient } from '\.\.\/lib\/clients\.js'/)
   assert.match(clientsView, /onMounted\(loadClients\)/)
   assert.doesNotMatch(clientsView, /mockClient/)
 

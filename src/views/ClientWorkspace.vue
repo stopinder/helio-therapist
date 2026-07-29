@@ -117,18 +117,32 @@
             </div>
           </div>
 
+          <!-- Details Tab -->
+          <div v-else-if="activeTab === 'Details'">
+            <ClientDetails :client="client" @updated="client = $event" />
+          </div>
+
           <!-- Other Tabs Placeholders -->
           <div v-else>
             <div v-if="activeTab === 'Timeline'" class="bg-surface-elevated border border-border-muted rounded-panel p-inline-lg max-w-2xl mx-auto">
               <h3 class="text-h3 font-semibold text-ink mb-stack-lg pt-stack-md">Client Timeline</h3>
-              <div class="space-y-0">
+              <div v-if="timelineLoading" class="py-stack-xl text-center">
+                <p class="text-body-sm text-ink-subtle">Loading clinical narrative...</p>
+              </div>
+              <div v-else-if="timelineEvents.length === 0" class="py-stack-xl text-center">
+                <p class="text-body-sm text-ink-subtle">No clinical events recorded for this client.</p>
+              </div>
+              <div v-else class="space-y-0">
                 <TimelineItem 
-                  v-for="(event, index) in (client.timeline_events || mockClient.timeline_events)" 
+                  v-for="(event, index) in timelineEvents" 
                   :key="event.id"
-                  :type="event.type"
-                  :date="event.date"
-                  :description="event.description"
-                  :is-last="index === (client.timeline_events || mockClient.timeline_events).length - 1"
+                  :event-type="event.event_type"
+                  :date="formatDate(event.occurred_at)"
+                  :description="event.summary"
+                  :subject-type="event.subject_type"
+                  :subject-id="event.subject_id"
+                  :session-id="event.session_id"
+                  :is-last="index === timelineEvents.length - 1"
                 />
               </div>
             </div>
@@ -156,13 +170,13 @@
 import { ref, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
 import { mockClient } from '../mocks/clientWorkspaceData.js';
-import { getClient } from '../lib/clients.js';
+import { getClient, getTimelineEvents } from '../lib/clients.js';
 import ClientWorkspaceHeader from '../components/workspace/ClientWorkspaceHeader.vue';
 import ClientWorkspaceTabs from '../components/workspace/ClientWorkspaceTabs.vue';
 import ClinicalAttentionPanel from '../components/workspace/ClinicalAttentionPanel.vue';
 import StatusBadge from '../components/workspace/StatusBadge.vue';
 import TimelineItem from '../components/workspace/TimelineItem.vue';
-import EmptyState from '../components/workspace/EmptyState.vue';
+import ClientDetails from './ClientDetails.vue';
 
 const route = useRoute();
 const client = ref(null);
@@ -172,6 +186,7 @@ const error = ref('');
 const tabs = [
   'Overview',
   'Sessions',
+  'Details',
   'Care',
   'Measures',
   'Resources',
@@ -180,6 +195,8 @@ const tabs = [
 ];
 
 const activeTab = ref('Overview');
+const timelineEvents = ref([]);
+const timelineLoading = ref(false);
 
 async function loadClient() {
   loading.value = true;
@@ -187,12 +204,38 @@ async function loadClient() {
   try {
     const clientId = route.params.clientId;
     client.value = await getClient({ clientId });
+    loadTimeline();
   } catch (e) {
     console.error('Failed to load client:', e);
     error.value = 'The client workspace could not be loaded.';
   } finally {
     loading.value = false;
   }
+}
+
+async function loadTimeline() {
+  const clientId = route.params.clientId;
+  if (!clientId) return;
+  timelineLoading.value = true;
+  try {
+    timelineEvents.value = await getTimelineEvents({ clientId });
+  } catch (e) {
+    console.error('Failed to load timeline:', e);
+  } finally {
+    timelineLoading.value = false;
+  }
+}
+
+function formatDate(dateString) {
+  if (!dateString) return '';
+  const date = new Date(dateString);
+  return date.toLocaleDateString('en-GB', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
 }
 
 onMounted(loadClient);

@@ -14,13 +14,12 @@ test.describe('Authenticated Therapist Workflow', () => {
     // 1. Sign In
     await page.goto('/');
     
-    // Ensure we are on the sign-in mode (default)
-    const signInTab = page.getByRole('button', { name: /Sign in/i });
-    await signInTab.click();
-
-    await page.fill('input[type="email"]', email);
-    await page.fill('input#account-password', password);
-    await page.click('button[type="submit"]');
+    // Fill credentials using accessible labels
+    await page.getByLabel('Email address').fill(email);
+    await page.getByLabel('Password').fill(password);
+    
+    // Click the submit button specifically within the form
+    await page.locator('form').getByRole('button', { name: 'Sign in' }).click();
 
     // Wait for the app to load (AppShell/router-view)
     // We expect to land on Overview or whatever the default is

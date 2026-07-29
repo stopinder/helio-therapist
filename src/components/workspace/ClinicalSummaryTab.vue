@@ -102,14 +102,15 @@
             <div class="flex gap-3">
               <button 
                 @click="openApprovalDialog"
-                disabled
+                :disabled="submitting || !reviewConfirmed"
                 class="px-inline-lg py-3 bg-action-primary text-on-action text-body-sm font-bold rounded-control hover:bg-action-primary-hover transition-all disabled:opacity-50 shadow-sm"
               >
-                Approve (Coming Soon)
+                {{ submitting ? 'Processing...' : 'Approve Clinical Record' }}
               </button>
               <button 
                 @click="status = 'draft'"
-                class="px-inline-lg py-3 bg-surface border border-border text-body-sm font-medium text-ink rounded-control hover:bg-state-hover transition-colors"
+                :disabled="submitting"
+                class="px-inline-lg py-3 bg-surface border border-border text-body-sm font-medium text-ink rounded-control hover:bg-state-hover transition-colors disabled:opacity-50"
               >
                 Return to Draft
               </button>
@@ -339,7 +340,7 @@ import RecordHistoryPanel from './RecordHistoryPanel.vue';
 import ApprovalConfirmationDialog from './ApprovalConfirmationDialog.vue';
 import ApprovedClinicalRecordView from './ApprovedClinicalRecordView.vue';
 import NoticeBanner from './NoticeBanner.vue';
-import { saveSessionDraft } from '../../lib/sessions.js';
+import { saveSessionDraft, completeSessionRecord } from '../../lib/sessions.js';
 
 const props = defineProps({
   session: {
@@ -391,7 +392,35 @@ onMounted(() => {
 });
 
 const loadFromSession = () => {
-  if (!props.session?.notes) return;
+  if (!props.session) return;
+
+  // Sync internal status with session status
+  if (props.session.status === 'completed') {
+    status.value = 'approved_record';
+    
+    // Load approved record content
+    if (props.session.notes) {
+      try {
+        const parsed = JSON.parse(props.session.notes);
+        if (parsed && typeof parsed === 'object') {
+          approvedRecord.content = { ...parsed };
+          delete approvedRecord.content.legacyNotes;
+          legacyNotes.value = parsed.legacyNotes || '';
+        } else {
+          legacyNotes.value = props.session.notes;
+        }
+      } catch (e) {
+        legacyNotes.value = props.session.notes;
+      }
+    }
+    approvedRecord.timestamp = props.session.completedAt ? new Date(props.session.completedAt).toLocaleString() : '';
+    return;
+  }
+
+  if (!props.session.notes) {
+    status.value = 'not_started';
+    return;
+  }
 
   try {
     const parsed = JSON.parse(props.session.notes);
@@ -574,17 +603,48 @@ const markReady = () => {
   scrollAndFocus();
 };
 
-const openApprovalDialog = () => {
+const openApprovalDialog = async () => {
+  // Always save latest draft before opening approval dialog to ensure data is persistent
+  await saveDraft();
   isApprovalDialogOpen.value = true;
 };
 
-const confirmApproval = () => {
-  // Snapshot the content
-  approvedRecord.timestamp = new Date().toLocaleString();
-  approvedRecord.content = { ...summaryData };
-  
-  status.value = 'approved_record';
-  scrollAndFocus();
+const confirmApproval = async () => {
+  if (submitting.value) return;
+  submitting.value = true;
+  saveMessage.value = 'Approving…';
+
+  try {
+    const payload = {
+      ...summaryData,
+      legacyNotes: legacyNotes.value
+    };
+
+    const updatedSession = await completeSessionRecord(
+      props.session,
+      JSON.stringify(payload)
+    );
+
+    emit('update:session', updatedSession);
+    saveMessage.value = 'Approved successfully.';
+    
+    // loadFromSession will be called via the watch on props.session.notes
+    // but since we want immediate UI update and scroll:
+    status.value = 'approved_record';
+    scrollAndFocus();
+  } catch (error) {
+    console.error('Failed to approve clinical record:', error);
+    if (error.code === 'SESSION_CONFLICT') {
+      saveMessage.value = 'Conflict: Session was updated in another tab.';
+    } else {
+      saveMessage.value = 'Approval failed.';
+    }
+  } finally {
+    submitting.value = false;
+    setTimeout(() => {
+      saveMessage.value = '';
+    }, 5000);
+  }
 };
 
 const startAmendment = () => {

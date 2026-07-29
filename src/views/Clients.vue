@@ -5,7 +5,10 @@
         <h1 class="text-h1 font-semibold text-ink">Clients</h1>
         <p class="mt-2 text-body text-ink-muted">Manage your clinical directory.</p>
       </div>
-      <button class="px-inline-md py-stack-sm bg-action-link text-body-sm font-medium text-on-action rounded-control hover:bg-action-link-hover transition-colors">
+      <button 
+        class="px-inline-md py-stack-sm bg-action-link text-body-sm font-medium text-on-action rounded-control hover:bg-action-link-hover transition-colors"
+        @click="showAddClient = true"
+      >
         + Add Client
       </button>
     </div>
@@ -30,7 +33,12 @@
 
     <div v-else-if="clients.length === 0" class="bg-surface-elevated border border-border-muted p-inline-lg py-stack-xl rounded-panel text-center">
       <p class="text-ink-secondary mb-4">You don't have any active clients yet.</p>
-      <button class="text-action-link font-medium hover:underline">Add your first client</button>
+      <button 
+        class="text-action-link font-medium hover:underline"
+        @click="showAddClient = true"
+      >
+        Add your first client
+      </button>
     </div>
 
     <div v-else class="bg-surface-elevated border border-border-muted rounded-panel overflow-hidden">
@@ -58,6 +66,7 @@
             <td class="px-inline-lg py-stack-md text-right">
               <router-link
                 :to="`/clients/${client.id}`"
+                data-testid="open-client-button"
                 class="inline-flex items-center px-inline-md py-stack-xs bg-surface-elevated border border-border text-body-sm font-medium text-action-link rounded-control hover:border-action-link transition-colors"
               >
                 Open client
@@ -67,17 +76,29 @@
         </tbody>
       </table>
     </div>
+
+    <AddClientModal
+      v-if="showAddClient"
+      :submitting="addingClient"
+      :error="addError"
+      @close="showAddClient = false"
+      @submit="handleAddClient"
+    />
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue';
-import { listClients } from '../lib/clients.js';
+import { listClients, createClient } from '../lib/clients.js';
 import StatusBadge from '../components/workspace/StatusBadge.vue';
+import AddClientModal from '../components/sidebar/AddClientModal.vue';
 
 const clients = ref([]);
 const loading = ref(true);
 const error = ref('');
+const showAddClient = ref(false);
+const addingClient = ref(false);
+const addError = ref('');
 
 async function loadClients() {
   loading.value = true;
@@ -89,6 +110,24 @@ async function loadClients() {
     error.value = 'The clinical directory could not be loaded.';
   } finally {
     loading.value = false;
+  }
+}
+
+async function handleAddClient(clientData) {
+  if (addingClient.value) return;
+  addingClient.value = true;
+  addError.value = '';
+  try {
+    const newClient = await createClient(clientData);
+    clients.value.push(newClient);
+    // Maintain alphabetical order
+    clients.value.sort((a, b) => a.display_name.localeCompare(b.display_name));
+    showAddClient.value = false;
+  } catch (e) {
+    console.error('Error creating client:', e);
+    addError.value = e.message || 'Failed to create client.';
+  } finally {
+    addingClient.value = false;
   }
 }
 

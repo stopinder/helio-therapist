@@ -1,5 +1,12 @@
 <template>
-  <main v-if="authLoading" class="min-h-screen bg-surface-muted flex items-center justify-center p-4">
+  <main v-if="!supabase" class="min-h-screen bg-state-danger-surface flex items-center justify-center p-4">
+    <div class="max-w-md w-full rounded-panel bg-surface p-6 border border-state-danger/20 text-center">
+      <h1 class="text-h2 font-semibold text-state-danger mb-2">Configuration Error</h1>
+      <p class="text-ink-secondary">Supabase URL or Anon Key is missing. Check your .env file.</p>
+    </div>
+  </main>
+
+  <main v-else-if="authLoading" class="min-h-screen bg-surface-muted flex items-center justify-center p-4">
     <p class="text-body text-ink-muted">Opening MindWorks…</p>
   </main>
 
@@ -40,11 +47,11 @@
 
   <ClientCompletion v-else-if="isClientCompletion" />
 
-  <AppShell v-else-if="session">
+  <AppShell v-else-if="session" data-testid="workspace-shell">
     <router-view />
   </AppShell>
 
-  <main v-else class="min-h-screen bg-surface-muted flex items-center justify-center px-4 py-8 sm:p-6">
+  <main v-else data-testid="login-page" class="min-h-screen bg-surface-muted flex items-center justify-center px-4 py-8 sm:p-6">
     <section class="w-full max-w-md rounded-panel bg-surface-elevated border border-border-muted  p-6 sm:p-8">
       <h1 class="text-h1 font-semibold text-ink">MindWorks</h1>
       <p class="mt-2 text-body text-ink-muted">
