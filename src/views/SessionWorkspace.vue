@@ -20,7 +20,11 @@
     </div>
     <template v-else-if="session">
       <!-- Header -->
-      <SessionWorkspaceHeader :session="workspaceSession" />
+      <SessionWorkspaceHeader 
+        :session="workspaceSession" 
+        :ending="isEnding"
+        @end-session="handleEndSession"
+      />
 
       <!-- Workflow Indicator -->
       <WorkflowIndicator :activeStage="activeTab" />
@@ -56,8 +60,8 @@
 
 <script setup>
 import { ref, onMounted, computed } from 'vue';
-import { useRoute } from 'vue-router';
-import { getSession } from '../lib/sessions.js';
+import { useRoute, useRouter } from 'vue-router';
+import { getSession, completeSessionRecord } from '../lib/sessions.js';
 import { getClient } from '../lib/clients.js';
 import { mockSession } from '../mocks/sessionWorkspaceData.js';
 import SessionWorkspaceHeader from '../components/workspace/SessionWorkspaceHeader.vue';
@@ -70,10 +74,12 @@ import ClinicalSummaryTab from '../components/workspace/ClinicalSummaryTab.vue';
 import SupervisionSummaryTab from '../components/workspace/SupervisionSummaryTab.vue';
 
 const route = useRoute();
+const router = useRouter();
 const session = ref(null);
 const client = ref(null);
 const loading = ref(true);
 const error = ref('');
+const isEnding = ref(false);
 
 const tabs = [
   'Transcript',
@@ -104,6 +110,23 @@ async function loadSession() {
   }
 }
 
+async function handleEndSession() {
+  if (isEnding.value || !session.value) return;
+  
+  isEnding.value = true;
+  error.value = '';
+  
+  try {
+    const updatedSession = await completeSessionRecord(session.value, session.value.notes);
+    session.value = updatedSession;
+    router.push(`/clients/${session.value.clientId}`);
+  } catch (e) {
+    console.error('Failed to end session:', e);
+    error.value = e.message || 'Failed to end session. Please try again.';
+    isEnding.value = false;
+  }
+}
+
 const workspaceSession = computed(() => {
   if (!session.value) return null;
   
@@ -131,7 +154,6 @@ const workspaceSession = computed(() => {
     isInPerson: false,
     
     // Fields still mocked for this phase
-    elapsedTime: '00:00:00', // Will be incremented by the header component
     transcript: mockSession.transcript,
     markers: mockSession.markers
   };

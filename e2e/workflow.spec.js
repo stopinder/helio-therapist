@@ -71,5 +71,20 @@ test.describe('Authenticated Therapist Workflow', () => {
     await expect(page).toHaveURL(/\/clients\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\/sessions\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
     await expect(transcriptTab).toBeVisible();
     await expect(workspaceError).not.toBeVisible();
+
+    // 9. Verify simplified workspace (no timer, no listening)
+    await expect(page.getByText(/Listening…/i)).not.toBeVisible();
+    await expect(page.getByText(/⏱/)).not.toBeVisible();
+
+    // 10. End Session
+    const endSessionButton = page.getByRole('button', { name: /End Session/i });
+    await expect(endSessionButton).toBeVisible();
+    await endSessionButton.click();
+
+    // 11. Verify navigation back to client record after completion
+    await expect(page).toHaveURL(/\/clients\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
+
+    // 12. Verify session-completed timeline event
+    await expect(page.getByText(/Session completed/i)).toBeVisible();
   });
 });
