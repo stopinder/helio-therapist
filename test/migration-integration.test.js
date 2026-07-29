@@ -57,10 +57,10 @@ test('the full migration chain preserves clinical invariants', async () => {
           values
             ('${userOne}', '{"full_name":"One"}'::jsonb),
             ('${userTwo}', '{"full_name":"Two"}'::jsonb);
-          insert into public.clients (id, user_id, display_name)
+          insert into public.clients (id, user_id, display_name, reference)
           values
-            ('${clientOne}', '${userOne}', 'Client One'),
-            ('${clientTwo}', '${userTwo}', 'Client Two');
+            ('${clientOne}', '${userOne}', 'Client One', 'CLIENT-ONE'),
+            ('${clientTwo}', '${userTwo}', 'Client Two', 'CLIENT-TWO');
           insert into public.client_timeline_events (
             user_id, client_id, event_type, subject_type, subject_id, summary
           )
@@ -74,7 +74,7 @@ test('the full migration chain preserves clinical invariants', async () => {
     }
 
     assert.equal(migrations[0], '20260717120000_bootstrap_legacy_integrations.sql')
-    assert.equal(migrations.at(-1), '20260729130000_enforce_session_immutability.sql')
+    assert.equal(migrations.at(-1), '20260729140500_add_document_timeline_events.sql')
 
     const integrationsColumns = await database.query(`
       select column_name
@@ -205,6 +205,194 @@ test('the full migration chain preserves clinical invariants', async () => {
       results: 1,
       timeline_events: 1
     })
+
+    // A. Completed treatment plan
+    const docA = 'f0000000-0000-4000-8000-00000000000a'
+    await database.exec(`
+      insert into public.documents (
+        id, user_id, client_ref, client_name, title, document_type,
+        storage_path, original_filename, mime_type, size_bytes, status
+      )
+      values (
+        '${docA}', '${userOne}', 'CLIENT-ONE', 'Client One', 'Plan A', 'treatment_plan',
+        'path/a', 'a.pdf', 'application/pdf', 100, 'completed'
+      );
+    `)
+    const checkA = await database.query(`
+      select event_type, subject_type, subject_id, client_id, user_id, summary
+      from public.client_timeline_events where subject_id = '${docA}'
+    `)
+    assert.deepEqual(checkA.rows[0], {
+      event_type: 'treatment_plan_updated',
+      subject_type: 'document',
+      subject_id: docA,
+      client_id: clientOne,
+      user_id: userOne,
+      summary: 'Treatment plan completed: Plan A'
+    })
+
+    // B. Completed risk assessment
+    const docB = 'f0000000-0000-4000-8000-00000000000b'
+    await database.exec(`
+      insert into public.documents (
+        id, user_id, client_ref, client_name, title, document_type,
+        storage_path, original_filename, mime_type, size_bytes, status
+      )
+      values (
+        '${docB}', '${userOne}', 'CLIENT-ONE', 'Client One', 'Risk B', 'risk_assessment',
+        'path/b', 'b.pdf', 'application/pdf', 100, 'completed'
+      );
+    `)
+    const checkB = await database.query(`
+      select event_type from public.client_timeline_events where subject_id = '${docB}'
+    `)
+    assert.equal(checkB.rows[0].event_type, 'risk_assessment_recorded')
+
+    // C. Completed referral
+    const docC = 'f0000000-0000-4000-8000-00000000000c'
+    await database.exec(`
+      insert into public.documents (
+        id, user_id, client_ref, client_name, title, document_type,
+        storage_path, original_filename, mime_type, size_bytes, status
+      )
+      values (
+        '${docC}', '${userOne}', 'CLIENT-ONE', 'Client One', 'Ref C', 'referral',
+        'path/c', 'c.pdf', 'application/pdf', 100, 'completed'
+      );
+    `)
+    const checkC = await database.query(`
+      select event_type from public.client_timeline_events where subject_id = '${docC}'
+    `)
+    assert.equal(checkC.rows[0].event_type, 'referral_recorded')
+
+    // D. Other completed document
+    const docD = 'f0000000-0000-4000-8000-00000000000d'
+    await database.exec(`
+      insert into public.documents (
+        id, user_id, client_ref, client_name, title, document_type,
+        storage_path, original_filename, mime_type, size_bytes, status
+      )
+      values (
+        '${docD}', '${userOne}', 'CLIENT-ONE', 'Client One', 'Other D', 'other',
+        'path/d', 'd.pdf', 'application/pdf', 100, 'completed'
+      );
+    `)
+    const checkD = await database.query(`
+      select event_type from public.client_timeline_events where subject_id = '${docD}'
+    `)
+    assert.equal(checkD.rows[0].event_type, 'clinical_milestone')
+
+    // E. Draft document
+    const docE = 'f0000000-0000-4000-8000-00000000000e'
+    await database.exec(`
+      insert into public.documents (
+        id, user_id, client_ref, client_name, title, document_type,
+        storage_path, original_filename, mime_type, size_bytes, status
+      )
+      values (
+        '${docE}', '${userOne}', 'CLIENT-ONE', 'Client One', 'Draft E', 'other',
+        'path/e', 'e.pdf', 'application/pdf', 100, 'draft'
+      );
+    `)
+    const checkE = await database.query(`
+      select count(*)::integer from public.client_timeline_events where subject_id = '${docE}'
+    `)
+    assert.equal(checkE.rows[0].count, 0)
+
+    // F. Review-stage document
+    const docF = 'f0000000-0000-4000-8000-00000000000f'
+    await database.exec(`
+      insert into public.documents (
+        id, user_id, client_ref, client_name, title, document_type,
+        storage_path, original_filename, mime_type, size_bytes, status
+      )
+      values (
+        '${docF}', '${userOne}', 'CLIENT-ONE', 'Client One', 'Review F', 'other',
+        'path/f', 'f.pdf', 'application/pdf', 100, 'review'
+      );
+    `)
+    const checkF = await database.query(`
+      select count(*)::integer from public.client_timeline_events where subject_id = '${docF}'
+    `)
+    assert.equal(checkF.rows[0].count, 0)
+
+    // G. Draft to completed
+    const docG = 'f0000000-0000-4000-8000-000000000010'
+    await database.exec(`
+      insert into public.documents (
+        id, user_id, client_ref, client_name, title, document_type,
+        storage_path, original_filename, mime_type, size_bytes, status
+      )
+      values (
+        '${docG}', '${userOne}', 'CLIENT-ONE', 'Client One', 'Transition G', 'other',
+        'path/g', 'g.pdf', 'application/pdf', 100, 'draft'
+      );
+      update public.documents set status = 'completed' where id = '${docG}';
+    `)
+    const checkG = await database.query(`
+      select count(*)::integer from public.client_timeline_events where subject_id = '${docG}'
+    `)
+    assert.equal(checkG.rows[0].count, 1)
+
+    // H. Completed document edited again
+    await database.exec(`
+      update public.documents set title = 'Updated G' where id = '${docG}';
+    `)
+    const checkH = await database.query(`
+      select count(*)::integer from public.client_timeline_events where subject_id = '${docG}'
+    `)
+    assert.equal(checkH.rows[0].count, 1)
+
+    // I. Tenant isolation
+    const docI = 'f0000000-0000-4000-8000-000000000011'
+    await database.exec(`
+      insert into public.documents (
+        id, user_id, client_ref, client_name, title, document_type,
+        storage_path, original_filename, mime_type, size_bytes, status
+      )
+      values (
+        '${docI}', '${userOne}', 'CLIENT-TWO', 'Client Two', 'Theft I', 'other',
+        'path/i', 'i.pdf', 'application/pdf', 100, 'completed'
+      );
+    `)
+    const checkI = await database.query(`
+      select count(*)::integer from public.client_timeline_events where subject_id = '${docI}'
+    `)
+    assert.equal(checkI.rows[0].count, 0)
+
+    // J. Missing client reference
+    const docJ = 'f0000000-0000-4000-8000-000000000012'
+    await database.exec(`
+      insert into public.documents (
+        id, user_id, client_ref, client_name, title, document_type,
+        storage_path, original_filename, mime_type, size_bytes, status
+      )
+      values (
+        '${docJ}', '${userOne}', 'UNKNOWN-REF', 'Ghost', 'Ghost J', 'other',
+        'path/j', 'j.pdf', 'application/pdf', 100, 'completed'
+      );
+    `)
+    const checkJ = await database.query(`
+      select count(*)::integer from public.client_timeline_events where subject_id = '${docJ}'
+    `)
+    assert.equal(checkJ.rows[0].count, 0)
+
+    // K. report_date
+    const docK = 'f0000000-0000-4000-8000-000000000013'
+    await database.exec(`
+      insert into public.documents (
+        id, user_id, client_ref, client_name, title, document_type, report_date,
+        storage_path, original_filename, mime_type, size_bytes, status
+      )
+      values (
+        '${docK}', '${userOne}', 'CLIENT-ONE', 'Client One', 'Backdated K', 'other', '2026-07-01',
+        'path/k', 'k.pdf', 'application/pdf', 100, 'completed'
+      );
+    `)
+    const checkK = await database.query(`
+      select occurred_at from public.client_timeline_events where subject_id = '${docK}'
+    `)
+    assert.equal(new Date(checkK.rows[0].occurred_at).toISOString().split('T')[0], '2026-07-01')
 
     await database.exec(`
       insert into public.resource_library_items (
