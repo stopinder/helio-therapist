@@ -30,7 +30,10 @@ export function presentSession(row) {
     legacyRef: row.legacy_ref,
     videoState: row.zoom_state,
     videoMeetingId: row.zoom_meeting_id,
-    videoError: row.zoom_error || ''
+    videoError: row.zoom_error || '',
+    billableMinutes: row.billable_minutes,
+    billableConfirmedAt: row.billable_confirmed_at,
+    billableAdjustmentReason: row.billable_adjustment_reason
   }
 }
 
@@ -38,7 +41,7 @@ export async function listSessions({ clientId } = {}) {
   const client = requireSupabase()
   let query = client
     .from('sessions')
-    .select('id,client_id,occurred_at,status,notes,created_at,updated_at,completed_at,ended_at,workflow_status,notes_status,version,legacy_ref,zoom_state,zoom_meeting_id,zoom_error')
+    .select('id,client_id,occurred_at,status,notes,created_at,updated_at,completed_at,ended_at,workflow_status,notes_status,version,legacy_ref,zoom_state,zoom_meeting_id,zoom_error,billable_minutes,billable_confirmed_at,billable_adjustment_reason')
     .order('occurred_at', { ascending: false })
   if (clientId) query = query.eq('client_id', clientId)
   const { data, error } = await query
@@ -48,7 +51,7 @@ export async function listSessions({ clientId } = {}) {
 
 export async function getSession({ clientId, sessionId }) {
   const client = requireSupabase()
-  const fields = 'id,client_id,occurred_at,status,notes,created_at,updated_at,completed_at,ended_at,workflow_status,notes_status,version,legacy_ref,zoom_state,zoom_meeting_id,zoom_error'
+  const fields = 'id,client_id,occurred_at,status,notes,created_at,updated_at,completed_at,ended_at,workflow_status,notes_status,version,legacy_ref,zoom_state,zoom_meeting_id,zoom_error,billable_minutes,billable_confirmed_at,billable_adjustment_reason'
   const { data, error } = await client
     .from('sessions')
     .select(fields)
@@ -65,7 +68,7 @@ export async function createOrResumeSession(clientId) {
   if (authError) throw authError
   if (!auth.user) throw new Error('Please sign in again')
 
-  const fields = 'id,client_id,occurred_at,status,notes,created_at,updated_at,completed_at,ended_at,workflow_status,notes_status,version,legacy_ref,zoom_state,zoom_meeting_id,zoom_error'
+  const fields = 'id,client_id,occurred_at,status,notes,created_at,updated_at,completed_at,ended_at,workflow_status,notes_status,version,legacy_ref,zoom_state,zoom_meeting_id,zoom_error,billable_minutes,billable_confirmed_at,billable_adjustment_reason'
   const { data: existing, error: existingError } = await client
     .from('sessions')
     .select(fields)
@@ -135,6 +138,45 @@ export async function completeSessionRecord(session, notes) {
     conflict.code = 'SESSION_CONFLICT'
     throw conflict
   }
+  if (error) throw error
+  return presentSession(singleResult(data))
+}
+
+export async function startSessionWork(sessionId) {
+  const client = requireSupabase()
+  const { data, error } = await client.rpc('start_session_work', {
+    p_session_id: sessionId
+  })
+  if (error) throw error
+  return data
+}
+
+export async function pauseSessionWork(sessionId) {
+  const client = requireSupabase()
+  const { data, error } = await client.rpc('pause_session_work', {
+    p_session_id: sessionId
+  })
+  if (error) throw error
+  return data
+}
+
+export async function getSessionWorkSummary(sessionId) {
+  const client = requireSupabase()
+  const { data, error } = await client.rpc('get_session_work_summary', {
+    p_session_id: sessionId
+  })
+  if (error) throw error
+  return singleResult(data)
+}
+
+export async function confirmSessionBillableTime({ sessionId, billableMinutes, adjustmentReason, expectedVersion }) {
+  const client = requireSupabase()
+  const { data, error } = await client.rpc('confirm_session_billable_time', {
+    p_session_id: sessionId,
+    p_billable_minutes: billableMinutes,
+    p_expected_version: expectedVersion,
+    p_adjustment_reason: adjustmentReason || null
+  })
   if (error) throw error
   return presentSession(singleResult(data))
 }

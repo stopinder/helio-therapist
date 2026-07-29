@@ -75,16 +75,52 @@ test.describe('Authenticated Therapist Workflow', () => {
     // 9. Verify simplified workspace (no timer, no listening)
     await expect(page.getByText(/Listening…/i)).not.toBeVisible();
     await expect(page.getByText(/⏱/)).not.toBeVisible();
+    await expect(page.getByText(/WORKSPACE ACTIVE/i)).not.toBeVisible();
+    await expect(page.getByText(/SESSION IN PROGRESS/i)).toBeVisible();
+    await expect(page.getByText(/Session type: In-person/i)).toBeVisible();
 
-    // 10. End Session
+    // 10. Work tracking
+    await expect(page.getByText(/Work time active/i)).toBeVisible();
+    await expect(page.getByText(/Recorded: 0 min/i)).toBeVisible();
+
+    // Pause
+    await page.getByTitle('Pause Work').click();
+    await expect(page.getByText(/Work paused/i)).toBeVisible();
+
+    // Resume
+    await page.getByTitle('Resume Work').click();
+    await expect(page.getByText(/Work time active/i)).toBeVisible();
+
+    // 11. End Session
     const endSessionButton = page.getByRole('button', { name: /End Session/i });
     await expect(endSessionButton).toBeVisible();
     await endSessionButton.click();
 
-    // 11. Verify navigation back to client record after completion
+    // 11a. Verify confirmation dialog
+    const confirmHeading = page.getByRole('heading', { name: /End this client session\?/i });
+    await expect(confirmHeading).toBeVisible();
+    
+    // Cancel first
+    await page.getByRole('button', { name: /Cancel/i }).click();
+    await expect(confirmHeading).not.toBeVisible();
+    await expect(page).toHaveURL(/\/clients\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\/sessions\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
+    
+    // Now confirm
+    await endSessionButton.click();
+    await page.locator('div').filter({ hasText: /^End this client session\?$/ }).locator('..').getByRole('button', { name: 'End Session' }).click();
+
+    // 11b. Verify Billing Confirmation dialog
+    const billingHeading = page.getByRole('heading', { name: /Confirm Billable Time/i });
+    await expect(billingHeading).toBeVisible();
+    await expect(page.getByText(/Recorded work time/i)).toBeVisible();
+
+    // Confirm billing (defaults to recorded)
+    await page.getByRole('button', { name: /Confirm Billable Time/i }).click();
+
+    // 12. Verify navigation back to client record after completion
     await expect(page).toHaveURL(/\/clients\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
 
-    // 12. Verify session-completed timeline event
+    // 13. Verify session-completed timeline event
     await expect(page.getByText(/Session completed/i)).toBeVisible();
   });
 });

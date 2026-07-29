@@ -22,30 +22,65 @@ test('SessionWorkspace simplification: UI elements removed', async () => {
   assert.doesNotMatch(workspace, /elapsedTime:/)
 })
 
-test('SessionWorkspace simplification: End Session wiring', async () => {
+test('SessionWorkspace: Header and layout cleanup', async () => {
+  const appShell = await readFile(new URL('../src/layouts/AppShell.vue', import.meta.url), 'utf8')
+  const header = await readFile(new URL('../src/components/workspace/SessionWorkspaceHeader.vue', import.meta.url), 'utf8')
+  const workspace = await readFile(new URL('../src/views/SessionWorkspace.vue', import.meta.url), 'utf8')
+
+  // WORKSPACE ACTIVE is not rendered
+  assert.doesNotMatch(appShell, /WORKSPACE ACTIVE/i)
+
+  // Session status says SESSION IN PROGRESS
+  assert.match(workspace, /SESSION IN PROGRESS/)
+  assert.match(workspace, /SESSION COMPLETED/)
+
+  // In-person session type is informational
+  assert.match(header, /Session type: In-person/)
+  assert.doesNotMatch(header, /<span v-if="isInPerson">In-person session<\/span>/)
+
+  // Save Notes is disabled as no autosave
+  assert.match(header, /Save Notes/)
+  assert.match(header, /disabled/)
+})
+
+test('SessionWorkspace: Navigation labels updated', async () => {
+  const workspace = await readFile(new URL('../src/views/SessionWorkspace.vue', import.meta.url), 'utf8')
+  const workflow = await readFile(new URL('../src/components/workspace/WorkflowIndicator.vue', import.meta.url), 'utf8')
+
+  // Therapist Notes -> Notes
+  assert.match(workspace, /'Notes'/)
+  assert.doesNotMatch(workspace, /'Therapist Notes'/)
+  assert.match(workflow, /'Notes'/)
+
+  // Clinical Summary -> Clinical Record
+  assert.match(workspace, /'Clinical Record'/)
+  assert.doesNotMatch(workspace, /'Clinical Summary'/)
+  assert.match(workflow, /'Clinical Record'/)
+})
+
+test('SessionWorkspace simplification: End Session confirmation wiring', async () => {
   const header = await readFile(new URL('../src/components/workspace/SessionWorkspaceHeader.vue', import.meta.url), 'utf8')
   const workspace = await readFile(new URL('../src/views/SessionWorkspace.vue', import.meta.url), 'utf8')
 
   // Header emits end-session
-  assert.match(header, /defineEmits\(\['end-session'\]\)/)
+  assert.match(header, /defineEmits\(\['end-session', 'pause-work', 'resume-work'\]\)/)
   assert.match(header, /@click="emit\('end-session'\)"/)
-  
-  // Header handles ending prop
-  assert.match(header, /ending: \{/)
-  assert.match(header, /:disabled="ending"/)
-  assert.match(header, /ending \? 'Ending Session…' : 'End Session'/)
 
-  // Header hides/disables when completed
-  assert.match(header, /isCompleted = computed/)
-  assert.match(header, /v-if="!isCompleted"/)
+  // Workspace has confirmation dialog
+  assert.match(workspace, /v-if="showEndSessionConfirmation"/)
+  assert.match(workspace, /End this client session\?/)
+  assert.match(workspace, /@click="showEndSessionConfirmation = false"/) // Cancel
+  assert.match(workspace, /@click="handleEndSession"/) // Confirm
 
-  // Workspace listens for end-session and calls library
-  assert.match(workspace, /@end-session="handleEndSession"/)
-  assert.match(workspace, /import \{ .*completeSessionRecord.* \} from '\.\.\/lib\/sessions\.js'/)
+  // Workspace listens for end-session and shows confirmation
+  assert.match(workspace, /@end-session="confirmEndSession"/)
+  assert.match(workspace, /function confirmEndSession\(\)/)
+
+  // handleEndSession calls library
+  assert.match(workspace, /completeSessionRecord/)
+  assert.match(workspace, /from '\.\.\/lib\/sessions\.js'/)
   assert.match(workspace, /async function handleEndSession\(\)/)
   assert.match(workspace, /await completeSessionRecord\(session\.value, session\.value\.notes\)/)
-  
-  // Workspace updates state and navigates
   assert.match(workspace, /session\.value = updatedSession/)
   assert.match(workspace, /router\.push\(`\/clients\/\$\{session\.value\.clientId\}`\)/)
 })

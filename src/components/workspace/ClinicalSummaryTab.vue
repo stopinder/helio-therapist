@@ -65,7 +65,7 @@
       <!-- Workflow Indicator -->
       <div class="bg-surface-elevated border border-border-muted rounded-panel p-6 shadow-sm pb-2">
         <div class="flex items-center justify-between mb-2">
-          <h2 class="text-h2 font-semibold text-ink editorial-heading" ref="mainHeading">{{ pageTitle }}</h2>
+          <h2 class="text-h2 font-semibold text-ink editorial-heading" ref="mainHeading">Clinical Record</h2>
           <StatusBadge :status="status" :label="statusLabel" />
         </div>
         <ClinicalWorkflowIndicator :state="status" />

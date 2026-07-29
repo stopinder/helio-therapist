@@ -101,10 +101,6 @@
           <h2 class="text-h3 font-semibold text-ink truncate">{{ currentPageName }}</h2>
         </div>
         <div class="flex items-center gap-inline-md">
-          <div class="flex items-center gap-inline-xs px-inline-md py-stack-xs rounded-pill bg-surface-subtle border border-border-muted">
-            <span class="h-2 w-2 rounded-pill bg-state-success"></span>
-            <span class="text-caption font-medium text-ink-secondary uppercase tracking-wide">Workspace Active</span>
-          </div>
         </div>
       </header>
 

@@ -74,7 +74,7 @@ test('the full migration chain preserves clinical invariants', async () => {
     }
 
     assert.equal(migrations[0], '20260717120000_bootstrap_legacy_integrations.sql')
-    assert.equal(migrations.at(-1), '20260729161000_persist_clinical_record_amendments.sql')
+    assert.equal(migrations.at(-1), '20260729193500_add_work_tracking.sql')
 
     const integrationsColumns = await database.query(`
       select column_name

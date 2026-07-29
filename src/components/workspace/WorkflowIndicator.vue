@@ -33,9 +33,9 @@ defineProps({
 
 const stages = [
   'Transcript',
-  'Therapist Notes',
+  'Notes',
   'Reflection',
-  'Clinical Summary',
+  'Clinical Record',
   'Supervision'
 ];
 </script>
