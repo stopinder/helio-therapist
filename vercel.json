@@ -1,3 +1,8 @@
 {
-  "rewrites": [{ "source": "/complete", "destination": "/" }]
+  "rewrites": [
+    {
+      "source": "/((?!api/).*)",
+      "destination": "/"
+    }
+  ]
 }
