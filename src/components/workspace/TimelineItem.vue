@@ -58,6 +58,10 @@ const props = defineProps({
     type: String,
     default: null
   },
+  clientId: {
+    type: String,
+    default: null
+  },
   isLast: {
     type: Boolean,
     default: false
@@ -70,6 +74,9 @@ const route = useRoute();
 const presentation = computed(() => timelineEventPresentation(props.eventType));
 
 const isNavigatable = computed(() => {
+  if (props.eventType === 'private_reflection') {
+    return !!(props.clientId || route.params.clientId);
+  }
   return (props.subjectType === 'session' || props.eventType === 'session_completed') && 
          (props.subjectId || props.sessionId);
 });
@@ -83,7 +90,8 @@ const typeClasses = computed(() => {
     referral_recorded: 'bg-state-selected text-action-link border-action-link/20',
     diagnosis_updated: 'bg-surface-subtle text-ink-secondary border-border',
     treatment_plan_updated: 'bg-surface-subtle text-ink-secondary border-border',
-    clinical_milestone: 'bg-surface-muted text-ink-secondary border-border'
+    clinical_milestone: 'bg-surface-muted text-ink-secondary border-border',
+    private_reflection: 'bg-state-selected text-action-link border-action-link/20'
   };
   
   return { 
@@ -94,7 +102,17 @@ const typeClasses = computed(() => {
 function handleClick() {
   if (isNavigatable.value) {
     const sId = props.subjectId || props.sessionId;
-    const cId = route.params.clientId;
+    const cId = props.clientId || route.params.clientId;
+    
+    if (props.eventType === 'private_reflection' && cId) {
+      if (sId) {
+        router.push(`/clients/${cId}/sessions/${sId}`);
+      } else {
+        router.push(`/clients/${cId}`);
+      }
+      return;
+    }
+
     if (cId && sId) {
       router.push(`/clients/${cId}/sessions/${sId}`);
     }

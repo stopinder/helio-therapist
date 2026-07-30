@@ -23,7 +23,8 @@ export function timelineEventPresentation(type) {
     referral_recorded: { icon: '↗', detail: 'Referral' },
     medication_changed: { icon: '•', detail: 'Medication change' },
     client_life_event: { icon: '•', detail: 'Client-reported event' },
-    clinical_milestone: { icon: '•', detail: 'Clinical milestone' }
+    clinical_milestone: { icon: '•', detail: 'Clinical milestone' },
+    private_reflection: { icon: '✍', detail: 'Private reflection' }
   })[type] || { icon: '•', detail: 'Clinical event' }
 }
 

@@ -218,7 +218,11 @@
             :markers="workspaceSession.markers"
             :activeTab="activeTab"
           />
-          <TherapistNotesTab v-else-if="activeTab === 'Notes'" />
+          <TherapistNotesTab 
+            v-else-if="activeTab === 'Notes'" 
+            :client-id="session.clientId"
+            :session-id="session.id"
+          />
           <ReflectionTab v-else-if="activeTab === 'Reflection'" />
           <ClinicalSummaryTab 
             v-else-if="activeTab === 'Clinical Record'" 
