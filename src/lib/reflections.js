@@ -152,7 +152,7 @@ export async function getAllPrivateReflections({
       *,
       clients (
         id,
-        full_name
+        display_name
       )
     `)
     .eq('user_id', user.id)
@@ -160,7 +160,7 @@ export async function getAllPrivateReflections({
 
   if (error) {
     console.error('[Reflections] Fetch all error:', error);
-    throw new Error(error.message || 'Could not fetch all reflections');
+    throw new Error('Could not fetch reflections');
   }
 
   return data;
@@ -184,7 +184,7 @@ export async function setReflectionSupervisionSelection({
 
   const { data, error } = await client
     .from('private_reflections')
-    .update({ included_in_supervision: included, updated_at: new Date().toISOString() })
+    .update({ included_in_supervision: included })
     .eq('id', reflectionId)
     .eq('user_id', user.id)
     .select()
