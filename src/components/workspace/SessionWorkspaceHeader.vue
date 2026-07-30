@@ -15,36 +15,31 @@
             <StatusBadge status="active" :label="session.status" />
           </div>
           <div class="flex flex-wrap items-center gap-x-inline-md gap-y-0 text-caption text-ink-muted">
-            <span class="font-medium">{{ session.type }}</span>
+            <span class="font-medium">Session type: {{ session.type }}</span>
             <span>{{ session.date }} at {{ session.time }}</span>
-            <span class="flex items-center gap-1 text-action-link font-mono bg-state-selected px-2 rounded-pill">
-              ⏱ {{ displayTime }}
-            </span>
           </div>
         </div>
       </div>
 
       <div class="flex items-center gap-inline-sm flex-wrap">
-        <div class="flex items-center gap-2 mr-4 px-3 py-1 bg-state-success-surface border border-state-success/20 rounded-pill">
-          <span class="w-2 h-2 rounded-full bg-state-success animate-pulse"></span>
-          <span class="text-caption text-state-success font-semibold tracking-wide uppercase">Listening…</span>
-        </div>
         <button 
           @click="joinMeeting"
           :disabled="isInPerson || !session.meetingUrl"
           :title="isInPerson ? 'In-person session' : (!session.meetingUrl ? 'No video meeting link has been added.' : '')"
           class="px-inline-md py-stack-xs bg-surface-elevated border border-border text-caption font-medium text-ink-secondary rounded-control hover:bg-surface-subtle transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-state-selected disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          <span v-if="isInPerson">In-person session</span>
-          <span v-else>{{ videoLabel }}</span>
+          {{ videoLabel }}
         </button>
-        <button class="px-inline-md py-stack-xs bg-surface-elevated border border-border text-caption font-medium text-ink-secondary rounded-control hover:bg-surface-subtle transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-state-selected">
-          Add to Supervision
-        </button>
-        <button class="px-inline-md py-stack-xs bg-surface-elevated border border-border text-body-sm font-medium text-ink rounded-control hover:bg-surface-subtle transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-state-selected">
+        <button 
+          class="px-inline-md py-stack-xs bg-surface-elevated border border-border text-body-sm font-medium text-ink rounded-control hover:bg-surface-subtle transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-state-selected disabled:opacity-50 disabled:cursor-not-allowed"
+          disabled
+        >
           Save Notes
         </button>
-        <button class="px-inline-md py-stack-xs bg-state-danger text-body-sm font-medium text-white rounded-control hover:opacity-90 transition-colors shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-state-danger ring-offset-2">
+        <button 
+          @click="emit('end-session')"
+          class="px-inline-md py-stack-xs bg-state-danger text-body-sm font-medium text-white rounded-control hover:opacity-90 transition-colors shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-state-danger ring-offset-2"
+        >
           End Session
         </button>
       </div>
@@ -53,7 +48,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, computed } from 'vue';
+import { computed } from 'vue';
 import { RouterLink } from 'vue-router';
 import StatusBadge from './StatusBadge.vue';
 import { videoProviderService } from '../../lib/videoProvider.js';
@@ -65,43 +60,22 @@ const props = defineProps({
   }
 });
 
-const isInPerson = computed(() => true); // Columns don't exist in Supabase yet, defaulting to safe in-person logic for UI
+const emit = defineEmits(['end-session']);
 
-const displayTime = ref(props.session.elapsedTime || '00:00');
-let timerInterval = null;
-
-const incrementTimer = () => {
-  const [mins, secs] = displayTime.value.split(':').map(Number);
-  let newSecs = secs + 1;
-  let newMins = mins;
-  if (newSecs >= 60) {
-    newSecs = 0;
-    newMins++;
-  }
-  displayTime.value = `${String(newMins).padStart(2, '0')}:${String(newSecs).padStart(2, '0')}`;
-};
+const isInPerson = computed(() => props.session.type === 'In-person');
 
 const joinMeeting = () => {
-  // Use mock data as these columns don't exist in Supabase yet
-  videoProviderService.openMeeting({
-    videoProvider: 'zoom',
-    meetingUrl: 'https://zoom.us/j/123456789'
-  });
+  if (props.session.meetingUrl) {
+    window.open(props.session.meetingUrl, '_blank');
+  }
 };
 
 const videoLabel = computed(() => {
+  if (isInPerson.value) return 'In-person session';
   return videoProviderService.getVideoActionLabel({
     videoProvider: 'zoom',
-    meetingUrl: 'https://zoom.us/j/123456789',
-    status: 'Scheduled'
+    meetingUrl: props.session.meetingUrl,
+    status: props.session.status
   });
-});
-
-onMounted(() => {
-  timerInterval = setInterval(incrementTimer, 1000);
-});
-
-onUnmounted(() => {
-  if (timerInterval) clearInterval(timerInterval);
 });
 </script>

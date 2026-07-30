@@ -20,7 +20,10 @@
     </div>
     <template v-else-if="session">
       <!-- Header -->
-      <SessionWorkspaceHeader :session="workspaceSession" />
+      <SessionWorkspaceHeader 
+        :session="workspaceSession" 
+        @end-session="confirmEndSession"
+      />
 
       <!-- Workflow Indicator -->
       <WorkflowIndicator :activeStage="activeTab" />
@@ -40,14 +43,42 @@
             :markers="workspaceSession.markers"
             :activeTab="activeTab"
           />
-          <TherapistNotesTab v-else-if="activeTab === 'Therapist Notes'" />
+          <TherapistNotesTab 
+            v-else-if="activeTab === 'Notes'" 
+            :clientId="session.clientId"
+            :sessionId="session.id"
+          />
           <ReflectionTab v-else-if="activeTab === 'Reflection'" />
           <ClinicalSummaryTab 
-            v-else-if="activeTab === 'Clinical Summary'" 
+            v-else-if="activeTab === 'Clinical Record'" 
             :session="session"
             @update:session="session = $event"
           />
           <SupervisionSummaryTab v-else-if="activeTab === 'Supervision Summary'" />
+        </div>
+      </div>
+
+      <!-- End Session Confirmation Modal -->
+      <div v-if="showEndSessionConfirmation" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+        <div class="bg-surface max-w-md w-full rounded-card shadow-xl p-6 border border-border">
+          <h3 class="text-h3 font-semibold text-ink mb-2">End this client session?</h3>
+          <p class="text-body text-ink-muted mb-6">
+            Ending the session will complete the clinical record. You won't be able to edit the transcript or base notes after this.
+          </p>
+          <div class="flex flex-col sm:flex-row justify-end gap-3">
+            <button 
+              @click="showEndSessionConfirmation = false"
+              class="px-4 py-2 bg-surface border border-border text-ink-secondary rounded-control hover:bg-surface-subtle transition-colors font-medium"
+            >
+              Cancel
+            </button>
+            <button 
+              @click="handleEndSession"
+              class="px-4 py-2 bg-state-danger text-white rounded-control hover:opacity-90 transition-opacity font-medium shadow-sm"
+            >
+              End Session
+            </button>
+          </div>
         </div>
       </div>
     </template>
@@ -56,8 +87,8 @@
 
 <script setup>
 import { ref, onMounted, computed } from 'vue';
-import { useRoute } from 'vue-router';
-import { getSession } from '../lib/sessions.js';
+import { useRoute, useRouter } from 'vue-router';
+import { getSession, completeSessionRecord } from '../lib/sessions.js';
 import { getClient } from '../lib/clients.js';
 import { mockSession } from '../mocks/sessionWorkspaceData.js';
 import SessionWorkspaceHeader from '../components/workspace/SessionWorkspaceHeader.vue';
@@ -70,6 +101,7 @@ import ClinicalSummaryTab from '../components/workspace/ClinicalSummaryTab.vue';
 import SupervisionSummaryTab from '../components/workspace/SupervisionSummaryTab.vue';
 
 const route = useRoute();
+const router = useRouter();
 const session = ref(null);
 const client = ref(null);
 const loading = ref(true);
@@ -77,13 +109,29 @@ const error = ref('');
 
 const tabs = [
   'Transcript',
-  'Therapist Notes',
+  'Notes',
   'Reflection',
-  'Clinical Summary',
+  'Clinical Record',
   'Supervision Summary'
 ];
 
 const activeTab = ref('Transcript');
+
+const showEndSessionConfirmation = ref(false);
+
+function confirmEndSession() {
+  showEndSessionConfirmation.value = true;
+}
+
+async function handleEndSession() {
+  try {
+    const updatedSession = await completeSessionRecord(session.value, session.value.notes);
+    session.value = updatedSession;
+    router.push(`/clients/${session.value.clientId}`);
+  } catch (err) {
+    console.error('Failed to complete session:', err);
+  }
+}
 
 async function loadSession() {
   loading.value = true;

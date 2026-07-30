@@ -1,0 +1,477 @@
+
+> helios-therapist@1.0.0 test
+> node --test test/**/*.test.js
+✔ calendar events open a Helio-controlled detail popover (94.4894ms)
+✔ keeps calendar recovery in the workspace rather than routing routine work to Settings (84.0767ms)
+✔ lib/clients.js includes createClient with authenticated user check (116.185ms)
+✔ Clients.vue integrates AddClientModal correctly (146.6333ms)
+✔ App.vue reuses createClient helper (52.1259ms)
+✔ searches names and identifiers without requiring email to be displayed (6.731ms)
+✔ only a single exact result is eligible for Enter-to-open (8.0034ms)
+✔ recent sorting prioritises recently opened clients and then uses name order (5.5029ms)
+✔ identifiers appear only when needed to distinguish duplicate names (1.4353ms)
+✔ client request model keeps one send action and independently managed items (129.533ms)
+✔ Clients page uses live Supabase clients and standard UI patterns (103.3735ms)
+✔ clinical exchange labels preserve the distinct assignment lifecycle (7.4217ms)
+✔ clinical timeline presents clinical findings, not workflow activity (4.6935ms)
+✔ PHQ-9 only calculates complete valid answers and preserves item answers (34.2965ms)
+✔ Clinical Summary Approval: draft session displays as draft (7.9858ms)
+✔ Clinical Summary Approval: completed session displays as approved_record (0.7622ms)
+✔ Clinical Summary Approval: parses notes correctly for approved record (1.017ms)
+✔ Clinical Summary Approval: handles legacy plain text after approval (12.6865ms)
+✔ Clinical Summary: parses valid JSON notes (11.2514ms)
+✔ Clinical Summary: handles plain text as legacy notes (12.3025ms)
+✔ Clinical Summary: handles invalid JSON as legacy notes (2.2984ms)
+✔ Clinical Summary: formats data as JSON string (2.5613ms)
+✔ clinical session state is server-backed with a one-time retained legacy import (220.6875ms)
+✔ session save and completion use concurrency and transactional RPC boundaries (125.2442ms)
+✔ Zoom session operations validate the durable session belongs to the therapist and client (182.0841ms)
+[Google Calendar] Refresh requires new consent: invalid_grant
+✔ refreshes an expired Google token and retries the calendar request silently (578.7135ms)
+✔ only asks for reconnect when Google rejects the refresh token (165.2317ms)
+✔ the full migration chain preserves clinical invariants (11670.4953ms)
+✔ ReflectionWorkspace.vue implements single modal with internal stages (235.957ms)
+✔ ReflectionWorkspace prevents background scroll when modal is open (17.4588ms)
+✔ Today has one focused before-session preparation state (528.1667ms)
+✔ the reflection workspace preserves its private therapist-only boundary (301.6876ms)
+✔ Sprint One keeps reflection and summary ownership explicit in RLS (117.2556ms)
+✔ frontend ReflectionWorkspace.vue does NOT contain relationship controls (140.0287ms)
+✔ ReflectionWorkspace.vue has 20,000 character validation (9.6361ms)
+✔ ReflectionWorkspace.vue detail modal is simplified (11.6277ms)
+✔ frontend validation matches database constraints (250.9811ms)
+✔ reflection saving has length validation and error handling (74.7362ms)
+✔ summary generation handles non-JSON responses safely (13.8097ms)
+✔ transcription also uses safe JSON parsing (40.5931ms)
+✔ resource picker separates resource selection from request configuration (150.8876ms)
+✖ SessionWorkspace simplification: UI elements removed (170.5696ms)
+✖ SessionWorkspace: Header and layout cleanup (443.9935ms)
+✔ SessionWorkspace: Navigation labels updated (41.3317ms)
+✔ SessionWorkspace simplification: End Session confirmation wiring (10.106ms)
+✔ semantic spacing tokens are defined once and exposed to Tailwind (100.6255ms)
+✔ priority workspace surfaces use semantic spacing (65.8872ms)
+✔ semantic surface, border, and elevation tokens are defined once and exposed to Tailwind (101.0442ms)
+✔ semantic interaction and motion tokens are defined once and exposed to Tailwind (64.3556ms)
+✔ primary drawers use the shared keyboard focus trap (30.8045ms)
+✔ shared visual decisions have semantic tokens and templates do not use arbitrary colour utilities (214.9191ms)
+✔ a reflection may be saved empty or short, while summary generation needs enough source material (76.2996ms)
+✔ the summary request is authenticated and delimits source writing (7.036ms)
+✔ only a bounded, supported draft is accepted (2.2174ms)
+✔ regeneration versions summaries and never overwrites the original reflection (20.9591ms)
+✔ ClientWorkspace.vue integrates live timeline (54.7227ms)
+✔ TimelineItem.vue handles navigation and event-driven presentation (37.6447ms)
+✔ lib/clients.js includes getTimelineEvents helper (46.5546ms)
+✔ multi-record resource and completion workflows call database transactions (67.746ms)
+✔ privileged transactional functions are not executable by browser roles (17.8606ms)
+✔ tenant policies validate the owner of referenced clinical records (14.573ms)
+✔ videoProviderService returns provider-neutral labels (6.5585ms)
+✔ videoProviderService does not include provider names in labels (1.9987ms)
+✔ downloads a transcript with an OAuth bearer token (140.9351ms)
+✔ follows a signed non-Zoom redirect without leaking the bearer token (7.4144ms)
+✔ uses a pre-expiry refreshed token before downloading (1.3548ms)
+✔ retries exactly once with a refreshed token after a 401 (1.9691ms)
+✔ leaves a persistent 401 for the caller to record as a failure (4.8744ms)
+✔ accepts a current Zoom webhook with a matching signature (7.7405ms)
+✔ rejects missing, mismatched and stale Zoom webhook signatures (1.2326ms)
+✔ verifies the exact raw Zoom payload without reserialising JSON (2.0631ms)
+✔ uses a stable delivery key and stores only bounded webhook metadata (3.1451ms)
+ℹ tests 72
+ℹ suites 0
+ℹ pass 70
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 14736.3267
+✖ failing tests:
+test at test\session-workspace-simplification.test.js:5:1
+✖ SessionWorkspace simplification: UI elements removed (170.5696ms)
+  AssertionError [ERR_ASSERTION]: The input was expected to not match the regular expression /elapsedTime:/. Input:
+
+  '<template>\r\n' +
+    '  <div class="flex flex-col h-full bg-surface-canvas">\r\n' +
+    '    <div v-if="loading" class="flex-1 flex items-center justify-center">\r\n' +
+    '      <div class="text-ink-muted flex flex-col items-center gap-2">\r\n' +
+    '        <span class="w-8 h-8 border-4 border-state-selected border-t-transparent rounded-full animate-spin"></span>\r\n' +
+    '        <p>Loading session workspace…</p>\r\n' +
+    '      </div>\r\n' +
+    '    </div>\r\n' +
+    '    <div v-else-if="error" class="flex-1 flex items-center justify-center p-inline-lg">\r\n' +
+    '      <div class="max-w-md w-full bg-surface p-inline-lg py-stack-lg rounded-card shadow-sm border border-state-danger/20 text-center">\r\n' +
+    '        <h2 class="text-h2 font-semibold text-state-danger mb-2">Workspace Error</h2>\r\n' +
+    '        <p class="text-ink-secondary mb-6">{{ error }}</p>\r\n' +
+    '        <button \r\n' +
+    '          @click="loadSession"\r\n' +
+    '          class="px-inline-md py-stack-sm bg-state-selected text-white rounded-control hover:opacity-90 transition-opacity"\r\n' +
+    '        >\r\n' +
+    '          Try Again\r\n' +
+    '        </button>\r\n' +
+    '      </div>\r\n' +
+    '    </div>\r\n' +
+    '    <template v-else-if="session">\r\n' +
+    '      <!-- Header -->\r\n' +
+    '      <SessionWorkspaceHeader \r\n' +
+    '        :session="workspaceSession" \r\n' +
+    '        @end-session="confirmEndSession"\r\n' +
+    '      />\r\n' +
+    '\r\n' +
+    '      <!-- Workflow Indicator -->\r\n' +
+    '      <WorkflowIndicator :activeStage="activeTab" />\r\n' +
+    '\r\n' +
+    '      <!-- Tabs -->\r\n' +
+    '      <SessionWorkspaceTabs\r\n' +
+    '        :tabs="tabs"\r\n' +
+    '        v-model:activeTab="activeTab"\r\n' +
+    '      />\r\n' +
+    '\r\n' +
+    '      <!-- Tab Content -->\r\n' +
+    '      <div class="flex-1 overflow-auto p-inline-lg py-stack-lg">\r\n' +
+    '        <div class="max-w-6xl mx-auto">\r\n' +
+    '          <TranscriptTab \r\n' +
+    `            v-if="activeTab === 'Transcript'" \r\n` +
+    '            :transcript="workspaceSession.transcript"\r\n' +
+    '            :markers="workspaceSession.markers"\r\n' +
+    '            :activeTab="activeTab"\r\n' +
+    '          />\r\n' +
+    '          <TherapistNotesTab \r\n' +
+    `            v-else-if="activeTab === 'Notes'" \r\n` +
+    '            :clientId="session.clientId"\r\n' +
+    '            :sessionId="session.id"\r\n' +
+    '          />\r\n' +
+    `          <ReflectionTab v-else-if="activeTab === 'Reflection'" />\r\n` +
+    '          <ClinicalSummaryTab \r\n' +
+    `            v-else-if="activeTab === 'Clinical Record'" \r\n` +
+    '            :session="session"\r\n' +
+    '            @update:session="session = $event"\r\n' +
+    '          />\r\n' +
+    `          <SupervisionSummaryTab v-else-if="activeTab === 'Supervision Summary'" />\r\n` +
+    '        </div>\r\n' +
+    '      </div>\r\n' +
+    '\r\n' +
+    '      <!-- End Session Confirmation Modal -->\r\n' +
+    '      <div v-if="showEndSessionConfirmation" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">\r\n' +
+    '        <div class="bg-surface max-w-md w-full rounded-card shadow-xl p-6 border border-border">\r\n' +
+    '          <h3 class="text-h3 font-semibold text-ink mb-2">End this client session?</h3>\r\n' +
+    '          <p class="text-body text-ink-muted mb-6">\r\n' +
+    "            Ending the session will complete the clinical record. You won't be able to edit the transcript or base notes after this.\r\n" +
+    '          </p>\r\n' +
+    '          <div class="flex flex-col sm:flex-row justify-end gap-3">\r\n' +
+    '            <button \r\n' +
+    '              @click="showEndSessionConfirmation = false"\r\n' +
+    '              class="px-4 py-2 bg-surface border border-border text-ink-secondary rounded-control hover:bg-surface-subtle transition-colors font-medium"\r\n' +
+    '            >\r\n' +
+    '              Cancel\r\n' +
+    '            </button>\r\n' +
+    '            <button \r\n' +
+    '              @click="handleEndSession"\r\n' +
+    '              class="px-4 py-2 bg-state-danger text-white rounded-control hover:opacity-90 transition-opacity font-medium shadow-sm"\r\n' +
+    '            >\r\n' +
+    '              End Session\r\n' +
+    '            </button>\r\n' +
+    '          </div>\r\n' +
+    '        </div>\r\n' +
+    '      </div>\r\n' +
+    '    </template>\r\n' +
+    '  </div>\r\n' +
+    '</template>\r\n' +
+    '\r\n' +
+    '<script setup>\r\n' +
+    "import { ref, onMounted, computed } from 'vue';\r\n" +
+    "import { useRoute, useRouter } from 'vue-router';\r\n" +
+    "import { getSession, completeSessionRecord } from '../lib/sessions.js';\r\n" +
+    "import { getClient } from '../lib/clients.js';\r\n" +
+    "import { mockSession } from '../mocks/sessionWorkspaceData.js';\r\n" +
+    "import SessionWorkspaceHeader from '../components/workspace/SessionWorkspaceHeader.vue';\r\n" +
+    "import SessionWorkspaceTabs from '../components/workspace/SessionWorkspaceTabs.vue';\r\n" +
+    "import WorkflowIndicator from '../components/workspace/WorkflowIndicator.vue';\r\n" +
+    "import TranscriptTab from '../components/workspace/TranscriptTab.vue';\r\n" +
+    "import TherapistNotesTab from '../components/workspace/TherapistNotesTab.vue';\r\n" +
+    "import ReflectionTab from '../components/workspace/ReflectionTab.vue';\r\n" +
+    "import ClinicalSummaryTab from '../components/workspace/ClinicalSummaryTab.vue';\r\n" +
+    "import SupervisionSummaryTab from '../components/workspace/SupervisionSummaryTab.vue';\r\n" +
+    '\r\n' +
+    'const route = useRoute();\r\n' +
+    'const router = useRouter();\r\n' +
+    'const session = ref(null);\r\n' +
+    'const client = ref(null);\r\n' +
+    'const loading = ref(true);\r\n' +
+    "const error = ref('');\r\n" +
+    '\r\n' +
+    'const tabs = [\r\n' +
+    "  'Transcript',\r\n" +
+    "  'Notes',\r\n" +
+    "  'Reflection',\r\n" +
+    "  'Clinical Record',\r\n" +
+    "  'Supervision Summary'\r\n" +
+    '];\r\n' +
+    '\r\n' +
+    "const activeTab = ref('Transcript');\r\n" +
+    '\r\n' +
+    'const showEndSessionConfirmation = ref(false);\r\n' +
+    '\r\n' +
+    'function confirmEndSession() {\r\n' +
+    '  showEndSessionConfirmation.value = true;\r\n' +
+    '}\r\n' +
+    '\r\n' +
+    'async function handleEndSession() {\r\n' +
+    '  try {\r\n' +
+    '    const updatedSession = await completeSessionRecord(session.value, session.value.notes);\r\n' +
+    '    session.value = updatedSession;\r\n' +
+    '    router.push(`/clients/${session.value.clientId}`);\r\n' +
+    '  } catch (err) {\r\n' +
+    "    console.error('Failed to complete session:', err);\r\n" +
+    '  }\r\n' +
+    '}\r\n' +
+    '\r\n' +
+    'async function loadSession() {\r\n' +
+    '  loading.value = true;\r\n' +
+    "  error.value = '';\r\n" +
+    '  try {\r\n' +
+    '    const { clientId, sessionId } = route.params;\r\n' +
+    '    const [sessionData, clientData] = await Promise.all([\r\n' +
+    '      getSession({ clientId, sessionId }),\r\n' +
+    '      getClient({ clientId })\r\n' +
+    '    ]);\r\n' +
+    '    session.value = sessionData;\r\n' +
+    '    client.value = clientData;\r\n' +
+    '  } catch (e) {\r\n' +
+    "    console.error('Session loading error:', e);\r\n" +
+    "    error.value = 'The session workspace could not be loaded.';\r\n" +
+    '  } finally {\r\n' +
+    '    loading.value = false;\r\n' +
+    '  }\r\n' +
+    '}\r\n' +
+    '\r\n' +
+    'const workspaceSession = computed(() => {\r\n' +
+    '  if (!session.value) return null;\r\n' +
+    '  \r\n' +
+    '  const dateObj = new Date(session.value.startedAt);\r\n' +
+    '  const isValidDate = !isNaN(dateObj.getTime());\r\n' +
+    '\r\n' +
+    '  return {\r\n' +
+    '    // Session metadata\r\n' +
+    '    id: session.value.id,\r\n' +
+    '    clientId: session.value.clientId,\r\n' +
+    "    status: session.value.status === 'in_progress' ? 'In Progress' : (session.value.status === 'completed' ? 'Completed' : session.value.status),\r\n" +
+    '    \r\n' +
+    '    // Real client data\r\n' +
+    "    clientName: client.value?.name || 'Unknown Client',\r\n" +
+    '    \r\n' +
+    '    // Derived display values\r\n' +
+    "    date: isValidDate ? dateObj.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : 'Pending',\r\n" +
+    "    time: isValidDate ? dateObj.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }) : '',\r\n" +
+    "    type: 'Clinical session',\r\n" +
+    '\r\n' +
+    '    // Video provider data (from session if available, otherwise fallback)\r\n' +
+    '    // IMPORTANT: videoProvider and meetingUrl do not exist in the current Supabase schema\r\n' +
+    "    videoProvider: 'zoom', // Hard-coded fallback for demonstration since columns don't exist\r\n" +
+    "    meetingUrl: 'https://zoom.us/j/123456789', // Hard-coded fallback for demonstration\r\n" +
+    '    isInPerson: false,\r\n' +
+    '    \r\n' +
+    '    // Fields still mocked for this phase\r\n' +
+    "    elapsedTime: '00:00:00', // Will be incremented by the header component\r\n" +
+    '    transcript: mockSession.transcript,\r\n' +
+    '    markers: mockSession.markers\r\n' +
+    '  };\r\n' +
+    '});\r\n' +
+    '\r\n' +
+    'onMounted(loadSession);\r\n' +
+    '</script>\r\n'
+
+      at TestContext.<anonymous> (file:///C:/Users/Rob/WebstormProjects/helio-therapist/test/session-workspace-simplification.test.js:22:10)
+      at async Test.run (node:internal/test_runner/test:1054:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: '<template>\r\n  <div class="flex flex-col h-full bg-surface-canvas">\r\n    <div v-if="loading" class="flex-1 flex items-center justify-center">\r\n      <div class="text-ink-muted flex flex-col items-center gap-2">\r\n        <span class="w-8 h-8 border-4 border-state-selected border-t-transparent rounded-full animate-spin"></span>\r\n        <p>Loading session workspace…</p>\r\n      </div>\r\n    </div>\r\n    <div v-else-if="error" class="flex-1 flex items-center justify-center p-inline-lg">\r\n      <div class="max-w-md w-full bg-surface p-inline-lg py-stack-lg rounded-card shadow-sm border border-state-danger/20 text-center">\r\n        <h2 class="text-h2 font-semibold text-state-danger mb-2">Workspace Error</h2>\r\n        <p class="text-ink-secondary mb-6">{{ error }}</p>\r\n        <button \r\n          @click="loadSession"\r\n          class="px-inline-md py-stack-sm bg-state-selected text-white rounded-control hover:opacity-90 transition-opacity"\r\n        >\r\n          Try Again\r\n        </button>\r\n      </div>\r\n    </div>\r\n    <template v-else-if="session">\r\n      <!-- Header -->\r\n      <SessionWorkspaceHeader \r\n        :session="workspaceSession" \r\n        @end-session="confirmEndSession"\r\n      />\r\n\r\n      <!-- Workflow Indicator -->\r\n      <WorkflowIndicator :activeStage="activeTab" />\r\n\r\n      <!-- Tabs -->\r\n      <SessionWorkspaceTabs\r\n        :tabs="tabs"\r\n        v-model:activeTab="activeTab"\r\n      />\r\n\r\n      <!-- Tab Content -->\r\n      <div class="flex-1 overflow-auto p-inline-lg py-stack-lg">\r\n        <div class="max-w-6xl mx-auto">\r\n          <TranscriptTab \r\n            v-if="activeTab === \'Transcript\'" \r\n            :transcript="workspaceSession.transcript"\r\n            :markers="workspaceSession.markers"\r\n            :activeTab="activeTab"\r\n          />\r\n          <TherapistNotesTab \r\n            v-else-if="activeTab === \'Notes\'" \r\n            :clientId="session.clientId"\r\n            :sessionId="session.id"\r\n          />\r\n          <ReflectionTab v-else-if="activeTab === \'Reflection\'" />\r\n          <ClinicalSummaryTab \r\n            v-else-if="activeTab === \'Clinical Record\'" \r\n            :session="session"\r\n            @update:session="session = $event"\r\n          />\r\n          <SupervisionSummaryTab v-else-if="activeTab === \'Supervision Summary\'" />\r\n        </div>\r\n      </div>\r\n\r\n      <!-- End Session Confirmation Modal -->\r\n      <div v-if="showEndSessionConfirmation" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">\r\n        <div class="bg-surface max-w-md w-full rounded-card shadow-xl p-6 border border-border">\r\n          <h3 class="text-h3 font-semibold text-ink mb-2">End this client session?</h3>\r\n          <p class="text-body text-ink-muted mb-6">\r\n            Ending the session will complete the clinical record. You won\'t be able to edit the transcript or base notes after this.\r\n          </p>\r\n          <div class="flex flex-col sm:flex-row justify-end gap-3">\r\n            <button \r\n              @click="showEndSessionConfirmation = false"\r\n              class="px-4 py-2 bg-surface border border-border text-ink-secondary rounded-control hover:bg-surface-subtle transition-colors font-medium"\r\n            >\r\n              Cancel\r\n            </button>\r\n            <button \r\n              @click="handleEndSession"\r\n              class="px-4 py-2 bg-state-danger text-white rounded-control hover:opacity-90 transition-opacity font-medium shadow-sm"\r\n            >\r\n              End Session\r\n            </button>\r\n          </div>\r\n        </div>\r\n      </div>\r\n    </template>\r\n  </div>\r\n</template>\r\n\r\n<script setup>\r\nimport { ref, onMounted, computed } from \'vue\';\r\nimport { useRoute, useRouter } from \'vue-router\';\r\nimport { getSession, completeSessionRecord } from \'../lib/sessions.js\';\r\nimport { getClient } from \'../lib/clients.js\';\r\nimport { mockSession } from \'../mocks/sessionWorkspaceData.js\';\r\nimport SessionWorkspaceHeader from \'../components/workspace/SessionWorkspaceHeader.vue\';\r\nimport SessionWorkspaceTabs from \'../components/workspace/SessionWorkspaceTabs.vue\';\r\nimport WorkflowIndicator from \'../components/workspace/WorkflowIndicator.vue\';\r\nimport TranscriptTab from \'../components/workspace/TranscriptTab.vue\';\r\nimport TherapistNotesTab from \'../components/workspace/TherapistNotesTab.vue\';\r\nimport ReflectionTab from \'../components/workspace/ReflectionTab.vue\';\r\nimport ClinicalSummaryTab from \'../components/workspace/ClinicalSummaryTab.vue\';\r\nimport SupervisionSummaryTab from \'../components/workspace/SupervisionSummaryTab.vue\';\r\n\r\nconst route = useRoute();\r\nconst router = useRouter();\r\nconst session = ref(null);\r\nconst client = ref(null);\r\nconst loading = ref(true);\r\nconst error = ref(\'\');\r\n\r\nconst tabs = [\r\n  \'Transcript\',\r\n  \'Notes\',\r\n  \'Reflection\',\r\n  \'Clinical Record\',\r\n  \'Supervision Summary\'\r\n];\r\n\r\nconst activeTab = ref(\'Transcript\');\r\n\r\nconst showEndSessionConfirmation = ref(false);\r\n\r\nfunction confirmEndSession() {\r\n  showEndSessionConfirmation.value = true;\r\n}\r\n\r\nasync function handleEndSession() {\r\n  try {\r\n    const updatedSession = await completeSessionRecord(session.value, session.value.notes);\r\n    session.value = updatedSession;\r\n    router.push(`/clients/${session.value.clientId}`);\r\n  } catch (err) {\r\n    console.error(\'Failed to complete session:\', err);\r\n  }\r\n}\r\n\r\nasync function loadSession() {\r\n  loading.value = true;\r\n  error.value = \'\';\r\n  try {\r\n    const { clientId, sessionId } = route.params;\r\n    const [sessionData, clientData] = await Promise.all([\r\n      getSession({ clientId, sessionId }),\r\n      getClient({ clientId })\r\n    ]);\r\n    session.value = sessionData;\r\n    client.value = clientData;\r\n  } catch (e) {\r\n    console.error(\'Session loading error:\', e);\r\n    error.value = \'The session workspace could not be loaded.\';\r\n  } finally {\r\n    loading.value = false;\r\n  }\r\n}\r\n\r\nconst workspaceSession = computed(() => {\r\n  if (!session.value) return null;\r\n  \r\n  const dateObj = new Date(session.value.startedAt);\r\n  const isValidDate = !isNaN(dateObj.getTime());\r\n\r\n  return {\r\n    // Session metadata\r\n    id: session.value.id,\r\n    clientId: session.value.clientId,\r\n    status: session.value.status === \'in_progress\' ? \'In Progress\' : (session.value.status === \'completed\' ? \'Completed\' : session.value.status),\r\n    \r\n    // Real client data\r\n    clientName: client.value?.name || \'Unknown Client\',\r\n    \r\n    // Derived display values\r\n    date: isValidDate ? dateObj.toLocaleDateString(\'en-US\', { month: \'long\', day: \'numeric\', year: \'numeric\' }) : \'Pending\',\r\n    time: isValidDate ? dateObj.toLocaleTimeString(\'en-US\', { hour: \'numeric\', minute: \'2-digit\', hour12: true }) : \'\',\r\n    type: \'Clinical session\',\r\n\r\n    // Video provider data (from session if available, otherwise fallback)\r\n    // IMPORTANT: videoProvider and meetingUrl do not exist in the current Supabase schema\r\n    videoProvider: \'zoom\', // Hard-coded fallback for demonstration since columns don\'t exist\r\n    meetingUrl: \'https://zoom.us/j/123456789\', // Hard-coded fallback for demonstration\r\n    isInPerson: false,\r\n    \r\n    // Fields still mocked for this phase\r\n    elapsedTime: \'00:00:00\', // Will be incremented by the header component\r\n    transcript: mockSession.transcript,\r\n    markers: mockSession.markers\r\n  };\r\n});\r\n\r\nonMounted(loadSession);\r\n</script>\r\n',
+    expected: /elapsedTime:/,
+    operator: 'doesNotMatch',
+    diff: 'simple'
+  }
+test at test\session-workspace-simplification.test.js:25:1
+✖ SessionWorkspace: Header and layout cleanup (443.9935ms)
+  AssertionError [ERR_ASSERTION]: The input was expected to not match the regular expression /WORKSPACE ACTIVE/i. Input:
+
+  '<template>\r\n' +
+    '  <div class="flex h-screen bg-surface-canvas text-ink overflow-hidden">\r\n' +
+    '    <!-- Mobile Sidebar Drawer -->\r\n' +
+    '    <Transition name="slide">\r\n' +
+    '      <aside\r\n' +
+    '        v-if="isMobileMenuOpen"\r\n' +
+    '        class="fixed inset-y-0 left-0 z-50 w-64 bg-sidebar border-r border-border-muted shadow-overlay md:hidden flex flex-col"\r\n' +
+    '      >\r\n' +
+    '        <div class="h-14 flex items-center justify-between px-5 border-b border-border-muted bg-surface-subtle shrink-0">\r\n' +
+    '          <span class="font-semibold text-lg tracking-tight">Helios</span>\r\n' +
+    '          <button\r\n' +
+    '            class="p-2 -mr-2 text-ink-subtle hover:text-ink-secondary"\r\n' +
+    '            @click="isMobileMenuOpen = false"\r\n' +
+    '            aria-label="Close menu"\r\n' +
+    '          >\r\n' +
+    '            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">\r\n' +
+    '              <path d="M18 6L6 18M6 6l12 12" />\r\n' +
+    '            </svg>\r\n' +
+    '          </button>\r\n' +
+    '        </div>\r\n' +
+    '        <nav class="flex-1 overflow-y-auto p-inline-md space-y-stack-xs">\r\n' +
+    '          <router-link\r\n' +
+    '            v-for="item in navItems"\r\n' +
+    '            :key="item.name"\r\n' +
+    '            :to="item.path"\r\n' +
+    '            @click="isMobileMenuOpen = false"\r\n' +
+    '            class="flex items-center px-inline-md py-stack-sm rounded-control text-body transition-colors duration-standard ease-out"\r\n' +
+    `            :class="$route.path === item.path ? 'bg-state-selected text-ink font-semibold' : 'text-ink-secondary hover:bg-surface-subtle'"\r\n` +
+    '          >\r\n' +
+    '            <span class="mr-3">{{ item.icon }}</span>\r\n' +
+    '            {{ item.name }}\r\n' +
+    '          </router-link>\r\n' +
+    '        </nav>\r\n' +
+    '        <div class="p-inline-md border-t border-border-muted">\r\n' +
+    '          <div class="flex items-center gap-3 px-inline-sm py-stack-sm">\r\n' +
+    '            <div class="h-9 w-9 rounded-pill bg-avatar flex items-center justify-center text-body font-semibold text-ink">\r\n' +
+    '              RO\r\n' +
+    '            </div>\r\n' +
+    '            <div class="flex flex-col min-w-0 leading-tight">\r\n' +
+    '              <span class="text-body font-semibold text-ink truncate">Robert Ormiston</span>\r\n' +
+    '              <span class="text-caption text-ink-muted truncate">Psychotherapist</span>\r\n' +
+    '            </div>\r\n' +
+    '          </div>\r\n' +
+    '        </div>\r\n' +
+    '      </aside>\r\n' +
+    '    </Transition>\r\n' +
+    '\r\n' +
+    '    <!-- Mobile Backdrop -->\r\n' +
+    '    <Transition name="fade">\r\n' +
+    '      <div\r\n' +
+    '        v-if="isMobileMenuOpen"\r\n' +
+    '        class="fixed inset-0 z-40 bg-backdrop backdrop-blur-sm md:hidden"\r\n' +
+    '        @click="isMobileMenuOpen = false"\r\n' +
+    '      ></div>\r\n' +
+    '    </Transition>\r\n' +
+    '\r\n' +
+    '    <!-- Desktop Sidebar -->\r\n' +
+    '    <aside class="hidden md:flex flex-col w-64 bg-sidebar border-r border-border-muted h-full shrink-0">\r\n' +
+    '      <div class="h-14 flex items-center px-5 border-b border-border-muted font-semibold text-lg tracking-tight bg-surface-subtle">\r\n' +
+    '        Helios\r\n' +
+    '      </div>\r\n' +
+    '      <nav class="flex-1 overflow-y-auto p-inline-md space-y-stack-xs">\r\n' +
+    '        <router-link\r\n' +
+    '          v-for="item in navItems"\r\n' +
+    '          :key="item.name"\r\n' +
+    '          :to="item.path"\r\n' +
+    '          class="flex items-center px-inline-md py-stack-sm rounded-control text-body transition-colors duration-standard ease-out"\r\n' +
+    `          :class="$route.path === item.path ? 'bg-state-selected text-ink font-semibold' : 'text-ink-secondary hover:bg-surface-subtle'"\r\n` +
+    '        >\r\n' +
+    '          <span class="mr-3">{{ item.icon }}</span>\r\n' +
+    '          {{ item.name }}\r\n' +
+    '        </router-link>\r\n' +
+    '      </nav>\r\n' +
+    '      <div class="p-inline-md border-t border-border-muted">\r\n' +
+    '        <div class="flex items-center gap-3 px-inline-sm py-stack-sm">\r\n' +
+    '          <div class="h-9 w-9 rounded-pill bg-avatar flex items-center justify-center text-body font-semibold text-ink">\r\n' +
+    '            RO\r\n' +
+    '          </div>\r\n' +
+    '          <div class="flex flex-col min-w-0 leading-tight">\r\n' +
+    '            <span class="text-body font-semibold text-ink truncate">Robert Ormiston</span>\r\n' +
+    '            <span class="text-caption text-ink-muted truncate">Psychotherapist</span>\r\n' +
+    '          </div>\r\n' +
+    '        </div>\r\n' +
+    '      </div>\r\n' +
+    '    </aside>\r\n' +
+    '\r\n' +
+    '    <!-- Main Content Area -->\r\n' +
+    '    <div class="flex flex-col flex-1 min-w-0 h-full overflow-hidden">\r\n' +
+    '      <!-- Top Header -->\r\n' +
+    '      <header class="h-14 flex items-center justify-between px-inline-lg border-b border-border-muted bg-surface shrink-0">\r\n' +
+    '        <div class="flex items-center gap-inline-md">\r\n' +
+    '          <button\r\n' +
+    '            class="md:hidden p-2 -ml-2 text-ink-secondary hover:bg-surface-subtle rounded-control transition-colors duration-standard ease-out"\r\n' +
+    '            @click="isMobileMenuOpen = true"\r\n' +
+    '            aria-label="Open menu"\r\n' +
+    '          >\r\n' +
+    '            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">\r\n' +
+    '              <path d="M4 6h16M4 12h16M4 18h16" />\r\n' +
+    '            </svg>\r\n' +
+    '          </button>\r\n' +
+    '          <h2 class="text-h3 font-semibold text-ink truncate">{{ currentPageName }}</h2>\r\n' +
+    '        </div>\r\n' +
+    '        <div class="flex items-center gap-inline-md">\r\n' +
+    '          <div class="flex items-center gap-inline-xs px-inline-md py-stack-xs rounded-pill bg-surface-subtle border border-border-muted">\r\n' +
+    '            <span class="h-2 w-2 rounded-pill bg-state-success"></span>\r\n' +
+    '            <span class="text-caption font-medium text-ink-secondary uppercase tracking-wide">Workspace Active</span>\r\n' +
+    '          </div>\r\n' +
+    '        </div>\r\n' +
+    '      </header>\r\n' +
+    '\r\n' +
+    '      <!-- Page Content -->\r\n' +
+    '      <main class="flex-1 overflow-auto bg-surface-canvas relative">\r\n' +
+    '        <slot />\r\n' +
+    '      </main>\r\n' +
+    '    </div>\r\n' +
+    '  </div>\r\n' +
+    '</template>\r\n' +
+    '\r\n' +
+    '<script setup>\r\n' +
+    "import { ref, computed } from 'vue'\r\n" +
+    "import { useRoute } from 'vue-router'\r\n" +
+    '\r\n' +
+    'const route = useRoute()\r\n' +
+    'const isMobileMenuOpen = ref(false)\r\n' +
+    '\r\n' +
+    'const navItems = [\r\n' +
+    "  { name: 'Overview', path: '/', icon: '📊' },\r\n" +
+    "  { name: 'Calendar', path: '/calendar', icon: '🗓️' },\r\n" +
+    "  { name: 'Clients', path: '/clients', icon: '👥' },\r\n" +
+    "  { name: 'Transcripts', path: '/transcripts', icon: '📝' },\r\n" +
+    "  { name: 'Professional Development', path: '/supervision', icon: '🌱' },\r\n" +
+    "  { name: 'Settings', path: '/settings', icon: '⚙️' },\r\n" +
+    ']\r\n' +
+    '\r\n' +
+    'const currentPageName = computed(() => {\r\n' +
+    '  const current = navItems.find(item => item.path === route.path)\r\n' +
+    "  return current ? current.name : 'Workspace'\r\n" +
+    '})\r\n' +
+    '</script>\r\n' +
+    '\r\n' +
+    '<style scoped>\r\n' +
+    '.slide-enter-active, .slide-leave-active {\r\n' +
+    '  transition: transform 0.25s ease-out;\r\n' +
+    '}\r\n' +
+    '.slide-enter-from, .slide-leave-to {\r\n' +
+    '  transform: translateX(-100%);\r\n' +
+    '}\r\n' +
+    '\r\n' +
+    '.fade-enter-active, .fade-leave-active {\r\n' +
+    '  transition: opacity 0.2s ease-out;\r\n' +
+    '}\r\n' +
+    '.fade-enter-from, .fade-leave-to {\r\n' +
+    '  opacity: 0;\r\n' +
+    '}\r\n' +
+    '</style>\r\n'
+
+      at TestContext.<anonymous> (file:///C:/Users/Rob/WebstormProjects/helio-therapist/test/session-workspace-simplification.test.js:31:10)
+      at async Test.run (node:internal/test_runner/test:1054:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:744:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: `<template>\r\n  <div class="flex h-screen bg-surface-canvas text-ink overflow-hidden">\r\n    <!-- Mobile Sidebar Drawer -->\r\n    <Transition name="slide">\r\n      <aside\r\n        v-if="isMobileMenuOpen"\r\n        class="fixed inset-y-0 left-0 z-50 w-64 bg-sidebar border-r border-border-muted shadow-overlay md:hidden flex flex-col"\r\n      >\r\n        <div class="h-14 flex items-center justify-between px-5 border-b border-border-muted bg-surface-subtle shrink-0">\r\n          <span class="font-semibold text-lg tracking-tight">Helios</span>\r\n          <button\r\n            class="p-2 -mr-2 text-ink-subtle hover:text-ink-secondary"\r\n            @click="isMobileMenuOpen = false"\r\n            aria-label="Close menu"\r\n          >\r\n            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">\r\n              <path d="M18 6L6 18M6 6l12 12" />\r\n            </svg>\r\n          </button>\r\n        </div>\r\n        <nav class="flex-1 overflow-y-auto p-inline-md space-y-stack-xs">\r\n          <router-link\r\n            v-for="item in navItems"\r\n            :key="item.name"\r\n            :to="item.path"\r\n            @click="isMobileMenuOpen = false"\r\n            class="flex items-center px-inline-md py-stack-sm rounded-control text-body transition-colors duration-standard ease-out"\r\n            :class="$route.path === item.path ? 'bg-state-selected text-ink font-semibold' : 'text-ink-secondary hover:bg-surface-subtle'"\r\n          >\r\n            <span class="mr-3">{{ item.icon }}</span>\r\n            {{ item.name }}\r\n          </router-link>\r\n        </nav>\r\n        <div class="p-inline-md border-t border-border-muted">\r\n          <div class="flex items-center gap-3 px-inline-sm py-stack-sm">\r\n            <div class="h-9 w-9 rounded-pill bg-avatar flex items-center justify-center text-body font-semibold text-ink">\r\n              RO\r\n            </div>\r\n            <div class="flex flex-col min-w-0 leading-tight">\r\n              <span class="text-body font-semibold text-ink truncate">Robert Ormiston</span>\r\n              <span class="text-caption text-ink-muted truncate">Psychotherapist</span>\r\n            </div>\r\n          </div>\r\n        </div>\r\n      </aside>\r\n    </Transition>\r\n\r\n    <!-- Mobile Backdrop -->\r\n    <Transition name="fade">\r\n      <div\r\n        v-if="isMobileMenuOpen"\r\n        class="fixed inset-0 z-40 bg-backdrop backdrop-blur-sm md:hidden"\r\n        @click="isMobileMenuOpen = false"\r\n      ></div>\r\n    </Transition>\r\n\r\n    <!-- Desktop Sidebar -->\r\n    <aside class="hidden md:flex flex-col w-64 bg-sidebar border-r border-border-muted h-full shrink-0">\r\n      <div class="h-14 flex items-center px-5 border-b border-border-muted font-semibold text-lg tracking-tight bg-surface-subtle">\r\n        Helios\r\n      </div>\r\n      <nav class="flex-1 overflow-y-auto p-inline-md space-y-stack-xs">\r\n        <router-link\r\n          v-for="item in navItems"\r\n          :key="item.name"\r\n          :to="item.path"\r\n          class="flex items-center px-inline-md py-stack-sm rounded-control text-body transition-colors duration-standard ease-out"\r\n          :class="$route.path === item.path ? 'bg-state-selected text-ink font-semibold' : 'text-ink-secondary hover:bg-surface-subtle'"\r\n        >\r\n          <span class="mr-3">{{ item.icon }}</span>\r\n          {{ item.name }}\r\n        </router-link>\r\n      </nav>\r\n      <div class="p-inline-md border-t border-border-muted">\r\n        <div class="flex items-center gap-3 px-inline-sm py-stack-sm">\r\n          <div class="h-9 w-9 rounded-pill bg-avatar flex items-center justify-center text-body font-semibold text-ink">\r\n            RO\r\n          </div>\r\n          <div class="flex flex-col min-w-0 leading-tight">\r\n            <span class="text-body font-semibold text-ink truncate">Robert Ormiston</span>\r\n            <span class="text-caption text-ink-muted truncate">Psychotherapist</span>\r\n          </div>\r\n        </div>\r\n      </div>\r\n    </aside>\r\n\r\n    <!-- Main Content Area -->\r\n    <div class="flex flex-col flex-1 min-w-0 h-full overflow-hidden">\r\n      <!-- Top Header -->\r\n      <header class="h-14 flex items-center justify-between px-inline-lg border-b border-border-muted bg-surface shrink-0">\r\n        <div class="flex items-center gap-inline-md">\r\n          <button\r\n            class="md:hidden p-2 -ml-2 text-ink-secondary hover:bg-surface-subtle rounded-control transition-colors duration-standard ease-out"\r\n            @click="isMobileMenuOpen = true"\r\n            aria-label="Open menu"\r\n          >\r\n            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">\r\n              <path d="M4 6h16M4 12h16M4 18h16" />\r\n            </svg>\r\n          </button>\r\n          <h2 class="text-h3 font-semibold text-ink truncate">{{ currentPageName }}</h2>\r\n        </div>\r\n        <div class="flex items-center gap-inline-md">\r\n          <div class="flex items-center gap-inline-xs px-inline-md py-stack-xs rounded-pill bg-surface-subtle border border-border-muted">\r\n            <span class="h-2 w-2 rounded-pill bg-state-success"></span>\r\n            <span class="text-caption font-medium text-ink-secondary uppercase tracking-wide">Workspace Active</span>\r\n          </div>\r\n        </div>\r\n      </header>\r\n\r\n      <!-- Page Content -->\r\n      <main class="flex-1 overflow-auto bg-surface-canvas relative">\r\n        <slot />\r\n      </main>\r\n    </div>\r\n  </div>\r\n</template>\r\n\r\n<script setup>\r\nimport { ref, computed } from 'vue'\r\nimport { useRoute } from 'vue-router'\r\n\r\nconst route = useRoute()\r\nconst isMobileMenuOpen = ref(false)\r\n\r\nconst navItems = [\r\n  { name: 'Overview', path: '/', icon: '📊' },\r\n  { name: 'Calendar', path: '/calendar', icon: '🗓️' },\r\n  { name: 'Clients', path: '/clients', icon: '👥' },\r\n  { name: 'Transcripts', path: '/transcripts', icon: '📝' },\r\n  { name: 'Professional Development', path: '/supervision', icon: '🌱' },\r\n  { name: 'Settings', path: '/settings', icon: '⚙️' },\r\n]\r\n\r\nconst currentPageName = computed(() => {\r\n  const current = navItems.find(item => item.path === route.path)\r\n  return current ? current.name : 'Workspace'\r\n})\r\n</script>\r\n\r\n<style scoped>\r\n.slide-enter-active, .slide-leave-active {\r\n  transition: transform 0.25s ease-out;\r\n}\r\n.slide-enter-from, .slide-leave-to {\r\n  transform: translateX(-100%);\r\n}\r\n\r\n.fade-enter-active, .fade-leave-active {\r\n  transition: opacity 0.2s ease-out;\r\n}\r\n.fade-enter-from, .fade-leave-to {\r\n  opacity: 0;\r\n}\r\n</style>\r\n`,
+    expected: /WORKSPACE ACTIVE/i,
+    operator: 'doesNotMatch',
+    diff: 'simple'
+  }
+> helios-therapist@1.0.0 build
+> node node_modules/vite/bin/vite.js build
+vite v8.1.5 building client environment for production...
+transforming (98) src\components\workspace\ClinicalSummaryTab.vueBrowserslist: browsers data (caniuse-lite) is 13 months old. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+✓ 116 modules transformed.
+computing gzip size...
+dist/index.html                   0.40 kB │ gzip:   0.28 kB
+dist/assets/index-ByDK2Z6A.css   40.28 kB │ gzip:   8.45 kB
+dist/assets/api-MDhKvCG4.js       0.37 kB │ gzip:   0.28 kB
+dist/assets/index-C2Y02s7c.js   367.90 kB │ gzip: 105.07 kB
+[INEFFECTIVE_DYNAMIC_IMPORT] src/lib/supabase.js is dynamically imported by src/lib/reflections.js but also statically imported by src/AuthGate.vue, src/lib/api.js, src/lib/clients.js, src/lib/sessions.js, dynamic import will not move module into another chunk.
+[PLUGIN_TIMINGS] Your build spent significant time in plugins. Here is a breakdown:
+  - vite:css (58%)
+  - vite:vue (40%)
+See https://rolldown.rs/reference/InputOptions.checks#plugintimings for more details.
+✓ built in 6.10s

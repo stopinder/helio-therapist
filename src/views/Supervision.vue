@@ -1,112 +1,109 @@
 <template>
-  <div class="p-6 md:p-8">
-    <div class="max-w-6xl mx-auto space-y-8">
-      <header class="max-w-3xl">
-        <p class="text-caption font-semibold uppercase tracking-wide text-ink-muted">
-          Private therapist workspace
-        </p>
-        <h1 class="mt-2 text-h1 font-semibold text-ink">Professional Development</h1>
-        <p class="mt-3 text-body text-ink-muted leading-relaxed">
-          A private space for reflection, learning and continuing professional development.
-          Supervision and peer consultation are optional ways to use work you choose to share.
-        </p>
-      </header>
+  <div class="flex flex-col h-full bg-surface-canvas">
+    <div class="p-inline-lg py-stack-lg border-b border-border-muted bg-surface">
+      <div class="max-w-6xl mx-auto">
+        <h1 class="text-h1 font-semibold text-ink">Professional Development</h1>
+        <p class="mt-2 text-body text-ink-muted">Your private professional reflections and supervision items.</p>
+      </div>
+    </div>
 
-      <section aria-labelledby="development-areas-heading">
-        <div class="flex items-end justify-between gap-4">
-          <div>
-            <h2 id="development-areas-heading" class="text-h2 font-semibold text-ink">
-              Your development areas
-            </h2>
-            <p class="mt-1 text-body text-ink-muted">
-              Each area will be introduced gradually as the underlying workflows are completed.
-            </p>
-          </div>
+    <div class="flex-1 overflow-auto p-inline-lg py-stack-lg">
+      <div class="max-w-6xl mx-auto">
+        <h2 class="text-h2 font-semibold text-ink mb-6">My Reflections</h2>
+
+        <div v-if="loading" class="py-stack-xl text-center">
+          <span class="inline-block w-8 h-8 border-4 border-state-selected border-t-transparent rounded-full animate-spin"></span>
+          <p class="mt-2 text-ink-muted">Loading reflections…</p>
         </div>
 
-        <div class="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          <article
-            v-for="area in developmentAreas"
-            :key="area.title"
-            class="rounded-card border border-border-muted bg-surface p-5 shadow-card"
+        <div v-else-if="reflections.length === 0" class="py-stack-xl text-center bg-surface-elevated border border-border-muted rounded-panel shadow-sm">
+          <p class="text-body text-ink-subtle italic">My private reflections will appear here.</p>
+          <p class="text-caption text-ink-muted mt-2">Reflections you save in the Session Workspace will appear here.</p>
+        </div>
+
+        <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div
+            v-for="reflection in reflections"
+            :key="reflection.id"
+            class="bg-surface-elevated border border-border-muted rounded-panel p-6 shadow-sm flex flex-col hover:border-state-selected/50 transition-colors"
           >
-            <div class="flex items-start justify-between gap-4">
-              <div
-                class="h-10 w-10 rounded-control bg-surface-subtle flex items-center justify-center text-lg"
-                aria-hidden="true"
-              >
-                {{ area.icon }}
-              </div>
-              <span
-                class="rounded-pill border border-border-muted bg-surface-subtle px-2.5 py-1 text-caption font-medium text-ink-muted"
-              >
-                {{ area.status }}
+            <div class="flex justify-between items-start mb-4">
+              <span class="text-caption font-bold text-ink-secondary uppercase tracking-wider">
+                {{ formatDate(reflection.created_at) }}
+              </span>
+              <span v-if="reflection.theme" class="px-2 py-0.5 bg-state-info-surface text-overline font-bold text-state-info uppercase rounded-full border border-state-info/20">
+                {{ reflection.theme }}
               </span>
             </div>
 
-            <h3 class="mt-4 text-h3 font-semibold text-ink">{{ area.title }}</h3>
-            <p class="mt-2 text-body text-ink-muted leading-relaxed">{{ area.description }}</p>
-          </article>
-        </div>
-      </section>
+            <div class="mb-4 space-y-1">
+              <div v-if="reflection.clients?.full_name" class="flex items-center gap-2 text-caption text-ink-muted font-medium">
+                <span class="w-4 text-center">👤</span>
+                {{ reflection.clients.full_name }}
+              </div>
+              <div v-if="reflection.session_ref" class="flex items-center gap-2 text-caption text-ink-muted">
+                <span class="w-4 text-center">📅</span>
+                Session: {{ reflection.session_ref }}
+              </div>
+            </div>
 
-      <section
-        class="rounded-card border border-border-muted bg-surface-subtle p-5 md:p-6"
-        aria-labelledby="privacy-boundary-heading"
-      >
-        <div class="flex gap-4">
-          <div
-            class="h-10 w-10 shrink-0 rounded-control bg-surface flex items-center justify-center"
-            aria-hidden="true"
-          >
-            🔒
-          </div>
-          <div>
-            <h2 id="privacy-boundary-heading" class="text-h3 font-semibold text-ink">
-              Your reflections remain private
-            </h2>
-            <p class="mt-2 text-body text-ink-muted leading-relaxed">
-              Professional development material is separate from client notes and the clinical record.
-              Nothing is prepared for supervision, consultation or export unless you explicitly choose it.
+            <p class="text-body-sm text-ink-secondary line-clamp-3 mb-6 flex-1 italic">
+              "{{ reflection.body || 'No content' }}"
             </p>
+
+            <div class="flex flex-wrap gap-2 pt-4 border-t border-border-muted">
+              <button
+                disabled
+                class="px-3 py-1.5 bg-surface-canvas border border-border text-overline font-bold text-ink-subtle rounded-control cursor-not-allowed uppercase tracking-wider opacity-60"
+              >
+                Reflect with AI
+              </button>
+              <button
+                disabled
+                class="px-3 py-1.5 bg-surface-canvas border border-border text-overline font-bold text-ink-subtle rounded-control cursor-not-allowed uppercase tracking-wider opacity-60"
+              >
+                CPD
+              </button>
+              <button
+                disabled
+                class="px-3 py-1.5 bg-surface-canvas border border-border text-overline font-bold text-ink-subtle rounded-control cursor-not-allowed uppercase tracking-wider opacity-60"
+              >
+                Share
+              </button>
+            </div>
           </div>
         </div>
-      </section>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup>
-const developmentAreas = [
-  {
-    title: 'My Reflections',
-    description: 'Review your private reflections in one chronological learning timeline.',
-    icon: '🪞',
-    status: 'Next step',
-  },
-  {
-    title: 'Reflect with AI',
-    description: 'Explore an interaction, ethical tension or possible pattern from different perspectives.',
-    icon: '✨',
-    status: 'Planned',
-  },
-  {
-    title: 'Learning Themes',
-    description: 'Notice recurring themes in your practice while keeping control of how they are described.',
-    icon: '🧭',
-    status: 'Planned',
-  },
-  {
-    title: 'CPD',
-    description: 'Turn useful reflection into concise continuing professional development evidence.',
-    icon: '📚',
-    status: 'Planned',
-  },
-  {
-    title: 'Share & Export',
-    description: 'Prepare selected material for supervision, peer consultation, printing or secure export.',
-    icon: '↗️',
-    status: 'Planned',
-  },
-]
+import { ref, onMounted } from 'vue';
+import { getAllPrivateReflections } from '../lib/reflections.js';
+
+const reflections = ref([]);
+const loading = ref(true);
+
+onMounted(loadReflections);
+
+async function loadReflections() {
+  try {
+    reflections.value = await getAllPrivateReflections({});
+  } catch (err) {
+    console.error('[Supervision] Load error:', err);
+  } finally {
+    loading.value = false;
+  }
+}
+
+function formatDate(dateString) {
+  if (!dateString) return '';
+  const date = new Date(dateString);
+  return date.toLocaleDateString('en-GB', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric'
+  });
+}
 </script>
