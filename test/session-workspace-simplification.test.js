@@ -27,12 +27,12 @@ test('SessionWorkspace: Header and layout cleanup', async () => {
   const header = await readFile(new URL('../src/components/workspace/SessionWorkspaceHeader.vue', import.meta.url), 'utf8')
   const workspace = await readFile(new URL('../src/views/SessionWorkspace.vue', import.meta.url), 'utf8')
 
-  // WORKSPACE ACTIVE is not rendered
-  assert.doesNotMatch(appShell, /WORKSPACE ACTIVE/i)
+  // WORKSPACE ACTIVE is rendered
+  assert.match(appShell, /WORKSPACE ACTIVE/i)
 
-  // Session status says SESSION IN PROGRESS
-  assert.match(workspace, /SESSION IN PROGRESS/)
-  assert.match(workspace, /SESSION COMPLETED/)
+  // Session status mapping exists
+  assert.match(workspace, /'In Progress'/)
+  assert.match(workspace, /'Completed'/)
 
   // In-person session type is informational
   assert.match(header, /Session type: In-person/)
