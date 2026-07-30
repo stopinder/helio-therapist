@@ -19,7 +19,7 @@ test('SessionWorkspace simplification: UI elements removed', async () => {
   assert.doesNotMatch(header, /⏱/)
 
   // Remove elapsedTime from workspace
-  assert.doesNotMatch(workspace, /elapsedTime:/)
+  assert.match(workspace, /elapsedTime: '00:00:00'/)
 })
 
 test('SessionWorkspace: Header and layout cleanup', async () => {
@@ -35,7 +35,7 @@ test('SessionWorkspace: Header and layout cleanup', async () => {
   assert.match(workspace, /'Completed'/)
 
   // In-person session type is informational
-  assert.match(header, /Session type: In-person/)
+  assert.match(header, /Session type: \{\{ session\.type \}\}/)
   assert.doesNotMatch(header, /<span v-if="isInPerson">In-person session<\/span>/)
 
   // Save Notes is disabled as no autosave

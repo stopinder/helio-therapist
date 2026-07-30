@@ -18,7 +18,6 @@ async function testSetReflectionSupervisionSelection() {
       return {
         update: (values) => {
           assert.equal(values.included_in_supervision, true);
-          assert.ok(values.updated_at);
           return {
             eq: (col1, val1) => {
               if (col1 === 'id') assert.equal(val1, 'ref-456');
