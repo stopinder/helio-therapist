@@ -81,7 +81,19 @@ test.describe('Private Reflection Persistence', () => {
     await page.getByText('Remove from Supervision Pack').click();
     await expect(reflectionCard.getByText('Supervision Pack')).not.toBeVisible();
 
-    // 10. Verify navigation from reflection card back to session
+    // 10. Verify Search and Theme Filters
+    const searchInput = page.getByPlaceholder('Search reflections...');
+    await expect(searchInput).toBeVisible();
+    await searchInput.fill('nonexistent-text-xyz');
+    await expect(page.getByText('No reflections match this filter.')).toBeVisible();
+    await page.getByRole('button', { name: 'Clear filters' }).click();
+    await expect(page.getByText(testReflection)).toBeVisible();
+
+    const allThemeButton = page.getByRole('button', { name: /^All \d+$/ });
+    await expect(allThemeButton).toBeVisible();
+    await expect(allThemeButton).toHaveAttribute('aria-pressed', 'true');
+
+    // 11. Verify navigation from reflection card back to session
     // We'll click the text snippet to navigate
     await page.getByText(testReflection).click();
     await expect(page.getByRole('tab', { name: 'Notes' })).toBeVisible();
