@@ -67,19 +67,6 @@
           {{ videoLabel }}
         </button>
         <button 
-          @click="emit('add-to-supervision')"
-          class="px-inline-md py-stack-xs bg-surface-elevated border border-border text-caption font-medium text-ink-secondary rounded-control hover:bg-surface-subtle transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-state-selected"
-        >
-          Add to Supervision
-        </button>
-        <button 
-          class="px-inline-md py-stack-xs bg-surface-elevated border border-border text-caption font-medium text-ink-secondary rounded-control hover:bg-surface-subtle transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-state-selected"
-          disabled
-          title="Autosave is not currently active for notes."
-        >
-          Save Notes
-        </button>
-        <button 
           v-if="!isCompleted"
           @click="emit('end-session')"
           :disabled="ending"

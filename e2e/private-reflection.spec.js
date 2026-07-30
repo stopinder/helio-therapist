@@ -35,7 +35,10 @@ test.describe('Private Reflection Persistence', () => {
     const privateNotesArea = page.getByPlaceholder('Enter private reflections...');
     await privateNotesArea.fill(testReflection);
 
-    // 5. Wait for autosave
+    // 5. Click Save and Wait for confirmation
+    const saveButton = page.getByRole('button', { name: 'Save Reflection' });
+    await expect(saveButton).toBeVisible();
+    await saveButton.click();
     await expect(page.getByText('✓ Saved')).toBeVisible({ timeout: 10000 });
 
     // 6. Reload and verify persistence

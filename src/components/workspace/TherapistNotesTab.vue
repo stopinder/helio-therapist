@@ -27,7 +27,7 @@
           <label for="private-notes" class="text-body-sm font-bold text-state-danger uppercase tracking-wider flex items-center gap-2">
             <span>🔒 Private Therapist Notes</span>
           </label>
-          <div class="flex items-center gap-2">
+        <div class="flex items-center gap-2">
             <span v-if="saveStatus === 'saving'" class="text-caption text-ink-muted flex items-center gap-1">
               <span class="w-3 h-3 border-2 border-ink-muted/30 border-t-ink-muted rounded-full animate-spin"></span>
               Saving...
@@ -38,6 +38,13 @@
             <span v-else-if="saveStatus === 'error'" class="text-caption text-state-danger flex items-center gap-1">
               ⚠️ Save failed
             </span>
+            <button
+              @click="savePrivateReflection"
+              :disabled="!canSave"
+              class="px-3 py-1 bg-action-link text-white text-caption font-bold rounded-control hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed uppercase tracking-wider"
+            >
+              {{ saveButtonLabel }}
+            </button>
           </div>
         </div>
         <p class="text-caption text-ink-muted mb-2 italic">These notes are for your personal reflection and will not be included in the shared clinical summary.</p>
@@ -47,7 +54,6 @@
           rows="4"
           class="w-full p-3 rounded-control border border-border bg-surface focus:ring-2 focus:ring-action-link focus:border-action-link outline-none transition-all text-body-sm text-ink"
           placeholder="Enter private reflections..."
-          @input="handlePrivateNoteInput"
         ></textarea>
       </div>
     </div>
@@ -55,7 +61,7 @@
 </template>
 
 <script setup>
-import { reactive, ref, onMounted, watch } from 'vue';
+import { reactive, ref, onMounted, computed } from 'vue';
 import { getPrivateReflection, upsertPrivateReflection } from '../../lib/reflections.js';
 
 const props = defineProps({
@@ -84,8 +90,23 @@ const notes = reactive({
   private: ''
 });
 
+const originalPrivateNote = ref('');
 const saveStatus = ref(''); // '', 'saving', 'saved', 'error'
-let saveTimeout = null;
+
+const isDirty = computed(() => notes.private !== originalPrivateNote.value);
+const canSave = computed(() => {
+  return notes.private.trim().length > 0 && 
+         isDirty.value && 
+         saveStatus.value !== 'saving' &&
+         props.clientId && 
+         props.sessionId;
+});
+
+const saveButtonLabel = computed(() => {
+  if (saveStatus.value === 'saving') return 'Saving...';
+  if (saveStatus.value === 'error') return 'Retry Save';
+  return 'Save Reflection';
+});
 
 async function loadPrivateReflection() {
   try {
@@ -95,6 +116,7 @@ async function loadPrivateReflection() {
     });
     if (data && data.body) {
       notes.private = data.body;
+      originalPrivateNote.value = data.body;
     }
   } catch (err) {
     console.error('[TherapistNotesTab] Load error:', err);
@@ -102,6 +124,8 @@ async function loadPrivateReflection() {
 }
 
 async function savePrivateReflection() {
+  if (!canSave.value) return;
+
   saveStatus.value = 'saving';
   try {
     await upsertPrivateReflection({
@@ -109,6 +133,7 @@ async function savePrivateReflection() {
       sessionId: props.sessionId,
       body: notes.private
     });
+    originalPrivateNote.value = notes.private;
     saveStatus.value = 'saved';
     // Clear "Saved" status after a few seconds
     setTimeout(() => {
@@ -118,12 +143,6 @@ async function savePrivateReflection() {
     console.error('[TherapistNotesTab] Save error:', err);
     saveStatus.value = 'error';
   }
-}
-
-function handlePrivateNoteInput() {
-  saveStatus.value = 'saving';
-  if (saveTimeout) clearTimeout(saveTimeout);
-  saveTimeout = setTimeout(savePrivateReflection, 1000);
 }
 
 onMounted(() => {

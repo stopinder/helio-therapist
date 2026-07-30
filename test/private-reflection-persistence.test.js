@@ -187,3 +187,20 @@ test('reflections lib: upsertPrivateReflection updates existing record', async (
 
   assert.deepStrictEqual(result, updatedReflection);
 });
+
+test('TherapistNotesTab.vue: UI state and validation', async (t) => {
+  const content = await import('node:fs').then(fs => fs.readFileSync('src/components/workspace/TherapistNotesTab.vue', 'utf8'));
+  
+  // Verify manual save button exists
+  assert.ok(content.includes('@click="savePrivateReflection"'), 'Should have a save button click handler');
+  assert.ok(content.includes(':disabled="!canSave"'), 'Save button should have disabled logic');
+  
+  // Verify canSave logic
+  assert.ok(content.includes('isDirty.value'), 'canSave should check if dirty');
+  assert.ok(content.includes('notes.private.trim().length > 0'), 'canSave should check if not empty');
+  assert.ok(content.includes("saveStatus.value !== 'saving'"), 'canSave should check if not already saving');
+  
+  // Verify autosave is removed
+  assert.ok(!content.includes('saveTimeout = setTimeout'), 'Autosave timeout should be removed');
+  assert.ok(!content.includes('@input="handlePrivateNoteInput"'), 'Input handler for autosave should be removed');
+});
