@@ -128,7 +128,7 @@ const navItems = [
   { name: 'Calendar', path: '/calendar', icon: '🗓️' },
   { name: 'Clients', path: '/clients', icon: '👥' },
   { name: 'Transcripts', path: '/transcripts', icon: '📝' },
-  { name: 'Supervision', path: '/supervision', icon: '🧘' },
+  { name: 'Professional Development', path: '/supervision', icon: '🌱' },
   { name: 'Settings', path: '/settings', icon: '⚙️' },
 ]
 
