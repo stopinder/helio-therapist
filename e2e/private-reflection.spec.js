@@ -54,12 +54,35 @@ test.describe('Private Reflection Persistence', () => {
     const timeline = page.locator('.timeline-container'); // Assuming there's a container or just search by text
     await expect(page.getByText(testReflection)).not.toBeVisible();
 
-    // 8. Go to Supervision and verify it IS there
-    await page.getByRole('link', { name: /Supervision/i }).click();
-    await expect(page.getByText('Supervision & Reflections')).toBeVisible();
+    // 8. Go to Professional Development and verify it IS there
+    await page.getByRole('link', { name: /Professional Development/i }).click();
+    await expect(page.getByText('Professional Development')).toBeVisible();
     await expect(page.getByText(testReflection)).toBeVisible();
 
-    // 9. Verify navigation from Supervision back to session
+    // 9. Verify Action Menu and Supervision Selection
+    const reflectionCard = page.locator('div', { hasText: testReflection }).first();
+    const actionMenuButton = reflectionCard.getByRole('button', { name: 'Reflection actions' });
+    await expect(actionMenuButton).toBeVisible();
+    await actionMenuButton.click();
+
+    // Check action menu items
+    await expect(page.getByText('Reflect with AI')).toBeVisible();
+    await expect(page.getByText('Add to CPD')).toBeVisible();
+    await expect(page.getByText('Include in Supervision Pack')).toBeVisible();
+    await expect(page.getByText('Export')).toBeVisible();
+
+    // Toggle Supervision Selection
+    await page.getByText('Include in Supervision Pack').click();
+    await expect(reflectionCard.getByText('Supervision Pack')).toBeVisible();
+
+    // Remove from Supervision Pack
+    await actionMenuButton.click();
+    await expect(page.getByText('Remove from Supervision Pack')).toBeVisible();
+    await page.getByText('Remove from Supervision Pack').click();
+    await expect(reflectionCard.getByText('Supervision Pack')).not.toBeVisible();
+
+    // 10. Verify navigation from reflection card back to session
+    // We'll click the text snippet to navigate
     await page.getByText(testReflection).click();
     await expect(page.getByRole('tab', { name: 'Notes' })).toBeVisible();
     await expect(page.getByPlaceholder('Enter private reflections...')).toHaveValue(testReflection);

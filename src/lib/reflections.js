@@ -165,3 +165,35 @@ export async function getAllPrivateReflections({
 
   return data;
 }
+
+export async function setReflectionSupervisionSelection({
+  supabaseClient,
+  reflectionId,
+  included
+}) {
+  if (!supabaseClient && !supabase) {
+    const module = await import('./supabase.js');
+    supabase = module.supabase;
+  }
+
+  const client = supabaseClient || supabase;
+  if (!client) throw new Error('Supabase client not initialized');
+
+  const { data: { user } } = await client.auth.getUser();
+  if (!user) throw new Error('Not authenticated');
+
+  const { data, error } = await client
+    .from('private_reflections')
+    .update({ included_in_supervision: included, updated_at: new Date().toISOString() })
+    .eq('id', reflectionId)
+    .eq('user_id', user.id)
+    .select()
+    .single();
+
+  if (error) {
+    console.error('[Reflections] Selection update error:', error);
+    throw new Error('Could not update supervision selection');
+  }
+
+  return data;
+}
