@@ -109,7 +109,7 @@
             </div>
 
             <p 
-              @click="goToSession(reflection)"
+              @click="openDetail(reflection)"
               class="text-body-sm text-ink-secondary line-clamp-3 mb-6 flex-1 italic cursor-pointer hover:text-ink transition-colors"
             >
               "{{ reflection.body || 'No content' }}"
@@ -140,6 +140,14 @@
                   role="menu"
                   @click.stop
                 >
+                  <button
+                    @click="openDetail(reflection)"
+                    role="menuitem"
+                    class="w-full text-left px-4 py-2 text-body-sm text-ink hover:bg-surface-subtle transition-colors flex justify-between items-center"
+                  >
+                    View Details
+                  </button>
+                  <div class="my-1 border-t border-border-muted"></div>
                   <button
                     disabled
                     role="menuitem"
@@ -183,6 +191,96 @@
       </div>
     </div>
   </div>
+
+  <!-- Reflection Detail Modal -->
+  <div
+    v-if="selectedReflection"
+    class="fixed inset-0 bg-backdrop/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+    @click.self="closeDetail"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="detail-modal-title"
+  >
+    <div class="w-full max-w-2xl bg-surface-elevated rounded-panel shadow-overlay max-h-[90vh] flex flex-col overflow-hidden border border-border">
+      <div class="p-6 border-b border-border-muted flex justify-between items-start">
+        <div>
+          <h2 id="detail-modal-title" class="text-h2 font-semibold text-ink">Reflection Details</h2>
+          <div class="mt-2 flex flex-wrap gap-2">
+            <span class="text-caption font-bold text-ink-secondary uppercase tracking-wider">
+              {{ formatDate(selectedReflection.created_at) }}
+            </span>
+            <span v-if="selectedReflection.theme" class="px-2 py-0.5 bg-state-info-surface text-overline font-bold text-state-info uppercase rounded-full border border-state-info/20">
+              {{ selectedReflection.theme }}
+            </span>
+            <span v-if="selectedReflection.included_in_supervision" class="inline-flex items-center px-2 py-0.5 bg-state-success-surface text-overline font-bold text-state-success uppercase rounded border border-state-success/20">
+              Supervision Pack
+            </span>
+          </div>
+        </div>
+        <button 
+          @click="closeDetail"
+          class="p-2 text-ink-muted hover:text-ink transition-colors rounded-control hover:bg-surface-subtle"
+          aria-label="Close detail view"
+        >
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M18 6L6 18M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+
+      <div class="p-8 overflow-y-auto flex-1">
+        <div class="mb-8 space-y-2 bg-surface-subtle p-4 rounded-panel border border-border-muted">
+          <div v-if="selectedReflection.clients?.display_name" class="flex items-center gap-3 text-body-sm text-ink-secondary">
+            <span class="w-5 text-center grayscale">👤</span>
+            <span class="font-medium">Client:</span> {{ selectedReflection.clients.display_name }}
+          </div>
+          <div v-if="selectedReflection.session_ref" class="flex items-center gap-3 text-body-sm text-ink-secondary">
+            <span class="w-5 text-center grayscale">📅</span>
+            <span class="font-medium">Session:</span> 
+            <button 
+              @click="goToSession(selectedReflection)"
+              class="text-state-selected hover:underline font-medium text-left"
+            >
+              {{ selectedReflection.session_ref }}
+            </button>
+          </div>
+        </div>
+
+        <div class="prose prose-sm max-w-none">
+          <p class="text-body text-ink italic whitespace-pre-wrap leading-relaxed">
+            "{{ selectedReflection.body || 'No content' }}"
+          </p>
+        </div>
+      </div>
+
+      <div class="p-6 border-t border-border-muted bg-surface flex justify-between items-center">
+        <div v-if="updateError[selectedReflection.id]" role="alert" class="text-overline text-state-danger font-medium">
+          Could not update selection.
+        </div>
+        <div v-else></div>
+
+        <div class="flex gap-3">
+          <button
+            @click="toggleSupervision(selectedReflection)"
+            :disabled="actionLoading === selectedReflection.id"
+            class="flex items-center gap-2 px-4 py-2 bg-surface border border-border text-body-sm font-semibold text-ink rounded-control hover:bg-surface-subtle transition-all disabled:opacity-50 shadow-sm"
+          >
+            <span v-if="actionLoading === selectedReflection.id" class="w-4 h-4 border-2 border-state-selected border-t-transparent rounded-full animate-spin"></span>
+            {{ selectedReflection.included_in_supervision ? 'Remove from Supervision Pack' : 'Include in Supervision Pack' }}
+          </button>
+          
+          <div class="relative group">
+            <button
+              disabled
+              class="flex items-center gap-2 px-4 py-2 bg-surface border border-border text-body-sm font-semibold text-ink-subtle rounded-control cursor-not-allowed opacity-60"
+            >
+              More actions
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script setup>
@@ -197,6 +295,7 @@ const error = ref(null);
 const actionLoading = ref(null); // ID of reflection currently being updated
 const menuOpenFor = ref(null); // ID of reflection with open menu
 const updateError = ref({}); // Map of reflection ID to error status
+const selectedReflection = ref(null);
 
 const searchQuery = ref('');
 const selectedTheme = ref('All');
@@ -284,6 +383,11 @@ async function toggleSupervision(reflection) {
     const index = reflections.value.findIndex(r => r.id === reflection.id);
     if (index !== -1) {
       reflections.value[index] = { ...reflections.value[index], ...updated };
+      
+      // Keep selected reflection in sync if open
+      if (selectedReflection.value?.id === reflection.id) {
+        selectedReflection.value = { ...selectedReflection.value, ...updated };
+      }
     }
   } catch (err) {
     console.error('[Supervision] Toggle error:', err);
@@ -291,6 +395,15 @@ async function toggleSupervision(reflection) {
   } finally {
     actionLoading.value = null;
   }
+}
+
+function openDetail(reflection) {
+  selectedReflection.value = { ...reflection };
+  menuOpenFor.value = null;
+}
+
+function closeDetail() {
+  selectedReflection.value = null;
 }
 
 function toggleMenu(id, event) {
@@ -309,6 +422,7 @@ function closeMenuOnOutsideClick() {
 function closeMenuOnEscape(e) {
   if (e.key === 'Escape') {
     menuOpenFor.value = null;
+    selectedReflection.value = null;
   }
 }
 

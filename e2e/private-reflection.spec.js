@@ -93,9 +93,29 @@ test.describe('Private Reflection Persistence', () => {
     await expect(allThemeButton).toBeVisible();
     await expect(allThemeButton).toHaveAttribute('aria-pressed', 'true');
 
-    // 11. Verify navigation from reflection card back to session
-    // We'll click the text snippet to navigate
+    // 11. Verify Detail View
+    // Clicking the text snippet should now open the detail view (previously it navigated to session)
     await page.getByText(testReflection).click();
+    await expect(page.getByRole('dialog')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Reflection Details' })).toBeVisible();
+    await expect(page.getByText(testReflection)).toBeVisible();
+
+    // Verify Supervision toggle in detail view
+    const detailToggle = page.getByRole('dialog').getByRole('button', { name: 'Include in Supervision Pack' });
+    await expect(detailToggle).toBeVisible();
+    await detailToggle.click();
+    await expect(page.getByRole('dialog').getByText('Supervision Pack')).toBeVisible();
+    
+    // Close detail view
+    await page.getByRole('button', { name: 'Close detail view' }).click();
+    await expect(page.getByRole('dialog')).not.toBeVisible();
+    
+    // Filter state should be preserved (search query should still be empty after clear filters)
+    await expect(page.getByText(testReflection)).toBeVisible();
+
+    // 12. Verify navigation from detail view back to session
+    await page.getByText(testReflection).click();
+    await page.getByRole('dialog').getByRole('button', { name: /SESS-/ }).click();
     await expect(page.getByRole('tab', { name: 'Notes' })).toBeVisible();
     await expect(page.getByPlaceholder('Enter private reflections...')).toHaveValue(testReflection);
   });
