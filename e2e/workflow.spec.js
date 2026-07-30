@@ -84,7 +84,7 @@ test.describe('Authenticated Therapist Workflow', () => {
     await expect(page.getByText(/Recorded: 0 min/i)).toBeVisible();
 
     // 10a. Add to Supervision
-    const addToSupervisionButton = page.getByRole('button', { name: /Add to Supervision/i });
+    const addToSupervisionButton = page.getByRole('button', { name: /Add to Supervision/i }).first();
     await expect(addToSupervisionButton).toBeVisible();
     await addToSupervisionButton.click();
 
