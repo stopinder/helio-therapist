@@ -27,8 +27,10 @@ test.describe('Clinical Summary Lifecycle', () => {
     await expect(openSessionButton).toBeVisible();
     await openSessionButton.click();
 
-    // 3. Switch to Clinical Summary Tab
-    await page.getByRole('tab', { name: 'Clinical Summary' }).click();
+    // 3. Switch to Clinical Record Tab
+    const clinicalRecordTab = page.getByRole('tab', { name: 'Clinical Record' });
+    await expect(clinicalRecordTab).toBeVisible();
+    await clinicalRecordTab.click();
 
     // 4. Prepare Draft (if not started)
     const prepareButton = page.getByRole('button', { name: /Prepare Draft Clinical Summary/i });
@@ -61,7 +63,9 @@ test.describe('Clinical Summary Lifecycle', () => {
 
     // 9. Reload and verify persistence of approved state
     await page.reload();
-    await page.getByRole('tab', { name: 'Clinical Summary' }).click();
+    const clinicalRecordTabReload = page.getByRole('tab', { name: 'Clinical Record' });
+    await expect(clinicalRecordTabReload).toBeVisible();
+    await clinicalRecordTabReload.click();
     await expect(page.getByText('This approved record is read-only.')).toBeVisible();
     await expect(page.getByText(testValue)).toBeVisible();
     

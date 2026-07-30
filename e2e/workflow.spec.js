@@ -135,7 +135,7 @@ test.describe('Authenticated Therapist Workflow', () => {
     
     // Now confirm
     await endSessionButton.click();
-    await page.locator('div').filter({ hasText: /^End this client session\?$/ }).locator('..').getByRole('button', { name: 'End Session' }).click();
+    await page.getByRole('button', { name: 'End Session' }).nth(1).click();
 
     // 11b. Verify Billing Confirmation dialog
     const billingHeading = page.getByRole('heading', { name: /Confirm Billable Time/i });
@@ -149,6 +149,10 @@ test.describe('Authenticated Therapist Workflow', () => {
     await expect(page).toHaveURL(/\/clients\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
 
     // 13. Verify session-completed timeline event
+    await expect(page.getByText(/Session completed/i)).toBeVisible();
+
+    // 14. Verify persistence after reload
+    await page.reload();
     await expect(page.getByText(/Session completed/i)).toBeVisible();
   });
 });

@@ -29,8 +29,10 @@ test.describe('Clinical Summary Persistence', () => {
     await expect(openSessionButton).toBeVisible();
     await openSessionButton.click();
 
-    // 3. Switch to Clinical Summary Tab
-    await page.getByRole('tab', { name: 'Clinical Summary' }).click();
+    // 3. Switch to Clinical Record Tab
+    const clinicalRecordTab = page.getByRole('tab', { name: 'Clinical Record' });
+    await expect(clinicalRecordTab).toBeVisible();
+    await clinicalRecordTab.click();
 
     // 4. Prepare Draft (if not started)
     const prepareButton = page.getByRole('button', { name: /Prepare Draft Clinical Summary/i });
@@ -51,7 +53,9 @@ test.describe('Clinical Summary Persistence', () => {
     await page.reload();
 
     // 8. Verify Persistence
-    await page.getByRole('tab', { name: 'Clinical Summary' }).click();
+    const clinicalRecordTabReload = page.getByRole('tab', { name: 'Clinical Record' });
+    await expect(clinicalRecordTabReload).toBeVisible();
+    await clinicalRecordTabReload.click();
     await expect(page.getByLabel(/Presenting concerns/i)).toHaveValue(testValue);
   });
 });

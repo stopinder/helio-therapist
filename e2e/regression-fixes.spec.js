@@ -236,8 +236,10 @@ test.describe('Regression Fixes Coverage', () => {
     await expect(page.getByRole('heading', { level: 1, name: FIXTURES.client.display_name })).toBeVisible();
     await expect(page.getByText(/July 29, 2026/)).toBeVisible(); // From occurred_at
 
-    // 3. Clinical Summary Tab
-    await page.getByRole('tab', { name: 'Clinical Summary' }).click();
+    // 3. Clinical Record Tab
+    const clinicalRecordTab = page.getByRole('tab', { name: 'Clinical Record' });
+    await expect(clinicalRecordTab).toBeVisible();
+    await clinicalRecordTab.click();
     
     // Verify Approved/Read-only state
     await expect(page.getByText('This approved record is read-only.')).toBeVisible();
@@ -277,7 +279,9 @@ test.describe('Regression Fixes Coverage', () => {
     await expect(page.getByText('Amendment 2', { exact: true })).toBeVisible();
 
     await page.reload();
-    await page.getByRole('tab', { name: 'Clinical Summary' }).click();
+    const clinicalRecordTabReload = page.getByRole('tab', { name: 'Clinical Record' });
+    await expect(clinicalRecordTabReload).toBeVisible();
+    await clinicalRecordTabReload.click();
     await expect(page.getByText('Amendment 1', { exact: true })).toBeVisible();
     await expect(page.getByText('Amendment 2', { exact: true })).toBeVisible();
   });
