@@ -16,25 +16,25 @@
               <span v-else-if="activeView === 'insights'">Insights</span>
               <span v-else-if="activeView === 'pack'">Supervision Pack</span>
             </h2>
-            <div class="flex bg-surface-subtle p-1 rounded-pill border border-border-muted">
+            <div class="flex bg-surface-subtle p-1 rounded-pill border border-border-muted shadow-inner">
               <button 
                 @click="activeView = 'timeline'"
-                class="px-4 py-1 text-overline font-bold rounded-pill transition-all"
-                :class="activeView === 'timeline' ? 'bg-surface text-state-selected shadow-sm' : 'text-ink-muted hover:text-ink'"
+                class="px-5 py-1.5 text-overline font-bold rounded-pill transition-all"
+                :class="activeView === 'timeline' ? 'bg-white text-action-primary shadow-sm' : 'text-ink-muted hover:text-ink'"
               >
                 Timeline
               </button>
               <button 
                 @click="activeView = 'insights'"
-                class="px-4 py-1 text-overline font-bold rounded-pill transition-all"
-                :class="activeView === 'insights' ? 'bg-surface text-state-selected shadow-sm' : 'text-ink-muted hover:text-ink'"
+                class="px-5 py-1.5 text-overline font-bold rounded-pill transition-all"
+                :class="activeView === 'insights' ? 'bg-white text-action-primary shadow-sm' : 'text-ink-muted hover:text-ink'"
               >
                 Insights
               </button>
               <button 
                 @click="activeView = 'pack'"
-                class="px-4 py-1 text-overline font-bold rounded-pill transition-all"
-                :class="activeView === 'pack' ? 'bg-surface text-state-selected shadow-sm' : 'text-ink-muted hover:text-ink'"
+                class="px-5 py-1.5 text-overline font-bold rounded-pill transition-all"
+                :class="activeView === 'pack' ? 'bg-white text-action-primary shadow-sm' : 'text-ink-muted hover:text-ink'"
               >
                 Pack
               </button>
@@ -119,19 +119,19 @@
           <!-- Insights View -->
           <div v-else-if="activeView === 'insights'" class="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              <div class="bg-surface-elevated p-6 rounded-panel border border-border-muted shadow-sm">
+              <div class="bg-surface-elevated p-6 rounded-panel border border-border-muted shadow-sm transition-all hover:shadow-md">
                 <div class="text-overline font-bold text-ink-muted uppercase tracking-wider mb-1">Total Reflections</div>
                 <div class="text-h2 font-semibold text-ink">{{ insights.total }}</div>
               </div>
-              <div class="bg-surface-elevated p-6 rounded-panel border border-border-muted shadow-sm">
+              <div class="bg-surface-elevated p-6 rounded-panel border border-border-muted shadow-sm transition-all hover:shadow-md">
                 <div class="text-overline font-bold text-ink-muted uppercase tracking-wider mb-1">Supervision Pack</div>
-                <div class="text-h2 font-semibold text-state-success">{{ insights.inSupervision }}</div>
+                <div class="text-h2 font-semibold text-action-primary">{{ insights.inSupervision }}</div>
               </div>
-              <div class="bg-surface-elevated p-6 rounded-panel border border-border-muted shadow-sm">
+              <div class="bg-surface-elevated p-6 rounded-panel border border-border-muted shadow-sm transition-all hover:shadow-md">
                 <div class="text-overline font-bold text-ink-muted uppercase tracking-wider mb-1">Unthemed</div>
                 <div class="text-h2 font-semibold text-ink-subtle">{{ insights.noTheme }}</div>
               </div>
-              <div class="bg-surface-elevated p-6 rounded-panel border border-border-muted shadow-sm">
+              <div class="bg-surface-elevated p-6 rounded-panel border border-border-muted shadow-sm transition-all hover:shadow-md">
                 <div class="text-overline font-bold text-ink-muted uppercase tracking-wider mb-1">Top Theme</div>
                 <div class="text-h2 font-semibold text-action-link truncate" :title="insights.topTheme">
                   {{ insights.topTheme }}
@@ -382,7 +382,8 @@ async function loadReflections(append = false) {
           packItemOptions.value[r.id] = {
             includeText: true,
             includeDate: true,
-            includeTheme: true
+            includeTheme: true,
+            notes: ''
           };
         }
       }
@@ -460,7 +461,8 @@ function toggleReportSelection(id) {
       packItemOptions.value[id] = {
         includeText: true,
         includeDate: true,
-        includeTheme: true
+        includeTheme: true,
+        notes: ''
       };
     }
   }
@@ -504,7 +506,8 @@ async function toggleSupervision(reflection) {
           packItemOptions.value[reflection.id] = {
             includeText: true,
             includeDate: true,
-            includeTheme: true
+            includeTheme: true,
+            notes: ''
           };
         }
       } else {

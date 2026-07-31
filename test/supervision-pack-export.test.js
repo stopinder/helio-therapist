@@ -17,15 +17,15 @@ test('Supervision Pack View and Export Flow', async () => {
   assert.match(viewsContent, /reflections\.value\.filter\(r => r\.included_in_supervision\)/)
 
   // 3. Privacy warning
-  assert.match(packViewContent, /The Supervision Pack is your private collection of material selected for supervision/)
-  assert.match(packViewContent, /Review and anonymise it before creating a report/)
-  assert.match(packViewContent, /Review and remove identifying information before sharing outside Helios/)
+  assert.match(packViewContent, /Thoughtfully prepare for your next supervision session/)
+  assert.match(packViewContent, /Review and anonymise your private reflections before generating a professional report/)
+  assert.match(packViewContent, /Private preparation workspace/)
 
   // 4. Pack items
   assert.match(packViewContent, /v-for="reflection in group.items"/)
   assert.match(packViewContent, /Remove from Pack/)
-  assert.match(packViewContent, /Open original reflection/)
-  assert.match(packViewContent, /preparation/)
+  assert.match(packViewContent, /Open full detail/)
+  assert.match(packViewContent, /Preparation Notes/)
   assert.match(packViewContent, /type="checkbox"/)
   assert.match(packViewContent, /toggle-report-selection/)
 
