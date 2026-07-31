@@ -82,7 +82,7 @@
                     Review and remove identifying information before sharing outside Helios.
                   </p>
                   <p class="text-caption text-ink-muted">
-                    {{ supervisionPackReflections.length }} item{{ supervisionPackReflections.length === 1 ? '' : 's' }} selected
+                    {{ reportSelectedReflections.length }} of {{ supervisionPackReflections.length }} selected for report
                   </p>
                 </div>
               </div>
@@ -90,7 +90,8 @@
             <button 
               v-if="supervisionPackReflections.length > 0"
               @click="openExportPreview"
-              class="px-6 py-2.5 bg-state-selected text-white text-body-sm font-bold rounded-pill hover:bg-state-selected-hover transition-all shadow-md flex items-center justify-center gap-2 shrink-0"
+              :disabled="reportSelectedReflections.length === 0"
+              class="px-6 py-2.5 bg-state-selected text-white text-body-sm font-bold rounded-pill hover:bg-state-selected-hover transition-all shadow-md flex items-center justify-center gap-2 shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <span>📄</span>
               Create Supervision Report
@@ -112,41 +113,65 @@
                 <div
                   v-for="reflection in group.items"
                   :key="'pack-' + reflection.id"
-                  class="group flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 bg-surface-elevated border border-border-muted rounded-panel shadow-sm hover:border-state-selected/50 transition-all cursor-pointer focus:outline-none focus:ring-2 focus:ring-state-selected/20 focus:border-state-selected"
-                  @click="openDetail(reflection)"
-                  @keydown.enter.prevent="openDetail(reflection)"
-                  @keydown.space.prevent="openDetail(reflection)"
-                  tabindex="0"
+                  class="group flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 bg-surface-elevated border border-border-muted rounded-panel shadow-sm transition-all focus-within:ring-2 focus-within:ring-state-selected/20 focus-within:border-state-selected"
+                  :class="reportSelectedIds.has(reflection.id) ? 'border-state-selected/30 bg-state-selected/[0.02]' : ''"
                 >
-                  <div class="flex-1 min-w-0">
-                    <div class="flex flex-wrap items-center gap-2 mb-2">
-                      <span class="text-caption font-bold text-ink-secondary uppercase tracking-wider">
-                        {{ formatDate(reflection.created_at) }}
-                      </span>
-                      <span v-if="reflection.theme" class="px-2 py-1 bg-surface-subtle text-caption font-bold text-ink-secondary uppercase rounded-full border border-border truncate max-w-[150px]">
-                        {{ reflection.theme }}
-                      </span>
-                      <span v-else class="text-caption text-ink-muted italic">No theme</span>
+                  <div class="flex items-start gap-4 flex-1 min-w-0">
+                    <div class="pt-1 shrink-0">
+                      <input 
+                        type="checkbox" 
+                        :checked="reportSelectedIds.has(reflection.id)"
+                        @change="toggleReportSelection(reflection.id)"
+                        class="w-5 h-5 rounded border-border text-state-selected focus:ring-state-selected/20 cursor-pointer"
+                        title="Include in next report"
+                      />
                     </div>
 
-                    <div v-if="reflection.clients?.display_name" class="flex items-center gap-1.5 text-body-sm text-ink font-semibold mb-2">
-                      <span class="text-xs">👤</span>
-                      {{ reflection.clients.display_name }}
-                    </div>
+                    <div class="flex-1 min-w-0">
+                      <div class="flex flex-wrap items-center gap-2 mb-2">
+                        <span class="text-caption font-bold text-ink-secondary uppercase tracking-wider">
+                          {{ formatDate(reflection.created_at) }}
+                        </span>
+                        <span v-if="reflection.theme" class="px-2 py-1 bg-surface-subtle text-caption font-bold text-ink-secondary uppercase rounded-full border border-border truncate max-w-[150px]">
+                          {{ reflection.theme }}
+                        </span>
+                        <span v-else class="text-caption text-ink-muted italic">No theme</span>
+                      </div>
 
-                    <p class="text-body-sm text-ink-secondary line-clamp-2 italic leading-relaxed">
-                      "{{ reflection.body || 'No content' }}"
-                    </p>
+                      <div v-if="reflection.clients?.display_name" class="flex items-center gap-1.5 text-body-sm text-ink font-semibold mb-2">
+                        <span class="text-xs">👤</span>
+                        {{ reflection.clients.display_name }}
+                      </div>
+
+                      <p class="text-body-sm text-ink-secondary line-clamp-2 italic leading-relaxed">
+                        "{{ reflection.body || 'No content' }}"
+                      </p>
+                    </div>
                   </div>
 
-                  <div class="flex items-center gap-3 shrink-0 self-end sm:self-center">
+                  <div class="flex items-center gap-2 shrink-0 self-end sm:self-center">
                     <button
-                      @click.stop="toggleSupervision(reflection)"
-                      :disabled="actionLoading === reflection.id"
-                      class="px-3 py-1.5 text-body-sm text-state-danger font-medium hover:bg-state-danger-surface rounded-control transition-colors flex items-center gap-2"
+                      v-if="reflection.client_id && reflection.session_ref"
+                      @click="goToSession(reflection)"
+                      class="p-2 text-ink-muted hover:text-state-selected hover:bg-surface-subtle rounded-control transition-all"
+                      title="Open session"
                     >
-                      <span v-if="actionLoading === reflection.id" class="w-3 h-3 border-2 border-state-danger border-t-transparent rounded-full animate-spin"></span>
-                      Remove from Pack
+                      <span>📅</span>
+                    </button>
+                    <button
+                      @click="openDetail(reflection)"
+                      class="px-3 py-1.5 text-body-sm text-state-selected font-bold hover:bg-state-selected/10 rounded-control transition-colors"
+                    >
+                      Review reflection
+                    </button>
+                    <button
+                      @click="toggleSupervision(reflection)"
+                      :disabled="actionLoading === reflection.id"
+                      class="p-2 text-ink-muted hover:text-state-danger hover:bg-state-danger-surface rounded-control transition-all"
+                      title="Remove from Pack"
+                    >
+                      <span v-if="actionLoading === reflection.id" class="w-4 h-4 border-2 border-state-danger border-t-transparent rounded-full animate-spin"></span>
+                      <span v-else>🗑️</span>
                     </button>
                   </div>
                 </div>
@@ -271,6 +296,15 @@
                         >
                           <span>{{ reflection.included_in_supervision ? 'Remove from Pack' : 'Include in Pack' }}</span>
                           <span v-if="actionLoading === reflection.id" class="w-3 h-3 border-2 border-state-selected border-t-transparent rounded-full animate-spin"></span>
+                        </button>
+                        <button
+                          v-if="reflection.client_id && reflection.session_ref"
+                          @click="goToSession(reflection)"
+                          role="menuitem"
+                          class="w-full text-left px-4 py-2 text-body-sm text-ink hover:bg-surface-subtle transition-colors flex items-center gap-2"
+                        >
+                          <span>📅</span>
+                          Open session
                         </button>
                       </div>
                     </div>
@@ -558,7 +592,7 @@
             </div>
 
             <div class="space-y-12">
-              <div v-for="reflection in supervisionPackReflections" :key="'export-' + reflection.id" class="break-inside-avoid">
+              <div v-for="reflection in reportSelectedReflections" :key="'export-' + reflection.id" class="break-inside-avoid">
                 <div class="flex justify-between items-baseline mb-4">
                   <div class="flex gap-4 items-center">
                     <span v-if="exportOptions.includeDates" class="text-caption font-bold text-ink uppercase tracking-widest">{{ formatDate(reflection.created_at) }}</span>
@@ -643,8 +677,9 @@ const actionLoading = ref(null); // ID of reflection currently being updated
 const menuOpenFor = ref(null); // ID of reflection with open menu
 const updateError = ref({}); // Map of reflection ID to error status
 const selectedReflection = ref(null);
+const reportSelectedIds = ref(new Set());
 
-  const searchQuery = ref('');
+const searchQuery = ref('');
 const selectedTheme = ref('All');
 const activeView = ref('timeline'); // 'timeline', 'insights' or 'pack'
 const exportPreviewOpen = ref(false);
@@ -659,6 +694,10 @@ const copying = ref(false);
 
 const supervisionPackReflections = computed(() => {
   return reflections.value.filter(r => r.included_in_supervision);
+});
+
+const reportSelectedReflections = computed(() => {
+  return supervisionPackReflections.value.filter(r => reportSelectedIds.value.has(r.id));
 });
 
 const insights = computed(() => {
@@ -736,7 +775,7 @@ const filteredReflections = computed(() => {
 const clientAliases = computed(() => {
   const aliases = {};
   let count = 0;
-  const clientNames = [...new Set(supervisionPackReflections.value.map(r => r.clients?.display_name).filter(Boolean))];
+  const clientNames = [...new Set(reportSelectedReflections.value.map(r => r.clients?.display_name).filter(Boolean))];
   clientNames.forEach(name => {
     aliases[name] = `Case ${String.fromCharCode(65 + count)}`; // Case A, Case B...
     count++;
@@ -815,6 +854,13 @@ async function loadReflections(append = false) {
       reflections.value = data;
     }
     hasMore.value = data.length === limit;
+
+    // Default new reflections to be selected for report if in pack
+    data.forEach(r => {
+      if (r.included_in_supervision) {
+        reportSelectedIds.value.add(r.id);
+      }
+    });
   } catch (err) {
     console.error('[Supervision] Load error:', err);
     error.value = 'Could not load reflections. Please try again.';
@@ -845,7 +891,7 @@ async function copyExportText() {
       text += `${therapistIntroduction.value}\n\n`;
     }
     
-    supervisionPackReflections.value.forEach(r => {
+    reportSelectedReflections.value.forEach(r => {
       if (exportOptions.value.includeDates) {
         text += `DATE: ${formatDate(r.created_at)}\n`;
       }
@@ -877,6 +923,14 @@ async function copyExportText() {
   }
 }
 
+function toggleReportSelection(id) {
+  if (reportSelectedIds.value.has(id)) {
+    reportSelectedIds.value.delete(id);
+  } else {
+    reportSelectedIds.value.add(id);
+  }
+}
+
 function printPack() {
   window.print();
 }
@@ -900,6 +954,13 @@ async function toggleSupervision(reflection) {
     if (index !== -1) {
       reflections.value[index] = { ...reflections.value[index], ...updated };
       
+      // Update report selection state
+      if (updated.included_in_supervision) {
+        reportSelectedIds.value.add(reflection.id);
+      } else {
+        reportSelectedIds.value.delete(reflection.id);
+      }
+
       // Keep selected reflection in sync if open
       if (selectedReflection.value?.id === reflection.id) {
         selectedReflection.value = { ...selectedReflection.value, ...updated };

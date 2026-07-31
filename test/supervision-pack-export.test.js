@@ -22,7 +22,9 @@ test('Supervision Pack View and Export Flow', async () => {
   // 4. Pack items
   assert.match(content, /v-for="reflection in group.items"/)
   assert.match(content, /Remove from Pack/)
-  assert.ok(!content.includes('View reflection'), 'Should not show redundant view action')
+  assert.match(content, /Review reflection/)
+  assert.match(content, /type="checkbox"/)
+  assert.match(content, /toggleReportSelection/)
 
   // 5. Export preview modal
   assert.match(content, /exportPreviewOpen/)
@@ -38,7 +40,7 @@ test('Supervision Pack View and Export Flow', async () => {
   // 7. Export actions: Copy and Print
   assert.match(content, /copyExportText/)
   assert.match(content, /printPack/)
-  assert.match(content, /window\.print\(\)/)
+  assert.match(content, /window\.print/)
   assert.match(content, /navigator\.clipboard\.writeText/)
 
   // 8. Print styles

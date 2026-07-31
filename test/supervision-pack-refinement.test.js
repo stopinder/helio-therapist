@@ -39,16 +39,22 @@ const mockReflections = [
   }
 ];
 
-test('Supervision Pack: Client Alias Generation', () => {
+test('Supervision Pack: Client Alias Generation and Selection', () => {
   const reflections = ref(mockReflections);
+  const reportSelectedIds = ref(new Set([1, 2, 3]));
+  
   const supervisionPackReflections = computed(() => {
     return reflections.value.filter(r => r.included_in_supervision);
+  });
+
+  const reportSelectedReflections = computed(() => {
+    return supervisionPackReflections.value.filter(r => reportSelectedIds.value.has(r.id));
   });
 
   const clientAliases = computed(() => {
     const aliases = {};
     let count = 0;
-    const clientNames = [...new Set(supervisionPackReflections.value.map(r => r.clients?.display_name).filter(Boolean))];
+    const clientNames = [...new Set(reportSelectedReflections.value.map(r => r.clients?.display_name).filter(Boolean))];
     clientNames.forEach(name => {
       aliases[name] = `Case ${String.fromCharCode(65 + count)}`;
       count++;
@@ -66,9 +72,17 @@ test('Supervision Pack: Client Alias Generation', () => {
   assert.equal(aliases['Bob Brown'], undefined);
   
   // The same client should have the same alias
-  const pack = supervisionPackReflections.value;
+  const pack = reportSelectedReflections.value;
   assert.equal(aliases[pack[0].clients.display_name], 'Case A');
-  assert.equal(aliases[pack[2].clients.display_name], 'Case A');
+  assert.equal(aliases[pack[1].clients.display_name], 'Case B');
+
+  // Test excluding John Doe from the report
+  reportSelectedIds.value.delete(1);
+  reportSelectedIds.value.delete(3);
+  
+  const updatedAliases = clientAliases.value;
+  assert.equal(updatedAliases['John Doe'], undefined);
+  assert.equal(updatedAliases['Jane Smith'], 'Case A');
 });
 
 test('Supervision Pack: Month Grouping', () => {
