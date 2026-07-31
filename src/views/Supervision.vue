@@ -74,11 +74,17 @@
               <div>
                 <h3 class="text-body font-bold text-ink">Supervision Pack</h3>
                 <p class="text-body-sm text-ink-secondary mt-1 max-w-2xl">
-                  Review and anonymise all material before sharing outside Helios. These reflections are selected for your next supervision session.
+                  The Supervision Pack is your private collection of material selected for supervision. Review and anonymise it before creating a report.
                 </p>
-                <p class="text-caption text-state-info font-medium mt-2">
-                  {{ supervisionPackReflections.length }} item{{ supervisionPackReflections.length === 1 ? '' : 's' }} selected
-                </p>
+                <div class="mt-4 flex flex-col gap-2">
+                  <p class="text-caption text-state-info font-medium flex items-center gap-1.5">
+                    <span>⚠️</span>
+                    Review and remove identifying information before sharing outside Helios.
+                  </p>
+                  <p class="text-caption text-ink-muted">
+                    {{ supervisionPackReflections.length }} item{{ supervisionPackReflections.length === 1 ? '' : 's' }} selected
+                  </p>
+                </div>
               </div>
             </div>
             <button 
@@ -87,56 +93,65 @@
               class="px-6 py-2.5 bg-state-selected text-white text-body-sm font-bold rounded-pill hover:bg-state-selected-hover transition-all shadow-md flex items-center justify-center gap-2 shrink-0"
             >
               <span>📄</span>
-              Export Pack
+              Create Supervision Report
             </button>
           </div>
 
           <div v-if="supervisionPackReflections.length === 0" class="py-stack-xl text-center bg-surface-elevated border border-border-muted rounded-panel shadow-sm">
-            <p class="text-body text-ink-subtle italic">Your Supervision Pack is empty.</p>
-            <p class="text-caption text-ink-muted mt-2">Select "Include in Pack" on reflections in the Timeline or Session Workspace.</p>
+            <p class="text-body text-ink-subtle italic">No reflections have been added to your Supervision Pack.</p>
+            <p class="text-caption text-ink-muted mt-2">Add reflections from a session or from your Professional Development timeline.</p>
           </div>
 
-          <div v-else class="space-y-4">
-            <div
-              v-for="reflection in supervisionPackReflections"
-              :key="'pack-' + reflection.id"
-              class="group flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 bg-surface-elevated border border-border-muted rounded-panel shadow-sm hover:border-state-selected/50 transition-all"
-            >
-              <div class="flex-1 min-w-0">
-                <div class="flex flex-wrap items-center gap-2 mb-2">
-                  <span class="text-caption font-bold text-ink-secondary uppercase tracking-wider">
-                    {{ formatDate(reflection.created_at) }}
-                  </span>
-                  <span v-if="reflection.theme" class="px-2 py-1 bg-surface-subtle text-caption font-bold text-ink-secondary uppercase rounded-full border border-border truncate max-w-[150px]">
-                    {{ reflection.theme }}
-                  </span>
-                </div>
-
-                <div v-if="reflection.clients?.display_name" class="flex items-center gap-1.5 text-body-sm text-ink font-semibold mb-2">
-                  <span class="text-xs">👤</span>
-                  {{ reflection.clients.display_name }}
-                </div>
-
-                <p class="text-body-sm text-ink-secondary line-clamp-2 italic leading-relaxed">
-                  "{{ reflection.body || 'No content' }}"
-                </p>
-              </div>
-
-              <div class="flex items-center gap-3 shrink-0 self-end sm:self-center">
-                <button
-                  @click="openDetail(reflection)"
-                  class="px-3 py-1.5 text-body-sm text-state-selected font-medium hover:underline"
+          <div v-else class="space-y-12">
+            <div v-for="group in groupedPackReflections" :key="'pack-group-' + group.monthYear" class="space-y-4">
+              <h3 class="text-overline font-bold text-ink-muted uppercase tracking-widest pl-1 border-l-2 border-border-muted">
+                {{ group.monthYear }}
+              </h3>
+              
+              <div class="space-y-4">
+                <div
+                  v-for="reflection in group.items"
+                  :key="'pack-' + reflection.id"
+                  class="group flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 bg-surface-elevated border border-border-muted rounded-panel shadow-sm hover:border-state-selected/50 transition-all"
                 >
-                  View Details
-                </button>
-                <button
-                  @click="toggleSupervision(reflection)"
-                  :disabled="actionLoading === reflection.id"
-                  class="px-3 py-1.5 text-body-sm text-state-danger font-medium hover:bg-state-danger-surface rounded-control transition-colors flex items-center gap-2"
-                >
-                  <span v-if="actionLoading === reflection.id" class="w-3 h-3 border-2 border-state-danger border-t-transparent rounded-full animate-spin"></span>
-                  Remove
-                </button>
+                  <div class="flex-1 min-w-0">
+                    <div class="flex flex-wrap items-center gap-2 mb-2">
+                      <span class="text-caption font-bold text-ink-secondary uppercase tracking-wider">
+                        {{ formatDate(reflection.created_at) }}
+                      </span>
+                      <span v-if="reflection.theme" class="px-2 py-1 bg-surface-subtle text-caption font-bold text-ink-secondary uppercase rounded-full border border-border truncate max-w-[150px]">
+                        {{ reflection.theme }}
+                      </span>
+                      <span v-else class="text-caption text-ink-muted italic">No theme</span>
+                    </div>
+
+                    <div v-if="reflection.clients?.display_name" class="flex items-center gap-1.5 text-body-sm text-ink font-semibold mb-2">
+                      <span class="text-xs">👤</span>
+                      {{ reflection.clients.display_name }}
+                    </div>
+
+                    <p class="text-body-sm text-ink-secondary line-clamp-2 italic leading-relaxed">
+                      "{{ reflection.body || 'No content' }}"
+                    </p>
+                  </div>
+
+                  <div class="flex items-center gap-3 shrink-0 self-end sm:self-center">
+                    <button
+                      @click="openDetail(reflection)"
+                      class="px-3 py-1.5 text-body-sm text-state-selected font-medium hover:underline"
+                    >
+                      View reflection
+                    </button>
+                    <button
+                      @click="toggleSupervision(reflection)"
+                      :disabled="actionLoading === reflection.id"
+                      class="px-3 py-1.5 text-body-sm text-state-danger font-medium hover:bg-state-danger-surface rounded-control transition-colors flex items-center gap-2"
+                    >
+                      <span v-if="actionLoading === reflection.id" class="w-3 h-3 border-2 border-state-danger border-t-transparent rounded-full animate-spin"></span>
+                      Remove from Pack
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -308,7 +323,7 @@
           </div>
 
           <div class="text-caption text-ink-muted italic bg-surface-subtle p-3 rounded-control border border-border-muted inline-block">
-            Note: Insights are based on currently loaded reflections.
+            Based on loaded reflections
           </div>
 
           <div class="bg-surface-elevated border border-border-muted rounded-panel overflow-hidden shadow-sm">
@@ -352,7 +367,7 @@
     <div class="w-full max-w-2xl bg-surface-elevated rounded-panel shadow-overlay max-h-[90vh] flex flex-col overflow-hidden border border-border">
       <div class="p-6 border-b border-border-muted flex justify-between items-start">
         <div>
-          <h2 id="detail-modal-title" class="text-h2 font-semibold text-ink">Reflection Details</h2>
+          <h2 id="detail-modal-title" class="text-h2 font-semibold text-ink">Private Reflection</h2>
           <div class="mt-2 flex flex-wrap gap-2">
             <span class="text-caption font-bold text-ink-secondary uppercase tracking-wider">
               {{ formatDate(selectedReflection.created_at) }}
@@ -389,7 +404,7 @@
               @click="goToSession(selectedReflection)"
               class="text-state-selected hover:underline font-medium text-left"
             >
-              {{ selectedReflection.session_ref }}
+              Open session
             </button>
           </div>
         </div>
@@ -407,24 +422,29 @@
         </div>
         <div v-else></div>
 
-        <div class="flex gap-3">
-          <button
-            @click="toggleSupervision(selectedReflection)"
-            :disabled="actionLoading === selectedReflection.id"
-            class="flex items-center gap-2 px-4 py-2 bg-surface border border-border text-body-sm font-semibold text-ink rounded-control hover:bg-surface-subtle transition-all disabled:opacity-50 shadow-sm"
-          >
-            <span v-if="actionLoading === selectedReflection.id" class="w-4 h-4 border-2 border-state-selected border-t-transparent rounded-full animate-spin"></span>
-            {{ selectedReflection.included_in_supervision ? 'Remove from Supervision Pack' : 'Include in Supervision Pack' }}
-          </button>
-          
-          <div class="relative group">
+        <div class="flex items-center gap-3">
+          <div v-if="selectedReflection.included_in_supervision" class="flex items-center gap-3">
+            <span class="text-body-sm text-ink-secondary font-medium flex items-center gap-1.5">
+              <span class="text-state-success">✓</span>
+              Included in Supervision Pack
+            </span>
             <button
-              disabled
-              class="flex items-center gap-2 px-4 py-2 bg-surface border border-border text-body-sm font-semibold text-ink-subtle rounded-control cursor-not-allowed opacity-60"
+              @click="toggleSupervision(selectedReflection)"
+              :disabled="actionLoading === selectedReflection.id"
+              class="text-body-sm font-semibold text-state-danger hover:underline disabled:opacity-50"
             >
-              More actions
+              Remove
             </button>
           </div>
+          <button
+            v-else
+            @click="toggleSupervision(selectedReflection)"
+            :disabled="actionLoading === selectedReflection.id"
+            class="flex items-center gap-2 px-4 py-2 bg-state-selected text-white text-body-sm font-semibold rounded-control hover:bg-state-selected-hover transition-all disabled:opacity-50 shadow-sm"
+          >
+            <span v-if="actionLoading === selectedReflection.id" class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+            Add to Supervision Pack
+          </button>
         </div>
       </div>
     </div>
@@ -472,8 +492,8 @@
                   <span class="text-caption font-bold text-ink uppercase tracking-widest">{{ formatDate(reflection.created_at) }}</span>
                   <span v-if="reflection.theme" class="text-caption font-bold text-ink-secondary uppercase border-l border-border-muted pl-4">{{ reflection.theme }}</span>
                 </div>
-                <div v-if="includeClientNames && reflection.clients?.display_name" class="text-caption font-bold text-ink-muted italic">
-                  Client: {{ reflection.clients.display_name }}
+                <div class="text-caption font-bold text-ink-muted italic">
+                  {{ includeClientNames && reflection.clients?.display_name ? reflection.clients.display_name : (reflection.clients?.display_name ? clientAliases[reflection.clients.display_name] : 'Anonymous') }}
                 </div>
               </div>
               <p class="text-body text-ink whitespace-pre-wrap leading-relaxed border-l-4 border-surface-subtle pl-6 py-2">
@@ -649,6 +669,34 @@ const filteredReflections = computed(() => {
   });
 });
 
+const clientAliases = computed(() => {
+  const aliases = {};
+  let count = 0;
+  const clientNames = [...new Set(supervisionPackReflections.value.map(r => r.clients?.display_name).filter(Boolean))];
+  clientNames.forEach(name => {
+    aliases[name] = `Case ${String.fromCharCode(65 + count)}`; // Case A, Case B...
+    count++;
+  });
+  return aliases;
+});
+
+const groupedPackReflections = computed(() => {
+  const groups = {};
+  supervisionPackReflections.value.forEach(r => {
+    const date = new Date(r.created_at);
+    const monthYear = date.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
+    if (!groups[monthYear]) {
+      groups[monthYear] = [];
+    }
+    groups[monthYear].push(r);
+  });
+  
+  return Object.entries(groups).map(([monthYear, items]) => ({
+    monthYear,
+    items
+  }));
+});
+
 const groupedReflections = computed(() => {
   const groups = {};
   filteredReflections.value.forEach(r => {
@@ -732,9 +780,12 @@ async function copyExportText() {
     supervisionPackReflections.value.forEach(r => {
       text += `DATE: ${formatDate(r.created_at)}\n`;
       if (r.theme) text += `THEME: ${r.theme}\n`;
-      if (includeClientNames.value && r.clients?.display_name) {
-        text += `CLIENT: ${r.clients.display_name}\n`;
-      }
+      
+      const clientRef = includeClientNames.value && r.clients?.display_name 
+        ? r.clients.display_name 
+        : (r.clients?.display_name ? clientAliases.value[r.clients.display_name] : 'Anonymous');
+      text += `CASE: ${clientRef}\n`;
+      
       text += `\n"${r.body}"\n\n`;
       text += `-------------------\n\n`;
     });

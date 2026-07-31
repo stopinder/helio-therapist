@@ -15,12 +15,14 @@ test('Supervision Pack View and Export Flow', async () => {
   assert.match(content, /reflections\.value\.filter\(r => r\.included_in_supervision\)/)
 
   // 3. Privacy warning
-  assert.match(content, /Review and anonymise all material before sharing outside Helios/)
+  assert.match(content, /The Supervision Pack is your private collection of material selected for supervision/)
+  assert.match(content, /Review and anonymise it before creating a report/)
+  assert.match(content, /Review and remove identifying information before sharing outside Helios/)
 
   // 4. Pack items
-  assert.match(content, /v-for="reflection in supervisionPackReflections"/)
-  assert.match(content, /View Details/)
-  assert.match(content, /Remove/)
+  assert.match(content, /v-for="reflection in group.items"/)
+  assert.match(content, /View reflection/)
+  assert.match(content, /Remove from Pack/)
 
   // 5. Export preview modal
   assert.match(content, /exportPreviewOpen/)
@@ -29,8 +31,8 @@ test('Supervision Pack View and Export Flow', async () => {
 
   // 6. Export privacy: default excluded client names, exclude UUIDs
   assert.match(content, /const includeClientNames = ref\(false\)/)
-  // Ensure we don't accidentally include session_ref or client_id in the export preview by default
-  assert.match(content, /v-if="includeClientNames && reflection\.clients\?\.display_name"/)
+  // Ensure we use aliases when client names are excluded
+  assert.match(content, /includeClientNames && reflection\.clients\?\.display_name \? reflection\.clients\.display_name : \(reflection\.clients\?\.display_name \? clientAliases\[reflection\.clients\.display_name\] : 'Anonymous'\)/)
   
   // 7. Export actions: Copy and Print
   assert.match(content, /copyExportText/)
