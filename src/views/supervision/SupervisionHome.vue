@@ -1,12 +1,21 @@
 <template>
-  <div class="p-10 max-w-6xl mx-auto space-y-12 fade-up">
-    <!-- Greeting -->
-    <header class="space-y-2">
-      <h1 class="text-5xl font-fraunces italic font-semibold text-ink leading-tight">
-        Good afternoon, <span class="text-ink-secondary">Robert</span>.
-      </h1>
-      <p class="text-h3 text-ink-muted">Welcome to your professional development workspace.</p>
+  <div class="p-4 md:p-10 max-w-6xl mx-auto space-y-8 md:space-y-12 animate-fadeUp">
+    <header class="animate-fadeUp">
+      <div class="flex items-center gap-3">
+        <h1 class="text-h2 font-semibold text-ink">Professional Development</h1>
+        <span class="px-2 py-0.5 bg-surface-subtle text-ink-secondary text-overline font-bold uppercase tracking-wider rounded-pill border border-border-muted">
+          Workspace
+        </span>
+      </div>
     </header>
+
+    <!-- Greeting -->
+    <section class="space-y-2">
+      <h2 class="text-3xl md:text-5xl font-fraunces italic font-semibold text-ink leading-tight">
+        Good afternoon, <span class="text-ink-secondary">Robert</span>.
+      </h2>
+      <p class="text-body md:text-h3 text-ink-muted">Welcome to your reflective practice hub.</p>
+    </section>
 
     <!-- Destination Cards -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -27,7 +36,7 @@
     <!-- Continue Section -->
     <section class="space-y-6">
       <h2 class="text-overline font-bold text-ink-muted uppercase tracking-[0.2em]">Continue</h2>
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
         <!-- Last Reflection -->
         <div class="bg-surface-elevated p-8 rounded-[2rem] border border-border-muted shadow-sm flex flex-col justify-between">
           <div>
@@ -132,28 +141,5 @@ const latestThemeCount = computed(() => {
 <style scoped>
 .font-fraunces {
   font-family: 'Fraunces', serif;
-}
-
-.fade-up {
-  opacity: 0;
-  animation: fadeUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
-
-@keyframes fadeUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .fade-up {
-    animation: none;
-    opacity: 1;
-  }
 }
 </style>

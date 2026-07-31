@@ -27,13 +27,13 @@
         </button>
       </div>
 
-      <div v-else class="space-y-12 mb-20">
+      <div v-else class="space-y-6 sm:space-y-12 mb-20 px-4 sm:px-0">
         <div v-for="group in groupedReflections" :key="group.monthYear" class="group-container transition-opacity duration-slow" :class="{ 'opacity-35': expandedId && !group.items.some(r => r.id === expandedId) }">
           <h3 class="editorial-heading text-h2 text-ink border-b border-border-muted pb-4 sticky top-0 bg-surface-canvas/90 backdrop-blur-sm z-20 py-6 transition-all duration-slow">
             {{ group.monthYear }}
           </h3>
           
-          <div class="mt-8 space-y-6">
+          <div class="mt-8 space-y-4 sm:space-y-6">
             <div
               v-for="reflection in group.items"
               :key="reflection.id"
@@ -46,7 +46,7 @@
             >
               <!-- Row Header / Summary View -->
               <div 
-                class="p-6 cursor-pointer flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                class="p-4 sm:p-6 cursor-pointer flex flex-col sm:flex-row sm:items-center justify-between gap-4"
                 @click="toggleExpand(reflection.id)"
                 @keydown.enter.prevent="toggleExpand(reflection.id)"
                 @keydown.space.prevent="toggleExpand(reflection.id)"

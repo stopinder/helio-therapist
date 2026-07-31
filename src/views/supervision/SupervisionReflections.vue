@@ -1,7 +1,19 @@
 <template>
-  <div class="p-10 max-w-6xl mx-auto">
+  <div class="p-4 md:p-10 max-w-6xl mx-auto animate-fadeUp">
+    <header class="mb-10">
+      <div class="flex items-center gap-3">
+        <h1 class="text-h2 font-semibold text-ink">Review Reflections</h1>
+        <span class="px-2 py-0.5 bg-surface-subtle text-ink-secondary text-overline font-bold uppercase tracking-wider rounded-pill border border-border-muted">
+          Workspace
+        </span>
+      </div>
+      <p class="text-body-sm text-ink-muted font-fraunces italic mt-1">
+        Browse your reflective journal and revisit previous thinking.
+      </p>
+    </header>
+
     <div class="bg-surface-elevated rounded-[2rem] border border-border-muted shadow-sm overflow-hidden min-h-[600px] flex flex-col transition-all duration-slow" :class="{ 'bg-surface-canvas shadow-none border-transparent': isTimelineFocused }">
-      <div class="p-8 border-b border-border-muted flex justify-between items-center bg-surface">
+      <div class="p-6 md:p-8 border-b border-border-muted flex flex-col md:flex-row md:justify-between md:items-center gap-6 bg-surface">
         <div class="flex flex-col md:flex-row items-center gap-4 w-full md:w-auto">
           <div class="relative w-full md:w-64">
             <span class="absolute left-3 top-1/2 -translate-y-1/2 text-ink-muted text-sm">🔍</span>
@@ -35,7 +47,7 @@
         </button>
       </div>
 
-      <div class="flex-1 p-0 md:p-8">
+      <div class="flex-1 p-0 sm:p-4 md:p-8">
         <div v-if="loading && reflections.length === 0" class="py-20 text-center">
           <span class="inline-block w-8 h-8 border-4 border-state-selected border-t-transparent rounded-full animate-spin"></span>
           <p class="mt-4 text-ink-muted italic">Gathering your thoughts…</p>

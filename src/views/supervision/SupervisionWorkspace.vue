@@ -1,5 +1,17 @@
 <template>
-  <div class="p-10 max-w-6xl mx-auto space-y-10">
+  <div class="p-4 md:p-10 max-w-6xl mx-auto space-y-10 animate-fadeUp">
+    <header>
+      <div class="flex items-center gap-3">
+        <h1 class="text-h2 font-semibold text-ink">Supervision Workspace</h1>
+        <span class="px-2 py-0.5 bg-surface-subtle text-ink-secondary text-overline font-bold uppercase tracking-wider rounded-pill border border-border-muted">
+          Workspace
+        </span>
+      </div>
+      <p class="text-body-sm text-ink-muted font-fraunces italic mt-1">
+        Curate reflections for your next supervision session.
+      </p>
+    </header>
+
     <div class="bg-surface-elevated rounded-[2rem] border border-border-muted shadow-sm overflow-hidden min-h-[600px] flex flex-col relative">
       <SupervisionPackView
         :reflections="supervisionPackReflections"

@@ -1,8 +1,17 @@
 <template>
-  <div class="p-10 max-w-6xl mx-auto space-y-16 pb-24">
+  <div class="p-4 md:p-10 max-w-6xl mx-auto space-y-12 md:space-y-16 pb-24">
+    <header class="animate-fadeUp">
+      <div class="flex items-center gap-3">
+        <h1 class="text-h2 font-semibold text-ink">Insights</h1>
+        <span class="px-2 py-0.5 bg-surface-subtle text-ink-secondary text-overline font-bold uppercase tracking-wider rounded-pill border border-border-muted">
+          Workspace
+        </span>
+      </div>
+    </header>
+
     <!-- Editorial Prompt -->
-    <section class="max-w-3xl fade-up" style="animation-delay: 0.1s">
-      <h2 class="text-h1 font-fraunces italic text-ink leading-tight mb-4">
+    <section class="max-w-3xl animate-fadeUp" style="animation-delay: 0.1s">
+      <h2 class="text-3xl md:text-h1 font-fraunces italic text-ink leading-tight mb-4">
         What feels most consistent across your recent reflections?
       </h2>
       <p class="text-body text-ink-muted">
@@ -13,7 +22,7 @@
     <!-- Reflection Activity & Recurring Themes -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-12">
       <!-- Reflection Activity -->
-      <section class="space-y-6 fade-up" style="animation-delay: 0.2s">
+      <section class="space-y-6 animate-fadeUp" style="animation-delay: 0.2s">
         <h3 class="text-overline font-bold text-ink-muted uppercase tracking-widest">Reflection Activity</h3>
         <div class="bg-surface-elevated p-8 rounded-[2rem] border border-border-muted shadow-sm space-y-8">
           <div class="grid grid-cols-2 gap-8">
@@ -50,7 +59,7 @@
       </section>
 
       <!-- Recurring Themes -->
-      <section class="space-y-6 fade-up" style="animation-delay: 0.3s">
+      <section class="space-y-6 animate-fadeUp" style="animation-delay: 0.3s">
         <h3 class="text-overline font-bold text-ink-muted uppercase tracking-widest">Recurring Themes</h3>
         <div class="space-y-4">
           <div 
@@ -83,7 +92,7 @@
     </div>
 
     <!-- Questions Worth Exploring -->
-    <section class="space-y-6 fade-up" style="animation-delay: 0.4s">
+    <section class="space-y-6 animate-fadeUp" style="animation-delay: 0.4s">
       <h3 class="text-overline font-bold text-ink-muted uppercase tracking-widest">Questions Worth Exploring</h3>
       <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div 
@@ -99,7 +108,7 @@
     </section>
 
     <!-- Reflective Balance -->
-    <section class="space-y-6 fade-up" style="animation-delay: 0.5s">
+    <section class="space-y-6 animate-fadeUp" style="animation-delay: 0.5s">
       <h3 class="text-overline font-bold text-ink-muted uppercase tracking-widest">Reflective Balance</h3>
       <div class="bg-surface-subtle p-10 rounded-[2.5rem] border border-border-muted">
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8">
@@ -114,7 +123,7 @@
     </section>
 
     <!-- Suggested Next Reflection -->
-    <section class="space-y-6 fade-up" style="animation-delay: 0.6s">
+    <section class="space-y-6 animate-fadeUp" style="animation-delay: 0.6s">
       <h3 class="text-overline font-bold text-ink-muted uppercase tracking-widest">Suggested Next Reflection</h3>
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div 
@@ -249,28 +258,5 @@ const nextReflections = computed(() => {
 <style scoped>
 .font-fraunces {
   font-family: 'Fraunces', serif;
-}
-
-.fade-up {
-  opacity: 0;
-  animation: fadeUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
-
-@keyframes fadeUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .fade-up {
-    animation: none;
-    opacity: 1;
-  }
 }
 </style>

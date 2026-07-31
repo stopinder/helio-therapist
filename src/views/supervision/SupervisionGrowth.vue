@@ -1,8 +1,17 @@
 <template>
-  <div class="p-10 max-w-6xl mx-auto space-y-16 pb-24">
+  <div class="p-4 md:p-10 max-w-6xl mx-auto space-y-12 md:space-y-16 pb-24">
+    <header class="animate-fadeUp">
+      <div class="flex items-center gap-3">
+        <h1 class="text-h2 font-semibold text-ink">Growth & Learning</h1>
+        <span class="px-2 py-0.5 bg-surface-subtle text-ink-secondary text-overline font-bold uppercase tracking-wider rounded-pill border border-border-muted">
+          Workspace
+        </span>
+      </div>
+    </header>
+
     <!-- Editorial Prompt -->
-    <section class="max-w-3xl fade-up" style="animation-delay: 0.1s">
-      <h2 class="text-h1 font-fraunces italic text-ink leading-tight mb-4">
+    <section class="max-w-3xl animate-fadeUp" style="animation-delay: 0.1s">
+      <h2 class="text-3xl md:text-h1 font-fraunces italic text-ink leading-tight mb-4">
         What is your reflective practice showing you about the therapist you are becoming?
       </h2>
       <p class="text-body text-ink-muted">
@@ -13,7 +22,7 @@
     <!-- Emerging Strengths & Theme Landscape -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-12">
       <!-- Emerging Strengths -->
-      <section class="space-y-6 fade-up" style="animation-delay: 0.2s">
+      <section class="space-y-6 animate-fadeUp" style="animation-delay: 0.2s">
         <h3 class="text-overline font-bold text-ink-muted uppercase tracking-widest">Emerging Strengths</h3>
         
         <div v-if="strengths.length > 0" class="space-y-4">
@@ -43,7 +52,7 @@
       </section>
 
       <!-- Theme Landscape -->
-      <section class="space-y-6 fade-up" style="animation-delay: 0.3s">
+      <section class="space-y-6 animate-fadeUp" style="animation-delay: 0.3s">
         <h3 class="text-overline font-bold text-ink-muted uppercase tracking-widest">Theme Landscape</h3>
         
         <div v-if="landscapeThemes.length > 0" class="flex flex-wrap gap-3 content-start">
@@ -71,7 +80,7 @@
     </div>
 
     <!-- Learning Goals -->
-    <section class="space-y-8 fade-up" style="animation-delay: 0.4s">
+    <section class="space-y-8 animate-fadeUp" style="animation-delay: 0.4s">
       <div class="flex items-end justify-between">
         <div>
           <h3 class="text-overline font-bold text-ink-muted uppercase tracking-widest mb-2">Learning Goals</h3>
@@ -99,10 +108,12 @@
               type="checkbox" 
               v-model="goal.completed"
               class="w-5 h-5 rounded-full border-border-muted text-ink focus:ring-ink transition-all cursor-pointer"
+              aria-label="Mark goal as complete"
             >
             <button 
               @click="removeGoal(index)"
               class="text-ink-subtle hover:text-ink-muted opacity-0 group-hover:opacity-100 transition-opacity"
+              aria-label="Remove goal"
             >
               <span class="text-xl">×</span>
             </button>
@@ -113,6 +124,7 @@
             rows="3"
             class="w-full bg-transparent border-none focus:ring-0 p-0 text-body font-medium text-ink resize-none placeholder:text-ink-subtle"
             placeholder="Describe your learning goal..."
+            aria-label="Learning goal description"
           ></textarea>
         </div>
         
@@ -129,7 +141,7 @@
     <!-- Ethical & CPD -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-12">
       <!-- Ethical Considerations -->
-      <section class="space-y-6 fade-up" style="animation-delay: 0.5s">
+      <section class="space-y-6 animate-fadeUp" style="animation-delay: 0.5s">
         <h3 class="text-overline font-bold text-ink-muted uppercase tracking-widest">Ethical Considerations</h3>
         <div class="bg-surface-subtle p-8 rounded-3xl border border-border-muted">
           <p class="text-body-sm text-ink-muted leading-relaxed mb-6 italic font-fraunces">
@@ -159,7 +171,7 @@
       </section>
 
       <!-- CPD Opportunities -->
-      <section class="space-y-6 fade-up" style="animation-delay: 0.6s">
+      <section class="space-y-6 animate-fadeUp" style="animation-delay: 0.6s">
         <h3 class="text-overline font-bold text-ink-muted uppercase tracking-widest">CPD Opportunities</h3>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div 
@@ -296,28 +308,5 @@ const cpdOpportunities = computed(() => {
 <style scoped>
 .font-fraunces {
   font-family: 'Fraunces', serif;
-}
-
-.fade-up {
-  opacity: 0;
-  animation: fadeUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
-
-@keyframes fadeUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .fade-up {
-    animation: none;
-    opacity: 1;
-  }
 }
 </style>

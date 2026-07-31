@@ -1,8 +1,8 @@
 <template>
-  <div class="space-y-12 animate-fadeUp">
+  <div class="space-y-8 sm:space-y-12 animate-fadeUp">
     <!-- Rich Summary Header -->
-    <div class="bg-surface-elevated p-8 rounded-[2.5rem] border border-border-muted shadow-sm overflow-hidden">
-      <div class="flex flex-col lg:flex-row justify-between gap-10">
+    <div class="bg-surface-elevated p-6 sm:p-8 rounded-[2.5rem] border border-border-muted shadow-sm overflow-hidden">
+      <div class="flex flex-col lg:flex-row justify-between gap-6 lg:gap-10">
         <div class="space-y-6 flex-1">
           <div>
             <h2 class="editorial-heading text-h1 text-ink mb-2">Supervision Workspace</h2>
@@ -11,7 +11,7 @@
             </p>
           </div>
 
-          <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
             <div class="space-y-1">
               <span class="type-overline text-ink-muted">Selected</span>
               <div class="text-h3 font-semibold text-ink">{{ selectedReflections.length }} Reflections</div>
@@ -74,7 +74,7 @@
       </div>
     </div>
 
-    <div v-else class="space-y-16">
+    <div v-else class="space-y-8 md:space-y-16 px-4 md:px-0">
       <div v-for="group in groupedReflections" :key="'pack-group-' + group.monthYear" class="space-y-8">
         <h3 class="editorial-heading text-h2 text-ink border-b border-border-muted pb-4 sticky top-0 bg-surface-canvas/90 backdrop-blur-sm z-20 py-6">
           {{ group.monthYear }}
@@ -93,7 +93,7 @@
           >
             <!-- Card Header -->
             <div 
-              class="p-6 cursor-pointer flex flex-col sm:flex-row sm:items-center gap-6"
+              class="p-4 sm:p-6 cursor-pointer flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6"
               @click="$emit('toggle-preparation', reflection.id)"
             >
               <div class="flex items-center gap-4 shrink-0">
@@ -103,7 +103,7 @@
                   @click.stop
                   @change="$emit('toggle-report-selection', reflection.id)"
                   class="w-6 h-6 rounded-full border-border text-action-primary focus:ring-action-primary/20 cursor-pointer transition-all"
-                  title="Include in next report"
+                  aria-label="Include in next report"
                 />
                 <div class="w-12 h-12 rounded-full bg-avatar flex items-center justify-center text-ink font-semibold border border-border-muted shadow-inner">
                   {{ getInitials(reflection.clients?.display_name ? clientAliases[reflection.clients.display_name] : 'Anonymous') }}
@@ -133,7 +133,7 @@
                   @click.stop="$emit('remove-from-pack', reflection)"
                   :disabled="actionLoading === reflection.id"
                   class="p-2 text-ink-muted hover:text-state-danger hover:bg-state-danger-surface rounded-control transition-all"
-                  title="Remove from Pack"
+                  aria-label="Remove from Pack"
                 >
                   <span v-if="actionLoading === reflection.id" class="w-4 h-4 border-2 border-state-danger border-t-transparent rounded-full animate-spin"></span>
                   <span v-else>🗑️</span>
@@ -199,6 +199,7 @@
                           v-model="packItemOptions[reflection.id].notes"
                           placeholder="Add any specific questions or points you want to raise in supervision..."
                           class="w-full h-32 p-4 bg-white/60 border border-border-reflection rounded-panel text-body focus:ring-2 focus:ring-state-reflection-focus outline-none transition-all resize-none"
+                          aria-label="Preparation notes for supervision"
                         ></textarea>
                       </div>
 
