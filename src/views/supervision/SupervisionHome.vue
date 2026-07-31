@@ -1,9 +1,9 @@
 <template>
-  <div class="p-10 max-w-6xl mx-auto space-y-12">
+  <div class="p-10 max-w-6xl mx-auto space-y-12 fade-up">
     <!-- Greeting -->
     <header class="space-y-2">
-      <h1 class="text-5xl font-fraunces font-semibold text-ink leading-tight">
-        Good afternoon, <span class="italic text-ink-secondary">Robert</span>.
+      <h1 class="text-5xl font-fraunces italic font-semibold text-ink leading-tight">
+        Good afternoon, <span class="text-ink-secondary">Robert</span>.
       </h1>
       <p class="text-h3 text-ink-muted">Welcome to your professional development workspace.</p>
     </header>
@@ -18,7 +18,7 @@
       >
         <div class="text-4xl mb-4">{{ card.icon }}</div>
         <div>
-          <h3 class="text-h3 font-semibold text-ink group-hover:text-ink-secondary transition-colors">{{ card.title }}</h3>
+          <h3 class="text-h4 font-semibold text-ink group-hover:text-ink-secondary transition-colors">{{ card.title }}</h3>
           <p class="text-caption text-ink-muted mt-2">{{ card.description }}</p>
         </div>
       </router-link>
@@ -31,7 +31,7 @@
         <!-- Last Reflection -->
         <div class="bg-surface-elevated p-8 rounded-[2rem] border border-border-muted shadow-sm flex flex-col justify-between">
           <div>
-            <div class="text-overline text-ink-secondary font-bold mb-2 uppercase tracking-wider">Last Reflection</div>
+            <div class="text-overline text-ink-secondary font-bold mb-4 uppercase tracking-wider">Last Reflection</div>
             <p v-if="lastReflection" class="text-body font-medium text-ink line-clamp-3 italic font-fraunces">
               "{{ lastReflection.body }}"
             </p>
@@ -39,21 +39,21 @@
           </div>
           <div class="mt-6 pt-4 border-t border-border-muted flex justify-between items-center">
             <span class="text-overline text-ink-muted">{{ lastReflectionDate }}</span>
-            <button v-if="lastReflection" @click="$emit('open-reflection', lastReflection)" class="text-caption font-semibold text-action-link hover:underline">View details</button>
+            <button v-if="lastReflection" @click="$emit('open-reflection', lastReflection)" class="text-caption font-semibold text-ink hover:text-ink-secondary transition-colors">View details</button>
           </div>
         </div>
 
         <!-- Supervision Progress -->
         <div class="bg-surface-elevated p-8 rounded-[2rem] border border-border-muted shadow-sm">
-          <div class="text-overline text-ink-secondary font-bold mb-6 uppercase tracking-wider">Supervision Progress</div>
+          <div class="text-overline text-ink-secondary font-bold mb-4 uppercase tracking-wider">Supervision Progress</div>
           <div class="flex items-end gap-2 mb-2">
             <span class="text-5xl font-semibold text-ink">{{ packCount }}</span>
             <span class="text-h3 text-ink-muted pb-1">items</span>
           </div>
           <p class="text-caption text-ink-muted">Selected for your next supervision pack.</p>
-          <div class="mt-8 h-2 w-full bg-surface-subtle rounded-full overflow-hidden">
+          <div class="mt-8 h-2 w-full bg-surface-subtle rounded-full overflow-hidden border border-border-muted">
             <div 
-              class="h-full bg-state-selected transition-all duration-1000" 
+              class="h-full bg-ink-muted transition-all duration-1000" 
               :style="{ width: Math.min(100, (packCount / 5) * 100) + '%' }"
             ></div>
           </div>
@@ -61,7 +61,7 @@
 
         <!-- Latest Theme -->
         <div class="bg-surface-elevated p-8 rounded-[2rem] border border-border-muted shadow-sm">
-          <div class="text-overline text-ink-secondary font-bold mb-2 uppercase tracking-wider">Latest Theme</div>
+          <div class="text-overline text-ink-secondary font-bold mb-4 uppercase tracking-wider">Latest Theme</div>
           <div v-if="latestTheme" class="space-y-4">
             <div class="inline-block px-4 py-2 bg-surface-subtle text-ink font-semibold rounded-pill border border-border-muted">
               {{ latestTheme }}
@@ -132,5 +132,28 @@ const latestThemeCount = computed(() => {
 <style scoped>
 .font-fraunces {
   font-family: 'Fraunces', serif;
+}
+
+.fade-up {
+  opacity: 0;
+  animation: fadeUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fade-up {
+    animation: none;
+    opacity: 1;
+  }
 }
 </style>
