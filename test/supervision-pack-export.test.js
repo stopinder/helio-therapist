@@ -21,8 +21,8 @@ test('Supervision Pack View and Export Flow', async () => {
 
   // 4. Pack items
   assert.match(content, /v-for="reflection in group.items"/)
-  assert.match(content, /View reflection/)
   assert.match(content, /Remove from Pack/)
+  assert.ok(!content.includes('View reflection'), 'Should not show redundant view action')
 
   // 5. Export preview modal
   assert.match(content, /exportPreviewOpen/)

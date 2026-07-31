@@ -112,7 +112,11 @@
                 <div
                   v-for="reflection in group.items"
                   :key="'pack-' + reflection.id"
-                  class="group flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 bg-surface-elevated border border-border-muted rounded-panel shadow-sm hover:border-state-selected/50 transition-all"
+                  class="group flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 bg-surface-elevated border border-border-muted rounded-panel shadow-sm hover:border-state-selected/50 transition-all cursor-pointer focus:outline-none focus:ring-2 focus:ring-state-selected/20 focus:border-state-selected"
+                  @click="openDetail(reflection)"
+                  @keydown.enter.prevent="openDetail(reflection)"
+                  @keydown.space.prevent="openDetail(reflection)"
+                  tabindex="0"
                 >
                   <div class="flex-1 min-w-0">
                     <div class="flex flex-wrap items-center gap-2 mb-2">
@@ -137,13 +141,7 @@
 
                   <div class="flex items-center gap-3 shrink-0 self-end sm:self-center">
                     <button
-                      @click="openDetail(reflection)"
-                      class="px-3 py-1.5 text-body-sm text-state-selected font-medium hover:underline"
-                    >
-                      View reflection
-                    </button>
-                    <button
-                      @click="toggleSupervision(reflection)"
+                      @click.stop="toggleSupervision(reflection)"
                       :disabled="actionLoading === reflection.id"
                       class="px-3 py-1.5 text-body-sm text-state-danger font-medium hover:bg-state-danger-surface rounded-control transition-colors flex items-center gap-2"
                     >
@@ -198,8 +196,11 @@
                 <div
                   v-for="reflection in group.items"
                   :key="reflection.id"
-                  class="group flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 bg-surface-elevated border border-border-muted rounded-panel shadow-sm hover:border-state-selected/50 transition-all cursor-pointer"
+                  class="group flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 bg-surface-elevated border border-border-muted rounded-panel shadow-sm hover:border-state-selected/50 transition-all cursor-pointer focus:outline-none focus:ring-2 focus:ring-state-selected/20 focus:border-state-selected"
                   @click="openDetail(reflection)"
+                  @keydown.enter.prevent="openDetail(reflection)"
+                  @keydown.space.prevent="openDetail(reflection)"
+                  tabindex="0"
                 >
                   <div class="flex-1 min-w-0">
                     <div class="flex flex-wrap items-center gap-2 mb-2">
@@ -262,14 +263,6 @@
                         role="menu"
                         @click.stop
                       >
-                        <button
-                          @click="openDetail(reflection)"
-                          role="menuitem"
-                          class="w-full text-left px-4 py-2 text-body-sm text-ink hover:bg-surface-subtle transition-colors"
-                        >
-                          View Details
-                        </button>
-                        <div class="my-1 border-t border-border-muted"></div>
                         <button
                           @click="toggleSupervision(reflection)"
                           :disabled="actionLoading === reflection.id"
