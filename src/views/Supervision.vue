@@ -3,58 +3,37 @@
     <div class="p-inline-lg py-stack-lg border-b border-border-muted bg-surface">
       <div class="max-w-6xl mx-auto">
         <h1 class="text-h1 font-semibold text-ink">Professional Development</h1>
-        <p class="mt-2 text-body text-ink-muted">Your private professional reflections and supervision items.</p>
+        <p class="mt-2 text-body text-ink-muted">Review your private reflections, learning themes and professional development over time.</p>
       </div>
     </div>
 
     <div class="flex-1 overflow-auto p-inline-lg py-stack-lg">
       <div class="max-w-6xl mx-auto">
-        <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8">
-          <div class="flex flex-col gap-4">
-            <div class="flex items-center gap-4">
-              <h2 class="text-h2 font-semibold text-ink">
-                {{ activeView === 'timeline' ? 'Timeline' : 'Insights' }}
-              </h2>
-              <div class="flex bg-surface-subtle p-1 rounded-pill border border-border-muted">
-                <button 
-                  @click="activeView = 'timeline'"
-                  class="px-4 py-1 text-overline font-bold rounded-pill transition-all"
-                  :class="activeView === 'timeline' ? 'bg-surface text-state-selected shadow-sm' : 'text-ink-muted hover:text-ink'"
-                >
-                  Timeline
-                </button>
-                <button 
-                  @click="activeView = 'insights'"
-                  class="px-4 py-1 text-overline font-bold rounded-pill transition-all"
-                  :class="activeView === 'insights' ? 'bg-surface text-state-selected shadow-sm' : 'text-ink-muted hover:text-ink'"
-                >
-                  Insights
-                </button>
-              </div>
-            </div>
-            
-            <div v-if="reflections.length > 0 && activeView === 'timeline'" class="flex flex-wrap gap-2">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
+          <div class="flex items-center gap-4">
+            <h2 class="text-h2 font-semibold text-ink">
+              {{ activeView === 'timeline' ? 'Timeline' : 'Insights' }}
+            </h2>
+            <div class="flex bg-surface-subtle p-1 rounded-pill border border-border-muted">
               <button 
-                v-for="theme in themes" 
-                :key="theme.name"
-                @click="selectedTheme = theme.name"
-                class="px-3 py-1 text-overline font-bold rounded-full border transition-colors flex items-center gap-2"
-                :class="selectedTheme === theme.name 
-                  ? 'bg-state-selected text-white border-state-selected' 
-                  : 'bg-surface border-border text-ink-secondary hover:bg-surface-subtle'"
-                :aria-pressed="selectedTheme === theme.name"
+                @click="activeView = 'timeline'"
+                class="px-4 py-1 text-overline font-bold rounded-pill transition-all"
+                :class="activeView === 'timeline' ? 'bg-surface text-state-selected shadow-sm' : 'text-ink-muted hover:text-ink'"
               >
-                {{ theme.name }}
-                <span class="px-1.5 py-0.5 rounded-full text-[10px] bg-ink-muted/10">
-                  {{ theme.count }}
-                </span>
+                Timeline
+              </button>
+              <button 
+                @click="activeView = 'insights'"
+                class="px-4 py-1 text-overline font-bold rounded-pill transition-all"
+                :class="activeView === 'insights' ? 'bg-surface text-state-selected shadow-sm' : 'text-ink-muted hover:text-ink'"
+              >
+                Insights
               </button>
             </div>
           </div>
 
-          <div class="w-full md:w-64">
-            <label for="reflection-search" class="sr-only">Search reflections</label>
-            <div class="relative">
+          <div v-if="activeView === 'timeline'" class="flex flex-col md:flex-row items-center gap-4 w-full md:w-auto">
+            <div class="relative w-full md:w-64 order-first md:order-none">
               <span class="absolute left-3 top-1/2 -translate-y-1/2 text-ink-muted">🔍</span>
               <input 
                 id="reflection-search"
@@ -63,6 +42,18 @@
                 placeholder="Search reflections..."
                 class="w-full pl-9 pr-4 py-2 bg-surface border border-border rounded-control text-body-sm focus:ring-2 focus:ring-state-selected/20 focus:border-state-selected outline-none transition-all"
               />
+            </div>
+            
+            <div class="relative w-full md:w-48">
+              <select 
+                v-model="selectedTheme"
+                class="w-full px-3 py-2 bg-surface border border-border rounded-control text-body-sm focus:ring-2 focus:ring-state-selected/20 focus:border-state-selected outline-none appearance-none cursor-pointer"
+              >
+                <option v-for="theme in themes" :key="theme.name" :value="theme.name">
+                  {{ theme.name }} ({{ theme.count }})
+                </option>
+              </select>
+              <span class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-ink-muted">▼</span>
             </div>
           </div>
         </div>
@@ -98,111 +89,113 @@
             </button>
           </div>
 
-          <div v-else class="relative space-y-8 before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-border-muted before:to-transparent">
-            <div
-              v-for="reflection in filteredReflections"
-              :key="reflection.id"
-              class="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group"
-            >
-              <!-- Icon -->
-              <div class="flex items-center justify-center w-10 h-10 rounded-full border border-border bg-surface text-state-selected shadow-sm z-10 shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2">
-                <span class="text-sm">📝</span>
-              </div>
-
-              <!-- Card -->
-              <div class="w-10/12 md:w-5/12 bg-surface-elevated border border-border-muted rounded-panel p-6 shadow-sm hover:border-state-selected/50 transition-colors">
-                <div class="flex justify-between items-start mb-4">
-                  <div class="flex flex-col gap-1">
-                    <div class="flex items-center gap-2">
+          <div v-else class="space-y-12">
+            <div v-for="group in groupedReflections" :key="group.monthYear" class="space-y-4">
+              <h3 class="text-h3 font-bold text-ink border-b border-border-muted pb-2 sticky top-0 bg-surface-canvas z-10 py-2">
+                {{ group.monthYear }}
+              </h3>
+              
+              <div class="space-y-3">
+                <div
+                  v-for="reflection in group.items"
+                  :key="reflection.id"
+                  class="group flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 bg-surface-elevated border border-border-muted rounded-panel shadow-sm hover:border-state-selected/50 transition-all cursor-pointer"
+                  @click="openDetail(reflection)"
+                >
+                  <div class="flex-1 min-w-0">
+                    <div class="flex flex-wrap items-center gap-2 mb-2">
                       <span class="text-caption font-bold text-ink-secondary uppercase tracking-wider">
                         {{ formatDate(reflection.created_at) }}
                       </span>
-                      <span class="px-2 py-0.5 bg-surface-subtle text-xs font-bold text-ink-muted uppercase rounded border border-border">
+                      <span class="px-2 py-0.5 bg-surface-subtle text-caption font-bold text-ink-muted uppercase rounded border border-border">
                         Private Reflection
                       </span>
-                    </div>
-                    <div class="flex flex-wrap gap-2 mt-1">
-                      <span v-if="reflection.included_in_supervision" class="inline-flex items-center px-2 py-0.5 bg-state-success-surface text-overline font-bold text-state-success uppercase rounded border border-state-success/20">
+                      <span v-if="reflection.included_in_supervision" class="inline-flex items-center px-2 py-0.5 bg-state-success-surface text-caption font-bold text-state-success uppercase rounded border border-state-success/20">
                         Supervision Pack
                       </span>
-                      <span v-if="reflection.theme" class="px-2 py-0.5 bg-state-info-surface text-overline font-bold text-state-info uppercase rounded-full border border-state-info/20">
-                        {{ reflection.theme }}
-                      </span>
-                      <span v-else class="px-2 py-0.5 bg-surface-subtle text-overline font-bold text-ink-subtle uppercase rounded-full border border-border">
-                        No theme
-                      </span>
                     </div>
-                  </div>
-                </div>
 
-                <div class="mb-4 space-y-2">
-                  <div v-if="reflection.clients?.display_name" class="flex items-center gap-2 text-body-sm text-ink font-semibold">
-                    <span class="w-4 text-center">👤</span>
-                    {{ reflection.clients.display_name }}
-                  </div>
-                  <div v-if="reflection.session_ref" class="flex items-center gap-2 text-caption text-ink-muted">
-                    <span class="w-4 text-center">📅</span>
-                    Session: 
-                    <button 
-                      @click="goToSession(reflection)"
-                      class="text-state-selected hover:underline font-medium truncate"
-                    >
-                      {{ reflection.session_ref }}
-                    </button>
-                  </div>
-                </div>
+                    <div class="flex items-center gap-4 mb-2">
+                      <div v-if="reflection.clients?.display_name" class="flex items-center gap-1.5 text-body-sm text-ink font-semibold">
+                        <span class="text-xs">👤</span>
+                        {{ reflection.clients.display_name }}
+                      </div>
+                      <div v-if="reflection.session_ref" class="flex items-center gap-1.5 text-caption text-ink-muted">
+                        <span class="text-xs">📅</span>
+                        <button 
+                          @click.stop="goToSession(reflection)"
+                          class="text-state-selected hover:underline font-medium"
+                        >
+                          View session
+                        </button>
+                      </div>
+                    </div>
 
-                <p 
-                  @click="openDetail(reflection)"
-                  class="text-body-sm text-ink-secondary line-clamp-3 mb-6 italic cursor-pointer hover:text-ink transition-colors leading-relaxed"
-                >
-                  "{{ reflection.body || 'No content' }}"
-                </p>
-
-                <div class="pt-4 border-t border-border-muted flex justify-between items-center">
-                  <div v-if="updateError[reflection.id]" role="alert" class="text-overline text-state-danger font-medium">
-                    Update failed.
+                    <p class="text-body-sm text-ink-secondary line-clamp-2 italic leading-relaxed">
+                      "{{ reflection.body || 'No content' }}"
+                    </p>
                   </div>
-                  <div v-else></div>
-                  <div class="relative">
-                    <button
-                      @click="toggleMenu(reflection.id, $event)"
-                      class="flex items-center gap-2 px-3 py-1.5 bg-surface-canvas border border-border text-overline font-bold text-ink-secondary rounded-control hover:bg-surface-subtle transition-colors uppercase tracking-wider"
-                      :aria-expanded="menuOpenFor === reflection.id"
-                    >
-                      Actions
-                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" :class="{'rotate-180': menuOpenFor === reflection.id}">
-                        <path d="M6 9l6 6 6-6" />
-                      </svg>
-                    </button>
 
-                    <div
-                      v-if="menuOpenFor === reflection.id"
-                      class="absolute bottom-full right-0 mb-2 w-56 bg-surface-elevated border border-border shadow-elevated rounded-panel py-2 z-20"
-                      role="menu"
-                      @click.stop
-                    >
+                  <div class="flex items-center gap-3 shrink-0">
+                    <span v-if="reflection.theme" class="px-2 py-1 bg-surface-subtle text-caption font-bold text-ink-secondary uppercase rounded-full border border-border truncate max-w-[120px]">
+                      {{ reflection.theme }}
+                    </span>
+                    <span v-else class="px-2 py-1 bg-surface-subtle text-caption font-bold text-ink-subtle uppercase rounded-full border border-border">
+                      No theme
+                    </span>
+
+                    <div class="relative">
                       <button
-                        @click="openDetail(reflection)"
-                        role="menuitem"
-                        class="w-full text-left px-4 py-2 text-body-sm text-ink hover:bg-surface-subtle transition-colors"
+                        @click.stop="toggleMenu(reflection.id, $event)"
+                        class="p-2 hover:bg-surface-subtle rounded-control transition-colors text-ink-muted"
+                        :aria-expanded="menuOpenFor === reflection.id"
                       >
-                        View Details
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                          <circle cx="12" cy="5" r="1.5" />
+                          <circle cx="12" cy="12" r="1.5" />
+                          <circle cx="12" cy="19" r="1.5" />
+                        </svg>
                       </button>
-                      <div class="my-1 border-t border-border-muted"></div>
-                      <button
-                        @click="toggleSupervision(reflection)"
-                        :disabled="actionLoading === reflection.id"
-                        role="menuitem"
-                        class="w-full text-left px-4 py-2 text-body-sm text-ink hover:bg-surface-subtle transition-colors flex justify-between items-center"
+
+                      <div
+                        v-if="menuOpenFor === reflection.id"
+                        class="absolute right-0 mt-2 w-56 bg-surface-elevated border border-border shadow-elevated rounded-panel py-2 z-20"
+                        role="menu"
+                        @click.stop
                       >
-                        <span>{{ reflection.included_in_supervision ? 'Remove from Pack' : 'Include in Pack' }}</span>
-                        <span v-if="actionLoading === reflection.id" class="w-3 h-3 border-2 border-state-selected border-t-transparent rounded-full animate-spin"></span>
-                      </button>
+                        <button
+                          @click="openDetail(reflection)"
+                          role="menuitem"
+                          class="w-full text-left px-4 py-2 text-body-sm text-ink hover:bg-surface-subtle transition-colors"
+                        >
+                          View Details
+                        </button>
+                        <div class="my-1 border-t border-border-muted"></div>
+                        <button
+                          @click="toggleSupervision(reflection)"
+                          :disabled="actionLoading === reflection.id"
+                          role="menuitem"
+                          class="w-full text-left px-4 py-2 text-body-sm text-ink hover:bg-surface-subtle transition-colors flex justify-between items-center"
+                        >
+                          <span>{{ reflection.included_in_supervision ? 'Remove from Pack' : 'Include in Pack' }}</span>
+                          <span v-if="actionLoading === reflection.id" class="w-3 h-3 border-2 border-state-selected border-t-transparent rounded-full animate-spin"></span>
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
+            </div>
+
+            <div v-if="hasMore" class="flex justify-center pt-8">
+              <button 
+                @click="loadReflections(true)" 
+                :disabled="loading"
+                class="px-8 py-3 bg-surface border border-border text-body-sm font-semibold text-ink rounded-pill hover:bg-surface-subtle transition-all shadow-sm disabled:opacity-50"
+              >
+                <span v-if="loading" class="inline-block w-4 h-4 border-2 border-state-selected border-t-transparent rounded-full animate-spin mr-2"></span>
+                Load more reflections
+              </button>
             </div>
           </div>
         </div>
@@ -224,10 +217,14 @@
             </div>
             <div class="bg-surface-elevated p-6 rounded-panel border border-border-muted shadow-sm">
               <div class="text-overline font-bold text-ink-muted uppercase tracking-wider mb-1">Top Theme</div>
-              <div class="text-h2 font-semibold text-state-info truncate" :title="insights.topTheme">
+              <div class="text-h2 font-semibold text-action-link truncate" :title="insights.topTheme">
                 {{ insights.topTheme }}
               </div>
             </div>
+          </div>
+
+          <div class="text-caption text-ink-muted italic bg-surface-subtle p-3 rounded-control border border-border-muted inline-block">
+            Note: Insights are based on currently loaded reflections.
           </div>
 
           <div class="bg-surface-elevated border border-border-muted rounded-panel overflow-hidden shadow-sm">
@@ -276,7 +273,7 @@
             <span class="text-caption font-bold text-ink-secondary uppercase tracking-wider">
               {{ formatDate(selectedReflection.created_at) }}
             </span>
-            <span v-if="selectedReflection.theme" class="px-2 py-0.5 bg-state-info-surface text-overline font-bold text-state-info uppercase rounded-full border border-state-info/20">
+            <span v-if="selectedReflection.theme" class="px-2 py-0.5 bg-surface-subtle text-overline font-bold text-ink-secondary uppercase rounded-full border border-border">
               {{ selectedReflection.theme }}
             </span>
             <span v-if="selectedReflection.included_in_supervision" class="inline-flex items-center px-2 py-0.5 bg-state-success-surface text-overline font-bold text-state-success uppercase rounded border border-state-success/20">
@@ -440,6 +437,26 @@ const filteredReflections = computed(() => {
   });
 });
 
+const groupedReflections = computed(() => {
+  const groups = {};
+  filteredReflections.value.forEach(r => {
+    const date = new Date(r.created_at);
+    const monthYear = date.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
+    if (!groups[monthYear]) {
+      groups[monthYear] = [];
+    }
+    groups[monthYear].push(r);
+  });
+  
+  return Object.entries(groups).map(([monthYear, items]) => ({
+    monthYear,
+    items
+  }));
+});
+
+const hasMore = ref(true);
+const limit = 20;
+
 function clearFilters() {
   searchQuery.value = '';
   selectedTheme.value = 'All';
@@ -456,11 +473,21 @@ onUnmounted(() => {
   window.removeEventListener('keydown', closeMenuOnEscape);
 });
 
-async function loadReflections() {
-  loading.value = true;
+async function loadReflections(append = false) {
+  if (!append) {
+    loading.value = true;
+    reflections.value = [];
+  }
   error.value = null;
   try {
-    reflections.value = await getAllPrivateReflections({});
+    const offset = append ? reflections.value.length : 0;
+    const data = await getAllPrivateReflections({ offset, limit });
+    if (append) {
+      reflections.value = [...reflections.value, ...data];
+    } else {
+      reflections.value = data;
+    }
+    hasMore.value = data.length === limit;
   } catch (err) {
     console.error('[Supervision] Load error:', err);
     error.value = 'Could not load reflections. Please try again.';

@@ -133,7 +133,9 @@ export async function upsertPrivateReflection({
 }
 
 export async function getAllPrivateReflections({
-  supabaseClient
+  supabaseClient,
+  offset = 0,
+  limit = 20
 }) {
   if (!supabaseClient && !supabase) {
     const module = await import('./supabase.js');
@@ -156,7 +158,8 @@ export async function getAllPrivateReflections({
       )
     `)
     .eq('user_id', user.id)
-    .order('created_at', { ascending: false });
+    .order('created_at', { ascending: false })
+    .range(offset, offset + limit - 1);
 
   if (error) {
     console.error('[Reflections] Fetch all error:', error);
