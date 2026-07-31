@@ -22,7 +22,8 @@ test('Supervision Pack View and Export Flow', async () => {
   // 4. Pack items
   assert.match(content, /v-for="reflection in group.items"/)
   assert.match(content, /Remove from Pack/)
-  assert.match(content, /Review reflection/)
+  assert.match(content, /Open original reflection/)
+  assert.match(content, /preparation/)
   assert.match(content, /type="checkbox"/)
   assert.match(content, /toggleReportSelection/)
 

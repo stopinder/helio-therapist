@@ -113,66 +113,137 @@
                 <div
                   v-for="reflection in group.items"
                   :key="'pack-' + reflection.id"
-                  class="group flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 bg-surface-elevated border border-border-muted rounded-panel shadow-sm transition-all focus-within:ring-2 focus-within:ring-state-selected/20 focus-within:border-state-selected"
+                  class="flex flex-col p-4 bg-surface-elevated border border-border-muted rounded-panel shadow-sm transition-all focus-within:ring-2 focus-within:ring-state-selected/20 focus-within:border-state-selected"
                   :class="reportSelectedIds.has(reflection.id) ? 'border-state-selected/30 bg-state-selected/[0.02]' : ''"
                 >
-                  <div class="flex items-start gap-4 flex-1 min-w-0">
-                    <div class="pt-1 shrink-0">
-                      <input 
-                        type="checkbox" 
-                        :checked="reportSelectedIds.has(reflection.id)"
-                        @change="toggleReportSelection(reflection.id)"
-                        class="w-5 h-5 rounded border-border text-state-selected focus:ring-state-selected/20 cursor-pointer"
-                        title="Include in next report"
-                      />
+                  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div class="flex items-start gap-4 flex-1 min-w-0">
+                      <div class="pt-1 shrink-0">
+                        <input 
+                          type="checkbox" 
+                          :checked="reportSelectedIds.has(reflection.id)"
+                          @change="toggleReportSelection(reflection.id)"
+                          class="w-5 h-5 rounded border-border text-state-selected focus:ring-state-selected/20 cursor-pointer"
+                          title="Include in next report"
+                        />
+                      </div>
+
+                      <div class="flex-1 min-w-0">
+                        <div class="flex flex-wrap items-center gap-2 mb-2">
+                          <span class="text-caption font-bold text-ink-secondary uppercase tracking-wider">
+                            {{ formatDate(reflection.created_at) }}
+                          </span>
+                          <span v-if="reflection.theme" class="px-2 py-1 bg-surface-subtle text-caption font-bold text-ink-secondary uppercase rounded-full border border-border truncate max-w-[150px]">
+                            {{ reflection.theme }}
+                          </span>
+                          <span v-else class="text-caption text-ink-muted italic">No theme</span>
+                        </div>
+
+                        <div v-if="reflection.clients?.display_name" class="flex items-center gap-1.5 text-body-sm text-ink font-semibold mb-2">
+                          <span class="text-xs">👤</span>
+                          {{ reflection.clients.display_name }}
+                        </div>
+
+                        <p class="text-body-sm text-ink-secondary line-clamp-2 italic leading-relaxed">
+                          "{{ reflection.body || 'No content' }}"
+                        </p>
+                      </div>
                     </div>
 
-                    <div class="flex-1 min-w-0">
-                      <div class="flex flex-wrap items-center gap-2 mb-2">
-                        <span class="text-caption font-bold text-ink-secondary uppercase tracking-wider">
-                          {{ formatDate(reflection.created_at) }}
-                        </span>
-                        <span v-if="reflection.theme" class="px-2 py-1 bg-surface-subtle text-caption font-bold text-ink-secondary uppercase rounded-full border border-border truncate max-w-[150px]">
-                          {{ reflection.theme }}
-                        </span>
-                        <span v-else class="text-caption text-ink-muted italic">No theme</span>
-                      </div>
-
-                      <div v-if="reflection.clients?.display_name" class="flex items-center gap-1.5 text-body-sm text-ink font-semibold mb-2">
-                        <span class="text-xs">👤</span>
-                        {{ reflection.clients.display_name }}
-                      </div>
-
-                      <p class="text-body-sm text-ink-secondary line-clamp-2 italic leading-relaxed">
-                        "{{ reflection.body || 'No content' }}"
-                      </p>
+                    <div class="flex items-center gap-2 shrink-0 self-end sm:self-center">
+                      <button
+                        v-if="reflection.client_id && reflection.session_ref"
+                        @click="goToSession(reflection)"
+                        class="p-2 text-ink-muted hover:text-state-selected hover:bg-surface-subtle rounded-control transition-all"
+                        title="Open session"
+                      >
+                        <span>📅</span>
+                      </button>
+                      <button
+                        @click="openDetail(reflection)"
+                        class="px-3 py-1.5 text-body-sm text-ink-muted font-bold hover:bg-surface-subtle rounded-control transition-colors"
+                      >
+                        Open original reflection
+                      </button>
+                      <button
+                        @click="togglePreparation(reflection.id)"
+                        class="px-3 py-1.5 text-body-sm text-state-selected font-bold hover:bg-state-selected/10 rounded-control transition-colors flex items-center gap-1"
+                      >
+                        <span>{{ expandedPreparationId === reflection.id ? 'Collapse' : 'Expand' }} preparation</span>
+                        <span class="text-xs transition-transform duration-200" :class="expandedPreparationId === reflection.id ? 'rotate-180' : ''">▼</span>
+                      </button>
+                      <button
+                        @click="toggleSupervision(reflection)"
+                        :disabled="actionLoading === reflection.id"
+                        class="p-2 text-ink-muted hover:text-state-danger hover:bg-state-danger-surface rounded-control transition-all"
+                        title="Remove from Pack"
+                      >
+                        <span v-if="actionLoading === reflection.id" class="w-4 h-4 border-2 border-state-danger border-t-transparent rounded-full animate-spin"></span>
+                        <span v-else>🗑️</span>
+                      </button>
                     </div>
                   </div>
 
-                  <div class="flex items-center gap-2 shrink-0 self-end sm:self-center">
-                    <button
-                      v-if="reflection.client_id && reflection.session_ref"
-                      @click="goToSession(reflection)"
-                      class="p-2 text-ink-muted hover:text-state-selected hover:bg-surface-subtle rounded-control transition-all"
-                      title="Open session"
-                    >
-                      <span>📅</span>
-                    </button>
-                    <button
-                      @click="openDetail(reflection)"
-                      class="px-3 py-1.5 text-body-sm text-state-selected font-bold hover:bg-state-selected/10 rounded-control transition-colors"
-                    >
-                      Review reflection
-                    </button>
-                    <button
-                      @click="toggleSupervision(reflection)"
-                      :disabled="actionLoading === reflection.id"
-                      class="p-2 text-ink-muted hover:text-state-danger hover:bg-state-danger-surface rounded-control transition-all"
-                      title="Remove from Pack"
-                    >
-                      <span v-if="actionLoading === reflection.id" class="w-4 h-4 border-2 border-state-danger border-t-transparent rounded-full animate-spin"></span>
-                      <span v-else>🗑️</span>
-                    </button>
+                  <!-- Expanded Preparation Panel -->
+                  <div 
+                    v-if="expandedPreparationId === reflection.id" 
+                    class="mt-4 pt-4 border-t border-border-muted animate-in slide-in-from-top-2 duration-200"
+                  >
+                    <div class="bg-surface-subtle p-4 rounded-control border border-border">
+                      <div class="flex flex-col md:flex-row gap-6">
+                        <div class="flex-1 space-y-4">
+                          <div class="flex items-center justify-between">
+                            <h4 class="text-caption font-bold text-ink-muted uppercase tracking-wider">Report Alias</h4>
+                            <span class="px-2 py-0.5 bg-surface text-caption font-bold text-ink rounded border border-border">
+                              {{ reflection.clients?.display_name ? clientAliases[reflection.clients.display_name] : 'Anonymous' }}
+                            </span>
+                          </div>
+                          
+                          <div>
+                            <h4 class="text-caption font-bold text-ink-muted uppercase tracking-wider mb-2">Content Preview</h4>
+                            <p class="text-body-sm text-ink-secondary leading-relaxed bg-surface p-3 rounded border border-border-muted italic">
+                              {{ reflection.body }}
+                            </p>
+                          </div>
+
+                          <div class="p-3 bg-state-info-surface/50 rounded border border-state-info/10 text-caption text-ink-secondary flex items-start gap-2">
+                            <span class="mt-0.5">💡</span>
+                            <span>Privacy reminder: Content should be reviewed for identifying details before sharing.</span>
+                          </div>
+                        </div>
+
+                        <div class="w-full md:w-64 space-y-3">
+                          <h4 class="text-caption font-bold text-ink-muted uppercase tracking-wider mb-3">Include in report:</h4>
+                          
+                          <label class="flex items-center gap-2 cursor-pointer group">
+                            <input 
+                              type="checkbox" 
+                              v-model="packItemOptions[reflection.id].includeText"
+                              class="w-4 h-4 rounded border-border text-state-selected focus:ring-state-selected/20"
+                            />
+                            <span class="text-body-sm text-ink group-hover:text-state-selected transition-colors">Reflection text</span>
+                          </label>
+
+                          <label class="flex items-center gap-2 cursor-pointer group">
+                            <input 
+                              type="checkbox" 
+                              v-model="packItemOptions[reflection.id].includeDate"
+                              class="w-4 h-4 rounded border-border text-state-selected focus:ring-state-selected/20"
+                            />
+                            <span class="text-body-sm text-ink group-hover:text-state-selected transition-colors">Date</span>
+                          </label>
+
+                          <label class="flex items-center gap-2 cursor-pointer group">
+                            <input 
+                              type="checkbox" 
+                              v-model="packItemOptions[reflection.id].includeTheme"
+                              class="w-4 h-4 rounded border-border text-state-selected focus:ring-state-selected/20"
+                            />
+                            <span class="text-body-sm text-ink group-hover:text-state-selected transition-colors">Theme</span>
+                          </label>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -510,6 +581,10 @@
             <div>
               <h3 class="text-overline font-bold text-ink-muted uppercase tracking-wider mb-4">Content Options</h3>
               <div class="space-y-4">
+                <div class="p-3 bg-state-info-surface/50 rounded border border-state-info/20 text-caption text-ink-secondary mb-4">
+                  <span class="font-bold text-state-info uppercase tracking-tighter block mb-1">Global Settings</span>
+                  These settings apply to all items in the report unless overridden in the preparation panel.
+                </div>
                 <label class="flex items-center gap-3 cursor-pointer group">
                   <div class="relative inline-block w-10 h-5 transition duration-200 ease-in-out bg-surface-subtle border border-border rounded-full">
                     <input 
@@ -595,14 +670,14 @@
               <div v-for="reflection in reportSelectedReflections" :key="'export-' + reflection.id" class="break-inside-avoid">
                 <div class="flex justify-between items-baseline mb-4">
                   <div class="flex gap-4 items-center">
-                    <span v-if="exportOptions.includeDates" class="text-caption font-bold text-ink uppercase tracking-widest">{{ formatDate(reflection.created_at) }}</span>
-                    <span v-if="exportOptions.includeThemes && reflection.theme" class="text-caption font-bold text-ink-secondary uppercase border-l border-border-muted pl-4">{{ reflection.theme }}</span>
+                    <span v-if="packItemOptions[reflection.id]?.includeDate" class="text-caption font-bold text-ink uppercase tracking-widest">{{ formatDate(reflection.created_at) }}</span>
+                    <span v-if="packItemOptions[reflection.id]?.includeTheme && reflection.theme" class="text-caption font-bold text-ink-secondary uppercase border-l border-border-muted pl-4">{{ reflection.theme }}</span>
                   </div>
                   <div class="text-caption font-bold text-ink-muted italic">
                     {{ exportOptions.includeClientReferences && reflection.clients?.display_name ? reflection.clients.display_name : (reflection.clients?.display_name ? clientAliases[reflection.clients.display_name] : 'Anonymous') }}
                   </div>
                 </div>
-                <p v-if="exportOptions.includeText" class="text-body text-ink whitespace-pre-wrap leading-relaxed border-l-4 border-surface-subtle pl-6 py-2">
+                <p v-if="packItemOptions[reflection.id]?.includeText" class="text-body text-ink whitespace-pre-wrap leading-relaxed border-l-4 border-surface-subtle pl-6 py-2">
                   {{ reflection.body }}
                 </p>
               </div>
@@ -665,7 +740,7 @@
 </style>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { getAllPrivateReflections, setReflectionSupervisionSelection } from '../lib/reflections.js';
 
@@ -678,6 +753,8 @@ const menuOpenFor = ref(null); // ID of reflection with open menu
 const updateError = ref({}); // Map of reflection ID to error status
 const selectedReflection = ref(null);
 const reportSelectedIds = ref(new Set());
+const expandedPreparationId = ref(null);
+const packItemOptions = ref({}); // { reflectionId: { includeText: bool, includeDate: bool, includeTheme: bool } }
 
 const searchQuery = ref('');
 const selectedTheme = ref('All');
@@ -688,6 +765,17 @@ const exportOptions = ref({
   includeThemes: true,
   includeDates: true,
   includeClientReferences: false
+});
+
+// Update all items when global options change
+watch(() => exportOptions.value.includeText, (val) => {
+  Object.values(packItemOptions.value).forEach(opt => opt.includeText = val);
+});
+watch(() => exportOptions.value.includeThemes, (val) => {
+  Object.values(packItemOptions.value).forEach(opt => opt.includeTheme = val);
+});
+watch(() => exportOptions.value.includeDates, (val) => {
+  Object.values(packItemOptions.value).forEach(opt => opt.includeDate = val);
 });
 const therapistIntroduction = ref('');
 const copying = ref(false);
@@ -859,6 +947,13 @@ async function loadReflections(append = false) {
     data.forEach(r => {
       if (r.included_in_supervision) {
         reportSelectedIds.value.add(r.id);
+        if (!packItemOptions.value[r.id]) {
+          packItemOptions.value[r.id] = {
+            includeText: true,
+            includeDate: true,
+            includeTheme: true
+          };
+        }
       }
     });
   } catch (err) {
@@ -892,11 +987,13 @@ async function copyExportText() {
     }
     
     reportSelectedReflections.value.forEach(r => {
-      if (exportOptions.value.includeDates) {
+      const opts = packItemOptions.value[r.id] || { includeText: true, includeDate: true, includeTheme: true };
+
+      if (opts.includeDate) {
         text += `DATE: ${formatDate(r.created_at)}\n`;
       }
       
-      if (exportOptions.value.includeThemes && r.theme) {
+      if (opts.includeTheme && r.theme) {
         text += `THEME: ${r.theme}\n`;
       }
       
@@ -905,7 +1002,7 @@ async function copyExportText() {
         : (r.clients?.display_name ? clientAliases.value[r.clients.display_name] : 'Anonymous');
       text += `CASE: ${clientRef}\n`;
       
-      if (exportOptions.value.includeText) {
+      if (opts.includeText) {
         text += `\n"${r.body}"\n\n`;
       } else {
         text += `\n`;
@@ -928,6 +1025,21 @@ function toggleReportSelection(id) {
     reportSelectedIds.value.delete(id);
   } else {
     reportSelectedIds.value.add(id);
+    if (!packItemOptions.value[id]) {
+      packItemOptions.value[id] = {
+        includeText: true,
+        includeDate: true,
+        includeTheme: true
+      };
+    }
+  }
+}
+
+function togglePreparation(id) {
+  if (expandedPreparationId.value === id) {
+    expandedPreparationId.value = null;
+  } else {
+    expandedPreparationId.value = id;
   }
 }
 
@@ -957,8 +1069,19 @@ async function toggleSupervision(reflection) {
       // Update report selection state
       if (updated.included_in_supervision) {
         reportSelectedIds.value.add(reflection.id);
+        if (!packItemOptions.value[reflection.id]) {
+          packItemOptions.value[reflection.id] = {
+            includeText: true,
+            includeDate: true,
+            includeTheme: true
+          };
+        }
       } else {
         reportSelectedIds.value.delete(reflection.id);
+        delete packItemOptions.value[reflection.id];
+        if (expandedPreparationId.value === reflection.id) {
+          expandedPreparationId.value = null;
+        }
       }
 
       // Keep selected reflection in sync if open

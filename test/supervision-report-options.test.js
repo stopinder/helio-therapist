@@ -33,6 +33,9 @@ test('Report Export: Option Handling and Clipboard Output', async () => {
     includeDates: true,
     includeClientReferences: false
   });
+  const packItemOptions = ref({
+    1: { includeText: true, includeDate: true, includeTheme: true }
+  });
   const therapistIntroduction = ref('This is an intro.');
   const clientAliases = ref({ 'John Doe': 'Case A' });
 
@@ -49,11 +52,13 @@ test('Report Export: Option Handling and Clipboard Output', async () => {
     }
     
     supervisionPackReflections.value.forEach(r => {
-      if (exportOptions.value.includeDates) {
+      const opts = packItemOptions.value[r.id] || { includeText: true, includeDate: true, includeTheme: true };
+
+      if (opts.includeDate) {
         text += `DATE: ${formatDate(r.created_at)}\n`;
       }
       
-      if (exportOptions.value.includeThemes && r.theme) {
+      if (opts.includeTheme && r.theme) {
         text += `THEME: ${r.theme}\n`;
       }
       
@@ -62,7 +67,7 @@ test('Report Export: Option Handling and Clipboard Output', async () => {
         : (r.clients?.display_name ? clientAliases.value[r.clients.display_name] : 'Anonymous');
       text += `CASE: ${clientRef}\n`;
       
-      if (exportOptions.value.includeText) {
+      if (opts.includeText) {
         text += `\n"${r.body}"\n\n`;
       } else {
         text += `\n`;
@@ -81,22 +86,22 @@ test('Report Export: Option Handling and Clipboard Output', async () => {
   assert.match(output, /CASE: Case A/);
   assert.match(output, /"Reflection 1"/);
 
-  // Exclude text and themes
-  exportOptions.value.includeText = false;
-  exportOptions.value.includeThemes = false;
+  // Per-item exclude text and themes
+  packItemOptions.value[1].includeText = false;
+  packItemOptions.value[1].includeTheme = false;
   output = generateText();
   assert.match(output, /DATE: 20 Jul 2026/);
   assert.doesNotMatch(output, /THEME: Theme X/);
   assert.doesNotMatch(output, /"Reflection 1"/);
 
-  // Include real names
+  // Include real names (global option)
   exportOptions.value.includeClientReferences = true;
   output = generateText();
   assert.match(output, /CASE: John Doe/);
   assert.doesNotMatch(output, /CASE: Case A/);
 
-  // Exclude dates
-  exportOptions.value.includeDates = false;
+  // Per-item exclude dates
+  packItemOptions.value[1].includeDate = false;
   output = generateText();
   assert.doesNotMatch(output, /DATE: 20 Jul 2026/);
 });
