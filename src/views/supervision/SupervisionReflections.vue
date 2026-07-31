@@ -37,7 +37,7 @@
 
       <div class="flex-1 p-0 md:p-8">
         <div v-if="loading && reflections.length === 0" class="py-20 text-center">
-          <span class="inline-block w-8 h-8 border-4 border-sage-500 border-t-transparent rounded-full animate-spin"></span>
+          <span class="inline-block w-8 h-8 border-4 border-state-selected border-t-transparent rounded-full animate-spin"></span>
           <p class="mt-4 text-ink-muted italic">Gathering your thoughts…</p>
         </div>
 
@@ -67,7 +67,8 @@ import ProfessionalDevelopmentTimeline from '../../components/professional-devel
 const props = defineProps({
   reflections: { type: Array, default: () => [] },
   loading: Boolean,
-  actionLoading: [String, Number]
+  actionLoading: [String, Number],
+  themes: { type: Array, default: () => [] }
 });
 
 defineEmits(['open-reflection', 'go-to-session', 'toggle-supervision']);
@@ -76,25 +77,6 @@ const searchQuery = ref('');
 const selectedTheme = ref('All');
 const menuOpenFor = ref(null);
 const isTimelineFocused = ref(false);
-
-const themes = computed(() => {
-  const counts = { All: props.reflections.length };
-  const themeList = ['All'];
-  
-  props.reflections.forEach(r => {
-    const t = r.theme || 'No theme';
-    counts[t] = (counts[t] || 0) + 1;
-    if (!themeList.includes(t)) themeList.push(t);
-  });
-
-  const sortedThemes = themeList.filter(t => t !== 'All' && t !== 'No theme').sort();
-  if (themeList.includes('No theme')) sortedThemes.push('No theme');
-  
-  return ['All', ...sortedThemes].map(t => ({
-    name: t,
-    count: counts[t]
-  }));
-});
 
 const filteredReflections = computed(() => {
   return props.reflections.filter(r => {

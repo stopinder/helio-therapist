@@ -32,6 +32,4 @@
 </template>
 
 <style scoped>
-.bg-sage-50 { background-color: #f7f9f7; }
-.text-sage-600 { color: #4a6e4a; }
 </style>

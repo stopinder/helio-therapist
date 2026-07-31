@@ -9,7 +9,7 @@
           </div>
           <div class="bg-surface-subtle p-8 rounded-[1.5rem] border border-border-muted shadow-sm">
             <div class="text-overline font-bold text-ink-muted uppercase tracking-wider mb-2">Supervision Pack</div>
-            <div class="text-5xl font-semibold text-sage-600">{{ insights.inSupervision }}</div>
+            <div class="text-5xl font-semibold text-action-primary">{{ insights.inSupervision }}</div>
           </div>
           <div class="bg-surface-subtle p-8 rounded-[1.5rem] border border-border-muted shadow-sm">
             <div class="text-overline font-bold text-ink-muted uppercase tracking-wider mb-2">Unthemed</div>
@@ -43,7 +43,7 @@
                 </div>
                 <div class="w-full bg-surface-subtle h-3 rounded-full overflow-hidden">
                   <div 
-                    class="bg-sage-500 h-full rounded-full transition-all duration-1000" 
+                    class="bg-state-selected h-full rounded-full transition-all duration-1000" 
                     :style="{ width: (theme.count / insights.total * 100) + '%' }"
                   ></div>
                 </div>

@@ -73,7 +73,7 @@
       <!-- View Content -->
       <main class="flex-1 overflow-auto z-10 relative">
         <router-view v-slot="{ Component }">
-          <transition name="fade-up" mode="out-in">
+          <transition name="fade-up" mode="out-in" appear>
             <component 
               :is="Component" 
               v-bind="childProps"
@@ -138,6 +138,25 @@ const currentSubtitle = computed(() => {
   return '';
 });
 
+const themeStats = computed(() => {
+  const counts = { All: reflections.value.length };
+  const themeList = ['All'];
+  
+  reflections.value.forEach(r => {
+    const t = r.theme || 'No theme';
+    counts[t] = (counts[t] || 0) + 1;
+    if (!themeList.includes(t)) themeList.push(t);
+  });
+
+  const sortedThemes = themeList.filter(t => t !== 'All' && t !== 'No theme').sort();
+  if (themeList.includes('No theme')) sortedThemes.push('No theme');
+  
+  return ['All', ...sortedThemes].map(t => ({
+    name: t,
+    count: counts[t]
+  }));
+});
+
 const stats = computed(() => {
   const count = reflections.value.length;
   const latest = reflections.value[0];
@@ -160,7 +179,8 @@ const stats = computed(() => {
 const childProps = computed(() => ({
   reflections: reflections.value,
   loading: loading.value,
-  actionLoading: actionLoading.value
+  actionLoading: actionLoading.value,
+  themes: themeStats.value
 }));
 
 const isActive = (path) => {
@@ -226,12 +246,12 @@ provide('loadData', loadData);
 
 .fade-up-enter-active,
 .fade-up-leave-active {
-  transition: all 0.3s ease-out;
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .fade-up-enter-from {
   opacity: 0;
-  transform: translateY(10px);
+  transform: translateY(20px);
 }
 
 .fade-up-leave-to {
