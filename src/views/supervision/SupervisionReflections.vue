@@ -1,6 +1,6 @@
 <template>
   <div class="p-10 max-w-6xl mx-auto">
-    <div class="bg-surface-elevated rounded-[2rem] border border-border-muted shadow-sm overflow-hidden min-h-[600px] flex flex-col">
+    <div class="bg-surface-elevated rounded-[2rem] border border-border-muted shadow-sm overflow-hidden min-h-[600px] flex flex-col transition-all duration-slow" :class="{ 'bg-surface-canvas shadow-none border-transparent': isTimelineFocused }">
       <div class="p-8 border-b border-border-muted flex justify-between items-center bg-surface">
         <div class="flex flex-col md:flex-row items-center gap-4 w-full md:w-auto">
           <div class="relative w-full md:w-64">
@@ -35,24 +35,26 @@
         </button>
       </div>
 
-      <div class="flex-1 p-8">
+      <div class="flex-1 p-0 md:p-8">
         <div v-if="loading && reflections.length === 0" class="py-20 text-center">
           <span class="inline-block w-8 h-8 border-4 border-sage-500 border-t-transparent rounded-full animate-spin"></span>
           <p class="mt-4 text-ink-muted italic">Gathering your thoughts…</p>
         </div>
 
-        <ProfessionalDevelopmentTimeline
-          v-else
-          :reflections="filteredReflections"
-          :menu-open-for="menuOpenFor"
-          :has-more="false"
-          @open-reflection="r => $emit('open-reflection', r)"
-          @go-to-session="r => $emit('go-to-session', r)"
-          @toggle-menu="toggleMenu"
-          @close-menu="menuOpenFor = null"
-          @toggle-supervision="r => $emit('toggle-supervision', r)"
-          @load-more="() => {}"
-        />
+        <div v-else class="max-w-5xl mx-auto px-4 py-8">
+          <ProfessionalDevelopmentTimeline
+            :reflections="filteredReflections"
+            :menu-open-for="menuOpenFor"
+            :has-more="false"
+            @open-reflection="r => $emit('open-reflection', r)"
+            @go-to-session="r => $emit('go-to-session', r)"
+            @toggle-menu="toggleMenu"
+            @close-menu="menuOpenFor = null"
+            @toggle-supervision="r => $emit('toggle-supervision', r)"
+            @load-more="() => {}"
+            @focus-change="v => isTimelineFocused = v"
+          />
+        </div>
       </div>
     </div>
   </div>
@@ -73,6 +75,7 @@ defineEmits(['open-reflection', 'go-to-session', 'toggle-supervision']);
 const searchQuery = ref('');
 const selectedTheme = ref('All');
 const menuOpenFor = ref(null);
+const isTimelineFocused = ref(false);
 
 const themes = computed(() => {
   const counts = { All: props.reflections.length };
