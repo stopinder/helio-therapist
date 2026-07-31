@@ -67,191 +67,8 @@
           </div>
         </div>
 
-        <div v-if="activeView === 'pack'" class="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
-          <div class="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-state-info-surface p-6 rounded-panel border border-state-info/20 shadow-sm">
-            <div class="flex items-start gap-4">
-              <span class="text-2xl mt-0.5">🔒</span>
-              <div>
-                <h3 class="text-body font-bold text-ink">Supervision Pack</h3>
-                <p class="text-body-sm text-ink-secondary mt-1 max-w-2xl">
-                  The Supervision Pack is your private collection of material selected for supervision. Review and anonymise it before creating a report.
-                </p>
-                <div class="mt-4 flex flex-col gap-2">
-                  <p class="text-caption text-state-info font-medium flex items-center gap-1.5">
-                    <span>⚠️</span>
-                    Review and remove identifying information before sharing outside Helios.
-                  </p>
-                  <p class="text-caption text-ink-muted">
-                    {{ reportSelectedReflections.length }} of {{ supervisionPackReflections.length }} selected for report
-                  </p>
-                </div>
-              </div>
-            </div>
-            <button 
-              v-if="supervisionPackReflections.length > 0"
-              @click="openExportPreview"
-              :disabled="reportSelectedReflections.length === 0"
-              class="px-6 py-2.5 bg-state-selected text-white text-body-sm font-bold rounded-pill hover:bg-state-selected-hover transition-all shadow-md flex items-center justify-center gap-2 shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <span>📄</span>
-              Create Supervision Report
-            </button>
-          </div>
-
-          <div v-if="supervisionPackReflections.length === 0" class="py-stack-xl text-center bg-surface-elevated border border-border-muted rounded-panel shadow-sm">
-            <p class="text-body text-ink-subtle italic">No reflections have been added to your Supervision Pack.</p>
-            <p class="text-caption text-ink-muted mt-2">Add reflections from a session or from your Professional Development timeline.</p>
-          </div>
-
-          <div v-else class="space-y-12">
-            <div v-for="group in groupedPackReflections" :key="'pack-group-' + group.monthYear" class="space-y-4">
-              <h3 class="text-overline font-bold text-ink-muted uppercase tracking-widest pl-1 border-l-2 border-border-muted">
-                {{ group.monthYear }}
-              </h3>
-              
-              <div class="space-y-4">
-                <div
-                  v-for="reflection in group.items"
-                  :key="'pack-' + reflection.id"
-                  class="flex flex-col p-4 bg-surface-elevated border border-border-muted rounded-panel shadow-sm transition-all focus-within:ring-2 focus-within:ring-state-selected/20 focus-within:border-state-selected"
-                  :class="reportSelectedIds.has(reflection.id) ? 'border-state-selected/30 bg-state-selected/[0.02]' : ''"
-                >
-                  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <div class="flex items-start gap-4 flex-1 min-w-0">
-                      <div class="pt-1 shrink-0">
-                        <input 
-                          type="checkbox" 
-                          :checked="reportSelectedIds.has(reflection.id)"
-                          @change="toggleReportSelection(reflection.id)"
-                          class="w-5 h-5 rounded border-border text-state-selected focus:ring-state-selected/20 cursor-pointer"
-                          title="Include in next report"
-                        />
-                      </div>
-
-                      <div class="flex-1 min-w-0">
-                        <div class="flex flex-wrap items-center gap-2 mb-2">
-                          <span class="text-caption font-bold text-ink-secondary uppercase tracking-wider">
-                            {{ formatDate(reflection.created_at) }}
-                          </span>
-                          <span v-if="reflection.theme" class="px-2 py-1 bg-surface-subtle text-caption font-bold text-ink-secondary uppercase rounded-full border border-border truncate max-w-[150px]">
-                            {{ reflection.theme }}
-                          </span>
-                          <span v-else class="text-caption text-ink-muted italic">No theme</span>
-                        </div>
-
-                        <div v-if="reflection.clients?.display_name" class="flex items-center gap-1.5 text-body-sm text-ink font-semibold mb-2">
-                          <span class="text-xs">👤</span>
-                          {{ reflection.clients.display_name }}
-                        </div>
-
-                        <p class="text-body-sm text-ink-secondary line-clamp-2 italic leading-relaxed">
-                          "{{ reflection.body || 'No content' }}"
-                        </p>
-                      </div>
-                    </div>
-
-                    <div class="flex items-center gap-2 shrink-0 self-end sm:self-center">
-                      <button
-                        v-if="reflection.client_id && reflection.session_ref"
-                        @click="goToSession(reflection)"
-                        class="p-2 text-ink-muted hover:text-state-selected hover:bg-surface-subtle rounded-control transition-all"
-                        title="Open session"
-                      >
-                        <span>📅</span>
-                      </button>
-                      <button
-                        @click="openDetail(reflection)"
-                        class="px-3 py-1.5 text-body-sm text-ink-muted font-bold hover:bg-surface-subtle rounded-control transition-colors"
-                      >
-                        Open original reflection
-                      </button>
-                      <button
-                        @click="togglePreparation(reflection.id)"
-                        class="px-3 py-1.5 text-body-sm text-state-selected font-bold hover:bg-state-selected/10 rounded-control transition-colors flex items-center gap-1"
-                      >
-                        <span>{{ expandedPreparationId === reflection.id ? 'Collapse' : 'Expand' }} preparation</span>
-                        <span class="text-xs transition-transform duration-200" :class="expandedPreparationId === reflection.id ? 'rotate-180' : ''">▼</span>
-                      </button>
-                      <button
-                        @click="toggleSupervision(reflection)"
-                        :disabled="actionLoading === reflection.id"
-                        class="p-2 text-ink-muted hover:text-state-danger hover:bg-state-danger-surface rounded-control transition-all"
-                        title="Remove from Pack"
-                      >
-                        <span v-if="actionLoading === reflection.id" class="w-4 h-4 border-2 border-state-danger border-t-transparent rounded-full animate-spin"></span>
-                        <span v-else>🗑️</span>
-                      </button>
-                    </div>
-                  </div>
-
-                  <!-- Expanded Preparation Panel -->
-                  <div 
-                    v-if="expandedPreparationId === reflection.id" 
-                    class="mt-4 pt-4 border-t border-border-muted animate-in slide-in-from-top-2 duration-200"
-                  >
-                    <div class="bg-surface-subtle p-4 rounded-control border border-border">
-                      <div class="flex flex-col md:flex-row gap-6">
-                        <div class="flex-1 space-y-4">
-                          <div class="flex items-center justify-between">
-                            <h4 class="text-caption font-bold text-ink-muted uppercase tracking-wider">Report Alias</h4>
-                            <span class="px-2 py-0.5 bg-surface text-caption font-bold text-ink rounded border border-border">
-                              {{ reflection.clients?.display_name ? clientAliases[reflection.clients.display_name] : 'Anonymous' }}
-                            </span>
-                          </div>
-                          
-                          <div>
-                            <h4 class="text-caption font-bold text-ink-muted uppercase tracking-wider mb-2">Content Preview</h4>
-                            <p class="text-body-sm text-ink-secondary leading-relaxed bg-surface p-3 rounded border border-border-muted italic">
-                              {{ reflection.body }}
-                            </p>
-                          </div>
-
-                          <div class="p-3 bg-state-info-surface/50 rounded border border-state-info/10 text-caption text-ink-secondary flex items-start gap-2">
-                            <span class="mt-0.5">💡</span>
-                            <span>Privacy reminder: Content should be reviewed for identifying details before sharing.</span>
-                          </div>
-                        </div>
-
-                        <div class="w-full md:w-64 space-y-3">
-                          <h4 class="text-caption font-bold text-ink-muted uppercase tracking-wider mb-3">Include in report:</h4>
-                          
-                          <label class="flex items-center gap-2 cursor-pointer group">
-                            <input 
-                              type="checkbox" 
-                              v-model="packItemOptions[reflection.id].includeText"
-                              class="w-4 h-4 rounded border-border text-state-selected focus:ring-state-selected/20"
-                            />
-                            <span class="text-body-sm text-ink group-hover:text-state-selected transition-colors">Reflection text</span>
-                          </label>
-
-                          <label class="flex items-center gap-2 cursor-pointer group">
-                            <input 
-                              type="checkbox" 
-                              v-model="packItemOptions[reflection.id].includeDate"
-                              class="w-4 h-4 rounded border-border text-state-selected focus:ring-state-selected/20"
-                            />
-                            <span class="text-body-sm text-ink group-hover:text-state-selected transition-colors">Date</span>
-                          </label>
-
-                          <label class="flex items-center gap-2 cursor-pointer group">
-                            <input 
-                              type="checkbox" 
-                              v-model="packItemOptions[reflection.id].includeTheme"
-                              class="w-4 h-4 rounded border-border text-state-selected focus:ring-state-selected/20"
-                            />
-                            <span class="text-body-sm text-ink group-hover:text-state-selected transition-colors">Theme</span>
-                          </label>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div v-if="loading" class="py-stack-xl text-center">
+        <!-- Main Views -->
+        <div v-if="loading && reflections.length === 0" class="py-stack-xl text-center">
           <span class="inline-block w-8 h-8 border-4 border-state-selected border-t-transparent rounded-full animate-spin"></span>
           <p class="mt-2 text-ink-muted">Loading reflections…</p>
         </div>
@@ -266,483 +83,133 @@
           </button>
         </div>
 
-        <div v-else-if="reflections.length === 0" class="py-stack-xl text-center bg-surface-elevated border border-border-muted rounded-panel shadow-sm">
-          <p class="text-body text-ink-subtle italic">My private reflections will appear here.</p>
-          <p class="text-caption text-ink-muted mt-2">Reflections you save in the Session Workspace will appear here.</p>
-        </div>
+        <template v-else>
+          <ProfessionalDevelopmentTimeline
+            v-if="activeView === 'timeline'"
+            :reflections="filteredReflections"
+            :menu-open-for="menuOpenFor"
+            :has-more="hasMore"
+            :loading-more="loading"
+            @open-reflection="openDetail"
+            @go-to-session="goToSession"
+            @toggle-menu="toggleMenu"
+            @close-menu="closeMenuOnOutsideClick"
+            @toggle-supervision="toggleSupervision"
+            @load-more="loadReflections(true)"
+            @clear-filters="clearFilters"
+          />
 
-        <div v-else-if="activeView === 'timeline'">
-          <div v-if="filteredReflections.length === 0" class="py-stack-xl text-center bg-surface-elevated border border-border-muted rounded-panel shadow-sm">
-            <p class="text-body text-ink-subtle italic">No reflections match this filter.</p>
-            <button 
-              @click="clearFilters" 
-              class="mt-4 text-body-sm text-state-selected font-medium hover:underline"
-            >
-              Clear filters
-            </button>
-          </div>
+          <SupervisionPackView
+            v-else-if="activeView === 'pack'"
+            :reflections="supervisionPackReflections"
+            :selected-reflections="reportSelectedReflections"
+            :report-selected-ids="reportSelectedIds"
+            :expanded-preparation-id="expandedPreparationId"
+            :pack-item-options="packItemOptions"
+            :client-aliases="clientAliases"
+            :action-loading="actionLoading"
+            @create-report="openExportPreview"
+            @toggle-report-selection="toggleReportSelection"
+            @go-to-session="goToSession"
+            @open-reflection="openDetail"
+            @toggle-preparation="togglePreparation"
+            @remove-from-pack="toggleSupervision"
+          />
 
-          <div v-else class="space-y-12">
-            <div v-for="group in groupedReflections" :key="group.monthYear" class="space-y-4">
-              <h3 class="text-h3 font-bold text-ink border-b border-border-muted pb-2 sticky top-0 bg-surface-canvas z-10 py-2">
-                {{ group.monthYear }}
-              </h3>
-              
-              <div class="space-y-3">
-                <div
-                  v-for="reflection in group.items"
-                  :key="reflection.id"
-                  class="group flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 bg-surface-elevated border border-border-muted rounded-panel shadow-sm hover:border-state-selected/50 transition-all cursor-pointer focus:outline-none focus:ring-2 focus:ring-state-selected/20 focus:border-state-selected"
-                  @click="openDetail(reflection)"
-                  @keydown.enter.prevent="openDetail(reflection)"
-                  @keydown.space.prevent="openDetail(reflection)"
-                  tabindex="0"
-                >
-                  <div class="flex-1 min-w-0">
-                    <div class="flex flex-wrap items-center gap-2 mb-2">
-                      <span class="text-caption font-bold text-ink-secondary uppercase tracking-wider">
-                        {{ formatDate(reflection.created_at) }}
-                      </span>
-                      <span class="px-2 py-0.5 bg-surface-subtle text-caption font-bold text-ink-muted uppercase rounded border border-border">
-                        Private Reflection
-                      </span>
-                      <span v-if="reflection.included_in_supervision" class="inline-flex items-center px-2 py-0.5 bg-state-success-surface text-caption font-bold text-state-success uppercase rounded border border-state-success/20">
-                        Supervision Pack
-                      </span>
+          <!-- Insights View -->
+          <div v-else-if="activeView === 'insights'" class="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              <div class="bg-surface-elevated p-6 rounded-panel border border-border-muted shadow-sm">
+                <div class="text-overline font-bold text-ink-muted uppercase tracking-wider mb-1">Total Reflections</div>
+                <div class="text-h2 font-semibold text-ink">{{ insights.total }}</div>
+              </div>
+              <div class="bg-surface-elevated p-6 rounded-panel border border-border-muted shadow-sm">
+                <div class="text-overline font-bold text-ink-muted uppercase tracking-wider mb-1">Supervision Pack</div>
+                <div class="text-h2 font-semibold text-state-success">{{ insights.inSupervision }}</div>
+              </div>
+              <div class="bg-surface-elevated p-6 rounded-panel border border-border-muted shadow-sm">
+                <div class="text-overline font-bold text-ink-muted uppercase tracking-wider mb-1">Unthemed</div>
+                <div class="text-h2 font-semibold text-ink-subtle">{{ insights.noTheme }}</div>
+              </div>
+              <div class="bg-surface-elevated p-6 rounded-panel border border-border-muted shadow-sm">
+                <div class="text-overline font-bold text-ink-muted uppercase tracking-wider mb-1">Top Theme</div>
+                <div class="text-h2 font-semibold text-action-link truncate" :title="insights.topTheme">
+                  {{ insights.topTheme }}
+                </div>
+              </div>
+            </div>
+
+            <div class="text-caption text-ink-muted italic bg-surface-subtle p-3 rounded-control border border-border-muted inline-block">
+              Based on loaded reflections
+            </div>
+
+            <div class="bg-surface-elevated border border-border-muted rounded-panel overflow-hidden shadow-sm">
+              <div class="p-6 border-b border-border-muted bg-surface">
+                <h3 class="text-body font-bold text-ink uppercase tracking-wider">Theme Distribution</h3>
+              </div>
+              <div class="p-6">
+                <div v-if="insights.themeCounts.length === 0" class="text-center py-8 text-ink-subtle italic">
+                  No themes identified yet.
+                </div>
+                <div v-else class="space-y-4">
+                  <div v-for="theme in insights.themeCounts" :key="theme.name" class="space-y-2">
+                    <div class="flex justify-between text-body-sm font-medium">
+                      <span class="text-ink">{{ theme.name }}</span>
+                      <span class="text-ink-muted">{{ theme.count }} ({{ Math.round(theme.count / insights.total * 100) }}%)</span>
                     </div>
-
-                    <div class="flex items-center gap-4 mb-2">
-                      <div v-if="reflection.clients?.display_name" class="flex items-center gap-1.5 text-body-sm text-ink font-semibold">
-                        <span class="text-xs">👤</span>
-                        {{ reflection.clients.display_name }}
-                      </div>
-                      <div v-if="reflection.session_ref" class="flex items-center gap-1.5 text-caption text-ink-muted">
-                        <span class="text-xs">📅</span>
-                        <button 
-                          @click.stop="goToSession(reflection)"
-                          class="text-state-selected hover:underline font-medium"
-                        >
-                          View session
-                        </button>
-                      </div>
-                    </div>
-
-                    <p class="text-body-sm text-ink-secondary line-clamp-2 italic leading-relaxed">
-                      "{{ reflection.body || 'No content' }}"
-                    </p>
-                  </div>
-
-                  <div class="flex items-center gap-3 shrink-0">
-                    <span v-if="reflection.theme" class="px-2 py-1 bg-surface-subtle text-caption font-bold text-ink-secondary uppercase rounded-full border border-border truncate max-w-[120px]">
-                      {{ reflection.theme }}
-                    </span>
-                    <span v-else class="px-2 py-1 bg-surface-subtle text-caption font-bold text-ink-subtle uppercase rounded-full border border-border">
-                      No theme
-                    </span>
-
-                    <div class="relative">
-                      <button
-                        @click.stop="toggleMenu(reflection.id, $event)"
-                        class="p-2 hover:bg-surface-subtle rounded-control transition-colors text-ink-muted"
-                        :aria-expanded="menuOpenFor === reflection.id"
-                      >
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                          <circle cx="12" cy="5" r="1.5" />
-                          <circle cx="12" cy="12" r="1.5" />
-                          <circle cx="12" cy="19" r="1.5" />
-                        </svg>
-                      </button>
-
-                      <div
-                        v-if="menuOpenFor === reflection.id"
-                        class="absolute right-0 mt-2 w-56 bg-surface-elevated border border-border shadow-elevated rounded-panel py-2 z-20"
-                        role="menu"
-                        @click.stop
-                      >
-                        <button
-                          @click="toggleSupervision(reflection)"
-                          :disabled="actionLoading === reflection.id"
-                          role="menuitem"
-                          class="w-full text-left px-4 py-2 text-body-sm text-ink hover:bg-surface-subtle transition-colors flex justify-between items-center"
-                        >
-                          <span>{{ reflection.included_in_supervision ? 'Remove from Pack' : 'Include in Pack' }}</span>
-                          <span v-if="actionLoading === reflection.id" class="w-3 h-3 border-2 border-state-selected border-t-transparent rounded-full animate-spin"></span>
-                        </button>
-                        <button
-                          v-if="reflection.client_id && reflection.session_ref"
-                          @click="goToSession(reflection)"
-                          role="menuitem"
-                          class="w-full text-left px-4 py-2 text-body-sm text-ink hover:bg-surface-subtle transition-colors flex items-center gap-2"
-                        >
-                          <span>📅</span>
-                          Open session
-                        </button>
-                      </div>
+                    <div class="w-full bg-surface-subtle h-2 rounded-full overflow-hidden">
+                      <div 
+                        class="bg-state-selected h-full rounded-full" 
+                        :style="{ width: (theme.count / insights.total * 100) + '%' }"
+                      ></div>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
-
-            <div v-if="hasMore" class="flex justify-center pt-8">
-              <button 
-                @click="loadReflections(true)" 
-                :disabled="loading"
-                class="px-8 py-3 bg-surface border border-border text-body-sm font-semibold text-ink rounded-pill hover:bg-surface-subtle transition-all shadow-sm disabled:opacity-50"
-              >
-                <span v-if="loading" class="inline-block w-4 h-4 border-2 border-state-selected border-t-transparent rounded-full animate-spin mr-2"></span>
-                Load more reflections
-              </button>
-            </div>
           </div>
-        </div>
-
-        <!-- Insights View -->
-        <div v-else-if="activeView === 'insights'" class="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
-          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div class="bg-surface-elevated p-6 rounded-panel border border-border-muted shadow-sm">
-              <div class="text-overline font-bold text-ink-muted uppercase tracking-wider mb-1">Total Reflections</div>
-              <div class="text-h2 font-semibold text-ink">{{ insights.total }}</div>
-            </div>
-            <div class="bg-surface-elevated p-6 rounded-panel border border-border-muted shadow-sm">
-              <div class="text-overline font-bold text-ink-muted uppercase tracking-wider mb-1">Supervision Pack</div>
-              <div class="text-h2 font-semibold text-state-success">{{ insights.inSupervision }}</div>
-            </div>
-            <div class="bg-surface-elevated p-6 rounded-panel border border-border-muted shadow-sm">
-              <div class="text-overline font-bold text-ink-muted uppercase tracking-wider mb-1">Unthemed</div>
-              <div class="text-h2 font-semibold text-ink-subtle">{{ insights.noTheme }}</div>
-            </div>
-            <div class="bg-surface-elevated p-6 rounded-panel border border-border-muted shadow-sm">
-              <div class="text-overline font-bold text-ink-muted uppercase tracking-wider mb-1">Top Theme</div>
-              <div class="text-h2 font-semibold text-action-link truncate" :title="insights.topTheme">
-                {{ insights.topTheme }}
-              </div>
-            </div>
-          </div>
-
-          <div class="text-caption text-ink-muted italic bg-surface-subtle p-3 rounded-control border border-border-muted inline-block">
-            Based on loaded reflections
-          </div>
-
-          <div class="bg-surface-elevated border border-border-muted rounded-panel overflow-hidden shadow-sm">
-            <div class="p-6 border-b border-border-muted bg-surface">
-              <h3 class="text-body font-bold text-ink uppercase tracking-wider">Theme Distribution</h3>
-            </div>
-            <div class="p-6">
-              <div v-if="insights.themeCounts.length === 0" class="text-center py-8 text-ink-subtle italic">
-                No themes identified yet.
-              </div>
-              <div v-else class="space-y-4">
-                <div v-for="theme in insights.themeCounts" :key="theme.name" class="space-y-2">
-                  <div class="flex justify-between text-body-sm font-medium">
-                    <span class="text-ink">{{ theme.name }}</span>
-                    <span class="text-ink-muted">{{ theme.count }} ({{ Math.round(theme.count / insights.total * 100) }}%)</span>
-                  </div>
-                  <div class="w-full bg-surface-subtle h-2 rounded-full overflow-hidden">
-                    <div 
-                      class="bg-state-selected h-full rounded-full" 
-                      :style="{ width: (theme.count / insights.total * 100) + '%' }"
-                    ></div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+        </template>
       </div>
     </div>
-  </div>
 
-  <!-- Reflection Detail Modal -->
-  <div
-    v-if="selectedReflection"
-    class="fixed inset-0 bg-backdrop/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 no-print"
-    @click.self="closeDetail"
-    role="dialog"
-    aria-modal="true"
-    aria-labelledby="detail-modal-title"
-  >
-    <div class="w-full max-w-2xl bg-surface-elevated rounded-panel shadow-overlay max-h-[90vh] flex flex-col overflow-hidden border border-border">
-      <div class="p-6 border-b border-border-muted flex justify-between items-start">
-        <div>
-          <h2 id="detail-modal-title" class="text-h2 font-semibold text-ink">Private Reflection</h2>
-          <div class="mt-2 flex flex-wrap gap-2">
-            <span class="text-caption font-bold text-ink-secondary uppercase tracking-wider">
-              {{ formatDate(selectedReflection.created_at) }}
-            </span>
-            <span v-if="selectedReflection.theme" class="px-2 py-0.5 bg-surface-subtle text-overline font-bold text-ink-secondary uppercase rounded-full border border-border">
-              {{ selectedReflection.theme }}
-            </span>
-            <span v-if="selectedReflection.included_in_supervision" class="inline-flex items-center px-2 py-0.5 bg-state-success-surface text-overline font-bold text-state-success uppercase rounded border border-state-success/20">
-              Supervision Pack
-            </span>
-          </div>
-        </div>
-        <button 
-          @click="closeDetail"
-          class="p-2 text-ink-muted hover:text-ink transition-colors rounded-control hover:bg-surface-subtle"
-          aria-label="Close detail view"
-        >
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M18 6L6 18M6 6l12 12" />
-          </svg>
-        </button>
-      </div>
+    <!-- Modals -->
+    <PrivateReflectionModal
+      v-if="selectedReflection"
+      :reflection="selectedReflection"
+      :loading="actionLoading === selectedReflection.id"
+      :error="updateError[selectedReflection.id]"
+      @close="closeDetail"
+      @toggle-supervision="toggleSupervision"
+      @go-to-session="goToSession"
+    />
 
-      <div class="p-8 overflow-y-auto flex-1">
-        <div class="mb-6 space-y-2 bg-surface-subtle p-4 rounded-panel border border-border-muted">
-          <div v-if="selectedReflection.clients?.display_name" class="flex items-center gap-3 text-body-sm text-ink-secondary">
-            <span class="w-5 text-center grayscale">👤</span>
-            <span class="font-medium">Client:</span> {{ selectedReflection.clients.display_name }}
-          </div>
-          <div v-if="selectedReflection.session_ref" class="flex items-center gap-3 text-body-sm text-ink-secondary">
-            <span class="w-5 text-center grayscale">📅</span>
-            <span class="font-medium">Session:</span> 
-            <button 
-              @click="goToSession(selectedReflection)"
-              class="text-state-selected hover:underline font-medium text-left"
-            >
-              Open session
-            </button>
-          </div>
-        </div>
-
-        <div class="prose prose-sm max-w-none">
-          <p class="text-body text-ink italic whitespace-pre-wrap leading-relaxed">
-            "{{ selectedReflection.body || 'No content' }}"
-          </p>
-        </div>
-      </div>
-
-      <div class="p-6 border-t border-border-muted bg-surface flex justify-between items-center">
-        <div v-if="updateError[selectedReflection.id]" role="alert" class="text-overline text-state-danger font-medium">
-          Could not update selection.
-        </div>
-        <div v-else></div>
-
-        <div class="flex items-center gap-3">
-          <div v-if="selectedReflection.included_in_supervision" class="flex items-center gap-3">
-            <span class="text-body-sm text-ink-secondary font-medium flex items-center gap-1.5">
-              <span class="text-state-success">✓</span>
-              Included in Supervision Pack
-            </span>
-            <button
-              @click="toggleSupervision(selectedReflection)"
-              :disabled="actionLoading === selectedReflection.id"
-              class="text-body-sm font-semibold text-state-danger hover:underline disabled:opacity-50"
-            >
-              Remove from Pack
-            </button>
-          </div>
-          <button
-            v-else
-            @click="toggleSupervision(selectedReflection)"
-            :disabled="actionLoading === selectedReflection.id"
-            class="flex items-center gap-2 px-4 py-2 bg-state-selected text-white text-body-sm font-semibold rounded-control hover:bg-state-selected-hover transition-all disabled:opacity-50 shadow-sm"
-          >
-            <span v-if="actionLoading === selectedReflection.id" class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-            Add to Supervision Pack
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Export Preview Modal -->
-  <div
-    v-if="exportPreviewOpen"
-    class="fixed inset-0 bg-backdrop/60 backdrop-blur-sm flex items-center justify-center z-[60] p-4 print:p-0 print:bg-white"
-    @click.self="closeExportPreview"
-    role="dialog"
-    aria-modal="true"
-    aria-labelledby="export-modal-title"
-  >
-    <div class="w-full max-w-5xl bg-surface rounded-panel shadow-overlay max-h-[90vh] flex flex-col overflow-hidden border border-border no-print">
-      <div class="p-6 border-b border-border-muted flex justify-between items-center bg-surface-elevated">
-        <div>
-          <h2 id="export-modal-title" class="text-h2 font-semibold text-ink">Supervision Report Preview</h2>
-          <p class="text-caption text-ink-muted mt-1">Review your content and anonymise before printing or copying.</p>
-        </div>
-        <button 
-          @click="closeExportPreview"
-          class="p-2 text-ink-muted hover:text-ink transition-colors rounded-control hover:bg-surface-subtle"
-          aria-label="Close export preview"
-        >
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M18 6L6 18M6 6l12 12" />
-          </svg>
-        </button>
-      </div>
-
-      <div class="flex-1 flex flex-col md:flex-row overflow-hidden bg-surface-subtle">
-        <!-- Options Sidebar -->
-        <div class="w-full md:w-80 border-r border-border-muted bg-surface p-6 overflow-y-auto">
-          <div class="space-y-6">
-            <div>
-              <h3 class="text-overline font-bold text-ink-muted uppercase tracking-wider mb-4">Content Options</h3>
-              <div class="space-y-4">
-                <div class="p-3 bg-state-info-surface/50 rounded border border-state-info/20 text-caption text-ink-secondary mb-4">
-                  <span class="font-bold text-state-info uppercase tracking-tighter block mb-1">Global Settings</span>
-                  These settings apply to all items in the report unless overridden in the preparation panel.
-                </div>
-                <label class="flex items-center gap-3 cursor-pointer group">
-                  <div class="relative inline-block w-10 h-5 transition duration-200 ease-in-out bg-surface-subtle border border-border rounded-full">
-                    <input 
-                      type="checkbox" 
-                      v-model="exportOptions.includeText"
-                      class="absolute block w-4 h-4 mt-0.5 ml-0.5 bg-white border border-border rounded-full appearance-none cursor-pointer transition-transform duration-200 ease-in-out checked:translate-x-5 checked:bg-state-selected"
-                    />
-                  </div>
-                  <span class="text-body-sm font-medium text-ink group-hover:text-state-selected transition-colors">Include reflection text</span>
-                </label>
-                
-                <label class="flex items-center gap-3 cursor-pointer group">
-                  <div class="relative inline-block w-10 h-5 transition duration-200 ease-in-out bg-surface-subtle border border-border rounded-full">
-                    <input 
-                      type="checkbox" 
-                      v-model="exportOptions.includeThemes"
-                      class="absolute block w-4 h-4 mt-0.5 ml-0.5 bg-white border border-border rounded-full appearance-none cursor-pointer transition-transform duration-200 ease-in-out checked:translate-x-5 checked:bg-state-selected"
-                    />
-                  </div>
-                  <span class="text-body-sm font-medium text-ink group-hover:text-state-selected transition-colors">Include themes</span>
-                </label>
-
-                <label class="flex items-center gap-3 cursor-pointer group">
-                  <div class="relative inline-block w-10 h-5 transition duration-200 ease-in-out bg-surface-subtle border border-border rounded-full">
-                    <input 
-                      type="checkbox" 
-                      v-model="exportOptions.includeDates"
-                      class="absolute block w-4 h-4 mt-0.5 ml-0.5 bg-white border border-border rounded-full appearance-none cursor-pointer transition-transform duration-200 ease-in-out checked:translate-x-5 checked:bg-state-selected"
-                    />
-                  </div>
-                  <span class="text-body-sm font-medium text-ink group-hover:text-state-selected transition-colors">Include dates</span>
-                </label>
-              </div>
-            </div>
-
-            <div>
-              <h3 class="text-overline font-bold text-ink-muted uppercase tracking-wider mb-4">Privacy Options</h3>
-              <div class="space-y-4">
-                <label class="flex items-center gap-3 cursor-pointer group">
-                  <div class="relative inline-block w-10 h-5 transition duration-200 ease-in-out bg-surface-subtle border border-border rounded-full">
-                    <input 
-                      type="checkbox" 
-                      v-model="exportOptions.includeClientReferences"
-                      class="absolute block w-4 h-4 mt-0.5 ml-0.5 bg-white border border-border rounded-full appearance-none cursor-pointer transition-transform duration-200 ease-in-out checked:translate-x-5 checked:bg-state-selected"
-                    />
-                  </div>
-                  <span class="text-body-sm font-medium text-ink group-hover:text-state-selected transition-colors">Include client names</span>
-                </label>
-                <div class="p-3 bg-state-info-surface border border-state-info/20 rounded-control text-caption text-ink-secondary">
-                  <span class="font-bold text-state-info uppercase tracking-tighter block mb-1">Privacy Rule</span>
-                  Client names are excluded by default. Session and Client UUIDs are always excluded from exports.
-                </div>
-              </div>
-            </div>
-
-            <div>
-              <h3 class="text-overline font-bold text-ink-muted uppercase tracking-wider mb-2">Introduction (Optional)</h3>
-              <textarea 
-                v-model="therapistIntroduction"
-                rows="4"
-                placeholder="Add a brief introduction to your report..."
-                class="w-full p-3 bg-surface border border-border rounded-control text-body-sm focus:ring-2 focus:ring-state-selected/20 focus:border-state-selected outline-none transition-all resize-none"
-              ></textarea>
-            </div>
-          </div>
-        </div>
-
-        <!-- Preview Area -->
-        <div class="flex-1 overflow-auto p-6 md:p-12 bg-surface-subtle flex justify-center">
-          <div class="w-full max-w-[21cm] bg-white shadow-lg border border-border-muted min-h-full p-[2cm] print-content" id="printable-pack">
-            <div class="mb-12 pb-6 border-b-2 border-ink">
-              <h1 class="text-3xl font-bold text-ink uppercase tracking-tighter">Supervision Report</h1>
-              <p class="text-body-sm text-ink-muted mt-2">
-                Generated on {{ new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) }}
-              </p>
-            </div>
-
-            <div v-if="therapistIntroduction" class="mb-10 text-body text-ink leading-relaxed whitespace-pre-wrap italic border-l-2 border-border-muted pl-4 py-1">
-              {{ therapistIntroduction }}
-            </div>
-
-            <div class="space-y-12">
-              <div v-for="reflection in reportSelectedReflections" :key="'export-' + reflection.id" class="break-inside-avoid">
-                <div class="flex justify-between items-baseline mb-4">
-                  <div class="flex gap-4 items-center">
-                    <span v-if="packItemOptions[reflection.id]?.includeDate" class="text-caption font-bold text-ink uppercase tracking-widest">{{ formatDate(reflection.created_at) }}</span>
-                    <span v-if="packItemOptions[reflection.id]?.includeTheme && reflection.theme" class="text-caption font-bold text-ink-secondary uppercase border-l border-border-muted pl-4">{{ reflection.theme }}</span>
-                  </div>
-                  <div class="text-caption font-bold text-ink-muted italic">
-                    {{ exportOptions.includeClientReferences && reflection.clients?.display_name ? reflection.clients.display_name : (reflection.clients?.display_name ? clientAliases[reflection.clients.display_name] : 'Anonymous') }}
-                  </div>
-                </div>
-                <p v-if="packItemOptions[reflection.id]?.includeText" class="text-body text-ink whitespace-pre-wrap leading-relaxed border-l-4 border-surface-subtle pl-6 py-2">
-                  {{ reflection.body }}
-                </p>
-              </div>
-            </div>
-
-            <div class="mt-20 pt-8 border-t border-border-muted text-center">
-              <p class="text-overline text-ink-subtle italic">Private & Confidential • Professional Development Record • Generated via Helios Therapist</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="p-6 border-t border-border-muted bg-surface-elevated flex justify-end items-center gap-4">
-        <button
-          @click="copyExportText"
-          class="px-6 py-2.5 bg-surface border border-border text-body-sm font-bold text-ink rounded-pill hover:bg-surface-subtle transition-all flex items-center justify-center gap-2 shadow-sm"
-        >
-          <span>{{ copying ? '✅' : '📋' }}</span>
-          {{ copying ? 'Copied!' : 'Copy Formatted Text' }}
-        </button>
-        <button
-          @click="printPack"
-          class="px-8 py-2.5 bg-ink text-white text-body-sm font-bold rounded-pill hover:opacity-90 transition-all flex items-center justify-center gap-2 shadow-md"
-        >
-          <span>🖨️</span>
-          Print / PDF
-        </button>
-      </div>
-    </div>
+    <SupervisionReportPreview
+      v-if="exportPreviewOpen"
+      :reflections="reportSelectedReflections"
+      :options="exportOptions"
+      :pack-item-options="packItemOptions"
+      :client-aliases="clientAliases"
+      :introduction="therapistIntroduction"
+      :copying="copying"
+      @close="closeExportPreview"
+      @update-option="(key, val) => exportOptions[key] = val"
+      @update-introduction="val => therapistIntroduction = val"
+      @copy="copyExportText"
+      @print="printPack"
+    />
   </div>
 </template>
-
-<style>
-@media print {
-  .no-print {
-    display: none !important;
-  }
-  
-  body {
-    background-color: white !important;
-    padding: 0 !important;
-    margin: 0 !important;
-  }
-
-  .print-content {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    margin: 0;
-    padding: 2cm;
-    border: none !important;
-    box-shadow: none !important;
-  }
-
-  #printable-pack {
-    display: block !important;
-  }
-}
-</style>
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { getAllPrivateReflections, setReflectionSupervisionSelection } from '../lib/reflections.js';
+
+// Components
+import ProfessionalDevelopmentTimeline from '../components/professional-development/ProfessionalDevelopmentTimeline.vue';
+import PrivateReflectionModal from '../components/professional-development/PrivateReflectionModal.vue';
+import SupervisionPackView from '../components/professional-development/SupervisionPackView.vue';
+import SupervisionReportPreview from '../components/professional-development/SupervisionReportPreview.vue';
 
 const router = useRouter();
 const reflections = ref([]);
@@ -871,40 +338,6 @@ const clientAliases = computed(() => {
   return aliases;
 });
 
-const groupedPackReflections = computed(() => {
-  const groups = {};
-  supervisionPackReflections.value.forEach(r => {
-    const date = new Date(r.created_at);
-    const monthYear = date.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
-    if (!groups[monthYear]) {
-      groups[monthYear] = [];
-    }
-    groups[monthYear].push(r);
-  });
-  
-  return Object.entries(groups).map(([monthYear, items]) => ({
-    monthYear,
-    items
-  }));
-});
-
-const groupedReflections = computed(() => {
-  const groups = {};
-  filteredReflections.value.forEach(r => {
-    const date = new Date(r.created_at);
-    const monthYear = date.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
-    if (!groups[monthYear]) {
-      groups[monthYear] = [];
-    }
-    groups[monthYear].push(r);
-  });
-  
-  return Object.entries(groups).map(([monthYear, items]) => ({
-    monthYear,
-    items
-  }));
-});
-
 const hasMore = ref(true);
 const limit = 20;
 
@@ -915,12 +348,10 @@ function clearFilters() {
 
 onMounted(() => {
   loadReflections();
-  window.addEventListener('click', closeMenuOnOutsideClick);
   window.addEventListener('keydown', closeMenuOnEscape);
 });
 
 onUnmounted(() => {
-  window.removeEventListener('click', closeMenuOnOutsideClick);
   window.removeEventListener('keydown', closeMenuOnEscape);
 });
 
@@ -1123,6 +554,8 @@ function closeMenuOnEscape(e) {
   if (e.key === 'Escape') {
     menuOpenFor.value = null;
     selectedReflection.value = null;
+    exportPreviewOpen.value = false;
+    document.body.style.overflow = '';
   }
 }
 
