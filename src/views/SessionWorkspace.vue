@@ -51,7 +51,11 @@
             :session="session"
             @update:session="session = $event"
           />
-          <SupervisionSummaryTab v-else-if="activeTab === 'Professional Development'" />
+          <SupervisionSummaryTab 
+            v-else-if="activeTab === 'Professional Development'" 
+            :clientId="session.clientId"
+            :sessionId="session.id"
+          />
         </div>
       </div>
 
