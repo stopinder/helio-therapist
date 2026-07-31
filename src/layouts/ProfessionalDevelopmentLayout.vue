@@ -1,81 +1,60 @@
 <template>
   <div class="flex h-full bg-surface-canvas overflow-hidden">
-    <!-- Workspace Sidebar -->
-    <aside class="w-64 bg-sidebar border-r border-border-muted flex flex-col shrink-0">
-      <div class="h-16 flex items-center px-6 border-b border-border-muted font-fraunces text-xl font-semibold text-ink">
-        Helios
-      </div>
-      
-      <nav class="flex-1 py-6 px-4 space-y-1 overflow-y-auto">
-        <router-link
-          v-for="item in navItems"
-          :key="item.name"
-          :to="item.path"
-          class="flex items-center px-4 py-2.5 rounded-panel text-body-sm transition-all duration-standard"
-          :class="isActive(item.path) ? 'bg-state-selected text-ink font-semibold shadow-sm' : 'text-ink-secondary hover:bg-surface-subtle'"
-        >
-          <span class="mr-3 text-lg">{{ item.icon }}</span>
-          {{ item.name }}
-        </router-link>
-      </nav>
-
-      <!-- Practice Section -->
-      <div class="p-6 border-t border-border-muted bg-surface-subtle">
-        <h3 class="text-overline font-bold text-ink-muted uppercase tracking-wider mb-4">Practice</h3>
-        <div class="space-y-3">
-          <div class="flex justify-between items-center">
-            <span class="text-caption text-ink-secondary">Reflections</span>
-            <span class="text-caption font-semibold text-ink">{{ stats.reflectionsCount }}</span>
-          </div>
-          <div class="flex justify-between items-center">
-            <span class="text-caption text-ink-secondary">Leading Theme</span>
-            <span class="text-caption font-semibold text-ink truncate ml-2 max-w-[100px]" :title="stats.leadingTheme">
-              {{ stats.leadingTheme }}
-            </span>
-          </div>
-          <div class="pt-2 border-t border-border-muted/50">
-            <span class="text-overline text-ink-muted uppercase block mb-1">Latest Reflection</span>
-            <span class="text-caption text-ink-secondary italic block truncate">
-              {{ stats.latestReflectionDate }}
-            </span>
-          </div>
-        </div>
-      </div>
-    </aside>
-
-    <!-- Main Workspace Area -->
     <div class="flex-1 flex flex-col min-w-0 overflow-hidden relative">
-      <!-- Background Shapes -->
       <div class="absolute inset-0 pointer-events-none overflow-hidden z-0">
         <div class="absolute top-0 right-0 w-[40%] h-[40%] bg-surface-muted/20 blur-3xl rounded-full translate-x-1/2 -translate-y-1/2"></div>
         <div class="absolute bottom-0 left-0 w-[35%] h-[35%] bg-surface-muted/20 blur-3xl rounded-full -translate-x-1/2 translate-y-1/2"></div>
       </div>
 
-      <!-- Header -->
-      <header v-if="showHeader" class="h-24 flex items-center justify-between px-10 border-b border-border-muted bg-surface/80 backdrop-blur-md z-10 shrink-0">
-        <div>
-          <div class="flex items-center gap-3">
-            <h1 class="text-h2 font-semibold text-ink">{{ currentTitle }}</h1>
-            <span class="px-2 py-0.5 bg-surface-subtle text-ink-secondary text-overline font-bold uppercase tracking-wider rounded-pill border border-border-muted">
-              Workspace
-            </span>
+      <header class="border-b border-border-muted bg-surface/80 backdrop-blur-md z-10 shrink-0">
+        <div class="px-4 py-4 md:px-8 md:py-5">
+          <div class="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
+            <div class="min-w-0">
+              <h1 class="text-h2 font-semibold text-ink">{{ currentTitle }}</h1>
+              <p class="text-body-sm text-ink-muted font-fraunces italic mt-1">
+                {{ currentSubtitle }}
+              </p>
+            </div>
+
+            <nav class="hidden lg:flex items-center gap-1" aria-label="Professional Development sections">
+              <router-link
+                v-for="item in navItems"
+                :key="item.name"
+                :to="item.path"
+                class="min-h-touch inline-flex items-center px-3 py-2 rounded-control text-body-sm transition-colors duration-standard whitespace-nowrap"
+                :class="isActive(item.path)
+                  ? 'bg-state-selected text-ink font-semibold'
+                  : 'text-ink-secondary hover:bg-surface-subtle'"
+              >
+                {{ item.shortName || item.name }}
+              </router-link>
+            </nav>
+
+            <div class="lg:hidden">
+              <label for="professional-development-section" class="sr-only">
+                Professional Development section
+              </label>
+              <select
+                id="professional-development-section"
+                :value="activePath"
+                class="w-full min-h-touch rounded-control border border-border bg-surface-elevated px-3 py-2 text-body-sm text-ink"
+                aria-label="Professional Development section"
+                @change="handleSectionChange"
+              >
+                <option v-for="item in navItems" :key="item.path" :value="item.path">
+                  {{ item.name }}
+                </option>
+              </select>
+            </div>
           </div>
-          <p class="text-body-sm text-ink-muted font-fraunces italic mt-1">
-            {{ currentSubtitle }}
-          </p>
-        </div>
-        
-        <div class="flex items-center gap-4">
-          <!-- Action buttons could go here -->
         </div>
       </header>
 
-      <!-- View Content -->
       <main class="flex-1 overflow-auto z-10 relative">
         <router-view v-slot="{ Component }">
           <transition name="fade-up" mode="out-in" appear>
-            <component 
-              :is="Component" 
+            <component
+              :is="Component"
               v-bind="childProps"
               @toggle-supervision="handleToggleSupervision"
               @open-reflection="handleOpenReflection"
@@ -86,7 +65,6 @@
       </main>
     </div>
 
-    <!-- Modals (Shared across sub-views) -->
     <PrivateReflectionModal
       v-if="selectedReflection"
       :reflection="selectedReflection"
@@ -113,67 +91,46 @@ const actionLoading = ref(null);
 const selectedReflection = ref(null);
 
 const navItems = [
-  { name: 'Home', path: '/supervision', icon: '🏠' },
-  { name: 'Review Reflections', path: '/supervision/reflections', icon: '📓' },
-  { name: 'Supervision Workspace', path: '/supervision/workspace', icon: '💼' },
-  { name: 'Growth & Learning', path: '/supervision/growth', icon: '📈' },
-  { name: 'Insights', path: '/supervision/insights', icon: '✨' },
+  { name: 'Home', path: '/supervision' },
+  { name: 'Review Reflections', shortName: 'Reflections', path: '/supervision/reflections' },
+  { name: 'Supervision Workspace', shortName: 'Supervision', path: '/supervision/workspace' },
+  { name: 'Growth & Learning', path: '/supervision/growth' },
+  { name: 'Insights', path: '/supervision/insights' },
 ];
-
-const showHeader = computed(() => route.path !== '/supervision');
 
 const currentTitle = computed(() => {
   if (route.path.includes('/reflections')) return 'Review Reflections';
   if (route.path.includes('/workspace')) return 'Supervision Workspace';
   if (route.path.includes('/growth')) return 'Growth & Learning';
   if (route.path.includes('/insights')) return 'Insights';
-  return '';
+  return 'Professional Development';
 });
 
 const currentSubtitle = computed(() => {
   if (route.path.includes('/reflections')) return 'Browse your reflective journal and revisit previous thinking.';
   if (route.path.includes('/workspace')) return 'Curate reflections for your next supervision session.';
   if (route.path.includes('/growth')) return 'Identify patterns, strengths and opportunities for development.';
-  if (route.path.includes('/insights')) return 'Understand trends across your reflective practice.';
-  return '';
+  if (route.path.includes('/insights')) return 'Notice recurring patterns across your reflective practice.';
+  return 'Reflect on your practice, prepare for supervision and support your ongoing learning.';
 });
 
 const themeStats = computed(() => {
   const counts = { All: reflections.value.length };
   const themeList = ['All'];
-  
-  reflections.value.forEach(r => {
-    const t = r.theme || 'No theme';
-    counts[t] = (counts[t] || 0) + 1;
-    if (!themeList.includes(t)) themeList.push(t);
+
+  reflections.value.forEach(reflection => {
+    const theme = reflection.theme || 'No theme';
+    counts[theme] = (counts[theme] || 0) + 1;
+    if (!themeList.includes(theme)) themeList.push(theme);
   });
 
-  const sortedThemes = themeList.filter(t => t !== 'All' && t !== 'No theme').sort();
+  const sortedThemes = themeList.filter(theme => theme !== 'All' && theme !== 'No theme').sort();
   if (themeList.includes('No theme')) sortedThemes.push('No theme');
-  
-  return ['All', ...sortedThemes].map(t => ({
-    name: t,
-    count: counts[t]
+
+  return ['All', ...sortedThemes].map(theme => ({
+    name: theme,
+    count: counts[theme]
   }));
-});
-
-const stats = computed(() => {
-  const count = reflections.value.length;
-  const latest = reflections.value[0];
-  
-  const themeMap = {};
-  reflections.value.forEach(r => {
-    const t = r.theme || 'No theme';
-    themeMap[t] = (themeMap[t] || 0) + 1;
-  });
-  const leadingTheme = Object.entries(themeMap)
-    .sort((a, b) => b[1] - a[1])[0]?.[0] || 'None';
-
-  return {
-    reflectionsCount: count,
-    leadingTheme: leadingTheme,
-    latestReflectionDate: latest ? new Date(latest.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : 'None'
-  };
 });
 
 const childProps = computed(() => ({
@@ -183,10 +140,16 @@ const childProps = computed(() => ({
   themes: themeStats.value
 }));
 
-const isActive = (path) => {
+const isActive = path => {
   if (path === '/supervision') return route.path === '/supervision';
   return route.path.startsWith(path);
 };
+
+const activePath = computed(() => navItems.find(item => isActive(item.path))?.path || '/supervision');
+
+function handleSectionChange(event) {
+  router.push(event.target.value);
+}
 
 async function loadData() {
   loading.value = true;
@@ -208,9 +171,9 @@ async function handleToggleSupervision(reflection) {
       reflectionId: reflection.id,
       included: !reflection.included_in_supervision
     });
-    const idx = reflections.value.findIndex(r => r.id === reflection.id);
-    if (idx !== -1) {
-      reflections.value[idx] = { ...reflections.value[idx], ...updated };
+    const index = reflections.value.findIndex(item => item.id === reflection.id);
+    if (index !== -1) {
+      reflections.value[index] = { ...reflections.value[index], ...updated };
     }
     if (selectedReflection.value?.id === reflection.id) {
       selectedReflection.value = { ...selectedReflection.value, ...updated };
@@ -234,7 +197,6 @@ function handleGoToSession(reflection) {
 
 onMounted(loadData);
 
-// Provide state to children if needed
 provide('reflections', reflections);
 provide('loadData', loadData);
 </script>
