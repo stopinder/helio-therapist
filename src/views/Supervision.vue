@@ -392,7 +392,7 @@
       </div>
 
       <div class="p-8 overflow-y-auto flex-1">
-        <div class="mb-8 space-y-2 bg-surface-subtle p-4 rounded-panel border border-border-muted">
+        <div class="mb-6 space-y-2 bg-surface-subtle p-4 rounded-panel border border-border-muted">
           <div v-if="selectedReflection.clients?.display_name" class="flex items-center gap-3 text-body-sm text-ink-secondary">
             <span class="w-5 text-center grayscale">👤</span>
             <span class="font-medium">Client:</span> {{ selectedReflection.clients.display_name }}
@@ -433,7 +433,7 @@
               :disabled="actionLoading === selectedReflection.id"
               class="text-body-sm font-semibold text-state-danger hover:underline disabled:opacity-50"
             >
-              Remove
+              Remove from Pack
             </button>
           </div>
           <button
@@ -459,11 +459,11 @@
     aria-modal="true"
     aria-labelledby="export-modal-title"
   >
-    <div class="w-full max-w-4xl bg-surface rounded-panel shadow-overlay max-h-[90vh] flex flex-col overflow-hidden border border-border no-print">
+    <div class="w-full max-w-5xl bg-surface rounded-panel shadow-overlay max-h-[90vh] flex flex-col overflow-hidden border border-border no-print">
       <div class="p-6 border-b border-border-muted flex justify-between items-center bg-surface-elevated">
         <div>
-          <h2 id="export-modal-title" class="text-h2 font-semibold text-ink">Export Preview</h2>
-          <p class="text-caption text-ink-muted mt-1">Review your content before printing or copying.</p>
+          <h2 id="export-modal-title" class="text-h2 font-semibold text-ink">Supervision Report Preview</h2>
+          <p class="text-caption text-ink-muted mt-1">Review your content and anonymise before printing or copying.</p>
         </div>
         <button 
           @click="closeExportPreview"
@@ -476,68 +476,133 @@
         </button>
       </div>
 
-      <div class="flex-1 overflow-auto bg-surface-subtle p-6">
-        <div class="max-w-3xl mx-auto bg-white shadow-sm border border-border-muted min-h-full p-12 print-content" id="printable-pack">
-          <div class="mb-12 pb-6 border-b-2 border-ink">
-            <h1 class="text-3xl font-bold text-ink uppercase tracking-tighter">Supervision Pack</h1>
-            <p class="text-body-sm text-ink-muted mt-2">
-              Generated on {{ new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) }}
-            </p>
-          </div>
+      <div class="flex-1 flex flex-col md:flex-row overflow-hidden bg-surface-subtle">
+        <!-- Options Sidebar -->
+        <div class="w-full md:w-80 border-r border-border-muted bg-surface p-6 overflow-y-auto">
+          <div class="space-y-6">
+            <div>
+              <h3 class="text-overline font-bold text-ink-muted uppercase tracking-wider mb-4">Content Options</h3>
+              <div class="space-y-4">
+                <label class="flex items-center gap-3 cursor-pointer group">
+                  <div class="relative inline-block w-10 h-5 transition duration-200 ease-in-out bg-surface-subtle border border-border rounded-full">
+                    <input 
+                      type="checkbox" 
+                      v-model="exportOptions.includeText"
+                      class="absolute block w-4 h-4 mt-0.5 ml-0.5 bg-white border border-border rounded-full appearance-none cursor-pointer transition-transform duration-200 ease-in-out checked:translate-x-5 checked:bg-state-selected"
+                    />
+                  </div>
+                  <span class="text-body-sm font-medium text-ink group-hover:text-state-selected transition-colors">Include reflection text</span>
+                </label>
+                
+                <label class="flex items-center gap-3 cursor-pointer group">
+                  <div class="relative inline-block w-10 h-5 transition duration-200 ease-in-out bg-surface-subtle border border-border rounded-full">
+                    <input 
+                      type="checkbox" 
+                      v-model="exportOptions.includeThemes"
+                      class="absolute block w-4 h-4 mt-0.5 ml-0.5 bg-white border border-border rounded-full appearance-none cursor-pointer transition-transform duration-200 ease-in-out checked:translate-x-5 checked:bg-state-selected"
+                    />
+                  </div>
+                  <span class="text-body-sm font-medium text-ink group-hover:text-state-selected transition-colors">Include themes</span>
+                </label>
 
-          <div class="space-y-12">
-            <div v-for="reflection in supervisionPackReflections" :key="'export-' + reflection.id" class="break-inside-avoid">
-              <div class="flex justify-between items-baseline mb-4">
-                <div class="flex gap-4 items-center">
-                  <span class="text-caption font-bold text-ink uppercase tracking-widest">{{ formatDate(reflection.created_at) }}</span>
-                  <span v-if="reflection.theme" class="text-caption font-bold text-ink-secondary uppercase border-l border-border-muted pl-4">{{ reflection.theme }}</span>
-                </div>
-                <div class="text-caption font-bold text-ink-muted italic">
-                  {{ includeClientNames && reflection.clients?.display_name ? reflection.clients.display_name : (reflection.clients?.display_name ? clientAliases[reflection.clients.display_name] : 'Anonymous') }}
+                <label class="flex items-center gap-3 cursor-pointer group">
+                  <div class="relative inline-block w-10 h-5 transition duration-200 ease-in-out bg-surface-subtle border border-border rounded-full">
+                    <input 
+                      type="checkbox" 
+                      v-model="exportOptions.includeDates"
+                      class="absolute block w-4 h-4 mt-0.5 ml-0.5 bg-white border border-border rounded-full appearance-none cursor-pointer transition-transform duration-200 ease-in-out checked:translate-x-5 checked:bg-state-selected"
+                    />
+                  </div>
+                  <span class="text-body-sm font-medium text-ink group-hover:text-state-selected transition-colors">Include dates</span>
+                </label>
+              </div>
+            </div>
+
+            <div>
+              <h3 class="text-overline font-bold text-ink-muted uppercase tracking-wider mb-4">Privacy Options</h3>
+              <div class="space-y-4">
+                <label class="flex items-center gap-3 cursor-pointer group">
+                  <div class="relative inline-block w-10 h-5 transition duration-200 ease-in-out bg-surface-subtle border border-border rounded-full">
+                    <input 
+                      type="checkbox" 
+                      v-model="exportOptions.includeClientReferences"
+                      class="absolute block w-4 h-4 mt-0.5 ml-0.5 bg-white border border-border rounded-full appearance-none cursor-pointer transition-transform duration-200 ease-in-out checked:translate-x-5 checked:bg-state-selected"
+                    />
+                  </div>
+                  <span class="text-body-sm font-medium text-ink group-hover:text-state-selected transition-colors">Include client names</span>
+                </label>
+                <div class="p-3 bg-state-info-surface border border-state-info/20 rounded-control text-caption text-ink-secondary">
+                  <span class="font-bold text-state-info uppercase tracking-tighter block mb-1">Privacy Rule</span>
+                  Client names are excluded by default. Session and Client UUIDs are always excluded from exports.
                 </div>
               </div>
-              <p class="text-body text-ink whitespace-pre-wrap leading-relaxed border-l-4 border-surface-subtle pl-6 py-2">
-                {{ reflection.body }}
-              </p>
+            </div>
+
+            <div>
+              <h3 class="text-overline font-bold text-ink-muted uppercase tracking-wider mb-2">Introduction (Optional)</h3>
+              <textarea 
+                v-model="therapistIntroduction"
+                rows="4"
+                placeholder="Add a brief introduction to your report..."
+                class="w-full p-3 bg-surface border border-border rounded-control text-body-sm focus:ring-2 focus:ring-state-selected/20 focus:border-state-selected outline-none transition-all resize-none"
+              ></textarea>
             </div>
           </div>
+        </div>
 
-          <div class="mt-20 pt-8 border-t border-border-muted text-center">
-            <p class="text-overline text-ink-subtle">Private & Confidential • Generated by Helios Therapist</p>
+        <!-- Preview Area -->
+        <div class="flex-1 overflow-auto p-6 md:p-12 bg-surface-subtle flex justify-center">
+          <div class="w-full max-w-[21cm] bg-white shadow-lg border border-border-muted min-h-full p-[2cm] print-content" id="printable-pack">
+            <div class="mb-12 pb-6 border-b-2 border-ink">
+              <h1 class="text-3xl font-bold text-ink uppercase tracking-tighter">Supervision Report</h1>
+              <p class="text-body-sm text-ink-muted mt-2">
+                Generated on {{ new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) }}
+              </p>
+            </div>
+
+            <div v-if="therapistIntroduction" class="mb-10 text-body text-ink leading-relaxed whitespace-pre-wrap italic border-l-2 border-border-muted pl-4 py-1">
+              {{ therapistIntroduction }}
+            </div>
+
+            <div class="space-y-12">
+              <div v-for="reflection in supervisionPackReflections" :key="'export-' + reflection.id" class="break-inside-avoid">
+                <div class="flex justify-between items-baseline mb-4">
+                  <div class="flex gap-4 items-center">
+                    <span v-if="exportOptions.includeDates" class="text-caption font-bold text-ink uppercase tracking-widest">{{ formatDate(reflection.created_at) }}</span>
+                    <span v-if="exportOptions.includeThemes && reflection.theme" class="text-caption font-bold text-ink-secondary uppercase border-l border-border-muted pl-4">{{ reflection.theme }}</span>
+                  </div>
+                  <div class="text-caption font-bold text-ink-muted italic">
+                    {{ exportOptions.includeClientReferences && reflection.clients?.display_name ? reflection.clients.display_name : (reflection.clients?.display_name ? clientAliases[reflection.clients.display_name] : 'Anonymous') }}
+                  </div>
+                </div>
+                <p v-if="exportOptions.includeText" class="text-body text-ink whitespace-pre-wrap leading-relaxed border-l-4 border-surface-subtle pl-6 py-2">
+                  {{ reflection.body }}
+                </p>
+              </div>
+            </div>
+
+            <div class="mt-20 pt-8 border-t border-border-muted text-center">
+              <p class="text-overline text-ink-subtle italic">Private & Confidential • Professional Development Record • Generated via Helios Therapist</p>
+            </div>
           </div>
         </div>
       </div>
 
-      <div class="p-6 border-t border-border-muted bg-surface-elevated flex flex-col sm:flex-row justify-between items-center gap-4">
-        <div class="flex items-center gap-3">
-          <label class="flex items-center gap-2 cursor-pointer select-none">
-            <div class="relative inline-block w-10 h-5 transition duration-200 ease-in-out bg-surface-subtle border border-border rounded-full">
-              <input 
-                type="checkbox" 
-                v-model="includeClientNames"
-                class="absolute block w-4 h-4 mt-0.5 ml-0.5 bg-white border border-border rounded-full appearance-none cursor-pointer transition-transform duration-200 ease-in-out checked:translate-x-5 checked:bg-state-selected"
-              />
-            </div>
-            <span class="text-body-sm font-medium text-ink">Include client names</span>
-          </label>
-        </div>
-
-        <div class="flex gap-3 w-full sm:w-auto">
-          <button
-            @click="copyExportText"
-            class="flex-1 sm:flex-none px-6 py-2.5 bg-surface border border-border text-body-sm font-bold text-ink rounded-pill hover:bg-surface-subtle transition-all flex items-center justify-center gap-2"
-          >
-            <span>{{ copying ? '✅' : '📋' }}</span>
-            {{ copying ? 'Copied!' : 'Copy Text' }}
-          </button>
-          <button
-            @click="printPack"
-            class="flex-1 sm:flex-none px-6 py-2.5 bg-ink text-white text-body-sm font-bold rounded-pill hover:opacity-90 transition-all flex items-center justify-center gap-2"
-          >
-            <span>🖨️</span>
-            Print / PDF
-          </button>
-        </div>
+      <div class="p-6 border-t border-border-muted bg-surface-elevated flex justify-end items-center gap-4">
+        <button
+          @click="copyExportText"
+          class="px-6 py-2.5 bg-surface border border-border text-body-sm font-bold text-ink rounded-pill hover:bg-surface-subtle transition-all flex items-center justify-center gap-2 shadow-sm"
+        >
+          <span>{{ copying ? '✅' : '📋' }}</span>
+          {{ copying ? 'Copied!' : 'Copy Formatted Text' }}
+        </button>
+        <button
+          @click="printPack"
+          class="px-8 py-2.5 bg-ink text-white text-body-sm font-bold rounded-pill hover:opacity-90 transition-all flex items-center justify-center gap-2 shadow-md"
+        >
+          <span>🖨️</span>
+          Print / PDF
+        </button>
       </div>
     </div>
   </div>
@@ -590,7 +655,13 @@ const selectedReflection = ref(null);
 const selectedTheme = ref('All');
 const activeView = ref('timeline'); // 'timeline', 'insights' or 'pack'
 const exportPreviewOpen = ref(false);
-const includeClientNames = ref(false);
+const exportOptions = ref({
+  includeText: true,
+  includeThemes: true,
+  includeDates: true,
+  includeClientReferences: false
+});
+const therapistIntroduction = ref('');
 const copying = ref(false);
 
 const supervisionPackReflections = computed(() => {
@@ -774,19 +845,32 @@ async function copyExportText() {
   copying.value = true;
   
   try {
-    let text = "SUPERVISION PACK\n";
+    let text = "SUPERVISION REPORT\n";
     text += `Generated on ${new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}\n\n`;
     
+    if (therapistIntroduction.value) {
+      text += `${therapistIntroduction.value}\n\n`;
+    }
+    
     supervisionPackReflections.value.forEach(r => {
-      text += `DATE: ${formatDate(r.created_at)}\n`;
-      if (r.theme) text += `THEME: ${r.theme}\n`;
+      if (exportOptions.value.includeDates) {
+        text += `DATE: ${formatDate(r.created_at)}\n`;
+      }
       
-      const clientRef = includeClientNames.value && r.clients?.display_name 
+      if (exportOptions.value.includeThemes && r.theme) {
+        text += `THEME: ${r.theme}\n`;
+      }
+      
+      const clientRef = exportOptions.value.includeClientReferences && r.clients?.display_name 
         ? r.clients.display_name 
         : (r.clients?.display_name ? clientAliases.value[r.clients.display_name] : 'Anonymous');
       text += `CASE: ${clientRef}\n`;
       
-      text += `\n"${r.body}"\n\n`;
+      if (exportOptions.value.includeText) {
+        text += `\n"${r.body}"\n\n`;
+      } else {
+        text += `\n`;
+      }
       text += `-------------------\n\n`;
     });
     

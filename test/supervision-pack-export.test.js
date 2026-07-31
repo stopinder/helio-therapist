@@ -26,13 +26,14 @@ test('Supervision Pack View and Export Flow', async () => {
 
   // 5. Export preview modal
   assert.match(content, /exportPreviewOpen/)
-  assert.match(content, /Export Preview/)
-  assert.match(content, /includeClientNames/)
+  assert.match(content, /Supervision Report Preview/)
+  assert.match(content, /exportOptions/)
 
   // 6. Export privacy: default excluded client names, exclude UUIDs
-  assert.match(content, /const includeClientNames = ref\(false\)/)
+  assert.match(content, /includeClientReferences: false/)
   // Ensure we use aliases when client names are excluded
-  assert.match(content, /includeClientNames && reflection\.clients\?\.display_name \? reflection\.clients\.display_name : \(reflection\.clients\?\.display_name \? clientAliases\[reflection\.clients\.display_name\] : 'Anonymous'\)/)
+  assert.match(content, /exportOptions\.value\.includeClientReferences && r\.clients\?\.display_name/)
+  assert.match(content, /exportOptions\.includeClientReferences && reflection\.clients\?\.display_name \? reflection\.clients\.display_name : \(reflection\.clients\?\.display_name \? clientAliases\[reflection\.clients\.display_name\] : 'Anonymous'\)/)
   
   // 7. Export actions: Copy and Print
   assert.match(content, /copyExportText/)
