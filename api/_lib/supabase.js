@@ -12,14 +12,6 @@ export function getSupabaseClient() {
     ''
   ).trim();
 
-  // Diagnostics
-  console.log(`[Supabase Diagnostics]
-    SUPABASE_URL exists: ${!!supabaseUrl} (length: ${supabaseUrl.length})
-    SUPABASE_SERVICE_ROLE_KEY exists: ${!!supabaseServiceKey} (length: ${supabaseServiceKey.length})
-    VERCEL_ENV: ${process.env.VERCEL_ENV || 'not set'}
-    VERCEL_GIT_COMMIT_SHA: ${process.env.VERCEL_GIT_COMMIT_SHA || 'not set'}
-  `.trim());
-
   if (!supabaseUrl || !supabaseServiceKey) {
     const missing = [];
     if (!supabaseUrl) missing.push('SUPABASE_URL');
@@ -32,6 +24,30 @@ export function getSupabaseClient() {
   }
 
   return createClient(supabaseUrl, supabaseServiceKey);
+}
+
+/**
+ * Creates and returns a Supabase client authenticated with the user's token.
+ * This ensures RLS is applied.
+ */
+export function getSupabaseUserClient(req) {
+  const supabaseUrl = (process.env.SUPABASE_URL || '').trim();
+  const supabaseAnonKey = (process.env.SUPABASE_ANON_KEY || '').trim();
+  const authorization = req.headers.authorization || '';
+  const match = authorization.match(/^Bearer\s+(.+)$/i);
+  const token = match ? match[1] : null;
+
+  if (!supabaseUrl || !supabaseAnonKey) {
+    const error = new Error('Supabase configuration missing');
+    error.status = 500;
+    throw error;
+  }
+
+  const options = token 
+    ? { global: { headers: { Authorization: `Bearer ${token}` } } }
+    : {};
+
+  return createClient(supabaseUrl, supabaseAnonKey, options);
 }
 
 export async function requireAuthenticatedUser(req) {

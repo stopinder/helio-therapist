@@ -41,23 +41,36 @@ export function validateAIReflectionResponse(content) {
     ];
     
     for (const field of requiredFields) {
-      if (!data[field]) return null;
+      if (data[field] === undefined || data[field] === null) return null;
     }
 
-    // Apply limits
+    const toString = (val) => String(val || '');
+    const trimAndLimit = (val, limit) => toString(val).trim().substring(0, limit);
+
+    // Apply limits and ensure they are arrays before slicing
     return {
-      reflective_questions: data.reflective_questions.slice(0, 3),
-      possible_themes: data.possible_themes.slice(0, 3).map(t => ({
-        theme: String(t.theme || '').substring(0, 100),
-        reason: String(t.reason || '').substring(0, 300)
-      })),
-      alternative_perspectives: data.alternative_perspectives.slice(0, 2),
-      ethical_considerations: data.ethical_considerations.slice(0, 2),
-      learning_points: data.learning_points.slice(0, 2),
-      limitations: String(data.limitations || '').substring(0, 500)
+      reflective_questions: Array.isArray(data.reflective_questions) 
+        ? data.reflective_questions.slice(0, 3).map(q => trimAndLimit(q, 500)) 
+        : [],
+      possible_themes: Array.isArray(data.possible_themes) 
+        ? data.possible_themes.slice(0, 3).map(t => ({
+            theme: trimAndLimit(t?.theme, 100),
+            reason: trimAndLimit(t?.reason, 300)
+          }))
+        : [],
+      alternative_perspectives: Array.isArray(data.alternative_perspectives) 
+        ? data.alternative_perspectives.slice(0, 2).map(p => trimAndLimit(p, 500)) 
+        : [],
+      ethical_considerations: Array.isArray(data.ethical_considerations) 
+        ? data.ethical_considerations.slice(0, 2).map(e => trimAndLimit(e, 500)) 
+        : [],
+      learning_points: Array.isArray(data.learning_points) 
+        ? data.learning_points.slice(0, 2).map(l => trimAndLimit(l, 500)) 
+        : [],
+      limitations: trimAndLimit(data.limitations, 500)
     };
   } catch (e) {
-    console.error('[AI Reflection] Validation failed:', e);
+    console.error('[AI Reflection] Validation failed');
     return null;
   }
 }

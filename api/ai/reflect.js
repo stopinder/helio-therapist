@@ -1,5 +1,5 @@
 import OpenAI from 'openai';
-import { requireAuthenticatedUser } from '../_lib/supabase.js';
+import { requireAuthenticatedUser, getSupabaseUserClient } from '../_lib/supabase.js';
 import {
   aiReflectionSystemPrompt,
   buildReflectionInput,
@@ -20,23 +20,35 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { supabase, user } = await requireAuthenticatedUser(req);
-    const { reflectionId } = req.body;
-
-    if (!reflectionId) {
+    const { user } = await requireAuthenticatedUser(req);
+    
+    // Issue 5: Reject bodies containing fields other than reflectionId
+    const bodyKeys = Object.keys(req.body || {});
+    if (bodyKeys.length !== 1 || bodyKeys[0] !== 'reflectionId') {
       return res.status(400).json({
         success: false,
-        error: { code: 'MISSING_REFLECTION_ID', message: 'Reflection ID is required' }
+        error: { code: 'INVALID_REQUEST', message: 'Invalid request body' }
       });
     }
 
+    const { reflectionId } = req.body;
+
+    // Issue 5: Enforce valid reflection ID format (UUID check)
+    if (!reflectionId || typeof reflectionId !== 'string' || !/^[0-9a-f-]{36}$/i.test(reflectionId)) {
+      return res.status(400).json({
+        success: false,
+        error: { code: 'INVALID_REFLECTION_ID', message: 'Invalid reflection ID format' }
+      });
+    }
+
+    // Issue 1: Use Supabase client with user's token to apply RLS
+    const supabase = getSupabaseUserClient(req);
+
     // 1. Load the reflection from private_reflections, ensuring ownership
-    // We use the service-role client provided by requireAuthenticatedUser but filter by user.id
     const { data: reflection, error: fetchError } = await supabase
       .from('private_reflections')
-      .select('id, user_id, body, theme, supervision_question')
+      .select('id, body, theme, supervision_question')
       .eq('id', reflectionId)
-      .eq('user_id', user.id)
       .single();
 
     if (fetchError || !reflection) {
@@ -47,8 +59,8 @@ export default async function handler(req, res) {
     }
 
     // 2. Data minimisation & validation
-    const body = (reflection.body || '').trim();
-    if (body.length < AI_REFLECTION_MINIMUM_CHARACTERS) {
+    const reflectionBody = (reflection.body || '').trim();
+    if (reflectionBody.length < AI_REFLECTION_MINIMUM_CHARACTERS) {
       return res.status(422).json({
         success: false,
         error: {
@@ -58,7 +70,7 @@ export default async function handler(req, res) {
       });
     }
 
-    if (body.length > AI_REFLECTION_MAX_INPUT_CHARACTERS) {
+    if (reflectionBody.length > AI_REFLECTION_MAX_INPUT_CHARACTERS) {
         return res.status(422).json({
           success: false,
           error: {
@@ -69,15 +81,19 @@ export default async function handler(req, res) {
     }
 
     if (!process.env.OPENAI_API_KEY) {
-      console.error('[AI Reflection] OPENAI_API_KEY is missing');
+      console.error('[AI Reflection] API key missing');
       return res.status(503).json({
         success: false,
         error: { code: 'SERVICE_UNAVAILABLE', message: 'AI reflection support is temporarily unavailable.' }
       });
     }
 
-    // 3. Call OpenAI
-    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+    // 3. Call OpenAI with timeout (Issue 3)
+    const openai = new OpenAI({ 
+      apiKey: process.env.OPENAI_API_KEY,
+      timeout: 20000 // 20 seconds
+    });
+
     const completion = await openai.chat.completions.create({
       model,
       messages: [
@@ -85,35 +101,43 @@ export default async function handler(req, res) {
         { role: 'user', content: buildReflectionInput(reflection) }
       ],
       response_format: { type: 'json_object' },
-      temperature: 0.7
+      temperature: 0.7,
+      max_tokens: 1000 // Issue 5: Limit output tokens
     });
 
-    // 4. Validate & clean response
+    // 4. Validate & clean response (Issue 4)
     const aiOutput = validateAIReflectionResponse(completion.choices?.[0]?.message?.content);
     if (!aiOutput) {
-      console.error('[AI Reflection] Malformed AI response');
+      console.error('[AI Reflection] Validation failed');
       return res.status(502).json({
         success: false,
         error: { code: 'INVALID_AI_RESPONSE', message: 'AI reflection support is temporarily unavailable.' }
       });
     }
 
-    // 5. Logging (Permitted logs only)
-    console.log(`[AI Reflection] Success: req_id=${req.headers['x-vercel-id'] || 'local'}, user_id=${user.id}, tokens=${completion.usage?.total_tokens || 0}`);
+    // 5. Logging (Issue 2: Permitted logs only, NO user_id or reflection content)
+    console.log(`[AI Reflection] Success: tokens=${completion.usage?.total_tokens || 0}`);
 
     return res.status(200).json({
       success: true,
       data: aiOutput
     });
-
   } catch (error) {
+    // Issue 3: Handle timeout
+    if (error.name === 'OpenAIConnectionTimeoutError' || error.status === 504) {
+      return res.status(504).json({
+        success: false,
+        error: { code: 'GATEWAY_TIMEOUT', message: 'AI reflection support is temporarily unavailable. Your reflection has not been changed.' }
+      });
+    }
+
     console.error('[AI Reflection] Error:', error.message);
     const status = error.status || 500;
     const code = error.code || 'INTERNAL_SERVER_ERROR';
-    
+
     return res.status(status).json({
       success: false,
-      error: { 
+      error: {
         code: status === 401 ? 'UNAUTHORIZED' : code,
         message: status === 401 ? 'Please sign in again.' : 'AI reflection support is temporarily unavailable. Your reflection has not been changed.'
       }

@@ -60,6 +60,61 @@ test('AI Reflection Library: validateAIReflectionResponse fails on missing field
   assert.strictEqual(validated, null);
 });
 
+test('AI Reflection Library: validateAIReflectionResponse handles malformed arrays', () => {
+  const malformedResponse = {
+    reflective_questions: "not an array",
+    possible_themes: [],
+    alternative_perspectives: 123,
+    ethical_considerations: {},
+    learning_points: undefined,
+    limitations: "Still valid string"
+  };
+  // Note: the current logic returns null if ANY required field is missing/null/undefined.
+  // We need to provide all required fields (even if they are the wrong type) to avoid returning null early.
+  const malformedButComplete = {
+    reflective_questions: "not an array",
+    possible_themes: null, // this will cause it to return null based on the loop
+    alternative_perspectives: 123,
+    ethical_considerations: {},
+    learning_points: [],
+    limitations: "Still valid string"
+  };
+  
+  // Let's adjust the test to match the code or vice versa.
+  // Actually, let's fix the test to provide all keys.
+  const testInput = {
+    reflective_questions: "not an array",
+    possible_themes: "not an array",
+    alternative_perspectives: 123,
+    ethical_considerations: {},
+    learning_points: [],
+    limitations: "Still valid string"
+  };
+
+  const validated = validateAIReflectionResponse(testInput);
+  assert.ok(validated);
+  assert.strictEqual(validated.reflective_questions.length, 0);
+  assert.strictEqual(validated.possible_themes.length, 0);
+  assert.strictEqual(validated.limitations, "Still valid string");
+});
+
+test('AI Reflection Library: validateAIReflectionResponse trims and limits strings', () => {
+  const longString = 'a'.repeat(1000);
+  const response = {
+    reflective_questions: [longString],
+    possible_themes: [{ theme: longString, reason: longString }],
+    alternative_perspectives: [longString],
+    ethical_considerations: [longString],
+    learning_points: [longString],
+    limitations: longString
+  };
+  const validated = validateAIReflectionResponse(response);
+  assert.strictEqual(validated.reflective_questions[0].length, 500);
+  assert.strictEqual(validated.possible_themes[0].theme.length, 100);
+  assert.strictEqual(validated.possible_themes[0].reason.length, 300);
+  assert.strictEqual(validated.limitations.length, 500);
+});
+
 test('AI Reflection Library: System Prompt contents', () => {
   assert.ok(aiReflectionSystemPrompt.includes('support the therapist\'s own reflective practice'));
   assert.ok(aiReflectionSystemPrompt.includes('DO NOT diagnose'));
