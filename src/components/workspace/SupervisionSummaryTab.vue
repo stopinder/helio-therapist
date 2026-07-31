@@ -2,7 +2,7 @@
   <div class="space-y-stack-lg max-w-4xl mx-auto">
     <div class="bg-surface-elevated border border-border-muted rounded-panel p-6 shadow-sm">
       <div class="flex items-center justify-between mb-8">
-        <h3 class="text-h3 font-semibold text-ink">Supervision Summary</h3>
+        <h3 class="text-h3 font-semibold text-ink">Professional Development</h3>
         <button class="px-inline-md py-stack-xs bg-surface border border-border text-body-sm font-medium text-ink rounded-control hover:bg-surface-subtle transition-colors">
           Add to Supervision Agenda
         </button>

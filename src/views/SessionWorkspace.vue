@@ -26,12 +26,9 @@
       />
 
       <!-- Workflow Indicator -->
-      <WorkflowIndicator :activeStage="activeTab" />
-
-      <!-- Tabs -->
-      <SessionWorkspaceTabs
-        :tabs="tabs"
-        v-model:activeTab="activeTab"
+      <WorkflowIndicator 
+        :activeStage="activeTab" 
+        @select-stage="activeTab = $event"
       />
 
       <!-- Tab Content -->
@@ -54,7 +51,7 @@
             :session="session"
             @update:session="session = $event"
           />
-          <SupervisionSummaryTab v-else-if="activeTab === 'Supervision Summary'" />
+          <SupervisionSummaryTab v-else-if="activeTab === 'Professional Development'" />
         </div>
       </div>
 
@@ -92,7 +89,6 @@ import { getSession, completeSessionRecord } from '../lib/sessions.js';
 import { getClient } from '../lib/clients.js';
 import { mockSession } from '../mocks/sessionWorkspaceData.js';
 import SessionWorkspaceHeader from '../components/workspace/SessionWorkspaceHeader.vue';
-import SessionWorkspaceTabs from '../components/workspace/SessionWorkspaceTabs.vue';
 import WorkflowIndicator from '../components/workspace/WorkflowIndicator.vue';
 import TranscriptTab from '../components/workspace/TranscriptTab.vue';
 import TherapistNotesTab from '../components/workspace/TherapistNotesTab.vue';
@@ -112,7 +108,7 @@ const tabs = [
   'Notes',
   'Reflection',
   'Clinical Record',
-  'Supervision Summary'
+  'Professional Development'
 ];
 
 const activeTab = ref('Transcript');
