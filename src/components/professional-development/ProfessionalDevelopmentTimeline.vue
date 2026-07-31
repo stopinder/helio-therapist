@@ -1,6 +1,6 @@
 <template>
   <div>
-    <div v-if="reflections.length === 0" class="py-24 text-center bg-surface-reflection border border-border-reflection rounded-[2.5rem] shadow-sm">
+    <div v-if="reflections.length === 0" class="py-24 text-center bg-surface-reflection border border-border-reflection rounded-panel shadow-sm">
       <div class="max-w-md mx-auto px-8">
         <div class="text-5xl mb-8 opacity-80">✍️</div>
         <h3 class="editorial-heading text-h1 text-ink mb-4">Your Reflective Space</h3>
@@ -37,9 +37,9 @@
             <div
               v-for="reflection in group.items"
               :key="reflection.id"
-              class="reflection-row relative flex flex-col p-0 bg-surface-elevated border border-border-muted rounded-[1.5rem] shadow-sm transition-all duration-slow overflow-hidden"
+              class="reflection-row relative flex flex-col p-0 bg-surface-elevated border border-border-muted rounded-panel shadow-sm transition-all duration-slow overflow-hidden"
               :class="[
-                expandedId === reflection.id ? 'ring-2 ring-state-reflection-focus shadow-elevated scale-[1.01] z-30' : 'hover:border-border-strong z-10',
+                expandedId === reflection.id ? 'ring-2 ring-state-reflection-focus shadow-elevated scale-105 z-30' : 'hover:border-border-strong z-10',
                 expandedId && expandedId !== reflection.id ? 'opacity-35 grayscale-[0.2]' : 'opacity-100'
               ]"
               data-testid="pd-timeline-row"

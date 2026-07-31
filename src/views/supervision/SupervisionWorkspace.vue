@@ -1,18 +1,13 @@
 <template>
-  <div class="p-4 md:p-10 max-w-6xl mx-auto space-y-10 animate-fadeUp">
+  <div class="p-6 md:p-10 max-w-7xl mx-auto space-y-10 animate-fadeUp">
     <header>
-      <div class="flex items-center gap-3">
-        <h1 class="text-h2 font-semibold text-ink">Supervision Workspace</h1>
-        <span class="px-2 py-0.5 bg-surface-subtle text-ink-secondary text-overline font-bold uppercase tracking-wider rounded-pill border border-border-muted">
-          Workspace
-        </span>
-      </div>
-      <p class="text-body-sm text-ink-muted font-fraunces italic mt-1">
-        Curate reflections for your next supervision session.
+      <h1 class="text-h1 font-semibold text-ink">Supervision Workspace</h1>
+      <p class="text-body text-ink-secondary mt-2">
+        Review the reflections you want to bring, add preparation notes, and check privacy before creating your report.
       </p>
     </header>
 
-    <div class="bg-surface-elevated rounded-[2rem] border border-border-muted shadow-sm overflow-hidden min-h-[600px] flex flex-col relative">
+    <div class="min-h-[600px] relative">
       <SupervisionPackView
         :reflections="supervisionPackReflections"
         :selected-reflections="reportSelectedReflections"
@@ -29,20 +24,22 @@
         @remove-from-pack="r => $emit('toggle-supervision', r)"
       />
 
-      <SupervisionReportPreview
-        v-if="exportPreviewOpen"
-        :reflections="reportSelectedReflections"
-        :options="exportOptions"
-        :pack-item-options="packItemOptions"
-        :client-aliases="clientAliases"
-        :introduction="therapistIntroduction"
-        :copying="copying"
-        @close="closeExportPreview"
-        @update-option="(key, val) => exportOptions[key] = val"
-        @update-introduction="val => therapistIntroduction = val"
-        @copy="copyExportText"
-        @print="printPack"
-      />
+      <teleport to="body">
+        <SupervisionReportPreview
+          v-if="exportPreviewOpen"
+          :reflections="reportSelectedReflections"
+          :options="exportOptions"
+          :pack-item-options="packItemOptions"
+          :client-aliases="clientAliases"
+          :introduction="therapistIntroduction"
+          :copying="copying"
+          @close="closeExportPreview"
+          @update-option="(key, val) => exportOptions[key] = val"
+          @update-introduction="val => therapistIntroduction = val"
+          @copy="copyExportText"
+          @print="printPack"
+        />
+      </teleport>
     </div>
   </div>
 </template>

@@ -110,7 +110,7 @@
     <!-- Reflective Balance -->
     <section class="space-y-6 animate-fadeUp" style="animation-delay: 0.5s">
       <h3 class="text-overline font-bold text-ink-muted uppercase tracking-widest">Reflective Balance</h3>
-      <div class="bg-surface-subtle p-10 rounded-[2.5rem] border border-border-muted">
+      <div class="bg-surface-subtle p-10 rounded-panel border border-border-muted">
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8">
           <div v-for="item in balancePrompts" :key="item.label" class="space-y-3">
             <div class="text-caption font-bold text-ink uppercase tracking-tighter">{{ item.label }}</div>
