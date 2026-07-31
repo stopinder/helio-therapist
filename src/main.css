@@ -123,6 +123,24 @@ html {
     .status-warning { color: var(--state-warning); }
     .status-danger { color: var(--state-danger); }
     .empty-state-standard { text-align: center; padding: var(--space-stack-2xl); color: var(--text-muted); }
+
+    .animate-expandIn {
+        animation: expandIn var(--motion-slow) var(--motion-ease);
+    }
+
+    .animate-fadeUp {
+        animation: fadeUp var(--motion-standard) var(--motion-ease);
+    }
+}
+
+@keyframes expandIn {
+    from { opacity: 0; transform: scale(0.98) translateY(10px); }
+    to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+@keyframes fadeUp {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
 /* Editorial type is reserved for orientation: page titles, client names, and

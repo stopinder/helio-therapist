@@ -1,42 +1,45 @@
 <template>
   <div>
-    <div v-if="reflections.length === 0" class="py-20 text-center bg-surface-subtle border border-border-muted rounded-[2rem] shadow-sm">
-      <div class="max-w-md mx-auto px-6">
-        <div class="text-4xl mb-6">✍️</div>
-        <h3 class="editorial-heading text-h2 text-ink mb-3">Your Reflective Space</h3>
-        <p class="text-body text-ink-muted leading-relaxed italic">
-          Every session is an opportunity for growth. When you're ready, your private reflections and clinical insights will gather here, creating a timeline of your professional journey.
+    <div v-if="reflections.length === 0" class="py-24 text-center bg-surface-reflection border border-border-reflection rounded-[2.5rem] shadow-sm">
+      <div class="max-w-md mx-auto px-8">
+        <div class="text-5xl mb-8 opacity-80">✍️</div>
+        <h3 class="editorial-heading text-h1 text-ink mb-4">Your Reflective Space</h3>
+        <p class="type-body-long text-ink-secondary leading-relaxed italic">
+          This is a quiet place for your professional growth. As you record reflections and insights after your sessions, a meaningful timeline of your journey will emerge here.
         </p>
-        <p class="text-caption text-ink-subtle mt-6 uppercase tracking-widest font-bold">
-          Start by adding a reflection to any active session.
-        </p>
+        <div class="mt-10 p-4 bg-white/40 rounded-panel border border-border-reflection/30 inline-block">
+          <p class="text-caption text-ink-muted uppercase tracking-widest font-bold">
+            Reflections are private to you
+          </p>
+        </div>
       </div>
     </div>
 
     <div v-else>
-      <div v-if="reflections.length === 0" class="py-16 text-center bg-surface-subtle border border-border-muted rounded-[2rem]">
+      <div v-if="reflections.length === 0" class="py-16 text-center bg-surface-reflection border border-border-reflection rounded-panel">
         <p class="editorial-heading text-h3 text-ink italic">No reflections found for this search.</p>
+        <p class="text-body-sm text-ink-muted mt-2">Try adjusting your filters or search term.</p>
         <button 
           @click="$emit('clear-filters')" 
-          class="mt-4 text-body-sm text-action-link font-semibold hover:underline"
+          class="mt-6 button-secondary"
         >
           View all reflections
         </button>
       </div>
 
-      <div v-else class="space-y-16">
-        <div v-for="group in groupedReflections" :key="group.monthYear" class="space-y-8">
-          <h3 class="editorial-heading text-h2 text-ink border-b border-border-muted pb-4 sticky top-0 bg-surface-canvas/90 backdrop-blur-sm z-10 py-4 transition-opacity duration-standard" :class="{ 'opacity-40': expandedId && !group.items.some(r => r.id === expandedId) }">
+      <div v-else class="space-y-12 mb-20">
+        <div v-for="group in groupedReflections" :key="group.monthYear" class="group-container transition-opacity duration-slow" :class="{ 'opacity-35': expandedId && !group.items.some(r => r.id === expandedId) }">
+          <h3 class="editorial-heading text-h2 text-ink border-b border-border-muted pb-4 sticky top-0 bg-surface-canvas/90 backdrop-blur-sm z-20 py-6 transition-all duration-slow">
             {{ group.monthYear }}
           </h3>
           
-          <div class="space-y-6">
+          <div class="mt-8 space-y-6">
             <div
               v-for="reflection in group.items"
               :key="reflection.id"
-              class="group relative flex flex-col p-0 bg-surface-elevated border border-border-muted rounded-[1.5rem] shadow-sm transition-all duration-slow overflow-hidden"
+              class="reflection-row relative flex flex-col p-0 bg-surface-elevated border border-border-muted rounded-[1.5rem] shadow-sm transition-all duration-slow overflow-hidden"
               :class="[
-                expandedId === reflection.id ? 'ring-2 ring-state-selected shadow-elevated scale-[1.01] z-20' : 'hover:border-border-strong z-10',
+                expandedId === reflection.id ? 'ring-2 ring-state-reflection-focus shadow-elevated scale-[1.01] z-30' : 'hover:border-border-strong z-10',
                 expandedId && expandedId !== reflection.id ? 'opacity-35 grayscale-[0.2]' : 'opacity-100'
               ]"
               data-testid="pd-timeline-row"
@@ -133,52 +136,61 @@
               <transition
                 enter-active-class="transition-all duration-slow ease-out"
                 leave-active-class="transition-all duration-standard ease-in"
-                enter-from-class="max-h-0 opacity-0"
-                enter-to-class="max-h-[2000px] opacity-100"
-                leave-from-class="max-h-[2000px] opacity-100"
-                leave-to-class="max-h-0 opacity-0"
+                enter-from-class="max-h-0 opacity-0 transform translate-y-4"
+                enter-to-class="max-h-[2000px] opacity-100 transform translate-y-0"
+                leave-from-class="max-h-[2000px] opacity-100 transform translate-y-0"
+                leave-to-class="max-h-0 opacity-0 transform translate-y-4"
               >
-                <div v-if="expandedId === reflection.id" class="bg-surface-subtle border-t border-border-muted">
-                  <div class="p-8 md:p-12 max-w-4xl">
-                    <div class="mb-10 flex flex-wrap gap-8 items-start">
-                      <div class="flex flex-col gap-1">
-                        <span class="type-overline text-ink-subtle">Date</span>
-                        <span class="text-body font-medium text-ink">{{ formatDate(reflection.created_at) }}</span>
+                <div v-if="expandedId === reflection.id" class="bg-surface-reflection border-t border-border-reflection">
+                  <div class="p-8 md:p-14 max-w-4xl mx-auto">
+                    <div class="mb-12 flex flex-wrap gap-10 items-start opacity-80">
+                      <div class="flex flex-col gap-1.5">
+                        <span class="type-overline text-ink-muted">Date</span>
+                        <span class="text-body font-medium text-ink-secondary">{{ formatDate(reflection.created_at) }}</span>
                       </div>
-                      <div v-if="reflection.theme" class="flex flex-col gap-1">
-                        <span class="type-overline text-ink-subtle">Theme</span>
-                        <span class="text-body font-medium text-ink">{{ reflection.theme }}</span>
+                      <div v-if="reflection.theme" class="flex flex-col gap-1.5">
+                        <span class="type-overline text-ink-muted">Theme</span>
+                        <span class="px-2.5 py-1 bg-white/60 text-caption font-bold text-ink-secondary uppercase rounded-full border border-border-reflection-tag inline-block">
+                          {{ reflection.theme }}
+                        </span>
                       </div>
-                      <div v-if="reflection.clients?.display_name" class="flex flex-col gap-1">
-                        <span class="type-overline text-ink-subtle">Client</span>
-                        <span class="text-body font-medium text-ink">{{ reflection.clients.display_name }}</span>
+                      <div v-if="reflection.clients?.display_name" class="flex flex-col gap-1.5">
+                        <span class="type-overline text-ink-muted">Client</span>
+                        <span class="text-body font-medium text-ink-secondary flex items-center gap-2">
+                          <span class="opacity-60 text-base">👤</span>
+                          {{ reflection.clients.display_name }}
+                        </span>
                       </div>
-                      <div v-if="reflection.session_ref" class="flex flex-col gap-1">
-                        <span class="type-overline text-ink-subtle">Session</span>
+                      <div v-if="reflection.session_ref" class="flex flex-col gap-1.5">
+                        <span class="type-overline text-ink-muted">Session</span>
                         <button 
                           @click="$emit('go-to-session', reflection)"
-                          class="text-body font-medium text-action-link hover:underline text-left"
+                          class="text-body font-medium text-action-link hover:underline text-left flex items-center gap-2"
                         >
+                          <span class="opacity-60 text-base">📅</span>
                           View context
                         </button>
                       </div>
                     </div>
 
-                    <div class="editorial-heading text-h2 text-ink italic leading-relaxed whitespace-pre-wrap max-w-3xl">
-                      "{{ reflection.body || 'No content provided for this reflection.' }}"
+                    <div class="editorial-heading text-display text-ink italic leading-relaxed whitespace-pre-wrap max-w-3xl animate-expandIn">
+                      {{ reflection.body || 'No content provided for this reflection.' }}
                     </div>
 
-                    <div class="mt-12 pt-8 border-t border-border-muted flex gap-4">
-                      <button 
-                        @click="$emit('open-reflection', reflection)"
-                        class="button-secondary"
-                      >
-                        Open Details
-                      </button>
+                    <div class="mt-14 pt-10 border-t border-border-reflection/40 flex items-center justify-between">
+                      <div class="flex gap-4">
+                        <button 
+                          @click="$emit('open-reflection', reflection)"
+                          class="button-secondary bg-white/60 border-border-reflection hover:bg-white hover:border-border-strong"
+                        >
+                          Open Details
+                        </button>
+                      </div>
                       <button 
                         @click="toggleExpand(reflection.id)"
-                        class="px-6 py-2 text-body-sm font-semibold text-ink-muted hover:text-ink transition-colors"
+                        class="group/btn flex items-center gap-2 px-6 py-2.5 text-body-sm font-semibold text-ink-muted hover:text-ink transition-all"
                       >
+                        <span class="transition-transform group-hover/btn:-translate-y-0.5">↑</span>
                         Collapse
                       </button>
                     </div>
