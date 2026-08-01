@@ -54,13 +54,17 @@ export function getEventStyle(event, overlappingData = { column: 0, totalColumns
   const endHour = event.end.getHours() + event.end.getMinutes() / 60
   const duration = endHour - startHour
   
-  // 80px per hour. No longer adding 56px header offset here.
-  const top = (startHour - 8) * 80 
-  const height = Math.max(duration * 80, 24)
-  
+  // Clinical range: 08:00 - 18:00 (10 hours)
+  const rangeStart = 8
+  const rangeEnd = 18
+  const hourHeight = 80 // Figma spec: ~80px per displayed hour
+
+  const top = (startHour - rangeStart) * hourHeight
+  const height = Math.max(duration * hourHeight, 24)
+
   const width = 100 / overlappingData.totalColumns
   const left = overlappingData.column * width
-  
+
   return {
     top: `${top}px`,
     height: `${height}px`,
@@ -112,6 +116,51 @@ export function getOverlappingGroups(events) {
   })
   
   return eventStyles
+}
+
+/**
+ * Generates cells for a Monday-first mini calendar.
+ */
+export function getMiniCalendarCells(viewDate, selectedDate) {
+  const year = viewDate.getFullYear()
+  const month = viewDate.getMonth()
+  
+  const firstDayOfMonth = new Date(year, month, 1)
+  const lastDayOfMonth = new Date(year, month + 1, 0)
+  
+  // getDay() is 0 (Sun) to 6 (Sat)
+  // We want Monday (1) to be first
+  let firstDayIdx = firstDayOfMonth.getDay()
+  firstDayIdx = firstDayIdx === 0 ? 6 : firstDayIdx - 1
+  
+  const cells = []
+  const today = new Date()
+  
+  // Leading blanks
+  for (let i = 0; i < firstDayIdx; i++) {
+    cells.push({ key: `blank-start-${i}`, date: null })
+  }
+  
+  // Month days
+  for (let d = 1; d <= lastDayOfMonth.getDate(); d++) {
+    const date = new Date(year, month, d)
+    cells.push({
+      key: date.toISOString(),
+      date,
+      isToday: isSameDay(date, today),
+      isSelected: isSameDay(date, selectedDate)
+    })
+  }
+  
+  // Trailing blanks to complete the last week
+  const remaining = 7 - (cells.length % 7)
+  if (remaining < 7) {
+    for (let i = 0; i < remaining; i++) {
+      cells.push({ key: `blank-end-${i}`, date: null })
+    }
+  }
+  
+  return cells
 }
 
 export function isSameDay(a, b) {

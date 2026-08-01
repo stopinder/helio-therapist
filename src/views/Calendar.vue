@@ -41,10 +41,9 @@
               </div>
             </div>
           </div>
-        </div>
 
           <!-- Today Section -->
-        <section class="space-y-stack-sm">
+          <section class="space-y-stack-sm">
           <h3 class="text-caption font-bold text-ink-muted uppercase tracking-widest">Today</h3>
           <div v-if="todayEvents.length === 0" class="text-body-sm text-ink-subtle py-stack-sm px-inline-sm italic">
             No appointments today.
@@ -71,31 +70,32 @@
         </section>
 
         <!-- Upcoming Section -->
-        <section class="space-y-stack-sm">
-          <h3 class="text-caption font-bold text-ink-muted uppercase tracking-widest">Upcoming</h3>
-          <div v-if="upcomingEvents.length === 0" class="text-body-sm text-ink-subtle py-stack-sm px-inline-sm italic">
-            No upcoming appointments.
-          </div>
-          <div v-else class="space-y-stack-xs">
-            <div 
-              v-for="event in upcomingEvents.slice(0, 10)" 
-              :key="event.id"
-              @click="selectAppointment(event, $event)"
-              class="group p-inline-sm rounded-control cursor-pointer transition-colors border"
-              :class="selectedEventId === event.id ? 'bg-state-selected border-action-primary' : 'hover:bg-surface-subtle border-transparent'"
-            >
-              <div class="flex items-start gap-inline-sm">
-                <div class="w-1.5 h-1.5 rounded-pill mt-2 shrink-0" :class="statusColor(event.status)"></div>
-                <div class="min-w-0">
-                  <div class="text-body-sm font-semibold text-ink truncate">{{ event.clientName }}</div>
-                  <div class="text-caption text-ink-muted truncate">
-                    {{ formatDate(event.start) }} · {{ formatTime(event.start) }}
+          <section class="space-y-stack-sm">
+            <h3 class="text-caption font-bold text-ink-muted uppercase tracking-widest">Upcoming</h3>
+            <div v-if="upcomingEvents.length === 0" class="text-body-sm text-ink-subtle py-stack-sm px-inline-sm italic">
+              No upcoming appointments.
+            </div>
+            <div v-else class="space-y-stack-xs">
+              <div 
+                v-for="event in upcomingEvents.slice(0, 10)" 
+                :key="event.id"
+                @click="selectAppointment(event, $event)"
+                class="group p-inline-sm rounded-control cursor-pointer transition-colors border"
+                :class="selectedEventId === event.id ? 'bg-state-selected border-action-primary' : 'hover:bg-surface-subtle border-transparent'"
+              >
+                <div class="flex items-start gap-inline-sm">
+                  <div class="w-1.5 h-1.5 rounded-pill mt-2 shrink-0" :class="statusColor(event.status)"></div>
+                  <div class="min-w-0">
+                    <div class="text-body-sm font-semibold text-ink truncate">{{ event.clientName }}</div>
+                    <div class="text-caption text-ink-muted truncate">
+                      {{ formatDate(event.start) }} · {{ formatTime(event.start) }}
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
-        </section>
+          </section>
+        </div>
       </div>
 
       <!-- Tablet Collapse Toggle -->
@@ -299,7 +299,8 @@ import {
   addMonths, 
   getEventStyle, 
   getOverlappingGroups,
-  isValidId
+  isValidId,
+  getMiniCalendarCells
 } from '../lib/calendarHelpers.js'
 
 const { loading, error, normalizedEvents, todayEvents, upcomingEvents, loadData } = useCalendar()
@@ -380,40 +381,10 @@ const currentRangeLabel = computed(() => {
   return `${start.getDate()} – ${new Intl.DateTimeFormat('en-GB', yearOptions).format(end)}`
 })
 
-const workingHours = Array.from({ length: 10 }, (_, i) => i + 8) // 08:00 - 17:00 (10 rows)
+const workingHours = Array.from({ length: 11 }, (_, i) => i + 8) // 08:00 - 18:00 (11 rows)
 
 const miniCalendarCells = computed(() => {
-  const d = new Date(viewDate.value)
-  const firstDay = new Date(d.getFullYear(), d.getMonth(), 1)
-  const lastDay = new Date(d.getFullYear(), d.getMonth() + 1, 0)
-  
-  // Monday start: (day + 6) % 7
-  const startOffset = (firstDay.getDay() + 6) % 7
-  const cells = []
-  
-  // Leading blank cells
-  for (let i = 0; i < startOffset; i++) {
-    cells.push({ date: null, key: `lead-${i}` })
-  }
-  
-  // Month dates
-  for (let day = 1; day <= lastDay.getDate(); day++) {
-    const date = new Date(d.getFullYear(), d.getMonth(), day)
-    cells.push({
-      date,
-      key: date.toISOString(),
-      isToday: isSameDay(date, new Date()),
-      isSelected: isSameDay(date, viewDate.value)
-    })
-  }
-
-  // Trailing blank cells to fill 6 rows (42 cells)
-  const remaining = 42 - cells.length
-  for (let i = 0; i < remaining; i++) {
-    cells.push({ date: null, key: `trail-${i}` })
-  }
-  
-  return cells
+  return getMiniCalendarCells(viewDate.value, viewDate.value)
 })
 
 const weekDays = computed(() => {

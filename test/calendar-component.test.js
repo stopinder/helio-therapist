@@ -48,8 +48,8 @@ test('Calendar component template and logic requirements', async (t) => {
     assert.match(calendarSource, /:key="`\${d}-\${idx}`"/)
   })
 
-  await t.test('Correct working-hours range (10 rows)', () => {
-    assert.match(calendarSource, /const workingHours = Array\.from\(\{ length: 10 \}/)
+  await t.test('Correct working-hours range (11 rows)', () => {
+    assert.match(calendarSource, /const workingHours = Array\.from\(\{ length: 11 \}/)
   })
 
   await t.test('Initial scroll claim audit', () => {

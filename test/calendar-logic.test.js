@@ -6,7 +6,8 @@ import {
   isEligibleForStart, 
   addMonths, 
   getEventStyle, 
-  getOverlappingGroups 
+  getOverlappingGroups,
+  getMiniCalendarCells
 } from '../src/lib/calendarHelpers.js'
 
 test('Calendar logic and date alignment', async (t) => {
@@ -17,9 +18,10 @@ test('Calendar logic and date alignment', async (t) => {
     assert.strictEqual(aug1_2026.getDay(), 6); // 6 is Saturday
     
     // Mini-calendar calculation (Monday start)
-    const firstDay = new Date(2026, 7, 1);
-    const startOffset = (firstDay.getDay() + 6) % 7;
-    assert.strictEqual(startOffset, 5, 'August 1 2026 should have 5 leading blank cells');
+    const cells = getMiniCalendarCells(new Date(2026, 7, 1), new Date(2026, 7, 1));
+    const blanks = cells.filter(c => c.date === null && c.key.startsWith('blank-start')).length;
+    assert.strictEqual(blanks, 5, 'August 1 2026 should have 5 leading blank cells');
+    assert.strictEqual(cells[5].date.getDate(), 1, 'First day should be at index 5');
   });
 
   await t.test('Leap year: February 2024 has 29 days', () => {
