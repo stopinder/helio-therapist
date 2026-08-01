@@ -52,6 +52,18 @@ test('Calendar component template and logic requirements', async (t) => {
     assert.match(calendarSource, /const workingHours = Array\.from\(\{ length: 10 \}/)
   })
 
+  await t.test('Initial scroll claim audit', () => {
+    assert.match(calendarSource, /\/\/ The timeline starts at 08:00 \(first row\)\./)
+    assert.match(calendarSource, /\/\/ No initial scroll offset needed to show the working day\./)
+  })
+
+  await t.test('Test IDs are present', () => {
+    assert.match(calendarSource, /data-testid="calendar-layout"/)
+    assert.match(calendarSource, /data-testid="calendar-agenda"/)
+    assert.match(calendarSource, /data-testid="calendar-canvas"/)
+    assert.match(calendarSource, /data-testid="timed-grid-scroll"/)
+  })
+
   await t.test('Tablet layout and agenda width exclusivity', () => {
     // Check for refactored aside classes
     assert.match(calendarSource, /isMobile \? \(isAgendaExpanded \? 'fixed inset-0 pt-14 flex' : 'hidden'\) : ''/)

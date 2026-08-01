@@ -1,8 +1,9 @@
 <template>
-  <div class="flex flex-1 h-full overflow-hidden">
+  <div class="flex flex-1 h-full overflow-hidden" data-testid="calendar-layout">
     <!-- Agenda Panel -->
     <aside 
       class="border-r border-border-muted bg-surface flex flex-col shrink-0 transition-all duration-300 ease-in-out z-30 overflow-hidden"
+      data-testid="calendar-agenda"
       :class="[
         isMobile ? (isAgendaExpanded ? 'fixed inset-0 pt-14 flex' : 'hidden') : '',
         !isMobile && isTablet ? (isAgendaExpanded ? 'w-72 flex' : 'w-12 flex') : '',
@@ -116,7 +117,7 @@
     </aside>
 
     <!-- Main Calendar Canvas -->
-    <main class="flex-1 flex flex-col bg-surface-canvas overflow-hidden relative">
+    <main class="flex-1 flex flex-col bg-surface-canvas overflow-hidden relative" data-testid="calendar-canvas">
       <!-- Mobile Agenda Toggle -->
       <button 
         v-if="isMobile" 
@@ -154,7 +155,7 @@
       </div>
 
       <!-- Grid Container -->
-      <div v-else class="flex-1 overflow-y-auto overflow-x-auto relative" ref="gridContainer" @click="selectedEventId = null">
+      <div v-else class="flex-1 overflow-y-auto overflow-x-auto relative" ref="gridContainer" @click="selectedEventId = null" data-testid="timed-grid-scroll">
         <div v-if="!isMobile" class="flex min-h-full relative" :class="isTablet ? 'min-w-[600px]' : 'min-w-calendar-grid'">
           <!-- Time Axis -->
           <div class="w-16 border-r border-border-muted bg-surface sticky left-0 z-20 shrink-0">
@@ -342,14 +343,8 @@ onMounted(() => {
   window.addEventListener('keydown', handleGlobalEsc)
   updateWidth()
   
-  // Initial scroll to 08:00
-  if (gridContainer.value) {
-    gridContainer.value.scrollTop = 0 // Just in case
-    // Each hour row is 80px. 08:00 is at the top of the events container.
-    // The events container starts after the 56px (h-14) day header.
-    // However, gridContainer scrolls everything. 
-    // If we want 08:00 at the top, we just keep it at 0 because 08:00 is the first row.
-  }
+  // The timeline starts at 08:00 (first row).
+  // No initial scroll offset needed to show the working day.
 })
 
 onUnmounted(() => {

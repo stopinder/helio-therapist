@@ -110,8 +110,8 @@
 
       <!-- Page Content -->
       <main 
-        class="flex-1 overflow-auto bg-surface-canvas relative"
-        :class="{ 'overflow-hidden': $route.path === '/calendar' }"
+        class="flex-1 bg-surface-canvas relative"
+        :class="$route.path === '/calendar' ? 'overflow-hidden' : 'overflow-auto'"
       >
         <slot />
       </main>
