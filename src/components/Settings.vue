@@ -108,22 +108,6 @@
             </template>
           </div>
         </div>
-
-        <!-- Outlook Calendar -->
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between p-4 gap-4">
-          <div class="flex items-start sm:items-center gap-4">
-            <div class="flex-shrink-0 w-10 h-10 rounded-panel bg-surface-subtle flex items-center justify-center border border-border-muted">
-              <span class="text-h2">📧</span>
-            </div>
-            <div class="min-w-0 flex-1">
-              <div class="text-body font-medium text-ink break-words">Outlook Calendar</div>
-              <div class="text-body-sm text-ink-subtle break-words">Not connected</div>
-            </div>
-          </div>
-          <button class="w-full sm:w-auto min-h-touch sm:min-h-0 px-4 py-2 sm:py-1.5 text-body-sm font-medium text-action-link hover:bg-state-selected rounded-control transition-colors duration-standard ease-out border border-transparent hover:border-state-selected text-center">
-            Connect
-          </button>
-        </div>
       </div>
     </section>
 
@@ -168,11 +152,10 @@
           </div>
 
           <div class="mt-4 space-y-3">
-            <p class="text-caption text-ink-subtle">Future integration notices:</p>
+            <p class="text-caption text-ink-subtle">Integration status:</p>
             <ul class="text-caption text-ink-subtle list-disc list-inside space-y-1">
-              <li>Microsoft Teams may later connect through Microsoft 365 / Outlook.</li>
-              <li>Google Meet may later connect through Google Workspace.</li>
-              <li>Zoom may later connect through Zoom OAuth.</li>
+              <li>Google Meet connects through Google Workspace.</li>
+              <li>Zoom connects through Zoom OAuth.</li>
               <li>Custom links may be entered manually.</li>
             </ul>
           </div>

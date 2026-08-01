@@ -80,8 +80,8 @@ test.describe('Settings Workspace Workflow', () => {
     await expect(page.getByText('therapist@example.com')).toBeVisible();
 
     // Check for Zoom connection info
-    await expect(page.locator('div').filter({ hasText: /^Zoom$/ })).toBeVisible();
-    await expect(page.locator('div').filter({ hasText: /^Not connected$/ }).first()).toBeVisible();
+    await expect(page.locator('section').filter({ hasText: 'Integrations' }).getByText('Zoom', { exact: true })).toBeVisible();
+    await expect(page.locator('section').filter({ hasText: 'Integrations' }).getByText('Not connected')).toBeVisible();
 
     // Mock Google Authorize
     await page.route('**/api/google/authorize', async (route) => {
