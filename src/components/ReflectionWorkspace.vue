@@ -179,6 +179,7 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { supabase } from '../lib/supabase.js'
+import { withSessionRecovery } from '../lib/api.js'
 import { authenticatedFetch } from '../lib/api.js'
 
 const props = defineProps({
@@ -220,8 +221,8 @@ async function load() {
   loading.value = true
   try {
     const [{ data: notes, error: notesError }, { data: summaries, error: summariesError }] = await Promise.all([
-      supabase.from('private_reflections').select('*').order('created_at', { ascending: false }),
-      supabase.from('reflection_supervision_summaries').select('*').in('generation_status', ['saved']).order('created_at', { ascending: false })
+      withSessionRecovery(() => supabase.from('private_reflections').select('*').order('created_at', { ascending: false })),
+      withSessionRecovery(() => supabase.from('reflection_supervision_summaries').select('*').in('generation_status', ['saved']).order('created_at', { ascending: false }))
     ])
 
     if (notesError) console.error('[Reflections] Load error:', notesError)
@@ -249,12 +250,12 @@ async function saveReflection({ keepOpen = false } = {}) {
     return null
   }
   saving.value = true; saveError.value = ''
-  const { data: auth } = await supabase.auth.getUser()
+  const { data: auth } = await withSessionRecovery(() => supabase.auth.getUser())
   if (!auth.user) { saving.value = false; saveError.value = 'Please sign in again before saving.'; return null }
-  const { data, error } = await supabase.from('private_reflections').insert({
+  const { data, error } = await withSessionRecovery(() => supabase.from('private_reflections').insert({
     user_id: auth.user.id,
     body: body.value
-  }).select().single()
+  }).select().single())
   saving.value = false
   if (error || !data) {
     saveError.value = error?.code === '23514'
@@ -351,29 +352,29 @@ async function generateSummary() {
     detailStage.value = 'summary'
   } catch (error) {
     summaryError.value = error.message || 'The draft could not be prepared. Your reflection was not changed.'
-    const { data: auth } = await supabase.auth.getUser()
-    if (auth.user) await supabase.from('reflection_supervision_summaries').insert({ reflection_id: summaryReflection.value.id, user_id: auth.user.id, generation_status: 'failed', generation_error: summaryError.value })
+    const { data: auth } = await withSessionRecovery(() => supabase.auth.getUser())
+    if (auth.user) await withSessionRecovery(() => supabase.from('reflection_supervision_summaries').insert({ reflection_id: summaryReflection.value.id, user_id: auth.user.id, generation_status: 'failed', generation_error: summaryError.value }))
   } finally { generatingSummary.value = false }
 }
 
 async function saveSummary() {
   if (!supabase || !summaryReflection.value || savingSummary.value) return
   savingSummary.value = true
-  const { data: auth } = await supabase.auth.getUser()
+  const { data: auth } = await withSessionRecovery(() => supabase.auth.getUser())
   if (!auth.user) {
     savingSummary.value = false
     summaryError.value = 'Please sign in again before saving.'
     return
   }
   const generatedAt = new Date().toISOString()
-  const { data, error } = await supabase.rpc('save_reflection_supervision_summary', {
+  const { data, error } = await withSessionRecovery(() => supabase.rpc('save_reflection_supervision_summary', {
     p_reflection_id: summaryReflection.value.id,
     p_generated_content: summaryGeneratedContent.value || summaryDraft.value.trim(),
     p_edited_content: summaryDraft.value.trim(),
     p_model: summaryReflection.value.pendingMetadata?.model || null,
     p_prompt_version: summaryReflection.value.pendingMetadata?.promptVersion || null,
     p_generated_at: generatedAt
-  })
+  }))
   savingSummary.value = false
   const savedSummary = Array.isArray(data) ? data[0] : data
   if (error || !savedSummary) {

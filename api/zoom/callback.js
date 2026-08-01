@@ -8,7 +8,7 @@ export default async function handler(req, res) {
   try {
     const { code, state } = req.query;
     if (!code || !state) {
-      return res.redirect(`${appUrl}/?zoom=error&message=Missing+OAuth+response`);
+      return res.redirect(`${appUrl}/settings?zoom=error&message=Missing+OAuth+response`);
     }
 
     const supabase = getSupabaseClient();
@@ -20,7 +20,7 @@ export default async function handler(req, res) {
       .maybeSingle();
 
     if (error || !saved || saved.completed_at || new Date(saved.expires_at) < new Date()) {
-      return res.redirect(`${appUrl}/?zoom=error&message=Security+validation+failed`);
+      return res.redirect(`${appUrl}/settings?zoom=error&message=Security+validation+failed`);
     }
 
     const clientId = (process.env.ZOOM_CLIENT_ID || '').trim();
@@ -28,7 +28,7 @@ export default async function handler(req, res) {
     const redirectUri = (process.env.ZOOM_REDIRECT_URI || '').trim();
 
     if (!clientId || !clientSecret || !redirectUri) {
-      return res.redirect(`${appUrl}/?zoom=error&message=Zoom+configuration+missing`);
+      return res.redirect(`${appUrl}/settings?zoom=error&message=Zoom+configuration+missing`);
     }
 
     const tokenResponse = await fetch('https://zoom.us/oauth/token', {
@@ -45,7 +45,7 @@ export default async function handler(req, res) {
     });
 
     if (!tokenResponse.ok) {
-      return res.redirect(`${appUrl}/?zoom=error&message=Token+exchange+failed`);
+      return res.redirect(`${appUrl}/settings?zoom=error&message=Token+exchange+failed`);
     }
 
     const tokens = await tokenResponse.json();
@@ -88,13 +88,13 @@ export default async function handler(req, res) {
 
     if (saveError) {
       console.error('[Zoom Callback] save failed', saveError.message);
-      return res.redirect(`${appUrl}/?zoom=error&message=Unable+to+save+Zoom+connection`);
+      return res.redirect(`${appUrl}/settings?zoom=error&message=Unable+to+save+Zoom+connection`);
     }
 
     await supabase.from('oauth_states').delete().eq('id', saved.id);
-    return res.redirect(`${appUrl}/?zoom=success`);
+    return res.redirect(`${appUrl}/settings?zoom=success`);
   } catch (error) {
     console.error('[Zoom Callback]', error.message);
-    return res.redirect(`${appUrl}/?zoom=error&message=Internal+server+error`);
+    return res.redirect(`${appUrl}/settings?zoom=error&message=Internal+server+error`);
   }
 }

@@ -6,7 +6,7 @@ export default async function handler(req, res) {
   try {
     const { code, state } = req.query;
     if (!code || !state) {
-      return res.redirect(`${appUrl}/?google=error&message=Missing+OAuth+response`);
+      return res.redirect(`${appUrl}/settings?google=error&message=Missing+OAuth+response`);
     }
 
     const supabase = getSupabaseClient();
@@ -24,7 +24,7 @@ export default async function handler(req, res) {
       new Date(oauthState.expires_at).getTime() < Date.now()
     ) {
       console.error('[Google Callback] Invalid, expired, or reused state');
-      return res.redirect(`${appUrl}/?google=error&message=Security+validation+failed`);
+      return res.redirect(`${appUrl}/settings?google=error&message=Security+validation+failed`);
     }
 
     const clientId = (process.env.GOOGLE_CLIENT_ID || '').trim();
@@ -32,7 +32,7 @@ export default async function handler(req, res) {
     const redirectUri = (process.env.GOOGLE_REDIRECT_URI || '').trim();
 
     if (!clientId || !clientSecret || !redirectUri) {
-      return res.redirect(`${appUrl}/?google=error&message=Google+configuration+missing`);
+      return res.redirect(`${appUrl}/settings?google=error&message=Google+configuration+missing`);
     }
 
     const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
@@ -50,7 +50,7 @@ export default async function handler(req, res) {
     if (!tokenResponse.ok) {
       const tokenError = await tokenResponse.json().catch(() => ({}));
       console.error('[Google Callback] Token exchange failed:', tokenError);
-      return res.redirect(`${appUrl}/?google=error&message=Token+exchange+failed`);
+      return res.redirect(`${appUrl}/settings?google=error&message=Token+exchange+failed`);
     }
 
     const tokens = await tokenResponse.json();
@@ -66,7 +66,7 @@ export default async function handler(req, res) {
 
     if (existingIntegrationError) {
       console.error('[Google Callback] Failed to read existing integration:', existingIntegrationError);
-      return res.redirect(`${appUrl}/?google=error&message=Unable+to+save+Google+connection`);
+      return res.redirect(`${appUrl}/settings?google=error&message=Unable+to+save+Google+connection`);
     }
 
     const integration = {
@@ -88,7 +88,7 @@ export default async function handler(req, res) {
 
     if (upsertError) {
       console.error('[Google Callback] Integration upsert failed:', upsertError);
-      return res.redirect(`${appUrl}/?google=error&message=Unable+to+save+Google+connection`);
+      return res.redirect(`${appUrl}/settings?google=error&message=Unable+to+save+Google+connection`);
     }
 
     const { error: deleteError } = await supabase
@@ -100,9 +100,9 @@ export default async function handler(req, res) {
       console.warn('[Google Callback] Connected but failed to remove OAuth state:', deleteError);
     }
 
-    return res.redirect(`${appUrl}/?google=success`);
+    return res.redirect(`${appUrl}/settings?google=success`);
   } catch (error) {
     console.error('[Google Callback] Error:', error);
-    return res.redirect(`${appUrl}/?google=error&message=Internal+server+error`);
+    return res.redirect(`${appUrl}/settings?google=error&message=Internal+server+error`);
   }
 }

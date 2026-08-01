@@ -4,10 +4,9 @@
       <h1 class="text-h2 sm:text-h1 font-semibold text-ink">Settings</h1>
     </header>
 
-    <!-- Configuration only: routine calendar recovery happens in the workspace. -->
     <section class="mb-12">
       <h2 class="text-caption sm:text-body-sm font-semibold uppercase tracking-wider text-ink-muted mb-4 px-1">
-        Scheduling
+        Integrations
       </h2>
       
       <div class="bg-surface-elevated border border-border-muted rounded-panel overflow-hidden ">
@@ -68,36 +67,46 @@
           </div>
         </div>
 
-        <!-- Microsoft Teams (Mock) -->
+        <!-- Zoom -->
         <div class="flex flex-col sm:flex-row sm:items-center justify-between p-4 border-b border-border-muted gap-4">
           <div class="flex items-start sm:items-center gap-4">
             <div class="flex-shrink-0 w-10 h-10 rounded-panel bg-surface-subtle flex items-center justify-center border border-border-muted">
-              <span class="text-h2" aria-hidden="true">👥</span>
+              <span class="text-h2">🎥</span>
             </div>
             <div class="min-w-0 flex-1">
-              <div class="text-body font-medium text-ink break-words">Microsoft Teams</div>
-              <div class="text-body-sm text-ink-subtle break-words">Not connected</div>
+              <div class="text-body font-medium text-ink break-words">Zoom</div>
+              <div class="text-body-sm" :class="zoomStatus === 'Connected' ? 'text-state-success' : 'text-ink-subtle'">
+                <template v-if="isLoadingZoomStatus">
+                  <span class="text-ink-subtle animate-pulse">Checking status...</span>
+                </template>
+                <template v-else-if="zoomStatus === 'Connected'">
+                  <span class="font-medium">✓ Connected</span>
+                </template>
+                <template v-else>
+                  Not connected
+                </template>
+              </div>
             </div>
           </div>
-          <button class="w-full sm:w-auto min-h-touch sm:min-h-0 px-4 py-2 sm:py-1.5 text-body-sm font-medium text-action-link hover:bg-state-selected rounded-control transition-colors duration-standard ease-out border border-transparent hover:border-state-selected text-center" aria-label="Connect Microsoft Teams">
-            Connect
-          </button>
-        </div>
-
-        <!-- Google Meet (Mock) -->
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between p-4 border-b border-border-muted gap-4">
-          <div class="flex items-start sm:items-center gap-4">
-            <div class="flex-shrink-0 w-10 h-10 rounded-panel bg-surface-subtle flex items-center justify-center border border-border-muted">
-              <span class="text-h2" aria-hidden="true">🎥</span>
-            </div>
-            <div class="min-w-0 flex-1">
-              <div class="text-body font-medium text-ink break-words">Google Meet</div>
-              <div class="text-body-sm text-ink-subtle break-words">Not connected</div>
-            </div>
+          <div class="flex items-center gap-2 w-full sm:w-auto">
+            <template v-if="zoomStatus === 'Connected'">
+              <details class="relative">
+                <summary class="list-none cursor-pointer min-h-touch sm:min-h-0 px-3 py-2 sm:py-1.5 text-body-sm font-medium text-ink-muted hover:bg-surface-subtle rounded-control">•••</summary>
+                <div class="absolute right-0 mt-1 z-10 w-48 bg-surface-elevated border border-border-muted rounded-control shadow-overlay p-1">
+                  <button @click="disconnectZoom" class="w-full text-left px-3 py-2 text-body-sm text-state-danger hover:bg-state-danger-surface rounded">Disconnect Zoom</button>
+                </div>
+              </details>
+            </template>
+            <template v-else>
+              <button 
+                @click="connectZoom" 
+                :disabled="isConnectingZoom"
+                class="w-full sm:w-auto min-h-touch sm:min-h-0 px-4 py-2 sm:py-1.5 text-body-sm font-medium text-action-link hover:bg-state-selected rounded-control transition-colors duration-standard ease-out border border-transparent hover:border-state-selected disabled:opacity-50 text-center"
+              >
+                {{ isConnectingZoom ? 'Connecting...' : 'Connect' }}
+              </button>
+            </template>
           </div>
-          <button class="w-full sm:w-auto min-h-touch sm:min-h-0 px-4 py-2 sm:py-1.5 text-body-sm font-medium text-action-link hover:bg-state-selected rounded-control transition-colors duration-standard ease-out border border-transparent hover:border-state-selected text-center" aria-label="Connect Google Meet">
-            Connect
-          </button>
         </div>
 
         <!-- Outlook Calendar -->
@@ -278,6 +287,11 @@ const googleEmail = ref('')
 const lastSyncedGoogle = ref('Not synced yet')
 const isConnectingGoogle = ref(false)
 const isLoadingStatus = ref(true)
+
+const zoomStatus = ref('Not connected')
+const isConnectingZoom = ref(false)
+const isLoadingZoomStatus = ref(true)
+
 const calendlyStatus = ref('Not connected')
 const isConnectingCalendly = ref(false)
 const isLoadingCalendlyStatus = ref(true)
@@ -301,23 +315,26 @@ onMounted(async () => {
     cleanupUrl()
   }
 
-  await fetchGoogleStatus()
-  
-  if (params.get('video') === 'success') {
-    successMessage.value = 'Video provider connected successfully'
+  if (params.get('zoom') === 'success') {
+    successMessage.value = 'Zoom connected successfully'
     showSuccess.value = true
     cleanupUrl()
   }
 
-  if (params.get('video') === 'error') {
-    alert(params.get('message') || 'Video connection failed')
-    cleanupUrl()
-  }
-  
   if (params.get('google') === 'error') {
     alert(params.get('message') || 'Google connection failed')
     cleanupUrl()
   }
+
+  if (params.get('zoom') === 'error') {
+    alert(params.get('message') || 'Zoom connection failed')
+    cleanupUrl()
+  }
+
+  await Promise.all([
+    fetchGoogleStatus(),
+    fetchZoomStatus()
+  ])
 })
 
 const formatSyncTime = (value) => {
@@ -372,6 +389,7 @@ const cleanupUrl = () => {
 }
 
 const fetchZoomStatus = async () => {
+  isLoadingZoomStatus.value = true
   try {
     const response = await authenticatedFetch('/api/zoom/status')
     const data = await response.json()
@@ -380,11 +398,13 @@ const fetchZoomStatus = async () => {
   } catch (error) {
     console.error('Failed to fetch Zoom status:', error)
     zoomStatus.value = 'Not connected'
+  } finally {
+    isLoadingZoomStatus.value = false
   }
 }
 
 const connectZoom = async () => {
-  isConnecting.value = true
+  isConnectingZoom.value = true
   try {
     const response = await authenticatedFetch('/api/zoom/authorize', {
       method: 'POST'
@@ -396,7 +416,7 @@ const connectZoom = async () => {
     window.location.href = data.url
   } catch (error) {
     alert(error.message)
-    isConnecting.value = false
+    isConnectingZoom.value = false
   }
 }
 

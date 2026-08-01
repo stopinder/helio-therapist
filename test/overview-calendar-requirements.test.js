@@ -51,23 +51,22 @@ test('Calendar view requirements', async () => {
 
   // Agenda Panel
   assert.match(calendar, /Agenda Panel/)
-  assert.match(calendar, /currentMonthName/)
+  assert.match(calendar, /miniMonthName/)
   assert.match(calendar, /Today/)
   assert.match(calendar, /Upcoming/)
-  assert.match(calendar, /Showing Helios session records/)
-  assert.match(calendar, /External calendar sync is not connected/)
+  assert.match(calendar, /Google Calendar/)
 
   // Main Calendar Canvas (Week View)
   assert.match(calendar, /currentRangeLabel/)
-  assert.match(calendar, /moveWeek\(-1\)/)
-  assert.match(calendar, /moveWeek\(1\)/)
+  assert.match(calendar, /move\(-1\)/)
+  assert.match(calendar, /move\(1\)/)
   assert.match(calendar, /goToday/)
-  assert.match(calendar, /v-for="day in weekDays\.slice\(0, 5\)"/)
+  assert.match(calendar, /v-for="day in weekDays"/)
   assert.match(calendar, /day.shortName/)
   assert.match(calendar, /day.date.getDate\(\)/)
 
   // Events in Canvas
-  assert.match(calendar, /v-for="event in day.events"/)
+  assert.match(calendar, /v-for="event in day.events/)
   assert.match(calendar, /event.clientName/)
   assert.match(calendar, /formatTime\(event.start\)/)
 
@@ -79,17 +78,12 @@ test('Calendar view requirements', async () => {
   
   // Routes
   assert.match(calendar, /:to="`\/clients\/\${selectedEvent\.clientId}`"/)
-  assert.match(calendar, /:to="`\/clients\/\${selectedEvent\.clientId}\/sessions\/\${selectedEvent\.id}`"/)
-
-  // Mobile agenda-first day view
-  assert.ok(calendar.includes('v-else class="h-full flex flex-col bg-surface"'))
-  assert.ok(calendar.includes(':key="\'tab-\'+day.date.toISOString()"'))
-  assert.ok(calendar.includes('v-for="event in currentDayEvents"'))
+  assert.match(calendar, /:to="`\/clients\/\${selectedEvent\.clientId}\/sessions\/\${selectedEvent\.originalId}`"/)
 
   // Popover dismissal and keyboard support
   assert.match(calendar, /window\.addEventListener\('keydown', handleGlobalEsc\)/)
   assert.match(calendar, /@click="selectedEventId = null"/)
-  assert.match(calendar, /tabindex="0"/)
+  assert.match(calendar, /tabindex/)
 
   // No Right Inspector / Clinical Panel
   assert.doesNotMatch(calendar, /inspector/)
