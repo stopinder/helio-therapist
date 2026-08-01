@@ -21,7 +21,7 @@
               </div>
             </div>
             <div class="grid grid-cols-7 gap-1 text-center mb-stack-sm">
-              <span v-for="d in ['M','T','W','T','F','S','S']" :key="d" class="text-caption text-ink-subtle font-bold py-1">{{ d }}</span>
+              <span v-for="(d, idx) in ['M','T','W','T','F','S','S']" :key="`${d}-${idx}`" class="text-caption text-ink-subtle font-bold py-1">{{ d }}</span>
               <div v-for="cell in miniCalendarCells" :key="cell.key" 
                 @click="cell.date && selectDate(cell.date)"
                 @keydown.enter="cell.date && selectDate(cell.date)"
@@ -255,12 +255,10 @@
           </div>
         </div>
 
-        <!-- Popover Action Surface -->
         <div v-if="selectedEvent && popoverPosition" 
           class="fixed z-40 w-64 bg-surface-elevated border border-border-strong rounded-panel shadow-overlay p-4 animate-in fade-in zoom-in duration-200"
           :style="{ top: popoverPosition.top + 'px', left: popoverPosition.left + 'px' }"
           @click.stop
-          v-keydown-esc="selectedEventId = null"
         >
           <div class="flex justify-between items-start mb-3">
             <div>
@@ -271,7 +269,7 @@
           </div>
           <div class="flex flex-col gap-2">
             <router-link 
-              v-if="selectedEvent.clientId"
+              v-if="selectedEvent.clientId && isValidId(selectedEvent.clientId)"
               :to="`/clients/${selectedEvent.clientId}`"
               class="w-full text-center py-2 text-body-sm font-medium text-ink bg-surface border border-border-muted rounded-control hover:bg-surface-subtle transition-colors"
             >
@@ -299,7 +297,8 @@ import {
   isSameDay, 
   addMonths, 
   getEventStyle, 
-  getOverlappingGroups 
+  getOverlappingGroups,
+  isValidId
 } from '../lib/calendarHelpers.js'
 
 const { loading, error, normalizedEvents, todayEvents, upcomingEvents, loadData } = useCalendar()
@@ -320,7 +319,9 @@ const updateWidth = () => {
 const vKeydownEsc = {
   mounted(el, binding) {
     el._escHandler = (e) => {
-      if (e.key === 'Escape') binding.value()
+      if (e.key === 'Escape' && typeof binding.value === 'function') {
+        binding.value()
+      }
     }
     window.addEventListener('keydown', el._escHandler)
   },
@@ -329,14 +330,22 @@ const vKeydownEsc = {
   }
 }
 
+const handleGlobalEsc = (e) => {
+  if (e.key === 'Escape') {
+    selectedEventId.value = null
+  }
+}
+
 onMounted(() => {
   loadData()
   window.addEventListener('resize', updateWidth)
+  window.addEventListener('keydown', handleGlobalEsc)
   updateWidth()
 })
 
 onUnmounted(() => {
   window.removeEventListener('resize', updateWidth)
+  window.removeEventListener('keydown', handleGlobalEsc)
 })
 
 const isMobile = computed(() => windowWidth.value < 640)
@@ -367,7 +376,7 @@ const currentRangeLabel = computed(() => {
   return `${start.getDate()} – ${new Intl.DateTimeFormat('en-GB', yearOptions).format(end)}`
 })
 
-const workingHours = Array.from({ length: 11 }, (_, i) => i + 8) // 08:00 - 18:00
+const workingHours = Array.from({ length: 10 }, (_, i) => i + 8) // 08:00 - 17:00 (10 rows)
 
 const miniCalendarCells = computed(() => {
   const d = new Date(viewDate.value)

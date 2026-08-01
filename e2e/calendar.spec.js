@@ -40,30 +40,35 @@ test.describe('Calendar Workspace Workflow', () => {
 
     // 5. Selecting an appointment exposes permitted actions
     const appointment = page.locator('.absolute.rounded-control').first();
-    if (await appointment.isVisible()) {
-      await appointment.click();
-      const popover = page.locator('.fixed.z-40.w-64');
-      await expect(popover).toBeVisible();
-      
-      // Action visibility and ineligible appointments
-      // We can't guarantee state, but we can check for buttons if eligible
-      const startButton = popover.getByRole('link', { name: /Start Session/i });
-      const openClientButton = popover.getByRole('link', { name: /Open Client/i });
-      
-      // Dismissal with Escape
-      await page.keyboard.press('Escape');
-      await expect(popover).not.toBeVisible();
-    }
+    await appointment.waitFor({ state: 'visible', timeout: 5000 });
+    await appointment.click();
+    const popover = page.locator('.fixed.z-40.w-64');
+    await expect(popover).toBeVisible();
+    
+    // Action visibility
+    const openClientButton = popover.getByRole('link', { name: /Open Client/i });
+    await expect(openClientButton).toBeVisible();
 
-    // 6. Mini-calendar date selection changes displayed week
-    const calendarCell = page.locator('.grid-cols-7 .rounded-pill').filter({ hasText: /^15$/ }).first();
-    if (await calendarCell.isVisible()) {
-      await calendarCell.click();
-      // Date label should include "15"
-      await expect(page.locator('h2.text-body')).toContainText(/15/);
-    }
+    const startButton = popover.getByRole('link', { name: /Start Session/i });
+    // Based on deterministic safe fixture data (which we assume exists for this test user)
+    // we expect at least one eligible and one ineligible session in a real suite.
+    // For this e2e, we verify the presence of the popover and at least one action.
+    
+    // Dismissal with Escape
+    await page.keyboard.press('Escape');
+    await expect(popover).not.toBeVisible();
 
-    // 7. Responsive Widths: Mobile
+    // 6. Tablet viewport check
+    await page.setViewportSize({ width: 800, height: 800 });
+    const collapsedAgenda = page.locator('aside.w-12');
+    await expect(collapsedAgenda).toBeVisible();
+
+    // 7. Mini-calendar date selection changes displayed week
+    const calendarCell = page.locator('.grid-cols-7 .rounded-pill:not(:empty)').filter({ hasText: /^15$/ }).first();
+    await calendarCell.click();
+    await expect(page.locator('h2.text-body')).toContainText(/15/);
+
+    // 8. Responsive Widths: Mobile
     await page.setViewportSize({ width: 375, height: 667 });
     await expect(page.locator('.h-full.flex.flex-col.bg-surface')).toBeVisible(); // Mobile day view
     await expect(page.locator('button').filter({ hasText: /Mon|Tue|Wed|Thu|Fri/ })).toHaveCount(5); // Day tabs
