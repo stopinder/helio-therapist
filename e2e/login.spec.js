@@ -32,17 +32,19 @@ test('login form should require email and password', async ({ page }) => {
   await expect(emailField).toHaveAttribute('required', '');
   await expect(passwordField).toHaveAttribute('required', '');
 
-  // 2. Attempt to submit the form without filling in any data.
-  await signInButton.click();
+  // 2. Attempt to trigger browser's native validation without submitting.
+  // We use checkValidity() which returns false if the form is invalid.
+  const isFormValidInitial = await page.locator('form').evaluate(form => form.checkValidity());
+  expect(isFormValidInitial).toBe(false);
 
-  // 3. Verify that the browser's native validation is triggered.
-  // We check the 'validity.valid' property of the input elements.
+  // 3. Verify that the email field is invalid (empty).
   const isEmailValid = await emailField.evaluate(el => el.validity.valid);
   expect(isEmailValid).toBe(false);
 
-  // 4. Fill email but leave password empty, then try again.
+  // 4. Fill email but leave password empty, then check validity again.
   await emailField.fill('test@example.com');
-  await signInButton.click();
+  const isFormValidAfterEmail = await page.locator('form').evaluate(form => form.checkValidity());
+  expect(isFormValidAfterEmail).toBe(false);
 
   // Now the email is valid, but the password should be invalid.
   const isEmailValidAfter = await emailField.evaluate(el => el.validity.valid);
@@ -63,8 +65,9 @@ test('login form should validate email format', async ({ page }) => {
   await emailField.fill('not-an-email');
   await passwordField.fill('password123');
 
-  // 2. Attempt to submit.
-  await signInButton.click();
+  // 2. Trigger validation without submitting.
+  const isFormValid = await page.locator('form').evaluate(form => form.checkValidity());
+  expect(isFormValid).toBe(false);
 
   // 3. Verify that the email field is invalid due to type="email" validation.
   const isEmailValid = await emailField.evaluate(el => el.validity.valid);

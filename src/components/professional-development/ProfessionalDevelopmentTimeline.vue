@@ -115,6 +115,13 @@
                       </button>
                       <div class="border-t border-border-muted my-1"></div>
                       <button 
+                        @click.stop="$emit('open-ai-reflection', reflection)"
+                        class="w-full text-left px-4 py-2.5 text-body-sm text-ink hover:bg-surface-subtle transition-colors flex items-center gap-3"
+                      >
+                        <span class="text-base">✨</span>
+                        Reflect with AI
+                      </button>
+                      <button 
                         @click.stop="$emit('open-reflection', reflection)"
                         class="w-full text-left px-4 py-2.5 text-body-sm text-ink hover:bg-surface-subtle transition-colors flex items-center gap-3"
                       >
@@ -240,6 +247,7 @@ const props = defineProps({
 
 const emit = defineEmits([
   'open-reflection',
+  'open-ai-reflection',
   'go-to-session',
   'toggle-menu',
   'close-menu',

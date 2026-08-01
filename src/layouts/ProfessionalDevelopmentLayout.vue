@@ -27,6 +27,7 @@
             v-bind="childProps"
             @toggle-supervision="handleToggleSupervision"
             @open-reflection="handleOpenReflection"
+            @open-ai-reflection="handleOpenAIReflection"
             @go-to-session="handleGoToSession"
           />
         </transition>
@@ -38,7 +39,8 @@
       v-if="selectedReflection"
       :reflection="selectedReflection"
       :loading="actionLoading === selectedReflection.id"
-      @close="selectedReflection = null"
+      :initial-ai-mode="initialAIMode"
+      @close="closeReflectionModal"
       @toggle-supervision="handleToggleSupervision"
       @go-to-session="handleGoToSession"
     />
@@ -58,6 +60,7 @@ const reflections = ref([]);
 const loading = ref(true);
 const actionLoading = ref(null);
 const selectedReflection = ref(null);
+const initialAIMode = ref(false);
 
 const isChildPage = computed(() => route.path !== '/supervision');
 
@@ -122,7 +125,18 @@ async function handleToggleSupervision(reflection) {
 }
 
 function handleOpenReflection(reflection) {
+  initialAIMode.value = false;
   selectedReflection.value = reflection;
+}
+
+function handleOpenAIReflection(reflection) {
+  initialAIMode.value = true;
+  selectedReflection.value = reflection;
+}
+
+function closeReflectionModal() {
+  selectedReflection.value = null;
+  initialAIMode.value = false;
 }
 
 function handleGoToSession(reflection) {

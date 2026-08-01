@@ -99,15 +99,109 @@
             </p>
           </div>
 
-          <div class="flex gap-3 pt-4">
+          <div class="flex flex-wrap gap-3 pt-4">
             <button @click="copyAIResponse" class="flex-1 py-2 bg-surface text-ink-secondary text-body-sm font-semibold border border-border rounded-control hover:bg-surface-subtle transition-all shadow-sm">
               Copy response
             </button>
+            <button 
+              @click="showRephraseWorkflow = true; aiResult = null" 
+              class="flex-1 py-2 bg-surface text-state-selected text-body-sm font-semibold border border-state-selected/20 rounded-control hover:bg-state-selected-surface transition-all shadow-sm"
+            >
+              Suggest a rephrasing
+            </button>
             <button @click="closeAI" class="px-6 py-2 bg-surface text-ink-muted text-body-sm font-semibold border border-border rounded-control hover:text-ink transition-all">
-              Close
+              Discard
             </button>
           </div>
 
+          <div class="border-b-2 border-dashed border-border-muted my-8"></div>
+          <!-- Future persistence boundary: Saved AI-assisted material will require a separately reviewed Supabase persistence model. It must retain source reflection ID, therapist ownership, prompt version, model and provenance. It must never be written to the client timeline or clinical record automatically. -->
+        </div>
+
+        <!-- Rephrasing Workflow -->
+        <div v-if="showRephraseWorkflow" class="mb-8 space-y-6 animate-fade-up">
+          <div class="flex items-center justify-between">
+            <h3 class="text-h3 font-semibold text-ink flex items-center gap-2">
+              <span class="text-state-selected">✨</span>
+              Suggest a Rephrasing
+            </h3>
+            <span class="text-overline font-bold text-ink-muted uppercase tracking-tighter">AI-Generated — Review Critically</span>
+          </div>
+
+          <div v-if="!aiRephraseResult" class="space-y-4">
+            <p class="text-body-sm text-ink-secondary leading-relaxed">
+              Select or enter a short excerpt from your reflection that you would like to rephrase. 
+              Helios will suggest alternative wording. It will not change your original reflection.
+            </p>
+            
+            <div class="space-y-2">
+              <label class="text-caption font-bold text-ink-muted uppercase tracking-wider">Excerpt to rephrase</label>
+              <textarea 
+                v-model="selectedExcerpt"
+                rows="3"
+                class="w-full p-3 bg-surface border border-border rounded-panel text-body-sm text-ink focus:ring-2 focus:ring-state-selected focus:border-transparent outline-none transition-all"
+                placeholder="Paste or type an excerpt here..."
+              ></textarea>
+            </div>
+
+            <div class="space-y-2">
+              <label class="text-caption font-bold text-ink-muted uppercase tracking-wider">Instruction (Optional)</label>
+              <input 
+                v-model="rephraseInstruction"
+                type="text"
+                class="w-full p-3 bg-surface border border-border rounded-panel text-body-sm text-ink focus:ring-2 focus:ring-state-selected focus:border-transparent outline-none transition-all"
+                placeholder="e.g., 'Make it more professional', 'Be more concise'"
+              />
+            </div>
+
+            <div v-if="rephraseError" class="text-overline text-state-danger font-medium">{{ rephraseError }}</div>
+
+            <div class="flex gap-3">
+              <button 
+                @click="startRephrase"
+                :disabled="rephraseLoading || !selectedExcerpt"
+                class="flex-1 py-2 bg-state-selected text-white text-body-sm font-semibold rounded-control hover:bg-state-selected-hover transition-all shadow-sm disabled:opacity-50"
+              >
+                <span v-if="rephraseLoading" class="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></span>
+                Get Suggestion
+              </button>
+              <button @click="discardRephrase" class="px-6 py-2 bg-surface text-ink-muted text-body-sm font-semibold border border-border rounded-control hover:text-ink transition-all">
+                Cancel
+              </button>
+            </div>
+          </div>
+
+          <div v-else class="space-y-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div class="space-y-2">
+                <label class="text-caption font-bold text-ink-muted uppercase tracking-wider">Original Excerpt</label>
+                <div class="p-4 bg-surface-subtle border border-border-muted rounded-panel text-body-sm text-ink-secondary italic leading-relaxed">
+                  "{{ selectedExcerpt }}"
+                </div>
+              </div>
+              <div class="space-y-2">
+                <label class="text-caption font-bold text-ink-muted uppercase tracking-wider">AI Suggestion</label>
+                <textarea 
+                  v-model="localRephrasing"
+                  rows="6"
+                  @input="isEditingRephrase = true"
+                  class="w-full p-4 bg-white border border-state-selected/30 rounded-panel text-body-sm text-ink focus:ring-2 focus:ring-state-selected focus:border-transparent outline-none transition-all leading-relaxed"
+                ></textarea>
+                <p class="text-caption text-ink-muted italic">
+                  <strong>Explanation:</strong> {{ aiRephraseResult.explanation }}
+                </p>
+              </div>
+            </div>
+
+            <div class="flex flex-wrap gap-3">
+              <button @click="copyRephrase" class="flex-1 py-2 bg-surface text-ink-secondary text-body-sm font-semibold border border-border rounded-control hover:bg-surface-subtle transition-all shadow-sm">
+                Copy rephrasing
+              </button>
+              <button @click="discardRephrase" class="px-6 py-2 bg-surface text-ink-muted text-body-sm font-semibold border border-border rounded-control hover:text-ink transition-all">
+                Discard
+              </button>
+            </div>
+          </div>
           <div class="border-b-2 border-dashed border-border-muted my-8"></div>
         </div>
 
@@ -115,8 +209,8 @@
         <div v-if="showAIConfirmation" class="mb-8 p-6 bg-state-info-surface/30 border border-state-info/20 rounded-panel animate-fade-up">
           <h3 class="text-body font-semibold text-ink mb-2">Reflect with AI</h3>
           <p class="text-body-sm text-ink-secondary mb-6 leading-relaxed">
-            Helios will send this reflection to the AI service to generate optional reflective prompts. 
-            The result will not be saved automatically. Only non-identifying reflection content is sent.
+            Helios will send this private reflection to the AI service to generate optional reflective prompts. 
+            The result will not be saved automatically and will not change your original reflection.
           </p>
           <div class="flex gap-3">
             <button @click="startAIReflection" class="px-4 py-2 bg-state-selected text-white text-body-sm font-semibold rounded-control hover:bg-state-selected-hover transition-all shadow-sm">
@@ -146,52 +240,65 @@
         </div>
 
         <div class="prose prose-sm max-w-none">
-          <p class="text-body text-ink italic whitespace-pre-wrap leading-relaxed">
+          <p 
+            class="text-body text-ink italic whitespace-pre-wrap leading-relaxed cursor-text selection:bg-state-selected/20"
+            @mouseup="handleTextSelection"
+          >
             "{{ reflection.body || 'No content' }}"
           </p>
         </div>
       </div>
 
-      <div class="p-6 border-t border-border-muted bg-surface flex justify-between items-center">
-        <div v-if="error || aiError" role="alert" class="text-overline text-state-danger font-medium">
-          {{ aiError || 'Could not update selection.' }}
-        </div>
-        <div v-else></div>
-
-        <div class="flex items-center gap-3">
+      <div class="p-6 border-t border-border-muted bg-surface flex flex-col gap-4">
+        <div 
+          v-if="!aiResult && !showAIConfirmation && !showRephraseWorkflow" 
+          class="flex items-center justify-between p-4 bg-surface-subtle border border-border-muted rounded-panel animate-fade-up"
+        >
+          <div>
+            <h4 class="text-body-sm font-semibold text-ink">Reflect with AI</h4>
+            <p class="text-caption text-ink-muted">Generate optional questions and alternative perspectives based on this reflection.</p>
+          </div>
           <button
-            v-if="!aiResult && !showAIConfirmation"
             @click="showAIConfirmation = true"
             :disabled="aiLoading || loading"
-            class="flex items-center gap-2 px-4 py-2 bg-surface text-ink-secondary text-body-sm font-semibold border border-border rounded-control hover:bg-surface-subtle transition-all disabled:opacity-50"
+            class="flex items-center gap-2 px-4 py-2 bg-white text-ink-secondary text-body-sm font-semibold border border-border rounded-control hover:bg-surface-subtle transition-all disabled:opacity-50 shadow-sm"
           >
             <span v-if="aiLoading" class="w-4 h-4 border-2 border-ink-muted border-t-transparent rounded-full animate-spin"></span>
             <span v-else>✨</span>
             Reflect with AI
           </button>
+        </div>
 
-          <div v-if="reflection.included_in_supervision" class="flex items-center gap-3">
-            <span class="text-body-sm text-ink-secondary font-medium flex items-center gap-1.5">
-              <span class="text-state-success">✓</span>
-              Included in Supervision Pack
-            </span>
+        <div class="flex justify-between items-center">
+          <div v-if="error || aiError || rephraseError" role="alert" class="text-overline text-state-danger font-medium">
+            {{ aiError || rephraseError || 'Could not update selection.' }}
+          </div>
+          <div v-else></div>
+
+          <div class="flex items-center gap-3">
+            <div v-if="reflection.included_in_supervision" class="flex items-center gap-3">
+              <span class="text-body-sm text-ink-secondary font-medium flex items-center gap-1.5">
+                <span class="text-state-success">✓</span>
+                Included in Supervision Pack
+              </span>
+              <button
+                @click="$emit('toggle-supervision', reflection)"
+                :disabled="loading"
+                class="text-body-sm font-semibold text-state-danger hover:underline disabled:opacity-50"
+              >
+                Remove from Pack
+              </button>
+            </div>
             <button
+              v-else
               @click="$emit('toggle-supervision', reflection)"
               :disabled="loading"
-              class="text-body-sm font-semibold text-state-danger hover:underline disabled:opacity-50"
+              class="flex items-center gap-2 px-4 py-2 bg-state-selected text-white text-body-sm font-semibold rounded-control hover:bg-state-selected-hover transition-all disabled:opacity-50 shadow-sm"
             >
-              Remove from Pack
+              <span v-if="loading" class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+              Add to Supervision Pack
             </button>
           </div>
-          <button
-            v-else
-            @click="$emit('toggle-supervision', reflection)"
-            :disabled="loading"
-            class="flex items-center gap-2 px-4 py-2 bg-state-selected text-white text-body-sm font-semibold rounded-control hover:bg-state-selected-hover transition-all disabled:opacity-50 shadow-sm"
-          >
-            <span v-if="loading" class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-            Add to Supervision Pack
-          </button>
         </div>
       </div>
     </div>
@@ -199,7 +306,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
 import { authenticatedFetch } from '../../lib/api.js';
 
 const props = defineProps({
@@ -214,6 +321,10 @@ const props = defineProps({
   error: {
     type: Boolean,
     default: false
+  },
+  initialAIMode: {
+    type: Boolean,
+    default: false
   }
 });
 
@@ -224,6 +335,16 @@ const showAIConfirmation = ref(false);
 const aiLoading = ref(false);
 const aiResult = ref(null);
 const aiError = ref(null);
+
+// Rephrasing State
+const showRephraseWorkflow = ref(false);
+const rephraseLoading = ref(false);
+const selectedExcerpt = ref('');
+const rephraseInstruction = ref('');
+const aiRephraseResult = ref(null);
+const localRephrasing = ref('');
+const isEditingRephrase = ref(false);
+const rephraseError = ref(null);
 
 async function startAIReflection() {
   showAIConfirmation.value = false;
@@ -247,15 +368,70 @@ async function startAIReflection() {
     aiResult.value = result.data;
   } catch (err) {
     console.error('[AI Reflection] Error:', err);
-    aiError.value = err.message || 'AI reflection support is temporarily unavailable.';
+    aiError.value = 'AI reflection support is temporarily unavailable. Your reflection has not been changed.';
   } finally {
     aiLoading.value = false;
+  }
+}
+
+async function startRephrase() {
+  if (!selectedExcerpt.value) return;
+  
+  rephraseLoading.value = true;
+  rephraseError.value = null;
+  
+  try {
+    const response = await authenticatedFetch('/api/ai/rephrase-reflection', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        reflectionId: props.reflection.id,
+        excerpt: selectedExcerpt.value,
+        instruction: rephraseInstruction.value
+      })
+    });
+
+    const result = await response.json();
+
+    if (!response.ok || !result.success) {
+      throw new Error(result.error?.message || 'Rephrasing failed');
+    }
+
+    aiRephraseResult.value = result.data;
+    localRephrasing.value = result.data.rephrased_text;
+    isEditingRephrase.value = false;
+  } catch (err) {
+    console.error('[AI Rephrase] Error:', err);
+    rephraseError.value = 'AI reflection support is temporarily unavailable. Your reflection has not been changed.';
+  } finally {
+    rephraseLoading.value = false;
+  }
+}
+
+function handleTextSelection() {
+  const selection = window.getSelection();
+  const text = selection.toString().trim();
+  if (text && props.reflection.body.includes(text)) {
+    selectedExcerpt.value = text;
   }
 }
 
 function closeAI() {
   aiResult.value = null;
   aiError.value = null;
+}
+
+function discardRephrase() {
+  if (isEditingRephrase.value && localRephrasing.value !== aiRephraseResult.value?.rephrased_text) {
+    if (!confirm('Discard your changes to the suggested rephrasing?')) return;
+  }
+  
+  showRephraseWorkflow.value = false;
+  aiRephraseResult.value = null;
+  localRephrasing.value = '';
+  selectedExcerpt.value = '';
+  rephraseInstruction.value = '';
+  rephraseError.value = null;
 }
 
 function copyAIResponse() {
@@ -278,13 +454,27 @@ function copyAIResponse() {
     ...aiResult.value.learning_points.map(l => `- ${l}`),
     '',
     'Limitations:',
-    aiResult.value.limitations
+    aiResult.value.limitations,
+    '',
+    'AI-generated reflection support — review critically.'
   ].join('\n');
 
   navigator.clipboard.writeText(text).then(() => {
     alert('AI reflection copied to clipboard');
   });
 }
+
+function copyRephrase() {
+  navigator.clipboard.writeText(localRephrasing.value).then(() => {
+    alert('Rephrased text copied to clipboard');
+  });
+}
+
+onMounted(() => {
+  if (props.initialAIMode) {
+    showAIConfirmation.value = true;
+  }
+});
 
 function formatDate(dateString) {
   if (!dateString) return '';
