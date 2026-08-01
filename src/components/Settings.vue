@@ -23,9 +23,12 @@
                 <template v-if="isLoadingStatus">
                   <span class="text-ink-subtle animate-pulse">Checking status...</span>
                 </template>
-                <template v-else-if="googleStatus === 'Connected'">
+                <template v-else-if="googleStatus === 'Connected' || googleStatus === 'Reconnect Required'">
                   <div class="flex flex-col mt-1">
-                    <span class="font-medium text-state-success">✓ Connected</span>
+                    <span class="font-medium" :class="googleStatus === 'Connected' ? 'text-state-success' : 'text-state-warning'">
+                      {{ googleStatus === 'Connected' ? '✓ Connected' : '⚠ Reconnect Required' }}
+                    </span>
+                    <span v-if="googleEmail" class="text-ink text-body-sm">{{ googleEmail }}</span>
                     <span class="text-ink-subtle text-overline leading-tight">{{ lastSyncedGoogle }}</span>
                   </div>
                 </template>
@@ -44,6 +47,15 @@
                 </div>
               </details>
             </template>
+            <template v-else-if="googleStatus === 'Reconnect Required'">
+              <button 
+                @click="connectGoogle" 
+                :disabled="isConnectingGoogle"
+                class="w-full sm:w-auto min-h-touch sm:min-h-0 px-4 py-2 sm:py-1.5 text-body-sm font-medium text-action-link hover:bg-state-selected rounded-control transition-colors duration-standard ease-out border border-transparent hover:border-state-selected disabled:opacity-50 text-center"
+              >
+                {{ isConnectingGoogle ? 'Connecting...' : 'Reconnect' }}
+              </button>
+            </template>
             <template v-else>
               <button 
                 @click="connectGoogle" 
@@ -53,49 +65,6 @@
                 {{ isConnectingGoogle ? 'Connecting...' : 'Connect' }}
               </button>
             </template>
-          </div>
-        </div>
-
-        <!-- Calendly -->
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between p-4 border-b border-border-muted gap-4">
-          <div class="flex items-start sm:items-center gap-4">
-            <div class="flex-shrink-0 w-10 h-10 rounded-panel bg-state-selected flex items-center justify-center border border-state-selected">
-              <span class="text-h3 font-bold text-action-link" aria-hidden="true">C</span>
-            </div>
-            <div class="min-w-0 flex-1">
-              <div class="text-body font-medium text-ink break-words">Calendly</div>
-              <div class="text-body-sm break-words" :class="calendlyStatus === 'Connected' ? 'text-state-success' : 'text-ink-subtle'">
-                <template v-if="isLoadingCalendlyStatus">
-                  <span class="text-ink-subtle animate-pulse">Checking status...</span>
-                </template>
-                <template v-else-if="calendlyStatus === 'Connected'">
-                  <div class="flex flex-col mt-1">
-                    <span class="font-medium text-state-success">✓ Connected</span>
-                    <span class="text-ink-subtle text-overline leading-tight">Connected to Calendly</span>
-                  </div>
-                </template>
-                <template v-else>
-                  Connect booking, rescheduling and cancellation updates
-                </template>
-              </div>
-            </div>
-          </div>
-          <div class="flex items-center gap-2 w-full sm:w-auto">
-            <button
-              v-if="calendlyStatus === 'Connected'"
-              @click="disconnectCalendly"
-              class="w-full sm:w-auto min-h-touch sm:min-h-0 px-4 py-2 sm:py-1.5 text-body-sm font-medium text-ink-muted hover:text-state-danger transition-colors duration-standard ease-out text-center"
-            >
-              Disconnect
-            </button>
-            <button
-              v-else
-              @click="connectCalendly"
-              :disabled="isConnectingCalendly"
-              class="w-full sm:w-auto min-h-touch sm:min-h-0 px-4 py-2 sm:py-1.5 text-body-sm font-medium text-action-link hover:bg-state-selected rounded-control transition-colors duration-standard ease-out border border-transparent hover:border-state-selected disabled:opacity-50 text-center"
-            >
-              {{ isConnectingCalendly ? 'Connecting...' : 'Connect' }}
-            </button>
           </div>
         </div>
 
@@ -332,7 +301,7 @@ onMounted(async () => {
     cleanupUrl()
   }
 
-  await Promise.all([fetchGoogleStatus(), fetchCalendlyStatus()])
+  await fetchGoogleStatus()
   
   if (params.get('video') === 'success') {
     successMessage.value = 'Video provider connected successfully'
@@ -367,10 +336,16 @@ const fetchGoogleStatus = async () => {
     if (response.ok) {
       const data = await response.json()
       if (data.connected) {
-        googleStatus.value = 'Connected'
+        googleEmail.value = data.email || ''
+        if (data.error === 'GOOGLE_TOKEN_EXPIRED' || data.error === 'GOOGLE_REVOKED') {
+          googleStatus.value = 'Reconnect Required'
+        } else {
+          googleStatus.value = 'Connected'
+        }
         lastSyncedGoogle.value = formatSyncTime(data.last_synced_at)
       } else {
         googleStatus.value = 'Not connected'
+        googleEmail.value = ''
       }
     }
   } catch (err) {
@@ -381,18 +356,7 @@ const fetchGoogleStatus = async () => {
 }
 
 const fetchCalendlyStatus = async () => {
-  isLoadingCalendlyStatus.value = true
-  try {
-    const response = await authenticatedFetch('/api/calendly/status')
-    const data = await response.json()
-    if (!response.ok) throw new Error(data.error || 'Unable to check Calendly connection')
-    calendlyStatus.value = data.connected ? 'Connected' : 'Not connected'
-  } catch (err) {
-    console.error('Failed to fetch Calendly status:', err)
-    calendlyStatus.value = 'Not connected'
-  } finally {
-    isLoadingCalendlyStatus.value = false
-  }
+  return // Calendly removed per instructions
 }
 
 const cleanupUrl = () => {

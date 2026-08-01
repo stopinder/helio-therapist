@@ -33,6 +33,49 @@ export function getStartOfWeek(date) {
 }
 
 /**
+ * Calculates the date range for the current view.
+ * Day: selected day
+ * Week: Monday through next Monday
+ * Month: all dates in a 6-row grid
+ */
+export function getViewRange(date, viewMode) {
+  if (viewMode === 'day') {
+    const start = new Date(date)
+    start.setHours(0, 0, 0, 0)
+    const end = new Date(start)
+    end.setDate(end.getDate() + 1)
+    return { start, end }
+  }
+  
+  if (viewMode === 'week') {
+    const start = getStartOfWeek(date)
+    const end = new Date(start)
+    end.setDate(end.getDate() + 7)
+    return { start, end }
+  }
+  
+  if (viewMode === 'month') {
+    const year = date.getFullYear()
+    const month = date.getMonth()
+    const firstOfMonth = new Date(year, month, 1)
+    
+    // Start from the Monday of the first week
+    let firstDayIdx = firstOfMonth.getDay()
+    firstDayIdx = firstDayIdx === 0 ? 6 : firstDayIdx - 1
+    const start = new Date(firstOfMonth)
+    start.setDate(firstOfMonth.getDate() - firstDayIdx)
+    start.setHours(0, 0, 0, 0)
+    
+    // Month grid is always 6 rows (42 days)
+    const end = new Date(start)
+    end.setDate(end.getDate() + 42)
+    return { start, end }
+  }
+  
+  return { start: date, end: date }
+}
+
+/**
  * Returns a date clamped to the end of the month if necessary.
  * e.g. Jan 31 -> Feb 28
  */
@@ -49,15 +92,10 @@ export function addMonths(date, months) {
 /**
  * Calculates event visual style in the timed grid.
  */
-export function getEventStyle(event, overlappingData = { column: 0, totalColumns: 1 }) {
+export function getEventStyle(event, overlappingData = { column: 0, totalColumns: 1 }, hourHeight = 80, rangeStart = 8) {
   const startHour = event.start.getHours() + event.start.getMinutes() / 60
   const endHour = event.end.getHours() + event.end.getMinutes() / 60
   const duration = endHour - startHour
-  
-  // Clinical range: 08:00 - 18:00 (10 hours)
-  const rangeStart = 8
-  const rangeEnd = 18
-  const hourHeight = 80 // Figma spec: ~80px per displayed hour
 
   const top = (startHour - rangeStart) * hourHeight
   const height = Math.max(duration * hourHeight, 24)

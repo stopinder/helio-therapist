@@ -7,11 +7,42 @@ import {
   addMonths, 
   getEventStyle, 
   getOverlappingGroups,
-  getMiniCalendarCells
+  getMiniCalendarCells,
+  getViewRange
 } from '../src/lib/calendarHelpers.js'
 
 test('Calendar logic and date alignment', async (t) => {
   
+  await t.test('View range calculation: Day', () => {
+    const date = new Date(2026, 7, 1) // Aug 1
+    const range = getViewRange(date, 'day')
+    assert.strictEqual(range.start.getDate(), 1)
+    assert.strictEqual(range.end.getDate(), 2)
+  })
+
+  await t.test('View range calculation: Week (Monday start)', () => {
+    const date = new Date(2026, 7, 5) // Wednesday Aug 5
+    const range = getViewRange(date, 'week')
+    assert.strictEqual(range.start.getDate(), 3) // Monday Aug 3
+    assert.strictEqual(range.start.getDay(), 1)
+    assert.strictEqual(range.end.getDate(), 10) // Next Monday Aug 10
+  })
+
+  await t.test('View range calculation: Month (6-row grid)', () => {
+    const date = new Date(2026, 7, 1) // August 2026
+    const range = getViewRange(date, 'month')
+    // Aug 1 is Saturday. Monday of that week is July 27
+    assert.strictEqual(range.start.getDate(), 27)
+    assert.strictEqual(range.start.getMonth(), 6) // July
+    
+    // 42 days later from July 27
+    // July has 31 days. 27 + 4 = 31 (Aug 0).
+    // Remaining days = 42 - 5 (to end of July) = 37 days in Aug/Sept
+    // August has 31 days. 37 - 31 = 6. Sept 7 is the end date.
+    assert.strictEqual(range.end.getDate(), 7)
+    assert.strictEqual(range.end.getMonth(), 8) // September
+  })
+
   await t.test('Mini-calendar weekday alignment for August 2026', () => {
     // 1 August 2026 should be Saturday
     const aug1_2026 = new Date(2026, 7, 1);

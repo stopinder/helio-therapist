@@ -19,6 +19,8 @@ export function useCalendar() {
   const error = ref(null)
   const googleError = ref(null)
   const isGoogleConnected = ref(false)
+  const googleAccount = ref('')
+  const lastSyncedAt = ref(null)
 
   async function loadData() {
     loading.value = true
@@ -41,7 +43,7 @@ export function useCalendar() {
     await loadGoogleEvents()
   }
 
-  async function loadGoogleEvents() {
+  async function loadGoogleEvents(customRange = null) {
     googleLoading.value = true
     googleError.value = null
     try {
@@ -50,13 +52,22 @@ export function useCalendar() {
       if (statusRes.ok) {
         const statusData = await statusRes.json()
         isGoogleConnected.value = !!statusData.connected
+        googleAccount.value = statusData.email || ''
+        lastSyncedAt.value = statusData.last_synced_at || null
         
         if (isGoogleConnected.value) {
-          // Fetch events for a reasonable window (e.g., 31 days each way)
-          const timeMin = new Date()
-          timeMin.setDate(timeMin.getDate() - 31)
-          const timeMax = new Date()
-          timeMax.setDate(timeMax.getDate() + 31)
+          let timeMin, timeMax
+          
+          if (customRange) {
+            timeMin = customRange.start
+            timeMax = customRange.end
+          } else {
+            // Fallback to reasonable window if no range provided
+            timeMin = new Date()
+            timeMin.setDate(timeMin.getDate() - 31)
+            timeMax = new Date()
+            timeMax.setDate(timeMax.getDate() + 31)
+          }
           
           const params = new URLSearchParams({
             timeMin: timeMin.toISOString(),
@@ -69,8 +80,10 @@ export function useCalendar() {
             googleEvents.value = eventsData.events || []
           } else {
             const errData = await eventsRes.json().catch(() => ({}))
-            if (errData.code !== 'GOOGLE_CONNECTION_NOT_FOUND') {
-              googleError.value = 'Google Calendar sync failed.'
+            if (errData.code === 'GOOGLE_TOKEN_EXPIRED' || errData.code === 'GOOGLE_REVOKED') {
+              googleError.value = 'RECONNECT_REQUIRED'
+            } else if (errData.code !== 'GOOGLE_CONNECTION_NOT_FOUND') {
+              googleError.value = 'SYNC_FAILED'
               console.error('Google Calendar events fetch failed:', errData)
             } else {
               isGoogleConnected.value = false
@@ -80,7 +93,7 @@ export function useCalendar() {
       }
     } catch (e) {
       console.error('Failed to load Google Calendar events:', e)
-      // Silent failure for Google Calendar to not block the main clinical view
+      googleError.value = 'SYNC_FAILED'
     } finally {
       googleLoading.value = false
     }
@@ -112,6 +125,7 @@ export function useCalendar() {
           clientName: client?.display_name || 'Unknown Client',
           start: startTime,
           end: endTime,
+          allDay: false,
           status: session.status || 'scheduled',
           workflowStatus: session.workflowStatus,
           type: session.type || 'Session',
@@ -127,20 +141,44 @@ export function useCalendar() {
       
       if (isNaN(startTime.getTime())) return null
 
+      // Matching logic: Match a Google title only when it equals exactly one Helios client display name
+      const title = (event.summary || '').trim()
+      const matchingClients = clients.value.filter(c => 
+        c.display_name && c.display_name.trim().toLowerCase() === title.toLowerCase()
+      )
+      
+      let matchedClientId = null
+      if (matchingClients.length === 1) {
+        matchedClientId = matchingClients[0].id
+      }
+
+      // Conservative deduplication: If a clinical session exists at the exact same start time 
+      // with the same matched client, hide the Google event.
+      if (matchedClientId) {
+        const isDuplicate = clinical.some(c => 
+          String(c.clientId) === String(matchedClientId) && 
+          c.start.getTime() === startTime.getTime()
+        )
+        if (isDuplicate) return null
+      }
+
       return {
         id: `google-${event.id}`,
-        originalId: event.id,
+        externalEventId: event.id,
         source: 'google',
-        clientName: event.summary || '(No title)',
+        title: title || '(No title)',
+        clientName: title || '(No title)',
         start: startTime,
         end: endTime,
+        allDay: !!event.allDay,
         status: 'external',
         type: 'External',
         isEligibleForStart: false,
+        clientId: matchedClientId,
         location: event.location,
         description: event.description,
         meetingLink: event.meetingLink,
-        link: event.link
+        htmlLink: event.htmlLink || event.link
       }
     }).filter(Boolean)
 
@@ -191,7 +229,10 @@ export function useCalendar() {
     error,
     googleError,
     isGoogleConnected,
+    googleAccount,
+    lastSyncedAt,
     loadData,
+    loadGoogleEvents,
     normalizedEvents,
     todayEvents,
     upcomingEvents,
