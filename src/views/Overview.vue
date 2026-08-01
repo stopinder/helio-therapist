@@ -125,6 +125,13 @@
           </section>
         </aside>
       </div>
+
+      <!-- Temporary Data Source Disclosure -->
+      <footer class="mt-stack-xl pt-stack-lg border-t border-border-muted max-w-2xl">
+        <p class="text-caption text-ink-subtle leading-tight">
+          Showing Helios session records. External calendar sync is not connected.
+        </p>
+      </footer>
     </div>
 </template>
 

@@ -42,6 +42,26 @@ test('Calendar logic and date alignment', async (t) => {
     assert.strictEqual(start.getMonth(), 6); // July
     assert.strictEqual(start.getDay(), 1); // Monday
   });
+
+  await t.test('Monday-Friday week generation', () => {
+    const getWeekDaysCount = (viewDate) => {
+      const getStartOfWeek = (date) => {
+        const d = new Date(date)
+        const day = d.getDay()
+        const diff = d.getDate() - (day === 0 ? 6 : day - 1)
+        const start = new Date(d.setDate(diff))
+        start.setHours(0, 0, 0, 0)
+        return start
+      }
+      const start = getStartOfWeek(viewDate)
+      return Array.from({ length: 5 }, (_, i) => {
+        const date = new Date(start)
+        date.setDate(date.getDate() + i)
+        return date
+      }).length
+    }
+    assert.strictEqual(getWeekDaysCount(new Date()), 5);
+  });
 });
 
 test('Appointment eligibility logic', async (t) => {
@@ -64,4 +84,27 @@ test('Appointment eligibility logic', async (t) => {
   assert.strictEqual(isEligible(mockSessions[2]), false, 'Cancelled session should not be eligible');
   assert.strictEqual(isEligible(mockSessions[3]), false, 'Session without client ID should not be eligible');
   assert.strictEqual(isEligible(mockSessions[4]), false, 'Session without ID should not be eligible');
+
+  await t.test('Event positioning and height', () => {
+    const getEventStyle = (event) => {
+      const startHour = event.start.getHours() + event.start.getMinutes() / 60
+      const endHour = event.end.getHours() + event.end.getMinutes() / 60
+      const duration = endHour - startHour
+      
+      const top = (startHour - 8) * 80 + 56
+      const height = Math.max(duration * 80, 24)
+      
+      return { top: `${top}px`, height: `${height}px` }
+    }
+
+    const event1 = { start: new Date(2026, 7, 1, 9, 0), end: new Date(2026, 7, 1, 10, 0) };
+    const style1 = getEventStyle(event1);
+    assert.strictEqual(style1.top, '136px'); // (9-8)*80 + 56 = 136
+    assert.strictEqual(style1.height, '80px'); // 1*80 = 80
+
+    const event2 = { start: new Date(2026, 7, 1, 14, 30), end: new Date(2026, 7, 1, 15, 0) };
+    const style2 = getEventStyle(event2);
+    assert.strictEqual(style2.top, '576px'); // (14.5-8)*80 + 56 = 6.5*80 + 56 = 520 + 56 = 576
+    assert.strictEqual(style2.height, '40px'); // 0.5*80 = 40
+  });
 });

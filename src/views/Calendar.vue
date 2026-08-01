@@ -1,36 +1,48 @@
 <template>
   <div class="flex h-[calc(100vh-3.5rem)] overflow-hidden">
     <!-- Agenda Panel -->
-    <aside class="w-80 border-r border-border-muted bg-surface flex flex-col shrink-0 overflow-y-auto hidden md:flex">
-      <div class="p-page space-y-stack-lg">
-        <!-- Mini Month Calendar -->
-        <div class="bg-surface-subtle border border-border-muted rounded-panel p-inline-md">
-          <div class="flex items-center justify-between mb-stack-sm">
-            <span class="text-body-sm font-semibold text-ink">{{ currentMonthName }}</span>
-            <div class="flex gap-1">
-              <button @click="prevMonth" class="p-1 hover:bg-surface-muted rounded" aria-label="Previous month">‹</button>
-              <button @click="nextMonth" class="p-1 hover:bg-surface-muted rounded" aria-label="Next month">›</button>
+    <aside 
+      class="border-r border-border-muted bg-surface flex flex-col shrink-0 transition-all duration-300 ease-in-out z-30"
+      :class="[
+        isMobile ? 'fixed inset-0 pt-14' : 'w-72',
+        isTablet && !isAgendaExpanded ? 'w-12' : '',
+        isMobile && !isAgendaExpanded ? 'hidden' : 'flex'
+      ]"
+    >
+      <div v-if="!isTablet || isAgendaExpanded" class="flex-1 flex flex-col overflow-y-auto">
+        <div class="p-page space-y-stack-lg">
+          <!-- Mini Month Calendar -->
+          <div class="bg-surface-subtle border border-border-muted rounded-panel p-inline-md">
+            <div class="flex items-center justify-between mb-stack-sm mt-stack-sm">
+              <span class="text-body-sm font-semibold text-ink">{{ currentMonthName }}</span>
+              <div class="flex gap-1">
+                <button @click="prevMonth" class="p-1 hover:bg-surface-muted rounded" aria-label="Previous month">‹</button>
+                <button @click="nextMonth" class="p-1 hover:bg-surface-muted rounded" aria-label="Next month">›</button>
+              </div>
             </div>
-          </div>
-          <div class="grid grid-cols-7 gap-1 text-center">
-            <span v-for="d in ['M','T','W','T','F','S','S']" :key="d" class="text-caption text-ink-subtle font-bold py-1">{{ d }}</span>
-            <div v-for="(cell, idx) in miniCalendarCells" :key="idx" 
-              @click="cell.date && selectDate(cell.date)"
-              class="text-body-sm p-1 rounded-pill transition-colors"
-              :class="[
-                cell.date ? 'cursor-pointer' : '',
-                cell.isSelected ? 'bg-action-primary text-on-action' : 
-                cell.isToday ? 'text-action-primary font-bold' : 
-                cell.date ? 'hover:bg-surface-muted text-ink' : ''
-              ]"
-              :aria-label="cell.date ? cell.date.toDateString() : ''"
-            >
-              {{ cell.date ? cell.date.getDate() : '' }}
+            <div class="grid grid-cols-7 gap-1 text-center mb-stack-sm">
+              <span v-for="d in ['M','T','W','T','F','S','S']" :key="d" class="text-caption text-ink-subtle font-bold py-1">{{ d }}</span>
+              <div v-for="cell in miniCalendarCells" :key="cell.key" 
+                @click="cell.date && selectDate(cell.date)"
+                @keydown.enter="cell.date && selectDate(cell.date)"
+                @keydown.space.prevent="cell.date && selectDate(cell.date)"
+                :tabindex="cell.date ? 0 : -1"
+                class="text-body-sm p-1 rounded-pill transition-colors focus-visible:ring-2 focus-visible:ring-action-primary outline-none"
+                :class="[
+                  cell.date ? 'cursor-pointer' : '',
+                  cell.isSelected ? 'bg-action-primary text-on-action' : 
+                  cell.isToday ? 'text-action-primary font-bold' : 
+                  cell.date ? 'hover:bg-surface-muted text-ink' : ''
+                ]"
+                :aria-label="cell.date ? cell.date.toDateString() : ''"
+              >
+                {{ cell.date ? cell.date.getDate() : '' }}
+              </div>
             </div>
           </div>
         </div>
 
-        <!-- Today Section -->
+          <!-- Today Section -->
         <section class="space-y-stack-sm">
           <h3 class="text-caption font-bold text-ink-muted uppercase tracking-widest">Today</h3>
           <div v-if="todayEvents.length === 0" class="text-body-sm text-ink-subtle py-stack-sm px-inline-sm italic">
@@ -85,8 +97,17 @@
         </section>
       </div>
 
+      <!-- Tablet Collapse Toggle -->
+      <button 
+        v-if="isTablet" 
+        @click="isAgendaExpanded = !isAgendaExpanded"
+        class="absolute -right-3 top-20 w-6 h-6 bg-surface border border-border-muted rounded-pill shadow-sm flex items-center justify-center z-40 hover:bg-surface-elevated transition-colors"
+      >
+        <span class="text-caption leading-none">{{ isAgendaExpanded ? '‹' : '›' }}</span>
+      </button>
+
       <!-- Footer -->
-      <div class="mt-auto p-inline-md border-t border-border-muted py-stack-sm bg-surface-subtle">
+      <div v-if="!isTablet || isAgendaExpanded" class="mt-auto p-inline-md border-t border-border-muted py-stack-sm bg-surface-subtle">
         <p class="text-caption text-ink-subtle leading-tight">
           Showing Helios session records.<br>
           External calendar sync is not connected.
@@ -95,7 +116,17 @@
     </aside>
 
     <!-- Main Calendar Canvas -->
-    <main class="flex-1 flex flex-col bg-surface-canvas overflow-hidden">
+    <main class="flex-1 flex flex-col bg-surface-canvas overflow-hidden relative">
+      <!-- Mobile Agenda Toggle -->
+      <button 
+        v-if="isMobile" 
+        @click="isAgendaExpanded = !isAgendaExpanded"
+        class="fixed bottom-6 right-6 w-14 h-14 bg-action-primary text-on-action rounded-pill shadow-overlay flex items-center justify-center z-50 hover:bg-action-primary-hover transition-all"
+        :class="isAgendaExpanded ? 'rotate-45' : ''"
+      >
+        <span class="text-2xl">{{ isAgendaExpanded ? '+' : '📅' }}</span>
+      </button>
+
       <!-- Calendar Header/Toolbar -->
       <header class="h-14 flex items-center justify-between px-page border-b border-border-muted bg-surface shrink-0 z-20">
         <div class="flex items-center gap-inline-md">
@@ -208,7 +239,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useCalendar } from '../composables/useCalendar'
 
 const { loading, error, normalizedEvents, todayEvents, upcomingEvents, loadData } = useCalendar()
@@ -216,8 +247,27 @@ const selectedEventId = ref(null)
 const viewDate = ref(new Date())
 const gridContainer = ref(null)
 const popoverPosition = ref(null)
+const isAgendaExpanded = ref(true)
 
-onMounted(loadData)
+const windowWidth = ref(window.innerWidth)
+const updateWidth = () => {
+  windowWidth.value = window.innerWidth
+  if (windowWidth.value < 1024) isAgendaExpanded.value = false
+  else isAgendaExpanded.value = true
+}
+
+onMounted(() => {
+  loadData()
+  window.addEventListener('resize', updateWidth)
+  updateWidth()
+})
+
+onUnmounted(() => {
+  window.removeEventListener('resize', updateWidth)
+})
+
+const isMobile = computed(() => windowWidth.value < 640)
+const isTablet = computed(() => windowWidth.value >= 640 && windowWidth.value < 1024)
 
 const selectedEvent = computed(() => {
   return normalizedEvents.value.find(e => e.id === selectedEventId.value)
@@ -255,15 +305,26 @@ const miniCalendarCells = computed(() => {
   const startOffset = (firstDay.getDay() + 6) % 7
   const cells = []
   
-  for (let i = 0; i < startOffset; i++) cells.push({ date: null })
+  // Leading blank cells
+  for (let i = 0; i < startOffset; i++) {
+    cells.push({ date: null, key: `lead-${i}` })
+  }
   
+  // Month dates
   for (let day = 1; day <= lastDay.getDate(); day++) {
     const date = new Date(d.getFullYear(), d.getMonth(), day)
     cells.push({
       date,
+      key: date.toISOString(),
       isToday: isSameDay(date, new Date()),
       isSelected: isSameDay(date, viewDate.value)
     })
+  }
+
+  // Trailing blank cells to fill 6 rows (42 cells)
+  const remaining = 42 - cells.length
+  for (let i = 0; i < remaining; i++) {
+    cells.push({ date: null, key: `trail-${i}` })
   }
   
   return cells
@@ -271,7 +332,7 @@ const miniCalendarCells = computed(() => {
 
 const weekDays = computed(() => {
   const start = getStartOfWeek(viewDate.value)
-  return Array.from({ length: 7 }, (_, i) => {
+  return Array.from({ length: 5 }, (_, i) => { // Monday-Friday week view
     const date = new Date(start)
     date.setDate(date.getDate() + i)
     const isToday = isSameDay(date, new Date())

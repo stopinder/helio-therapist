@@ -6,8 +6,9 @@ import { listClients } from '../lib/clients.js'
  * Calendar domain service for managing clinical sessions as calendar events.
  * 
  * NOTE: This is a temporary adapter mapping Supabase session records into calendar events.
- * It should be replaced or extended to support Google Calendar discovery and 
- * read-only synchronization in a future sprint.
+ * Showing Helios session records. External calendar sync is not connected.
+ * 
+ * This adapter should later be extended or replaced following read-only Google Calendar discovery.
  */
 export function useCalendar() {
   const sessions = ref([])
@@ -61,7 +62,7 @@ export function useCalendar() {
           end: endTime,
           status: session.status || 'scheduled',
           workflowStatus: session.workflowStatus,
-          type: 'Session', // Neutral fallback
+          type: session.type || 'Session', // Use real session type if available, else neutral fallback
           isEligibleForStart,
           session
         }
