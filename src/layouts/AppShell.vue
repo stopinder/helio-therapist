@@ -31,7 +31,7 @@
             {{ item.name }}
           </router-link>
         </nav>
-        <div class="p-inline-md border-t border-border-muted">
+        <div class="p-inline-md border-t border-border-muted flex flex-col gap-2">
           <div class="flex items-center gap-3 px-inline-sm py-stack-sm">
             <div class="h-9 w-9 rounded-pill bg-avatar flex items-center justify-center text-body font-semibold text-ink">
               RO
@@ -41,6 +41,13 @@
               <span class="text-caption text-ink-muted truncate">Psychotherapist</span>
             </div>
           </div>
+          <button
+            @click="handleSignOut"
+            class="flex items-center w-full px-inline-md py-stack-sm rounded-control text-body text-ink-secondary hover:bg-surface-subtle transition-colors duration-standard ease-out"
+          >
+            <span class="mr-3">🚪</span>
+            Sign out
+          </button>
         </div>
       </aside>
     </Transition>
@@ -71,7 +78,7 @@
           {{ item.name }}
         </router-link>
       </nav>
-      <div class="p-inline-md border-t border-border-muted">
+      <div class="p-inline-md border-t border-border-muted flex flex-col gap-2">
         <div class="flex items-center gap-3 px-inline-sm py-stack-sm">
           <div class="h-9 w-9 rounded-pill bg-avatar flex items-center justify-center text-body font-semibold text-ink">
             RO
@@ -81,6 +88,13 @@
             <span class="text-caption text-ink-muted truncate">Psychotherapist</span>
           </div>
         </div>
+        <button
+          @click="handleSignOut"
+          class="flex items-center w-full px-inline-md py-stack-sm rounded-control text-body text-ink-secondary hover:bg-surface-subtle transition-colors duration-standard ease-out"
+        >
+          <span class="mr-3">🚪</span>
+          Sign out
+        </button>
       </div>
     </aside>
 
@@ -101,7 +115,7 @@
           <h2 class="text-h3 font-semibold text-ink truncate">{{ currentPageName }}</h2>
         </div>
         <div class="flex items-center gap-inline-md">
-          <div class="flex items-center gap-inline-xs px-inline-md py-stack-xs rounded-pill bg-surface-subtle border border-border-muted">
+          <div v-if="isSessionActive" class="flex items-center gap-inline-xs px-inline-md py-stack-xs rounded-pill bg-surface-subtle border border-border-muted">
             <span class="h-2 w-2 rounded-pill bg-state-success"></span>
             <span class="text-caption font-medium text-ink-secondary uppercase tracking-wide">Workspace Active</span>
           </div>
@@ -120,11 +134,31 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
+import { supabase } from '../lib/supabase.js'
 
 const route = useRoute()
 const isMobileMenuOpen = ref(false)
+const isSessionActive = ref(true)
+
+const handleExpiry = () => {
+  isSessionActive.value = false
+}
+
+onMounted(() => {
+  window.addEventListener('helios-session-expired', handleExpiry)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('helios-session-expired', handleExpiry)
+})
+
+const handleSignOut = async () => {
+  if (supabase) {
+    await supabase.auth.signOut()
+  }
+}
 
 const navItems = [
   { name: 'Overview', path: '/', icon: '📊' },

@@ -59,11 +59,10 @@
             </div>
             <div v-else-if="isGoogleConnected" class="space-y-1">
               <div class="flex items-center gap-1.5 text-state-success">
-                <span class="text-[10px]">✓</span>
                 <span class="text-caption font-medium">Connected</span>
               </div>
-              <p v-if="googleAccount" class="text-[10px] text-ink-subtle truncate">{{ googleAccount }}</p>
-              <p v-if="lastSyncedAt" class="text-[9px] text-ink-subtle uppercase tracking-tighter">Last synced {{ formatSyncTime(lastSyncedAt) }}</p>
+              <p v-if="googleAccount" class="text-caption text-ink-subtle truncate">{{ googleAccount }}</p>
+              <p v-if="lastSyncedAt" class="text-caption text-ink-subtle uppercase tracking-tighter">Last synced {{ formatSyncTime(lastSyncedAt) }}</p>
             </div>
           </div>
 
@@ -149,7 +148,7 @@
         class="fixed bottom-6 right-6 w-14 h-14 bg-action-primary text-on-action rounded-pill shadow-overlay flex items-center justify-center z-50 hover:bg-action-primary-hover transition-all"
         :class="isAgendaExpanded ? 'rotate-45' : ''"
       >
-        <span class="text-2xl">{{ isAgendaExpanded ? '+' : '📅' }}</span>
+        <span class="text-h2">{{ isAgendaExpanded ? '+' : '📅' }}</span>
       </button>
 
       <!-- Calendar Header/Toolbar -->
@@ -220,7 +219,7 @@
             <!-- Day Content -->
             <div class="flex-1 relative h-full bg-surface-canvas overflow-hidden">
               <!-- Earlier Indicator -->
-              <div v-if="hasEarlierEvents(dayData(viewDate).events)" class="absolute top-0 left-0 right-0 z-20 bg-surface-subtle/90 border-b border-border-muted p-1 text-[10px] text-center font-bold text-ink-muted uppercase">
+              <div v-if="hasEarlierEvents(dayData(viewDate).events)" class="absolute top-0 left-0 right-0 z-20 bg-surface-subtle/90 border-b border-border-muted p-1 text-caption text-center font-bold text-ink-muted uppercase">
                 Earlier events ({{ earlierEvents(dayData(viewDate).events).length }})
               </div>
               
@@ -236,17 +235,17 @@
                 :style="getEventStyle(event, overlappingStyles[event.id], hourHeight, 8)"
                 :class="[
                   selectedEventId === event.id 
-                    ? 'bg-state-selected border-action-primary shadow-md z-20 ring-1 ring-action-primary/20' 
+                    ? 'bg-state-selected border-action-primary shadow-md z-20' 
                     : 'bg-surface border-border-muted hover:border-border-strong hover:shadow-sm z-10'
                 ]"
               >
                 <div class="font-bold text-ink truncate">{{ event.clientName }}</div>
                 <div class="text-ink-secondary">{{ formatTime(event.start) }} – {{ formatTime(event.end) }}</div>
-                <div v-if="event.source === 'google'" class="text-[10px] text-action-primary mt-0.5">Google Calendar</div>
+                <div v-if="event.source === 'google'" class="text-caption text-action-primary mt-0.5">Google Calendar</div>
               </div>
 
               <!-- Later Indicator -->
-              <div v-if="hasLaterEvents(dayData(viewDate).events)" class="absolute bottom-0 left-0 right-0 z-20 bg-surface-subtle/90 border-t border-border-muted p-1 text-[10px] text-center font-bold text-ink-muted uppercase">
+              <div v-if="hasLaterEvents(dayData(viewDate).events)" class="absolute bottom-0 left-0 right-0 z-20 bg-surface-subtle/90 border-t border-border-muted p-1 text-caption text-center font-bold text-ink-muted uppercase">
                 Later events ({{ laterEvents(dayData(viewDate).events).length }})
               </div>
             </div>
@@ -284,7 +283,7 @@
                 <!-- Events Container -->
                 <div class="flex-1 relative overflow-hidden bg-surface-canvas/30">
                   <!-- Earlier Indicator -->
-                  <div v-if="hasEarlierEvents(day.events)" class="absolute top-0 left-0 right-0 z-20 bg-surface-subtle/90 border-b border-border-muted px-1 py-0.5 text-[9px] text-center font-bold text-ink-muted">
+                  <div v-if="hasEarlierEvents(day.events)" class="absolute top-0 left-0 right-0 z-20 bg-surface-subtle/90 border-b border-border-muted px-1 py-0.5 text-caption text-center font-bold text-ink-muted">
                     Earlier ({{ earlierEvents(day.events).length }})
                   </div>
 
@@ -296,7 +295,7 @@
                     v-for="event in day.events.filter(e => !isOutsideWorkingHours(e))" 
                     :key="event.id"
                     @click.stop="selectAppointment(event, $event)"
-                    class="absolute rounded-control border text-[10px] leading-tight p-1 transition-all overflow-hidden select-none group focus-visible:ring-2 focus-visible:ring-action-primary outline-none"
+                    class="absolute rounded-control border text-caption leading-tight p-1 transition-all overflow-hidden select-none group focus-visible:ring-2 focus-visible:ring-action-primary outline-none"
                     :style="getEventStyle(event, overlappingStyles[event.id], hourHeight, 8)"
                     :class="[
                       selectedEventId === event.id 
@@ -309,7 +308,7 @@
                   </div>
 
                   <!-- Later Indicator -->
-                  <div v-if="hasLaterEvents(day.events)" class="absolute bottom-0 left-0 right-0 z-20 bg-surface-subtle/90 border-t border-border-muted px-1 py-0.5 text-[9px] text-center font-bold text-ink-muted">
+                  <div v-if="hasLaterEvents(day.events)" class="absolute bottom-0 left-0 right-0 z-20 bg-surface-subtle/90 border-t border-border-muted px-1 py-0.5 text-caption text-center font-bold text-ink-muted">
                     Later ({{ laterEvents(day.events).length }})
                   </div>
                 </div>
@@ -346,7 +345,7 @@
                   v-for="event in cell.events.slice(0, 3)" 
                   :key="event.id"
                   @click.stop="selectAppointment(event, $event)"
-                  class="px-1.5 py-0.5 rounded-pill text-[10px] font-medium truncate border"
+                  class="px-1.5 py-0.5 rounded-pill text-caption font-medium truncate border"
                   :class="[
                     event.source === 'google' ? 'bg-action-primary/10 text-action-primary border-action-primary/20' : 'bg-surface-subtle text-ink border-border-muted',
                     selectedEventId === event.id ? 'ring-1 ring-action-primary border-action-primary shadow-sm' : ''
@@ -354,7 +353,7 @@
                 >
                   {{ formatTime(event.start) }} {{ event.clientName }}
                 </div>
-                <div v-if="cell.events.length > 3" class="px-1.5 text-[10px] font-bold text-ink-muted">
+                <div v-if="cell.events.length > 3" class="px-1.5 text-caption font-bold text-ink-muted">
                   +{{ cell.events.length - 3 }} more
                 </div>
               </div>
@@ -374,8 +373,8 @@
             <h3 class="text-body font-bold text-ink truncate">{{ selectedEvent.clientName }}</h3>
             <p class="text-caption text-ink-secondary">{{ fullEventDateTime(selectedEvent) }}</p>
             <div v-if="selectedEvent.source === 'google'" class="mt-1 flex items-center gap-1">
-              <span class="text-[10px] px-1.5 py-0.5 bg-action-primary/10 text-action-primary rounded-pill font-bold uppercase">Google</span>
-              <a v-if="selectedEvent.htmlLink" :href="selectedEvent.htmlLink" target="_blank" class="text-[10px] text-action-link hover:underline">View in Calendar ↗</a>
+              <span class="text-caption px-1.5 py-0.5 bg-action-primary/10 text-action-primary rounded-pill font-bold uppercase">Google</span>
+              <a v-if="selectedEvent.htmlLink" :href="selectedEvent.htmlLink" target="_blank" class="text-caption text-action-link hover:underline">View in Calendar ↗</a>
             </div>
           </div>
           <button @click="selectedEventId = null" class="text-ink-subtle hover:text-ink-secondary p-1 text-xl leading-none ml-2" aria-label="Close">×</button>

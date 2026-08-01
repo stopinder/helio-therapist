@@ -172,6 +172,7 @@ const submitting = ref(false)
 const message = ref('')
 const errorMessage = ref('')
 let authSubscription
+const handleExpiryRef = ref(null)
 
 onMounted(async () => {
   if (!supabase) {
@@ -185,15 +186,34 @@ onMounted(async () => {
   session.value = data.session
   authLoading.value = false
 
+  handleExpiryRef.value = (event) => {
+    errorMessage.value = event.detail.message
+    session.value = null
+  }
+  window.addEventListener('helios-session-expired', handleExpiryRef.value)
+
   const listener = supabase.auth.onAuthStateChange((event, nextSession) => {
     if (event === 'PASSWORD_RECOVERY') recovering.value = true
+    if (event === 'SIGNED_OUT') {
+      const currentError = errorMessage.value
+      clearFeedback()
+      if (currentError && currentError.includes('expired')) {
+        errorMessage.value = currentError
+      }
+      recovering.value = false // Ensure we are not in recovery mode
+    }
     session.value = nextSession
     authLoading.value = false
   })
   authSubscription = listener.data.subscription
 })
 
-onUnmounted(() => authSubscription?.unsubscribe())
+onUnmounted(() => {
+  authSubscription?.unsubscribe()
+  if (handleExpiryRef.value) {
+    window.removeEventListener('helios-session-expired', handleExpiryRef.value)
+  }
+})
 
 const clearFeedback = () => {
   message.value = ''
