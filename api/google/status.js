@@ -43,9 +43,11 @@ export default async function handler(req, res) {
     // Return safe metadata (no tokens)
     return res.status(200).json({
       connected: true,
+      email: integration.email, // Added email to status
       last_synced_at: integration.last_synced_at,
       expires_at: integration.expires_at,
-      has_refresh_token: Boolean(integration.refresh_token)
+      has_refresh_token: Boolean(integration.refresh_token),
+      error: integration.access_token ? null : 'GOOGLE_TOKEN_MISSING' // Basic health check
     });
   } catch (error) {
     console.error('[Google Status] Internal error:', error);

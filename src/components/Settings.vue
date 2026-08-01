@@ -337,7 +337,10 @@ const fetchGoogleStatus = async () => {
       const data = await response.json()
       if (data.connected) {
         googleEmail.value = data.email || ''
-        if (data.error === 'GOOGLE_TOKEN_EXPIRED' || data.error === 'GOOGLE_REVOKED') {
+        // Recognize standardized error codes
+        if (data.error === 'GOOGLE_TOKEN_EXPIRED' || 
+            data.error === 'GOOGLE_REVOKED' || 
+            data.error === 'GOOGLE_TOKEN_MISSING') {
           googleStatus.value = 'Reconnect Required'
         } else {
           googleStatus.value = 'Connected'

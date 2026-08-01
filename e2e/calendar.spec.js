@@ -155,4 +155,56 @@ test.describe('Calendar Workspace Workflow', () => {
     // Tablet collapsed agenda is 48px (w-12)
     await expect(tabletAgenda).toHaveCSS('width', '48px');
   });
+
+  test('should display Reconnect Required when Google token refresh fails', async ({ page }) => {
+    // Mock Google API status with error
+    await page.route('**/api/google/status', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          connected: true,
+          email: 'therapist@example.com',
+          error: 'GOOGLE_TOKEN_EXPIRED'
+        })
+      });
+    });
+
+    // Mock Helios profile response
+    await page.route('**/rest/v1/profiles*', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify([{ id: 'mock-user-id', full_name: 'Robert', role: 'therapist' }])
+      });
+    });
+
+    // 1. Sign In (Mocked)
+    await page.route('**/auth/v1/token*', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          access_token: 'mock-token',
+          token_type: 'bearer',
+          expires_in: 3600,
+          refresh_token: 'mock-refresh',
+          user: { id: 'mock-user-id', email: email }
+        })
+      });
+    });
+
+    await page.goto('/');
+    await page.getByLabel('Email address').fill(email);
+    await page.getByLabel('Password').fill(password);
+    await page.locator('form').getByRole('button', { name: 'Sign in' }).click();
+
+    const calendarNavLink = page.locator('aside').getByRole('link', { name: /Calendar/i });
+    await expect(calendarNavLink).toBeVisible({ timeout: 15000 });
+    await calendarNavLink.click();
+
+    // Check agenda panel for Reconnect Required
+    const agendaPanel = page.getByTestId('calendar-agenda');
+    await expect(agendaPanel).toContainText('Reconnect');
+  });
 });

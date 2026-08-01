@@ -57,3 +57,19 @@ test('only asks for reconnect when Google rejects the refresh token', async () =
       : new Response('', { status: 401 })
   }), GoogleCalendarAuthError)
 })
+
+test('validates range boundaries to prevent 400 errors', async () => {
+  const supabase = fakeSupabase()
+  const start = new Date('2026-07-21T00:00:00.000Z')
+  const end = new Date('2026-07-21T00:00:00.000Z') // Same time
+  
+  // Helper now validates range
+  await assert.rejects(() => fetchGoogleCalendarEvents({
+    supabase,
+    userId: 'therapist-1',
+    integration: { access_token: 'valid-token' },
+    start,
+    end,
+    fetchImpl: async () => Response.json({ items: [] })
+  }), /Invalid calendar date range/)
+})

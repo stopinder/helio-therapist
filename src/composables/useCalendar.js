@@ -21,6 +21,7 @@ export function useCalendar() {
   const isGoogleConnected = ref(false)
   const googleAccount = ref('')
   const lastSyncedAt = ref(null)
+  const abortController = ref(null)
 
   async function loadData() {
     loading.value = true
@@ -44,58 +45,76 @@ export function useCalendar() {
   }
 
   async function loadGoogleEvents(customRange = null) {
+    if (googleLoading.value && abortController.value) {
+      abortController.value.abort()
+    }
+    
+    abortController.value = new AbortController()
+    const { signal } = abortController.value
+
     googleLoading.value = true
     googleError.value = null
     try {
       // First check status to avoid unnecessary errors
-      const statusRes = await authenticatedFetch('/api/google/status')
-      if (statusRes.ok) {
-        const statusData = await statusRes.json()
-        isGoogleConnected.value = !!statusData.connected
-        googleAccount.value = statusData.email || ''
-        lastSyncedAt.value = statusData.last_synced_at || null
+      const statusRes = await authenticatedFetch('/api/google/status', { signal })
+      if (!statusRes.ok) throw new Error('Status check failed')
+      
+      const statusData = await statusRes.json()
+      isGoogleConnected.value = !!statusData.connected
+      googleAccount.value = statusData.email || ''
+      lastSyncedAt.value = statusData.last_synced_at || null
+      
+      if (statusData.error === 'GOOGLE_TOKEN_EXPIRED' || statusData.error === 'GOOGLE_REVOKED') {
+        googleError.value = 'RECONNECT_REQUIRED'
+        return
+      }
+
+      if (isGoogleConnected.value) {
+        let timeMin, timeMax
         
-        if (isGoogleConnected.value) {
-          let timeMin, timeMax
-          
-          if (customRange) {
-            timeMin = customRange.start
-            timeMax = customRange.end
+        if (customRange) {
+          // Normalize to avoid millisecond/DST issues with backend range check
+          timeMin = new Date(customRange.start)
+          timeMin.setMilliseconds(0)
+          timeMax = new Date(customRange.end)
+          timeMax.setMilliseconds(0)
+        } else {
+          // Fallback to reasonable window if no range provided
+          timeMin = new Date()
+          timeMin.setHours(0, 0, 0, 0)
+          timeMin.setDate(timeMin.getDate() - 31)
+          timeMax = new Date(timeMin)
+          timeMax.setDate(timeMax.getDate() + 62)
+        }
+        
+        const params = new URLSearchParams({
+          timeMin: timeMin.toISOString(),
+          timeMax: timeMax.toISOString()
+        })
+        
+        const eventsRes = await authenticatedFetch(`/api/google/events?${params.toString()}`, { signal })
+        if (eventsRes.ok) {
+          const eventsData = await eventsRes.json()
+          googleEvents.value = eventsData.events || []
+        } else {
+          const errData = await eventsRes.json().catch(() => ({}))
+          if (errData.code === 'GOOGLE_REAUTH_REQUIRED' || eventsRes.status === 403) {
+            googleError.value = 'RECONNECT_REQUIRED'
+          } else if (errData.code !== 'GOOGLE_CONNECTION_NOT_FOUND') {
+            googleError.value = 'SYNC_FAILED'
+            console.error('Google Calendar events fetch failed:', errData)
           } else {
-            // Fallback to reasonable window if no range provided
-            timeMin = new Date()
-            timeMin.setDate(timeMin.getDate() - 31)
-            timeMax = new Date()
-            timeMax.setDate(timeMax.getDate() + 31)
-          }
-          
-          const params = new URLSearchParams({
-            timeMin: timeMin.toISOString(),
-            timeMax: timeMax.toISOString()
-          })
-          
-          const eventsRes = await authenticatedFetch(`/api/google/events?${params.toString()}`)
-          if (eventsRes.ok) {
-            const eventsData = await eventsRes.json()
-            googleEvents.value = eventsData.events || []
-          } else {
-            const errData = await eventsRes.json().catch(() => ({}))
-            if (errData.code === 'GOOGLE_TOKEN_EXPIRED' || errData.code === 'GOOGLE_REVOKED') {
-              googleError.value = 'RECONNECT_REQUIRED'
-            } else if (errData.code !== 'GOOGLE_CONNECTION_NOT_FOUND') {
-              googleError.value = 'SYNC_FAILED'
-              console.error('Google Calendar events fetch failed:', errData)
-            } else {
-              isGoogleConnected.value = false
-            }
+            isGoogleConnected.value = false
           }
         }
       }
     } catch (e) {
+      if (e.name === 'AbortError') return
       console.error('Failed to load Google Calendar events:', e)
       googleError.value = 'SYNC_FAILED'
     } finally {
       googleLoading.value = false
+      abortController.value = null
     }
   }
 

@@ -56,6 +56,12 @@ export async function refreshGoogleAccessToken({ supabase, userId, integration, 
 }
 
 export async function fetchGoogleCalendarEvents({ supabase, userId, integration, start, end, fetchImpl = fetch }) {
+  if (!start || !end || isNaN(start.getTime()) || isNaN(end.getTime()) || end <= start) {
+    const error = new Error('Invalid calendar date range')
+    error.status = 400
+    throw error
+  }
+
   const requestEvents = async (accessToken) => {
     const params = new URLSearchParams({
       timeMin: start.toISOString(), timeMax: end.toISOString(), singleEvents: 'true',

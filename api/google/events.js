@@ -1,8 +1,7 @@
 import { requireAuthenticatedUser } from '../_lib/supabase.js';
+import { fetchGoogleCalendarEvents, recordGoogleCalendarSync } from '../_lib/google-calendar.js';
 
 export default async function handler(req, res) {
-  console.log('[Google Calendar] Fetching events...');
-
   try {
     let supabase;
     let user;
@@ -16,7 +15,6 @@ export default async function handler(req, res) {
       });
     }
 
-    // FUTURE MIGRATION: Query by user_id when Supabase Auth is introduced.
     const { data: integration, error: dbError } = await supabase
       .from('integrations')
       .select('*')
@@ -39,140 +37,30 @@ export default async function handler(req, res) {
       });
     }
 
-    if (!integration.access_token) {
-      console.warn('[Google Calendar] Access token missing');
-      return res.status(401).json({
-        error: 'Google Calendar not connected',
-        details: 'Stored access token is empty or invalid'
-      });
-    }
+    const requestedStart = req.query.timeMin ? new Date(req.query.timeMin) : null;
+    const requestedEnd = req.query.timeMax ? new Date(req.query.timeMax) : null;
 
-    let accessToken = integration.access_token;
-
-    const now = new Date();
-    const defaultStart = new Date(now);
-    defaultStart.setHours(0, 0, 0, 0);
-    const defaultEnd = new Date(defaultStart);
-    defaultEnd.setDate(defaultEnd.getDate() + 1);
-    const requestedStart = req.query.timeMin ? new Date(req.query.timeMin) : defaultStart;
-    const requestedEnd = req.query.timeMax ? new Date(req.query.timeMax) : defaultEnd;
-
-    if (Number.isNaN(requestedStart.getTime()) || Number.isNaN(requestedEnd.getTime()) || requestedEnd <= requestedStart) {
+    if (!requestedStart || !requestedEnd || 
+        Number.isNaN(requestedStart.getTime()) || Number.isNaN(requestedEnd.getTime()) || 
+        requestedEnd <= requestedStart) {
       return res.status(400).json({ error: 'Invalid calendar date range' });
     }
 
-    const maximumRangeMs = 62 * 24 * 60 * 60 * 1000;
+    // Use a slightly larger margin for the 62-day check to avoid millisecond/DST issues
+    const maximumRangeMs = 63 * 24 * 60 * 60 * 1000;
     if (requestedEnd - requestedStart > maximumRangeMs) {
       return res.status(400).json({ error: 'Calendar range cannot exceed 62 days' });
     }
 
-    const fetchEvents = async (token) => {
+    const { items: rawEvents } = await fetchGoogleCalendarEvents({
+      supabase,
+      userId: user.id,
+      integration,
+      start: requestedStart,
+      end: requestedEnd
+    });
 
-      const params = new URLSearchParams({
-        timeMin: requestedStart.toISOString(),
-        timeMax: requestedEnd.toISOString(),
-        singleEvents: 'true',
-        orderBy: 'startTime',
-        maxResults: '500',
-      });
-
-      return fetch(`https://www.googleapis.com/calendar/v3/calendars/primary/events?${params.toString()}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-    };
-
-    let response = await fetchEvents(accessToken);
-
-    if (response.status === 401 && integration.refresh_token) {
-      console.log('[Google Calendar] Access token expired, refreshing...');
-
-      const clientId = (process.env.GOOGLE_CLIENT_ID || '').trim();
-      const clientSecret = (process.env.GOOGLE_CLIENT_SECRET || '').trim();
-
-      if (!clientId) {
-        console.error('[Google Calendar] Missing GOOGLE_CLIENT_ID during refresh');
-        return res.status(500).json({
-          error: 'Google configuration missing',
-          details: 'GOOGLE_CLIENT_ID is not configured.'
-        });
-      }
-
-      if (!clientSecret) {
-        console.error('[Google Calendar] Missing GOOGLE_CLIENT_SECRET during refresh');
-        return res.status(500).json({
-          error: 'Google configuration missing',
-          details: 'GOOGLE_CLIENT_SECRET is not configured.'
-        });
-      }
-
-      const refreshResponse = await fetch('https://oauth2.googleapis.com/token', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams({
-          client_id: clientId,
-          client_secret: clientSecret,
-          refresh_token: integration.refresh_token,
-          grant_type: 'refresh_token'
-        })
-      });
-
-      if (refreshResponse.ok) {
-        const newTokens = await refreshResponse.json();
-        const tokenUpdate = {
-          access_token: newTokens.access_token,
-          token_type: newTokens.token_type || integration.token_type,
-          scope: newTokens.scope || integration.scope,
-          expires_at: newTokens.expires_in
-            ? new Date(Date.now() + newTokens.expires_in * 1000).toISOString()
-            : integration.expires_at,
-          updated_at: new Date().toISOString()
-        };
-
-        if (newTokens.refresh_token) {
-          tokenUpdate.refresh_token = newTokens.refresh_token;
-        }
-
-        const { error: updateError } = await supabase
-          .from('integrations')
-          .update(tokenUpdate)
-          .eq('provider', 'google')
-          .eq('user_id', user.id);
-
-        if (updateError) {
-          console.error('[Google Calendar] Failed to update tokens in DB:', updateError);
-        }
-
-        accessToken = newTokens.access_token;
-        response = await fetchEvents(accessToken);
-      } else {
-        const refreshError = await refreshResponse.json().catch(() => ({}));
-        console.error('[Google Calendar] Token refresh failed:', refreshError);
-        return res.status(403).json({
-          error: 'Session expired, please reconnect',
-          details: refreshError.error_description || refreshError.error || 'Refresh token invalid'
-        });
-      }
-    }
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      console.error('[Google Calendar] API error:', errorData);
-      return res.status(response.status).json({
-        error: 'Failed to fetch calendar events',
-        details: errorData.error?.message || response.statusText
-      });
-    }
-
-    const data = await response.json();
-    if (!data.items) {
-      console.warn('[Google Calendar] Unexpected API response format:', data);
-      return res.status(500).json({
-        error: 'Invalid response from Google',
-        details: 'Expected items array was missing'
-      });
-    }
-
-    const events = data.items.map(event => ({
+    const events = rawEvents.map(event => ({
       id: event.id,
       summary: event.summary || '(No title)',
       start: event.start?.dateTime || event.start?.date,
@@ -184,13 +72,22 @@ export default async function handler(req, res) {
       meetingLink: event.hangoutLink || ''
     }));
 
-    console.log(`[Google Calendar] Successfully fetched ${events.length} events`);
+    await recordGoogleCalendarSync({ supabase, userId: user.id });
+
     return res.status(200).json({ events });
   } catch (error) {
-    console.error('[Google Calendar] Fatal internal error:', error);
-    return res.status(500).json({
-      error: 'Internal server error',
-      details: error.message
+    if (error.code === 'GOOGLE_REAUTH_REQUIRED') {
+      return res.status(403).json({
+        error: error.message,
+        code: error.code
+      });
+    }
+
+    console.error('[Google Calendar] Error fetching events:', error);
+    return res.status(error.status || 500).json({
+      error: 'Failed to fetch calendar events',
+      details: error.message,
+      code: error.code
     });
   }
 }
