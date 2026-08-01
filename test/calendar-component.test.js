@@ -51,4 +51,15 @@ test('Calendar component template and logic requirements', async (t) => {
   await t.test('Correct working-hours range (10 rows)', () => {
     assert.match(calendarSource, /const workingHours = Array\.from\(\{ length: 10 \}/)
   })
+
+  await t.test('Tablet layout and agenda width exclusivity', () => {
+    // Check for refactored aside classes
+    assert.match(calendarSource, /isMobile \? \(isAgendaExpanded \? 'fixed inset-0 pt-14 flex' : 'hidden'\) : ''/)
+    assert.match(calendarSource, /!isMobile && isTablet \? \(isAgendaExpanded \? 'w-72 flex' : 'w-12 flex'\) : ''/)
+    assert.match(calendarSource, /!isMobile && !isTablet \? 'w-72 flex' : ''/)
+  })
+
+  await t.test('Tablet grid min-width behavior', () => {
+    assert.match(calendarSource, /:class="isTablet \? 'min-w-\[600px\]' : 'min-w-calendar-grid'"/)
+  })
 })

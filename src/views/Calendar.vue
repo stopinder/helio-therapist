@@ -4,9 +4,9 @@
     <aside 
       class="border-r border-border-muted bg-surface flex flex-col shrink-0 transition-all duration-300 ease-in-out z-30"
       :class="[
-        isMobile ? 'fixed inset-0 pt-14' : 'w-72',
-        isTablet && !isAgendaExpanded ? 'w-12' : '',
-        isMobile && !isAgendaExpanded ? 'hidden' : 'flex'
+        isMobile ? (isAgendaExpanded ? 'fixed inset-0 pt-14 flex' : 'hidden') : '',
+        !isMobile && isTablet ? (isAgendaExpanded ? 'w-72 flex' : 'w-12 flex') : '',
+        !isMobile && !isTablet ? 'w-72 flex' : ''
       ]"
     >
       <div v-if="!isTablet || isAgendaExpanded" class="flex-1 flex flex-col overflow-y-auto">
@@ -155,7 +155,7 @@
 
       <!-- Grid -->
       <div v-else class="flex-1 overflow-auto relative" ref="gridContainer" @click="selectedEventId = null">
-        <div v-if="!isMobile" class="flex min-w-calendar-grid h-full relative">
+        <div v-if="!isMobile" class="flex h-full relative" :class="isTablet ? 'min-w-[600px]' : 'min-w-calendar-grid'">
           <!-- Time Axis -->
           <div class="w-16 border-r border-border-muted bg-surface sticky left-0 z-10 shrink-0">
             <div class="h-14 border-b border-border-muted bg-surface"></div> <!-- Matches day header -->
