@@ -107,9 +107,13 @@
         <span class="text-caption leading-none">{{ isAgendaExpanded ? '‹' : '›' }}</span>
       </button>
 
-      <!-- Footer -->
+          <!-- Footer -->
       <div v-if="!isTablet || isAgendaExpanded" class="mt-auto p-inline-md border-t border-border-muted py-stack-sm bg-surface-subtle">
-        <p class="text-caption text-ink-subtle leading-tight">
+        <p v-if="isGoogleConnected" class="text-caption text-ink-subtle leading-tight">
+          <span class="text-state-success font-medium">✓ Google Calendar connected</span><br>
+          Showing sessions and external events.
+        </p>
+        <p v-else class="text-caption text-ink-subtle leading-tight">
           Showing Helios session records.<br>
           External calendar sync is not connected.
         </p>
@@ -204,6 +208,7 @@
                 >
                   <div class="font-bold text-ink truncate">{{ event.clientName }}</div>
                   <div class="text-ink-secondary">{{ formatTime(event.start) }}</div>
+                  <div v-if="event.source === 'google'" class="text-[10px] text-ink-muted mt-0.5 opacity-70">Google</div>
                 </div>
               </div>
             </div>
@@ -303,7 +308,15 @@ import {
   getMiniCalendarCells
 } from '../lib/calendarHelpers.js'
 
-const { loading, error, normalizedEvents, todayEvents, upcomingEvents, loadData } = useCalendar()
+const { 
+  loading, 
+  error, 
+  normalizedEvents, 
+  todayEvents, 
+  upcomingEvents, 
+  loadData,
+  isGoogleConnected
+} = useCalendar()
 const selectedEventId = ref(null)
 const viewDate = ref(new Date())
 const gridContainer = ref(null)
@@ -438,6 +451,7 @@ function statusColor(status) {
     case 'in_progress': return 'bg-state-warning'
     case 'completed': return 'bg-state-success'
     case 'cancelled': return 'bg-state-danger'
+    case 'external': return 'bg-action-primary/20'
     default: return 'bg-ink-subtle'
   }
 }
@@ -447,6 +461,7 @@ function statusBadgeClass(status) {
     case 'in_progress': return 'bg-state-warning/10 text-state-warning border border-state-warning/20'
     case 'completed': return 'bg-state-success/10 text-state-success border border-state-success/20'
     case 'cancelled': return 'bg-state-danger/10 text-state-danger border border-state-danger/20'
+    case 'external': return 'bg-action-primary/10 text-action-primary border border-action-primary/20'
     default: return 'bg-surface-muted text-ink-subtle border border-border-muted'
   }
 }

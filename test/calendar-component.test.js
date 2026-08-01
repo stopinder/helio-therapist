@@ -39,7 +39,9 @@ test('Calendar component template and logic requirements', async (t) => {
     assert.match(calendarSource, /No appointments for this day/)
   })
 
-  await t.test('Temporary data-source disclosure', () => {
+  await t.test('Data-source disclosure matches connection state', () => {
+    assert.match(calendarSource, /v-if="isGoogleConnected"/)
+    assert.match(calendarSource, /v-else/)
     assert.match(calendarSource, /Showing Helios session records/)
     assert.match(calendarSource, /External calendar sync is not connected/)
   })
