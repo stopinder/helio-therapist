@@ -2,6 +2,13 @@ import { ref, computed } from 'vue'
 import { listSessions } from '../lib/sessions.js'
 import { listClients } from '../lib/clients.js'
 
+/**
+ * Calendar domain service for managing clinical sessions as calendar events.
+ * 
+ * NOTE: This is a temporary adapter mapping Supabase session records into calendar events.
+ * It should be replaced or extended to support Google Calendar discovery and 
+ * read-only synchronization in a future sprint.
+ */
 export function useCalendar() {
   const sessions = ref([])
   const clients = ref([])
@@ -20,33 +27,46 @@ export function useCalendar() {
       clients.value = clientsData
     } catch (e) {
       console.error('Failed to load calendar data:', e)
-      error.value = e.message || 'Failed to load schedule'
+      error.value = 'Failed to load schedule. Please try again.'
     } finally {
       loading.value = false
     }
   }
 
   const normalizedEvents = computed(() => {
-    return sessions.value.map(session => {
-      const client = clients.value.find(c => String(c.id) === String(session.clientId))
-      const startTime = new Date(session.startedAt)
-      // Assume 50 min sessions if not specified, or use endedAt
-      const endTime = session.endedAt 
-        ? new Date(session.endedAt) 
-        : new Date(startTime.getTime() + 50 * 60000)
+    return sessions.value
+      .filter(session => session.startedAt) // Safety check
+      .map(session => {
+        const client = clients.value.find(c => String(c.id) === String(session.clientId))
+        const startTime = new Date(session.startedAt)
+        
+        // Handle invalid dates
+        if (isNaN(startTime.getTime())) return null
 
-      return {
-        id: session.id,
-        clientId: session.clientId,
-        clientName: client?.display_name || 'Unknown Client',
-        start: startTime,
-        end: endTime,
-        status: session.status,
-        workflowStatus: session.workflowStatus,
-        type: 'Individual Session', // Fallback label
-        session
-      }
-    })
+        // Preserve real end time or use 50-minute fallback
+        const endTime = session.endedAt && !isNaN(new Date(session.endedAt).getTime())
+          ? new Date(session.endedAt) 
+          : new Date(startTime.getTime() + 50 * 60000)
+
+        // Eligibility rule: Start Session is valid if not completed/cancelled and IDs exist
+        const isEligibleForStart = session.id && 
+                                 session.clientId && 
+                                 !['completed', 'cancelled'].includes(session.status)
+
+        return {
+          id: session.id,
+          clientId: session.clientId,
+          clientName: client?.display_name || 'Unknown Client',
+          start: startTime,
+          end: endTime,
+          status: session.status || 'scheduled',
+          workflowStatus: session.workflowStatus,
+          type: 'Session', // Neutral fallback
+          isEligibleForStart,
+          session
+        }
+      })
+      .filter(Boolean)
   })
 
   const todayEvents = computed(() => {

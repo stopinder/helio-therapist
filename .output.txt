@@ -1,0 +1,327 @@
+
+> helios-therapist@1.0.0 test
+> node --test test/**/*.test.js test/calendar-logic.test.js test/overview-calendar-requirements.test.js test/spacing-system.test.js
+✔ AI Reflection Library: buildReflectionInput (5.8708ms)
+✔ AI Reflection Library: buildReflectionInput with minimal data (1.6866ms)
+✔ AI Reflection Library: validateAIReflectionResponse handles valid input (16.9473ms)
+✔ AI Reflection Library: validateAIReflectionResponse fails on missing fields (7.0311ms)
+✔ AI Reflection Library: validateAIReflectionResponse handles malformed arrays (2.38ms)
+✔ AI Reflection Library: validateAIReflectionResponse trims and limits strings (1.0158ms)
+✔ AI Reflection Library: System Prompt contents (0.8372ms)
+✔ AI Rephrase Library: validateAIRephraseResponse handles valid input (62.0181ms)
+✔ AI Rephrase Library: validateAIRephraseResponse fails on missing rephrased_text (1.1373ms)
+✔ AI Rephrase Library: validateAIRephraseResponse trims and limits strings (1.7452ms)
+✔ AI Rephrase Library: System Prompt contents (3.1978ms)
+✔ calendar events open a Helio-controlled detail popover (334.6998ms)
+▶ Calendar logic and date alignment
+  ✔ Mini-calendar weekday alignment for August 2026 (20.1907ms)
+  ✔ Leap year: February 2024 has 29 days (0.905ms)
+  ✔ Leap year: February 2026 has 28 days (1.0165ms)
+  ✔ Start of week calculation (Monday) (1.5092ms)
+✔ Calendar logic and date alignment (49.2045ms)
+✔ Appointment eligibility logic (25.4143ms)
+✔ keeps calendar recovery in the workspace rather than routing routine work to Settings (440.0648ms)
+✔ lib/clients.js includes createClient with authenticated user check (370.668ms)
+✔ Clients.vue integrates AddClientModal correctly (197.4363ms)
+✔ App.vue reuses createClient helper (36.9307ms)
+✔ searches names and identifiers without requiring email to be displayed (3.5398ms)
+✔ only a single exact result is eligible for Enter-to-open (41.3627ms)
+✔ recent sorting prioritises recently opened clients and then uses name order (4.913ms)
+✔ identifiers appear only when needed to distinguish duplicate names (2.7125ms)
+✔ client request model keeps one send action and independently managed items (493.63ms)
+✔ Clients page uses live Supabase clients and standard UI patterns (592.9857ms)
+✔ clinical exchange labels preserve the distinct assignment lifecycle (12.0362ms)
+✔ clinical timeline presents clinical findings, not workflow activity (15.9328ms)
+✔ PHQ-9 only calculates complete valid answers and preserves item answers (4.4711ms)
+✔ Clinical Summary Approval: draft session displays as draft (2.5647ms)
+✔ Clinical Summary Approval: completed session displays as approved_record (0.5908ms)
+✔ Clinical Summary Approval: parses notes correctly for approved record (0.7182ms)
+✔ Clinical Summary Approval: handles legacy plain text after approval (74.4307ms)
+✔ Clinical Summary: parses valid JSON notes (9.4956ms)
+✔ Clinical Summary: handles plain text as legacy notes (2.8554ms)
+✔ Clinical Summary: handles invalid JSON as legacy notes (55.8792ms)
+✔ Clinical Summary: formats data as JSON string (2.2263ms)
+✔ clinical session state is server-backed with a one-time retained legacy import (754.0618ms)
+✔ session save and completion use concurrency and transactional RPC boundaries (196.3144ms)
+✔ Zoom session operations validate the durable session belongs to the therapist and client (58.953ms)
+[Google Calendar] Refresh requires new consent: invalid_grant
+✔ refreshes an expired Google token and retries the calendar request silently (1758.1417ms)
+✔ only asks for reconnect when Google rejects the refresh token (82.3884ms)
+✔ Growth & Learning View logic and wording (216.0197ms)
+✔ the full migration chain preserves clinical invariants (23431.3621ms)
+✔ ReflectionWorkspace.vue implements single modal with internal stages (214.7935ms)
+✔ ReflectionWorkspace prevents background scroll when modal is open (65.3019ms)
+✔ Today has one focused before-session preparation state (157.6313ms)
+✔ Overview view requirements (591.7178ms)
+✖ Calendar view requirements (214.3611ms)
+✔ Professional Development Insights View logic and wording (1208.2238ms)
+✔ Professional Development Hub-and-Spoke Navigation Architecture (6.3516ms)
+✔ Child Pages Header Consistency (219.8461ms)
+Testing setReflectionSupervisionSelection...
+✓ Success: Update is scoped correctly and returns updated row
+✓ Success: Authentication requirement enforced
+✓ Success: Database errors return a safe error
+[Reflections] Selection update error: { message: 'DB Error' }
+✔ test\reflection-actions.test.js (3910.8937ms)
+Testing Reflection Detail View logic...
+✓ Success: Can open detail view
+✓ Success: Filter state preserved when opening detail
+✓ Success: Supervision toggle updates both list and detail view
+✓ Success: Can close detail view and filter state remains
+✔ test\reflection-detail-view.test.js (2823.7978ms)
+Testing Theme and Search Filtering logic...
+✓ Success: Theme counts are correct
+✓ Success: Theme filtering works
+✓ Success: Search filtering works (body, client, session)
+✓ Success: Combined search + theme filter works
+✓ Success: Empty filtered state confirmed
+✔ test\reflection-filtering.test.js (2652.9061ms)
+✔ the reflection workspace preserves its private therapist-only boundary (204.8096ms)
+✔ Sprint One keeps reflection and summary ownership explicit in RLS (55.0158ms)
+✔ frontend ReflectionWorkspace.vue does NOT contain relationship controls (165.5552ms)
+✔ ReflectionWorkspace.vue has 20,000 character validation (80.4713ms)
+✔ ReflectionWorkspace.vue detail modal is simplified (16.3585ms)
+✔ frontend validation matches database constraints (164.5095ms)
+✔ reflection saving has length validation and error handling (42.3679ms)
+✔ summary generation handles non-JSON responses safely (48.1894ms)
+✔ transcription also uses safe JSON parsing (18.3385ms)
+✔ resource picker separates resource selection from request configuration (224.9846ms)
+✔ SessionWorkspace simplification: UI elements removed (103.8108ms)
+✔ SessionWorkspace: Header and layout cleanup (114.4376ms)
+✔ SessionWorkspace: Navigation labels updated (163.4409ms)
+✔ SessionWorkspace simplification: End Session confirmation wiring (373.9585ms)
+✔ semantic spacing tokens are defined once and exposed to Tailwind (148.762ms)
+✔ priority workspace surfaces use semantic spacing (54.2975ms)
+✔ semantic surface, border, and elevation tokens are defined once and exposed to Tailwind (8.2719ms)
+✔ semantic interaction and motion tokens are defined once and exposed to Tailwind (10.9288ms)
+✔ primary drawers use the shared keyboard focus trap (18.4581ms)
+✔ shared visual decisions have semantic tokens and templates do not use arbitrary colour utilities (667.7426ms)
+✔ SupervisionSummaryTab: New wording and Supervision Pack action (94.6662ms)
+✔ Supervision Pack View and Export Flow (160.5148ms)
+✔ Supervision Pack: Client Alias Generation and Selection (13.9642ms)
+✔ Supervision Pack: Month Grouping (209.0777ms)
+✔ Report Export: Option Handling and Clipboard Output (194.9142ms)
+✔ a reflection may be saved empty or short, while summary generation needs enough source material (125.2747ms)
+✔ the summary request is authenticated and delimits source writing (19.678ms)
+✔ only a bounded, supported draft is accepted (10.8348ms)
+✔ regeneration versions summaries and never overwrites the original reflection (19.0432ms)
+✔ ClientWorkspace.vue integrates live timeline (60.7692ms)
+✔ TimelineItem.vue handles navigation and event-driven presentation (31.7152ms)
+✔ lib/clients.js includes getTimelineEvents helper (14.2977ms)
+✔ multi-record resource and completion workflows call database transactions (122.8271ms)
+✔ privileged transactional functions are not executable by browser roles (17.3534ms)
+✔ tenant policies validate the owner of referenced clinical records (12.9638ms)
+✔ videoProviderService returns provider-neutral labels (5.3341ms)
+✔ videoProviderService does not include provider names in labels (1.0288ms)
+✔ downloads a transcript with an OAuth bearer token (176.8671ms)
+✔ follows a signed non-Zoom redirect without leaking the bearer token (13.2239ms)
+✔ uses a pre-expiry refreshed token before downloading (3.3974ms)
+✔ retries exactly once with a refreshed token after a 401 (2.3174ms)
+✔ leaves a persistent 401 for the caller to record as a failure (1.6132ms)
+✔ accepts a current Zoom webhook with a matching signature (21.7358ms)
+✔ rejects missing, mismatched and stale Zoom webhook signatures (11.1145ms)
+✔ verifies the exact raw Zoom payload without reserialising JSON (7.5462ms)
+✔ uses a stable delivery key and stores only bounded webhook metadata (8.6239ms)
+ℹ tests 103
+ℹ suites 0
+ℹ pass 102
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 29623.7382
+✖ failing tests:
+test at test\overview-calendar-requirements.test.js:49:1
+✖ Calendar view requirements (214.3611ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /v-for="day in weekDays"/. Input:
+
+  '<template>\r\n' +
+    '  <div class="flex h-[calc(100vh-3.5rem)] overflow-hidden">\r\n' +
+    '    <!-- Agenda Panel -->\r\n' +
+    '    <aside class="w-80 border-r border-border-muted bg-surface flex flex-col shrink-0 overflow-y-auto hidden md:flex">\r\n' +
+    '      <div class="p-page space-y-stack-lg">\r\n' +
+    '        <!-- Mini Month Calendar -->\r\n' +
+    '        <div class="bg-surface-subtle border border-border-muted rounded-panel p-inline-md">\r\n' +
+    '          <div class="flex items-center justify-between mb-stack-sm">\r\n' +
+    '            <span class="text-body-sm font-semibold text-ink">{{ currentMonthName }}</span>\r\n' +
+    '            <div class="flex gap-1">\r\n' +
+    '              <button @click="prevMonth" class="p-1 hover:bg-surface-muted rounded" aria-label="Previous month">‹</button>\r\n' +
+    '              <button @click="nextMonth" class="p-1 hover:bg-surface-muted rounded" aria-label="Next month">›</button>\r\n' +
+    '            </div>\r\n' +
+    '          </div>\r\n' +
+    '          <div class="grid grid-cols-7 gap-1 text-center">\r\n' +
+    `            <span v-for="d in ['M','T','W','T','F','S','S']" :key="d" class="text-caption text-ink-subtle font-bold py-1">{{ d }}</span>\r\n` +
+    '            <div v-for="(cell, idx) in miniCalendarCells" :key="idx" \r\n' +
+    '              @click="cell.date && selectDate(cell.date)"\r\n' +
+    '              class="text-body-sm p-1 rounded-pill transition-colors"\r\n' +
+    '              :class="[\r\n' +
+    "                cell.date ? 'cursor-pointer' : '',\r\n" +
+    "                cell.isSelected ? 'bg-action-primary text-on-action' : \r\n" +
+    "                cell.isToday ? 'text-action-primary font-bold' : \r\n" +
+    "                cell.date ? 'hover:bg-surface-muted text-ink' : ''\r\n" +
+    '              ]"\r\n' +
+    `              :aria-label="cell.date ? cell.date.toDateString() : ''"\r\n` +
+    '            >\r\n' +
+    "              {{ cell.date ? cell.date.getDate() : '' }}\r\n" +
+    '            </div>\r\n' +
+    '          </div>\r\n' +
+    '        </div>\r\n' +
+    '\r\n' +
+    '        <!-- Today Section -->\r\n' +
+    '        <section class="space-y-stack-sm">\r\n' +
+    '          <h3 class="text-caption font-bold text-ink-muted uppercase tracking-widest">Today</h3>\r\n' +
+    '          <div v-if="todayEvents.length === 0" class="text-body-sm text-ink-subtle py-stack-sm px-inline-sm italic">\r\n' +
+    '            No appointments today.\r\n' +
+    '          </div>\r\n' +
+    '          <div v-else class="space-y-stack-xs">\r\n' +
+    '            <div \r\n' +
+    '              v-for="event in todayEvents" \r\n' +
+    '              :key="event.id"\r\n' +
+    '              @click="selectAppointment(event, $event)"\r\n' +
+    '              class="group p-inline-sm rounded-control cursor-pointer transition-colors border"\r\n' +
+    `              :class="selectedEventId === event.id ? 'bg-state-selected border-action-primary' : 'hover:bg-surface-subtle border-transparent'"\r\n` +
+    '            >\r\n' +
+    '              <div class="flex items-start gap-inline-sm">\r\n' +
+    '                <div class="w-1.5 h-1.5 rounded-pill mt-2 shrink-0" :class="statusColor(event.status)"></div>\r\n' +
+    '                <div class="min-w-0">\r\n' +
+    '                  <div class="text-body-sm font-semibold text-ink truncate">{{ event.clientName }}</div>\r\n' +
+    '                  <div class="text-caption text-ink-muted truncate">\r\n' +
+    '                    {{ formatTime(event.start) }} · {{ event.type }}\r\n' +
+    '                  </div>\r\n' +
+    '                </div>\r\n' +
+    '              </div>\r\n' +
+    '            </div>\r\n' +
+    '          </div>\r\n' +
+    '        </section>\r\n' +
+    '\r\n' +
+    '        <!-- Upcoming Section -->\r\n' +
+    '        <section class="space-y-stack-sm">\r\n' +
+    '          <h3 class="text-caption font-bold text-ink-muted uppercase tracking-widest">Upcoming</h3>\r\n' +
+    '          <div v-if="upcomingEvents.length === 0" class="text-body-sm text-ink-subtle py-stack-sm px-inline-sm italic">\r\n' +
+    '            No upcoming appointments.\r\n' +
+    '          </div>\r\n' +
+    '          <div v-else class="space-y-stack-xs">\r\n' +
+    '            <div \r\n' +
+    '              v-for="event in upcomingEvents.slice(0, 10)" \r\n' +
+    '              :key="event.id"\r\n' +
+    '              @click="selectAppointment(event, $event)"\r\n' +
+    '              class="group p-inline-sm rounded-control cursor-pointer transition-colors border"\r\n' +
+    `              :class="selectedEventId === event.id ? 'bg-state-selected border-action-primary' : 'hover:bg-surface-subtle border-transparent'"\r\n` +
+    '            >\r\n' +
+    '              <div class="flex items-start gap-inline-sm">\r\n' +
+    '                <div class="w-1.5 h-1.5 rounded-pill mt-2 shrink-0" :class="statusColor(event.status)"></div>\r\n' +
+    '                <div class="min-w-0">\r\n' +
+    '                  <div class="text-body-sm font-semibold text-ink truncate">{{ event.clientName }}</div>\r\n' +
+    '                  <div class="text-caption text-ink-muted truncate">\r\n' +
+    '                    {{ formatDate(event.start) }} · {{ formatTime(event.start) }}\r\n' +
+    '                  </div>\r\n' +
+    '                </div>\r\n' +
+    '              </div>\r\n' +
+    '            </div>\r\n' +
+    '          </div>\r\n' +
+    '        </section>\r\n' +
+    '      </div>\r\n' +
+    '\r\n' +
+    '      <!-- Footer -->\r\n' +
+    '      <div class="mt-auto p-inline-md border-t border-border-muted py-stack-sm bg-surface-subtle">\r\n' +
+    '        <p class="text-caption text-ink-subtle leading-tight">\r\n' +
+    '          Showing Helios session records.<br>\r\n' +
+    '          External calendar sync is not connected.\r\n' +
+    '        </p>\r\n' +
+    '      </div>\r\n' +
+    '    </aside>\r\n' +
+    '\r\n' +
+    '    <!-- Main Calendar Canvas -->\r\n' +
+    '    <main class="flex-1 flex flex-col bg-surface-canvas overflow-hidden">\r\n' +
+    '      <!-- Calendar Header/Toolbar -->\r\n' +
+    '      <header class="h-14 flex items-center justify-between px-page border-b border-border-muted bg-surface shrink-0 z-20">\r\n' +
+    '        <div class="flex items-center gap-inline-md">\r\n' +
+    '          <h2 class="text-body font-semibold text-ink">{{ currentRangeLabel }}</h2>\r\n' +
+    '          <div class="flex items-center bg-surface-muted rounded-control p-0.5 border border-border-muted">\r\n' +
+    '            <button @click="moveWeek(-1)" class="px-2 py-0.5 hover:bg-surface-elevated rounded transition-colors" aria-label="Previous week">‹</button>\r\n' +
+    '            <button @click="goToday" class="px-inline-sm py-0.5 text-body-sm font-medium hover:bg-surface-elevated rounded transition-colors">Today</button>\r\n' +
+    '            <button @click="moveWeek(1)" class="px-2 py-0.5 hover:bg-surface-elevated rounded transition-colors" aria-label="Next week">›</button>\r\n' +
+    '          </div>\r\n' +
+    '        </div>\r\n' +
+    '        <div class="flex items-center gap-inline-sm">\r\n' +
+    '          <div class="bg-surface-muted rounded-control p-0.5 flex border border-border-muted">\r\n' +
+    '            <button class="px-inline-md py-stack-xs text-body-sm font-medium bg-surface-elevated shadow-sm rounded-control">Week</button>\r\n' +
+    '          </div>\r\n' +
+    '        </div>\r\n' +
+    '      </header>\r\n' +
+    '\r\n' +
+    '      <!-- Loading/Error State -->\r\n' +
+    '      <div v-if="loading && !normalizedEvents.length" class="flex-1 flex items-center justify-center">\r\n' +
+    '        <p class="text-ink-muted animate-pulse">Loading calendar...</p>\r\n' +
+    '      </div>\r\n' +
+    '      <div v-else-if="error" class="flex-1 flex flex-col items-center justify-center p-page text-center">\r\n' +
+    '        <p class="text-body text-state-danger mb-stack-md">{{ error }}</p>\r\n' +
+    '        <button @click="loadData" class="px-inline-md py-stack-sm bg-action-primary text-on-action rounded-control font-medium">Retry</button>\r\n' +
+    '      </div>\r\n' +
+    '\r\n' +
+    '      <!-- Grid -->\r\n' +
+    '      <div v-else class="flex-1 overflow-auto relative" ref="gridContainer">\r\n' +
+    '        <div class="flex min-w-[800px] h-full relative">\r\n' +
+    '          <!-- Time Axis -->\r\n' +
+    '          <div class="w-16 border-r border-border-muted bg-surface sticky left-0 z-10 shrink-0">\r\n' +
+    '            <div class="h-14 border-b border-border-muted bg-surface"></div> <!-- Matches day header -->\r\n' +
+    '            <div class="relative">\r\n' +
+    '              <div v-for="hour in workingHours" :key="hour" \r\n' +
+    '                class="h-20 border-b border-border-muted/30 text-right pr-2 pt-1"\r\n' +
+    '              >\r\n' +
+    '                <span class="text-caption font-bold text-ink-subtle uppercase">{{ formatHour(hour) }}</span>\r\n' +
+    '              </div>\r\n' +
+    '            </div>\r\n' +
+    '          </div>\r\n' +
+    '\r\n' +
+    '          <!-- Week Days -->\r\n' +
+    '          <div class="flex-1 grid grid-cols-5 h-full relative">\r\n' +
+    '            <div v-for="day in weekDays.slice(0, 5)" :key="day.date.toISOString()" \r\n' +
+    '              class="border-r border-border-muted flex flex-col min-h-full"\r\n' +
+    `              :class="day.isToday ? 'bg-surface-subtle' : ''"\r\n` +
+    '            >\r\n' +
+    '              <!-- Day Header -->\r\n' +
+    '              <div class="sticky top-0 bg-surface border-b border-border-muted p-stack-sm text-center z-10 h-14 flex flex-col justify-center">\r\n' +
+    '                <div class="text-caption font-bold text-ink-muted uppercase tracking-wider">{{ day.shortName }}</div>\r\n' +
+    `                <div class="text-body font-semibold" :class="day.isToday ? 'text-action-primary' : 'text-ink'">{{ day.date.getDate() }}</div>\r\n` +
+    '              </div>\r\n' +
+    '\r\n' +
+    '              <!-- Events Container (Timed) -->\r\n' +
+    '              <div class="flex-1 relative">\r\n' +
+    '                <!-- Hour markers background -->\r\n' +
+    `                <div v-for="hour in workingHours" :key="'bg-'+hour" class="h-20 border-b border-border-muted/30"></div>\r\n` +
+    '                \r\n' +
+    '                <!-- Events -->\r\n' +
+    '                <div \r\n' +
+    '                  v-for="event in day.events" \r\n' +
+    '                  :key="event.id"\r\n' +
+    '                  @click.stop="selectAppointment(event, $event)"\r\n' +
+    '                  class="absolute left-1 right-1 rounded-control border text-caption leading-tight p-1.5 transition-all overflow-hidden z-0 select-none group"\r\n' +
+    '                  :style="getEventStyle(event)"\r\n' +
+    '                  :class="selectedEventId === event.id \r\n' +
+    "                    ? 'bg-state-selected border-action-primary shadow-md z-10 ring-1 ring-action-primary/20' \r\n" +
+    `                    : 'bg-surface border-border-muted hover:border-border-strong hover:shadow-sm'"\r\n` +
+    '                >\r\n' +
+    '                  <div class="font-bold text-ink truncate">{{ event.clientName }}</div>\r\n' +
+    '                  <div class="text-ink-secondary">{{ formatTime(event.start) }}</div>\r\n' +
+    '                </div>\r\n' +
+    '              </div>\r\n' +
+    '            </div>\r\n' +
+    '          </div>\r\n' +
+    '        </div>\r\n' +
+    '\r\n' +
+    '        <!-- Popover Action Surface -->\r\n' +
+    '        <div v-if="selectedEvent && popoverPosition" \r\n' +
+    '          class="fixed z-40 w-64 bg-surface-elevated border border-border-strong rounded-panel shadow-overlay p-4 animate-in fade-in zoom-in duration-200"\r\n' +
+    '          :style="{ top: popoverPosition.top '... 7306 more characters
+
+      at TestContext.<anonymous> (file:///C:/Users/Rob/WebstormProjects/helio-therapist/test/overview-calendar-requirements.test.js:65:10)
+      at async Test.run (node:internal/test_runner/test:1054:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:744:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: `<template>\r\n  <div class="flex h-[calc(100vh-3.5rem)] overflow-hidden">\r\n    <!-- Agenda Panel -->\r\n    <aside class="w-80 border-r border-border-muted bg-surface flex flex-col shrink-0 overflow-y-auto hidden md:flex">\r\n      <div class="p-page space-y-stack-lg">\r\n        <!-- Mini Month Calendar -->\r\n        <div class="bg-surface-subtle border border-border-muted rounded-panel p-inline-md">\r\n          <div class="flex items-center justify-between mb-stack-sm">\r\n            <span class="text-body-sm font-semibold text-ink">{{ currentMonthName }}</span>\r\n            <div class="flex gap-1">\r\n              <button @click="prevMonth" class="p-1 hover:bg-surface-muted rounded" aria-label="Previous month">‹</button>\r\n              <button @click="nextMonth" class="p-1 hover:bg-surface-muted rounded" aria-label="Next month">›</button>\r\n            </div>\r\n          </div>\r\n          <div class="grid grid-cols-7 gap-1 text-center">\r\n            <span v-for="d in ['M','T','W','T','F','S','S']" :key="d" class="text-caption text-ink-subtle font-bold py-1">{{ d }}</span>\r\n            <div v-for="(cell, idx) in miniCalendarCells" :key="idx" \r\n              @click="cell.date && selectDate(cell.date)"\r\n              class="text-body-sm p-1 rounded-pill transition-colors"\r\n              :class="[\r\n                cell.date ? 'cursor-pointer' : '',\r\n                cell.isSelected ? 'bg-action-primary text-on-action' : \r\n                cell.isToday ? 'text-action-primary font-bold' : \r\n                cell.date ? 'hover:bg-surface-muted text-ink' : ''\r\n              ]"\r\n              :aria-label="cell.date ? cell.date.toDateString() : ''"\r\n            >\r\n              {{ cell.date ? cell.date.getDate() : '' }}\r\n            </div>\r\n          </div>\r\n        </div>\r\n\r\n        <!-- Today Section -->\r\n        <section class="space-y-stack-sm">\r\n          <h3 class="text-caption font-bold text-ink-muted uppercase tracking-widest">Today</h3>\r\n          <div v-if="todayEvents.length === 0" class="text-body-sm text-ink-subtle py-stack-sm px-inline-sm italic">\r\n            No appointments today.\r\n          </div>\r\n          <div v-else class="space-y-stack-xs">\r\n            <div \r\n              v-for="event in todayEvents" \r\n              :key="event.id"\r\n              @click="selectAppointment(event, $event)"\r\n              class="group p-inline-sm rounded-control cursor-pointer transition-colors border"\r\n              :class="selectedEventId === event.id ? 'bg-state-selected border-action-primary' : 'hover:bg-surface-subtle border-transparent'"\r\n            >\r\n              <div class="flex items-start gap-inline-sm">\r\n                <div class="w-1.5 h-1.5 rounded-pill mt-2 shrink-0" :class="statusColor(event.status)"></div>\r\n                <div class="min-w-0">\r\n                  <div class="text-body-sm font-semibold text-ink truncate">{{ event.clientName }}</div>\r\n                  <div class="text-caption text-ink-muted truncate">\r\n                    {{ formatTime(event.start) }} · {{ event.type }}\r\n                  </div>\r\n                </div>\r\n              </div>\r\n            </div>\r\n          </div>\r\n        </section>\r\n\r\n        <!-- Upcoming Section -->\r\n        <section class="space-y-stack-sm">\r\n          <h3 class="text-caption font-bold text-ink-muted uppercase tracking-widest">Upcoming</h3>\r\n          <div v-if="upcomingEvents.length === 0" class="text-body-sm text-ink-subtle py-stack-sm px-inline-sm italic">\r\n            No upcoming appointments.\r\n          </div>\r\n          <div v-else class="space-y-stack-xs">\r\n            <div \r\n              v-for="event in upcomingEvents.slice(0, 10)" \r\n              :key="event.id"\r\n              @click="selectAppointment(event, $event)"\r\n              class="group p-inline-sm rounded-control cursor-pointer transition-colors border"\r\n              :class="selectedEventId === event.id ? 'bg-state-selected border-action-primary' : 'hover:bg-surface-subtle border-transparent'"\r\n            >\r\n              <div class="flex items-start gap-inline-sm">\r\n                <div class="w-1.5 h-1.5 rounded-pill mt-2 shrink-0" :class="statusColor(event.status)"></div>\r\n                <div class="min-w-0">\r\n                  <div class="text-body-sm font-semibold text-ink truncate">{{ event.clientName }}</div>\r\n                  <div class="text-caption text-ink-muted truncate">\r\n                    {{ formatDate(event.start) }} · {{ formatTime(event.start) }}\r\n                  </div>\r\n                </div>\r\n              </div>\r\n            </div>\r\n          </div>\r\n        </section>\r\n      </div>\r\n\r\n      <!-- Footer -->\r\n      <div class="mt-auto p-inline-md border-t border-border-muted py-stack-sm bg-surface-subtle">\r\n        <p class="text-caption text-ink-subtle leading-tight">\r\n          Showing Helios session records.<br>\r\n          External calendar sync is not connected.\r\n        </p>\r\n      </div>\r\n    </aside>\r\n\r\n    <!-- Main Calendar Canvas -->\r\n    <main class="flex-1 flex flex-col bg-surface-canvas overflow-hidden">\r\n      <!-- Calendar Header/Toolbar -->\r\n      <header class="h-14 flex items-center justify-between px-page border-b border-border-muted bg-surface shrink-0 z-20">\r\n        <div class="flex items-center gap-inline-md">\r\n          <h2 class="text-body font-semibold text-ink">{{ currentRangeLabel }}</h2>\r\n          <div class="flex items-center bg-surface-muted rounded-control p-0.5 border border-border-muted">\r\n            <button @click="moveWeek(-1)" class="px-2 py-0.5 hover:bg-surface-elevated rounded transition-colors" aria-label="Previous week">‹</button>\r\n            <button @click="goToday" class="px-inline-sm py-0.5 text-body-sm font-medium hover:bg-surface-elevated rounded transition-colors">Today</button>\r\n            <button @click="moveWeek(1)" class="px-2 py-0.5 hover:bg-surface-elevated rounded transition-colors" aria-label="Next week">›</button>\r\n          </div>\r\n        </div>\r\n        <div class="flex items-center gap-inline-sm">\r\n          <div class="bg-surface-muted rounded-control p-0.5 flex border border-border-muted">\r\n            <button class="px-inline-md py-stack-xs text-body-sm font-medium bg-surface-elevated shadow-sm rounded-control">Week</button>\r\n          </div>\r\n        </div>\r\n      </header>\r\n\r\n      <!-- Loading/Error State -->\r\n      <div v-if="loading && !normalizedEvents.length" class="flex-1 flex items-center justify-center">\r\n        <p class="text-ink-muted animate-pulse">Loading calendar...</p>\r\n      </div>\r\n      <div v-else-if="error" class="flex-1 flex flex-col items-center justify-center p-page text-center">\r\n        <p class="text-body text-state-danger mb-stack-md">{{ error }}</p>\r\n        <button @click="loadData" class="px-inline-md py-stack-sm bg-action-primary text-on-action rounded-control font-medium">Retry</button>\r\n      </div>\r\n\r\n      <!-- Grid -->\r\n      <div v-else class="flex-1 overflow-auto relative" ref="gridContainer">\r\n        <div class="flex min-w-[800px] h-full relative">\r\n          <!-- Time Axis -->\r\n          <div class="w-16 border-r border-border-muted bg-surface sticky left-0 z-10 shrink-0">\r\n            <div class="h-14 border-b border-border-muted bg-surface"></div> <!-- Matches day header -->\r\n            <div class="relative">\r\n              <div v-for="hour in workingHours" :key="hour" \r\n                class="h-20 border-b border-border-muted/30 text-right pr-2 pt-1"\r\n              >\r\n                <span class="text-caption font-bold text-ink-subtle uppercase">{{ formatHour(hour) }}</span>\r\n              </div>\r\n            </div>\r\n          </div>\r\n\r\n          <!-- Week Days -->\r\n          <div class="flex-1 grid grid-cols-5 h-full relative">\r\n            <div v-for="day in weekDays.slice(0, 5)" :key="day.date.toISOString()" \r\n              class="border-r border-border-muted flex flex-col min-h-full"\r\n              :class="day.isToday ? 'bg-surface-subtle' : ''"\r\n            >\r\n              <!-- Day Header -->\r\n              <div class="sticky top-0 bg-surface border-b border-border-muted p-stack-sm text-center z-10 h-14 flex flex-col justify-center">\r\n                <div class="text-caption font-bold text-ink-muted uppercase tracking-wider">{{ day.shortName }}</div>\r\n                <div class="text-body font-semibold" :class="day.isToday ? 'text-action-primary' : 'text-ink'">{{ day.date.getDate() }}</div>\r\n              </div>\r\n\r\n              <!-- Events Container (Timed) -->\r\n              <div class="flex-1 relative">\r\n                <!-- Hour markers background -->\r\n                <div v-for="hour in workingHours" :key="'bg-'+hour" class="h-20 border-b border-border-muted/30"></div>\r\n                \r\n                <!-- Events -->\r\n                <div \r\n                  v-for="event in day.events" \r\n                  :key="event.id"\r\n                  @click.stop="selectAppointment(event, $event)"\r\n                  class="absolute left-1 right-1 rounded-control border text-caption leading-tight p-1.5 transition-all overflow-hidden z-0 select-none group"\r\n                  :style="getEventStyle(event)"\r\n                  :class="selectedEventId === event.id \r\n                    ? 'bg-state-selected border-action-primary shadow-md z-10 ring-1 ring-action-primary/20' \r\n                    : 'bg-surface border-border-muted hover:border-border-strong hover:shadow-sm'"\r\n                >\r\n                  <div class="font-bold text-ink truncate">{{ event.clientName }}</div>\r\n                  <div class="text-ink-secondary">{{ formatTime(event.start) }}</div>\r\n                </div>\r\n              </div>\r\n            </div>\r\n          </div>\r\n        </div>\r\n\r\n        <!-- Popover Action Surface -->\r\n        <div v-if="selectedEvent && popoverPosition" \r\n          class="fixed z-40 w-64 bg-surface-elevated border border-border-strong rounded-panel shadow-overlay p-4 animate-in fade-in zoom-in duration-200"\r\n          :style="{ top: popoverPosition.top `... 7306 more characters,
+    expected: /v-for="day in weekDays"/,
+    operator: 'match',
+    diff: 'simple'
+  }

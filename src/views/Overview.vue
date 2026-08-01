@@ -1,6 +1,5 @@
 <template>
-  <AppShell>
-    <div class="max-w-7xl mx-auto px-page py-page space-y-stack-xl">
+  <div class="max-w-7xl mx-auto px-page py-page space-y-stack-xl">
       <!-- Compact Greeting -->
       <header>
         <p class="text-caption font-medium text-ink-muted uppercase tracking-wider mb-stack-xs">
@@ -51,17 +50,18 @@
               </div>
               <div class="flex items-center gap-inline-sm">
                 <router-link 
+                  v-if="event.clientId"
                   :to="`/clients/${event.clientId}`"
                   class="px-inline-sm py-stack-xs text-body-sm font-medium text-ink-secondary hover:text-ink hover:bg-surface-subtle rounded-control border border-border-muted transition-colors"
                 >
                   Open Client
                 </router-link>
                 <router-link 
-                  v-if="event.id"
+                  v-if="event.isEligibleForStart"
                   :to="`/clients/${event.clientId}/sessions/${event.id}`"
                   class="px-inline-sm py-stack-xs text-body-sm font-medium text-on-action bg-action-primary hover:bg-action-primary-hover rounded-control transition-colors shadow-sm"
                 >
-                  Open Session
+                  Start Session
                 </router-link>
               </div>
             </div>
@@ -126,12 +126,10 @@
         </aside>
       </div>
     </div>
-  </AppShell>
 </template>
 
 <script setup>
 import { computed, onMounted, ref } from 'vue'
-import AppShell from '../layouts/AppShell.vue'
 import { useCalendar } from '../composables/useCalendar'
 import { getAllPrivateReflections } from '../lib/reflections'
 

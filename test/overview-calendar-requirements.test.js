@@ -16,7 +16,7 @@ test('Overview view requirements', async () => {
   assert.match(overview, /event.clientName/)
   assert.match(overview, /formatStatus\(event.status\)/)
   assert.match(overview, /Open Client/)
-  assert.match(overview, /Open Session/)
+  assert.match(overview, /Start Session/)
   
   // Sorting chronologically (verified in composable test)
   assert.match(overview, /View Calendar →/)
@@ -54,14 +54,15 @@ test('Calendar view requirements', async () => {
   assert.match(calendar, /currentMonthName/)
   assert.match(calendar, /Today/)
   assert.match(calendar, /Upcoming/)
-  assert.match(calendar, /Calendar integration not connected/)
+  assert.match(calendar, /Showing Helios session records/)
+  assert.match(calendar, /External calendar sync is not connected/)
 
   // Main Calendar Canvas (Week View)
   assert.match(calendar, /currentRangeLabel/)
   assert.match(calendar, /moveWeek\(-1\)/)
   assert.match(calendar, /moveWeek\(1\)/)
   assert.match(calendar, /goToday/)
-  assert.match(calendar, /v-for="day in weekDays"/)
+  assert.match(calendar, /v-for="day in weekDays\.slice\(0, 5\)"/)
   assert.match(calendar, /day.shortName/)
   assert.match(calendar, /day.date.getDate\(\)/)
 
@@ -72,7 +73,7 @@ test('Calendar view requirements', async () => {
 
   // Selection Logic
   assert.match(calendar, /selectedEventId === event.id/)
-  assert.match(calendar, /selectAppointment\(event\)/)
+  assert.match(calendar, /selectAppointment\(event, \$event\)/)
   assert.match(calendar, /Open Client/)
   assert.match(calendar, /Start Session/)
   
