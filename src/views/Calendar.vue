@@ -10,8 +10,8 @@
         !isMobile && !isTablet ? 'w-72 flex' : ''
       ]"
     >
-      <div v-if="!isTablet || isAgendaExpanded" class="flex-1 flex flex-col overflow-y-auto min-h-0">
-        <div class="p-page space-y-stack-lg">
+      <div v-if="!isTablet || isAgendaExpanded" class="flex-1 flex flex-col min-h-0">
+        <div class="p-page space-y-stack-lg overflow-y-auto">
           <!-- Mini Month Calendar -->
           <div class="bg-surface-subtle border border-border-muted rounded-panel p-inline-md">
             <div class="flex items-center justify-between mb-stack-sm mt-stack-sm">

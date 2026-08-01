@@ -79,32 +79,68 @@ test.describe('Calendar Workspace Workflow', () => {
     expect(tabletScrollWidth).toBeLessThanOrEqual(tabletClientWidth);
 
     // 7. Verify single vertical scrolling region and fixed elements
-    const bodyOverflow = await page.evaluate(() => window.getComputedStyle(document.body).overflowY);
-    const htmlOverflow = await page.evaluate(() => window.getComputedStyle(document.documentElement).overflowY);
-    
+    // Helper to find visible scrollable elements
+    const getScrollableElements = async () => {
+      return await page.evaluate(() => {
+        const elements = Array.from(document.querySelectorAll('*'));
+        return elements
+          .filter(el => {
+            const style = window.getComputedStyle(el);
+            const isVisible = el.offsetWidth > 0 && el.offsetHeight > 0;
+            const hasOverflow = ['auto', 'scroll'].includes(style.overflowY);
+            const isScrollable = el.scrollHeight > el.clientHeight;
+            return isVisible && hasOverflow && isScrollable;
+          })
+          .map(el => ({
+            tag: el.tagName,
+            id: el.id,
+            testId: el.getAttribute('data-testid'),
+            className: el.className,
+            scrollHeight: el.scrollHeight,
+            clientHeight: el.clientHeight
+          }));
+      });
+    };
+
     // Body and HTML should not scroll
-    expect(['hidden', 'clip']).toContain(bodyOverflow);
-    expect(['hidden', 'clip']).toContain(htmlOverflow);
+    const docDimensions = await page.evaluate(() => ({
+      scrollWidth: document.documentElement.scrollWidth,
+      clientWidth: document.documentElement.clientWidth,
+      scrollHeight: document.documentElement.scrollHeight,
+      clientHeight: document.documentElement.clientHeight,
+      scrollY: window.scrollY
+    }));
+    
+    expect(docDimensions.scrollWidth, 'Document should not have horizontal overflow').toBeLessThanOrEqual(docDimensions.clientWidth);
+    expect(docDimensions.scrollHeight, 'Document should not have vertical overflow').toBeLessThanOrEqual(docDimensions.clientHeight);
+    expect(docDimensions.scrollY, 'window.scrollY should be 0').toBe(0);
 
     const mainElement = page.locator('main.flex-1.bg-surface-canvas');
     const mainOverflow = await mainElement.evaluate((el) => window.getComputedStyle(el).overflowY);
     expect(mainOverflow).toBe('hidden');
-    
-    // Page level scroll should be zero
-    const pageScrollY = await page.evaluate(() => window.scrollY);
-    expect(pageScrollY).toBe(0);
 
     // Grid container should be the vertical scroll owner
     const gridContainer = page.getByTestId('timed-grid-scroll');
     await expect(gridContainer).toHaveCSS('overflow-y', 'auto');
     
     const isGridScrollable = await gridContainer.evaluate((el) => el.scrollHeight > el.clientHeight);
-    expect(isGridScrollable).toBeTruthy();
+    expect(isGridScrollable, 'Timed grid should be scrollable').toBeTruthy();
 
     // Changing timedGrid.scrollTop does not change window.scrollY
+    const initialScrollTop = await gridContainer.evaluate((el) => el.scrollTop);
     await gridContainer.evaluate((el) => el.scrollTop = 100);
+    const newScrollTop = await gridContainer.evaluate((el) => el.scrollTop);
+    expect(newScrollTop, 'Grid scrollTop should change').not.toBe(initialScrollTop);
+    
     const pageScrollYAfter = await page.evaluate(() => window.scrollY);
-    expect(pageScrollYAfter).toBe(0);
+    expect(pageScrollYAfter, 'Scrolling grid should not scroll page').toBe(0);
+
+    // Verify exactly one scrollable element in the calendar workspace (the timed grid)
+    const scrollableElements = await getScrollableElements();
+    const scrollableTestIds = scrollableElements.map(el => el.testId || el.className);
+    
+    expect(scrollableElements.length, `Expected only one scrollable element, found: ${JSON.stringify(scrollableElements)}`).toBe(1);
+    expect(scrollableElements[0].testId).toBe('timed-grid-scroll');
 
     // 8. Mini-calendar date selection changes displayed week
     const calendarCell = page.locator('.grid-cols-7 .rounded-pill:not(:empty)').filter({ hasText: /^15$/ }).first();

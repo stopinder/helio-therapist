@@ -9,6 +9,9 @@ test('Vercel routing configuration', async (t) => {
   await t.test('SPA catch-all rewrite is present', () => {
     const catchAll = vercelJson.rewrites.find(r => r.source === "/(.*)" && r.destination === "/index.html")
     assert.ok(catchAll, 'Should have a catch-all rewrite for SPA routing')
+    
+    const apiRewrite = vercelJson.rewrites.find(r => r.source === "/api/(.*)")
+    assert.ok(!apiRewrite, 'Should not have a redundant API rewrite as Vercel filesystem routing handles /api naturally')
   })
 
   await t.test('Schema is present', () => {

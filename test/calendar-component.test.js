@@ -78,7 +78,7 @@ test('Calendar component template and logic requirements', async (t) => {
   await t.test('Single vertical scrolling region requirements', () => {
     // Audit vertical scroll containers
     assert.match(calendarSource, /class="flex-1 overflow-y-auto overflow-x-auto relative" ref="gridContainer"/)
-    assert.match(calendarSource, /class="flex-1 flex flex-col overflow-y-auto min-h-0"/)
+    assert.match(calendarSource, /class="p-page space-y-stack-lg overflow-y-auto"/)
     assert.match(calendarSource, /class="border-r border-border-muted bg-surface flex flex-col shrink-0 transition-all duration-300 ease-in-out z-30 overflow-hidden"/)
     assert.match(calendarSource, /class="flex flex-1 h-full overflow-hidden"/)
   })
