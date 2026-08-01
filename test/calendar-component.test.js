@@ -62,4 +62,26 @@ test('Calendar component template and logic requirements', async (t) => {
   await t.test('Tablet grid min-width behavior', () => {
     assert.match(calendarSource, /:class="isTablet \? 'min-w-\[600px\]' : 'min-w-calendar-grid'"/)
   })
+
+  await t.test('Single vertical scrolling region requirements', () => {
+    // Audit vertical scroll containers
+    assert.match(calendarSource, /class="flex-1 overflow-y-auto overflow-x-auto relative" ref="gridContainer"/)
+    assert.match(calendarSource, /class="flex-1 flex flex-col overflow-y-auto min-h-0"/)
+    assert.match(calendarSource, /class="border-r border-border-muted bg-surface flex flex-col shrink-0 transition-all duration-300 ease-in-out z-30 overflow-hidden"/)
+    assert.match(calendarSource, /class="flex flex-1 h-full overflow-hidden"/)
+  })
+
+  await t.test('Fixed Calendar context and sticky elements', () => {
+    assert.match(calendarSource, /class="w-16 border-r border-border-muted bg-surface sticky left-0 z-20 shrink-0"/)
+    assert.match(calendarSource, /class="h-14 border-b border-border-muted bg-surface sticky top-0 z-30"/)
+    assert.match(calendarSource, /class="sticky top-0 bg-surface border-b border-border-muted p-stack-sm text-center z-10 h-14 flex flex-col justify-center"/)
+  })
+
+  await t.test('Popover containment and flipping logic', () => {
+    assert.match(calendarSource, /const popoverWidth = 256/)
+    assert.match(calendarSource, /const popoverHeight = 160/)
+    assert.match(calendarSource, /if \(left \+ popoverWidth \+ padding > window\.innerWidth\)/)
+    assert.match(calendarSource, /if \(top \+ popoverHeight \+ padding > window\.innerHeight\)/)
+    assert.match(calendarSource, /top = Math\.max\(padding \+ 56, Math\.min\(top, window\.innerHeight - popoverHeight - padding\)\)/)
+  })
 })

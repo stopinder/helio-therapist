@@ -1,15 +1,15 @@
 <template>
-  <div class="flex flex-1 overflow-hidden">
+  <div class="flex flex-1 h-full overflow-hidden">
     <!-- Agenda Panel -->
     <aside 
-      class="border-r border-border-muted bg-surface flex flex-col shrink-0 transition-all duration-300 ease-in-out z-30"
+      class="border-r border-border-muted bg-surface flex flex-col shrink-0 transition-all duration-300 ease-in-out z-30 overflow-hidden"
       :class="[
         isMobile ? (isAgendaExpanded ? 'fixed inset-0 pt-14 flex' : 'hidden') : '',
         !isMobile && isTablet ? (isAgendaExpanded ? 'w-72 flex' : 'w-12 flex') : '',
         !isMobile && !isTablet ? 'w-72 flex' : ''
       ]"
     >
-      <div v-if="!isTablet || isAgendaExpanded" class="flex-1 flex flex-col overflow-y-auto">
+      <div v-if="!isTablet || isAgendaExpanded" class="flex-1 flex flex-col overflow-y-auto min-h-0">
         <div class="p-page space-y-stack-lg">
           <!-- Mini Month Calendar -->
           <div class="bg-surface-subtle border border-border-muted rounded-panel p-inline-md">
@@ -153,12 +153,12 @@
         <button @click="loadData" class="px-inline-md py-stack-sm bg-action-primary text-on-action rounded-control font-medium">Retry</button>
       </div>
 
-      <!-- Grid -->
-      <div v-else class="flex-1 overflow-auto relative" ref="gridContainer" @click="selectedEventId = null">
-        <div v-if="!isMobile" class="flex h-full relative" :class="isTablet ? 'min-w-[600px]' : 'min-w-calendar-grid'">
+      <!-- Grid Container -->
+      <div v-else class="flex-1 overflow-y-auto overflow-x-auto relative" ref="gridContainer" @click="selectedEventId = null">
+        <div v-if="!isMobile" class="flex min-h-full relative" :class="isTablet ? 'min-w-[600px]' : 'min-w-calendar-grid'">
           <!-- Time Axis -->
-          <div class="w-16 border-r border-border-muted bg-surface sticky left-0 z-10 shrink-0">
-            <div class="h-14 border-b border-border-muted bg-surface"></div> <!-- Matches day header -->
+          <div class="w-16 border-r border-border-muted bg-surface sticky left-0 z-20 shrink-0">
+            <div class="h-14 border-b border-border-muted bg-surface sticky top-0 z-30"></div> <!-- Matches day header -->
             <div class="relative">
               <div v-for="hour in workingHours" :key="hour" 
                 class="h-20 border-b border-border-muted/30 text-right pr-2 pt-1"
@@ -341,6 +341,15 @@ onMounted(() => {
   window.addEventListener('resize', updateWidth)
   window.addEventListener('keydown', handleGlobalEsc)
   updateWidth()
+  
+  // Initial scroll to 08:00
+  if (gridContainer.value) {
+    gridContainer.value.scrollTop = 0 // Just in case
+    // Each hour row is 80px. 08:00 is at the top of the events container.
+    // The events container starts after the 56px (h-14) day header.
+    // However, gridContainer scrolls everything. 
+    // If we want 08:00 at the top, we just keep it at 0 because 08:00 is the first row.
+  }
 })
 
 onUnmounted(() => {
@@ -481,19 +490,31 @@ function selectAppointment(event, clickEvent) {
   
   if (clickEvent && gridContainer.value) {
     const rect = clickEvent.currentTarget.getBoundingClientRect()
+    const popoverWidth = 256
+    const popoverHeight = 160 // Approximate
+    const padding = 10
     
     // Position popover relative to the clicked element
-    let left = rect.right + 10
+    let left = rect.right + padding
     let top = rect.top
     
     // Mobile adjustment
     if (isMobile.value) {
-      left = (window.innerWidth - 256) / 2
-      top = (window.innerHeight - 200) / 2
+      left = (window.innerWidth - popoverWidth) / 2
+      top = (window.innerHeight - popoverHeight) / 2
     } else {
-      if (left + 260 > window.innerWidth) {
-        left = rect.left - 270
+      // Horizontal flip/clamp
+      if (left + popoverWidth + padding > window.innerWidth) {
+        left = rect.left - popoverWidth - padding
       }
+      // Keep within viewport horizontally
+      left = Math.max(padding, Math.min(left, window.innerWidth - popoverWidth - padding))
+      
+      // Vertical clamp
+      if (top + popoverHeight + padding > window.innerHeight) {
+        top = window.innerHeight - popoverHeight - padding
+      }
+      top = Math.max(padding + 56, Math.min(top, window.innerHeight - popoverHeight - padding))
     }
     
     popoverPosition.value = { top, left }

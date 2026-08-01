@@ -78,7 +78,26 @@ test.describe('Calendar Workspace Workflow', () => {
     const tabletClientWidth = await page.evaluate(() => document.documentElement.clientWidth);
     expect(tabletScrollWidth).toBeLessThanOrEqual(tabletClientWidth);
 
-    // 7. Mini-calendar date selection changes displayed week
+    // 7. Verify single vertical scrolling region and fixed elements
+    const bodyOverflow = await page.evaluate(() => window.getComputedStyle(document.body).overflowY);
+    const htmlOverflow = await page.evaluate(() => window.getComputedStyle(document.documentElement).overflowY);
+    const mainOverflow = await page.evaluate(() => window.getComputedStyle(document.querySelector('main.flex-1.bg-surface-canvas')).overflowY);
+    
+    // In our implementation, main.flex-1.bg-surface-canvas should have overflow: hidden
+    expect(mainOverflow).toBe('hidden');
+    
+    // Page level scroll should be zero
+    const pageScrollY = await page.evaluate(() => window.scrollY);
+    expect(pageScrollY).toBe(0);
+
+    // Grid container should be scrollable
+    const gridScrollable = await page.evaluate(() => {
+      const el = document.querySelector('[ref="gridContainer"]') || document.querySelector('.flex-1.overflow-y-auto.overflow-x-auto');
+      return el && window.getComputedStyle(el).overflowY === 'auto';
+    });
+    expect(gridScrollable).toBeTruthy();
+
+    // 8. Mini-calendar date selection changes displayed week
     const calendarCell = page.locator('.grid-cols-7 .rounded-pill:not(:empty)').filter({ hasText: /^15$/ }).first();
     await calendarCell.click();
     await expect(page.locator('h2.text-body')).toContainText(/15/);

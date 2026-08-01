@@ -109,7 +109,10 @@
       </header>
 
       <!-- Page Content -->
-      <main class="flex-1 overflow-auto bg-surface-canvas relative">
+      <main 
+        class="flex-1 overflow-auto bg-surface-canvas relative"
+        :class="{ 'overflow-hidden': $route.path === '/calendar' }"
+      >
         <slot />
       </main>
     </div>
