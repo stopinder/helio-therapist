@@ -66,6 +66,9 @@ module.exports = {
         caption: ['0.75rem', { lineHeight: '1rem' }],
         overline: ['0.6875rem', { lineHeight: '1rem', letterSpacing: '0.08em' }],
       },
+      minWidth: {
+        'calendar-grid': '800px',
+      },
       spacing: {
         // Semantic spacing aliases. Values remain defined in main.css so CSS
         // variables are the source of truth across Tailwind and component CSS.

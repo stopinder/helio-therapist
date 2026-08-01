@@ -20,36 +20,57 @@ test.describe('Calendar Workspace Workflow', () => {
     // Wait for the app to load
     await expect(page.locator('aside')).toBeVisible(); // Sidebar should be visible
     
-    // 2. Exactly one sidebar and one top-level application header
-    const sidebars = page.locator('aside');
-    // Note: There might be multiple aside tags (one for agenda panel, one for app sidebar)
-    // But the AppShell sidebar has a specific structure.
-    // Let's check for the "Workspace Active" indicator which is in the AppShell header.
+    // 2. Exactly one application shell (sidebar and header)
+    const appSidebar = page.locator('aside').filter({ hasText: /Helios/ });
+    await expect(appSidebar).toHaveCount(1);
     const activeIndicators = page.locator('text=Workspace Active');
-    // await expect(activeIndicators).toHaveCount(1); // Usually only one if not duplicated
+    await expect(activeIndicators).toHaveCount(1);
 
     // 3. Navigate to Calendar
     await page.getByRole('link', { name: /Calendar/i }).click();
     await expect(page).toHaveURL(/\/calendar/);
 
-    // 4. Desktop Calendar has an agenda panel and dominant week canvas
-    const agendaPanel = page.locator('aside', { hasText: /Today|Upcoming/i });
+    // 4. Desktop agenda and dominant timed week canvas
+    const agendaPanel = page.locator('aside').filter({ hasText: /Today|Upcoming/ });
     await expect(agendaPanel).toBeVisible();
     
-    const weekGrid = page.locator('main', { hasText: /Mon|Tue|Wed|Thu|Fri/i });
+    const weekGrid = page.locator('main').filter({ hasText: /Mon|Tue|Wed|Thu|Fri/ });
     await expect(weekGrid).toBeVisible();
+    await expect(page.locator('.min-w-calendar-grid')).toBeVisible();
 
-    // 5. Mini-calendar date selection changes the displayed week
-    // Find August 1 2026 specifically if we can set the view date, 
-    // but without control over real time, we just test if clicking a date works.
-    const calendarCell = page.locator('div.rounded-pill').filter({ hasText: /^15$/ }).first();
-    if (await calendarCell.isVisible()) {
-        await calendarCell.click();
-        // UI should update, but hard to assert without knowing current month.
+    // 5. Selecting an appointment exposes permitted actions
+    const appointment = page.locator('.absolute.rounded-control').first();
+    if (await appointment.isVisible()) {
+      await appointment.click();
+      const popover = page.locator('.fixed.z-40.w-64');
+      await expect(popover).toBeVisible();
+      
+      // Action visibility and ineligible appointments
+      // We can't guarantee state, but we can check for buttons if eligible
+      const startButton = popover.getByRole('link', { name: /Start Session/i });
+      const openClientButton = popover.getByRole('link', { name: /Open Client/i });
+      
+      // Dismissal with Escape
+      await page.keyboard.press('Escape');
+      await expect(popover).not.toBeVisible();
     }
 
-    // 6. Selecting an eligible appointment exposes the permitted actions
-    // This requires mock data or a real session in the test account.
-    // Since we can't guarantee sessions, we just verify the elements exist in the template.
+    // 6. Mini-calendar date selection changes displayed week
+    const calendarCell = page.locator('.grid-cols-7 .rounded-pill').filter({ hasText: /^15$/ }).first();
+    if (await calendarCell.isVisible()) {
+      await calendarCell.click();
+      // Date label should include "15"
+      await expect(page.locator('h2.text-body')).toContainText(/15/);
+    }
+
+    // 7. Responsive Widths: Mobile
+    await page.setViewportSize({ width: 375, height: 667 });
+    await expect(page.locator('.h-full.flex.flex-col.bg-surface')).toBeVisible(); // Mobile day view
+    await expect(page.locator('button').filter({ hasText: /Mon|Tue|Wed|Thu|Fri/ })).toHaveCount(5); // Day tabs
+    
+    // No avoidable page-level horizontal overflow
+    const scrollWidth = await page.evaluate(() => document.documentElement.scrollWidth);
+    const clientWidth = await page.evaluate(() => document.documentElement.clientWidth);
+    expect(scrollWidth).toBeLessThanOrEqual(clientWidth);
   });
 });

@@ -1,6 +1,7 @@
 import { ref, computed } from 'vue'
 import { listSessions } from '../lib/sessions.js'
 import { listClients } from '../lib/clients.js'
+import { isEligibleForStart } from '../lib/calendarHelpers.js'
 
 /**
  * Calendar domain service for managing clinical sessions as calendar events.
@@ -49,10 +50,8 @@ export function useCalendar() {
           ? new Date(session.endedAt) 
           : new Date(startTime.getTime() + 50 * 60000)
 
-        // Eligibility rule: Start Session is valid if not completed/cancelled and IDs exist
-        const isEligibleForStart = session.id && 
-                                 session.clientId && 
-                                 !['completed', 'cancelled'].includes(session.status)
+        // Eligibility rule: uses shared helper
+        const isEligible = isEligibleForStart(session)
 
         return {
           id: session.id,
@@ -63,7 +62,7 @@ export function useCalendar() {
           status: session.status || 'scheduled',
           workflowStatus: session.workflowStatus,
           type: session.type || 'Session', // Use real session type if available, else neutral fallback
-          isEligibleForStart,
+          isEligibleForStart: isEligible,
           session
         }
       })

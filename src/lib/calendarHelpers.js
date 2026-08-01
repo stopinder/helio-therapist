@@ -1,0 +1,122 @@
+/**
+ * Calendar and session domain logic helpers.
+ */
+
+/**
+ * Checks if a string is a valid UUID.
+ */
+export function isValidId(id) {
+  if (!id) return false
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+  return uuidRegex.test(id)
+}
+
+/**
+ * Determines if a session is eligible to be started.
+ */
+export function isEligibleForStart(session) {
+  return isValidId(session.id) && 
+         isValidId(session.clientId) && 
+         !['completed', 'cancelled'].includes(session.status)
+}
+
+/**
+ * Monday-first start of week.
+ */
+export function getStartOfWeek(date) {
+  const d = new Date(date)
+  const day = d.getDay()
+  const diff = d.getDate() - (day === 0 ? 6 : day - 1)
+  const start = new Date(d.setDate(diff))
+  start.setHours(0, 0, 0, 0)
+  return start
+}
+
+/**
+ * Returns a date clamped to the end of the month if necessary.
+ * e.g. Jan 31 -> Feb 28
+ */
+export function addMonths(date, months) {
+  const d = new Date(date)
+  const day = d.getDate()
+  d.setMonth(d.getMonth() + months)
+  if (d.getDate() !== day) {
+    d.setDate(0)
+  }
+  return d
+}
+
+/**
+ * Calculates event visual style in the timed grid.
+ */
+export function getEventStyle(event, overlappingData = { column: 0, totalColumns: 1 }) {
+  const startHour = event.start.getHours() + event.start.getMinutes() / 60
+  const endHour = event.end.getHours() + event.end.getMinutes() / 60
+  const duration = endHour - startHour
+  
+  // 80px per hour. No longer adding 56px header offset here.
+  const top = (startHour - 8) * 80 
+  const height = Math.max(duration * 80, 24)
+  
+  const width = 100 / overlappingData.totalColumns
+  const left = overlappingData.column * width
+  
+  return {
+    top: `${top}px`,
+    height: `${height}px`,
+    left: `${left}%`,
+    width: `${width}%`
+  }
+}
+
+/**
+ * Groups events that overlap in time.
+ */
+export function getOverlappingGroups(events) {
+  const sorted = [...events].sort((a, b) => a.start - b.start)
+  const groups = []
+  
+  sorted.forEach(event => {
+    let placed = false
+    for (const group of groups) {
+      if (group.some(e => e.start < event.end && event.start < e.end)) {
+        group.push(event)
+        placed = true
+        break
+      }
+    }
+    if (!placed) {
+      groups.push([event])
+    }
+  })
+  
+  const eventStyles = {}
+  groups.forEach(group => {
+    const columns = []
+    group.forEach(event => {
+      let columnIndex = 0
+      while (columns[columnIndex] && columns[columnIndex].some(e => e.start < event.end && event.start < e.end)) {
+        columnIndex++
+      }
+      if (!columns[columnIndex]) columns[columnIndex] = []
+      columns[columnIndex].push(event)
+    })
+    
+    group.forEach(event => {
+      let colIdx = columns.findIndex(col => col.includes(event))
+      eventStyles[event.id] = {
+        column: colIdx,
+        totalColumns: columns.length
+      }
+    })
+  })
+  
+  return eventStyles
+}
+
+export function isSameDay(a, b) {
+  return a && b && 
+         a.getFullYear() === b.getFullYear() && 
+         a.getMonth() === b.getMonth() && 
+         a.getDate() === b.getDate()
+}

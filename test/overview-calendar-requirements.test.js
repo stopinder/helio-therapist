@@ -81,6 +81,16 @@ test('Calendar view requirements', async () => {
   assert.match(calendar, /:to="`\/clients\/\${selectedEvent.clientId}`"/)
   assert.match(calendar, /:to="`\/clients\/\${selectedEvent.clientId}\/sessions\/\${selectedEvent.id}`"/)
 
+  // Mobile agenda-first day view
+  assert.match(calendar, /v-else class="h-full flex flex-col bg-surface"/)
+  assert.match(calendar, /v-for="day in weekDays\.slice\(0, 5\)" :key="'tab-' \+ day\.date\.toISOString\(\)"/)
+  assert.match(calendar, /v-for="event in currentDayEvents"/)
+
+  // Popover dismissal and keyboard support
+  assert.match(calendar, /v-keydown-esc="selectedEventId = null"/)
+  assert.match(calendar, /@click="selectedEventId = null"/)
+  assert.match(calendar, /tabindex="0"/)
+
   // No Right Inspector / Clinical Panel
   assert.doesNotMatch(calendar, /inspector/)
   assert.doesNotMatch(calendar, /clinical-panel/)
