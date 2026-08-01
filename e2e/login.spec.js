@@ -26,7 +26,6 @@ test('login form should require email and password', async ({ page }) => {
 
   const emailField = page.getByLabel('Email address');
   const passwordField = page.getByLabel('Password');
-  const signInButton = page.locator('form').getByRole('button', { name: 'Sign in' });
 
   // 1. Verify that the fields have the 'required' attribute in the DOM.
   await expect(emailField).toHaveAttribute('required', '');
@@ -59,7 +58,6 @@ test('login form should validate email format', async ({ page }) => {
 
   const emailField = page.getByLabel('Email address');
   const passwordField = page.getByLabel('Password');
-  const signInButton = page.locator('form').getByRole('button', { name: 'Sign in' });
 
   // 1. Enter an invalid email format.
   await emailField.fill('not-an-email');
