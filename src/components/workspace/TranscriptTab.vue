@@ -1,69 +1,62 @@
 <template>
   <div class="flex flex-col gap-stack-md">
-    <!-- Notice -->
-    <div class="p-3 bg-state-warning-surface border border-state-warning/20 rounded-panel">
-      <p class="text-caption text-state-warning font-medium uppercase tracking-wider mb-1">Notice</p>
-      <p class="text-body-sm text-ink-secondary">This transcript is <strong>demonstration data</strong> for clinical workflow visualization.</p>
+    <div v-if="loading" class="min-h-64 flex flex-col items-center justify-center gap-3 rounded-panel border border-border bg-surface p-6 text-center">
+      <span class="w-8 h-8 border-4 border-state-selected border-t-transparent rounded-full animate-spin"></span>
+      <p class="text-body text-ink-muted">Loading linked Zoom transcript…</p>
     </div>
 
-    <div class="flex flex-col lg:flex-row gap-6">
-      <!-- Main Area -->
-      <div class="flex-1 space-y-4">
-        <h3 class="text-h3 font-semibold text-ink">Timeline</h3>
-        <div class="space-y-3">
-          <TranscriptEntry 
-            v-for="(entry, index) in transcript" 
-            :key="entry.id"
-            v-bind="entry"
-            :isActive="index === transcript.length - 1"
-          />
-        </div>
+    <div v-else-if="error" class="min-h-64 flex flex-col items-center justify-center gap-4 rounded-panel border border-state-danger/20 bg-surface p-6 text-center">
+      <div>
+        <h3 class="text-h3 font-semibold text-state-danger">Transcript unavailable</h3>
+        <p class="mt-2 text-body text-ink-muted">{{ error }}</p>
       </div>
+      <button
+        class="px-4 py-2 bg-action-primary text-on-action rounded-control font-medium hover:bg-action-primary-hover"
+        @click="$emit('retry')"
+      >
+        Retry
+      </button>
+    </div>
 
-      <!-- Side Panel -->
-      <div class="w-full lg:w-72 space-y-6">
-        <WorkflowStatusPanel 
-          :workflowItems="workflowProgress" 
+    <div v-else-if="!transcript" class="min-h-64 flex flex-col items-center justify-center rounded-panel border border-border bg-surface p-6 text-center">
+      <h3 class="text-h3 font-semibold text-ink">No linked transcript</h3>
+      <p class="mt-2 max-w-lg text-body text-ink-muted">No Zoom transcript is linked to this client session. Review unmatched transcripts in the Transcript Inbox.</p>
+    </div>
+
+    <div v-else class="flex flex-col lg:flex-row gap-6">
+      <section class="min-w-0 flex-1 rounded-panel border border-border bg-surface p-5">
+        <header class="mb-4">
+          <p class="text-caption font-medium uppercase tracking-wider text-action-link">Original Zoom transcript</p>
+          <h3 class="mt-1 text-h3 font-semibold text-ink">Source material</h3>
+          <p class="mt-2 text-body-sm text-ink-muted">This is the original transcript imported from Zoom. Helios has not analysed or changed it.</p>
+        </header>
+        <pre class="max-h-[36rem] overflow-auto whitespace-pre-wrap break-words rounded-panel bg-surface-subtle p-4 font-mono text-body-sm leading-relaxed text-ink-secondary">{{ transcript.text }}</pre>
+      </section>
+
+      <div class="w-full lg:w-72">
+        <WorkflowStatusPanel
+          :workflowItems="workflowProgress"
           :activeStage="activeTab"
         />
-
-        <section class="p-4 bg-surface border border-border rounded-panel">
-          <h4 class="text-body-sm font-bold text-ink uppercase tracking-wider mb-4">Markers</h4>
-          <div class="space-y-3">
-            <div 
-              v-for="marker in markers" 
-              :key="marker.id"
-              class="flex items-center justify-between p-2 border border-border rounded bg-surface-subtle hover:border-action-link cursor-pointer transition-colors"
-            >
-              <span class="text-body-sm text-ink">{{ marker.label }}</span>
-              <span class="text-caption font-mono text-ink-muted">{{ marker.time }}</span>
-            </div>
-            <button class="w-full py-2 border border-dashed border-border text-caption text-ink-muted hover:text-action-link hover:border-action-link transition-colors rounded">
-              + Add Marker
-            </button>
-          </div>
-        </section>
-
-        <section class="p-4 bg-surface border border-border rounded-panel">
-          <h4 class="text-body-sm font-bold text-ink uppercase tracking-wider mb-4">Important Moments</h4>
-          <div class="text-body-sm text-ink-muted italic text-center py-4 border border-dashed border-border rounded">
-            No moments highlighted yet.
-          </div>
-        </section>
+        <p class="mt-4 rounded-panel border border-border bg-surface-subtle p-4 text-body-sm text-ink-muted">
+          Markers and important moments are unavailable until their persistence workflow is approved.
+        </p>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import TranscriptEntry from './TranscriptEntry.vue';
 import WorkflowStatusPanel from './WorkflowStatusPanel.vue';
 
 defineProps({
-  transcript: Array,
-  markers: Array,
+  transcript: { type: Object, default: null },
+  loading: Boolean,
+  error: { type: String, default: '' },
   activeTab: String
 });
+
+defineEmits(['retry']);
 
 const workflowProgress = [
   { label: 'Recording', status: 'In Progress' },

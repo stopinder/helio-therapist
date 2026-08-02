@@ -18,8 +18,28 @@ test('SessionWorkspace simplification: UI elements removed', async () => {
   assert.doesNotMatch(header, /onUnmounted/)
   assert.doesNotMatch(header, /⏱/)
 
-  // Remove elapsedTime from workspace
+  // Keep the inert display value expected by the header shape
   assert.match(workspace, /elapsedTime: '00:00:00'/)
+})
+
+test('SessionWorkspace uses the authenticated linked transcript source without mock fallback', async () => {
+  const workspace = await readFile(new URL('../src/views/SessionWorkspace.vue', import.meta.url), 'utf8')
+  const transcriptTab = await readFile(new URL('../src/components/workspace/TranscriptTab.vue', import.meta.url), 'utf8')
+  const endpoint = await readFile(new URL('../api/zoom/transcripts.js', import.meta.url), 'utf8')
+
+  assert.doesNotMatch(workspace, /sessionWorkspaceData/)
+  assert.doesNotMatch(workspace, /mockSession/)
+  assert.match(workspace, /authenticatedFetch/)
+  assert.match(workspace, /sessionRef: String\(session\.value\.id\)/)
+  assert.match(workspace, /clientId: String\(session\.value\.clientId\)/)
+  assert.match(transcriptTab, /Original Zoom transcript/)
+  assert.match(transcriptTab, /No linked transcript/)
+  assert.match(transcriptTab, /Transcript unavailable/)
+  assert.doesNotMatch(transcriptTab, /demonstration data/)
+  assert.doesNotMatch(transcriptTab, /Add Marker/)
+  assert.match(endpoint, /\.eq\('therapist_user_id', user\.id\)/)
+  assert.match(endpoint, /\.eq\('session_ref', sessionRef\)/)
+  assert.match(endpoint, /\.eq\('client_id', clientId\)/)
 })
 
 test('SessionWorkspace: Header and layout cleanup', async () => {

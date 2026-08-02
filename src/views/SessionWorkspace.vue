@@ -36,9 +36,11 @@
         <div class="max-w-6xl mx-auto">
           <TranscriptTab 
             v-if="activeTab === 'Transcript'" 
-            :transcript="workspaceSession.transcript"
-            :markers="workspaceSession.markers"
+            :transcript="transcript"
+            :loading="transcriptLoading"
+            :error="transcriptError"
             :activeTab="activeTab"
+            @retry="loadTranscript"
           />
           <TherapistNotesTab 
             v-else-if="activeTab === 'Notes'" 
@@ -91,7 +93,7 @@ import { ref, onMounted, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { getSession, completeSessionRecord } from '../lib/sessions.js';
 import { getClient } from '../lib/clients.js';
-import { mockSession } from '../mocks/sessionWorkspaceData.js';
+import { authenticatedFetch } from '../lib/api.js';
 import SessionWorkspaceHeader from '../components/workspace/SessionWorkspaceHeader.vue';
 import WorkflowIndicator from '../components/workspace/WorkflowIndicator.vue';
 import TranscriptTab from '../components/workspace/TranscriptTab.vue';
@@ -106,6 +108,9 @@ const session = ref(null);
 const client = ref(null);
 const loading = ref(true);
 const error = ref('');
+const transcript = ref(null);
+const transcriptLoading = ref(false);
+const transcriptError = ref('');
 
 const tabs = [
   'Transcript',
@@ -144,11 +149,35 @@ async function loadSession() {
     ]);
     session.value = sessionData;
     client.value = clientData;
+    loadTranscript();
   } catch (e) {
     console.error('Session loading error:', e);
     error.value = 'The session workspace could not be loaded.';
   } finally {
     loading.value = false;
+  }
+}
+
+async function loadTranscript() {
+  if (!session.value?.id || !session.value?.clientId) return;
+
+  transcriptLoading.value = true;
+  transcriptError.value = '';
+  transcript.value = null;
+
+  try {
+    const params = new URLSearchParams({
+      sessionRef: String(session.value.id),
+      clientId: String(session.value.clientId)
+    });
+    const response = await authenticatedFetch(`/api/zoom/transcripts?${params.toString()}`);
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.error || 'Unable to load the linked transcript.');
+    transcript.value = data.transcripts?.[0] || null;
+  } catch (err) {
+    transcriptError.value = err?.message || 'Unable to load the linked transcript.';
+  } finally {
+    transcriptLoading.value = false;
   }
 }
 
@@ -178,10 +207,7 @@ const workspaceSession = computed(() => {
     meetingUrl: 'https://zoom.us/j/123456789', // Hard-coded fallback for demonstration
     isInPerson: false,
     
-    // Fields still mocked for this phase
-    elapsedTime: '00:00:00', // Will be incremented by the header component
-    transcript: mockSession.transcript,
-    markers: mockSession.markers
+    elapsedTime: '00:00:00'
   };
 });
 

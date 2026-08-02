@@ -28,11 +28,28 @@ export default async function handler(req, res) {
     const { supabase, user } = await requireAuthenticatedUser(req);
 
     if (req.method === 'GET') {
-      const { data, error } = await supabase
+      const { sessionRef, clientId } = req.query || {};
+      const hasSessionFilter = sessionRef !== undefined || clientId !== undefined;
+
+      if (hasSessionFilter && (
+        typeof sessionRef !== 'string' || !sessionRef.trim()
+        || typeof clientId !== 'string' || !clientId.trim()
+      )) {
+        return res.status(400).json({ error: 'Session and client ids are required together.' });
+      }
+
+      let query = supabase
         .from('zoom_transcripts')
         .select(transcriptFields)
-        .eq('therapist_user_id', user.id)
-        .order('received_at', { ascending: false });
+        .eq('therapist_user_id', user.id);
+
+      if (hasSessionFilter) {
+        query = query
+          .eq('session_ref', sessionRef)
+          .eq('client_id', clientId);
+      }
+
+      const { data, error } = await query.order('received_at', { ascending: false });
 
       if (error) throw error;
       return res.status(200).json({ transcripts: (data || []).map(serialiseTranscript) });
