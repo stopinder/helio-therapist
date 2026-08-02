@@ -188,10 +188,12 @@
 
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue'
+import { useRouter } from 'vue-router'
 import { authenticatedFetch } from '../lib/api.js'
 import { createSessionFromTranscript as createTranscriptSession, listSessions } from '../lib/sessions.js'
 
 const props = defineProps({ clients: { type: Array, default: () => [] }, openTranscriptId: { type: [String, Number], default: null } })
+const router = useRouter()
 const transcripts = ref([])
 const selected = ref(null)
 const selectedClientId = ref('')
@@ -372,8 +374,13 @@ async function openLinkedSession() {
     const completed = await patchTranscript({ markComplete: true }, 'Unable to complete transcript triage.')
     if (!completed) return
   }
-  window.dispatchEvent(new CustomEvent('helio:open-session', { detail: { sessionId: selected.value.sessionRef, clientId: selected.value.clientId } }))
-  selected.value = null
+  await router.push({
+    name: 'SessionWorkspace',
+    params: {
+      clientId: selected.value.clientId,
+      sessionId: selected.value.sessionRef
+    }
+  })
 }
 function downloadRaw(transcript) {
   const blob = new Blob([transcript.text], { type: 'text/plain;charset=utf-8' })
