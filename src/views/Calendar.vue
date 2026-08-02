@@ -201,7 +201,13 @@
       <!-- Grid Area -->
       <div class="flex-1 flex flex-col min-h-0 overflow-hidden relative" ref="gridContainer" @click="selectedEventId = null">
         <!-- Day View -->
-        <div v-if="viewMode === 'day'" class="flex-1 flex flex-col min-h-0 overflow-hidden bg-surface">
+        <div v-if="viewMode === 'day'" class="flex-1 flex flex-col min-h-0 bg-surface">
+          <!-- Day Header for alignment with Week View -->
+          <div class="h-10 border-b border-border-muted flex items-center justify-center gap-2 bg-surface shrink-0">
+            <span class="text-caption font-bold text-ink-muted uppercase">{{ dayData(viewDate).shortName }}</span>
+            <span class="text-body-sm font-bold" :class="dayData(viewDate).isToday ? 'text-action-primary' : 'text-ink'">{{ viewDate.getDate() }}</span>
+          </div>
+
           <!-- Timed Scroll Area -->
           <div 
             class="flex-1 flex relative overflow-y-auto" 
@@ -213,7 +219,8 @@
           >
             <!-- Time Axis -->
             <div class="w-16 border-r border-border-muted bg-surface shrink-0 sticky left-0 z-30">
-              <div class="relative h-full">
+              <div class="h-10 border-b border-border-muted bg-surface"></div> <!-- Header spacer -->
+              <div class="relative">
                 <div v-for="hour in workingHours" :key="hour" 
                   class="border-b border-border-muted/30 text-right pr-2 pt-1 bg-surface"
                   :style="{ height: hourHeight + 'px' }"
@@ -229,18 +236,18 @@
               <div v-for="hour in workingHours" :key="'bg-'+hour" class="border-b border-border-muted/30" :style="{ height: hourHeight + 'px' }"></div>
               
               <!-- Events -->
-              <div 
-                v-for="event in dayData(viewDate).events.filter(e => !isOutsideWorkingHours(e))" 
-                :key="event.id"
-                @click.stop="selectAppointment(event, $event)"
-                class="absolute rounded-control border text-caption leading-tight p-2 transition-all overflow-hidden select-none group focus-visible:ring-2 focus-visible:ring-action-primary outline-none"
-                :style="getEventStyle(event, overlappingStyles[event.id], hourHeight, 8)"
-                :class="[
-                  selectedEventId === event.id 
-                    ? 'bg-state-selected border-action-primary shadow-md z-20' 
-                    : 'bg-surface border-border-muted hover:border-border-strong hover:shadow-sm z-10'
-                ]"
-              >
+                <div 
+                  v-for="event in dayData(viewDate).events.filter(e => !isOutsideWorkingHours(e))" 
+                  :key="event.id"
+                  @click.stop="selectAppointment(event, $event)"
+                  class="absolute rounded-control border text-caption leading-tight p-2 transition-all overflow-hidden select-none group focus-visible:ring-2 focus-visible:ring-action-primary outline-none"
+                  :style="getEventStyle(event, overlappingStyles[event.id], hourHeight, 0)"
+                  :class="[
+                    selectedEventId === event.id 
+                      ? 'bg-state-selected border-action-primary shadow-md z-20' 
+                      : 'bg-surface border-border-muted hover:border-border-strong hover:shadow-sm z-10'
+                  ]"
+                >
                 <div class="font-bold text-ink truncate">{{ event.clientName }}</div>
                 <div class="text-ink-secondary">{{ formatTime(event.start) }} – {{ formatTime(event.end) }}</div>
                 <div v-if="event.source === 'google'" class="text-caption text-action-primary mt-0.5">Google Calendar</div>
@@ -250,7 +257,7 @@
         </div>
 
         <!-- Week View -->
-        <div v-else-if="viewMode === 'week'" class="flex-1 flex flex-col min-h-0 overflow-hidden bg-surface" data-testid="week-view">
+        <div v-else-if="viewMode === 'week'" class="flex-1 flex flex-col min-h-0 bg-surface" data-testid="week-view">
           <div 
             class="flex flex-1 relative overflow-y-auto" 
             data-testid="timed-grid-scroll"
@@ -275,12 +282,12 @@
             <!-- Days Grid -->
             <div class="flex-1 grid grid-cols-5 h-full relative">
               <div v-for="day in weekDays" :key="day.date.toISOString()" 
-                class="border-r border-border-muted flex flex-col h-full relative"
+                class="border-r border-border-muted flex flex-col h-full relative min-w-0"
                 :class="day.isToday ? 'bg-surface-subtle' : ''"
               >
                 <!-- Day Header -->
                 <div class="h-10 border-b border-border-muted flex items-center justify-center gap-2 sticky top-0 bg-surface z-20">
-                  <span class="text-caption font-bold text-ink-muted uppercase">{{ day.shortName }}</span>
+                  <span class="text-caption font-bold text-ink-muted uppercase truncate">{{ day.shortName }}</span>
                   <span class="text-body-sm font-bold" :class="day.isToday ? 'text-action-primary' : 'text-ink'">{{ day.date.getDate() }}</span>
                 </div>
 
@@ -295,7 +302,7 @@
                     :key="event.id"
                     @click.stop="selectAppointment(event, $event)"
                     class="absolute rounded-control border text-caption leading-tight p-1 transition-all overflow-hidden select-none group focus-visible:ring-2 focus-visible:ring-action-primary outline-none"
-                    :style="getEventStyle(event, overlappingStyles[event.id], hourHeight, 8)"
+                    :style="getEventStyle(event, overlappingStyles[event.id], hourHeight, 0)"
                     :class="[
                       selectedEventId === event.id 
                         ? 'bg-state-selected border-action-primary shadow-md z-20' 

@@ -86,6 +86,16 @@ test('Calendar component template and logic requirements', async (t) => {
     assert.match(calendarSource, /class="flex flex-1 relative overflow-y-auto"/)
   })
 
+  await t.test('Alignment rangeStart is 0', () => {
+    assert.match(calendarSource, /getEventStyle\(event, .*, 0\)/)
+  })
+
+  await t.test('Time axis header spacer present in both Day and Week views', () => {
+    // There should be two instances of the header spacer in the time axis
+    const axisSpacers = calendarSource.match(/<div class="h-10 border-b border-border-muted bg-surface"><\/div> <!-- Header spacer -->/g)
+    assert.strictEqual(axisSpacers.length, 2)
+  })
+
   await t.test('Sticky elements updated', () => {
     assert.match(calendarSource, /class="h-10 border-b border-border-muted flex items-center justify-center gap-2 sticky top-0 bg-surface z-20"/)
   })

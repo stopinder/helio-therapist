@@ -121,6 +121,12 @@ export function useCalendar() {
   const normalizedEvents = computed(() => {
     const clinical = sessions.value
       .filter(session => session.startedAt) // Safety check
+      .filter(session => {
+        // Only include Helios sessions that have an explicit completed clinical state
+        // and a valid completed_at timestamp. 
+        // This excludes drafts, workspace openings, and active sessions.
+        return session.workflowStatus === 'completed' && session.completedAt
+      })
       .map(session => {
         const client = clients.value.find(c => String(c.id) === String(session.clientId))
         const startTime = new Date(session.startedAt)
