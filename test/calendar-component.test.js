@@ -48,13 +48,13 @@ test('Calendar component template and logic requirements', async (t) => {
     assert.match(calendarSource, /:key="`\${d}-\${idx}`"/)
   })
 
-  await t.test('Correct working-hours range (11 rows)', () => {
-    assert.match(calendarSource, /const workingHours = Array\.from\(\{ length: 11 \}/)
+  await t.test('Correct working-hours range (24 hours)', () => {
+    assert.match(calendarSource, /const workingHours = Array\.from\(\{ length: 24 \}/)
   })
 
-  await t.test('Viewport-fitted height logic', () => {
+  await t.test('Scrolling height logic', () => {
     assert.match(calendarSource, /const hourHeight = computed\(\(\) => \{/)
-    assert.match(calendarSource, /Math\.max\(available \/ 10, 60\)/)
+    assert.match(calendarSource, /return 60/)
   })
 
   await t.test('Honest Google states in Sidebar', () => {
@@ -80,20 +80,19 @@ test('Calendar component template and logic requirements', async (t) => {
     assert.match(calendarSource, /!isMobile && !isTablet \? 'w-72 flex' : ''/)
   })
 
-  await t.test('Scrollbar removal audit', () => {
-    // Primary grid container should not have overflow-y-auto as primary week architecture
-    // Instead we use overflow-hidden on major surfaces
-    assert.match(calendarSource, /class="flex-1 flex flex-col bg-surface-canvas overflow-hidden relative"/)
-    assert.match(calendarSource, /class="flex-1 flex flex-col min-h-0 overflow-hidden relative"/)
+  await t.test('Scrollable grid audit', () => {
+    // Timed grid should have overflow-y-auto
+    assert.match(calendarSource, /class="flex-1 flex relative overflow-y-auto"/)
+    assert.match(calendarSource, /class="flex flex-1 relative overflow-y-auto"/)
   })
 
   await t.test('Sticky elements updated', () => {
-    assert.match(calendarSource, /class="h-10 border-b border-border-muted flex items-center justify-center gap-2 sticky top-0 bg-surface z-10"/)
+    assert.match(calendarSource, /class="h-10 border-b border-border-muted flex items-center justify-center gap-2 sticky top-0 bg-surface z-20"/)
   })
 
   await t.test('Popover containment and flipping logic', () => {
-    assert.match(calendarSource, /const popoverWidth = 256/)
-    assert.match(calendarSource, /const popoverHeight = 180/)
+    assert.match(calendarSource, /const popoverWidth = window\.innerWidth < 640 \? 280 : 288/)
+    assert.match(calendarSource, /const popoverHeight = 220/)
     assert.match(calendarSource, /if \(left \+ popoverWidth \+ padding > window\.innerWidth\)/)
     assert.match(calendarSource, /if \(top \+ popoverHeight \+ padding > window\.innerHeight\)/)
   })

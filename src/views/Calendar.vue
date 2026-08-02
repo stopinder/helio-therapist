@@ -202,13 +202,20 @@
       <div class="flex-1 flex flex-col min-h-0 overflow-hidden relative" ref="gridContainer" @click="selectedEventId = null">
         <!-- Day View -->
         <div v-if="viewMode === 'day'" class="flex-1 flex flex-col min-h-0 overflow-hidden bg-surface">
-          <!-- Timed Scroll Area (Actually fitted, no scrollbar) -->
-          <div class="flex-1 flex relative overflow-hidden" data-testid="timed-grid-scroll">
+          <!-- Timed Scroll Area -->
+          <div 
+            class="flex-1 flex relative overflow-y-auto" 
+            data-testid="timed-grid-scroll"
+            ref="timedGridScrollDay"
+            tabindex="0"
+            role="region"
+            aria-label="Calendar hours"
+          >
             <!-- Time Axis -->
-            <div class="w-16 border-r border-border-muted bg-surface shrink-0">
+            <div class="w-16 border-r border-border-muted bg-surface shrink-0 sticky left-0 z-30">
               <div class="relative h-full">
                 <div v-for="hour in workingHours" :key="hour" 
-                  class="border-b border-border-muted/30 text-right pr-2 pt-1"
+                  class="border-b border-border-muted/30 text-right pr-2 pt-1 bg-surface"
                   :style="{ height: hourHeight + 'px' }"
                 >
                   <span class="text-caption font-bold text-ink-subtle uppercase">{{ formatHour(hour) }}</span>
@@ -217,12 +224,7 @@
             </div>
             
             <!-- Day Content -->
-            <div class="flex-1 relative h-full bg-surface-canvas overflow-hidden">
-              <!-- Earlier Indicator -->
-              <div v-if="hasEarlierEvents(dayData(viewDate).events)" class="absolute top-0 left-0 right-0 z-20 bg-surface-subtle/90 border-b border-border-muted p-1 text-caption text-center font-bold text-ink-muted uppercase">
-                Earlier events ({{ earlierEvents(dayData(viewDate).events).length }})
-              </div>
-              
+            <div class="flex-1 relative h-full bg-surface-canvas overflow-visible">
               <!-- Hour markers background -->
               <div v-for="hour in workingHours" :key="'bg-'+hour" class="border-b border-border-muted/30" :style="{ height: hourHeight + 'px' }"></div>
               
@@ -243,24 +245,26 @@
                 <div class="text-ink-secondary">{{ formatTime(event.start) }} – {{ formatTime(event.end) }}</div>
                 <div v-if="event.source === 'google'" class="text-caption text-action-primary mt-0.5">Google Calendar</div>
               </div>
-
-              <!-- Later Indicator -->
-              <div v-if="hasLaterEvents(dayData(viewDate).events)" class="absolute bottom-0 left-0 right-0 z-20 bg-surface-subtle/90 border-t border-border-muted p-1 text-caption text-center font-bold text-ink-muted uppercase">
-                Later events ({{ laterEvents(dayData(viewDate).events).length }})
-              </div>
             </div>
           </div>
         </div>
 
         <!-- Week View -->
         <div v-else-if="viewMode === 'week'" class="flex-1 flex flex-col min-h-0 overflow-hidden bg-surface" data-testid="week-view">
-          <div class="flex flex-1 relative overflow-hidden" data-testid="timed-grid-scroll">
+          <div 
+            class="flex flex-1 relative overflow-y-auto" 
+            data-testid="timed-grid-scroll"
+            ref="timedGridScrollWeek"
+            tabindex="0"
+            role="region"
+            aria-label="Calendar hours"
+          >
             <!-- Time Axis -->
-            <div class="w-16 border-r border-border-muted bg-surface shrink-0">
-              <div class="h-10 border-b border-border-muted"></div> <!-- Header spacer -->
+            <div class="w-16 border-r border-border-muted bg-surface shrink-0 sticky left-0 z-30">
+              <div class="h-10 border-b border-border-muted bg-surface"></div> <!-- Header spacer -->
               <div class="relative">
                 <div v-for="hour in workingHours" :key="hour" 
-                  class="border-b border-border-muted/30 text-right pr-2 pt-1"
+                  class="border-b border-border-muted/30 text-right pr-2 pt-1 bg-surface"
                   :style="{ height: hourHeight + 'px' }"
                 >
                   <span class="text-caption font-bold text-ink-subtle uppercase">{{ formatHour(hour) }}</span>
@@ -275,18 +279,13 @@
                 :class="day.isToday ? 'bg-surface-subtle' : ''"
               >
                 <!-- Day Header -->
-                <div class="h-10 border-b border-border-muted flex items-center justify-center gap-2 sticky top-0 bg-surface z-10">
+                <div class="h-10 border-b border-border-muted flex items-center justify-center gap-2 sticky top-0 bg-surface z-20">
                   <span class="text-caption font-bold text-ink-muted uppercase">{{ day.shortName }}</span>
                   <span class="text-body-sm font-bold" :class="day.isToday ? 'text-action-primary' : 'text-ink'">{{ day.date.getDate() }}</span>
                 </div>
 
                 <!-- Events Container -->
-                <div class="flex-1 relative overflow-hidden bg-surface-canvas/30">
-                  <!-- Earlier Indicator -->
-                  <div v-if="hasEarlierEvents(day.events)" class="absolute top-0 left-0 right-0 z-20 bg-surface-subtle/90 border-b border-border-muted px-1 py-0.5 text-caption text-center font-bold text-ink-muted">
-                    Earlier ({{ earlierEvents(day.events).length }})
-                  </div>
-
+                <div class="flex-1 relative overflow-visible bg-surface-canvas/30">
                   <!-- Hour markers background -->
                   <div v-for="hour in workingHours" :key="'bg-'+hour" class="border-b border-border-muted/30" :style="{ height: hourHeight + 'px' }"></div>
                   
@@ -305,11 +304,6 @@
                   >
                     <div class="font-bold text-ink truncate">{{ event.clientName }}</div>
                     <div class="text-ink-muted truncate">{{ formatTime(event.start) }}</div>
-                  </div>
-
-                  <!-- Later Indicator -->
-                  <div v-if="hasLaterEvents(day.events)" class="absolute bottom-0 left-0 right-0 z-20 bg-surface-subtle/90 border-t border-border-muted px-1 py-0.5 text-caption text-center font-bold text-ink-muted">
-                    Later ({{ laterEvents(day.events).length }})
                   </div>
                 </div>
               </div>
@@ -459,6 +453,9 @@ const gridContainer = ref(null)
 const popoverPosition = ref(null)
 const isAgendaExpanded = ref(true)
 
+const timedGridScrollDay = ref(null)
+const timedGridScrollWeek = ref(null)
+
 const miniViewDate = ref(new Date())
 
 const windowWidth = ref(window.innerWidth)
@@ -471,13 +468,21 @@ const updateDimensions = () => {
   else isAgendaExpanded.value = true
 }
 
-// Figma-like: fit 10 hours (8-18) in the available viewport height minus headers
 const hourHeight = computed(() => {
   if (isMobile.value) return 80
-  const headerHeight = 56 // header
-  const dayHeaderHeight = viewMode.value === 'week' ? 40 : 0
-  const available = windowHeight.value - headerHeight - dayHeaderHeight
-  return Math.max(available / 10, 60)
+  return 60
+})
+
+const scrollToWorkingDay = () => {
+  const container = viewMode.value === 'day' ? timedGridScrollDay.value : timedGridScrollWeek.value
+  if (container) {
+    container.scrollTop = 8 * hourHeight.value
+  }
+}
+
+watch([viewMode, timedGridScrollDay, timedGridScrollWeek], () => {
+  // Use nextTick if needed, but watch on ref might trigger after mount
+  setTimeout(scrollToWorkingDay, 0)
 })
 
 onMounted(() => {
@@ -528,7 +533,7 @@ const miniMonthName = computed(() => {
   return new Intl.DateTimeFormat('en-GB', { month: 'long', year: 'numeric' }).format(miniViewDate.value)
 })
 
-const workingHours = Array.from({ length: 11 }, (_, i) => i + 8) // 08:00 - 18:00
+const workingHours = Array.from({ length: 24 }, (_, i) => i) // 00:00 - 23:00
 
 const miniCalendarCells = computed(() => {
   return getMiniCalendarCells(miniViewDate.value, viewDate.value)
@@ -585,28 +590,23 @@ const overlappingStyles = computed(() => {
 })
 
 function isOutsideWorkingHours(event) {
-  const startHour = event.start.getHours()
-  const endHour = event.end.getHours() + (event.end.getMinutes() > 0 ? 1 : 0)
-  return startHour < 8 || endHour > 18
+  return false // All events reachable via scroll
 }
 
 function earlierEvents(events) {
-  return events.filter(e => e.start.getHours() < 8)
+  return []
 }
 
 function hasEarlierEvents(events) {
-  return earlierEvents(events).length > 0
+  return false
 }
 
 function laterEvents(events) {
-  return events.filter(e => {
-    const endHour = e.end.getHours() + (e.end.getMinutes() > 0 ? 1 : 0)
-    return endHour > 18
-  })
+  return []
 }
 
 function hasLaterEvents(events) {
-  return laterEvents(events).length > 0
+  return false
 }
 
 function formatTime(date) {
