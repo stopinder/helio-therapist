@@ -462,6 +462,8 @@ const isAgendaExpanded = ref(true)
 
 const timedGridScrollDay = ref(null)
 const timedGridScrollWeek = ref(null)
+const initialScrollPerformedDay = ref(false)
+const initialScrollPerformedWeek = ref(false)
 
 const miniViewDate = ref(new Date())
 
@@ -481,15 +483,32 @@ const hourHeight = computed(() => {
 })
 
 const scrollToWorkingDay = () => {
+  if (viewMode.value === 'month') return
+
   const container = viewMode.value === 'day' ? timedGridScrollDay.value : timedGridScrollWeek.value
   if (container) {
     container.scrollTop = 8 * hourHeight.value
   }
 }
 
-watch([viewMode, timedGridScrollDay, timedGridScrollWeek], () => {
-  // Use nextTick if needed, but watch on ref might trigger after mount
-  setTimeout(scrollToWorkingDay, 0)
+watch([viewMode, timedGridScrollDay, timedGridScrollWeek], ([newViewMode, newDayEl, newWeekEl]) => {
+  if (newViewMode === 'month') {
+    initialScrollPerformedDay.value = false
+    initialScrollPerformedWeek.value = false
+    return
+  }
+  
+  if (newViewMode === 'day' && newDayEl && !initialScrollPerformedDay.value) {
+    setTimeout(() => {
+      scrollToWorkingDay()
+      initialScrollPerformedDay.value = true
+    }, 0)
+  } else if (newViewMode === 'week' && newWeekEl && !initialScrollPerformedWeek.value) {
+    setTimeout(() => {
+      scrollToWorkingDay()
+      initialScrollPerformedWeek.value = true
+    }, 0)
+  }
 })
 
 onMounted(() => {
