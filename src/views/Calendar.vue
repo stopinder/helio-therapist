@@ -364,7 +364,7 @@
 
       <!-- Popover -->
       <div v-if="selectedEvent && popoverPosition" 
-        class="fixed z-40 w-64 bg-surface-elevated border border-border-strong rounded-panel shadow-overlay p-4 animate-in fade-in zoom-in duration-200"
+        class="fixed z-40 w-[280px] sm:w-72 bg-surface-elevated border border-border-strong rounded-panel shadow-overlay p-4 animate-in fade-in zoom-in duration-200"
         :style="{ top: popoverPosition.top + 'px', left: popoverPosition.left + 'px' }"
         @click.stop
       >
@@ -380,9 +380,26 @@
           <button @click="selectedEventId = null" class="text-ink-subtle hover:text-ink-secondary p-1 text-xl leading-none ml-2" aria-label="Close">×</button>
         </div>
         
-        <div v-if="selectedEvent.location" class="mb-3 flex gap-2 items-start">
-          <span class="text-caption">📍</span>
-          <span class="text-caption text-ink-muted break-words">{{ selectedEvent.location }}</span>
+        <div v-if="selectedEvent.location" class="mb-3 flex gap-2 items-start overflow-hidden">
+          <span class="text-caption flex-shrink-0">📍</span>
+          <div class="min-w-0 flex-1">
+            <template v-if="isLocationUrl(selectedEvent.location)">
+              <a 
+                :href="selectedEvent.location" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                class="text-caption text-action-link hover:underline font-medium block truncate"
+              >
+                Open meeting link ↗
+              </a>
+              <span class="text-[10px] text-ink-muted block truncate opacity-70">
+                {{ getLocationHostname(selectedEvent.location) }}
+              </span>
+            </template>
+            <span v-else class="text-caption text-ink-muted break-words whitespace-pre-wrap leading-tight">
+              {{ selectedEvent.location }}
+            </span>
+          </div>
         </div>
 
         <div class="flex flex-col gap-2">
@@ -624,6 +641,24 @@ function statusColor(status) {
   }
 }
 
+function isLocationUrl(location) {
+  if (!location) return false
+  try {
+    const url = new URL(location)
+    return url.protocol === 'http:' || url.protocol === 'https:'
+  } catch {
+    return false
+  }
+}
+
+function getLocationHostname(location) {
+  try {
+    return new URL(location).hostname
+  } catch {
+    return ''
+  }
+}
+
 async function refreshEvents() {
   const range = getViewRange(viewDate.value, viewMode.value)
   await loadData()
@@ -635,9 +670,10 @@ function selectAppointment(event, clickEvent) {
   
   if (clickEvent) {
     const rect = clickEvent.currentTarget.getBoundingClientRect()
-    const popoverWidth = 256
-    const popoverHeight = 180
-    const padding = 10
+    // Adaptive popover dimensions
+    const popoverWidth = window.innerWidth < 640 ? 280 : 288 
+    const popoverHeight = 220 // Allow more height for wrapped text or links
+    const padding = 12
     
     let left = rect.right + padding
     let top = rect.top
@@ -646,14 +682,18 @@ function selectAppointment(event, clickEvent) {
       left = (window.innerWidth - popoverWidth) / 2
       top = (window.innerHeight - popoverHeight) / 2
     } else {
+      // Avoid right overflow
       if (left + popoverWidth + padding > window.innerWidth) {
         left = rect.left - popoverWidth - padding
       }
+      // Ensure it doesn't go off screen left
       left = Math.max(padding, Math.min(left, window.innerWidth - popoverWidth - padding))
       
+      // Avoid bottom overflow
       if (top + popoverHeight + padding > window.innerHeight) {
         top = window.innerHeight - popoverHeight - padding
       }
+      // Ensure it doesn't go off screen top (under header)
       top = Math.max(padding + 56, Math.min(top, window.innerHeight - popoverHeight - padding))
     }
     popoverPosition.value = { top, left }
