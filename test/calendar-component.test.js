@@ -92,12 +92,12 @@ test('Calendar component template and logic requirements', async (t) => {
 
   await t.test('Time axis header spacer present in both Day and Week views', () => {
     // There should be two instances of the header spacer in the time axis
-    const axisSpacers = calendarSource.match(/<div class="h-10 border-b border-border-muted bg-surface"><\/div> <!-- Header spacer -->/g)
+    const axisSpacers = calendarSource.match(/class="h-10 border-b border-border-muted bg-surface sticky top-0 z-40"/g)
     assert.strictEqual(axisSpacers.length, 2)
   })
 
   await t.test('Sticky elements updated', () => {
-    assert.match(calendarSource, /class="h-10 border-b border-border-muted flex items-center justify-center gap-2 sticky top-0 bg-surface z-20"/)
+    assert.match(calendarSource, /class="h-10 border-b border-border-muted flex items-center justify-center gap-2 sticky top-0 bg-surface z-40"/)
   })
 
   await t.test('Popover containment and flipping logic', () => {

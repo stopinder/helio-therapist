@@ -219,7 +219,7 @@
           >
             <!-- Time Axis -->
             <div class="w-16 border-r border-border-muted bg-surface shrink-0 sticky left-0 z-30">
-              <div class="h-10 border-b border-border-muted bg-surface"></div> <!-- Header spacer -->
+              <div class="h-10 border-b border-border-muted bg-surface sticky top-0 z-40"></div> <!-- Header spacer -->
               <div class="relative">
                 <div v-for="hour in workingHours" :key="hour" 
                   class="border-b border-border-muted/30 text-right pr-2 pt-1 bg-surface"
@@ -268,7 +268,7 @@
           >
             <!-- Time Axis -->
             <div class="w-16 border-r border-border-muted bg-surface shrink-0 sticky left-0 z-30">
-              <div class="h-10 border-b border-border-muted bg-surface"></div> <!-- Header spacer -->
+              <div class="h-10 border-b border-border-muted bg-surface sticky top-0 z-40"></div> <!-- Header spacer -->
               <div class="relative">
                 <div v-for="hour in workingHours" :key="hour" 
                   class="border-b border-border-muted/30 text-right pr-2 pt-1 bg-surface"
@@ -280,13 +280,13 @@
             </div>
 
             <!-- Days Grid -->
-            <div class="flex-1 grid grid-cols-5 h-full relative">
+            <div class="flex-1 grid grid-cols-5 h-full relative min-w-0">
               <div v-for="day in weekDays" :key="day.date.toISOString()" 
                 class="border-r border-border-muted flex flex-col h-full relative min-w-0"
                 :class="day.isToday ? 'bg-surface-subtle' : ''"
               >
                 <!-- Day Header -->
-                <div class="h-10 border-b border-border-muted flex items-center justify-center gap-2 sticky top-0 bg-surface z-20">
+                <div class="h-10 border-b border-border-muted flex items-center justify-center gap-2 sticky top-0 bg-surface z-40">
                   <span class="text-caption font-bold text-ink-muted uppercase truncate">{{ day.shortName }}</span>
                   <span class="text-body-sm font-bold" :class="day.isToday ? 'text-action-primary' : 'text-ink'">{{ day.date.getDate() }}</span>
                 </div>
