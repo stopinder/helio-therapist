@@ -393,7 +393,7 @@
               >
                 Open meeting link ↗
               </a>
-              <span class="text-[10px] text-ink-muted block truncate opacity-70">
+              <span class="text-caption text-ink-muted block truncate opacity-70">
                 {{ getLocationHostname(selectedEvent.location) }}
               </span>
             </template>
@@ -455,7 +455,11 @@ const {
 
 const selectedEventId = ref(null)
 const viewDate = ref(new Date())
-const viewMode = ref('week')
+const viewMode = ref((() => {
+  const today = new Date()
+  const day = today.getDay()
+  return (day === 0 || day === 6) ? 'day' : 'week'
+})())
 const gridContainer = ref(null)
 const popoverPosition = ref(null)
 const isAgendaExpanded = ref(true)
@@ -747,7 +751,14 @@ function move(dir) {
 }
 
 function goToday() {
-  viewDate.value = new Date()
+  const today = new Date()
+  console.log('goToday called, today:', today, 'day of week:', today.getDay())
+  viewDate.value = today
+  const day = today.getDay()
+  if (day === 0 || day === 6) {
+    console.log('Switching to day view')
+    viewMode.value = 'day'
+  }
   selectedEventId.value = null
   refreshEvents()
 }

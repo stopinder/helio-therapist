@@ -2,7 +2,6 @@
  * Video Provider Service (Mock)
  * 
  * Future integration boundaries:
- * - Microsoft 365 / Outlook integration
  * - Google Workspace integration
  * - Zoom OAuth integration
  * - Calendar sync

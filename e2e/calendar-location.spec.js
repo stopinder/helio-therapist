@@ -84,7 +84,8 @@ test.describe('Calendar Location URL Handling', () => {
         start: new Date(baseDate.getTime()).toISOString(),
         end: new Date(baseDate.getTime() + 3600000).toISOString(),
         location: longUrl,
-        source: 'google'
+        source: 'google',
+        status: 'confirmed'
       }
     ];
 
@@ -118,7 +119,8 @@ test.describe('Calendar Location URL Handling', () => {
         start: new Date(baseDate.getTime()).toISOString(),
         end: new Date(baseDate.getTime() + 3600000).toISOString(),
         location: longText,
-        source: 'google'
+        source: 'google',
+        status: 'confirmed'
       }
     ];
 
@@ -147,7 +149,8 @@ test.describe('Calendar Location URL Handling', () => {
         start: new Date(baseDate.getTime()).toISOString(),
         end: new Date(baseDate.getTime() + 3600000).toISOString(),
         location: xss,
-        source: 'google'
+        source: 'google',
+        status: 'confirmed'
       }
     ];
 

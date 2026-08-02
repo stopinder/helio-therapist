@@ -236,7 +236,7 @@ Done when a retry cannot duplicate a client, field errors are inline, and a relo
 - Start OAuth with a stored state/PKCE boundary where appropriate; exchange and store tokens server-side.
 - On disconnect, confirm, revoke remotely where possible, disable credentials and jobs, and preserve imported clinical records.
 - Keep verified Google and Zoom paths active.
-- Mark Calendly, Outlook, Notifications, and AI Settings as disabled or coming soon until their full schema, API, and recovery behavior exists.
+- Mark Calendly, Notifications, and AI Settings as disabled or coming soon until their full schema, API, and recovery behavior exists.
 
 ### Clinical exchange and client completion
 

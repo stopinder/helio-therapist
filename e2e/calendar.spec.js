@@ -36,7 +36,8 @@ test.describe('Calendar Workspace Workflow', () => {
               summary: 'Google Event',
               start: new Date().toISOString(),
               end: new Date(Date.now() + 3600000).toISOString(),
-              location: 'Google Meet'
+              location: 'Google Meet',
+              status: 'confirmed'
             }
           ]
         })
