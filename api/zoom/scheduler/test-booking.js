@@ -36,25 +36,29 @@ export default async function handler(req, res) {
 
     const duration = Number(availability?.duration || schedule?.duration || 50);
     const timeZone = schedule?.time_zone || schedule?.timezone || 'Europe/London';
-    const location = Array.isArray(schedule?.location) ? schedule.location[0] : schedule?.location;
 
     const booking = await createZoomSchedulerBooking(accessToken, {
       schedule_id: schedule.schedule_id,
-      start_time: slot.startTime,
       duration,
+      start_date_time: slot.startTime,
       time_zone: timeZone,
       booker: {
-        name: 'Helio Scheduler Test',
-        email: user.email
+        first_name: 'Helio',
+        last_name: 'Scheduler Test',
+        email: user.email,
+        time_format: '24h'
       },
-      ...(location ? { location } : {})
+      location_configuration: {
+        kind: 'zoomMeeting'
+      }
     });
 
     createdEventId = booking?.event_id || booking?.scheduled_event_id || booking?.id || null;
     const event = createdEventId ? await getZoomSchedulerEvent(accessToken, createdEventId) : booking;
     const zoomMeetingPresent = Boolean(
       event?.zoom_meeting_id || event?.meeting_id || event?.join_url || event?.zoom_join_url ||
-      booking?.zoom_meeting_id || booking?.meeting_id || booking?.join_url || booking?.zoom_join_url
+      booking?.zoom_meeting_id || booking?.meeting_id || booking?.join_url || booking?.zoom_join_url ||
+      event?.location_kind === 'zoomMeeting' || booking?.location_kind === 'zoomMeeting'
     );
 
     if (createdEventId) {
