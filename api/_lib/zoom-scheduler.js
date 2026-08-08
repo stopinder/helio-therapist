@@ -85,11 +85,13 @@ export function listAvailableZoomSchedulerSlots(availability) {
 
 export function summarizeZoomSchedulerProbe(schedules, availability) {
   const activeSchedules = schedules.filter((schedule) => schedule?.active !== false);
+  const selectedSchedule = activeSchedules[0] || schedules[0] || null;
   const availableSlots = listAvailableZoomSchedulerSlots(availability);
 
   return {
     scheduleCount: schedules.length,
     activeScheduleCount: activeSchedules.length,
+    scheduleType: selectedSchedule?.schedule_type || null,
     scheduleId: availability?.schedule_id || null,
     duration: availability?.duration || null,
     availableSlotCount: availableSlots.length,
