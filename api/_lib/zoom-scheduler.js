@@ -52,6 +52,15 @@ export async function getZoomSchedulerAvailableTimes(accessToken, scheduleId, op
   );
 }
 
+export async function createZoomSchedulerSingleUseLink(accessToken, scheduleId, options = {}) {
+  if (!scheduleId) throw new Error('A Zoom Scheduler schedule ID is required');
+  return zoomSchedulerRequest(accessToken, '/scheduler/schedules/single_use_link', {
+    ...options,
+    method: 'POST',
+    body: { schedule_id: scheduleId }
+  });
+}
+
 export async function createZoomSchedulerBooking(accessToken, schedulerUser, booking, options = {}) {
   if (!schedulerUser) throw new Error('A Zoom Scheduler user is required');
   return zoomSchedulerRequest(accessToken, `/scheduler/attendee?user=${encodeURIComponent(schedulerUser)}`, {
