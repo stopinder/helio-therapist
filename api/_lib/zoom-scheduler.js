@@ -52,8 +52,9 @@ export async function getZoomSchedulerAvailableTimes(accessToken, scheduleId, op
   );
 }
 
-export async function createZoomSchedulerBooking(accessToken, booking, options = {}) {
-  return zoomSchedulerRequest(accessToken, '/scheduler/attendee', {
+export async function createZoomSchedulerBooking(accessToken, schedulerUser, booking, options = {}) {
+  if (!schedulerUser) throw new Error('A Zoom Scheduler user is required');
+  return zoomSchedulerRequest(accessToken, `/scheduler/attendee?user=${encodeURIComponent(schedulerUser)}`, {
     ...options,
     method: 'POST',
     body: booking
