@@ -6,6 +6,7 @@ import ClientWorkspace from '../views/ClientWorkspace.vue'
 import SessionWorkspace from '../views/SessionWorkspace.vue'
 import Transcripts from '../views/Transcripts.vue'
 import Settings from '../views/Settings.vue'
+import ScheduleAppointment from '../components/ScheduleAppointment.vue'
 import ProfessionalDevelopmentLayout from '../layouts/ProfessionalDevelopmentLayout.vue'
 import SupervisionHome from '../views/supervision/SupervisionHome.vue'
 import SupervisionReflections from '../views/supervision/SupervisionReflections.vue'
@@ -14,77 +15,25 @@ import SupervisionGrowth from '../views/supervision/SupervisionGrowth.vue'
 import SupervisionInsights from '../views/supervision/SupervisionInsights.vue'
 
 const routes = [
+  { path: '/', name: 'Overview', component: Overview },
+  { path: '/calendar', name: 'Calendar', component: Calendar },
+  { path: '/schedule', name: 'ScheduleAppointment', component: ScheduleAppointment },
+  { path: '/clients', name: 'Clients', component: Clients },
+  { path: '/clients/:clientId', name: 'ClientWorkspace', component: ClientWorkspace },
+  { path: '/clients/:clientId/sessions/:sessionId', name: 'SessionWorkspace', component: SessionWorkspace },
+  { path: '/transcripts', name: 'Transcripts', component: Transcripts },
   {
-    path: '/',
-    name: 'Overview',
-    component: Overview
-  },
-  {
-    path: '/calendar',
-    name: 'Calendar',
-    component: Calendar
-  },
-  {
-    path: '/clients',
-    name: 'Clients',
-    component: Clients
-  },
-  {
-    path: '/clients/:clientId',
-    name: 'ClientWorkspace',
-    component: ClientWorkspace
-  },
-  {
-    path: '/clients/:clientId/sessions/:sessionId',
-    name: 'SessionWorkspace',
-    component: SessionWorkspace
-  },
-  {
-    path: '/transcripts',
-    name: 'Transcripts',
-    component: Transcripts
-  },
-  {
-    path: '/supervision',
-    component: ProfessionalDevelopmentLayout,
+    path: '/supervision', component: ProfessionalDevelopmentLayout,
     children: [
-      {
-        path: '',
-        name: 'SupervisionHome',
-        component: SupervisionHome
-      },
-      {
-        path: 'reflections',
-        name: 'SupervisionReflections',
-        component: SupervisionReflections
-      },
-      {
-        path: 'workspace',
-        name: 'SupervisionWorkspace',
-        component: SupervisionWorkspace
-      },
-      {
-        path: 'growth',
-        name: 'SupervisionGrowth',
-        component: SupervisionGrowth
-      },
-      {
-        path: 'insights',
-        name: 'SupervisionInsights',
-        component: SupervisionInsights
-      }
+      { path: '', name: 'SupervisionHome', component: SupervisionHome },
+      { path: 'reflections', name: 'SupervisionReflections', component: SupervisionReflections },
+      { path: 'workspace', name: 'SupervisionWorkspace', component: SupervisionWorkspace },
+      { path: 'growth', name: 'SupervisionGrowth', component: SupervisionGrowth },
+      { path: 'insights', name: 'SupervisionInsights', component: SupervisionInsights }
     ]
   },
-  {
-    path: '/settings',
-    name: 'Settings',
-    component: Settings
-  }
+  { path: '/settings', name: 'Settings', component: Settings }
 ]
 
-const router = createRouter({
-  history: createWebHistory(),
-  routes
-})
-
+const router = createRouter({ history: createWebHistory(), routes })
 export default router
