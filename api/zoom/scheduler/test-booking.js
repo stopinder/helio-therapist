@@ -30,6 +30,9 @@ export default async function handler(req, res) {
     const schedule = schedules.find((item) => item?.active !== false) || schedules[0];
     if (!schedule?.schedule_id) return res.status(409).json({ error: 'No Zoom Scheduler schedule is available' });
 
+    const schedulerUser = schedule?.organizer?.email || schedule?.organizer_email || schedule?.owner_email || schedule?.email;
+    if (!schedulerUser) return res.status(409).json({ error: 'Zoom Scheduler did not return an organizer email for this schedule' });
+
     const availability = await getZoomSchedulerAvailableTimes(accessToken, schedule.schedule_id);
     const slot = listAvailableZoomSchedulerSlots(availability)[0];
     if (!slot?.startTime) return res.status(409).json({ error: 'No available Zoom Scheduler slot was found' });
@@ -37,7 +40,7 @@ export default async function handler(req, res) {
     const duration = Number(availability?.duration || schedule?.duration || 50);
     const timeZone = schedule?.time_zone || schedule?.timezone || 'Europe/London';
 
-    const booking = await createZoomSchedulerBooking(accessToken, {
+    const booking = await createZoomSchedulerBooking(accessToken, schedulerUser, {
       schedule_id: schedule.schedule_id,
       duration,
       start_date_time: slot.startTime,
