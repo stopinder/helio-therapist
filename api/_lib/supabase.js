@@ -1,5 +1,13 @@
 import { createClient } from '@supabase/supabase-js';
 
+function getSupabaseHost() {
+  try {
+    return new URL((process.env.SUPABASE_URL || '').trim()).host || 'missing';
+  } catch {
+    return 'invalid';
+  }
+}
+
 /**
  * Creates and returns a Supabase client using environment variables.
  * Throws an error if required variables are missing.
@@ -65,6 +73,13 @@ export async function requireAuthenticatedUser(req) {
   const { data, error } = await supabase.auth.getUser(match[1]);
 
   if (error || !data?.user) {
+    console.error('[Supabase Server Auth]', {
+      host: getSupabaseHost(),
+      status: error?.status || null,
+      code: error?.code || null,
+      message: error?.message || 'No user returned'
+    });
+
     const authError = new Error('Session is invalid or expired');
     authError.status = 401;
     authError.code = 'AUTH_INVALID';
