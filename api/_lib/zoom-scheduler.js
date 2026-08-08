@@ -1,5 +1,23 @@
 const ZOOM_API_BASE = 'https://api.zoom.us/v2';
 
+function zoomSchedulerErrorMessage(payload, status) {
+  const candidate = payload?.message ?? payload?.error ?? payload?.errors;
+  if (typeof candidate === 'string' && candidate.trim()) return candidate.trim();
+  if (candidate && typeof candidate === 'object') {
+    try {
+      const text = JSON.stringify(candidate);
+      if (text && text !== '{}') return text.slice(0, 1200);
+    } catch {}
+  }
+  if (payload && typeof payload === 'object') {
+    try {
+      const text = JSON.stringify(payload);
+      if (text && text !== '{}') return text.slice(0, 1200);
+    } catch {}
+  }
+  return `Zoom Scheduler request failed (${status})`;
+}
+
 async function zoomSchedulerRequest(accessToken, path, { fetchImpl = fetch, method = 'GET', body } = {}) {
   const response = await fetchImpl(`${ZOOM_API_BASE}${path}`, {
     method,
@@ -12,7 +30,7 @@ async function zoomSchedulerRequest(accessToken, path, { fetchImpl = fetch, meth
 
   const payload = response.status === 204 ? null : await response.json().catch(() => ({}));
   if (!response.ok) {
-    const error = new Error(payload?.message || payload?.error || `Zoom Scheduler request failed (${response.status})`);
+    const error = new Error(zoomSchedulerErrorMessage(payload, response.status));
     error.status = response.status;
     error.code = payload?.code || null;
     throw error;
