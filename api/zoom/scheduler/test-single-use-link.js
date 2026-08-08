@@ -26,7 +26,7 @@ export default async function handler(req, res) {
     if (!schedule?.schedule_id) return res.status(409).json({ error: 'No Zoom Scheduler schedule is available' });
 
     const result = await createZoomSchedulerSingleUseLink(accessToken, schedule.schedule_id);
-    const link = result?.single_use_link || result?.booking_link || result?.link || result?.url || null;
+    const link = result?.scheduling_url || result?.single_use_link || result?.booking_link || result?.link || result?.url || null;
 
     if (!link) {
       console.error('[Zoom Scheduler Single Use Link]', { message: 'Zoom returned no recognizable link', keys: Object.keys(result || {}) });
