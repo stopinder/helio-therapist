@@ -113,16 +113,26 @@
           <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
               <div class="text-body-sm font-medium text-ink">Zoom Scheduler diagnostic</div>
-              <div class="text-caption text-ink-subtle">Temporary preview-only check. Reads schedules and available times; it does not create bookings.</div>
+              <div class="text-caption text-ink-subtle">Temporary preview-only checks. No Helio client or clinical session is created.</div>
             </div>
-            <button
-              type="button"
-              :disabled="isCheckingZoomScheduler"
-              class="min-h-touch sm:min-h-0 px-4 py-2 text-body-sm font-medium text-action-link border border-border rounded-control hover:bg-surface-muted disabled:opacity-50"
-              @click="checkZoomScheduler"
-            >
-              {{ isCheckingZoomScheduler ? 'Checking…' : 'Check Zoom Scheduler' }}
-            </button>
+            <div class="flex flex-col sm:flex-row gap-2">
+              <button
+                type="button"
+                :disabled="isCheckingZoomScheduler || isTestingZoomSchedulerBooking"
+                class="min-h-touch sm:min-h-0 px-4 py-2 text-body-sm font-medium text-action-link border border-border rounded-control hover:bg-surface-muted disabled:opacity-50"
+                @click="checkZoomScheduler"
+              >
+                {{ isCheckingZoomScheduler ? 'Checking…' : 'Check Zoom Scheduler' }}
+              </button>
+              <button
+                type="button"
+                :disabled="isCheckingZoomScheduler || isTestingZoomSchedulerBooking"
+                class="min-h-touch sm:min-h-0 px-4 py-2 text-body-sm font-medium text-action-link border border-border rounded-control hover:bg-surface-muted disabled:opacity-50"
+                @click="runZoomSchedulerBookingTest"
+              >
+                {{ isTestingZoomSchedulerBooking ? 'Testing booking…' : 'Run test booking' }}
+              </button>
+            </div>
           </div>
           <div
             v-if="zoomSchedulerProbe"
@@ -134,6 +144,18 @@
             </template>
             <template v-else>
               Scheduler check failed: {{ zoomSchedulerProbe.message }}
+            </template>
+          </div>
+          <div
+            v-if="zoomSchedulerBookingTest"
+            class="mt-3 p-3 rounded-control border text-body-sm"
+            :class="zoomSchedulerBookingTest.ok ? 'border-state-success text-state-success bg-surface' : 'border-state-danger text-state-danger bg-surface'"
+          >
+            <template v-if="zoomSchedulerBookingTest.ok">
+              ✓ Test booking created and cancelled · Zoom meeting {{ zoomSchedulerBookingTest.zoomMeetingPresent ? 'confirmed' : 'not reported by API' }}
+            </template>
+            <template v-else>
+              Test booking failed: {{ zoomSchedulerBookingTest.message }}
             </template>
           </div>
         </div>
@@ -305,6 +327,8 @@ const isConnectingZoom = ref(false)
 const isLoadingZoomStatus = ref(true)
 const isCheckingZoomScheduler = ref(false)
 const zoomSchedulerProbe = ref(null)
+const isTestingZoomSchedulerBooking = ref(false)
+const zoomSchedulerBookingTest = ref(null)
 
 const calendlyStatus = ref('Not connected')
 const isConnectingCalendly = ref(false)
@@ -437,6 +461,25 @@ const checkZoomScheduler = async () => {
   }
 }
 
+const runZoomSchedulerBookingTest = async () => {
+  isTestingZoomSchedulerBooking.value = true
+  zoomSchedulerBookingTest.value = null
+  try {
+    const response = await authenticatedFetch('/api/zoom/scheduler/test-booking', { method: 'POST' })
+    const data = await response.json().catch(() => ({}))
+    if (!response.ok) throw new Error(data.error || 'Zoom Scheduler booking test failed')
+    zoomSchedulerBookingTest.value = {
+      ok: Boolean(data.created && data.cancelled),
+      zoomMeetingPresent: Boolean(data.zoomMeetingPresent),
+      message: ''
+    }
+  } catch (error) {
+    zoomSchedulerBookingTest.value = { ok: false, zoomMeetingPresent: false, message: error.message }
+  } finally {
+    isTestingZoomSchedulerBooking.value = false
+  }
+}
+
 const connectZoom = async () => {
   isConnectingZoom.value = true
   try {
@@ -466,6 +509,7 @@ const disconnectZoom = async () => {
 
     zoomStatus.value = 'Not connected'
     zoomSchedulerProbe.value = null
+    zoomSchedulerBookingTest.value = null
     successMessage.value = 'Zoom disconnected'
     showSuccess.value = true
     setTimeout(() => showSuccess.value = false, 3000)
