@@ -132,9 +132,11 @@
         <section>
           <h3 class="text-body-sm font-semibold uppercase tracking-wide text-ink-muted mb-2">Actions</h3>
           <div class="space-y-2">
+            <!--
             <button class="w-full py-2 text-body-sm rounded-control bg-action-link text-on-action hover:bg-action-link-hover transition-colors duration-standard ease-out">
               Schedule / Reschedule Session
             </button>
+            -->
             <button class="w-full py-2 text-body-sm rounded-control border border-border bg-surface-elevated text-ink hover:bg-surface-subtle transition-colors duration-standard ease-out">
               Export Session Summary (PDF)
             </button>

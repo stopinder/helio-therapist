@@ -33,6 +33,7 @@ The application currently exposes **Today**, **Clients**, **Inbox**, **Reflectio
 - Dictation needs a real browser microphone permission and authenticated transcription endpoint test with normal browser audio.
 - Google Calendar/Calendly need a signed-in user with a valid connected integration; verify the Google silent-refresh and reconnect-only-on-revocation paths from the deployed app.
 - Selecting a calendar appointment opens preparation only if its title matches exactly one Helio client; no durable calendar-event-to-client link exists yet.
+- The "Schedule" action in the Client Workspace is currently hidden (as of August 2026) because the integrated scheduling/appointment creation workflow is not yet implemented. The app currently references existing events from external providers (Google Calendar, Calendly) and existing Supabase sessions.
 - Supabase leaked-password protection remains disabled. This hosted Auth setting should be enabled as a separate sign-up policy decision.
 - Vercel production serves the deployed app successfully with no observed runtime errors. Node 24 is pinned in the repository and CI so new deployments do not depend on the deprecated Node 20 runtime.
 
