@@ -14,6 +14,7 @@ export default async function handler(req, res) {
 
   let createdEventId = null;
   let accessToken = null;
+  let scheduleType = null;
   try {
     const { supabase, user } = await requireAuthenticatedUser(req);
     const { data: integration, error } = await supabase
@@ -29,6 +30,7 @@ export default async function handler(req, res) {
     const schedules = await listZoomSchedulerSchedules(accessToken);
     const schedule = schedules.find((item) => item?.active !== false) || schedules[0];
     if (!schedule?.schedule_id) return res.status(409).json({ error: 'No Zoom Scheduler schedule is available' });
+    scheduleType = schedule?.schedule_type || null;
 
     const schedulerUser = schedule?.organizer?.email || schedule?.organizer_email || schedule?.owner_email || schedule?.email;
     if (!schedulerUser) return res.status(409).json({ error: 'Zoom Scheduler did not return an organizer email for this schedule' });
@@ -74,6 +76,7 @@ export default async function handler(req, res) {
       created: true,
       cancelled: true,
       zoomMeetingPresent,
+      scheduleType,
       startTime: slot.startTime,
       duration
     });
@@ -83,9 +86,10 @@ export default async function handler(req, res) {
         console.error('[Zoom Scheduler Test Cleanup]', { message: cleanupError.message });
       }
     }
-    console.error('[Zoom Scheduler Test Booking]', { status: error.status || 500, code: error.code || null, message: error.message });
+    console.error('[Zoom Scheduler Test Booking]', { status: error.status || 500, code: error.code || null, message: error.message, scheduleType });
+    const suffix = scheduleType ? ` · schedule type: ${scheduleType}` : '';
     return res.status(error.status && error.status < 500 ? error.status : 502).json({
-      error: error.message || 'Zoom Scheduler booking test failed'
+      error: `${error.message || 'Zoom Scheduler booking test failed'}${suffix}`
     });
   }
 }
