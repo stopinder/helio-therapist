@@ -108,6 +108,35 @@
             </template>
           </div>
         </div>
+
+        <div v-if="zoomStatus === 'Connected'" class="p-4 bg-surface-subtle">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <div class="text-body-sm font-medium text-ink">Zoom Scheduler diagnostic</div>
+              <div class="text-caption text-ink-subtle">Temporary preview-only check. Reads schedules and available times; it does not create bookings.</div>
+            </div>
+            <button
+              type="button"
+              :disabled="isCheckingZoomScheduler"
+              class="min-h-touch sm:min-h-0 px-4 py-2 text-body-sm font-medium text-action-link border border-border rounded-control hover:bg-surface-muted disabled:opacity-50"
+              @click="checkZoomScheduler"
+            >
+              {{ isCheckingZoomScheduler ? 'Checking…' : 'Check Zoom Scheduler' }}
+            </button>
+          </div>
+          <div
+            v-if="zoomSchedulerProbe"
+            class="mt-3 p-3 rounded-control border text-body-sm"
+            :class="zoomSchedulerProbe.ok ? 'border-state-success text-state-success bg-surface' : 'border-state-danger text-state-danger bg-surface'"
+          >
+            <template v-if="zoomSchedulerProbe.ok">
+              ✓ Scheduler available · {{ zoomSchedulerProbe.scheduleCount }} schedule(s) · {{ zoomSchedulerProbe.availableSlotCount }} available slot(s)
+            </template>
+            <template v-else>
+              Scheduler check failed: {{ zoomSchedulerProbe.message }}
+            </template>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -274,6 +303,8 @@ const isLoadingStatus = ref(true)
 const zoomStatus = ref('Not connected')
 const isConnectingZoom = ref(false)
 const isLoadingZoomStatus = ref(true)
+const isCheckingZoomScheduler = ref(false)
+const zoomSchedulerProbe = ref(null)
 
 const calendlyStatus = ref('Not connected')
 const isConnectingCalendly = ref(false)
@@ -386,6 +417,26 @@ const fetchZoomStatus = async () => {
   }
 }
 
+const checkZoomScheduler = async () => {
+  isCheckingZoomScheduler.value = true
+  zoomSchedulerProbe.value = null
+  try {
+    const response = await authenticatedFetch('/api/zoom/scheduler/probe')
+    const data = await response.json().catch(() => ({}))
+    if (!response.ok) throw new Error(data.error || 'Unable to check Zoom Scheduler')
+    zoomSchedulerProbe.value = {
+      ok: Boolean(data.schedulerAvailable),
+      scheduleCount: Number(data.scheduleCount || 0),
+      availableSlotCount: Number(data.availableSlotCount || 0),
+      message: ''
+    }
+  } catch (error) {
+    zoomSchedulerProbe.value = { ok: false, scheduleCount: 0, availableSlotCount: 0, message: error.message }
+  } finally {
+    isCheckingZoomScheduler.value = false
+  }
+}
+
 const connectZoom = async () => {
   isConnectingZoom.value = true
   try {
@@ -414,6 +465,7 @@ const disconnectZoom = async () => {
     if (!response.ok) throw new Error(data.error || 'Unable to disconnect Zoom')
 
     zoomStatus.value = 'Not connected'
+    zoomSchedulerProbe.value = null
     successMessage.value = 'Zoom disconnected'
     showSuccess.value = true
     setTimeout(() => showSuccess.value = false, 3000)
