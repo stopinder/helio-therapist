@@ -3,7 +3,7 @@
     <div v-if="loading" class="flex-1 flex items-center justify-center"><div class="text-ink-muted flex flex-col items-center gap-2"><span class="w-8 h-8 border-4 border-state-selected border-t-transparent rounded-full animate-spin"></span><p>Loading client workspace…</p></div></div>
     <div v-else-if="error" class="flex-1 flex items-center justify-center p-inline-lg"><div class="max-w-md w-full bg-surface p-inline-lg py-stack-lg rounded-card shadow-sm border border-state-danger/20 text-center"><h2 class="text-h2 font-semibold text-state-danger mb-2">Workspace Error</h2><p class="text-ink-secondary mb-6">{{ error }}</p><button @click="loadClient" class="px-inline-md py-stack-sm bg-state-selected text-white rounded-control">Try Again</button></div></div>
     <template v-else-if="client">
-      <ClientWorkspaceHeader :client="client" @document-saved="refreshDocuments" />
+      <ClientWorkspaceHeader :client="client" @create-document="newDocument" />
       <ClientWorkspaceTabs :tabs="tabs" v-model:activeTab="activeTab" />
       <div class="flex-1 overflow-auto p-inline-lg py-stack-lg"><div class="max-w-6xl mx-auto space-y-stack-lg">
         <div v-if="activeTab === 'Overview'" class="space-y-stack-lg">
@@ -18,7 +18,7 @@
         <ClientDocumentsPanel v-else-if="activeTab === 'Documents'" :documents="documents" :loading="documentsLoading" :error="documentsError" @create="newDocument" @edit="editDocument" @download="downloadDocument" />
         <div v-else><div v-if="activeTab === 'Timeline'" class="bg-surface-elevated border border-border-muted rounded-panel p-inline-lg max-w-2xl mx-auto"><h3 class="text-h3 font-semibold text-ink mb-stack-lg pt-stack-md">Client Timeline</h3><div v-if="timelineLoading" class="py-stack-xl text-center"><p class="text-body-sm text-ink-subtle">Loading clinical narrative...</p></div><div v-else-if="timelineEvents.length === 0" class="py-stack-xl text-center"><p class="text-body-sm text-ink-subtle">No clinical events recorded for this client.</p></div><div v-else class="space-y-0"><TimelineItem v-for="(event, index) in timelineEvents" :key="event.id" :event-type="event.event_type" :date="formatDate(event.occurred_at)" :description="event.summary" :subject-type="event.subject_type" :subject-id="event.subject_id" :session-id="event.session_id" :is-last="index === timelineEvents.length - 1" /></div></div><EmptyState v-else :title="activeTab" :description="`The ${activeTab} module will provide detailed clinical information and management tools for this client's care journey.`" icon="🛠️"><template #action><button @click="activeTab = 'Overview'" class="text-action-link font-medium hover:underline">Return to Overview</button></template></EmptyState></div>
       </div></div>
-      <ClientDocumentComposer v-if="documentComposerOpen" :client="client" :document="editingDocument" @close="closeDocumentComposer" @saved="documentSaved" />
+      <ClientDocumentComposer v-if="documentComposerOpen" :client="client" :document="editingDocument" @close="closeDocumentComposer" @saved="documentSaved" @show-documents="showDocuments" />
     </template>
   </div>
 </template>
@@ -46,9 +46,10 @@ async function refreshDocuments() { if (!route.params.clientId) return; document
 function newDocument() { editingDocument.value = null; documentComposerOpen.value = true; }
 function editDocument(document) { editingDocument.value = document; documentComposerOpen.value = true; }
 function openDocument(document) { if (document.status === 'completed' && document.storagePath) downloadDocument(document); else editDocument(document); }
-async function downloadDocument(document) { try { await downloadClientDocument(document); } catch (e) { console.error('Failed to download document:', e); documentsError.value = 'Could not open this document.'; } }
+async function downloadDocument(document) { try { await downloadClientDocument(document); } catch (e) { console.error('Failed to download document:', e); documentsError.value = 'Could not download this document.'; } }
 function closeDocumentComposer() { documentComposerOpen.value = false; editingDocument.value = null; }
 async function documentSaved() { await refreshDocuments(); }
+function showDocuments(){closeDocumentComposer();activeTab.value='Documents';}
 function formatDate(dateString) { if (!dateString) return ''; return new Date(dateString).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }); }
 onMounted(loadClient);
 </script>
