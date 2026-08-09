@@ -88,12 +88,20 @@ test.describe('Therapist appointment scheduling', () => {
       const request = route.request();
       expect(request.method()).toBe('POST');
       expect(request.postDataJSON()).toEqual({ clientId });
+      
+      const count = await page.evaluate(() => {
+        window.__booking_call_count = (window.__booking_call_count || 0) + 1;
+        return window.__booking_call_count;
+      });
+
       await route.fulfill({
         status: 201,
         contentType: 'application/json',
         body: JSON.stringify({
-          appointmentId: '00000000-0000-4000-8000-000000000001',
-          bookingUrl: 'https://scheduler.zoom.us/t/helios-playwright-test'
+          appointmentId: `00000000-0000-4000-8000-00000000000${count}`,
+          bookingUrl: count === 1 
+            ? 'https://scheduler.zoom.us/t/helios-playwright-test'
+            : 'https://scheduler.zoom.us/t/helios-playwright-test-2'
         })
       });
     });
@@ -122,6 +130,18 @@ test.describe('Therapist appointment scheduling', () => {
     await expect(page.getByRole('link', { name: /Open booking page/i })).toHaveAttribute(
       'href',
       'https://scheduler.zoom.us/t/helios-playwright-test'
+    );
+
+    // Test "Schedule another" functionality
+    const scheduleAnotherButton = page.getByRole('button', { name: 'Schedule another' });
+    await expect(scheduleAnotherButton).toBeVisible();
+    
+    await scheduleAnotherButton.click();
+    
+    // Wait for the UI to update with the new link from the second call
+    await expect(page.getByRole('link', { name: /Open booking page/i })).toHaveAttribute(
+      'href',
+      'https://scheduler.zoom.us/t/helios-playwright-test-2'
     );
   });
 });

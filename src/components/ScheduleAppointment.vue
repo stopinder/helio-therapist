@@ -57,9 +57,21 @@ async function createBookingLink() {
     const payload = await response.json().catch(() => ({}))
     if (!response.ok) throw new Error(payload.error || 'Unable to create booking link')
     bookingUrl.value = payload.bookingUrl
+    if (payload.bookingUrl) {
+      window.open(payload.bookingUrl, '_blank')
+    }
   } catch (cause) { error.value = cause.message || 'Unable to create booking link' }
   finally { loading.value = false }
 }
 
-function reset() { clientId.value = ''; bookingUrl.value = ''; error.value = '' }
+function reset() {
+  const previousClient = clientId.value;
+  clientId.value = '';
+  bookingUrl.value = '';
+  error.value = '';
+  if (previousClient) {
+    clientId.value = previousClient;
+    createBookingLink();
+  }
+}
 </script>
