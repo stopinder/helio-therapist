@@ -5,6 +5,7 @@ import { readFile } from 'node:fs/promises'
 test('Client Workspace supervision entry reuses private reflection mutation', async () => {
   const header = await readFile(new URL('../src/components/workspace/ClientWorkspaceHeader.vue', import.meta.url), 'utf8')
   const picker = await readFile(new URL('../src/components/workspace/ClientSupervisionPicker.vue', import.meta.url), 'utf8')
+  const query = await readFile(new URL('../src/lib/clientSupervision.js', import.meta.url), 'utf8')
   const reflections = await readFile(new URL('../src/lib/reflections.js', import.meta.url), 'utf8')
 
   assert.match(header, /Add to Supervision/)
@@ -14,9 +15,11 @@ test('Client Workspace supervision entry reuses private reflection mutation', as
   assert.match(header, /listSessions/)
   assert.match(header, /included: true/)
 
-  assert.match(reflections, /export async function getPrivateReflectionsForClient/)
-  assert.match(reflections, /\.eq\('user_id', user\.id\)\.eq\('client_id', clientId\)/)
-  assert.match(reflections, /included_in_supervision/)
+  assert.match(query, /export async function getPrivateReflectionsForClient/)
+  assert.match(query, /\.eq\('user_id', user\.id\)/)
+  assert.match(query, /\.eq\('client_id', clientId\)/)
+  assert.match(query, /included_in_supervision/)
+  assert.match(reflections, /export async function setReflectionSupervisionSelection/)
 
   assert.match(picker, /type="checkbox"/)
   assert.match(picker, /Already in pack/)
