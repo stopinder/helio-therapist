@@ -14,6 +14,9 @@ test('Client Workspace supervision entry reuses private reflection mutation', as
   assert.match(header, /setReflectionSupervisionSelection/)
   assert.match(header, /listSessions/)
   assert.match(header, /included: true/)
+  assert.match(header, /Saved to supervision\./)
+  assert.match(header, /role="status"/)
+  assert.match(header, /aria-live="polite"/)
 
   assert.match(query, /export async function getPrivateReflectionsForClient/)
   assert.match(query, /\.eq\('user_id', user\.id\)/)
