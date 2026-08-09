@@ -237,7 +237,7 @@ const submit = async () => {
         email: email.value,
         password: password.value,
         options: {
-          emailRedirectTo: 'https://helio-therapist.vercel.app',
+          emailRedirectTo: 'https://therapyworks.works',
           data: { full_name: fullName.value }
         }
       })
@@ -284,7 +284,7 @@ const resetPassword = async () => {
 
   try {
     const { error } = await supabase.auth.resetPasswordForEmail(email.value, {
-      redirectTo: 'https://helio-therapist.vercel.app'
+      redirectTo: 'https://therapyworks.works'
     })
     if (error) throw error
     message.value = 'Check your email for the password reset link.'

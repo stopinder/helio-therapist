@@ -1,7 +1,7 @@
 import { getSupabaseClient } from '../_lib/supabase.js';
 
 export default async function handler(req, res) {
-  const appUrl = (process.env.APP_URL || 'https://helio-therapist.vercel.app').replace(/\/$/, '');
+  const appUrl = (process.env.APP_URL || 'https://therapyworks.works').replace(/\/$/, '');
 
   try {
     const { code, state } = req.query;

@@ -23,7 +23,7 @@ for this connection method.
 
 ## Connect MindWorks
 
-1. Sign in at `https://helio-therapist.vercel.app`.
+1. Sign in at `https://therapyworks.works`.
 2. Open **Settings**.
 3. Select **Connect** beside Calendly.
 4. Paste the token into the secure connection form and select
