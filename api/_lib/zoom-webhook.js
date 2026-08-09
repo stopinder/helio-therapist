@@ -49,7 +49,61 @@ export function verifyZoomWebhookRequest({
   }
 }
 
+export function schedulerAppointmentEvent(body) {
+  const eventType = String(body?.event || '')
+  if (eventType !== 'scheduler.scheduled_event_created' && eventType !== 'scheduler.scheduled_event_canceled') {
+    return null
+  }
+
+  const object = body?.payload?.object || {}
+  const scheduledEvent = object?.scheduled_event || {}
+  const tracking = object?.tracking || {}
+  const externalLocation = scheduledEvent?.external_location || {}
+
+  return {
+    eventType,
+    eventId: scheduledEvent?.event_id ? String(scheduledEvent.event_id) : null,
+    meetingId: externalLocation?.meeting_id ? String(externalLocation.meeting_id) : null,
+    startsAt: scheduledEvent?.start_date_time || null,
+    endsAt: scheduledEvent?.end_date_time || null,
+    timezone: object?.time_zone || null,
+    correlationToken: tracking?.utm_content ? String(tracking.utm_content) : null,
+    rescheduled: Boolean(object?.rescheduled),
+    status: eventType === 'scheduler.scheduled_event_canceled'
+      ? 'cancelled'
+      : object?.rescheduled ? 'rescheduled' : 'scheduled'
+  }
+}
+
 export function safeZoomWebhookPayload(body) {
+  const schedulerEvent = schedulerAppointmentEvent(body)
+  if (schedulerEvent) {
+    return {
+      event: schedulerEvent.eventType,
+      event_ts: body?.event_ts || null,
+      payload: {
+        object: {
+          scheduled_event: {
+            event_id: schedulerEvent.eventId,
+            start_date_time: schedulerEvent.startsAt,
+            end_date_time: schedulerEvent.endsAt,
+            status: body?.payload?.object?.scheduled_event?.status || null,
+            location_kind: body?.payload?.object?.scheduled_event?.location_kind || null,
+            external_location: {
+              kind: body?.payload?.object?.scheduled_event?.external_location?.kind || null,
+              meeting_id: schedulerEvent.meetingId
+            }
+          },
+          time_zone: schedulerEvent.timezone,
+          rescheduled: schedulerEvent.rescheduled,
+          tracking: {
+            utm_content: schedulerEvent.correlationToken
+          }
+        }
+      }
+    }
+  }
+
   const source = body?.payload?.object || {}
   return {
     event: String(body?.event || 'unknown'),
