@@ -1,4 +1,5 @@
 import { requireAuthenticatedUser } from '../_lib/supabase.js';
+import { hasGoogleCalendarReadScope } from '../_lib/google-scopes.js';
 
 export default async function handler(req, res) {
   if (req.method !== 'GET') {
@@ -6,51 +7,42 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Initialize Supabase
-    let supabase;
-    let user;
-    try {
-      ({ supabase, user } = await requireAuthenticatedUser(req));
-    } catch (err) {
-      console.error('[Google Status] Authentication failed:', err.message);
-      return res.status(err.status || 500).json({
-        error: err.status === 401 ? err.message : 'Database connection failed',
-        details: err.message
-      });
-    }
-
-    // 1. Get integration from Supabase
-    // FUTURE MIGRATION: Query by user_id when Supabase Auth is introduced.
+    const { supabase, user } = await requireAuthenticatedUser(req);
     const { data: integration, error: dbError } = await supabase
       .from('integrations')
-      .select('*')
+      .select('email,last_synced_at,expires_at,refresh_token,access_token,scope')
       .eq('provider', 'google')
       .eq('user_id', user.id)
       .maybeSingle();
 
     if (dbError) {
       console.error('[Google Status] Database error:', dbError);
-      return res.status(500).json({ 
-        error: 'Database error',
-        details: dbError.message 
-      });
+      return res.status(500).json({ error: 'Database error', details: dbError.message });
     }
 
     if (!integration) {
       return res.status(200).json({ connected: false });
     }
 
-    // Return safe metadata (no tokens)
+    const hasCalendarPermission = hasGoogleCalendarReadScope(integration.scope);
+    const healthError = !integration.access_token
+      ? 'GOOGLE_TOKEN_MISSING'
+      : !hasCalendarPermission
+        ? 'GOOGLE_REVOKED'
+        : null;
+
     return res.status(200).json({
       connected: true,
-      email: integration.email, // Added email to status
+      email: integration.email,
       last_synced_at: integration.last_synced_at,
       expires_at: integration.expires_at,
       has_refresh_token: Boolean(integration.refresh_token),
-      error: integration.access_token ? null : 'GOOGLE_TOKEN_MISSING' // Basic health check
+      calendar_permission: hasCalendarPermission,
+      calendar_permission_error: hasCalendarPermission ? null : 'GOOGLE_CALENDAR_SCOPE_MISSING',
+      error: healthError
     });
   } catch (error) {
     console.error('[Google Status] Internal error:', error);
-    return res.status(500).json({ error: 'Internal server error' });
+    return res.status(error.status || 500).json({ error: error.status === 401 ? error.message : 'Internal server error' });
   }
 }
