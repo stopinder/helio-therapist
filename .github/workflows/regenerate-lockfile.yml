@@ -29,15 +29,6 @@ jobs:
       - name: Regenerate package-lock.json
         run: npm install --package-lock-only --ignore-scripts --no-fund
 
-      - name: Verify clean install
-        run: npm ci --ignore-scripts --no-fund
-
-      - name: Run tests
-        run: npm test
-
-      - name: Build production bundle
-        run: npm run build
-
       - name: Commit regenerated lockfile
         run: |
           if git diff --quiet -- package-lock.json; then
@@ -49,3 +40,12 @@ jobs:
           git add package-lock.json
           git commit -m "chore: regenerate npm lockfile"
           git push origin HEAD:chore/regenerate-npm-lockfile
+
+      - name: Verify clean install
+        run: npm ci --ignore-scripts --no-fund
+
+      - name: Run tests
+        run: npm test
+
+      - name: Build production bundle
+        run: npm run build
