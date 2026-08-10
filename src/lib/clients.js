@@ -68,18 +68,21 @@ export async function updateClient({ clientId, ...updates }) {
   }
 }
 
-export async function listClients() {
+export async function listClients({ includeArchived = false } = {}) {
   if (!supabase) {
     throw new Error('Supabase is not configured')
   }
 
-  const { data, error } = await withSessionRecovery(() =>
-    supabase
-      .from('clients')
-      .select('id, user_id, display_name, reference, current_focus, archived, created_at, updated_at')
-      .eq('archived', false)
-      .order('display_name', { ascending: true })
-  )
+  let query = supabase
+    .from('clients')
+    .select('id, user_id, display_name, reference, current_focus, archived, created_at, updated_at')
+    .order('display_name', { ascending: true })
+
+  if (!includeArchived) {
+    query = query.eq('archived', false)
+  }
+
+  const { data, error } = await withSessionRecovery(() => query)
 
   if (error) {
     throw new Error(error.message || 'Failed to load clients')
@@ -89,6 +92,27 @@ export async function listClients() {
     ...client,
     name: client.display_name
   }))
+}
+
+export async function listUpcomingClientAppointments({ from = new Date() } = {}) {
+  if (!supabase) {
+    throw new Error('Supabase is not configured')
+  }
+
+  const { data, error } = await withSessionRecovery(() =>
+    supabase
+      .from('appointments')
+      .select('id,client_id,status,starts_at,ends_at,timezone')
+      .in('status', ['scheduled', 'rescheduled'])
+      .gte('starts_at', from.toISOString())
+      .order('starts_at', { ascending: true })
+  )
+
+  if (error) {
+    throw new Error(error.message || 'Failed to load upcoming appointments')
+  }
+
+  return data || []
 }
 
 export async function createClient({ name, email = null, note = '' }) {
