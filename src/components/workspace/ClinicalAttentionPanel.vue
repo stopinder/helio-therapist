@@ -5,8 +5,8 @@
         <span class="text-action-link">✨</span> Clinical Attention
       </h3>
     </div>
-    <div class="p-inline-lg grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-inline-lg gap-y-stack-md">
-      <div v-for="item in client.attention_items" :key="item.id" class="flex flex-col items-start group py-1">
+    <div v-if="items.length" class="p-inline-lg grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-inline-lg gap-y-stack-md">
+      <div v-for="item in items" :key="item.id" class="flex flex-col items-start group py-1">
         <StatusBadge :status="item.status" :label="item.label" />
         <div class="mt-2 flex flex-col">
           <span class="text-body-sm text-ink font-medium">{{ item.description }}</span>
@@ -20,10 +20,12 @@
         </div>
       </div>
     </div>
+    <p v-else class="p-inline-lg py-stack-lg text-body-sm text-ink-muted">No clinical attention items are recorded for this client.</p>
   </div>
 </template>
 
 <script setup>
+import { computed } from 'vue';
 import StatusBadge from './StatusBadge.vue';
 
 const props = defineProps({
@@ -32,4 +34,6 @@ const props = defineProps({
     required: true
   }
 });
+
+const items = computed(() => Array.isArray(props.client.attention_items) ? props.client.attention_items : []);
 </script>
