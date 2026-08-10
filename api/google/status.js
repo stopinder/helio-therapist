@@ -10,7 +10,7 @@ export default async function handler(req, res) {
     const { supabase, user } = await requireAuthenticatedUser(req);
     const { data: integration, error: dbError } = await supabase
       .from('integrations')
-      .select('email,last_synced_at,expires_at,refresh_token,access_token,scope')
+      .select('provider_email,last_synced_at,expires_at,refresh_token,access_token,scope')
       .eq('provider', 'google')
       .eq('user_id', user.id)
       .maybeSingle();
@@ -33,7 +33,7 @@ export default async function handler(req, res) {
 
     return res.status(200).json({
       connected: true,
-      email: integration.email,
+      email: integration.provider_email,
       last_synced_at: integration.last_synced_at,
       expires_at: integration.expires_at,
       has_refresh_token: Boolean(integration.refresh_token),
