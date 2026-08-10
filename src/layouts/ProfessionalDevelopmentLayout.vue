@@ -1,12 +1,10 @@
 <template>
   <div class="h-full bg-surface-canvas overflow-hidden relative">
-    <!-- Background Shapes -->
     <div class="absolute inset-0 pointer-events-none overflow-hidden z-0">
       <div class="absolute top-0 right-0 w-[40%] h-[40%] bg-surface-muted/20 blur-3xl rounded-full translate-x-1/2 -translate-y-1/2"></div>
       <div class="absolute bottom-0 left-0 w-[35%] h-[35%] bg-surface-muted/20 blur-3xl rounded-full -translate-x-1/2 translate-y-1/2"></div>
     </div>
 
-    <!-- Hub-and-Spoke Header (only for child pages) -->
     <header v-if="isChildPage" class="h-16 flex items-center px-6 md:px-10 border-b border-border-muted bg-surface/80 backdrop-blur-md z-20 shrink-0 sticky top-0">
       <router-link 
         to="/supervision" 
@@ -18,7 +16,6 @@
       </router-link>
     </header>
 
-    <!-- View Content -->
     <main class="h-full overflow-auto z-10 relative">
       <router-view v-slot="{ Component }">
         <transition name="fade-up" mode="out-in" appear>
@@ -34,7 +31,6 @@
       </router-view>
     </main>
 
-    <!-- Modals (Shared across sub-views) -->
     <PrivateReflectionModal
       v-if="selectedReflection"
       :reflection="selectedReflection"
@@ -67,20 +63,14 @@ const isChildPage = computed(() => route.path !== '/supervision');
 const themeStats = computed(() => {
   const counts = { All: reflections.value.length };
   const themeList = ['All'];
-  
   reflections.value.forEach(r => {
     const t = r.theme || 'No theme';
     counts[t] = (counts[t] || 0) + 1;
     if (!themeList.includes(t)) themeList.push(t);
   });
-
   const sortedThemes = themeList.filter(t => t !== 'All' && t !== 'No theme').sort();
   if (themeList.includes('No theme')) sortedThemes.push('No theme');
-  
-  return ['All', ...sortedThemes].map(t => ({
-    name: t,
-    count: counts[t]
-  }));
+  return ['All', ...sortedThemes].map(t => ({ name: t, count: counts[t] }));
 });
 
 const childProps = computed(() => ({
@@ -95,6 +85,13 @@ async function loadData() {
   try {
     const data = await getAllPrivateReflections({ limit: 100 });
     reflections.value = data;
+    const requestedReflectionId = typeof route.query.aiReflection === 'string' ? route.query.aiReflection : '';
+    if (requestedReflectionId) {
+      const reflection = reflections.value.find(item => item.id === requestedReflectionId);
+      if (reflection) handleOpenAIReflection(reflection);
+      else console.warn('[AI Reflection] Saved reflection handoff could not be resolved.');
+      await router.replace({ path: route.path, query: { ...route.query, aiReflection: undefined } });
+    }
   } catch (err) {
     console.error('Failed to load reflections', err);
   } finally {
@@ -111,12 +108,8 @@ async function handleToggleSupervision(reflection) {
       included: !reflection.included_in_supervision
     });
     const idx = reflections.value.findIndex(r => r.id === reflection.id);
-    if (idx !== -1) {
-      reflections.value[idx] = { ...reflections.value[idx], ...updated };
-    }
-    if (selectedReflection.value?.id === reflection.id) {
-      selectedReflection.value = { ...selectedReflection.value, ...updated };
-    }
+    if (idx !== -1) reflections.value[idx] = { ...reflections.value[idx], ...updated };
+    if (selectedReflection.value?.id === reflection.id) selectedReflection.value = { ...selectedReflection.value, ...updated };
   } catch (err) {
     console.error('Toggle error', err);
   } finally {
@@ -140,35 +133,19 @@ function closeReflectionModal() {
 }
 
 function handleGoToSession(reflection) {
-  if (reflection.client_id && reflection.session_ref) {
-    router.push(`/clients/${reflection.client_id}/sessions/${reflection.session_ref}`);
-  }
+  if (reflection.client_id && reflection.session_ref) router.push(`/clients/${reflection.client_id}/sessions/${reflection.session_ref}`);
 }
 
 onMounted(loadData);
 
-// Provide state to children if needed
 provide('reflections', reflections);
 provide('loadData', loadData);
 </script>
 
 <style scoped>
-.font-fraunces {
-  font-family: 'Fraunces', serif;
-}
-
+.font-fraunces { font-family: 'Fraunces', serif; }
 .fade-up-enter-active,
-.fade-up-leave-active {
-  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.fade-up-enter-from {
-  opacity: 0;
-  transform: translateY(20px);
-}
-
-.fade-up-leave-to {
-  opacity: 0;
-  transform: translateY(-10px);
-}
+.fade-up-leave-active { transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
+.fade-up-enter-from { opacity: 0; transform: translateY(20px); }
+.fade-up-leave-to { opacity: 0; transform: translateY(-10px); }
 </style>
