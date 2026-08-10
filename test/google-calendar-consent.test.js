@@ -24,3 +24,10 @@ test('Google status exposes Calendar permission health',async()=>{
   assert.match(status,/GOOGLE_CALENDAR_SCOPE_MISSING/);
   assert.match(status,/GOOGLE_REVOKED/);
 });
+
+test('Google status reads the canonical integrations provider email column',async()=>{
+  const status=await read('../api/google/status.js');
+  assert.match(status,/\.select\('provider_email,last_synced_at,expires_at,refresh_token,access_token,scope'\)/);
+  assert.match(status,/email: integration\.provider_email/);
+  assert.doesNotMatch(status,/\.select\('email,/);
+});
