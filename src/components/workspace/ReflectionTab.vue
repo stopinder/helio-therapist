@@ -8,7 +8,10 @@
       <div v-if="loading" class="text-body-sm text-ink-muted">Loading reflection…</div>
       <div v-else class="grid grid-cols-1 gap-8">
         <div v-for="(label, key) in reflectionFields" :key="key" class="space-y-2">
-          <label :for="key" class="text-body-sm font-bold text-ink uppercase tracking-wider">{{ label }}</label>
+          <div class="flex items-center justify-between">
+            <label :for="key" class="text-body-sm font-bold text-ink uppercase tracking-wider">{{ label }}</label>
+            <DictationControl v-model="reflection[key]" @transcribed="queueSave" />
+          </div>
           <textarea :id="key" v-model="reflection[key]" rows="3" class="w-full p-3 rounded-control border border-border bg-surface focus:ring-2 focus:ring-action-link focus:border-action-link outline-none transition-all text-body-sm text-ink" :placeholder="`Reflect on ${label.toLowerCase()}...`" @input="queueSave"></textarea>
         </div>
         <p v-if="error" role="alert" class="text-body-sm text-state-danger">{{ error }}</p>
@@ -18,6 +21,7 @@
 </template>
 <script setup>
 import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue';
+import DictationControl from './DictationControl.vue';
 import { decodeSessionReflection, emptySessionReflection, getPrivateReflection, upsertPrivateReflection } from '../../lib/reflections.js';
 const props=defineProps({clientId:{type:String,required:true},sessionId:{type:String,required:true}});
 const reflectionFields={stoodOut:'What stood out in this session?',emotionalResponse:'Therapist emotional response',countertransference:'Possible countertransference',uncertainties:'Uncertainties or sticking points',supervisionQuestions:'Supervision questions',nextSession:'Next session considerations'};
