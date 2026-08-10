@@ -17,20 +17,15 @@ test('lib/clients.js includes createClient with authenticated user check', async
 test('Clients.vue integrates AddClientModal correctly', async () => {
   const content = await readFile(new URL('../src/views/Clients.vue', import.meta.url), 'utf8')
   
-  // Modal integration
   assert.match(content, /import AddClientModal from '\.\.\/components\/sidebar\/AddClientModal\.vue'/)
   assert.match(content, /<AddClientModal/)
   assert.match(content, /v-if="showAddClient"/)
   assert.match(content, /@submit="handleAddClient"/)
-  
-  // Button wiring
   assert.match(content, /@click="showAddClient = true"/)
-  
-  // Logic
   assert.match(content, /async function handleAddClient\(clientData\)/)
   assert.match(content, /await createClient\(clientData\)/)
   assert.match(content, /clients\.value\.push\(newClient\)/)
-  assert.match(content, /\.sort\(\(a, b\) => a\.display_name\.localeCompare\(b\.display_name\)\)/)
+  assert.match(content, /clients\.value\.sort\(\(a\s*,\s*b\)\s*=>\s*a\.display_name\.localeCompare\(b\.display_name\)\)/)
 })
 
 test('App.vue reuses createClient helper', async () => {
@@ -38,6 +33,5 @@ test('App.vue reuses createClient helper', async () => {
   
   assert.match(content, /import { .*createClient as createClientHelper } from ["']\.\/lib\/clients\.js["']/)
   assert.match(content, /await createClientHelper\({/)
-  // Verify old logic is removed (e.g., direct insert call in handleAddClient)
   assert.doesNotMatch(content, /supabase\.from\('clients'\)\.insert\({ user_id: auth\.user\.id/)
 })
