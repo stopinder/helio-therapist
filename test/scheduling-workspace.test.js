@@ -4,12 +4,13 @@ import fs from 'node:fs'
 
 const read = (path) => fs.readFileSync(new URL(`../${path}`, import.meta.url), 'utf8')
 
-test('therapist workspace exposes scheduling as a top-level action', () => {
+test('therapist workspace exposes scheduling as a header action without sidebar duplication', () => {
   const shell = read('src/layouts/AppShell.vue')
   const router = read('src/router/index.js')
   assert.match(shell, /Schedule appointment/)
-  assert.match(shell, /path: '\/schedule'/)
-  assert.match(router, /path: '\/schedule'/)
+  assert.match(shell, /to="\/schedule"/)
+  assert.doesNotMatch(shell, /{name:'Schedule',path:'\/schedule'/)
+  assert.match(router, /path:'\/schedule'/)
   assert.match(router, /ScheduleAppointment/)
 })
 

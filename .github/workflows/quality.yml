@@ -23,11 +23,8 @@ jobs:
           node-version: 24
           cache: npm
 
-      # package.json gained the PDF renderer dependencies before the lockfile was
-      # regenerated. Keep CI aligned with Vercel's install path for this release;
-      # restoring npm ci is tracked as lockfile maintenance after deployment.
       - name: Install dependencies
-        run: npm install --ignore-scripts --no-fund
+        run: npm ci --ignore-scripts --no-fund
 
       - name: Audit dependencies
         run: npm audit --audit-level=high

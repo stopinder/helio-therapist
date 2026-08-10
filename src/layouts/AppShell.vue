@@ -2,130 +2,21 @@
   <div class="flex h-screen bg-surface-canvas text-ink overflow-hidden">
     <Transition name="slide">
       <aside v-if="isMobileMenuOpen" class="fixed inset-y-0 left-0 z-50 w-64 bg-sidebar border-r border-border-muted shadow-overlay md:hidden flex flex-col">
-        <div class="h-14 flex items-center justify-between px-5 border-b border-border-muted bg-surface-subtle shrink-0">
-          <span class="font-semibold text-lg tracking-tight">Helios</span>
-          <button class="p-2 -mr-2 text-ink-subtle hover:text-ink-secondary" @click="isMobileMenuOpen=false" aria-label="Close menu">
-            <XMarkIcon class="h-5 w-5" />
-          </button>
-        </div>
-        <SidebarNavigation :groups="navGroups" :current-path="$route.path" @navigate="isMobileMenuOpen=false" />
-        <SidebarAccount @sign-out="handleSignOut" />
+        <div class="h-14 flex items-center justify-between px-5 border-b border-border-muted bg-surface-subtle shrink-0"><span class="font-semibold text-lg tracking-tight">Helios</span><button class="p-2 -mr-2 text-ink-subtle hover:text-ink-secondary" @click="isMobileMenuOpen=false" aria-label="Close menu"><XMarkIcon class="h-5 w-5" /></button></div>
+        <SidebarNavigation :groups="navGroups" :current-path="$route.path" @navigate="isMobileMenuOpen=false" /><SidebarAccount @sign-out="handleSignOut" />
       </aside>
     </Transition>
-
     <Transition name="fade"><div v-if="isMobileMenuOpen" class="fixed inset-0 z-40 bg-backdrop backdrop-blur-sm md:hidden" @click="isMobileMenuOpen=false"></div></Transition>
-
-    <aside class="hidden md:flex flex-col w-64 bg-sidebar border-r border-border-muted h-full shrink-0">
-      <div class="h-14 flex items-center px-5 border-b border-border-muted font-semibold text-lg tracking-tight bg-surface-subtle">Helios</div>
-      <SidebarNavigation :groups="navGroups" :current-path="$route.path" />
-      <SidebarAccount @sign-out="handleSignOut" />
-    </aside>
-
-    <div class="flex flex-col flex-1 min-w-0 h-full overflow-hidden">
-      <header class="h-14 flex items-center justify-between px-inline-lg border-b border-border-muted bg-surface shrink-0">
-        <div class="flex items-center gap-inline-md">
-          <button class="md:hidden p-2 -ml-2 text-ink-secondary hover:bg-surface-subtle rounded-control" @click="isMobileMenuOpen=true" aria-label="Open menu">
-            <Bars3Icon class="h-5 w-5" />
-          </button>
-          <h2 class="text-h3 font-semibold text-ink truncate">{{ currentPageName }}</h2>
-        </div>
-        <div class="flex items-center gap-inline-md">
-          <router-link v-if="$route.path!=='/schedule'" to="/schedule" class="hidden sm:inline-flex rounded-control bg-action-primary text-on-action px-3 py-2 text-body-sm font-semibold hover:bg-action-primary-hover">Schedule appointment</router-link>
-          <div v-if="isSessionActive" class="flex items-center gap-inline-xs px-inline-md py-stack-xs rounded-pill bg-surface-subtle border border-border-muted">
-            <span class="h-2 w-2 rounded-pill bg-state-success"></span>
-            <span class="text-caption font-medium text-ink-secondary uppercase tracking-wide">Workspace Active</span>
-          </div>
-        </div>
-      </header>
-      <main class="flex-1 bg-surface-canvas relative" :class="$route.path==='/calendar'?'overflow-hidden':'overflow-auto'"><slot/></main>
-    </div>
+    <aside class="hidden md:flex flex-col w-64 bg-sidebar border-r border-border-muted h-full shrink-0"><div class="h-14 flex items-center px-5 border-b border-border-muted font-semibold text-lg tracking-tight bg-surface-subtle">Helios</div><SidebarNavigation :groups="navGroups" :current-path="$route.path" /><SidebarAccount @sign-out="handleSignOut" /></aside>
+    <div class="flex flex-col flex-1 min-w-0 h-full overflow-hidden"><header class="h-14 flex items-center justify-between px-inline-lg border-b border-border-muted bg-surface shrink-0"><div class="flex items-center gap-inline-md"><button class="md:hidden p-2 -ml-2 text-ink-secondary hover:bg-surface-subtle rounded-control" @click="isMobileMenuOpen=true" aria-label="Open menu"><Bars3Icon class="h-5 w-5" /></button><h2 class="text-h3 font-semibold text-ink truncate">{{ currentPageName }}</h2></div><div class="flex items-center gap-inline-md"><router-link v-if="$route.path!=='/schedule'" to="/schedule" class="hidden sm:inline-flex rounded-control bg-action-primary text-on-action px-3 py-2 text-body-sm font-semibold hover:bg-action-primary-hover">Schedule appointment</router-link><div v-if="isSessionActive" class="flex items-center gap-inline-xs px-inline-md py-stack-xs rounded-pill bg-surface-subtle border border-border-muted"><span class="h-2 w-2 rounded-pill bg-state-success"></span><span class="text-caption font-medium text-ink-secondary uppercase tracking-wide">Workspace Active</span></div></div></header><main class="flex-1 bg-surface-canvas relative" :class="$route.path==='/calendar'?'overflow-hidden':'overflow-auto'"><slot/></main></div>
   </div>
 </template>
-
 <script setup>
-import { computed, defineComponent, h, onMounted, onUnmounted, ref } from 'vue'
-import { RouterLink, useRoute } from 'vue-router'
-import {
-  AcademicCapIcon,
-  ArrowRightStartOnRectangleIcon,
-  Bars3Icon,
-  CalendarDaysIcon,
-  Cog6ToothIcon,
-  DocumentTextIcon,
-  FolderOpenIcon,
-  Squares2X2Icon,
-  UsersIcon,
-  XMarkIcon
-} from '@heroicons/vue/24/outline'
-import { supabase } from '../lib/supabase.js'
-
-const route=useRoute(),isMobileMenuOpen=ref(false),isSessionActive=ref(true)
-const handleExpiry=()=>{isSessionActive.value=false}
-onMounted(()=>window.addEventListener('helios-session-expired',handleExpiry))
-onUnmounted(()=>window.removeEventListener('helios-session-expired',handleExpiry))
-const handleSignOut=async()=>{if(supabase)await supabase.auth.signOut()}
-
-const navGroups=[
-  {label:'Practice',items:[
-    {name:'Overview',path:'/',icon:Squares2X2Icon},
-    {name:'Calendar',path:'/calendar',icon:CalendarDaysIcon},
-    {name:'Clients',path:'/clients',icon:UsersIcon}
-  ]},
-  {label:'Records',items:[
-    {name:'Transcripts',path:'/transcripts',icon:DocumentTextIcon},
-    {name:'Documents',path:'/documents',icon:FolderOpenIcon}
-  ]},
-  {label:'Development',items:[
-    {name:'CPD',path:'/supervision',icon:AcademicCapIcon}
-  ]}
-]
-
-const pageTitles={
-  '/':'Overview',
-  '/calendar':'Calendar',
-  '/schedule':'Schedule appointment',
-  '/clients':'Clients',
-  '/transcripts':'Transcripts',
-  '/documents':'Documents',
-  '/supervision':'CPD',
-  '/settings':'Settings'
-}
-const currentPageName=computed(()=>pageTitles[route.path]||route.meta?.title||'Workspace')
-
-const SidebarNavigation=defineComponent({
-  name:'SidebarNavigation',
-  props:{groups:{type:Array,required:true},currentPath:{type:String,required:true}},
-  emits:['navigate'],
-  setup(props,{emit}){
-    const active=item=>item.path==='/'?props.currentPath==='/':props.currentPath===item.path||props.currentPath.startsWith(`${item.path}/`)
-    return()=>h('nav',{class:'flex-1 overflow-y-auto px-3 py-4 space-y-5'},props.groups.map(group=>
-      h('section',{key:group.label},[
-        h('p',{class:'px-3 mb-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-ink-subtle'},group.label),
-        h('div',{class:'space-y-0.5'},group.items.map(item=>h(RouterLink,{
-          key:item.name,to:item.path,onClick:()=>emit('navigate'),
-          class:['flex items-center gap-3 px-3 py-2.5 rounded-control text-body-sm transition-colors duration-standard ease-out',active(item)?'bg-state-selected text-ink font-semibold':'text-ink-secondary hover:bg-surface-subtle hover:text-ink']
-        },()=>[h(item.icon,{class:'h-[18px] w-[18px] shrink-0 text-ink-muted'}),h('span',item.name)])))
-      ])
-    ))
-  }
-})
-
-const SidebarAccount=defineComponent({
-  name:'SidebarAccount',emits:['sign-out'],
-  setup(_,{emit}){return()=>h('div',{class:'px-3 py-3 border-t border-border-muted'},[
-    h('div',{class:'flex items-center gap-3 px-2 py-2'},[
-      h('div',{class:'h-8 w-8 rounded-pill bg-avatar flex items-center justify-center text-body-sm font-semibold text-ink shrink-0'},'RO'),
-      h('div',{class:'min-w-0 leading-tight'},[
-        h('p',{class:'text-body-sm font-semibold text-ink truncate'},'Robert Ormiston'),
-        h('p',{class:'text-caption text-ink-muted truncate mt-0.5'},'Psychotherapist')
-      ])
-    ]),
-    h(RouterLink,{to:'/settings',class:'mt-1 flex items-center gap-2.5 w-full px-2 py-2 rounded-control text-caption font-medium text-ink-muted hover:text-ink-secondary hover:bg-surface-subtle'},()=>[h(Cog6ToothIcon,{class:'h-4 w-4'}),h('span','Settings')]),
-    h('button',{type:'button',onClick:()=>emit('sign-out'),class:'flex items-center gap-2.5 w-full px-2 py-2 rounded-control text-caption text-ink-subtle hover:text-ink-secondary hover:bg-surface-subtle'},[h(ArrowRightStartOnRectangleIcon,{class:'h-4 w-4'}),h('span','Sign out')])
-  ])}
-})
+import { computed, defineComponent, h, onMounted, onUnmounted, ref } from 'vue';import { RouterLink, useRoute } from 'vue-router';import { AcademicCapIcon,ArrowRightStartOnRectangleIcon,Bars3Icon,CalendarDaysIcon,Cog6ToothIcon,DocumentTextIcon,FolderOpenIcon,Squares2X2Icon,UsersIcon,XMarkIcon } from '@heroicons/vue/24/outline';import { supabase } from '../lib/supabase.js';
+const route=useRoute(),isMobileMenuOpen=ref(false),isSessionActive=ref(true);const handleExpiry=()=>{isSessionActive.value=false};onMounted(()=>window.addEventListener('helios-session-expired',handleExpiry));onUnmounted(()=>window.removeEventListener('helios-session-expired',handleExpiry));const handleSignOut=async()=>{if(supabase)await supabase.auth.signOut()};
+const navGroups=[{label:'Practice',items:[{name:'Overview',path:'/',icon:Squares2X2Icon},{name:'Calendar',path:'/calendar',icon:CalendarDaysIcon},{name:'Clients',path:'/clients',icon:UsersIcon}]},{label:'Records',items:[{name:'Transcripts',path:'/transcripts',icon:DocumentTextIcon},{name:'Documents',path:'/documents',icon:FolderOpenIcon}]},{label:'Development',items:[{name:'CPD',path:'/supervision',icon:AcademicCapIcon}]}];
+const pageTitles={'/':'Overview','/calendar':'Calendar','/schedule':'Schedule appointment','/clients':'Clients','/transcripts':'Transcripts','/documents':'Documents','/supervision':'CPD','/settings':'Settings'};const currentPageName=computed(()=>pageTitles[route.path]||route.meta?.title||'Workspace');
+const SidebarNavigation=defineComponent({name:'SidebarNavigation',props:{groups:{type:Array,required:true},currentPath:{type:String,required:true}},emits:['navigate'],setup(props,{emit}){const active=item=>item.path==='/'?props.currentPath==='/':props.currentPath===item.path||props.currentPath.startsWith(`${item.path}/`);return()=>h('nav',{class:'flex-1 overflow-y-auto px-3 py-4 space-y-5'},props.groups.map(group=>h('section',{key:group.label},[h('p',{class:'px-3 mb-1.5 text-xs font-semibold uppercase tracking-widest text-ink-subtle'},group.label),h('div',{class:'space-y-0.5'},group.items.map(item=>h(RouterLink,{key:item.name,to:item.path,onClick:()=>emit('navigate'),class:['flex items-center gap-3 px-3 py-2.5 rounded-control text-body-sm transition-colors duration-standard ease-out',active(item)?'bg-state-selected text-ink font-semibold':'text-ink-secondary hover:bg-surface-subtle hover:text-ink']},()=>[h(item.icon,{class:'h-4 w-4 shrink-0 text-ink-muted'}),h('span',item.name)])))])))} });
+const SidebarAccount=defineComponent({name:'SidebarAccount',emits:['sign-out'],setup(_,{emit}){return()=>h('div',{class:'px-3 py-3 border-t border-border-muted'},[h('div',{class:'flex items-center gap-3 px-2 py-2'},[h('div',{class:'h-8 w-8 rounded-pill bg-avatar flex items-center justify-center text-body-sm font-semibold text-ink shrink-0'},'RO'),h('div',{class:'min-w-0 leading-tight'},[h('p',{class:'text-body-sm font-semibold text-ink truncate'},'Robert Ormiston'),h('p',{class:'text-caption text-ink-muted truncate mt-0.5'},'Psychotherapist')])]),h(RouterLink,{to:'/settings',class:'mt-1 flex items-center gap-2.5 w-full px-2 py-2 rounded-control text-caption font-medium text-ink-muted hover:text-ink-secondary hover:bg-surface-subtle'},()=>[h(Cog6ToothIcon,{class:'h-4 w-4'}),h('span','Settings')]),h('button',{type:'button',onClick:()=>emit('sign-out'),class:'flex items-center gap-2.5 w-full px-2 py-2 rounded-control text-caption text-ink-subtle hover:text-ink-secondary hover:bg-surface-subtle'},[h(ArrowRightStartOnRectangleIcon,{class:'h-4 w-4'}),h('span','Sign out')])])}});
 </script>
-
-<style scoped>
-.slide-enter-active,.slide-leave-active{transition:transform .25s ease-out}.slide-enter-from,.slide-leave-to{transform:translateX(-100%)}.fade-enter-active,.fade-leave-active{transition:opacity .2s ease-out}.fade-enter-from,.fade-leave-to{opacity:0}
-</style>
+<style scoped>.slide-enter-active,.slide-leave-active{transition:transform .25s ease-out}.slide-enter-from,.slide-leave-to{transform:translateX(-100%)}.fade-enter-active,.fade-leave-active{transition:opacity .2s ease-out}.fade-enter-from,.fade-leave-to{opacity:0}</style>
