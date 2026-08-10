@@ -5,8 +5,26 @@ import { readFile } from 'node:fs/promises'
 test('Calendar filtering logic audit', async (t) => {
   const source = await readFile(new URL('../src/composables/useCalendar.js', import.meta.url), 'utf8')
 
-  await t.test('Filters out auto-created workspace sessions based on explicit completed state', () => {
-    assert.match(source, /return session\.workflowStatus === 'completed' && session\.completedAt/)
-    assert.ok(!source.includes('Math.abs(start.getTime() - created.getTime()) < 10000'), 'Should not contain old timestamp heuristic')
+  await t.test('keeps workspace-created in-progress sessions out of the calendar', () => {
+    assert.match(source, /session\.startedAt && session\.workflowStatus === 'completed' && session\.completedAt/)
+    assert.doesNotMatch(source, /sessions\.value\s*\.filter\([^)]*status\s*===\s*['"]in_progress/)
+  })
+
+  await t.test('adds canonical scheduled and rescheduled Helios appointments', () => {
+    assert.match(source, /listCalendarAppointments/)
+    assert.match(source, /const heliosAppointments = appointments\.value\.map/)
+    assert.match(source, /source: 'appointment'/)
+  })
+
+  await t.test('only enables session start when a real eligible session is linked', () => {
+    assert.match(source, /sessionId: linkedSession\?\.id \|\| null/)
+    assert.match(source, /isEligibleForStart: Boolean\(linkedSession\)/)
+    assert.match(source, /isEligibleForStart\(session\)/)
+  })
+
+  await t.test('deduplicates Google events against Helios appointments and completed sessions', () => {
+    assert.match(source, /duplicateHelios/)
+    assert.match(source, /duplicateClinical/)
+    assert.match(source, /if \(duplicateHelios \|\| duplicateClinical\) return null/)
   })
 })
