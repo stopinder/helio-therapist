@@ -7,7 +7,7 @@ const transcripts = await readFile(new URL('../src/views/Transcripts.vue', impor
 
 test('app shell distinguishes full-height workspaces from ordinary scrolling pages', () => {
   assert.match(shell, /fullHeightWorkspacePaths=new Set\(\['\/calendar','\/transcripts'\]\)/)
-  assert.match(shell, /isFullHeightWorkspace\? 'overflow-hidden' : 'overflow-y-auto overflow-x-hidden'/)
+  assert.match(shell, /isFullHeightWorkspace\s*\?\s*'overflow-hidden'\s*:\s*'overflow-y-auto overflow-x-hidden'/)
 })
 
 test('app shell propagates min-height zero through the flex content chain', () => {
