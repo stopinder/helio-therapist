@@ -20,8 +20,9 @@ test('transcripts owns its internal scrolling only because it is a full-height w
   assert.match(transcripts, /<main v-else class="flex-1 overflow-y-auto p-page">/)
 })
 
-test('sidebar remains usable on short screens without showing a permanent heavy scrollbar', () => {
+test('sidebar remains scrollable on short screens but never renders a scrollbar rail', () => {
   assert.match(shell, /sidebar-navigation flex-1 min-h-0 overflow-y-auto/)
-  assert.match(shell, /\.sidebar-navigation\{scrollbar-width:thin;scrollbar-color:transparent transparent\}/)
-  assert.match(shell, /\.sidebar-navigation:hover/)
+  assert.match(shell, /\.sidebar-navigation\{scrollbar-width:none;-ms-overflow-style:none\}/)
+  assert.match(shell, /\.sidebar-navigation::-webkit-scrollbar\{display:none;width:0;height:0\}/)
+  assert.doesNotMatch(shell, /\.sidebar-navigation:hover/)
 })
