@@ -19,3 +19,14 @@ test('clinical safety: demonstration content cannot be hidden in legacy notes', 
     error => error?.code === 'DEMO_CLINICAL_CONTENT'
   )
 })
+
+test('frontend: prepareDraft should not generate [DEMO] content', async () => {
+  const { readFile } = await import('node:fs/promises');
+  const { join } = await import('node:path');
+  const source = await readFile(join(process.cwd(), 'src/components/workspace/ClinicalSummaryTab.vue'), 'utf8');
+  
+  // Verify that prepareDraft does not contain any [DEMO] strings
+  const prepareDraftBlock = source.match(/const prepareDraft = async \(\) => \{([\s\S]*?)\};/);
+  assert.ok(prepareDraftBlock, 'Could not find prepareDraft function');
+  assert.doesNotMatch(prepareDraftBlock[1], /\[DEMO\]/, 'prepareDraft should not contain [DEMO] content');
+})

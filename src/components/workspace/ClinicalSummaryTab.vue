@@ -1,5 +1,5 @@
 <template>
-  <div class="space-y-stack-lg max-w-4xl mx-auto">
+  <div class="space-y-stack-lg max-w-4xl mx-auto" data-testid="clinical-summary-workspace">
     <!-- Preparation State -->
     <div v-if="status === 'not_started'" class="bg-surface-elevated border border-border-muted rounded-panel p-6 shadow-sm">
       <h3 class="text-h3 font-semibold text-ink mb-6">Preparation for Clinical Summary</h3>
@@ -29,7 +29,7 @@
             <span class="text-body-sm font-medium text-ink">Workflow Status</span>
             <StatusBadge :status="status" :label="statusLabel" />
           </div>
-          <p class="text-caption text-ink-muted">Ready to begin the clinical record workflow.</p>
+          <p class="text-caption text-ink-muted">Start an empty therapist-authored draft. Source material will only be shown as available once that wiring is verified.</p>
         </section>
 
         <div class="flex flex-col gap-4">
@@ -39,7 +39,7 @@
             class="w-full py-3 bg-action-link text-on-action font-medium rounded-control flex items-center justify-center gap-2 transition-all hover:bg-action-link-hover focus-visible:ring-2 focus-visible:ring-state-focus-ring focus-visible:outline-none"
             :class="{ 'opacity-50 cursor-not-allowed': !canPrepareDraft }"
           >
-            🪄 Prepare Draft Clinical Summary
+            Prepare Empty Clinical Summary Draft
           </button>
           
           <div v-if="!canPrepareDraft" class="p-3 bg-state-danger-surface border border-state-danger/20 rounded flex gap-3 text-state-danger">
@@ -361,9 +361,9 @@ const submitting = ref(false);
 const legacyNotes = ref('');
 
 const checklist = [
-  { id: 1, label: 'Session Transcript', available: true, required: true },
-  { id: 2, label: 'Therapist Notes', available: true, required: true },
-  { id: 3, label: 'Therapist Reflection', available: true, required: false },
+  { id: 1, label: 'Session Transcript', available: false, required: true },
+  { id: 2, label: 'Therapist Notes', available: false, required: true },
+  { id: 3, label: 'Therapist Reflection', available: false, required: false },
   { id: 4, label: 'Client Feedback', available: false, required: false }
 ];
 
@@ -512,9 +512,8 @@ const recordHistory = computed(() => {
 });
 
 const canPrepareDraft = computed(() => {
-  return checklist
-    .filter(item => item.required)
-    .every(item => item.available) && status.value === 'not_started';
+  // Allow starting a draft even if source material is not yet verified for this sprint
+  return status.value === 'not_started';
 });
 
 const missingRequiredSources = computed(() => {
@@ -551,20 +550,7 @@ const pageTitle = computed(() => {
 
 const prepareDraft = async () => {
   status.value = 'draft';
-  
-  // Populate with mock demonstration content if empty
-  if (!Object.values(summaryData).some(v => v)) {
-    summaryData.presentingConcerns = '[DEMO] Client expressed anxiety regarding upcoming performance review at work.';
-    summaryData.sessionThemes = '[DEMO] Professional competence, self-criticism, fear of failure.';
-    summaryData.interventionsUsed = '[DEMO] Cognitive restructuring, socratic questioning regarding "worst case scenario".';
-    summaryData.clientResponse = '[DEMO] Engaged, able to identify two cognitive distortions.';
-    summaryData.riskSafeguarding = '[DEMO] No new risk concerns identified. Protective factors remain stable.';
-    summaryData.progressGoals = '[DEMO] Working towards reducing workplace anxiety. Progress is consistent.';
-    summaryData.planNextSession = '[DEMO] Behavioral experiment review and deepening work on self-compassion.';
-  }
-
   scrollAndFocus();
-  await saveDraft();
 };
 
 const saveDraft = async () => {
@@ -587,7 +573,11 @@ const saveDraft = async () => {
     saveMessage.value = 'Draft saved.';
   } catch (error) {
     console.error('Failed to save clinical summary draft:', error);
-    saveMessage.value = 'Failed to save.';
+    if (error.code === 'DEMO_CLINICAL_CONTENT') {
+      saveMessage.value = 'Demonstration content [DEMO] cannot be saved.';
+    } else {
+      saveMessage.value = 'Failed to save.';
+    }
   } finally {
     submitting.value = false;
     setTimeout(() => {
@@ -636,6 +626,8 @@ const confirmApproval = async () => {
     console.error('Failed to approve clinical record:', error);
     if (error.code === 'SESSION_CONFLICT') {
       saveMessage.value = 'Conflict: Session was updated in another tab.';
+    } else if (error.code === 'DEMO_CLINICAL_CONTENT') {
+      saveMessage.value = 'Demonstration content [DEMO] cannot be saved.';
     } else {
       saveMessage.value = 'Approval failed.';
     }
