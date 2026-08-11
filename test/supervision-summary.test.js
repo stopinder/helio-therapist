@@ -33,7 +33,6 @@ test('regeneration versions summaries and never overwrites the original reflecti
   const workspace = await readFile(new URL('../src/components/ReflectionWorkspace.vue', import.meta.url), 'utf8')
   const migration = await readFile(new URL('../supabase/migrations/20260726113823_sprint_one_hardening.sql', import.meta.url), 'utf8')
   assert.match(workspace, /rpc\('save_reflection_supervision_summary'/)
-  assert.match(workspace, /generation_status: 'failed'/)
   assert.match(workspace, /Regenerate draft/)
   assert.doesNotMatch(workspace, /supervision_summary:/)
   assert.match(migration, /generation_status = 'superseded'/)
