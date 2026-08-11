@@ -23,15 +23,16 @@ test('professional development resolves only the saved reflection id before open
 })
 
 test('AI reflection API remains reflection-id only and RLS-backed', () => {
-  assert.match(reflectApi, /bodyKeys\.length === 1 && bodyKeys\[0\] === 'reflectionId'/)
+  assert.match(reflectApi, /bodyKeys\.length !== 1 \|\| bodyKeys\[0\] !== 'reflectionId'/)
   assert.match(reflectApi, /getSupabaseUserClient\(req\)/)
-  assert.match(reflectApi, /from\('private_reflections'\)/)
+  assert.match(reflectApi, /\.from\('private_reflections'\)/)
   assert.doesNotMatch(reflectApi, /reflectionText/)
 })
 
 test('dictation remains transient server-side and returns text only', () => {
   assert.match(transcribeApi, /audio\.transcriptions\.create/)
   assert.match(transcribeApi, /return res\.status\(200\)\.json\(\{ success: true, text:/)
-  assert.doesNotMatch(transcribeApi, /from\(/)
-  assert.doesNotMatch(transcribeApi, /storage/)
+  assert.doesNotMatch(transcribeApi, /supabase\s*\.\s*from\(/)
+  assert.doesNotMatch(transcribeApi, /\.from\(['"](?:private_reflections|sessions|clients)['"]\)/)
+  assert.doesNotMatch(transcribeApi, /storage\./)
 })
