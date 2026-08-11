@@ -57,5 +57,6 @@ test('directory loads real upcoming appointments and listClients keeps active-on
   assert.match(source, /query = query\.eq\('archived', false\)/)
   assert.match(source, /\.from\('appointments'\)/)
   assert.match(source, /\.in\('status', \['scheduled', 'rescheduled'\]\)/)
-  assert.match(source, /\.gte\('starts_at', from\.toISOString\(\)\)/)
+  assert.match(source, /if \(from\) query = query\.gte\('starts_at', new Date\(from\)\.toISOString\(\)\)/)
+  assert.match(source, /return listCalendarAppointments\(\{ from \}\)/)
 })

@@ -94,25 +94,31 @@ export async function listClients({ includeArchived = false } = {}) {
   }))
 }
 
-export async function listUpcomingClientAppointments({ from = new Date() } = {}) {
+export async function listCalendarAppointments({ from = null, to = null } = {}) {
   if (!supabase) {
     throw new Error('Supabase is not configured')
   }
 
-  const { data, error } = await withSessionRecovery(() =>
-    supabase
-      .from('appointments')
-      .select('id,client_id,status,starts_at,ends_at,timezone')
-      .in('status', ['scheduled', 'rescheduled'])
-      .gte('starts_at', from.toISOString())
-      .order('starts_at', { ascending: true })
-  )
+  let query = supabase
+    .from('appointments')
+    .select('id,client_id,status,starts_at,ends_at,timezone,google_event_id')
+    .in('status', ['scheduled', 'rescheduled'])
+    .order('starts_at', { ascending: true })
+
+  if (from) query = query.gte('starts_at', new Date(from).toISOString())
+  if (to) query = query.lt('starts_at', new Date(to).toISOString())
+
+  const { data, error } = await withSessionRecovery(() => query)
 
   if (error) {
-    throw new Error(error.message || 'Failed to load upcoming appointments')
+    throw new Error(error.message || 'Failed to load appointments')
   }
 
   return data || []
+}
+
+export async function listUpcomingClientAppointments({ from = new Date() } = {}) {
+  return listCalendarAppointments({ from })
 }
 
 export async function createClient({ name, email = null, note = '' }) {

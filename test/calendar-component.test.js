@@ -6,26 +6,21 @@ test('Calendar component template and logic requirements', async (t) => {
   const calendarSource = await readFile(new URL('../src/views/Calendar.vue', import.meta.url), 'utf8')
 
   await t.test('Open Client hidden for malformed client IDs', () => {
-    // Check that v-if uses isValidId for clientId
     assert.match(calendarSource, /v-if="selectedEvent\.clientId && isValidId\(selectedEvent\.clientId\)"/)
   })
 
   await t.test('Start Session eligibility', () => {
-    // Check that v-if uses isEligibleForStart
     assert.match(calendarSource, /v-if="selectedEvent\.isEligibleForStart"/)
   })
 
   await t.test('Escape closes the action surface', () => {
-    // Check for global Escape listener
     assert.match(calendarSource, /window\.addEventListener\('keydown', handleGlobalEsc\)/)
-    assert.match(calendarSource, /if \(e\.key === 'Escape'\) \{/)
+    assert.match(calendarSource, /event\.key === 'Escape'/)
     assert.match(calendarSource, /selectedEventId\.value = null/)
   })
 
   await t.test('Mini-calendar interaction', () => {
-    // Check for selectDate call in mini-calendar
     assert.match(calendarSource, /@click="cell\.date && selectDate\(cell\.date\)"/)
-    // Check for month navigation
     assert.match(calendarSource, /@click="miniPrevMonth"/)
     assert.match(calendarSource, /@click="miniNextMonth"/)
   })
@@ -36,7 +31,6 @@ test('Calendar component template and logic requirements', async (t) => {
     assert.match(calendarSource, /@click="loadData".*>Retry<\/button>/)
     assert.match(calendarSource, /No appointments today/)
     assert.match(calendarSource, /No upcoming appointments/)
-    // Removed mobile-only "No appointments for this day" check as it might have changed structure
   })
 
   await t.test('Data-source disclosure matches connection state', () => {
@@ -45,16 +39,32 @@ test('Calendar component template and logic requirements', async (t) => {
   })
 
   await t.test('Weekday keys are unique in mini-calendar', () => {
-    assert.match(calendarSource, /:key="`\${d}-\${idx}`"/)
+    assert.match(calendarSource, /:key="`\$\{d\}-\$\{idx\}`"/)
   })
 
   await t.test('Correct working-hours range (24 hours)', () => {
     assert.match(calendarSource, /const workingHours = Array\.from\(\{ length: 24 \}/)
   })
 
-  await t.test('Scrolling height logic', () => {
-    assert.match(calendarSource, /const hourHeight = computed\(\(\) => \{/)
-    assert.match(calendarSource, /return 60/)
+  await t.test('opens timed views at 08:00 after render', () => {
+    assert.match(calendarSource, /const workingDayStartHour = 8/)
+    assert.match(calendarSource, /await nextTick\(\)/)
+    assert.match(calendarSource, /window\.requestAnimationFrame\(\(\) => \{/)
+    assert.match(calendarSource, /container\.scrollTop = workingDayStartHour \* hourHeight\.value/)
+    assert.match(calendarSource, /await refreshEvents\(\)\s+await scrollToWorkingDay\(\)/)
+  })
+
+  await t.test('Today is a current-period shortcut rather than a view switch', () => {
+    assert.match(calendarSource, /const isCurrentPeriod = computed\(\(\) => \{/)
+    assert.match(calendarSource, /:disabled="isCurrentPeriod"/)
+    assert.match(calendarSource, /if \(isCurrentPeriod\.value\) return/)
+    assert.doesNotMatch(calendarSource, /function goToday\(\)[\s\S]*?viewMode\.value = 'day'/)
+  })
+
+  await t.test('unlinked Google events retain honest secondary context', () => {
+    assert.match(calendarSource, /function eventContext\(event\)/)
+    assert.match(calendarSource, /return 'Google Calendar'/)
+    assert.match(calendarSource, /\{\{ eventContext\(event\) \}\}/)
   })
 
   await t.test('Honest Google states in Sidebar', () => {
@@ -74,14 +84,12 @@ test('Calendar component template and logic requirements', async (t) => {
   })
 
   await t.test('Tablet layout and agenda width exclusivity', () => {
-    // Check for refactored aside classes
     assert.match(calendarSource, /isMobile \? \(isAgendaExpanded \? 'fixed inset-0 pt-14 flex' : 'hidden'\) : ''/)
     assert.match(calendarSource, /!isMobile && isTablet \? \(isAgendaExpanded \? 'w-72 flex' : 'w-12 flex'\) : ''/)
     assert.match(calendarSource, /!isMobile && !isTablet \? 'w-72 flex' : ''/)
   })
 
   await t.test('Scrollable grid audit', () => {
-    // Timed grid should have overflow-y-auto
     assert.match(calendarSource, /class="flex-1 flex relative overflow-y-auto"/)
     assert.match(calendarSource, /class="flex flex-1 relative overflow-y-auto"/)
   })
@@ -91,7 +99,6 @@ test('Calendar component template and logic requirements', async (t) => {
   })
 
   await t.test('Time axis header spacer present in both Day and Week views', () => {
-    // There should be two instances of the header spacer in the time axis
     const axisSpacers = calendarSource.match(/class="h-10 border-b border-border-muted bg-surface sticky top-0 z-40"/g)
     assert.strictEqual(axisSpacers.length, 2)
   })
