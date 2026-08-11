@@ -1,6 +1,9 @@
+import { createHash } from 'node:crypto';
 import { requireAuthenticatedUser } from '../_lib/supabase.js';
 
-const transcriptFields = 'id, zoom_meeting_id, zoom_meeting_uuid, original_format, original_transcript, status, client_id, session_ref, received_at, updated_at, requested_lens, source_retention, review_choices_saved_at, completed_at';
+const transcriptFields = 'id, zoom_meeting_id, zoom_meeting_uuid, original_format, original_transcript, source, status, client_id, session_ref, received_at, updated_at, requested_lens, source_retention, review_choices_saved_at, completed_at';
+const MAX_MANUAL_TRANSCRIPT_BYTES = 2 * 1024 * 1024;
+const MANUAL_SOURCE = 'zoom_manual';
 
 function serialiseTranscript(row) {
   return {
@@ -9,6 +12,7 @@ function serialiseTranscript(row) {
     meetingUuid: row.zoom_meeting_uuid,
     format: row.original_format,
     text: row.original_transcript,
+    source: row.source,
     status: row.status,
     clientId: row.client_id,
     sessionRef: row.session_ref,
@@ -18,6 +22,38 @@ function serialiseTranscript(row) {
     sourceRetention: row.source_retention,
     reviewChoicesSavedAt: row.review_choices_saved_at,
     completedAt: row.completed_at
+  };
+}
+
+function normaliseManualImport({ filename, text }) {
+  if (typeof filename !== 'string' || !filename.trim()) {
+    return { error: 'Choose a Zoom transcript file to import.' };
+  }
+  if (typeof text !== 'string' || !text.trim()) {
+    return { error: 'That transcript file is empty.' };
+  }
+
+  const cleanFilename = filename.trim();
+  const extension = cleanFilename.split('.').pop()?.toLowerCase();
+  if (!['vtt', 'txt'].includes(extension)) {
+    return { error: 'Import a Zoom transcript in .vtt or .txt format.' };
+  }
+
+  if (Buffer.byteLength(text, 'utf8') > MAX_MANUAL_TRANSCRIPT_BYTES) {
+    return { error: 'That transcript file is too large to import.' };
+  }
+
+  const fingerprintText = text.replace(/\r\n/g, '\n');
+  const fingerprint = createHash('sha256').update(fingerprintText, 'utf8').digest('hex');
+  const meetingIdMatch = cleanFilename.match(/(?:^|\D)(\d{9,11})(?:\D|$)/);
+
+  return {
+    filename: cleanFilename,
+    text,
+    format: extension.toUpperCase(),
+    fingerprint,
+    recordingFileId: `manual:${fingerprint}`,
+    meetingId: meetingIdMatch?.[1] || `manual-${fingerprint.slice(0, 12)}`
   };
 }
 
@@ -53,6 +89,47 @@ export default async function handler(req, res) {
 
       if (error) throw error;
       return res.status(200).json({ transcripts: (data || []).map(serialiseTranscript) });
+    }
+
+    if (req.method === 'POST') {
+      const manualImport = normaliseManualImport(req.body || {});
+      if (manualImport.error) {
+        return res.status(400).json({ error: manualImport.error });
+      }
+
+      const { data: existing, error: existingError } = await supabase
+        .from('zoom_transcripts')
+        .select(transcriptFields)
+        .eq('therapist_user_id', user.id)
+        .eq('zoom_recording_file_id', manualImport.recordingFileId)
+        .maybeSingle();
+
+      if (existingError) throw existingError;
+      if (existing) {
+        return res.status(200).json({ transcript: serialiseTranscript(existing), duplicate: true });
+      }
+
+      const now = new Date().toISOString();
+      const { data, error } = await supabase
+        .from('zoom_transcripts')
+        .insert({
+          therapist_user_id: user.id,
+          zoom_meeting_id: manualImport.meetingId,
+          zoom_meeting_uuid: null,
+          zoom_recording_file_id: manualImport.recordingFileId,
+          original_format: manualImport.format,
+          original_transcript: manualImport.text,
+          source: MANUAL_SOURCE,
+          status: 'unassigned',
+          source_retention: 'keep_until_review',
+          received_at: now,
+          updated_at: now
+        })
+        .select(transcriptFields)
+        .single();
+
+      if (error) throw error;
+      return res.status(201).json({ transcript: serialiseTranscript(data), duplicate: false });
     }
 
     if (req.method === 'PATCH') {
@@ -112,7 +189,6 @@ export default async function handler(req, res) {
         update.status = clientId ? 'ready' : 'unassigned';
       }
 
-      // A new client assignment deliberately clears downstream review decisions.
       if (clientChanged) {
         update.session_ref = null;
         update.review_choices_saved_at = null;
