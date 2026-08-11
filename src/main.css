@@ -10,6 +10,24 @@ html {
     color: var(--text-primary);
 }
 
+/* Keep every existing scroll region fully usable while removing permanent
+   browser scrollbar chrome from Helios' quiet workspace UI. Wheel, trackpad,
+   touch and keyboard scrolling continue to work normally. */
+html,
+body,
+* {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+html::-webkit-scrollbar,
+body::-webkit-scrollbar,
+*::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+    display: none;
+}
+
 :root {
     /* Semantic surface, boundary, and elevation hierarchy. */
     --surface-canvas: #f6f4f0;
