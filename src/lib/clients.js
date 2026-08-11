@@ -10,6 +10,14 @@ export async function getClient({ clientId }) {
   return { ...data, name: data.display_name, note: data.current_focus }
 }
 
+export async function getCurrentTherapistLabel() {
+  if (!supabase) throw new Error('Supabase is not configured')
+  const { data: { user }, error } = await withSessionRecovery(() => supabase.auth.getUser())
+  if (error || !user) return 'Current therapist'
+  const metadata = user.user_metadata || {}
+  return metadata.full_name || metadata.name || user.email || 'Current therapist'
+}
+
 export async function getTimelineEvents({ clientId }) {
   const { authenticatedFetch } = await import('./api.js')
   const fetchResponse = await authenticatedFetch(`/api/client-timeline?clientId=${encodeURIComponent(clientId)}`)
@@ -27,7 +35,11 @@ async function requireUser(action) {
 export async function updateClient({ clientId, ...updates }) {
   if (!supabase) throw new Error('Supabase is not configured')
   const user = await requireUser('update a client')
-  const { data, error } = await withSessionRecovery(() => supabase.from('clients').update({ display_name: updates.name, current_focus: updates.note, updated_at: new Date().toISOString() }).eq('id', clientId).eq('user_id', user.id).select(clientSelect).single())
+  const { data, error } = await withSessionRecovery(() => supabase.from('clients').update({
+    display_name: updates.name,
+    current_focus: updates.note,
+    updated_at: new Date().toISOString()
+  }).eq('id', clientId).eq('user_id', user.id).select(clientSelect).single())
   if (error) throw new Error(error.message || 'Failed to update client')
   return { ...data, name: data.display_name, note: data.current_focus }
 }
@@ -36,7 +48,11 @@ export async function setClientArchived({ clientId, archived }) {
   if (!supabase) throw new Error('Supabase is not configured')
   const user = await requireUser(archived ? 'archive a client' : 'restore a client')
   const now = new Date().toISOString()
-  const { data, error } = await withSessionRecovery(() => supabase.from('clients').update({ archived, archived_at: archived ? now : null, updated_at: now }).eq('id', clientId).eq('user_id', user.id).select(clientSelect).single())
+  const { data, error } = await withSessionRecovery(() => supabase.from('clients').update({
+    archived,
+    archived_at: archived ? now : null,
+    updated_at: now
+  }).eq('id', clientId).eq('user_id', user.id).select(clientSelect).single())
   if (error) throw new Error(error.message || (archived ? 'Failed to archive client' : 'Failed to restore client'))
   return { ...data, name: data.display_name, note: data.current_focus }
 }
