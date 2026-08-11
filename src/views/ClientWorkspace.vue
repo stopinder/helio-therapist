@@ -3,9 +3,10 @@
     <div v-if="loading" class="flex-1 flex items-center justify-center"><div class="text-ink-muted flex flex-col items-center gap-2"><span class="w-8 h-8 border-4 border-state-selected border-t-transparent rounded-full animate-spin"></span><p>Loading client workspace…</p></div></div>
     <div v-else-if="error" class="flex-1 flex items-center justify-center p-inline-lg"><div class="max-w-md w-full bg-surface p-inline-lg py-stack-lg rounded-card shadow-sm border border-state-danger/20 text-center"><h2 class="text-h2 font-semibold text-state-danger mb-2">Workspace Error</h2><p class="text-ink-secondary mb-6">{{ error }}</p><button @click="loadClient" class="px-inline-md py-stack-sm bg-state-selected text-white rounded-control">Try Again</button></div></div>
     <template v-else-if="client">
-      <ClientWorkspaceHeader :client="client" @create-document="newDocument" />
+      <ClientWorkspaceHeader :client="client" @create-document="newDocument" @client-updated="client = $event" />
       <ClientWorkspaceTabs :tabs="tabs" v-model:activeTab="activeTab" />
       <div class="flex-1 overflow-auto p-inline-lg py-stack-lg"><div class="max-w-6xl mx-auto space-y-stack-lg">
+        <div v-if="client.archived" class="rounded-panel border border-border bg-surface-elevated px-inline-lg py-stack-md text-body-sm text-ink-secondary"><strong class="text-ink">Archived client.</strong> Historical records remain available. Restore the client before starting a new session or joining a meeting.</div>
         <div v-if="activeTab === 'Overview'" class="space-y-stack-lg">
           <ClinicalAttentionPanel :client="client" />
           <div class="grid grid-cols-1 lg:grid-cols-3 gap-stack-lg"><div class="lg:col-span-2 space-y-stack-lg">
