@@ -18,15 +18,26 @@ test('manual transcript import is authenticated, bounded and idempotent', () => 
   assert.match(apiSource, /status: 'unassigned'/)
 })
 
-test('manual import uses the existing transcript inbox workflow without raw file storage', () => {
-  assert.match(viewSource, /Import transcript/)
+test('manual file import uses the existing transcript inbox workflow without raw file storage', () => {
+  assert.match(viewSource, /Choose file/)
   assert.match(viewSource, /accept="\.vtt,\.txt,text\/vtt,text\/plain"/)
+  assert.match(viewSource, /submitTranscriptImport\(file\.name, text\)/)
   assert.match(viewSource, /authenticatedFetch\('\/api\/zoom\/transcripts'/)
   assert.match(viewSource, /method: 'POST'/)
-  assert.match(viewSource, /body: JSON\.stringify\(\{ filename: file\.name, text \}\)/)
+  assert.match(viewSource, /body: JSON\.stringify\(\{ filename, text \}\)/)
   assert.match(viewSource, /inboxKey\.value \+= 1/)
   assert.doesNotMatch(viewSource, /FormData/)
   assert.doesNotMatch(apiSource, /storage\./)
+})
+
+test('therapist can paste a Zoom transcript directly into the same protected import path', () => {
+  assert.match(viewSource, /Paste transcript/)
+  assert.match(viewSource, /v-model="pastedTranscript"/)
+  assert.match(viewSource, /Import pasted transcript/)
+  assert.match(viewSource, /submitTranscriptImport\('pasted-transcript\.txt', pastedTranscript\.value\)/)
+  assert.match(viewSource, /Paste some transcript text before importing\./)
+  assert.match(viewSource, /new Blob\(\[text\]\)\.size > MAX_IMPORT_BYTES/)
+  assert.match(viewSource, /data\.duplicate \? 'That transcript is already in your inbox\.'/)
 })
 
 test('manual import returns safe therapist-facing validation messages', () => {
