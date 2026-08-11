@@ -15,6 +15,7 @@
           </div><div class="space-y-stack-lg"><div class="p-inline-md bg-state-warning-surface border border-state-warning/20 rounded-panel"><p class="text-caption text-state-warning font-medium uppercase tracking-wider mb-1">Notice</p><p class="text-body-sm text-ink-secondary">This workspace still contains some <strong>mock data</strong> outside the document workflow.</p></div><div class="bg-surface-elevated border border-border-muted rounded-panel p-inline-lg"><h3 class="text-h3 font-semibold text-ink mb-stack-md pt-stack-md">Care Team</h3><p class="text-body-sm text-ink-muted italic">Primary: {{ client.primary_therapist || mockClient.primary_therapist }}</p></div></div></div>
         </div>
         <div v-else-if="activeTab === 'Details'"><ClientDetails :client="client" @updated="client = $event" /></div>
+        <ClientTranscriptsPanel v-else-if="activeTab === 'Transcripts'" :client-id="String(route.params.clientId)" />
         <ClientDocumentsPanel v-else-if="activeTab === 'Documents'" :documents="documents" :loading="documentsLoading" :error="documentsError" @create="newDocument" @edit="editDocument" @download="downloadDocument" />
         <div v-else><div v-if="activeTab === 'Timeline'" class="bg-surface-elevated border border-border-muted rounded-panel p-inline-lg max-w-2xl mx-auto"><h3 class="text-h3 font-semibold text-ink mb-stack-lg pt-stack-md">Client Timeline</h3><div v-if="timelineLoading" class="py-stack-xl text-center"><p class="text-body-sm text-ink-subtle">Loading clinical narrative...</p></div><div v-else-if="timelineEvents.length === 0" class="py-stack-xl text-center"><p class="text-body-sm text-ink-subtle">No clinical events recorded for this client.</p></div><div v-else class="space-y-0"><TimelineItem v-for="(event, index) in timelineEvents" :key="event.id" :event-type="event.event_type" :date="formatDate(event.occurred_at)" :description="event.summary" :subject-type="event.subject_type" :subject-id="event.subject_id" :session-id="event.session_id" :is-last="index === timelineEvents.length - 1" /></div></div><EmptyState v-else :title="activeTab" :description="`The ${activeTab} module will provide detailed clinical information and management tools for this client's care journey.`" icon="🛠️"><template #action><button @click="activeTab = 'Overview'" class="text-action-link font-medium hover:underline">Return to Overview</button></template></EmptyState></div>
       </div></div>
@@ -32,13 +33,14 @@ import ClientWorkspaceHeader from '../components/workspace/ClientWorkspaceHeader
 import ClientWorkspaceTabs from '../components/workspace/ClientWorkspaceTabs.vue';
 import ClinicalAttentionPanel from '../components/workspace/ClinicalAttentionPanel.vue';
 import ClientDocumentsPanel from '../components/workspace/ClientDocumentsPanel.vue';
+import ClientTranscriptsPanel from '../components/workspace/ClientTranscriptsPanel.vue';
 import ClientDocumentComposer from '../components/workspace/ClientDocumentComposer.vue';
 import StatusBadge from '../components/workspace/StatusBadge.vue';
 import TimelineItem from '../components/workspace/TimelineItem.vue';
 import EmptyState from '../components/workspace/EmptyState.vue';
 import ClientDetails from './ClientDetails.vue';
 const route = useRoute(); const client = ref(null); const loading = ref(true); const error = ref('');
-const tabs = ['Overview','Sessions','Details','Care','Measures','Resources','Documents','Timeline']; const activeTab = ref('Overview'); const timelineEvents = ref([]); const timelineLoading = ref(false);
+const tabs = ['Overview','Sessions','Transcripts','Details','Care','Measures','Resources','Documents','Timeline']; const activeTab = ref('Overview'); const timelineEvents = ref([]); const timelineLoading = ref(false);
 const documents = ref([]); const documentsLoading = ref(false); const documentsError = ref(''); const documentComposerOpen = ref(false); const editingDocument = ref(null);
 async function loadClient() { loading.value = true; error.value = ''; try { client.value = await getClient({ clientId: route.params.clientId }); await Promise.all([loadTimeline(), refreshDocuments()]); } catch (e) { console.error('Failed to load client:', e); error.value = 'The client workspace could not be loaded.'; } finally { loading.value = false; } }
 async function loadTimeline() { const clientId = route.params.clientId; if (!clientId) return; timelineLoading.value = true; try { timelineEvents.value = await getTimelineEvents({ clientId }); } catch (e) { console.error('Failed to load timeline:', e); } finally { timelineLoading.value = false; } }
