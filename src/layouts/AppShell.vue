@@ -71,5 +71,5 @@ const SidebarAccount=defineComponent({name:'SidebarAccount',props:{account:{type
 </script>
 <style scoped>
 .slide-enter-active,.slide-leave-active{transition:transform .25s ease-out}.slide-enter-from,.slide-leave-to{transform:translateX(-100%)}.fade-enter-active,.fade-leave-active{transition:opacity .2s ease-out}.fade-enter-from,.fade-leave-to{opacity:0}
-.sidebar-navigation{scrollbar-width:thin;scrollbar-color:transparent transparent}.sidebar-navigation:hover{scrollbar-color:var(--color-border-muted,rgba(0,0,0,.16)) transparent}.sidebar-navigation::-webkit-scrollbar{width:6px}.sidebar-navigation::-webkit-scrollbar-thumb{background:transparent;border-radius:999px}.sidebar-navigation:hover::-webkit-scrollbar-thumb{background:var(--color-border-muted,rgba(0,0,0,.16))}
+.sidebar-navigation{scrollbar-width:none;-ms-overflow-style:none}.sidebar-navigation::-webkit-scrollbar{display:none;width:0;height:0}
 </style>
