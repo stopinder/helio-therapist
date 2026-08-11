@@ -1,3 +1,6 @@
+-- Applied to production via the Supabase connector as migration
+-- 20260811152125_client_archive_lifecycle. Keep this file idempotent so
+-- repository migration-chain tests and fresh environments converge safely.
 alter table public.clients
   add column if not exists archived_at timestamptz;
 
