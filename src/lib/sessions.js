@@ -2,6 +2,7 @@ import { supabase } from './supabase.js'
 
 const LEGACY_STORAGE_KEY = 'helio_sessions'
 const MIGRATION_MARKER_KEY = 'helio_sessions_migrated'
+const DEMO_CLINICAL_CONTENT_PATTERN = /\[DEMO\]/i
 
 function requireSupabase() {
   if (!supabase) throw new Error('Supabase is not configured')
@@ -16,6 +17,13 @@ function archivedClientError() {
   const error = new Error('Restore this client before opening a session.')
   error.code = 'CLIENT_ARCHIVED'
   return error
+}
+
+export function assertNoDemoClinicalContent(notes) {
+  if (!DEMO_CLINICAL_CONTENT_PATTERN.test(String(notes || ''))) return
+  const error = new Error('Demonstration content cannot be saved to a clinical session.')
+  error.code = 'DEMO_CLINICAL_CONTENT'
+  throw error
 }
 
 async function requireActiveOwnedClient(client, clientId, userId) {
@@ -100,6 +108,7 @@ export async function createOrResumeSession(clientId) {
 }
 
 export async function saveSessionDraft(session, notes, video = {}) {
+  assertNoDemoClinicalContent(notes)
   const client = requireSupabase()
   const { data, error } = await client.rpc('save_session_draft', { p_session_id: session.id, p_notes: notes || '', p_expected_version: session.version, p_zoom_state: video.state || null, p_zoom_meeting_id: video.meetingId || null, p_zoom_error: video.error ?? null })
   if (error?.code === '40001') { const conflict = new Error('This session changed in another tab. Reopen it before saving again.'); conflict.code = 'SESSION_CONFLICT'; throw conflict }
@@ -108,6 +117,7 @@ export async function saveSessionDraft(session, notes, video = {}) {
 }
 
 export async function completeSessionRecord(session, notes) {
+  assertNoDemoClinicalContent(notes)
   const client = requireSupabase()
   const { data, error } = await client.rpc('complete_session', { p_session_id: session.id, p_notes: notes || '', p_expected_version: session.version })
   if (error?.code === '40001') { const conflict = new Error('This session changed in another tab. Reopen it before completing it.'); conflict.code = 'SESSION_CONFLICT'; throw conflict }

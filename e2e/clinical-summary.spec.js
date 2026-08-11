@@ -33,14 +33,20 @@ test.describe('Clinical Summary Persistence', () => {
     await page.getByRole('tab', { name: 'Clinical Summary' }).click();
 
     // 4. Prepare Draft (if not started)
-    const prepareButton = page.getByRole('button', { name: /Prepare Draft Clinical Summary/i });
+    const prepareButton = page.getByRole('button', { name: /Prepare Empty Clinical Summary Draft/i });
     if (await prepareButton.isVisible()) {
       await prepareButton.click();
     }
 
-    // 5. Edit a field
-    const testValue = 'Test presenting concern ' + Date.now();
+    // Verify Presenting concerns is empty before therapist input
     const textArea = page.getByLabel(/Presenting concerns/i);
+    await expect(textArea).toHaveValue('');
+
+    // Verify no [DEMO] text exists anywhere in the clinical-summary workspace
+    await expect(page.getByTestId('clinical-summary-workspace')).not.toContainText('[DEMO]');
+
+    // 5. Edit a field
+    const testValue = 'Unique therapist-authored value ' + Date.now();
     await textArea.fill(testValue);
 
     // 6. Save Draft
