@@ -43,8 +43,7 @@ test.describe('Clinical Summary Persistence', () => {
     await expect(textArea).toHaveValue('');
 
     // Verify no [DEMO] text exists anywhere in the clinical-summary workspace
-    const workspace = page.getByTestId('clinical-summary-workspace'); // Assuming we add this or use a locator
-    await expect(page.locator('body')).not.toContainText('[DEMO]');
+    await expect(page.getByTestId('clinical-summary-workspace')).not.toContainText('[DEMO]');
 
     // 5. Edit a field
     const testValue = 'Unique therapist-authored value ' + Date.now();
