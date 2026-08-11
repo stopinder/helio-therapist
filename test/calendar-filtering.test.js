@@ -12,7 +12,7 @@ test('Calendar filtering logic audit', async (t) => {
 
   await t.test('adds canonical scheduled and rescheduled Helios appointments', () => {
     assert.match(source, /listCalendarAppointments/)
-    assert.match(source, /const heliosAppointments = appointments\.value\.map/)
+    assert.match(source, /const heliosAppointments = appointments\.value/)
     assert.match(source, /source: 'appointment'/)
   })
 
@@ -20,6 +20,17 @@ test('Calendar filtering logic audit', async (t) => {
     assert.match(source, /sessionId: linkedSession\?\.id \|\| null/)
     assert.match(source, /isEligibleForStart: Boolean\(linkedSession\)/)
     assert.match(source, /isEligibleForStart\(session\)/)
+  })
+
+  await t.test('uses authoritative Google event linkage before title matching', () => {
+    assert.match(source, /appointment\.googleEventId/)
+    assert.match(source, /String\(appointment\.googleEventId\) === String\(event\.id\)/)
+    assert.match(source, /if \(linkedAppointment\) return null/)
+  })
+
+  await t.test('never presents an unmatched external event title as a client identity', () => {
+    assert.match(source, /clientName = matchedClient\?\.display_name \|\| 'Client not linked'/)
+    assert.match(source, /title: title \|\| '\(No title\)'/)
   })
 
   await t.test('deduplicates Google events against Helios appointments and completed sessions', () => {
