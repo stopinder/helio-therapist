@@ -1,5 +1,6 @@
 import { requireAuthenticatedUser, getSupabaseUserClient } from '../_lib/supabase.js';
 import { AI_FEATURES, runTextAI } from '../_lib/ai-execution.js';
+import { loadOwnedClientAIContext } from '../_lib/client-ai-context.js';
 import {
   aiReflectionSystemPrompt,
   buildReflectionInput,
@@ -28,7 +29,7 @@ export default async function handler(req, res) {
 
     const supabase = getSupabaseUserClient(req);
     const { data: reflection, error: fetchError } = await supabase
-      .from('private_reflections').select('id, body, theme, supervision_question').eq('id', reflectionId).single();
+      .from('private_reflections').select('id, body, theme, supervision_question, client_id').eq('id', reflectionId).single();
     if (fetchError || !reflection) {
       return res.status(404).json({ success: false, error: { code: 'REFLECTION_NOT_FOUND', message: 'Reflection not found or access denied' } });
     }
@@ -41,13 +42,17 @@ export default async function handler(req, res) {
       return res.status(422).json({ success: false, error: { code: 'REFLECTION_TOO_LONG', message: 'Reflection is too long for the current AI assistant Phase.' } });
     }
 
+    const clientContext = reflection.client_id
+      ? await loadOwnedClientAIContext(supabase, { clientId: reflection.client_id, userId: user.id })
+      : null;
+
     const { completion } = await runTextAI({
       feature: AI_FEATURES.REFLECTION_ANALYSIS,
       userId: user.id,
       promptVersion: AI_REFLECTION_PROMPT_VERSION,
       messages: [
         { role: 'system', content: aiReflectionSystemPrompt },
-        { role: 'user', content: buildReflectionInput(reflection) }
+        { role: 'user', content: buildReflectionInput(reflection, clientContext) }
       ],
       responseFormat: { type: 'json_object' },
       temperature: 0.7,
