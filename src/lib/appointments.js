@@ -5,6 +5,19 @@ function requireSupabase() {
   return supabase
 }
 
+export async function listScheduledAppointments() {
+  const client = requireSupabase()
+  const { data, error } = await client
+    .from('appointments')
+    .select('id,client_id,status,starts_at,ends_at,timezone,zoom_meeting_id')
+    .in('status', ['scheduled', 'rescheduled'])
+    .not('starts_at', 'is', null)
+    .order('starts_at', { ascending: true })
+
+  if (error) throw error
+  return data || []
+}
+
 export async function listClientAppointments({ clientId }) {
   const client = requireSupabase()
   const { data, error } = await client
