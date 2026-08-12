@@ -30,7 +30,7 @@ test('summary generation handles non-JSON responses safely', async () => {
   assert.match(workspace, /async function safeParseJson\(response\)/)
   assert.match(workspace, /contentType\.includes\('application\/json'\)/)
   assert.match(workspace, /const data = await safeParseJson\(response\)/)
-  assert.match(workspace, /throw new Error\(data\?\.error \|\| `Server error \(\$\{response\.status\}\)\. Please try again later\.`\)/)
+  assert.match(workspace, /throw new Error\(data\?\.error\?\.message \|\| data\?\.error \|\| `Server error \(\$\{response\.status\}\)\. Please try again later\.`\)/)
 })
 
 test('transcription also uses safe JSON parsing', async () => {
