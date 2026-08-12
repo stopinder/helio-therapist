@@ -39,3 +39,6 @@ create index session_working_notes_user_id_idx
 
 create index session_working_notes_client_id_idx
   on public.session_working_notes(client_id);
+
+alter table public.private_reflections
+  add column workspace_content jsonb;
