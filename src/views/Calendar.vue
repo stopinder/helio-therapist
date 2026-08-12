@@ -77,7 +77,12 @@
                 v-for="event in todayEvents" 
                 :key="event.id"
                 @click="selectAppointment(event, $event)"
-                class="group p-inline-sm rounded-control cursor-pointer transition-colors border"
+                @keydown.enter.stop="selectAppointment(event, $event)"
+                @keydown.space.prevent.stop="selectAppointment(event, $event)"
+                role="button"
+                :aria-label="`Appointment with ${event.clientName}`"
+                tabindex="0"
+                class="group p-inline-sm rounded-control cursor-pointer transition-colors border focus-visible:ring-2 focus-visible:ring-action-primary outline-none"
                 :class="selectedEventId === event.id ? 'bg-state-selected border-action-primary' : 'hover:bg-surface-subtle border-transparent'"
               >
                 <div class="flex items-start gap-inline-sm">
@@ -104,7 +109,12 @@
                 v-for="event in upcomingEvents.slice(0, 10)" 
                 :key="event.id"
                 @click="selectAppointment(event, $event)"
-                class="group p-inline-sm rounded-control cursor-pointer transition-colors border"
+                @keydown.enter.stop="selectAppointment(event, $event)"
+                @keydown.space.prevent.stop="selectAppointment(event, $event)"
+                role="button"
+                :aria-label="`Appointment with ${event.clientName}`"
+                tabindex="0"
+                class="group p-inline-sm rounded-control cursor-pointer transition-colors border focus-visible:ring-2 focus-visible:ring-action-primary outline-none"
                 :class="selectedEventId === event.id ? 'bg-state-selected border-action-primary' : 'hover:bg-surface-subtle border-transparent'"
               >
                 <div class="flex items-start gap-inline-sm">
@@ -240,6 +250,11 @@
                   v-for="event in dayData(viewDate).events.filter(e => !isOutsideWorkingHours(e))" 
                   :key="event.id"
                   @click.stop="selectAppointment(event, $event)"
+                  @keydown.enter.stop="selectAppointment(event, $event)"
+                  @keydown.space.prevent.stop="selectAppointment(event, $event)"
+                  role="button"
+                  :aria-label="`Appointment with ${event.clientName}`"
+                  tabindex="0"
                   class="absolute rounded-control border text-caption leading-tight p-2 transition-all overflow-hidden select-none group focus-visible:ring-2 focus-visible:ring-action-primary outline-none"
                   :style="getEventStyle(event, overlappingStyles[event.id], hourHeight, 0)"
                   :class="[
@@ -301,6 +316,11 @@
                     v-for="event in day.events.filter(e => !isOutsideWorkingHours(e))" 
                     :key="event.id"
                     @click.stop="selectAppointment(event, $event)"
+                    @keydown.enter.stop="selectAppointment(event, $event)"
+                    @keydown.space.prevent.stop="selectAppointment(event, $event)"
+                    role="button"
+                    :aria-label="`Appointment with ${event.clientName}`"
+                    tabindex="0"
                     class="absolute rounded-control border text-caption leading-tight p-1 transition-all overflow-hidden select-none group focus-visible:ring-2 focus-visible:ring-action-primary outline-none"
                     :style="getEventStyle(event, overlappingStyles[event.id], hourHeight, 0)"
                     :class="[
@@ -346,7 +366,12 @@
                   v-for="event in cell.events.slice(0, 3)" 
                   :key="event.id"
                   @click.stop="selectAppointment(event, $event)"
-                  class="px-1.5 py-0.5 rounded-pill text-caption font-medium truncate border"
+                  @keydown.enter.stop="selectAppointment(event, $event)"
+                  @keydown.space.prevent.stop="selectAppointment(event, $event)"
+                  role="button"
+                  :aria-label="`Appointment with ${event.clientName}`"
+                  tabindex="0"
+                  class="px-1.5 py-0.5 rounded-pill text-caption font-medium truncate border focus-visible:ring-2 focus-visible:ring-action-primary outline-none"
                   :class="[
                     event.source === 'google' ? 'bg-action-primary/10 text-action-primary border-action-primary/20' : 'bg-surface-subtle text-ink border-border-muted',
                     selectedEventId === event.id ? 'ring-1 ring-action-primary border-action-primary shadow-sm' : ''
@@ -411,13 +436,18 @@
           >
             Open Client
           </router-link>
-          <router-link 
+          <button 
             v-if="selectedEvent.isEligibleForStart"
-            :to="`/clients/${selectedEvent.clientId}/sessions/${selectedEvent.originalId}`"
-            class="w-full text-center py-2 text-body-sm font-medium text-on-action bg-action-primary rounded-control hover:bg-action-primary-hover transition-colors shadow-sm"
+            @click="startSession(selectedEvent)"
+            :disabled="startingEventId === selectedEvent.id"
+            :aria-busy="startingEventId === selectedEvent.id"
+            class="w-full text-center py-2 text-body-sm font-medium text-on-action bg-action-primary rounded-control hover:bg-action-primary-hover disabled:opacity-60 transition-colors shadow-sm"
           >
-            Start Session
-          </router-link>
+            {{ startingEventId === selectedEvent.id ? 'Opening…' : 'Start Session' }}
+          </button>
+          <p v-if="sessionOpenErrorId === selectedEvent.id" class="text-caption text-state-danger mt-1">
+            Couldn’t open the session workspace. Please try again.
+          </p>
         </div>
       </div>
     </main>
@@ -426,7 +456,9 @@
 
 <script setup>
 import { onMounted, onUnmounted, ref, computed, watch } from 'vue'
+import { useRouter } from 'vue-router'
 import { useCalendar } from '../composables/useCalendar.js'
+import { createOrResumeSession } from '../lib/sessions.js'
 import { 
   getStartOfWeek, 
   isSameDay, 
@@ -438,6 +470,7 @@ import {
   getViewRange
 } from '../lib/calendarHelpers.js'
 
+const router = useRouter()
 const { 
   loading, 
   error, 
@@ -454,6 +487,23 @@ const {
 } = useCalendar()
 
 const selectedEventId = ref(null)
+const startingEventId = ref(null)
+const sessionOpenErrorId = ref(null)
+
+async function startSession(event) {
+  if (!event?.clientId || startingEventId.value) return
+  startingEventId.value = event.id
+  sessionOpenErrorId.value = null
+  try {
+    const { session } = await createOrResumeSession(event.clientId)
+    await router.push({ name: 'SessionWorkspace', params: { clientId: event.clientId, sessionId: session.id } })
+  } catch (error) {
+    console.error('Failed to open session workspace from calendar:', error)
+    sessionOpenErrorId.value = event.id
+  } finally {
+    startingEventId.value = null
+  }
+}
 const viewDate = ref(new Date())
 const viewMode = ref((() => {
   const today = new Date()

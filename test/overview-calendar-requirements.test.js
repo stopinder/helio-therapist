@@ -62,6 +62,14 @@ test('Calendar view requirements', async () => {
   assert.match(calendar, /Open Client/)
   assert.match(calendar, /Start Session/)
   assert.match(calendar, /:to="`\/clients\/\${selectedEvent\.clientId}`"/)
+
+  // Session entry must create/resume a real session before routing.
+  assert.match(calendar, /createOrResumeSession\(event\.clientId\)/)
+  assert.match(calendar, /sessionId: session\.id/)
+  assert.doesNotMatch(calendar, /sessions\/\$\{selectedEvent\.originalId\}/)
+  assert.match(calendar, /startingEventId/)
+  assert.match(calendar, /Couldn’t open the session workspace\. Please try again\./)
+
   assert.match(calendar, /window\.addEventListener\('keydown', handleGlobalEsc\)/)
   assert.match(calendar, /@click="selectedEventId = null"/)
   assert.match(calendar, /tabindex/)

@@ -6,7 +6,7 @@ test('Calendar filtering logic audit', async (t) => {
   const source = await readFile(new URL('../src/composables/useCalendar.js', import.meta.url), 'utf8')
 
   await t.test('Filters out auto-created workspace sessions based on explicit completed state', () => {
-    assert.match(source, /return session\.workflowStatus === 'completed' && session\.completedAt/)
+    assert.match(source, /\.filter\(session => session\.startedAt && session\.workflowStatus === 'completed' && session\.completedAt\)/)
     assert.ok(!source.includes('Math.abs(start.getTime() - created.getTime()) < 10000'), 'Should not contain old timestamp heuristic')
   })
 })
