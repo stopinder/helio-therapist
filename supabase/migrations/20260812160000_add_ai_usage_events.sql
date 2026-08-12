@@ -9,6 +9,7 @@ create table if not exists public.ai_usage_events (
   prompt_version text,
   pricing_version text,
   input_tokens integer not null default 0 check (input_tokens >= 0),
+  cached_input_tokens integer not null default 0 check (cached_input_tokens >= 0),
   output_tokens integer not null default 0 check (output_tokens >= 0),
   total_tokens integer not null default 0 check (total_tokens >= 0),
   estimated_cost_usd numeric(14, 8),
