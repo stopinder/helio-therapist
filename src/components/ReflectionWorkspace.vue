@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <section class="reflection-workspace">
     <header v-if="localView === 'main'" class="reflection-introduction">
       <h1>Reflections</h1>
@@ -101,7 +101,7 @@
             <textarea v-model="summaryDraft" aria-label="Supervision summary" class="w-full min-h-[300px] p-4 border border-border rounded-control bg-surface-muted type-body outline-none focus:border-action-primary" />
             <p v-if="summaryError" class="text-state-error mt-2">{{ summaryError }}</p>
             <footer class="flex justify-between items-center mt-8 pt-6 border-t border-border">
-              <div class="flex gap-2"><button type="button" class="secondary-action" @click="backToReflection">Back</button><button type="button" class="secondary-action" @click="generateSummary">Regenerate draft</button></div>
+              <div class="flex gap-2"><button type="button" class="secondary-action" @click="backToReflection">Back</button><button type="button" class="secondary-action" @click="generateSummary(true)">Regenerate draft</button></div>
               <div class="flex gap-2"><button type="button" class="secondary-action" @click="discardDraft">Discard</button><button type="button" class="primary-action" :disabled="savingSummary || !summaryDraft.trim()" @click="saveSummary">{{ savingSummary ? 'Saving…' : 'Save summary' }}</button></div>
             </footer>
           </div>
@@ -182,15 +182,15 @@ function summariseFromDetail(reflection) { if (!canSummariseText(reflection.body
 function openDetail(reflection) { selectedReflection.value = reflection; detailStage.value = 'reflection'; document.body.style.overflow = 'hidden' }
 function closeDetail() { selectedReflection.value = null; summaryReflection.value = null; summaryDraft.value = ''; summaryGeneratedContent.value = ''; summaryError.value = ''; detailStage.value = 'reflection'; document.body.style.overflow = '' }
 async function safeParseJson(response) { const contentType = response.headers.get('content-type') || ''; if (!contentType.includes('application/json')) return null; try { return await response.json() } catch { return null } }
-async function generateSummary() {
+async function generateSummary(forceRegenerate = false) {
   if (!summaryReflection.value || generatingSummary.value) return
   generatingSummary.value = true; summaryError.value = ''; detailStage.value = 'generating'
   try {
-    const response = await authenticatedFetch('/api/ai/supervision-summary', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ reflection: summaryReflection.value.body }) })
+    const response = await authenticatedFetch('/api/ai/supervision-summary', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ reflectionId: summaryReflection.value.id, forceRegenerate }) })
     const data = await safeParseJson(response)
-    if (!response.ok) throw new Error(data?.error || `Server error (${response.status}). Please try again later.`)
+    if (!response.ok) throw new Error(data?.error?.message || data?.error || `Server error (${response.status}). Please try again later.`)
     if (!data?.success || typeof data.summary !== 'string') throw new Error('The server returned an invalid summary response.')
-    summaryGeneratedContent.value = data.summary; summaryDraft.value = data.summary; summaryReflection.value.pendingMetadata = { model: data.model, promptVersion: data.promptVersion }; detailStage.value = 'summary'
+    summaryGeneratedContent.value = data.summary; summaryDraft.value = data.summary; summaryReflection.value.pendingMetadata = { model: data.model, promptVersion: data.promptVersion, modelPolicyVersion: data.modelPolicyVersion, reused: data.reused === true }; detailStage.value = 'summary'
   } catch (error) { summaryError.value = error.message || 'The draft could not be prepared. Your reflection was not changed.' } finally { generatingSummary.value = false }
 }
 async function saveSummary() {
