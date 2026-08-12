@@ -2,8 +2,6 @@ import { requireAuthenticatedUser, getSupabaseUserClient } from '../_lib/supabas
 import { AI_FEATURES, runTextAI } from '../_lib/ai-execution.js';
 import { aiRephraseSystemPrompt, validateAIRephraseResponse } from '../_lib/ai-rephrase.js';
 
-const AI_REPHRASE_PROMPT_VERSION = 'ai-rephrase-v1';
-
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     res.setHeader('Allow', 'POST');
@@ -28,32 +26,31 @@ export default async function handler(req, res) {
     if (!reflection.body.includes(excerpt)) {
       return res.status(400).json({ success: false, error: { code: 'INVALID_EXCERPT', message: 'Excerpt not found in reflection body' } });
     }
-    if (!process.env.OPENAI_API_KEY) {
-      return res.status(503).json({ success: false, error: { code: 'SERVICE_UNAVAILABLE', message: 'AI reflection support is temporarily unavailable.' } });
-    }
 
     const promptInput = `Original excerpt: "${excerpt}"\n\nInstruction: ${instruction || 'Suggest a clearer version while keeping the original intent.'}`;
     const { completion } = await runTextAI({
       feature: AI_FEATURES.REFLECTION_REPHRASE,
       userId: user.id,
-      promptVersion: AI_REPHRASE_PROMPT_VERSION,
       messages: [
         { role: 'system', content: aiRephraseSystemPrompt },
         { role: 'user', content: promptInput }
       ],
       responseFormat: { type: 'json_object' },
       temperature: 0.7,
-      maxTokens: 1000,
-      timeout: 20000
+      maxTokens: 1000
     });
 
     const aiOutput = validateAIRephraseResponse(completion.choices?.[0]?.message?.content);
-    if (!aiOutput) return res.status(502).json({ success: false, error: { code: 'INVALID_AI_RESPONSE', message: 'AI reflection support is temporarily unavailable.' } });
-    console.log(`[AI Rephrase] Success: tokens=${completion.usage?.total_tokens || 0}`);
+    if (!aiOutput) {
+      return res.status(502).json({ success: false, error: { code: 'INVALID_AI_RESPONSE', message: 'AI reflection support is temporarily unavailable.' } });
+    }
     return res.status(200).json({ success: true, data: aiOutput });
   } catch (error) {
     if (error.name === 'OpenAIConnectionTimeoutError' || error.status === 504) {
       return res.status(504).json({ success: false, error: { code: 'GATEWAY_TIMEOUT', message: 'AI reflection support is temporarily unavailable. Your reflection has not been changed.' } });
+    }
+    if (error.code === 'AI_PROVIDER_NOT_CONFIGURED') {
+      return res.status(503).json({ success: false, error: { code: 'SERVICE_UNAVAILABLE', message: 'AI reflection support is temporarily unavailable.' } });
     }
     console.error('[AI Rephrase] Error:', error.message);
     const status = error.status || 500;
