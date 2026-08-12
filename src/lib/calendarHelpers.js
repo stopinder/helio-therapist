@@ -15,9 +15,19 @@ export function isValidId(id) {
  * Determines if a session is eligible to be started.
  */
 export function isEligibleForStart(session) {
-  return isValidId(session.id) && 
-         isValidId(session.clientId) && 
+  return isValidId(session.id) &&
+         isValidId(session.clientId) &&
          !['completed', 'cancelled'].includes(session.status)
+}
+
+/**
+ * Determines if an operational appointment can explicitly start/resume a Helios session.
+ */
+export function isAppointmentEligibleForStart(appointment) {
+  return isValidId(appointment?.id) &&
+         isValidId(appointment?.client_id) &&
+         ['scheduled', 'rescheduled'].includes(appointment?.status) &&
+         Boolean(appointment?.starts_at)
 }
 
 /**
@@ -46,32 +56,32 @@ export function getViewRange(date, viewMode) {
     end.setDate(end.getDate() + 1)
     return { start, end }
   }
-  
+
   if (viewMode === 'week') {
     const start = getStartOfWeek(date)
     const end = new Date(start)
     end.setDate(end.getDate() + 7)
     return { start, end }
   }
-  
+
   if (viewMode === 'month') {
     const year = date.getFullYear()
     const month = date.getMonth()
     const firstOfMonth = new Date(year, month, 1)
-    
+
     // Start from the Monday of the first week
     let firstDayIdx = firstOfMonth.getDay()
     firstDayIdx = firstDayIdx === 0 ? 6 : firstDayIdx - 1
     const start = new Date(firstOfMonth)
     start.setDate(firstOfMonth.getDate() - firstDayIdx)
     start.setHours(0, 0, 0, 0)
-    
+
     // Month grid is always 6 rows (42 days)
     const end = new Date(start)
     end.setDate(end.getDate() + 42)
     return { start, end }
   }
-  
+
   return { start: date, end: date }
 }
 
@@ -117,7 +127,7 @@ export function getEventStyle(event, overlappingData = { column: 0, totalColumns
 export function getOverlappingGroups(events) {
   const sorted = [...events].sort((a, b) => a.start - b.start)
   const groups = []
-  
+
   sorted.forEach(event => {
     let placed = false
     for (const group of groups) {
@@ -131,7 +141,7 @@ export function getOverlappingGroups(events) {
       groups.push([event])
     }
   })
-  
+
   const eventStyles = {}
   groups.forEach(group => {
     const columns = []
@@ -143,7 +153,7 @@ export function getOverlappingGroups(events) {
       if (!columns[columnIndex]) columns[columnIndex] = []
       columns[columnIndex].push(event)
     })
-    
+
     group.forEach(event => {
       let colIdx = columns.findIndex(col => col.includes(event))
       eventStyles[event.id] = {
@@ -152,7 +162,7 @@ export function getOverlappingGroups(events) {
       }
     })
   })
-  
+
   return eventStyles
 }
 
@@ -162,23 +172,23 @@ export function getOverlappingGroups(events) {
 export function getMiniCalendarCells(viewDate, selectedDate) {
   const year = viewDate.getFullYear()
   const month = viewDate.getMonth()
-  
+
   const firstDayOfMonth = new Date(year, month, 1)
   const lastDayOfMonth = new Date(year, month + 1, 0)
-  
+
   // getDay() is 0 (Sun) to 6 (Sat)
   // We want Monday (1) to be first
   let firstDayIdx = firstDayOfMonth.getDay()
   firstDayIdx = firstDayIdx === 0 ? 6 : firstDayIdx - 1
-  
+
   const cells = []
   const today = new Date()
-  
+
   // Leading blanks
   for (let i = 0; i < firstDayIdx; i++) {
     cells.push({ key: `blank-start-${i}`, date: null })
   }
-  
+
   // Month days
   for (let d = 1; d <= lastDayOfMonth.getDate(); d++) {
     const date = new Date(year, month, d)
@@ -189,7 +199,7 @@ export function getMiniCalendarCells(viewDate, selectedDate) {
       isSelected: isSameDay(date, selectedDate)
     })
   }
-  
+
   // Trailing blanks to complete the last week
   const remaining = 7 - (cells.length % 7)
   if (remaining < 7) {
@@ -197,13 +207,13 @@ export function getMiniCalendarCells(viewDate, selectedDate) {
       cells.push({ key: `blank-end-${i}`, date: null })
     }
   }
-  
+
   return cells
 }
 
 export function isSameDay(a, b) {
-  return a && b && 
-         a.getFullYear() === b.getFullYear() && 
-         a.getMonth() === b.getMonth() && 
+  return a && b &&
+         a.getFullYear() === b.getFullYear() &&
+         a.getMonth() === b.getMonth() &&
          a.getDate() === b.getDate()
 }
