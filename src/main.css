@@ -8,62 +8,68 @@ html {
     font-family: 'Inter', system-ui, sans-serif;
     background: var(--surface-canvas);
     color: var(--text-primary);
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
 }
 
+body { background: var(--surface-canvas); }
+
 :root {
-    /* Semantic surface, boundary, and elevation hierarchy. */
-    --surface-canvas: #f6f4f0;
-    --surface: #fbfaf7;
-    --surface-muted: #f0ede7;
-    --surface-subtle: #f8f6f2;
-    --surface-elevated: #ffffff;
-    --surface-overlay: #fefdfb;
-    --text-primary: #292a28;
-    --text-secondary: #4d4b46;
-    --text-muted: #746f67;
-    --text-subtle: #9b958b;
-    --text-on-action: #ffffff;
-    --action-primary: #4e625b;
-    --action-primary-hover: #40544d;
-    --action-link: #5a746a;
-    --action-link-hover: #405c52;
-    --border: #d8d3ca;
-    --border-muted: #e8e4dd;
-    --border-strong: #beb8ae;
-    --shadow-elevated: 0 1px 2px rgb(52 46 37 / 0.03), 0 6px 18px rgb(52 46 37 / 0.04);
-    --shadow-overlay: 0 10px 30px rgb(52 46 37 / 0.08), 0 28px 72px rgb(52 46 37 / 0.08);
-    /* Semantic interaction states. Component code must refer to roles, not
-       invent a new blue/grey/red for each control. */
-    --state-hover: #eeece6;
-    --state-active: #e4e0d8;
-    --state-selected: #e4ebe5;
-    --state-focus-ring: #476e60;
+    /* Helios warm-neutral foundation: quiet enough for long clinical work,
+       distinctive enough to feel like a considered practice environment. */
+    --surface-canvas: #f5f1e9;
+    --surface: #fbf8f2;
+    --surface-muted: #eee8de;
+    --surface-subtle: #f8f4ed;
+    --surface-elevated: #fffdf8;
+    --surface-overlay: #fffdf9;
+    --text-primary: #262a26;
+    --text-secondary: #4f514b;
+    --text-muted: #747269;
+    --text-subtle: #969187;
+    --text-on-action: #fffdf8;
+    --action-primary: #536f5d;
+    --action-primary-hover: #435d4d;
+    --action-link: #557363;
+    --action-link-hover: #3f5b4c;
+    --border: #d9d2c6;
+    --border-muted: #e8e1d6;
+    --border-strong: #bfb6a8;
+    --shadow-elevated: 0 1px 2px rgb(61 51 38 / 0.03), 0 8px 24px rgb(61 51 38 / 0.055);
+    --shadow-overlay: 0 12px 34px rgb(61 51 38 / 0.10), 0 30px 80px rgb(61 51 38 / 0.10);
+    --state-hover: #eee9df;
+    --state-active: #e5ded2;
+    --state-selected: #e1e8df;
+    --state-focus-ring: #3f6a55;
     --state-disabled: #aaa399;
     --state-loading: #746f67;
-    --state-success: #3d7160;
-    --state-warning: #9a641b;
-    --state-danger: #a7453f;
-    --state-recording: #a7453f;
+    --state-success: #47725c;
+    --state-warning: #9a681f;
+    --state-danger: #a34a43;
+    --state-recording: #a34a43;
     --state-ai-working: #667367;
-    --state-success-surface: #edf5ef;
-    --state-warning-surface: #faf4e8;
-    --state-danger-surface: #fbefed;
-    --surface-reflection: #f7f2e9;
-    --surface-reflection-hover: #f1eadf;
-    --border-reflection: #e2d7c6;
-    --border-reflection-tag: #e7d0ad;
-    --state-reflection-focus: #9b7a49;
-    --surface-sidebar: #f9f7f3;
-    --surface-avatar: #e4ddd2;
-    --surface-backdrop: rgb(40 38 34 / 0.38);
-    --radius-control: 0.5rem;
-    --radius-panel: 0.75rem;
+    --state-success-surface: #edf4ed;
+    --state-warning-surface: #faf2e3;
+    --state-danger-surface: #faeeeb;
+    --surface-reflection: #f6efe3;
+    --surface-reflection-hover: #efe5d6;
+    --border-reflection: #dfd0bb;
+    --border-reflection-tag: #dfbd86;
+    --state-reflection-focus: #9c753d;
+    --surface-sidebar: #f8f4ec;
+    --surface-avatar: #dce5da;
+    --surface-backdrop: rgb(43 39 33 / 0.42);
+    --brand-amber: #c78b2b;
+    --brand-amber-soft: #f4e7cd;
+    --brand-sage-soft: #dfe7dd;
+    --radius-control: 0.625rem;
+    --radius-panel: 0.875rem;
     --radius-pill: 9999px;
     --control-target: 2.75rem;
     --motion-fast: 100ms;
-    --motion-standard: 150ms;
-    --motion-slow: 200ms;
-    --motion-ease: ease-out;
+    --motion-standard: 160ms;
+    --motion-slow: 220ms;
+    --motion-ease: cubic-bezier(.2,.8,.2,1);
     --space-inline-xs: 0.25rem;
     --space-inline-sm: 0.5rem;
     --space-inline-md: 0.75rem;
@@ -74,45 +80,40 @@ html {
     --space-stack-lg: 1rem;
     --space-stack-xl: 1.5rem;
     --space-stack-2xl: 2rem;
-    --space-section: 2.5rem;
+    --space-section: 2.75rem;
     --space-page: 1rem;
 }
 
-@media (min-width: 768px) {
-    :root { --space-page: 2rem; }
-}
+@media (min-width: 768px) { :root { --space-page: 2.25rem; } }
+@media (min-width: 1280px) { :root { --space-page: 2.75rem; } }
 
 @layer components {
-    /* Helio's only type scale. The weight is part of the semantic role. */
-    .type-display { @apply font-serif text-display font-semibold; }
-    .type-h1 { @apply font-serif text-h1 font-semibold; }
-    .type-h2 { @apply font-serif text-h2 font-semibold; }
+    .type-display { @apply font-serif text-display font-semibold; letter-spacing: -0.035em; }
+    .type-h1 { @apply font-serif text-h1 font-semibold; letter-spacing: -0.025em; }
+    .type-h2 { @apply font-serif text-h2 font-semibold; letter-spacing: -0.015em; }
     .type-h3 { @apply font-sans text-h3 font-semibold; }
     .type-body { @apply font-sans text-body font-normal; }
     .type-body-medium { @apply font-sans text-body font-medium; }
     .type-body-long { @apply font-sans text-body-long font-normal; }
     .type-body-sm { @apply font-sans text-body-sm font-normal; }
     .type-caption { @apply font-sans text-caption font-medium; }
-    .type-overline { @apply font-sans text-overline font-semibold uppercase tracking-[0.08em]; }
+    .type-overline { @apply font-sans text-overline font-semibold uppercase; letter-spacing: .11em; }
 
-    /* Layout primitives for page-level and panel-level rhythm. */
     .page-layout { @apply p-page; }
     .page-section { margin-top: var(--space-section); }
     .card-standard { padding: var(--space-stack-xl); }
     .card-compact { padding: var(--space-stack-lg); }
-    .surface-card { @apply rounded-panel border border-border-muted bg-surface; }
+    .surface-card { @apply rounded-panel border border-border-muted bg-surface; box-shadow: var(--shadow-elevated); }
     .surface-panel { @apply rounded-panel border border-border-muted bg-surface; }
     .control-surface { @apply border border-border bg-surface-elevated hover:border-border-strong focus-visible:outline-none; }
     .control-field { @apply w-full rounded-control border border-border bg-surface-elevated px-inline-md py-stack-sm type-body focus-visible:outline-none; }
-    .button-secondary { @apply min-h-touch rounded-control border border-border bg-surface-elevated px-inline-lg py-stack-sm type-body-medium text-ink-secondary interaction-control; }
-    .button-primary { @apply min-h-touch rounded-control bg-action-primary px-inline-lg py-stack-sm type-body-medium text-on-action interaction-control hover:bg-action-primary-hover; }
+    .button-secondary { @apply min-h-touch rounded-control border border-border bg-surface-elevated px-inline-lg py-stack-sm type-body-medium text-ink-secondary interaction-control; box-shadow: 0 1px 1px rgb(61 51 38 / .025); }
+    .button-primary { @apply min-h-touch rounded-control bg-action-primary px-inline-lg py-stack-sm type-body-medium text-on-action interaction-control hover:bg-action-primary-hover; box-shadow: 0 1px 2px rgb(43 63 51 / .16); }
     .dialog-surface { @apply rounded-panel border border-border bg-surface-overlay shadow-overlay; }
 
-    /* Shared interaction primitives. They provide the same quiet response for
-       controls and rows without assigning workflow-specific meaning. */
-    .interaction-control { transition: background-color var(--motion-standard) var(--motion-ease), border-color var(--motion-standard) var(--motion-ease), color var(--motion-standard) var(--motion-ease), opacity var(--motion-fast) var(--motion-ease); }
+    .interaction-control { transition: background-color var(--motion-standard) var(--motion-ease), border-color var(--motion-standard) var(--motion-ease), color var(--motion-standard) var(--motion-ease), opacity var(--motion-fast) var(--motion-ease), transform var(--motion-fast) var(--motion-ease); }
     .interaction-control:hover:not(:disabled) { background-color: var(--state-hover); }
-    .interaction-control:active:not(:disabled) { background-color: var(--state-active); }
+    .interaction-control:active:not(:disabled) { background-color: var(--state-active); transform: translateY(1px); }
     .interaction-row { transition: background-color var(--motion-standard) var(--motion-ease), border-color var(--motion-standard) var(--motion-ease); }
     .interaction-row:hover { background-color: var(--state-hover); }
     .state-selected { background-color: var(--state-selected); }
@@ -123,68 +124,31 @@ html {
     .status-warning { color: var(--state-warning); }
     .status-danger { color: var(--state-danger); }
     .empty-state-standard { text-align: center; padding: var(--space-stack-2xl); color: var(--text-muted); }
+    .brand-mark { color: var(--brand-amber); }
+    .brand-accent-surface { background: var(--brand-amber-soft); }
 
-    .animate-expandIn {
-        animation: expandIn var(--motion-slow) var(--motion-ease);
-    }
-
-    .animate-fadeUp {
-        animation: fadeUp var(--motion-standard) var(--motion-ease);
-    }
+    .animate-expandIn { animation: expandIn var(--motion-slow) var(--motion-ease); }
+    .animate-fadeUp { animation: fadeUp var(--motion-standard) var(--motion-ease); }
 }
 
-@keyframes expandIn {
-    from { opacity: 0; transform: scale(0.98) translateY(10px); }
-    to { opacity: 1; transform: scale(1) translateY(0); }
-}
+@keyframes expandIn { from { opacity: 0; transform: scale(0.98) translateY(10px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-@keyframes fadeUp {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
-}
+.editorial-heading { font-family: 'Newsreader', Georgia, serif; font-weight: 600; letter-spacing: -.02em; }
 
-/* Editorial type is reserved for orientation: page titles, client names, and
-   major section headings. Forms, navigation, notes, and controls stay Inter. */
-.editorial-heading { font-family: 'Newsreader', Georgia, serif; font-weight: 600; }
-
-/* One keyboard focus treatment across the app. :focus-visible prevents the
-   ring appearing after ordinary mouse use, while the offset preserves it on
-   both canvas and raised surfaces. */
 :where(button, a[href], input, select, textarea, summary, [tabindex]:not([tabindex="-1"])):focus-visible {
     outline: 2px solid var(--state-focus-ring) !important;
-    outline-offset: 2px;
+    outline-offset: 3px;
     box-shadow: none;
 }
 
-:where(button, input, select, textarea):disabled,
-[aria-disabled="true"] {
-    cursor: not-allowed;
-    opacity: .55;
-    color: var(--state-disabled);
-}
+:where(button, input, select, textarea):disabled, [aria-disabled="true"] { cursor: not-allowed; opacity: .55; color: var(--state-disabled); }
 
 @media (prefers-reduced-motion: reduce) {
-    *, *::before, *::after {
-        animation-duration: 1ms !important;
-        animation-iteration-count: 1 !important;
-        scroll-behavior: auto !important;
-        transition-duration: 1ms !important;
-    }
-}
-/* Therapist workspace sidebar buttons */
-.sidebar-btn {
-    @apply w-full text-left text-body px-3 py-2 rounded-control transition-colors;
-    @apply text-ink-secondary hover:bg-surface-subtle focus-visible:outline-none;
+    *, *::before, *::after { animation-duration: 1ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; transition-duration: 1ms !important; }
 }
 
-.sidebar-btn.primary {
-    @apply bg-action-primary text-on-action hover:bg-action-primary-hover;
-}
-
-.sidebar-section {
-    @apply mt-4 border-t border-border-muted pt-3;
-}
-
-.sidebar-section-title {
-    @apply type-overline text-ink-muted mb-2 px-inline-md;
-}
+.sidebar-btn { @apply w-full text-left text-body px-3 py-2 rounded-control transition-colors text-ink-secondary hover:bg-surface-subtle focus-visible:outline-none; }
+.sidebar-btn.primary { @apply bg-action-primary text-on-action hover:bg-action-primary-hover; }
+.sidebar-section { @apply mt-4 border-t border-border-muted pt-3; }
+.sidebar-section-title { @apply type-overline text-ink-muted mb-2 px-inline-md; }
