@@ -1,5 +1,6 @@
 import { requireAuthenticatedUser } from '../_lib/supabase.js'
 import { AI_FEATURES, runTextAI } from '../_lib/ai-execution.js'
+import { AI_MODEL_POLICY_VERSION, findReusableSupervisionArtifact, hashArtifactSource, persistGeneratedSupervisionArtifact } from '../_lib/ai-artifacts.js'
 import {
   SUPERVISION_SUMMARY_MINIMUM_CHARACTERS,
   SUPERVISION_SUMMARY_PROMPT_VERSION,
@@ -17,10 +18,36 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { user } = await requireAuthenticatedUser(req)
+    const { supabase, user } = await requireAuthenticatedUser(req)
     const reflection = normaliseReflection(req.body?.reflection)
     if (!canSummariseReflection(reflection)) {
       return res.status(422).json({ success: false, error: { code: 'REFLECTION_TOO_SHORT', message: `Please write a little more before creating a summary (${SUPERVISION_SUMMARY_MINIMUM_CHARACTERS} characters).` } })
+    }
+
+    // Summary generation is only reusable for an already-persisted, owned source.
+    // This keeps cache identity tied to the canonical private reflection rather than
+    // trusting an arbitrary browser-supplied cache key.
+    const { data: reflectionRecord, error: reflectionError } = await supabase
+      .from('private_reflections')
+      .select('id, body')
+      .eq('user_id', user.id)
+      .eq('body', req.body?.reflection)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+    if (reflectionError) throw reflectionError
+
+    const sourceHash = reflectionRecord ? hashArtifactSource(normaliseReflection(reflectionRecord.body)) : null
+    if (reflectionRecord && req.body?.forceRegenerate !== true) {
+      const reusable = await findReusableSupervisionArtifact(supabase, {
+        reflectionId: reflectionRecord.id,
+        sourceHash,
+        promptVersion: SUPERVISION_SUMMARY_PROMPT_VERSION
+      })
+      const cachedContent = validateSupervisionSummary(reusable?.generated_content)
+      if (cachedContent) {
+        return res.status(200).json({ success: true, summary: cachedContent, model: reusable.model, promptVersion: SUPERVISION_SUMMARY_PROMPT_VERSION, modelPolicyVersion: AI_MODEL_POLICY_VERSION, generatedFor: user.id, reused: true })
+      }
     }
 
     const { completion, model } = await runTextAI({
@@ -39,7 +66,18 @@ export default async function handler(req, res) {
       return res.status(502).json({ success: false, error: { code: 'INVALID_AI_RESPONSE', message: 'The draft could not be prepared safely. Please try again.' } })
     }
 
-    return res.status(200).json({ success: true, summary: content, model, promptVersion: SUPERVISION_SUMMARY_PROMPT_VERSION, generatedFor: user.id })
+    if (reflectionRecord) {
+      await persistGeneratedSupervisionArtifact(supabase, {
+        reflectionId: reflectionRecord.id,
+        userId: user.id,
+        generatedContent: content,
+        model,
+        promptVersion: SUPERVISION_SUMMARY_PROMPT_VERSION,
+        sourceHash
+      })
+    }
+
+    return res.status(200).json({ success: true, summary: content, model, promptVersion: SUPERVISION_SUMMARY_PROMPT_VERSION, modelPolicyVersion: AI_MODEL_POLICY_VERSION, generatedFor: user.id, reused: false })
   } catch (error) {
     if (error.code === 'AI_PROVIDER_NOT_CONFIGURED') {
       return res.status(503).json({ success: false, error: { code: 'SERVICE_UNAVAILABLE', message: 'Summary generation is not available right now. Please try again later.' } })
