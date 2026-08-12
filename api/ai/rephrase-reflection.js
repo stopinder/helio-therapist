@@ -1,6 +1,6 @@
 import { requireAuthenticatedUser, getSupabaseUserClient } from '../_lib/supabase.js';
 import { AI_FEATURES, runTextAI } from '../_lib/ai-execution.js';
-import { aiRephraseSystemPrompt, validateAIRephraseResponse } from '../_lib/ai-rephrase.js';
+import { AI_REPHRASE_PROMPT_VERSION, aiRephraseSystemPrompt, validateAIRephraseResponse } from '../_lib/ai-rephrase.js';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -31,6 +31,7 @@ export default async function handler(req, res) {
     const { completion } = await runTextAI({
       feature: AI_FEATURES.REFLECTION_REPHRASE,
       userId: user.id,
+      promptVersion: AI_REPHRASE_PROMPT_VERSION,
       messages: [
         { role: 'system', content: aiRephraseSystemPrompt },
         { role: 'user', content: promptInput }
