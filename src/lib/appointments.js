@@ -9,7 +9,7 @@ export async function listClientAppointments({ clientId }) {
   const client = requireSupabase()
   const { data, error } = await client
     .from('appointments')
-    .select('id,client_id,status,starts_at,ends_at,timezone')
+    .select('id,client_id,status,starts_at,ends_at,timezone,zoom_meeting_id')
     .eq('client_id', clientId)
     .in('status', ['scheduled', 'rescheduled'])
     .not('starts_at', 'is', null)
