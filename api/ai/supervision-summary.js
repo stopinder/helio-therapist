@@ -22,20 +22,16 @@ export default async function handler(req, res) {
     if (!canSummariseReflection(reflection)) {
       return res.status(422).json({ success: false, error: { code: 'REFLECTION_TOO_SHORT', message: `Please write a little more before creating a summary (${SUPERVISION_SUMMARY_MINIMUM_CHARACTERS} characters).` } })
     }
-    if (!process.env.OPENAI_API_KEY) {
-      console.error('[Supervision Summary] OPENAI_API_KEY is missing')
-      return res.status(503).json({ success: false, error: { code: 'SERVICE_UNAVAILABLE', message: 'Summary generation is not available right now. Please try again later.' } })
-    }
 
     const { completion, model } = await runTextAI({
       feature: AI_FEATURES.SUPERVISION_SUMMARY,
       userId: user.id,
       promptVersion: SUPERVISION_SUMMARY_PROMPT_VERSION,
+      temperature: 0.2,
       messages: [
         { role: 'system', content: supervisionSummarySystemPrompt },
         { role: 'user', content: buildReflectionInput(reflection) }
-      ],
-      temperature: 0.2
+      ]
     })
     const content = validateSupervisionSummary(completion.choices?.[0]?.message?.content)
     if (!content) {
@@ -45,6 +41,9 @@ export default async function handler(req, res) {
 
     return res.status(200).json({ success: true, summary: content, model, promptVersion: SUPERVISION_SUMMARY_PROMPT_VERSION, generatedFor: user.id })
   } catch (error) {
+    if (error.code === 'AI_PROVIDER_NOT_CONFIGURED') {
+      return res.status(503).json({ success: false, error: { code: 'SERVICE_UNAVAILABLE', message: 'Summary generation is not available right now. Please try again later.' } })
+    }
     console.error('[Supervision Summary] Error:', error.message, error.stack)
     const status = error.status || 500
     return res.status(status).json({ success: false, error: { code: status === 401 ? 'UNAUTHORIZED' : 'SUMMARY_GENERATION_FAILED', message: status === 401 ? 'Please sign in again.' : 'The draft could not be prepared. Your reflection was not changed; please try again.' } })
