@@ -1,0 +1,2 @@
+<template><div class="flex items-end justify-between gap-4"><div><p v-if="eyebrow" class="type-eyebrow text-ink-muted mb-1">{{ eyebrow }}</p><h2 class="type-section-title text-ink">{{ title }}</h2></div><div v-if="$slots.action" class="shrink-0"><slot name="action" /></div></div></template>
+<script setup>defineProps({ title: { type: String, required: true }, eyebrow: { type: String, default: '' } })</script>
