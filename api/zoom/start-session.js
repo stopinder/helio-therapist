@@ -122,9 +122,23 @@ export default async function handler(req, res) {
 
     const linkedMeetingId = await existingSessionMeeting(supabase, user.id, session.id);
     if (linkedMeetingId) {
-      const launch = await resolveZoomHostMeeting(supabase, integration, linkedMeetingId);
-      console.info('[Zoom Start Session] Reusing linked session meeting', { meetingId: linkedMeetingId });
-      return res.status(200).json({ meetingId: launch.meetingId, startUrl: launch.startUrl, source: 'session_link' });
+      try {
+        const launch = await resolveZoomHostMeeting(supabase, integration, linkedMeetingId);
+        console.info('[Zoom Start Session] Reusing linked session meeting', { meetingId: linkedMeetingId });
+        return res.status(200).json({ meetingId: launch.meetingId, startUrl: launch.startUrl, source: 'session_link' });
+      } catch (error) {
+        // Recover only if meeting is specifically stale/invalid (404 or specific Zoom error code)
+        // Zoom error code 3001: Meeting does not exist.
+        const isStale = error.status === 404 || error.zoomCode === 3001 || error.zoomCode === 3000;
+        if (!isStale) throw error;
+        
+        console.warn('[Zoom Start Session] Linked meeting is stale, attempting recovery', { 
+          meetingId: linkedMeetingId, 
+          status: error.status, 
+          zoomCode: error.zoomCode 
+        });
+        // Continue to appointment matching and fresh creation
+      }
     }
 
     const appointment = await matchingAppointmentMeeting(supabase, user.id, client.id, session.occurred_at);

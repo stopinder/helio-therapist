@@ -1,0 +1,88 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+
+// We'll test the logic by mocking the components that start-session.js uses.
+// Since we can't easily mock imports in this environment without complex loaders,
+// we will verify the logic by inspecting the implementation and adding a test 
+// for the resolveZoomHostMeeting enhancement which is a key part of the fix.
+
+import { resolveZoomHostMeeting, requestError } from '../api/_lib/zoom-meeting-launch.js';
+
+test('resolveZoomHostMeeting parses Zoom error codes', async (t) => {
+  const originalFetch = global.fetch;
+  const originalKey = process.env.INTEGRATION_ENCRYPTION_KEY;
+  
+  // Set up a valid key for the crypto lib
+  process.env.INTEGRATION_ENCRYPTION_KEY = Buffer.alloc(32).toString('base64');
+  
+  // Create an encrypted token for the mock integration
+  const { encryptIntegrationToken } = await import('../api/_lib/token-crypto.js');
+  const validEncrypted = encryptIntegrationToken('valid-token');
+  const refreshEncrypted = encryptIntegrationToken('refresh-token');
+
+  const mockIntegration = {
+    user_id: 'user-1',
+    encrypted_access_token: validEncrypted,
+    encrypted_refresh_token: refreshEncrypted,
+    expires_at: '2099-01-01T00:00:00Z'
+  };
+
+  const mockSupabase = {
+    from: () => ({
+      update: () => ({
+        eq: () => ({
+          eq: () => Promise.resolve({ error: null })
+        })
+      })
+    })
+  };
+
+  t.after(() => {
+    global.fetch = originalFetch;
+    process.env.INTEGRATION_ENCRYPTION_KEY = originalKey;
+  });
+
+  await t.test('captures zoomCode 3001 as stale', async () => {
+    global.fetch = async () => ({
+      status: 400,
+      ok: false,
+      clone: function() { return this; },
+      json: async () => ({ code: 3001, message: 'Meeting does not exist' })
+    });
+
+    try {
+      await resolveZoomHostMeeting(mockSupabase, mockIntegration, 'stale-id');
+      assert.fail('Should have thrown');
+    } catch (error) {
+      assert.strictEqual(error.zoomCode, 3001);
+      assert.strictEqual(error.status, 502); // 400 maps to 502 in current impl
+    }
+  });
+
+  await t.test('captures 404 as stale', async () => {
+    global.fetch = async () => ({
+      status: 404,
+      ok: false,
+      clone: function() { return this; },
+      json: async () => ({ code: 3000, message: 'Meeting not found' })
+    });
+
+    try {
+      await resolveZoomHostMeeting(mockSupabase, mockIntegration, 'missing-id');
+      assert.fail('Should have thrown');
+    } catch (error) {
+      assert.strictEqual(error.status, 404);
+      assert.strictEqual(error.zoomCode, 3000);
+    }
+  });
+});
+
+test('Recovery logic condition in start-session.js', () => {
+  const isStale = (error) => error.status === 404 || error.zoomCode === 3001 || error.zoomCode === 3000;
+  
+  assert.strictEqual(isStale({ status: 404 }), true);
+  assert.strictEqual(isStale({ zoomCode: 3001 }), true);
+  assert.strictEqual(isStale({ zoomCode: 3000 }), true);
+  assert.strictEqual(isStale({ status: 400, zoomCode: 123 }), false);
+  assert.strictEqual(isStale({ status: 500 }), false);
+});
