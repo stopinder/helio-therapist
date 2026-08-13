@@ -49,11 +49,15 @@ export async function resolveZoomHostMeeting(supabase, integration, meetingId) {
     }
 
     const status = response.status === 404 ? 404 : (response.status === 403 ? 409 : 502);
-    const message = response.status === 404
+    let message = response.status === 404
       ? 'This Zoom meeting is no longer available.'
       : response.status === 403
         ? 'Zoom needs permission to read this meeting. Reconnect Zoom in Settings.'
         : `Zoom could not load the meeting (${response.status}).`;
+
+    if (zoomError?.code === 4711) {
+      message = 'Zoom needs permission to access this meeting. Reconnect Zoom in Settings.';
+    }
     
     console.warn('[Zoom Meeting Launch] Meeting lookup unavailable', { 
       meetingId: String(meetingId), 
@@ -64,7 +68,7 @@ export async function resolveZoomHostMeeting(supabase, integration, meetingId) {
     });
 
     const error = new Error(message);
-    error.status = status;
+    error.status = zoomError?.code === 4711 ? 409 : status;
     if (zoomError) {
       error.zoomCode = zoomError.code;
       error.zoomMessage = zoomError.message;

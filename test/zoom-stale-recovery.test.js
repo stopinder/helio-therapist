@@ -6,7 +6,23 @@ import assert from 'node:assert/strict';
 // we will verify the logic by inspecting the implementation and adding a test 
 // for the resolveZoomHostMeeting enhancement which is a key part of the fix.
 
-import { resolveZoomHostMeeting, requestError } from '../api/_lib/zoom-meeting-launch.js';
+import { resolveZoomHostMeeting } from '../api/_lib/zoom-meeting-launch.js';
+import { buildZoomAuthorizationUrl } from '../api/zoom/authorize.js';
+
+test('buildZoomAuthorizationUrl requests meeting:read:meeting', () => {
+  const url = buildZoomAuthorizationUrl({
+    clientId: 'client-123',
+    redirectUri: 'https://app.com/callback',
+    state: 'state-abc'
+  });
+  
+  const parsed = new URL(url);
+  assert.strictEqual(parsed.origin, 'https://zoom.us');
+  assert.strictEqual(parsed.pathname, '/oauth/authorize');
+  assert.strictEqual(parsed.searchParams.get('client_id'), 'client-123');
+  assert.strictEqual(parsed.searchParams.get('scope'), 'meeting:read:meeting');
+  assert.strictEqual(parsed.searchParams.get('include_granted_scopes'), 'true');
+});
 
 test('resolveZoomHostMeeting parses Zoom error codes', async (t) => {
   const originalFetch = global.fetch;
@@ -73,6 +89,24 @@ test('resolveZoomHostMeeting parses Zoom error codes', async (t) => {
     } catch (error) {
       assert.strictEqual(error.status, 404);
       assert.strictEqual(error.zoomCode, 3000);
+    }
+  });
+
+  await t.test('captures scope error 4711 as 409', async () => {
+    global.fetch = async () => ({
+      status: 400,
+      ok: false,
+      clone: function() { return this; },
+      json: async () => ({ code: 4711, message: 'Invalid access token, does not contain scopes' })
+    });
+
+    try {
+      await resolveZoomHostMeeting(mockSupabase, mockIntegration, 'scope-error-id');
+      assert.fail('Should have thrown');
+    } catch (error) {
+      assert.strictEqual(error.status, 409);
+      assert.strictEqual(error.zoomCode, 4711);
+      assert.match(error.message, /Reconnect Zoom in Settings/);
     }
   });
 });

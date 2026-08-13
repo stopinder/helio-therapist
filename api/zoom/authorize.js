@@ -1,6 +1,18 @@
 import crypto from 'crypto';
 import { requireAuthenticatedUser } from '../_lib/supabase.js';
 
+export function buildZoomAuthorizationUrl({ clientId, redirectUri, state }) {
+  const params = new URLSearchParams({
+    response_type: 'code',
+    client_id: clientId,
+    redirect_uri: redirectUri,
+    state,
+    scope: 'meeting:read:meeting',
+    include_granted_scopes: 'true'
+  });
+  return `https://zoom.us/oauth/authorize?${params.toString()}`;
+}
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
   try {
@@ -16,9 +28,7 @@ export default async function handler(req, res) {
       expires_at: new Date(Date.now() + 10 * 60 * 1000).toISOString()
     });
     if (error) throw error;
-    return res.status(200).json({ url: 'https://zoom.us/oauth/authorize?' + new URLSearchParams({
-      response_type: 'code', client_id: clientId, redirect_uri: redirectUri, state
-    }) });
+    return res.status(200).json({ url: buildZoomAuthorizationUrl({ clientId, redirectUri, state }) });
   } catch (error) {
     console.error('[Zoom Authorize]', error.message);
     return res.status(error.status || 500).json({ error: error.status === 401 ? error.message : 'Unable to start Zoom connection' });
