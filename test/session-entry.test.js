@@ -2,17 +2,25 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 
-test('Client Workspace session entry exposes safe loading, failure, and retry behaviour', async () => {
+test('Client Workspace session entry behavior', async () => {
   const header = await readFile(new URL('../src/components/workspace/ClientWorkspaceHeader.vue', import.meta.url), 'utf8')
-  assert.match(header, /const openingSession = ref\(false\)/)
-  assert.match(header, /const sessionOpenError = ref\(''\)/)
-  assert.match(header, /if \(props\.client\.archived \|\| openingSession\.value\) return/)
-  assert.match(header, /:disabled="openingSession"/)
-  assert.match(header, /:aria-busy="openingSession"/)
-  assert.match(header, /Opening session…/)
-  assert.match(header, /Couldn’t open the session workspace\. Please try again\./)
-  assert.match(header, /await router\.push/)
-  assert.match(header, /finally \{\s*openingSession\.value = false/)
+  const workspace = await readFile(new URL('../src/views/ClientWorkspace.vue', import.meta.url), 'utf8')
+  
+  // ClientWorkspaceHeader shows Start Session and manages busy state
+  assert.match(header, /:disabled="sessionBusy"/)
+  assert.match(header, /@click="\$emit\('start-session'\)"/)
+  assert.match(header, /Starting…/)
+  assert.match(header, /Start Session/)
+
+  // ClientWorkspace handles session creation and errors
+  assert.match(workspace, /const\s+sessionBusy\s*=\s*ref\(false\)/)
+  assert.match(workspace, /const\s+sessionError\s*=\s*ref\(['"]['"]\)/)
+  assert.match(workspace, /async\s+function\s+startSession\(\)/)
+  assert.match(workspace, /sessionBusy\.value\s*=\s*true/)
+  assert.match(workspace, /await\s+createOrResumeSession/)
+  assert.match(workspace, /sessionError\.value\s*=\s*e\?\.code\s*===\s*['"]CLIENT_ARCHIVED['"]/)
+  assert.match(workspace, /Couldn’t start the session\. Please try again\./)
+  assert.match(workspace, /finally\s*{\s*sessionBusy\.value\s*=\s*false/)
 })
 
 test('Session create or resume rejects archived clients before touching sessions', async () => {

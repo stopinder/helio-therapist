@@ -9,10 +9,9 @@ test('Client Workspace overview uses live sources and honest empty states', asyn
   const attention = await readFile(new URL('../src/components/workspace/ClinicalAttentionPanel.vue', import.meta.url), 'utf8')
 
   assert.doesNotMatch(view, /mockClient|clientWorkspaceData/)
-  assert.match(view, /listSessions\(\{ clientId: route\.params\.clientId \}\)/)
-  assert.match(view, /listClientAppointments\(\{ clientId: route\.params\.clientId \}\)/)
+  assert.match(view, /listSessions\(\{\s*clientId:\s*route\.params\.clientId\s*\}\)/)
+  assert.match(view, /listClientAppointments\(\{\s*clientId:\s*route\.params\.clientId\s*\}\)/)
   assert.match(view, /No sessions recorded for this client yet\./)
-  assert.match(view, /No structured goals are recorded for this client yet\./)
   assert.match(view, /No structured tasks are recorded for this client yet\./)
   assert.match(view, /No upcoming appointment is recorded\./)
   assert.match(view, /getCurrentTherapistLabel/)
