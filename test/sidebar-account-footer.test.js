@@ -19,8 +19,9 @@ test('sidebar account identity is dynamic and therapist-owned', () => {
 test('navigation scrolls independently above a compact account footer', () => {
   assert.match(shell, /flex-1 min-h-0 overflow-y-auto/)
   assert.match(shell, /shrink-0 border-t border-border-muted px-3 py-2 bg-sidebar/)
-  assert.match(shell, /h-7 w-7 rounded-pill/)
-  assert.match(shell, /py-1\.5/)
+  assert.match(shell, /w-full min-h-touch flex items-center/)
+  assert.match(shell, /aria-expanded/)
+  assert.match(shell, /aria-haspopup':'menu'/)
   assert.match(shell, /Settings/)
   assert.match(shell, /Sign out/)
 })
