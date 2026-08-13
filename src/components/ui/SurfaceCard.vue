@@ -1,0 +1,2 @@
+<template><component :is="as" :class="[tone === 'raised' ? 'surface-card' : tone === 'muted' ? 'rounded-panel border border-border-muted bg-surface-muted' : 'surface-panel', compact ? 'card-compact' : 'card-standard']"><slot /></component></template>
+<script setup>defineProps({ as: { type: String, default: 'div' }, tone: { type: String, default: 'raised', validator: v => ['raised','base','muted'].includes(v) }, compact: { type: Boolean, default: false } })</script>
