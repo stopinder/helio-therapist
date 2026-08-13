@@ -24,7 +24,8 @@ test('Clients page uses live Supabase clients and standard UI patterns', async (
   assert.match(clientsView, /v-for="client in filteredClients"/)
 
   // Routing remains client-ID based without displaying database IDs.
-  assert.match(clientsView, /:to="`\/clients\/\${client\.id}`"/)
+  assert.match(clientsView, /function openClient\(clientId\)\{router\.push\(`\/clients\/\$\{clientId\}`\);\}/)
+  assert.match(clientsView, /@click="openClient\(client\.id\)"/)
   assert.doesNotMatch(clientsView, /ID:\s*\{\{ client\.id/)
   assert.doesNotMatch(clientsView, /Only one example client is shown/)
 })
