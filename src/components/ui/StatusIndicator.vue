@@ -1,0 +1,2 @@
+<template><span :class="['inline-flex items-center gap-1.5 type-metadata', toneClass]"><span class="h-1.5 w-1.5 rounded-pill bg-current" aria-hidden="true"></span><span><slot /></span></span></template>
+<script setup>import { computed } from 'vue'; const props = defineProps({ tone: { type: String, default: 'neutral', validator: v => ['neutral','success','warning','danger'].includes(v) } }); const toneClass = computed(() => ({ neutral:'text-ink-muted', success:'text-state-success', warning:'text-state-warning', danger:'text-state-danger' }[props.tone]))</script>

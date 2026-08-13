@@ -1,21 +1,11 @@
 <template>
   <div class="p-4 md:p-10 max-w-6xl mx-auto space-y-8 md:space-y-12 animate-fadeUp">
     <header class="animate-fadeUp">
-      <div class="flex items-center gap-3">
-        <h1 class="text-h2 font-semibold text-ink">Professional Development</h1>
-        <span class="px-2 py-0.5 bg-surface-subtle text-ink-secondary text-overline font-bold uppercase tracking-wider rounded-pill border border-border-muted">
-          Workspace
-        </span>
-      </div>
+      <h1 class="type-section-title text-ink">Professional Development</h1>
     </header>
 
     <!-- Greeting -->
-    <section class="space-y-2">
-      <h2 class="text-3xl md:text-5xl font-fraunces italic font-semibold text-ink leading-tight">
-        Good afternoon, <span class="text-ink-secondary">Robert</span>.
-      </h2>
-      <p class="text-body md:text-h3 text-ink-muted">Welcome to your reflective practice hub.</p>
-    </section>
+    <GreetingHeader :phrase="phrase" :display-name="therapistDisplayName" supporting="Welcome to your reflective practice hub." />
 
     <!-- Destination Cards -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -85,7 +75,10 @@
 </template>
 
 <script setup>
-import { computed } from 'vue';
+import { computed, onMounted } from 'vue';
+import GreetingHeader from '../../components/ui/GreetingHeader.vue';
+import { useGreeting } from '../../composables/useGreeting.js';
+import { useTherapistIdentity } from '../../composables/useTherapistIdentity.js';
 
 const props = defineProps({
   reflections: { type: Array, default: () => [] },
@@ -93,6 +86,9 @@ const props = defineProps({
 });
 
 defineEmits(['open-reflection']);
+
+const { displayName, loadTherapistIdentity } = useTherapistIdentity();
+const { phrase, therapistDisplayName } = useGreeting({ displayName });
 
 const destinationCards = [
   { 
@@ -136,6 +132,8 @@ const latestThemeCount = computed(() => {
   if (!latestTheme.value) return 0;
   return props.reflections.filter(r => r.theme === latestTheme.value).length;
 });
+
+onMounted(loadTherapistIdentity);
 </script>
 
 <style scoped>

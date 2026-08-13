@@ -1,29 +1,31 @@
 <template>
   <div class="p-inline-lg py-stack-lg">
-    <div class="flex items-center justify-between gap-4 mb-stack-lg">
-      <div><h1 class="text-h1 font-semibold text-ink">Clients</h1><p class="mt-2 text-body text-ink-muted">Manage your clinical directory.</p></div>
-      <button class="px-inline-md py-stack-sm bg-action-link text-body-sm font-medium text-on-action rounded-control hover:bg-action-link-hover transition-colors shrink-0" @click="showAddClient = true">+ Add Client</button>
+    <div class="flex items-start justify-between gap-inline-lg mb-stack-lg">
+      <PageHeader title="Clients" supporting="Manage your clinical directory." />
+      <AppButton variant="primary" @click="showAddClient = true">+ Add Client</AppButton>
     </div>
 
-    <div v-if="loading" class="flex items-center justify-center py-stack-xl"><div class="text-ink-muted flex flex-col items-center gap-2"><span class="w-8 h-8 border-4 border-state-selected border-t-transparent rounded-full animate-spin"></span><p>Loading clients…</p></div></div>
-    <div v-else-if="error" class="bg-surface-elevated border border-state-danger/20 p-inline-lg py-stack-lg rounded-panel text-center"><h2 class="text-h2 font-semibold text-state-danger mb-2">Error Loading Clients</h2><p class="text-ink-secondary mb-6">{{ error }}</p><button @click="loadClients" class="px-inline-md py-stack-sm bg-state-selected text-white rounded-control hover:opacity-90 transition-opacity">Try Again</button></div>
+    <div v-if="loading" class="flex items-center justify-center py-stack-xl"><div class="text-ink-muted flex flex-col items-center gap-2"><span class="w-8 h-8 border-4 border-state-selected border-t-transparent rounded-full animate-spin"></span><p class="type-body">Loading clients…</p></div></div>
+    <div v-else-if="error" class="bg-surface-elevated border border-state-danger/20 p-inline-lg py-stack-lg rounded-panel text-center"><h2 class="type-section-title text-state-danger mb-stack-sm">Error loading clients</h2><p class="type-body text-ink-secondary mb-stack-lg">{{ error }}</p><AppButton variant="secondary" @click="loadClients">Try again</AppButton></div>
     <template v-else>
-      <div class="flex flex-col md:flex-row md:items-center gap-3 mb-stack-md">
-        <label class="relative flex-1 max-w-xl"><span class="sr-only">Search clients</span><input v-model="searchQuery" type="search" placeholder="Search clients by name or reference…" class="w-full px-inline-md py-stack-sm border border-border rounded-control bg-surface text-body-sm text-ink" data-testid="client-search" /></label>
-        <div class="inline-flex self-start rounded-control border border-border bg-surface p-1" aria-label="Client status filter">
-          <button v-for="option in statusOptions" :key="option.value" type="button" class="px-inline-md py-stack-xs rounded-control text-body-sm font-medium transition-colors" :class="statusFilter===option.value?'bg-state-selected text-white':'text-ink-secondary hover:bg-surface-subtle'" @click="statusFilter=option.value">{{ option.label }} <span class="opacity-75">{{ option.count }}</span></button>
+      <div class="grid grid-cols-1 md:grid-cols-5 gap-inline-md md:items-center mb-stack-md">
+        <FormControl class="md:col-span-3">
+          <template #default="{ controlClass }"><span class="sr-only">Search clients</span><input v-model="searchQuery" type="search" placeholder="Search clients by name or reference…" :class="controlClass" data-testid="client-search" /></template>
+        </FormControl>
+        <div class="md:col-span-2 inline-flex min-h-touch self-start rounded-control border border-border bg-surface p-1" role="group" aria-label="Client status filter">
+          <button v-for="option in statusOptions" :key="option.value" type="button" class="flex-1 min-h-touch px-inline-md rounded-control type-ui transition-colors" :aria-pressed="statusFilter===option.value" :class="statusFilter===option.value?'bg-state-selected text-ink font-semibold':'text-ink-secondary hover:bg-surface-subtle'" @click="statusFilter=option.value">{{ option.label }} <span class="text-ink-muted">{{ option.count }}</span></button>
         </div>
       </div>
-      <div class="flex items-center justify-between mb-stack-sm"><p class="text-caption text-ink-muted">{{ resultLabel }}</p></div>
+      <div class="flex items-center justify-between mb-stack-sm"><p class="type-metadata text-ink-muted">{{ resultLabel }}</p></div>
 
-      <div v-if="filteredClients.length === 0" class="bg-surface-elevated border border-border-muted p-inline-lg py-stack-xl rounded-panel text-center"><p class="text-ink-secondary">{{ searchQuery ? 'No clients match your search.' : emptyStatusMessage }}</p></div>
+      <div v-if="filteredClients.length === 0" class="bg-surface-elevated border border-border-muted p-inline-lg py-stack-xl rounded-panel text-center"><p class="type-body text-ink-secondary">{{ searchQuery ? 'No clients match your search.' : emptyStatusMessage }}</p></div>
       <div v-else class="bg-surface-elevated border border-border-muted rounded-panel overflow-hidden">
-        <table class="w-full text-left border-collapse"><thead class="bg-surface-subtle border-b border-border-muted"><tr><th class="px-inline-lg py-stack-md text-caption font-semibold text-ink-secondary uppercase tracking-wider">Client</th><th class="px-inline-lg py-stack-md text-caption font-semibold text-ink-secondary uppercase tracking-wider">Next Appointment</th><th class="px-inline-lg py-stack-md text-caption font-semibold text-ink-secondary uppercase tracking-wider">Status</th><th class="px-inline-lg py-stack-md text-caption font-semibold text-ink-secondary uppercase tracking-wider text-right"><span class="sr-only">Open</span></th></tr></thead>
-          <tbody class="divide-y divide-border-muted"><tr v-for="client in filteredClients" :key="client.id" tabindex="0" role="link" :aria-label="`Open ${client.display_name}`" class="group cursor-pointer hover:bg-surface-subtle/50 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-state-selected transition-colors" @click="openClient(client.id)" @keydown.enter.prevent="openClient(client.id)" @keydown.space.prevent="openClient(client.id)">
-            <td class="px-inline-lg py-stack-md"><div class="font-medium text-ink">{{ client.display_name }}</div><div v-if="client.reference" class="text-caption text-ink-muted">{{ client.reference }}</div></td>
-            <td class="px-inline-lg py-stack-md text-body-sm text-ink-secondary">{{ appointmentLabel(client.id) }}</td>
-            <td class="px-inline-lg py-stack-md"><StatusBadge :status="client.archived ? 'archived' : 'active'" /></td>
-            <td class="px-inline-lg py-stack-md text-right"><router-link :to="`/clients/${client.id}`" data-testid="open-client-button" class="text-body-sm font-medium text-action-link group-hover:underline" @click.stop>Open</router-link></td>
+        <table class="w-full text-left border-collapse"><thead class="bg-surface-subtle border-b border-border-muted"><tr><th class="px-inline-lg py-stack-md type-eyebrow text-ink-secondary">Client</th><th class="px-inline-lg py-stack-md type-eyebrow text-ink-secondary">Next appointment</th><th v-if="statusFilter === 'all'" class="px-inline-lg py-stack-md type-eyebrow text-ink-secondary">Status</th><th class="px-inline-lg py-stack-md type-eyebrow text-ink-secondary text-right"><span class="sr-only">Open client record</span></th></tr></thead>
+          <tbody class="divide-y divide-border-muted"><tr v-for="client in filteredClients" :key="client.id" tabindex="0" role="link" :aria-label="`Open ${client.display_name}`" class="group cursor-pointer hover:bg-surface-subtle/50 transition-colors" @click="openClient(client.id)" @keydown.enter.prevent="openClient(client.id)" @keydown.space.prevent="openClient(client.id)">
+            <td class="px-inline-lg py-stack-md"><div class="type-body-medium text-ink">{{ client.display_name }}</div><div v-if="client.reference" class="type-metadata text-ink-muted">{{ client.reference }}</div></td>
+            <td class="px-inline-lg py-stack-md type-ui text-ink-secondary">{{ appointmentLabel(client.id) }}</td>
+            <td v-if="statusFilter === 'all'" class="px-inline-lg py-stack-md"><StatusIndicator :tone="client.archived ? 'neutral' : 'success'">{{ client.archived ? 'Archived' : 'Active' }}</StatusIndicator></td>
+            <td class="px-inline-lg py-stack-md text-right text-action-link" aria-hidden="true">›</td>
           </tr></tbody></table>
       </div>
     </template>
@@ -36,8 +38,11 @@
 import { computed, ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { listClients, createClient, listUpcomingClientAppointments } from '../lib/clients.js';
-import StatusBadge from '../components/workspace/StatusBadge.vue';
 import AddClientModal from '../components/sidebar/AddClientModal.vue';
+import PageHeader from '../components/ui/PageHeader.vue';
+import AppButton from '../components/ui/AppButton.vue';
+import FormControl from '../components/ui/FormControl.vue';
+import StatusIndicator from '../components/ui/StatusIndicator.vue';
 
 const router = useRouter();
 const clients = ref([]); const appointments = ref([]); const loading = ref(true); const error = ref(''); const showAddClient = ref(false); const addingClient = ref(false); const addError = ref('');

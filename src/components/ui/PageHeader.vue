@@ -1,0 +1,2 @@
+<template><header :class="['space-y-2', $attrs.class]"><p v-if="eyebrow" class="type-eyebrow text-ink-muted">{{ eyebrow }}</p><h1 class="type-page-title text-ink">{{ title }}</h1><p v-if="supporting" class="type-body text-ink-muted max-w-3xl">{{ supporting }}</p><slot /></header></template>
+<script setup>defineOptions({ inheritAttrs: false }); defineProps({ title: { type: String, required: true }, eyebrow: { type: String, default: '' }, supporting: { type: String, default: '' } })</script>

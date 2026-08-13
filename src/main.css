@@ -4,187 +4,74 @@
 @tailwind components;
 @tailwind utilities;
 
-html {
-    font-family: 'Inter', system-ui, sans-serif;
-    background: var(--surface-canvas);
-    color: var(--text-primary);
-}
+html { font-family:var(--font-ui); background:var(--surface-canvas); color:var(--text-primary); text-rendering:optimizeLegibility; -webkit-font-smoothing:antialiased; }
+body { background:radial-gradient(circle at 78% 8%,rgb(244 231 205 / .28),transparent 24rem),var(--surface-canvas); }
 
 :root {
-    /* Semantic surface, boundary, and elevation hierarchy. */
-    --surface-canvas: #f6f4f0;
-    --surface: #fbfaf7;
-    --surface-muted: #f0ede7;
-    --surface-subtle: #f8f6f2;
-    --surface-elevated: #ffffff;
-    --surface-overlay: #fefdfb;
-    --text-primary: #292a28;
-    --text-secondary: #4d4b46;
-    --text-muted: #746f67;
-    --text-subtle: #9b958b;
-    --text-on-action: #ffffff;
-    --action-primary: #4e625b;
-    --action-primary-hover: #40544d;
-    --action-link: #5a746a;
-    --action-link-hover: #405c52;
-    --border: #d8d3ca;
-    --border-muted: #e8e4dd;
-    --border-strong: #beb8ae;
-    --shadow-elevated: 0 1px 2px rgb(52 46 37 / 0.03), 0 6px 18px rgb(52 46 37 / 0.04);
-    --shadow-overlay: 0 10px 30px rgb(52 46 37 / 0.08), 0 28px 72px rgb(52 46 37 / 0.08);
-    /* Semantic interaction states. Component code must refer to roles, not
-       invent a new blue/grey/red for each control. */
-    --state-hover: #eeece6;
-    --state-active: #e4e0d8;
-    --state-selected: #e4ebe5;
-    --state-focus-ring: #476e60;
-    --state-disabled: #aaa399;
-    --state-loading: #746f67;
-    --state-success: #3d7160;
-    --state-warning: #9a641b;
-    --state-danger: #a7453f;
-    --state-recording: #a7453f;
-    --state-ai-working: #667367;
-    --state-success-surface: #edf5ef;
-    --state-warning-surface: #faf4e8;
-    --state-danger-surface: #fbefed;
-    --surface-reflection: #f7f2e9;
-    --surface-reflection-hover: #f1eadf;
-    --border-reflection: #e2d7c6;
-    --border-reflection-tag: #e7d0ad;
-    --state-reflection-focus: #9b7a49;
-    --surface-sidebar: #f9f7f3;
-    --surface-avatar: #e4ddd2;
-    --surface-backdrop: rgb(40 38 34 / 0.38);
-    --radius-control: 0.5rem;
-    --radius-panel: 0.75rem;
-    --radius-pill: 9999px;
-    --control-target: 2.75rem;
-    --motion-fast: 100ms;
-    --motion-standard: 150ms;
-    --motion-slow: 200ms;
-    --motion-ease: ease-out;
-    --space-inline-xs: 0.25rem;
-    --space-inline-sm: 0.5rem;
-    --space-inline-md: 0.75rem;
-    --space-inline-lg: 1rem;
-    --space-stack-xs: 0.25rem;
-    --space-stack-sm: 0.5rem;
-    --space-stack-md: 0.75rem;
-    --space-stack-lg: 1rem;
-    --space-stack-xl: 1.5rem;
-    --space-stack-2xl: 2rem;
-    --space-section: 2.5rem;
-    --space-page: 1rem;
-}
+ --font-ui:'Inter',system-ui,sans-serif;
+ --font-editorial:'Newsreader',Georgia,serif;
 
-@media (min-width: 768px) {
-    :root { --space-page: 2rem; }
+ --type-greeting-size:2rem; --type-greeting-size-lg:2.35rem; --type-greeting-line:1.12; --type-greeting-tracking:-.025em;
+ --type-page-title-size:2rem; --type-page-title-line:2.35rem; --type-page-title-tracking:-.025em;
+ --type-section-title-size:1.45rem; --type-section-title-line:1.25; --type-section-title-tracking:-.015em;
+ --type-subsection-size:1.0625rem; --type-subsection-line:1.5rem;
+ --type-body-size:.9375rem; --type-body-line:1.55rem;
+ --type-body-long-size:1rem; --type-body-long-line:1.8rem;
+ --type-ui-size:.8125rem; --type-ui-line:1.3rem;
+ --type-metadata-size:.75rem; --type-metadata-line:1.05rem;
+ --type-eyebrow-size:.6875rem; --type-eyebrow-line:1rem; --type-eyebrow-tracking:.13em;
+
+ --surface-canvas:#f3eee5; --surface:#faf6ef; --surface-muted:#ebe4d9; --surface-subtle:#f6f0e7; --surface-elevated:#fffaf3; --surface-overlay:#fffbf5;
+ --text-primary:#242722; --text-secondary:#4c5049; --text-muted:#716f66; --text-subtle:#938d82; --text-on-action:#fffaf3;
+ --action-primary:#587765; --action-primary-hover:#466453; --action-link:#4f705e; --action-link-hover:#385846;
+ --border:#d6ccbd; --border-muted:#e4dbcf; --border-strong:#b8ad9e;
+ --shadow-elevated:0 1px 1px rgb(67 54 39 / .025),0 10px 30px rgb(67 54 39 / .065); --shadow-overlay:0 18px 44px rgb(61 48 35 / .12),0 40px 90px rgb(61 48 35 / .10);
+ --state-hover:#eee7dc; --state-active:#e3dbcf; --state-selected:#dde6dc; --state-focus-ring:#3f6a55; --state-disabled:#77746d; --state-loading:#746f67;
+ --state-success:#47725c; --state-warning:#9a681f; --state-danger:#a34a43; --state-recording:#a34a43; --state-ai-working:#667367;
+ --state-success-surface:#edf4ed; --state-warning-surface:#faf2e3; --state-danger-surface:#faeeeb;
+ --surface-reflection:#f7eddd; --surface-reflection-hover:#efe1cd; --border-reflection:#dfcdb2; --border-reflection-tag:#d7ae70; --state-reflection-focus:#9c753d;
+ --surface-sidebar:#f8f3ea; --surface-avatar:#dbe5da; --surface-backdrop:rgb(43 39 33 / .42); --brand-amber:#c88a27; --brand-amber-soft:#f3e3c3; --brand-sage-soft:#dce7dc;
+ --radius-control:.75rem; --radius-panel:1rem; --radius-pill:9999px; --control-target:2.75rem;
+ --motion-fast:100ms; --motion-standard:160ms; --motion-slow:220ms; --motion-ease:cubic-bezier(.2,.8,.2,1);
+ --space-inline-xs:.25rem; --space-inline-sm:.5rem; --space-inline-md:.875rem; --space-inline-lg:1.125rem;
+ --space-stack-xs:.25rem; --space-stack-sm:.5rem; --space-stack-md:.875rem; --space-stack-lg:1.125rem; --space-stack-xl:1.75rem; --space-stack-2xl:2.25rem; --space-section:3.25rem; --space-page:1.25rem;
 }
+@media(min-width:768px){:root{--space-page:2.5rem}}
+@media(min-width:1280px){:root{--space-page:3.25rem}}
 
 @layer components {
-    /* Helio's only type scale. The weight is part of the semantic role. */
-    .type-display { @apply font-serif text-display font-semibold; }
-    .type-h1 { @apply font-serif text-h1 font-semibold; }
-    .type-h2 { @apply font-serif text-h2 font-semibold; }
-    .type-h3 { @apply font-sans text-h3 font-semibold; }
-    .type-body { @apply font-sans text-body font-normal; }
-    .type-body-medium { @apply font-sans text-body font-medium; }
-    .type-body-long { @apply font-sans text-body-long font-normal; }
-    .type-body-sm { @apply font-sans text-body-sm font-normal; }
-    .type-caption { @apply font-sans text-caption font-medium; }
-    .type-overline { @apply font-sans text-overline font-semibold uppercase tracking-[0.08em]; }
+ .type-greeting{font-family:var(--font-editorial);font-size:var(--type-greeting-size);line-height:var(--type-greeting-line);font-weight:600;letter-spacing:var(--type-greeting-tracking)}
+ .type-page-title{font-family:var(--font-ui);font-size:var(--type-page-title-size);line-height:var(--type-page-title-line);font-weight:600;letter-spacing:var(--type-page-title-tracking)}
+ .type-section-title{font-family:var(--font-editorial);font-size:var(--type-section-title-size);line-height:var(--type-section-title-line);font-weight:600;letter-spacing:var(--type-section-title-tracking)}
+ .type-subsection{font-family:var(--font-ui);font-size:var(--type-subsection-size);line-height:var(--type-subsection-line);font-weight:600}
+ .type-body{font-family:var(--font-ui);font-size:var(--type-body-size);line-height:var(--type-body-line);font-weight:400}
+ .type-body-medium{font-family:var(--font-ui);font-size:var(--type-body-size);line-height:var(--type-body-line);font-weight:500}
+ .type-body-long{font-family:var(--font-ui);font-size:var(--type-body-long-size);line-height:var(--type-body-long-line);font-weight:400}
+ .type-ui{font-family:var(--font-ui);font-size:var(--type-ui-size);line-height:var(--type-ui-line);font-weight:500}
+ .type-metadata{font-family:var(--font-ui);font-size:var(--type-metadata-size);line-height:var(--type-metadata-line);font-weight:500}
+ .type-eyebrow{font-family:var(--font-ui);font-size:var(--type-eyebrow-size);line-height:var(--type-eyebrow-line);font-weight:600;letter-spacing:var(--type-eyebrow-tracking);text-transform:uppercase}
+ @media(min-width:768px){.type-greeting{font-size:var(--type-greeting-size-lg)}}
 
-    /* Layout primitives for page-level and panel-level rhythm. */
-    .page-layout { @apply p-page; }
-    .page-section { margin-top: var(--space-section); }
-    .card-standard { padding: var(--space-stack-xl); }
-    .card-compact { padding: var(--space-stack-lg); }
-    .surface-card { @apply rounded-panel border border-border-muted bg-surface; }
-    .surface-panel { @apply rounded-panel border border-border-muted bg-surface; }
-    .control-surface { @apply border border-border bg-surface-elevated hover:border-border-strong focus-visible:outline-none; }
-    .control-field { @apply w-full rounded-control border border-border bg-surface-elevated px-inline-md py-stack-sm type-body focus-visible:outline-none; }
-    .button-secondary { @apply min-h-touch rounded-control border border-border bg-surface-elevated px-inline-lg py-stack-sm type-body-medium text-ink-secondary interaction-control; }
-    .button-primary { @apply min-h-touch rounded-control bg-action-primary px-inline-lg py-stack-sm type-body-medium text-on-action interaction-control hover:bg-action-primary-hover; }
-    .dialog-surface { @apply rounded-panel border border-border bg-surface-overlay shadow-overlay; }
+ /* Compatibility aliases retained until later page migration. New/refactored work uses the explicit roles above. */
+ .type-display{@apply type-greeting}
+ .type-h1{font-family:var(--font-editorial);font-size:var(--type-page-title-size);line-height:1.08;font-weight:600;letter-spacing:-.03em}
+ .type-h2{font-family:var(--font-editorial);font-size:1.375rem;line-height:1.12;font-weight:600;letter-spacing:-.02em}
+ .type-h3{@apply type-subsection}.type-body-sm{@apply type-ui}.type-caption{@apply type-metadata}.type-overline{@apply type-eyebrow}
 
-    /* Shared interaction primitives. They provide the same quiet response for
-       controls and rows without assigning workflow-specific meaning. */
-    .interaction-control { transition: background-color var(--motion-standard) var(--motion-ease), border-color var(--motion-standard) var(--motion-ease), color var(--motion-standard) var(--motion-ease), opacity var(--motion-fast) var(--motion-ease); }
-    .interaction-control:hover:not(:disabled) { background-color: var(--state-hover); }
-    .interaction-control:active:not(:disabled) { background-color: var(--state-active); }
-    .interaction-row { transition: background-color var(--motion-standard) var(--motion-ease), border-color var(--motion-standard) var(--motion-ease); }
-    .interaction-row:hover { background-color: var(--state-hover); }
-    .state-selected { background-color: var(--state-selected); }
-    .state-recording { color: var(--state-recording); }
-    .state-ai-working { color: var(--state-ai-working); }
-    .loading-indicator { color: var(--state-loading); }
-    .status-success { color: var(--state-success); }
-    .status-warning { color: var(--state-warning); }
-    .status-danger { color: var(--state-danger); }
-    .empty-state-standard { text-align: center; padding: var(--space-stack-2xl); color: var(--text-muted); }
-
-    .animate-expandIn {
-        animation: expandIn var(--motion-slow) var(--motion-ease);
-    }
-
-    .animate-fadeUp {
-        animation: fadeUp var(--motion-standard) var(--motion-ease);
-    }
+ .page-layout{@apply p-page}.page-section{margin-top:var(--space-section)}.card-standard{padding:var(--space-stack-xl)}.card-compact{padding:var(--space-stack-lg)}
+ .surface-card{@apply rounded-panel border border-border-muted bg-surface-elevated;box-shadow:var(--shadow-elevated)}.surface-panel{@apply rounded-panel border border-border-muted bg-surface}
+ .control-surface{@apply border border-border bg-surface-elevated hover:border-border-strong focus-visible:outline-none}.control-field{@apply w-full rounded-control border border-border bg-surface-elevated px-inline-md py-stack-sm type-body focus-visible:outline-none}
+ .button-secondary{@apply min-h-touch rounded-control border border-border bg-surface-elevated px-inline-lg py-stack-sm type-ui text-ink-secondary interaction-control;box-shadow:0 1px 1px rgb(61 51 38 / .025)}
+ .button-primary{@apply min-h-touch rounded-control bg-action-primary px-inline-lg py-stack-sm type-ui text-on-action interaction-control hover:bg-action-primary-hover;box-shadow:0 2px 5px rgb(43 63 51 / .15)}
+ .dialog-surface{@apply rounded-panel border border-border bg-surface-overlay shadow-overlay}
+ .interaction-control{transition:background-color var(--motion-standard) var(--motion-ease),border-color var(--motion-standard) var(--motion-ease),color var(--motion-standard) var(--motion-ease),opacity var(--motion-fast) var(--motion-ease),transform var(--motion-fast) var(--motion-ease)}
+ .interaction-control:hover:not(:disabled){background-color:var(--state-hover)}.interaction-control:active:not(:disabled){background-color:var(--state-active);transform:translateY(1px)}.interaction-row{transition:background-color var(--motion-standard) var(--motion-ease),border-color var(--motion-standard) var(--motion-ease)}.interaction-row:hover{background-color:var(--state-hover)}
+ .state-selected{background-color:var(--state-selected)}.state-recording{color:var(--state-recording)}.state-ai-working{color:var(--state-ai-working)}.loading-indicator{color:var(--state-loading)}.status-success{color:var(--state-success)}.status-warning{color:var(--state-warning)}.status-danger{color:var(--state-danger)}.empty-state-standard{text-align:center;padding:var(--space-stack-2xl);color:var(--text-muted)}.brand-mark{color:var(--brand-amber)}.brand-accent-surface{background:var(--brand-amber-soft)}
+ .animate-expandIn{animation:expandIn var(--motion-slow) var(--motion-ease)}.animate-fadeUp{animation:fadeUp var(--motion-standard) var(--motion-ease)}
 }
-
-@keyframes expandIn {
-    from { opacity: 0; transform: scale(0.98) translateY(10px); }
-    to { opacity: 1; transform: scale(1) translateY(0); }
-}
-
-@keyframes fadeUp {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
-/* Editorial type is reserved for orientation: page titles, client names, and
-   major section headings. Forms, navigation, notes, and controls stay Inter. */
-.editorial-heading { font-family: 'Newsreader', Georgia, serif; font-weight: 600; }
-
-/* One keyboard focus treatment across the app. :focus-visible prevents the
-   ring appearing after ordinary mouse use, while the offset preserves it on
-   both canvas and raised surfaces. */
-:where(button, a[href], input, select, textarea, summary, [tabindex]:not([tabindex="-1"])):focus-visible {
-    outline: 2px solid var(--state-focus-ring) !important;
-    outline-offset: 2px;
-    box-shadow: none;
-}
-
-:where(button, input, select, textarea):disabled,
-[aria-disabled="true"] {
-    cursor: not-allowed;
-    opacity: .55;
-    color: var(--state-disabled);
-}
-
-@media (prefers-reduced-motion: reduce) {
-    *, *::before, *::after {
-        animation-duration: 1ms !important;
-        animation-iteration-count: 1 !important;
-        scroll-behavior: auto !important;
-        transition-duration: 1ms !important;
-    }
-}
-/* Therapist workspace sidebar buttons */
-.sidebar-btn {
-    @apply w-full text-left text-body px-3 py-2 rounded-control transition-colors;
-    @apply text-ink-secondary hover:bg-surface-subtle focus-visible:outline-none;
-}
-
-.sidebar-btn.primary {
-    @apply bg-action-primary text-on-action hover:bg-action-primary-hover;
-}
-
-.sidebar-section {
-    @apply mt-4 border-t border-border-muted pt-3;
-}
-
-.sidebar-section-title {
-    @apply type-overline text-ink-muted mb-2 px-inline-md;
-}
+@keyframes expandIn{from{opacity:0;transform:scale(.98) translateY(10px)}to{opacity:1;transform:scale(1) translateY(0)}}@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.editorial-heading{font-family:var(--font-editorial);font-weight:600;letter-spacing:-.025em}
+:where(button,a[href],input,select,textarea,summary,[tabindex]:not([tabindex="-1"])):focus-visible{outline:2px solid var(--state-focus-ring)!important;outline-offset:3px;box-shadow:none}
+:where(button,input,select,textarea):disabled,[aria-disabled="true"]{cursor:not-allowed;color:var(--state-disabled);border-color:var(--border-muted);background-color:var(--surface-muted)}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:1ms!important;animation-iteration-count:1!important;scroll-behavior:auto!important;transition-duration:1ms!important}}
+.sidebar-btn{@apply w-full text-left type-body px-3.5 py-2.5 rounded-control transition-all text-ink-secondary hover:bg-surface-subtle focus-visible:outline-none}.sidebar-btn:hover{transform:translateX(1px)}.sidebar-btn.primary{@apply bg-action-primary text-on-action hover:bg-action-primary-hover}.sidebar-section{@apply mt-5 border-t border-border-muted pt-4}.sidebar-section-title{@apply type-eyebrow text-ink-muted mb-2.5 px-inline-md}
