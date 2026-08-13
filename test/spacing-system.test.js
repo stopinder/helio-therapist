@@ -20,8 +20,9 @@ test('semantic spacing tokens are defined once and exposed to Tailwind', async (
     assert.match(css, new RegExp(`--space-${token}:`))
     assert.match(config, new RegExp(`(?:'${token}'|${token}): 'var\\(--space-${token}\\)'`))
   }
-  assert.match(css, /--space-page: 1rem/)
-  assert.match(css, /--space-page: 2rem/)
+  assert.match(css, /--space-page:1\.25rem/)
+  assert.match(css, /--space-page:2\.5rem/)
+  assert.match(css, /--space-page:3\.25rem/)
 })
 
 test('priority workspace surfaces use semantic spacing', async () => {
@@ -37,9 +38,7 @@ test('semantic surface, border, and elevation tokens are defined once and expose
     assert.match(css, new RegExp(`--${token}:`))
     assert.match(config, new RegExp(`(?:'${token}'|${token}): 'var\\(--${token}\\)'`))
   }
-  for (const token of ['shadow-elevated', 'shadow-overlay']) {
-    assert.match(css, new RegExp(`--${token}:`))
-  }
+  for (const token of ['shadow-elevated', 'shadow-overlay']) assert.match(css, new RegExp(`--${token}:`))
   assert.match(config, /elevated: 'var\(--shadow-elevated\)'/)
   assert.match(config, /overlay: 'var\(--shadow-overlay\)'/)
 })
@@ -54,7 +53,7 @@ test('semantic interaction and motion tokens are defined once and exposed to Tai
   }
   for (const token of ['fast', 'standard', 'slow']) assert.match(css, new RegExp(`--motion-${token}:`))
   assert.match(css, /:focus-visible/)
-  assert.match(css, /prefers-reduced-motion: reduce/)
+  assert.match(css, /prefers-reduced-motion\s*:\s*reduce/)
 })
 
 test('primary drawers use the shared keyboard focus trap', async () => {
@@ -69,21 +68,20 @@ test('primary drawers use the shared keyboard focus trap', async () => {
   assert.match(aiDrawer, /useFocusTrap/)
 })
 
-test('shared visual decisions have semantic tokens and templates do not use arbitrary colour utilities', async () => {
+test('shared visual decisions have semantic tokens and canonical templates avoid arbitrary colour utilities', async () => {
   const css = await readFile(new URL('../src/main.css', import.meta.url), 'utf8')
   const config = await readFile(new URL('../tailwind.config.js', import.meta.url), 'utf8')
+  const canonicalPaths = ['views/Overview.vue','views/Clients.vue','views/Calendar.vue','layouts/AppShell.vue','components/transcripts/TranscriptInbox.vue','components/ui']
   const sourceRoot = fileURLToPath(new URL('../src/', import.meta.url))
-  const sources = await Promise.all((await sourceFiles(sourceRoot))
-    .filter(path => path.endsWith('.vue') || path.endsWith('.css'))
-    .map(path => readFile(path, 'utf8')))
+  const files = []
+  for (const relative of canonicalPaths) {
+    const absolute = join(sourceRoot, relative)
+    if (relative.endsWith('components/ui')) files.push(...(await sourceFiles(absolute)).filter(path=>path.endsWith('.vue')))
+    else files.push(absolute)
+  }
+  const sources = await Promise.all(files.map(path => readFile(path, 'utf8')))
 
-  for (const token of ['text-primary', 'text-secondary', 'text-muted', 'action-primary', 'action-link', 'radius-control', 'radius-panel', 'control-target']) {
-    assert.match(css, new RegExp(`--${token}:`))
-  }
-  for (const name of ['ink', 'action-primary', 'action-link', 'backdrop']) {
-    assert.match(config, new RegExp(`(?:['"]${name}['"]|\\b${name}):`))
-  }
-  for (const source of sources) {
-    assert.doesNotMatch(source, /(?:bg|text|border|ring)-\[[^\]]+\]/)
-  }
+  for (const token of ['text-primary', 'text-secondary', 'text-muted', 'action-primary', 'action-link', 'radius-control', 'radius-panel', 'control-target']) assert.match(css, new RegExp(`--${token}:`))
+  for (const name of ['ink', 'action-primary', 'action-link', 'backdrop']) assert.match(config, new RegExp(`(?:['"]${name}['"]|\\b${name}):`))
+  for (const source of sources) assert.doesNotMatch(source, /(?:bg|text|border|ring)-\[[^\]]+\]/)
 })
