@@ -32,9 +32,9 @@ test('SessionWorkspace uses the authenticated linked transcript source without m
   assert.match(workspace, /authenticatedFetch/)
   assert.match(workspace, /sessionRef:String\(session\.value\.id\)/)
   assert.match(workspace, /clientId:String\(session\.value\.clientId\)/)
-  assert.match(transcriptTab, /Original Zoom transcript/)
-  assert.match(transcriptTab, /No linked transcript/)
-  assert.match(transcriptTab, /Transcript unavailable/)
+  assert.match(transcriptTab, /Session Capture · Transcript/)
+  assert.match(transcriptTab, /Session capture in progress/)
+  assert.match(transcriptTab, /Session capture unavailable/)
   assert.doesNotMatch(transcriptTab, /demonstration data/)
   assert.doesNotMatch(transcriptTab, /Add Marker/)
   assert.match(endpoint, /\.eq\('therapist_user_id', user\.id\)/)
@@ -67,15 +67,22 @@ test('SessionWorkspace: Navigation labels updated', async () => {
   const workspace = await readFile(new URL('../src/views/SessionWorkspace.vue', import.meta.url), 'utf8')
   const workflow = await readFile(new URL('../src/components/workspace/WorkflowIndicator.vue', import.meta.url), 'utf8')
 
+  // Transcript -> Session Capture
+  assert.match(workspace, /'Session Capture'/)
+  assert.doesNotMatch(workspace, /'Transcript'/)
+  assert.match(workflow, /'Session Capture'/)
+
   // Therapist Notes -> Notes
-  assert.match(workspace, /'Notes'/)
-  assert.doesNotMatch(workspace, /'Therapist Notes'/)
-  assert.match(workflow, /'Notes'/)
 
   // Clinical Summary -> Clinical Record
   assert.match(workspace, /'Clinical Record'/)
   assert.doesNotMatch(workspace, /'Clinical Summary'/)
   assert.match(workflow, /'Clinical Record'/)
+
+  // Supervision -> Professional Development
+  assert.match(workspace, /'Professional Development'/)
+  assert.doesNotMatch(workspace, /'Supervision'/)
+  assert.match(workflow, /'Professional Development'/)
 })
 
 test('SessionWorkspace simplification: End Session confirmation wiring', async () => {

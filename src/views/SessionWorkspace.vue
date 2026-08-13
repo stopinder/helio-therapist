@@ -6,7 +6,14 @@
       <SessionWorkspaceHeader :session="workspaceSession" :joiningMeeting="joiningMeeting" :meetingError="meetingError" @join-meeting="joinMeeting" />
       <WorkflowIndicator :activeStage="activeTab" @select-stage="activeTab = $event" />
       <div class="flex-1 overflow-auto p-inline-lg py-stack-lg"><div class="max-w-6xl mx-auto">
-        <TranscriptTab v-if="activeTab === 'Transcript'" :transcript="transcript" :loading="transcriptLoading" :error="transcriptError" :activeTab="activeTab" @retry="loadTranscript" />
+        <TranscriptTab 
+          v-if="activeTab === 'Session Capture'" 
+          :transcript="transcript" 
+          :loading="transcriptLoading" 
+          :error="transcriptError" 
+          :activeTab="activeTab" 
+          @retry="loadTranscript" 
+        />
         <TherapistNotesTab v-else-if="activeTab === 'Notes'" :clientId="session.clientId" :sessionId="session.id" />
         <ReflectionTab v-else-if="activeTab === 'Reflection'" :clientId="session.clientId" :sessionId="session.id" />
         <ClinicalSummaryTab v-else-if="activeTab === 'Clinical Record'" :session="session" @update:session="session = $event" />
@@ -17,7 +24,7 @@
 </template>
 <script setup>
 import { ref, onMounted, onBeforeUnmount, computed } from 'vue'; import { useRoute } from 'vue-router'; import { getSession } from '../lib/sessions.js'; import { getClient } from '../lib/clients.js'; import { authenticatedFetch } from '../lib/api.js'; import SessionWorkspaceHeader from '../components/workspace/SessionWorkspaceHeader.vue'; import WorkflowIndicator from '../components/workspace/WorkflowIndicator.vue'; import TranscriptTab from '../components/workspace/TranscriptTab.vue'; import TherapistNotesTab from '../components/workspace/TherapistNotesTab.vue'; import ReflectionTab from '../components/workspace/ReflectionTab.vue'; import ClinicalSummaryTab from '../components/workspace/ClinicalSummaryTab.vue'; import SupervisionSummaryTab from '../components/workspace/SupervisionSummaryTab.vue';
-const route=useRoute(); const session=ref(null), client=ref(null), loading=ref(true), error=ref(''), transcript=ref(null), transcriptLoading=ref(false), transcriptError=ref(''), activeTab=ref('Transcript'), joiningMeeting=ref(false), meetingError=ref(''), now=ref(Date.now()); let clockTimer;
+const route=useRoute(); const session=ref(null), client=ref(null), loading=ref(true), error=ref(''), transcript=ref(null), transcriptLoading=ref(false), transcriptError=ref(''), activeTab=ref('Session Capture'), joiningMeeting=ref(false), meetingError=ref(''), now=ref(Date.now()); let clockTimer;
 async function joinMeeting(){if(!session.value?.id||!session.value?.clientId||joiningMeeting.value)return;joiningMeeting.value=true;meetingError.value='';try{const response=await authenticatedFetch('/api/zoom/start-session',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({clientId:session.value.clientId,sessionRef:session.value.id})});const data=await response.json().catch(()=>({}));if(!response.ok)throw new Error(data.error||'Unable to open Zoom for this session.');if(!data.startUrl)throw new Error('Zoom did not return a meeting link.');window.open(data.startUrl,'_blank','noopener,noreferrer')}catch(err){meetingError.value=err?.message||'Unable to open Zoom for this session.'}finally{joiningMeeting.value=false}}
 async function loadSession(){loading.value=true;error.value='';try{const {clientId,sessionId}=route.params;const [sessionData,clientData]=await Promise.all([getSession({clientId,sessionId}),getClient({clientId})]);session.value=sessionData;client.value=clientData;now.value=Date.now();loadTranscript()}catch(e){error.value='The clinical workspace could not be loaded.'}finally{loading.value=false}}
 async function loadTranscript(){if(!session.value?.id||!session.value?.clientId)return;transcriptLoading.value=true;transcriptError.value='';transcript.value=null;try{const params=new URLSearchParams({sessionRef:String(session.value.id),clientId:String(session.value.clientId)});const response=await authenticatedFetch(`/api/zoom/transcripts?${params.toString()}`);const data=await response.json().catch(()=>({}));if(!response.ok)throw new Error(data.error||'Unable to load the linked transcript.');transcript.value=data.transcripts?.[0]||null}catch(err){transcriptError.value=err?.message||'Unable to load the linked transcript.'}finally{transcriptLoading.value=false}}

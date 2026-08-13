@@ -12,7 +12,7 @@
         <div>
           <div class="flex items-center gap-inline-sm">
             <span class="text-body font-bold text-ink">Session in progress</span>
-            <span class="text-h3 font-mono font-bold text-state-selected" aria-live="polite">{{ elapsedTime }}</span>
+            <span class="text-h3 font-mono font-bold text-ink" aria-live="polite">{{ elapsedTime }}</span>
           </div>
           <p class="text-caption text-ink-muted mt-0.5">Started at {{ formatSessionTime(activeSession.startedAt) }} · Timing continues in both workspaces</p>
         </div>

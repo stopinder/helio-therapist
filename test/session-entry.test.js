@@ -14,7 +14,7 @@ test('Client Workspace session entry behavior', async () => {
 
   // ClientWorkspace handles session creation and errors
   assert.match(workspace, /const\s+sessionBusy\s*=\s*ref\(false\)/)
-  assert.match(workspace, /const\s+sessionError\s*=\s*ref\(['"]['"]\)/)
+  assert.match(workspace, /sessionError\s*=\s*ref\(\s*['"]['"]\s*\)/)
   assert.match(workspace, /async\s+function\s+startSession\(\)/)
   assert.match(workspace, /sessionBusy\.value\s*=\s*true/)
   assert.match(workspace, /await\s+createOrResumeSession/)
