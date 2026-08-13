@@ -71,7 +71,7 @@ test('primary drawers use the shared keyboard focus trap', async () => {
 test('shared visual decisions have semantic tokens and canonical templates avoid arbitrary colour utilities', async () => {
   const css = await readFile(new URL('../src/main.css', import.meta.url), 'utf8')
   const config = await readFile(new URL('../tailwind.config.js', import.meta.url), 'utf8')
-  const canonicalPaths = ['views/Overview.vue','views/Clients.vue','views/Calendar.vue','layouts/AppShell.vue','components/transcripts/TranscriptInbox.vue','components/ui']
+  const canonicalPaths = ['views/Overview.vue','views/Clients.vue','views/Calendar.vue','views/Transcripts.vue','layouts/AppShell.vue','components/ui']
   const sourceRoot = fileURLToPath(new URL('../src/', import.meta.url))
   const files = []
   for (const relative of canonicalPaths) {
