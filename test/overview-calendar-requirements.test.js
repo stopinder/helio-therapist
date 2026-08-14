@@ -16,7 +16,7 @@ test('Overview view requirements', async () => {
   assert.match(overview, /event.clientName/)
   assert.match(overview, /formatStatus\(event.status\)/)
   assert.match(overview, /Open client/)
-  assert.match(overview, /Start session/)
+  assert.match(overview, /Clinical Workspace/)
   assert.match(overview, /View calendar →/)
 
   // Session entry must create/resume a real session before routing.
@@ -63,7 +63,7 @@ test('Calendar view requirements', async () => {
   assert.match(calendar, /selectedEventId === event\.id/)
   assert.match(calendar, /selectAppointment\(event, \$event\)/)
   assert.match(calendar, /Open Client/)
-  assert.match(calendar, /Start Session/)
+  assert.match(calendar, /Clinical Workspace/)
   assert.match(calendar, /:to="`\/clients\/\${selectedEvent\.clientId}`"/)
 
   // Session entry must create/resume a real session before routing.

@@ -24,7 +24,7 @@ test.describe('Client archive lifecycle', () => {
     page.once('dialog', dialog => dialog.accept())
     await page.getByTestId('client-archive-action').click()
     await expect(page.getByText('Archived client.')).toBeVisible()
-    await expect(page.getByTestId('open-session-workspace')).toHaveCount(0)
+    await expect(page.getByTestId('open-clinical-workspace')).toHaveCount(0)
     await expect(page.getByTestId('client-archive-action')).toHaveText('Restore client')
 
     await page.getByRole('link', { name: /Clients/i }).click()
@@ -37,7 +37,7 @@ test.describe('Client archive lifecycle', () => {
     page.once('dialog', dialog => dialog.accept())
     await page.getByTestId('client-archive-action').click()
     await expect(page.getByText('Archived client.')).toHaveCount(0)
-    await expect(page.getByTestId('open-session-workspace')).toBeVisible()
+    await expect(page.getByTestId('open-clinical-workspace')).toBeVisible()
     await expect(page.getByTestId('client-archive-action')).toHaveText('Archive client')
   })
 })

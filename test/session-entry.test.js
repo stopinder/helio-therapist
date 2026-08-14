@@ -6,21 +6,29 @@ test('Client Workspace session entry behavior', async () => {
   const header = await readFile(new URL('../src/components/workspace/ClientWorkspaceHeader.vue', import.meta.url), 'utf8')
   const workspace = await readFile(new URL('../src/views/ClientWorkspace.vue', import.meta.url), 'utf8')
   
-  // ClientWorkspaceHeader shows Start Session and manages busy state
-  assert.match(header, /:disabled="sessionBusy"/)
-  assert.match(header, /@click="\$emit\('start-session'\)"/)
-  assert.match(header, /Starting…/)
-  assert.match(header, /Start Session/)
+  // ClientWorkspaceHeader contains Clinical Workspace action
+  assert.match(header, /Clinical Workspace/)
+  assert.match(header, /data-testid="open-clinical-workspace"/)
+  assert.match(header, /import { createOrResumeSession/)
+  assert.match(header, /async function openClinicalWorkspace\(\)/)
+  assert.match(header, /props\.activeSession \|\| \(await createOrResumeSession\(props\.client\.id\)\)\.session/)
+  assert.match(header, /name: 'SessionWorkspace', params: { clientId: props\.client\.id, sessionId: session\.id }/)
 
-  // ClientWorkspace handles session creation and errors
-  assert.match(workspace, /const\s+sessionBusy\s*=\s*ref\(false\)/)
-  assert.match(workspace, /sessionError\s*=\s*ref\(\s*['"]['"]\s*\)/)
-  assert.match(workspace, /async\s+function\s+startSession\(\)/)
-  assert.match(workspace, /sessionBusy\.value\s*=\s*true/)
-  assert.match(workspace, /await\s+createOrResumeSession/)
-  assert.match(workspace, /sessionError\.value\s*=\s*e\?\.code\s*===\s*['"]CLIENT_ARCHIVED['"]/)
-  assert.match(workspace, /Couldn’t start the session\. Please try again\./)
-  assert.match(workspace, /finally\s*{\s*sessionBusy\.value\s*=\s*false/)
+  // Negative assertions for removed ceremony/timer
+  assert.doesNotMatch(header, /Start Session/)
+  assert.doesNotMatch(header, /@click="\$emit\('start-session'\)"/)
+  assert.doesNotMatch(header, /End Session/)
+  assert.doesNotMatch(header, /elapsedTime/)
+  assert.doesNotMatch(header, /timer-panel/)
+
+  // ClientWorkspaceHeader handles workspace busy/error state
+  assert.match(header, /workspaceBusy/)
+  assert.match(header, /workspaceError/)
+  assert.match(header, /Couldn’t open Clinical Workspace\. Please try again\./)
+  
+  // ClientWorkspace view no longer manages session ceremony state
+  assert.doesNotMatch(workspace, /const\s+sessionBusy\s*=\s*ref\(false\)/)
+  assert.doesNotMatch(workspace, /async\s+function\s+startSession\(\)/)
 })
 
 test('Session create or resume rejects archived clients before touching sessions', async () => {
