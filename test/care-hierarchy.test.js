@@ -28,14 +28,17 @@ test('Care Hierarchy: Current Care is primary and Reflection is collapsed', asyn
   assert.match(content, /v-model="selectedLensId"/, 'Lens selector uses v-model')
 })
 
-test('Care Hierarchy: Longitudinal Care sections are rendered immediately', async () => {
+test('Care Hierarchy: Reflection panel appears immediately below the header', async () => {
   const content = await readFile(new URL('../src/components/workspace/ClientCarePanel.vue', import.meta.url), 'utf8')
 
-  // Verify the loop for sections is BEFORE the reflection panel
-  const currentCareIndex = content.indexOf('data-testid="current-care-view"')
+  const headerIndex = content.indexOf('<header')
   const reflectionIndex = content.indexOf('data-testid="care-reflection-panel"')
+  const currentCareIndex = content.indexOf('data-testid="current-care-view"')
   
-  assert.ok(currentCareIndex !== -1, 'current-care-view not found')
+  assert.ok(headerIndex !== -1, 'header not found')
   assert.ok(reflectionIndex !== -1, 'care-reflection-panel not found')
-  assert.ok(currentCareIndex < reflectionIndex, 'Current Care view should appear before Reflection panel')
+  assert.ok(currentCareIndex !== -1, 'current-care-view not found')
+  
+  assert.ok(headerIndex < reflectionIndex, 'Header should appear before Reflection panel')
+  assert.ok(reflectionIndex < currentCareIndex, 'Reflection panel should appear before Current Care view')
 })
