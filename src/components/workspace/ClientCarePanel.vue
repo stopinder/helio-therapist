@@ -14,30 +14,6 @@
     </div>
   </header>
 
-  <p v-if="loading" class="text-body-sm text-ink-muted py-stack-lg">Loading Care…</p>
-  <div v-else class="space-y-stack-xl" data-testid="current-care-view">
-    <section v-for="section in sections" :key="section.kind">
-      <div class="mb-stack-sm">
-        <h3 class="text-h3 font-semibold text-ink">{{ section.title }}</h3>
-        <p v-if="!itemsFor(section.kind).length" class="text-body-sm text-ink-muted mt-1">{{ section.empty }}</p>
-      </div>
-      <div v-if="itemsFor(section.kind).length" class="border-y border-border divide-y divide-border">
-        <article v-for="item in itemsFor(section.kind)" :key="item.id" class="py-stack-md flex gap-inline-md justify-between items-start">
-          <div>
-            <p class="text-body text-ink leading-relaxed">{{ item.body }}</p>
-            <p class="text-caption text-ink-muted mt-stack-xs">{{ formatDate(item.updatedAt) }}<span v-if="item.origin==='ai_assisted'"> · AI-assisted, clinician accepted</span></p>
-          </div>
-          <select :value="item.status" class="shrink-0 border border-border rounded-control bg-surface px-inline-sm py-stack-xs text-caption text-ink-secondary" @change="changeStatus(item,$event.target.value)">
-            <option value="current">Current</option>
-            <option value="less_relevant">Less relevant</option>
-            <option value="paused">Paused</option>
-            <option value="historical">Earlier</option>
-          </select>
-        </article>
-      </div>
-    </section>
-  </div>
-
   <section v-if="showReflection" id="care-reflection" class="space-y-stack-md border-t border-border pt-stack-lg" data-testid="care-reflection-panel">
     <div class="border border-border rounded-panel bg-surface-elevated p-inline-lg py-stack-lg space-y-stack-md">
       <div>
@@ -91,6 +67,30 @@
       <p v-if="saveError" class="text-body-sm text-state-danger">{{ saveError }}</p>
     </section>
   </section>
+
+  <p v-if="loading" class="text-body-sm text-ink-muted py-stack-lg">Loading Care…</p>
+  <div v-else class="space-y-stack-xl" data-testid="current-care-view">
+    <section v-for="section in sections" :key="section.kind">
+      <div class="mb-stack-sm">
+        <h3 class="text-h3 font-semibold text-ink">{{ section.title }}</h3>
+        <p v-if="!itemsFor(section.kind).length" class="text-body-sm text-ink-muted mt-1">{{ section.empty }}</p>
+      </div>
+      <div v-if="itemsFor(section.kind).length" class="border-y border-border divide-y divide-border">
+        <article v-for="item in itemsFor(section.kind)" :key="item.id" class="py-stack-md flex gap-inline-md justify-between items-start">
+          <div>
+            <p class="text-body text-ink leading-relaxed">{{ item.body }}</p>
+            <p class="text-caption text-ink-muted mt-stack-xs">{{ formatDate(item.updatedAt) }}<span v-if="item.origin==='ai_assisted'"> · AI-assisted, clinician accepted</span></p>
+          </div>
+          <select :value="item.status" class="shrink-0 border border-border rounded-control bg-surface px-inline-sm py-stack-xs text-caption text-ink-secondary" @change="changeStatus(item,$event.target.value)">
+            <option value="current">Current</option>
+            <option value="less_relevant">Less relevant</option>
+            <option value="paused">Paused</option>
+            <option value="historical">Earlier</option>
+          </select>
+        </article>
+      </div>
+    </section>
+  </div>
 
   <p v-if="saveError && !showReflection" class="text-body-sm text-state-danger">{{ saveError }}</p>
 </section>
