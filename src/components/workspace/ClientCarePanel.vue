@@ -3,24 +3,102 @@
   <header class="border-b border-border pb-stack-md flex justify-between items-start flex-wrap gap-inline-md">
     <div>
       <h2 id="care-heading" class="text-h2 font-semibold text-ink">{{ lens.terminology.care }}</h2>
-      <p class="text-body-sm text-ink-secondary mt-1">Think aloud or type. Helio can offer possibilities; you decide what becomes part of {{ lens.terminology.care }}.</p>
+      <p class="text-body-sm text-ink-secondary mt-1">Your current longitudinal view of this client. Review what is current, then reflect when something may need adding or revisiting.</p>
     </div>
-    <div class="flex items-center gap-inline-sm">
+    <div class="flex items-center gap-inline-sm flex-wrap justify-end">
       <label for="lens-selector" class="text-caption font-medium text-ink-muted">Lens:</label>
       <select id="lens-selector" v-model="selectedLensId" class="border border-border rounded-control bg-surface px-inline-sm py-stack-xs text-caption text-ink-secondary">
         <option v-for="l in availableLenses" :key="l.id" :value="l.id">{{ l.label }}</option>
       </select>
+      <button type="button" class="px-inline-md py-stack-xs border border-border rounded-control bg-surface-elevated text-body-sm font-medium text-ink hover:bg-surface-subtle" :aria-expanded="showReflection" aria-controls="care-reflection" @click="showReflection=!showReflection">{{ showReflection ? 'Close reflection' : '+ Reflect on Care' }}</button>
     </div>
   </header>
-  <section class="border border-border rounded-panel bg-surface-elevated p-inline-lg py-stack-lg space-y-stack-md"><div><h3 class="text-h3 font-semibold text-ink">What’s on your mind?</h3><p class="text-body-sm text-ink-muted mt-1">A thought, impression, uncertainty, pattern or possible next step. This draft is not part of the clinical record.</p></div><textarea v-model="capture" rows="5" class="w-full border border-border rounded-control bg-surface px-inline-md py-stack-sm text-body text-ink" placeholder="Type here, or use the microphone to dictate…"></textarea><div class="flex flex-wrap items-center gap-inline-sm"><button type="button" :disabled="transcribing" class="px-inline-md py-stack-xs border border-border rounded-control text-body-sm font-medium text-ink" @click="toggleRecording">{{ recording ? '■ Stop recording' : '🎙 Dictate' }}</button><span v-if="recording" class="text-caption text-action-link">Listening… {{ recordingSeconds }}s</span><span v-else-if="transcribing" class="text-caption text-ink-muted">Transcribing securely…</span><select v-model="steering" class="border border-border rounded-control bg-surface px-inline-sm py-stack-xs text-body-sm text-ink-secondary"><option value="">Balanced suggestions</option><option value="stay close to observable evidence">Stay close to evidence</option><option value="offer alternative hypotheses and avoid premature certainty">Alternative hypotheses</option><option value="emphasise gentle behavioural experiments and practical next steps">More behavioural</option><option value="make the language less interpretive and more tentative">Less interpretive</option></select><button type="button" :disabled="generating || !capture.trim()" class="ml-auto px-inline-md py-stack-xs bg-action-link text-on-action rounded-control text-body-sm font-medium disabled:opacity-50" @click="generate">{{ generating ? 'Thinking…' : suggestions.length ? 'Regenerate suggestions' : 'Generate suggestions' }}</button></div><p v-if="captureError" class="text-body-sm text-state-danger">{{ captureError }}</p></section>
-  <section v-if="suggestions.length" class="space-y-stack-md"><div><h3 class="text-h3 font-semibold text-ink">Possibilities to review</h3><p class="text-body-sm text-ink-muted mt-1">Helio can suggest something new or notice when the existing understanding may need revisiting.</p></div><article v-for="suggestion in suggestions" :key="suggestion.id" class="border rounded-panel p-inline-lg py-stack-md" :class="suggestion.decision==='accepted'?'border-action-link bg-surface-subtle':'border-border bg-surface-elevated'"><div class="flex flex-wrap gap-inline-sm mb-stack-sm"><span class="text-caption font-medium text-ink-secondary">{{ sectionTitle(suggestion.kind) }}</span><span class="text-caption text-ink-muted">{{ suggestion.action==='update'?'Possible update':'Possible addition' }}</span><span class="text-caption text-ink-muted">{{ epistemicLabel(suggestion.epistemic) }}</span><span class="text-caption text-ink-muted">{{ basisLabel(suggestion.basis) }}</span></div><div v-if="suggestion.action==='update' && targetItem(suggestion)" class="mb-stack-sm pl-inline-md border-l-2 border-border"><p class="text-caption text-ink-muted">Current understanding</p><p class="text-body-sm text-ink-secondary mt-1">{{ targetItem(suggestion).body }}</p></div><textarea v-if="suggestion.decision==='accepted'" v-model="suggestion.body" rows="3" class="w-full border border-border rounded-control bg-surface px-inline-md py-stack-sm text-body text-ink"></textarea><p v-else class="text-body text-ink leading-relaxed">{{ suggestion.body }}</p><p v-if="suggestion.reason" class="text-caption text-ink-muted mt-stack-xs">Why Helio raised this: {{ suggestion.reason }}</p><div class="flex gap-inline-sm mt-stack-md"><button type="button" class="px-inline-sm py-stack-xs rounded-control text-body-sm font-medium" :class="suggestion.decision==='accepted'?'bg-action-link text-on-action':'border border-border text-ink'" @click="suggestion.decision='accepted'">Accept</button><button type="button" class="px-inline-sm py-stack-xs border border-border rounded-control text-body-sm text-ink-secondary" @click="suggestion.decision='declined'">Decline</button></div></article><div v-if="acceptedCount" class="flex justify-end border-t border-border pt-stack-md"><button type="button" :disabled="saving" class="px-inline-md py-stack-xs bg-action-link text-on-action rounded-control font-medium disabled:opacity-50" @click="saveAccepted">{{ saving?'Saving…':`Save ${acceptedCount} accepted ${acceptedCount===1?'change':'changes'}` }}</button></div><p v-if="saveError" class="text-body-sm text-state-danger">{{ saveError }}</p></section>
-  <p v-if="loading" class="text-body-sm text-ink-muted py-stack-lg">Loading Care…</p><div v-else class="space-y-stack-xl"><section v-for="section in sections" :key="section.kind"><div class="mb-stack-sm"><h3 class="text-h3 font-semibold text-ink">{{ section.title }}</h3><p v-if="!itemsFor(section.kind).length" class="text-body-sm text-ink-muted mt-1">{{ section.empty }}</p></div><div v-if="itemsFor(section.kind).length" class="border-y border-border divide-y divide-border"><article v-for="item in itemsFor(section.kind)" :key="item.id" class="py-stack-md flex gap-inline-md justify-between items-start"><div><p class="text-body text-ink leading-relaxed">{{ item.body }}</p><p class="text-caption text-ink-muted mt-stack-xs">{{ formatDate(item.updatedAt) }}<span v-if="item.origin==='ai_assisted'"> · AI-assisted, clinician accepted</span></p></div><select :value="item.status" class="shrink-0 border border-border rounded-control bg-surface px-inline-sm py-stack-xs text-caption text-ink-secondary" @change="changeStatus(item,$event.target.value)"><option value="current">Current</option><option value="less_relevant">Less relevant</option><option value="paused">Paused</option><option value="historical">Earlier</option></select></article></div></section></div>
+
+  <p v-if="loading" class="text-body-sm text-ink-muted py-stack-lg">Loading Care…</p>
+  <div v-else class="space-y-stack-xl" data-testid="current-care-view">
+    <section v-for="section in sections" :key="section.kind">
+      <div class="mb-stack-sm">
+        <h3 class="text-h3 font-semibold text-ink">{{ section.title }}</h3>
+        <p v-if="!itemsFor(section.kind).length" class="text-body-sm text-ink-muted mt-1">{{ section.empty }}</p>
+      </div>
+      <div v-if="itemsFor(section.kind).length" class="border-y border-border divide-y divide-border">
+        <article v-for="item in itemsFor(section.kind)" :key="item.id" class="py-stack-md flex gap-inline-md justify-between items-start">
+          <div>
+            <p class="text-body text-ink leading-relaxed">{{ item.body }}</p>
+            <p class="text-caption text-ink-muted mt-stack-xs">{{ formatDate(item.updatedAt) }}<span v-if="item.origin==='ai_assisted'"> · AI-assisted, clinician accepted</span></p>
+          </div>
+          <select :value="item.status" class="shrink-0 border border-border rounded-control bg-surface px-inline-sm py-stack-xs text-caption text-ink-secondary" @change="changeStatus(item,$event.target.value)">
+            <option value="current">Current</option>
+            <option value="less_relevant">Less relevant</option>
+            <option value="paused">Paused</option>
+            <option value="historical">Earlier</option>
+          </select>
+        </article>
+      </div>
+    </section>
+  </div>
+
+  <section v-if="showReflection" id="care-reflection" class="space-y-stack-md border-t border-border pt-stack-lg" data-testid="care-reflection-panel">
+    <div class="border border-border rounded-panel bg-surface-elevated p-inline-lg py-stack-lg space-y-stack-md">
+      <div>
+        <h3 class="text-h3 font-semibold text-ink">Reflect on Care</h3>
+        <p class="text-body-sm text-ink-muted mt-1">Capture a thought, impression, uncertainty, pattern or possible next step. This draft is not part of the clinical record.</p>
+      </div>
+      <textarea v-model="capture" rows="5" class="w-full border border-border rounded-control bg-surface px-inline-md py-stack-sm text-body text-ink" placeholder="Type here, or use the microphone to dictate…"></textarea>
+      <div class="flex flex-wrap items-center gap-inline-sm">
+        <button type="button" :disabled="transcribing" class="px-inline-md py-stack-xs border border-border rounded-control text-body-sm font-medium text-ink" @click="toggleRecording">{{ recording ? '■ Stop recording' : '🎙 Dictate' }}</button>
+        <span v-if="recording" class="text-caption text-action-link">Listening… {{ recordingSeconds }}s</span>
+        <span v-else-if="transcribing" class="text-caption text-ink-muted">Transcribing securely…</span>
+        <select v-model="steering" class="border border-border rounded-control bg-surface px-inline-sm py-stack-xs text-body-sm text-ink-secondary">
+          <option value="">Balanced suggestions</option>
+          <option value="stay close to observable evidence">Stay close to evidence</option>
+          <option value="offer alternative hypotheses and avoid premature certainty">Alternative hypotheses</option>
+          <option value="emphasise gentle behavioural experiments and practical next steps">More behavioural</option>
+          <option value="make the language less interpretive and more tentative">Less interpretive</option>
+        </select>
+        <button type="button" :disabled="generating || !capture.trim()" class="ml-auto px-inline-md py-stack-xs bg-action-link text-on-action rounded-control text-body-sm font-medium disabled:opacity-50" @click="generate">{{ generating ? 'Thinking…' : suggestions.length ? 'Regenerate suggestions' : 'Generate suggestions' }}</button>
+      </div>
+      <p v-if="captureError" class="text-body-sm text-state-danger">{{ captureError }}</p>
+    </div>
+
+    <section v-if="suggestions.length" class="space-y-stack-md">
+      <div>
+        <h3 class="text-h3 font-semibold text-ink">Possibilities to review</h3>
+        <p class="text-body-sm text-ink-muted mt-1">Helio can suggest something new or notice when the existing understanding may need revisiting.</p>
+      </div>
+      <article v-for="suggestion in suggestions" :key="suggestion.id" class="border rounded-panel p-inline-lg py-stack-md" :class="suggestion.decision==='accepted'?'border-action-link bg-surface-subtle':'border-border bg-surface-elevated'">
+        <div class="flex flex-wrap gap-inline-sm mb-stack-sm">
+          <span class="text-caption font-medium text-ink-secondary">{{ sectionTitle(suggestion.kind) }}</span>
+          <span class="text-caption text-ink-muted">{{ suggestion.action==='update'?'Possible update':'Possible addition' }}</span>
+          <span class="text-caption text-ink-muted">{{ epistemicLabel(suggestion.epistemic) }}</span>
+          <span class="text-caption text-ink-muted">{{ basisLabel(suggestion.basis) }}</span>
+        </div>
+        <div v-if="suggestion.action==='update' && targetItem(suggestion)" class="mb-stack-sm pl-inline-md border-l-2 border-border">
+          <p class="text-caption text-ink-muted">Current understanding</p>
+          <p class="text-body-sm text-ink-secondary mt-1">{{ targetItem(suggestion).body }}</p>
+        </div>
+        <textarea v-if="suggestion.decision==='accepted'" v-model="suggestion.body" rows="3" class="w-full border border-border rounded-control bg-surface px-inline-md py-stack-sm text-body text-ink"></textarea>
+        <p v-else class="text-body text-ink leading-relaxed">{{ suggestion.body }}</p>
+        <p v-if="suggestion.reason" class="text-caption text-ink-muted mt-stack-xs">Why Helio raised this: {{ suggestion.reason }}</p>
+        <div class="flex gap-inline-sm mt-stack-md">
+          <button type="button" class="px-inline-sm py-stack-xs rounded-control text-body-sm font-medium" :class="suggestion.decision==='accepted'?'bg-action-link text-on-action':'border border-border text-ink'" @click="suggestion.decision='accepted'">Accept</button>
+          <button type="button" class="px-inline-sm py-stack-xs border border-border rounded-control text-body-sm text-ink-secondary" @click="suggestion.decision='declined'">Decline</button>
+        </div>
+      </article>
+      <div v-if="acceptedCount" class="flex justify-end border-t border-border pt-stack-md">
+        <button type="button" :disabled="saving" class="px-inline-md py-stack-xs bg-action-link text-on-action rounded-control font-medium disabled:opacity-50" @click="saveAccepted">{{ saving?'Saving…':`Save ${acceptedCount} accepted ${acceptedCount===1?'change':'changes'}` }}</button>
+      </div>
+      <p v-if="saveError" class="text-body-sm text-state-danger">{{ saveError }}</p>
+    </section>
+  </section>
+
+  <p v-if="saveError && !showReflection" class="text-body-sm text-state-danger">{{ saveError }}</p>
 </section>
 </template>
 <script setup>
 import { computed,onBeforeUnmount,onMounted,ref } from 'vue'; import { createClientCareItem,generateCareSuggestions,listClientCareItems,transcribeCareAudio,updateClientCareItem } from '../../lib/clientCare.js'
 import { CLINICAL_LENSES, DEFAULT_LENS_ID, getLens } from '../../lib/clinicalLenses.js'
-const props=defineProps({clientId:{type:String,required:true}}),emit=defineEmits(['changed']);const items=ref([]),loading=ref(true),capture=ref(''),steering=ref(''),suggestions=ref([]),generating=ref(false),saving=ref(false),recording=ref(false),transcribing=ref(false),recordingSeconds=ref(0),captureError=ref(''),saveError=ref(''),selectedLensId=ref(DEFAULT_LENS_ID);let recorder=null,chunks=[],stream=null,recordingTimer=null
+const props=defineProps({clientId:{type:String,required:true}}),emit=defineEmits(['changed']);const items=ref([]),loading=ref(true),capture=ref(''),steering=ref(''),suggestions=ref([]),generating=ref(false),saving=ref(false),recording=ref(false),transcribing=ref(false),recordingSeconds=ref(0),captureError=ref(''),saveError=ref(''),selectedLensId=ref(DEFAULT_LENS_ID),showReflection=ref(false);let recorder=null,chunks=[],stream=null,recordingTimer=null
 const lens=computed(()=>getLens(selectedLensId.value)),availableLenses=computed(()=>Object.values(CLINICAL_LENSES));const sections=computed(()=>Object.entries(lens.value.sections).map(([kind,cfg])=>({kind,title:cfg.label,empty:cfg.emptyState})));const acceptedCount=computed(()=>suggestions.value.filter(s=>s.decision==='accepted').length)
 function itemsFor(k){return items.value.filter(i=>i.kind===k&&i.status!=='historical')}function targetItem(s){return items.value.find(i=>i.id===s.targetItemId)}function sectionTitle(k){return lens.value.sections[k]?.label||lens.value.terminology.care}function epistemicLabel(v){return{observation:'Observation',clinical_inference:'Clinical inference',possible_next_step:'Possible next step'}[v]||'Possibility'}function basisLabel(v){return{therapist_input:'From your note',approved_record:'From approved record',both:'Your note + approved record'}[v]||'From your note'}
 async function load(){loading.value=true;try{items.value=await listClientCareItems(props.clientId)}catch(e){saveError.value=e.code==='CARE_SCHEMA_UNAVAILABLE'?'Care storage is not configured in this environment yet.':'Care could not be loaded.'}finally{loading.value=false}}
