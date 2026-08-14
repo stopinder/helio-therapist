@@ -45,8 +45,8 @@ test.describe('Authenticated Therapist Workflow', () => {
     // Verify the URL contains /clients/<uuid>
     await expect(page).toHaveURL(/\/clients\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
 
-    // 4. Click Open Session Workspace
-    const openSessionButton = page.getByRole('button', { name: /Open Session Workspace/i });
+    // 4. Click Clinical Workspace
+    const openSessionButton = page.getByRole('button', { name: /Clinical Workspace/i });
     await expect(openSessionButton).toBeVisible();
     await openSessionButton.click();
 

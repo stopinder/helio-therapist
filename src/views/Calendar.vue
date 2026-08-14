@@ -443,7 +443,7 @@
             :aria-busy="startingEventId === selectedEvent.id"
             class="w-full text-center py-2 text-body-sm font-medium text-on-action bg-action-primary rounded-control hover:bg-action-primary-hover disabled:opacity-60 transition-colors shadow-sm"
           >
-            {{ startingEventId === selectedEvent.id ? 'Opening…' : 'Start Session' }}
+            {{ startingEventId === selectedEvent.id ? 'Opening…' : 'Clinical Workspace' }}
           </button>
           <p v-if="sessionOpenErrorId === selectedEvent.id" class="text-caption text-state-danger mt-1">
             Couldn’t open the session workspace. Please try again.

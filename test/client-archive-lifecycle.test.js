@@ -26,9 +26,9 @@ test('workspace makes archive meaning explicit and never exposes deletion', () =
 })
 
 test('archived clients cannot receive new active work', () => {
-  assert.match(header, /!isSessionWorkspace && !client\.archived/)
-  assert.match(header, /if \(props\.client\.archived \|\| openingSession\.value\) return/)
-  assert.match(workspace, /Restore the client before starting a new session, joining a meeting, or scheduling a new appointment/)
+  assert.match(header, /v-if="!client\.archived"/)
+  assert.match(header, /if \(props\.client\.archived \|\| workspaceBusy\.value\) return/)
+  assert.match(workspace, /Restore the client before opening Clinical Workspace, joining a meeting, or scheduling a new appointment/)
   assert.match(guardMigration, /before insert on public\.sessions/)
   assert.match(guardMigration, /before insert on public\.appointments/)
   assert.match(guardMigration, /c\.archived = true/)

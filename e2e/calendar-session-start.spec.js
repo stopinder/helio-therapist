@@ -189,8 +189,8 @@ test.describe('Calendar Session Start Workflow', () => {
     await expect(appointment).toBeVisible();
     await appointment.click();
 
-    // 3. Click Start Session
-    const startButton = page.getByRole('button', { name: 'Start Session' });
+    // 3. Click Clinical Workspace
+    const startButton = page.getByRole('button', { name: 'Clinical Workspace' });
     await expect(startButton).toBeVisible();
     await startButton.click();
 
@@ -206,8 +206,8 @@ test.describe('Calendar Session Start Workflow', () => {
     await expect(page).toHaveURL(/\/$/);
     await expect(page.getByRole('heading', { name: /Good afternoon|Good morning|Good evening/i })).toBeVisible();
 
-    // 2. Find Start Session button in Today's Schedule
-    const startButton = page.getByRole('button', { name: 'Start Session' });
+    // 2. Find Clinical Workspace button in Today's Schedule
+    const startButton = page.getByRole('button', { name: 'Clinical Workspace' });
     await expect(startButton).toBeVisible();
 
     // 3. Click Start Session
@@ -227,7 +227,7 @@ test.describe('Calendar Session Start Workflow', () => {
     const appointment = page.getByTestId('timed-grid-scroll').getByRole('button', { name: /Appointment with Test Client/i });
     await appointment.click();
 
-    const startButton = page.getByRole('button', { name: 'Start Session' });
+    const startButton = page.getByRole('button', { name: 'Clinical Workspace' });
     await startButton.click();
 
     // Verify error message
