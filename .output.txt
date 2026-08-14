@@ -1,0 +1,302 @@
+✖ Follow-ups service uses correct Supabase table and RLS constraints (8.1796ms)
+✖ Follow-ups UI components follow requirements (5.1063ms)
+✔ Follow-ups migration follows schema requirements (3.6377ms)
+✔ Client Workspace overview uses live sources and honest empty states (10.6742ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 2
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 134.4749
+✖ failing tests:
+test at test\client-follow-ups.test.js:5:1
+✖ Follow-ups service uses correct Supabase table and RLS constraints (8.1796ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /if\(!auth\?\.user\)/. Input:
+
+  "import { supabase } from './supabase.js'\r\n" +
+    '\r\n' +
+    'function requireSupabase() {\r\n' +
+    "  if (!supabase) throw new Error('Supabase is not configured')\r\n" +
+    '  return supabase\r\n' +
+    '}\r\n' +
+    '\r\n' +
+    'async function authenticatedHeaders() {\r\n' +
+    '  const db = requireSupabase()\r\n' +
+    '  const { data } = await db.auth.getSession()\r\n' +
+    '  const token = data?.session?.access_token\r\n' +
+    '  if (!token) {\r\n' +
+    "    const e = new Error('Authentication required')\r\n" +
+    "    e.code = 'UNAUTHENTICATED'\r\n" +
+    '    throw e\r\n' +
+    '  }\r\n' +
+    '  return {\r\n' +
+    "    'Content-Type': 'application/json',\r\n" +
+    "    'Authorization': `Bearer ${token}`\r\n" +
+    '  }\r\n' +
+    '}\r\n' +
+    '\r\n' +
+    'function mapFollowUp(row) {\r\n' +
+    '  return {\r\n' +
+    '    id: row.id,\r\n' +
+    '    therapistId: row.therapist_id,\r\n' +
+    '    clientId: row.client_id,\r\n' +
+    '    body: row.body,\r\n' +
+    '    completedAt: row.completed_at,\r\n' +
+    '    createdAt: row.created_at,\r\n' +
+    '    updatedAt: row.updated_at\r\n' +
+    '  }\r\n' +
+    '}\r\n' +
+    '\r\n' +
+    'export async function listClientFollowUps(clientId) {\r\n' +
+    '  const db = requireSupabase()\r\n' +
+    '  const { data, error } = await db\r\n' +
+    "    .from('client_follow_ups')\r\n" +
+    "    .select('*')\r\n" +
+    "    .eq('client_id', clientId)\r\n" +
+    "    .order('completed_at', { ascending: true, nullsFirst: true })\r\n" +
+    "    .order('updated_at', { ascending: false })\r\n" +
+    '\r\n' +
+    '  if (error) throw error\r\n' +
+    '  return (data || []).map(mapFollowUp)\r\n' +
+    '}\r\n' +
+    '\r\n' +
+    'export async function createClientFollowUp({ clientId, body }) {\r\n' +
+    '  const db = requireSupabase()\r\n' +
+    '  const { data: auth } = await db.auth.getUser()\r\n' +
+    '  if (!auth?.user) {\r\n' +
+    "    const e = new Error('Authentication required')\r\n" +
+    "    e.code = 'UNAUTHENTICATED'\r\n" +
+    '    throw e\r\n' +
+    '  }\r\n' +
+    '\r\n' +
+    '  const { data, error } = await db\r\n' +
+    "    .from('client_follow_ups')\r\n" +
+    '    .insert({\r\n' +
+    '      therapist_id: auth.user.id,\r\n' +
+    '      client_id: clientId,\r\n' +
+    '      body: body.trim()\r\n' +
+    '    })\r\n' +
+    "    .select('*')\r\n" +
+    '    .single()\r\n' +
+    '\r\n' +
+    '  if (error) throw error\r\n' +
+    '  return mapFollowUp(data)\r\n' +
+    '}\r\n' +
+    '\r\n' +
+    'export async function setClientFollowUpCompleted({ id, completed }) {\r\n' +
+    '  const db = requireSupabase()\r\n' +
+    '  const { data, error } = await db\r\n' +
+    "    .from('client_follow_ups')\r\n" +
+    '    .update({\r\n' +
+    '      completed_at: completed ? new Date().toISOString() : null\r\n' +
+    '    })\r\n' +
+    "    .eq('id', id)\r\n" +
+    "    .select('*')\r\n" +
+    '    .single()\r\n' +
+    '\r\n' +
+    '  if (error) throw error\r\n' +
+    '  return mapFollowUp(data)\r\n' +
+    '}\r\n' +
+    '\r\n' +
+    'export async function updateClientFollowUp({ id, body }) {\r\n' +
+    '  const db = requireSupabase()\r\n' +
+    '  const { data, error } = await db\r\n' +
+    "    .from('client_follow_ups')\r\n" +
+    '    .update({ body: body.trim() })\r\n' +
+    "    .eq('id', id)\r\n" +
+    "    .select('*')\r\n" +
+    '    .single()\r\n' +
+    '\r\n' +
+    '  if (error) throw error\r\n' +
+    '  return mapFollowUp(data)\r\n' +
+    '}\r\n' +
+    '\r\n' +
+    'export async function transcribeAudio(audio) {\r\n' +
+    "  const response = await fetch('/api/ai/transcribe', {\r\n" +
+    "    method: 'POST',\r\n" +
+    '    headers: await authenticatedHeaders(),\r\n' +
+    '    body: JSON.stringify({ audio })\r\n' +
+    '  })\r\n' +
+    '  const payload = await response.json().catch(() => ({}))\r\n' +
+    '  if (!response.ok) {\r\n' +
+    "    const e = new Error(payload?.error?.message || 'Dictation could not be transcribed')\r\n" +
+    "    e.code = payload?.error?.code || 'TRANSCRIPTION_FAILED'\r\n" +
+    '    throw e\r\n' +
+    '  }\r\n' +
+    "  return payload.text || ''\r\n" +
+    '}\r\n'
+
+      at TestContext.<anonymous> (file:///C:/Users/Rob/WebstormProjects/helio-therapist/test/client-follow-ups.test.js:22:10)
+      at async Test.run (node:internal/test_runner/test:1054:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: "import { supabase } from './supabase.js'\r\n\r\nfunction requireSupabase() {\r\n  if (!supabase) throw new Error('Supabase is not configured')\r\n  return supabase\r\n}\r\n\r\nasync function authenticatedHeaders() {\r\n  const db = requireSupabase()\r\n  const { data } = await db.auth.getSession()\r\n  const token = data?.session?.access_token\r\n  if (!token) {\r\n    const e = new Error('Authentication required')\r\n    e.code = 'UNAUTHENTICATED'\r\n    throw e\r\n  }\r\n  return {\r\n    'Content-Type': 'application/json',\r\n    'Authorization': `Bearer ${token}`\r\n  }\r\n}\r\n\r\nfunction mapFollowUp(row) {\r\n  return {\r\n    id: row.id,\r\n    therapistId: row.therapist_id,\r\n    clientId: row.client_id,\r\n    body: row.body,\r\n    completedAt: row.completed_at,\r\n    createdAt: row.created_at,\r\n    updatedAt: row.updated_at\r\n  }\r\n}\r\n\r\nexport async function listClientFollowUps(clientId) {\r\n  const db = requireSupabase()\r\n  const { data, error } = await db\r\n    .from('client_follow_ups')\r\n    .select('*')\r\n    .eq('client_id', clientId)\r\n    .order('completed_at', { ascending: true, nullsFirst: true })\r\n    .order('updated_at', { ascending: false })\r\n\r\n  if (error) throw error\r\n  return (data || []).map(mapFollowUp)\r\n}\r\n\r\nexport async function createClientFollowUp({ clientId, body }) {\r\n  const db = requireSupabase()\r\n  const { data: auth } = await db.auth.getUser()\r\n  if (!auth?.user) {\r\n    const e = new Error('Authentication required')\r\n    e.code = 'UNAUTHENTICATED'\r\n    throw e\r\n  }\r\n\r\n  const { data, error } = await db\r\n    .from('client_follow_ups')\r\n    .insert({\r\n      therapist_id: auth.user.id,\r\n      client_id: clientId,\r\n      body: body.trim()\r\n    })\r\n    .select('*')\r\n    .single()\r\n\r\n  if (error) throw error\r\n  return mapFollowUp(data)\r\n}\r\n\r\nexport async function setClientFollowUpCompleted({ id, completed }) {\r\n  const db = requireSupabase()\r\n  const { data, error } = await db\r\n    .from('client_follow_ups')\r\n    .update({\r\n      completed_at: completed ? new Date().toISOString() : null\r\n    })\r\n    .eq('id', id)\r\n    .select('*')\r\n    .single()\r\n\r\n  if (error) throw error\r\n  return mapFollowUp(data)\r\n}\r\n\r\nexport async function updateClientFollowUp({ id, body }) {\r\n  const db = requireSupabase()\r\n  const { data, error } = await db\r\n    .from('client_follow_ups')\r\n    .update({ body: body.trim() })\r\n    .eq('id', id)\r\n    .select('*')\r\n    .single()\r\n\r\n  if (error) throw error\r\n  return mapFollowUp(data)\r\n}\r\n\r\nexport async function transcribeAudio(audio) {\r\n  const response = await fetch('/api/ai/transcribe', {\r\n    method: 'POST',\r\n    headers: await authenticatedHeaders(),\r\n    body: JSON.stringify({ audio })\r\n  })\r\n  const payload = await response.json().catch(() => ({}))\r\n  if (!response.ok) {\r\n    const e = new Error(payload?.error?.message || 'Dictation could not be transcribed')\r\n    e.code = payload?.error?.code || 'TRANSCRIPTION_FAILED'\r\n    throw e\r\n  }\r\n  return payload.text || ''\r\n}\r\n",
+    expected: /if\(!auth\?\.user\)/,
+    operator: 'match',
+    diff: 'simple'
+  }
+test at test\client-follow-ups.test.js:25:1
+✖ Follow-ups UI components follow requirements (5.1063ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /<input type="checkbox"/. Input:
+
+  '<template>\r\n' +
+    '  <section class="bg-surface-elevated border border-border-muted rounded-panel p-inline-lg">\r\n' +
+    '    <div class="flex justify-between items-center mb-stack-md pt-stack-md">\r\n' +
+    '      <h3 class="text-h3 font-semibold text-ink">Follow-ups</h3>\r\n' +
+    '      <button \r\n' +
+    '        @click="showCapture = true"\r\n' +
+    '        type="button" \r\n' +
+    '        class="text-caption font-medium text-action-link hover:underline"\r\n' +
+    '      >\r\n' +
+    '        Quick capture\r\n' +
+    '      </button>\r\n' +
+    '    </div>\r\n' +
+    '\r\n' +
+    '    <div class="pb-stack-md">\r\n' +
+    '      <div v-if="loading && !followUps.length" class="py-stack-md text-center">\r\n' +
+    '        <p class="text-body-sm text-ink-muted">Loading follow-ups...</p>\r\n' +
+    '      </div>\r\n' +
+    '      \r\n' +
+    '      <div v-else-if="!openFollowUps.length" class="py-stack-md text-center border border-dashed border-border rounded-control">\r\n' +
+    '        <p class="text-body-sm text-ink-muted">No follow-ups recorded.</p>\r\n' +
+    '        <button \r\n' +
+    '          @click="showCapture = true"\r\n' +
+    '          type="button"\r\n' +
+    '          class="mt-2 text-action-link font-medium hover:underline text-body-sm"\r\n' +
+    '        >\r\n' +
+    '          Quick capture\r\n' +
+    '        </button>\r\n' +
+    '      </div>\r\n' +
+    '      \r\n' +
+    '      <div v-else class="space-y-stack-sm">\r\n' +
+    '        <div \r\n' +
+    '          v-for="item in openFollowUps" \r\n' +
+    '          :key="item.id"\r\n' +
+    '          class="group flex gap-inline-sm p-inline-md border border-border rounded-control bg-surface hover:border-border-hover transition-colors"\r\n' +
+    '        >\r\n' +
+    '          <input \r\n' +
+    '            type="checkbox" \r\n' +
+    '            :checked="!!item.completedAt"\r\n' +
+    '            @change="toggleComplete(item)"\r\n' +
+    '            class="mt-1 w-4 h-4 rounded border-border text-action-link focus:ring-action-link cursor-pointer"\r\n' +
+    '          />\r\n' +
+    '          <div class="flex-1 min-w-0">\r\n' +
+    '            <p class="text-body-sm text-ink leading-relaxed whitespace-pre-wrap">{{ item.body }}</p>\r\n' +
+    '            <p class="text-caption text-ink-muted mt-1">{{ formatDate(item.createdAt) }}</p>\r\n' +
+    '          </div>\r\n' +
+    '        </div>\r\n' +
+    '      </div>\r\n' +
+    '\r\n' +
+    '      <div v-if="completedFollowUps.length > 0" class="mt-stack-md pt-stack-md border-t border-border-muted">\r\n' +
+    '        <button \r\n' +
+    '          @click="showCompleted = !showCompleted"\r\n' +
+    '          type="button"\r\n' +
+    '          class="text-caption text-ink-muted hover:text-ink flex items-center gap-1"\r\n' +
+    '        >\r\n' +
+    "          {{ showCompleted ? 'Hide' : 'Show' }} {{ completedFollowUps.length }} completed\r\n" +
+    '        </button>\r\n' +
+    '        \r\n' +
+    '        <div v-if="showCompleted" class="mt-stack-sm space-y-stack-sm opacity-60">\r\n' +
+    '          <div \r\n' +
+    '            v-for="item in completedFollowUps" \r\n' +
+    '            :key="item.id"\r\n' +
+    '            class="flex gap-inline-sm p-inline-md border border-border rounded-control bg-surface-subtle"\r\n' +
+    '          >\r\n' +
+    '            <input \r\n' +
+    '              type="checkbox" \r\n' +
+    '              checked\r\n' +
+    '              @change="toggleComplete(item)"\r\n' +
+    '              class="mt-1 w-4 h-4 rounded border-border text-ink-muted focus:ring-ink-muted cursor-pointer"\r\n' +
+    '            />\r\n' +
+    '            <div class="flex-1 min-w-0">\r\n' +
+    '              <p class="text-body-sm text-ink-secondary leading-relaxed line-through">{{ item.body }}</p>\r\n' +
+    '            </div>\r\n' +
+    '          </div>\r\n' +
+    '        </div>\r\n' +
+    '      </div>\r\n' +
+    '    </div>\r\n' +
+    '\r\n' +
+    '    <QuickCaptureModal \r\n' +
+    '      v-if="showCapture" \r\n' +
+    '      :client-id="clientId"\r\n' +
+    '      @close="showCapture = false"\r\n' +
+    '      @saved="onSaved"\r\n' +
+    '    />\r\n' +
+    '  </section>\r\n' +
+    '</template>\r\n' +
+    '\r\n' +
+    '<script setup>\r\n' +
+    "import { ref, computed, onMounted } from 'vue';\r\n" +
+    "import { listClientFollowUps, setClientFollowUpCompleted } from '../../lib/clientFollowUps.js';\r\n" +
+    "import QuickCaptureModal from './QuickCaptureModal.vue';\r\n" +
+    '\r\n' +
+    'const props = defineProps({\r\n' +
+    '  clientId: { type: String, required: true }\r\n' +
+    '});\r\n' +
+    '\r\n' +
+    'const followUps = ref([]);\r\n' +
+    'const loading = ref(true);\r\n' +
+    'const showCapture = ref(false);\r\n' +
+    'const showCompleted = ref(false);\r\n' +
+    '\r\n' +
+    'const openFollowUps = computed(() => followUps.value.filter(f => !f.completedAt));\r\n' +
+    'const completedFollowUps = computed(() => followUps.value.filter(f => !!f.completedAt));\r\n' +
+    '\r\n' +
+    'async function load() {\r\n' +
+    '  loading.value = true;\r\n' +
+    '  try {\r\n' +
+    '    followUps.value = await listClientFollowUps(props.clientId);\r\n' +
+    '  } catch (e) {\r\n' +
+    "    console.error('Failed to load follow-ups:', e);\r\n" +
+    '  } finally {\r\n' +
+    '    loading.value = false;\r\n' +
+    '  }\r\n' +
+    '}\r\n' +
+    '\r\n' +
+    'async function toggleComplete(item) {\r\n' +
+    '  const isCompleted = !!item.completedAt;\r\n' +
+    '  try {\r\n' +
+    '    const updated = await setClientFollowUpCompleted({ \r\n' +
+    '      id: item.id, \r\n' +
+    '      completed: !isCompleted \r\n' +
+    '    });\r\n' +
+    '    followUps.value = followUps.value.map(f => f.id === updated.id ? updated : f);\r\n' +
+    '    // Re-sort if needed, though listClientFollowUps does it on load\r\n' +
+    '    followUps.value.sort((a, b) => {\r\n' +
+    '      if (!a.completedAt && b.completedAt) return -1;\r\n' +
+    '      if (a.completedAt && !b.completedAt) return 1;\r\n' +
+    '      return new Date(b.updatedAt) - new Date(a.updatedAt);\r\n' +
+    '    });\r\n' +
+    '  } catch (e) {\r\n' +
+    "    console.error('Failed to update follow-up:', e);\r\n" +
+    '  }\r\n' +
+    '}\r\n' +
+    '\r\n' +
+    'function onSaved(newFollowUp) {\r\n' +
+    '  followUps.value = [newFollowUp, ...followUps.value];\r\n' +
+    '}\r\n' +
+    '\r\n' +
+    'function formatDate(dateString) {\r\n' +
+    "  if (!dateString) return '';\r\n" +
+    "  return new Date(dateString).toLocaleDateString('en-GB', { \r\n" +
+    "    day: 'numeric', \r\n" +
+    "    month: 'short' \r\n" +
+    '  });\r\n' +
+    '}\r\n' +
+    '\r\n' +
+    'onMounted(load);\r\n' +
+    '</script>\r\n'
+
+      at TestContext.<anonymous> (file:///C:/Users/Rob/WebstormProjects/helio-therapist/test/client-follow-ups.test.js:42:10)
+      at async Test.run (node:internal/test_runner/test:1054:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:744:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: `<template>\r\n  <section class="bg-surface-elevated border border-border-muted rounded-panel p-inline-lg">\r\n    <div class="flex justify-between items-center mb-stack-md pt-stack-md">\r\n      <h3 class="text-h3 font-semibold text-ink">Follow-ups</h3>\r\n      <button \r\n        @click="showCapture = true"\r\n        type="button" \r\n        class="text-caption font-medium text-action-link hover:underline"\r\n      >\r\n        Quick capture\r\n      </button>\r\n    </div>\r\n\r\n    <div class="pb-stack-md">\r\n      <div v-if="loading && !followUps.length" class="py-stack-md text-center">\r\n        <p class="text-body-sm text-ink-muted">Loading follow-ups...</p>\r\n      </div>\r\n      \r\n      <div v-else-if="!openFollowUps.length" class="py-stack-md text-center border border-dashed border-border rounded-control">\r\n        <p class="text-body-sm text-ink-muted">No follow-ups recorded.</p>\r\n        <button \r\n          @click="showCapture = true"\r\n          type="button"\r\n          class="mt-2 text-action-link font-medium hover:underline text-body-sm"\r\n        >\r\n          Quick capture\r\n        </button>\r\n      </div>\r\n      \r\n      <div v-else class="space-y-stack-sm">\r\n        <div \r\n          v-for="item in openFollowUps" \r\n          :key="item.id"\r\n          class="group flex gap-inline-sm p-inline-md border border-border rounded-control bg-surface hover:border-border-hover transition-colors"\r\n        >\r\n          <input \r\n            type="checkbox" \r\n            :checked="!!item.completedAt"\r\n            @change="toggleComplete(item)"\r\n            class="mt-1 w-4 h-4 rounded border-border text-action-link focus:ring-action-link cursor-pointer"\r\n          />\r\n          <div class="flex-1 min-w-0">\r\n            <p class="text-body-sm text-ink leading-relaxed whitespace-pre-wrap">{{ item.body }}</p>\r\n            <p class="text-caption text-ink-muted mt-1">{{ formatDate(item.createdAt) }}</p>\r\n          </div>\r\n        </div>\r\n      </div>\r\n\r\n      <div v-if="completedFollowUps.length > 0" class="mt-stack-md pt-stack-md border-t border-border-muted">\r\n        <button \r\n          @click="showCompleted = !showCompleted"\r\n          type="button"\r\n          class="text-caption text-ink-muted hover:text-ink flex items-center gap-1"\r\n        >\r\n          {{ showCompleted ? 'Hide' : 'Show' }} {{ completedFollowUps.length }} completed\r\n        </button>\r\n        \r\n        <div v-if="showCompleted" class="mt-stack-sm space-y-stack-sm opacity-60">\r\n          <div \r\n            v-for="item in completedFollowUps" \r\n            :key="item.id"\r\n            class="flex gap-inline-sm p-inline-md border border-border rounded-control bg-surface-subtle"\r\n          >\r\n            <input \r\n              type="checkbox" \r\n              checked\r\n              @change="toggleComplete(item)"\r\n              class="mt-1 w-4 h-4 rounded border-border text-ink-muted focus:ring-ink-muted cursor-pointer"\r\n            />\r\n            <div class="flex-1 min-w-0">\r\n              <p class="text-body-sm text-ink-secondary leading-relaxed line-through">{{ item.body }}</p>\r\n            </div>\r\n          </div>\r\n        </div>\r\n      </div>\r\n    </div>\r\n\r\n    <QuickCaptureModal \r\n      v-if="showCapture" \r\n      :client-id="clientId"\r\n      @close="showCapture = false"\r\n      @saved="onSaved"\r\n    />\r\n  </section>\r\n</template>\r\n\r\n<script setup>\r\nimport { ref, computed, onMounted } from 'vue';\r\nimport { listClientFollowUps, setClientFollowUpCompleted } from '../../lib/clientFollowUps.js';\r\nimport QuickCaptureModal from './QuickCaptureModal.vue';\r\n\r\nconst props = defineProps({\r\n  clientId: { type: String, required: true }\r\n});\r\n\r\nconst followUps = ref([]);\r\nconst loading = ref(true);\r\nconst showCapture = ref(false);\r\nconst showCompleted = ref(false);\r\n\r\nconst openFollowUps = computed(() => followUps.value.filter(f => !f.completedAt));\r\nconst completedFollowUps = computed(() => followUps.value.filter(f => !!f.completedAt));\r\n\r\nasync function load() {\r\n  loading.value = true;\r\n  try {\r\n    followUps.value = await listClientFollowUps(props.clientId);\r\n  } catch (e) {\r\n    console.error('Failed to load follow-ups:', e);\r\n  } finally {\r\n    loading.value = false;\r\n  }\r\n}\r\n\r\nasync function toggleComplete(item) {\r\n  const isCompleted = !!item.completedAt;\r\n  try {\r\n    const updated = await setClientFollowUpCompleted({ \r\n      id: item.id, \r\n      completed: !isCompleted \r\n    });\r\n    followUps.value = followUps.value.map(f => f.id === updated.id ? updated : f);\r\n    // Re-sort if needed, though listClientFollowUps does it on load\r\n    followUps.value.sort((a, b) => {\r\n      if (!a.completedAt && b.completedAt) return -1;\r\n      if (a.completedAt && !b.completedAt) return 1;\r\n      return new Date(b.updatedAt) - new Date(a.updatedAt);\r\n    });\r\n  } catch (e) {\r\n    console.error('Failed to update follow-up:', e);\r\n  }\r\n}\r\n\r\nfunction onSaved(newFollowUp) {\r\n  followUps.value = [newFollowUp, ...followUps.value];\r\n}\r\n\r\nfunction formatDate(dateString) {\r\n  if (!dateString) return '';\r\n  return new Date(dateString).toLocaleDateString('en-GB', { \r\n    day: 'numeric', \r\n    month: 'short' \r\n  });\r\n}\r\n\r\nonMounted(load);\r\n</script>\r\n`,
+    expected: /<input type="checkbox"/,
+    operator: 'match',
+    diff: 'simple'
+  }

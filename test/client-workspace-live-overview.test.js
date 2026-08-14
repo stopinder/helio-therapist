@@ -12,7 +12,7 @@ test('Client Workspace overview uses live sources and honest empty states', asyn
   assert.match(view, /listSessions\(\{\s*clientId:\s*route\.params\.clientId\s*\}\)/)
   assert.match(view, /listClientAppointments\(\{\s*clientId:\s*route\.params\.clientId\s*\}\)/)
   assert.match(view, /No sessions recorded for this client yet\./)
-  assert.match(view, /No structured tasks are recorded for this client yet\./)
+  assert.match(view, /<ClientFollowUps :client-id="String\(route\.params\.clientId\)" \/>/)
   assert.match(view, /No upcoming appointment is recorded\./)
   assert.match(view, /getCurrentTherapistLabel/)
 
