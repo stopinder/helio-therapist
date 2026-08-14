@@ -26,7 +26,7 @@ create policy "Therapists can manage their own follow-ups"
     and exists (
       select 1 from public.clients
       where id = client_follow_ups.client_id
-      and therapist_id = auth.uid()
+      and user_id = auth.uid()
     )
   )
   with check (
@@ -34,7 +34,7 @@ create policy "Therapists can manage their own follow-ups"
     and exists (
       select 1 from public.clients
       where id = client_follow_ups.client_id
-      and therapist_id = auth.uid()
+      and user_id = auth.uid()
     )
   );
 

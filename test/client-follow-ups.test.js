@@ -39,7 +39,7 @@ test('Follow-ups UI components follow requirements', async () => {
   
   // Panel requirements
   assert.ok(panel.includes("No follow-ups recorded."))
-  assert.ok(panel.includes('<input \r\n            type="checkbox"')) // Completion checkbox (matching Windows line endings)
+  assert.match(panel, /<input\s+type="checkbox"/) // Completion checkbox
   assert.ok(panel.includes("Quick capture")) // Action to open modal
 })
 
@@ -53,4 +53,8 @@ test('Follow-ups migration follows schema requirements', async () => {
   assert.match(migration, /completed_at timestamptz/)
   assert.match(migration, /enable row level security/)
   assert.match(migration, /create index if not exists client_follow_ups_client_id_completed_at_idx/)
+  
+  // Ownership policy requirements
+  assert.match(migration, /user_id = auth\.uid\(\)/)
+  assert.doesNotMatch(migration, /and therapist_id = auth\.uid\(\)/)
 })

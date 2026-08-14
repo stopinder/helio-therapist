@@ -1,302 +1,541 @@
-✖ Follow-ups service uses correct Supabase table and RLS constraints (8.1796ms)
-✖ Follow-ups UI components follow requirements (5.1063ms)
-✔ Follow-ups migration follows schema requirements (3.6377ms)
-✔ Client Workspace overview uses live sources and honest empty states (10.6742ms)
-ℹ tests 4
-ℹ suites 0
-ℹ pass 2
-ℹ fail 2
+
+> helios-therapist@1.0.0 test
+> node --test test/**/*.test.js
+✔ artifact source hash is deterministic and content-sensitive (3.0274ms)
+✔ model policy version is explicit and stable (0.3126ms)
+✔ AI execution: known model cost is estimated from input and output tokens (1.8548ms)
+✔ AI execution: cached input tokens use the cached input rate (0.3487ms)
+✔ AI execution: unknown model pricing is explicit rather than guessed (0.2579ms)
+✔ AI execution: usage records contain accounting metadata but no prompt or clinical content (0.6065ms)
+✔ AI execution: reflection model override remains backwards compatible (0.4618ms)
+✔ AI execution: missing provider configuration is a 503-class error (1.7352ms)
+✔ reflection prompt version changes when bounded client context is introduced (3.0874ms)
+✔ reflection input includes only the assembled bounded client context (0.6969ms)
+✔ unlinked reflections do not receive client context (0.3097ms)
+✔ reflection endpoint loads context only through the owned client context loader (14.3756ms)
+✔ reflection editor exposes an explicit save then AI handoff (4.1249ms)
+✔ professional development resolves only the saved reflection id before opening AI (0.4292ms)
+✔ AI reflection API remains reflection-id only and RLS-backed (0.3877ms)
+✔ dictation remains transient server-side and returns text only (1.2302ms)
+✔ AI Reflection Library: buildReflectionInput (2.1256ms)
+✔ AI Reflection Library: buildReflectionInput with minimal data (0.3939ms)
+✔ AI Reflection Library: validateAIReflectionResponse handles valid input (3.0256ms)
+✔ AI Reflection Library: validateAIReflectionResponse fails on missing fields (0.4378ms)
+✔ AI Reflection Library: validateAIReflectionResponse handles malformed arrays (1.616ms)
+✔ AI Reflection Library: validateAIReflectionResponse trims and limits strings (0.6371ms)
+✔ AI Reflection Library: System Prompt contents (0.6712ms)
+✔ AI Rephrase Library: validateAIRephraseResponse handles valid input (2.3676ms)
+✔ AI Rephrase Library: validateAIRephraseResponse fails on missing rephrased_text (0.5761ms)
+✔ AI Rephrase Library: validateAIRephraseResponse trims and limits strings (0.3936ms)
+✔ AI Rephrase Library: System Prompt contents (0.2793ms)
+[Supabase Diagnostics] { urlExists: true, urlValid: true, anonKeyExists: true }
+▶ authenticatedFetch Logic
+  ✔ successful first request (2.8701ms)
+  ✔ successful recovery on 401 (1.5543ms)
+  ✔ failed recovery on 401 triggers local sign-out and event (1.6002ms)
+  ✔ no infinite loop on repeated 401 (1.1443ms)
+  ✔ Google 403 does not trigger Helios sign-out (1.4889ms)
+✔ authenticatedFetch Logic (12.5321ms)
+✔ app shell distinguishes full-height workspaces from ordinary scrolling pages (1.756ms)
+✔ app shell propagates min-height zero through the flex content chain (0.292ms)
+✔ transcripts owns its internal scrolling only because it is a full-height workspace (0.2599ms)
+✔ sidebar remains scrollable on short screens but never renders a scrollbar rail (0.8573ms)
+▶ Calendar component template and logic requirements
+  ✔ Open Client hidden for malformed client IDs (2.221ms)
+  ✔ Start Session eligibility (0.3632ms)
+  ✔ Escape closes the action surface (0.7066ms)
+  ✔ Mini-calendar interaction (0.3437ms)
+  ✔ Loading, error/Retry and empty states (0.5355ms)
+  ✔ Data-source disclosure matches connection state (0.3586ms)
+  ✔ Weekday keys are unique in mini-calendar (0.3877ms)
+  ✔ Correct working-hours range (24 hours) (0.7094ms)
+  ✔ Scrolling height logic (0.758ms)
+  ✔ Honest Google states in Sidebar (0.8946ms)
+  ✔ Test IDs are present (0.4331ms)
+  ✔ Tablet layout and agenda width exclusivity (0.3111ms)
+  ✔ Scrollable grid audit (0.2274ms)
+  ✔ Alignment rangeStart is 0 (0.3029ms)
+  ✔ Time axis header spacer present in both Day and Week views (0.4346ms)
+  ✔ Sticky elements updated (0.2775ms)
+  ✔ Popover containment and flipping logic (0.3156ms)
+✔ Calendar component template and logic requirements (48.5976ms)
+✔ calendar events open a Helio-controlled detail popover (24.5601ms)
+▶ Calendar filtering logic audit
+  ✔ Filters out auto-created workspace sessions based on explicit completed state (1.5939ms)
+✔ Calendar filtering logic audit (14.7155ms)
+✔ useCalendar loadGoogleEvents aborts concurrent requests (120.479ms)
+✔ useCalendar range normalization avoids millisecond issues (2.1975ms)
+✔ URL detection logic (2.8355ms)
+✔ Safe hostname extraction (0.4242ms)
+✔ Rejection of unsafe protocols (0.4427ms)
+▶ Calendar logic and date alignment
+  ✔ View range calculation: Day (3.0734ms)
+  ✔ View range calculation: Week (Monday start) (0.4636ms)
+  ✔ View range calculation: Month (6-row grid) (0.5662ms)
+  ✔ Mini-calendar weekday alignment for August 2026 (2.446ms)
+  ✔ Leap year: February 2024 has 29 days (0.519ms)
+  ✔ Start of week calculation (Monday) (0.3758ms)
+  ✔ Month navigation safety (Jan 31 -> Feb) (0.4702ms)
+✔ Calendar logic and date alignment (19.6636ms)
+▶ Appointment eligibility logic
+  ✔ Event positioning and height (1.049ms)
+  ✔ Overlapping appointments logic (1.0966ms)
+✔ Appointment eligibility logic (4.4429ms)
+✔ keeps calendar recovery in the workspace rather than routing routine work to Settings (24.7128ms)
+✔ client AI context is explicitly versioned and source constrained (3.5166ms)
+✔ approved session context rejects drafts, empty notes, and missing IDs (0.4264ms)
+✔ client AI context caps completed-session history (2.0669ms)
+✔ client archive is reversible and records an archive timestamp (1.9104ms)
+✔ workspace makes archive meaning explicit and never exposes deletion (0.6677ms)
+✖ archived clients cannot receive new active work (2.6304ms)
+✔ lib/clients.js includes createClient with authenticated user check (19.9594ms)
+✔ Clients.vue integrates AddClientModal correctly (9.9592ms)
+✔ App.vue reuses createClient helper (7.8013ms)
+✔ searches names and identifiers without requiring email to be displayed (2.3874ms)
+✔ only a single exact result is eligible for Enter-to-open (2.4045ms)
+✔ recent sorting prioritises recently opened clients and then uses name order (1.7558ms)
+✔ identifiers appear only when needed to distinguish duplicate names (0.4122ms)
+✔ client directory exposes active archived and all views without database UUID noise (17.0247ms)
+✔ client rows remain directly and keyboard navigable (2.452ms)
+✔ directory loads real upcoming appointments and listClients keeps active-only default (5.0196ms)
+✔ client document schema is additive, client-scoped and draft-capable (20.6371ms)
+✔ document service only offers completed clinical sessions as sources (2.3267ms)
+✔ Client Workspace owns the professional clinical composer and exposes safe document actions (6.5882ms)
+✔ clinical source selector stays compact and prevents duplicate note insertion (1.8907ms)
+✔ clinical finalisation uses therapist-authenticated PDF generation and private download (4.4376ms)
+✔ Follow-ups service uses correct Supabase table and RLS constraints (26.4279ms)
+✔ Follow-ups UI components follow requirements (9.1902ms)
+✔ Follow-ups migration follows schema requirements (3.9085ms)
+✔ client request model keeps one send action and independently managed items (25.725ms)
+✖ Client Workspace supervision entry reuses private reflection mutation (21.2822ms)
+✔ Supervision report supports direct PDF download without changing stored reflections (12.481ms)
+✔ Client Workspace overview uses live sources and honest empty states (15.3815ms)
+✔ client workspace exposes a real transcripts tab (1.6775ms)
+✔ client transcript panel only renders transcripts assigned to the current client (0.39ms)
+✔ client transcript view preserves authenticated therapist ownership boundary (0.304ms)
+✔ client transcript panel does not mutate transcript assignments or source text (0.5675ms)
+✔ Client Workspace Video Rejoin Workflow (9.0935ms)
+✔ Clients page uses live Supabase clients and standard UI patterns (10.424ms)
+[Supabase Diagnostics] { urlExists: false, urlValid: false, anonKeyExists: false }
+Supabase configuration missing or invalid. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY environment variables.
+✔ clinical safety: normal therapist draft content is allowed (2.054ms)
+✔ clinical safety: demonstration content cannot be persisted as a session draft (0.881ms)
+✔ clinical safety: demonstration content cannot be hidden in legacy notes (0.4225ms)
+✔ frontend: prepareDraft should not generate [DEMO] content (39.7955ms)
+✔ clinical exchange labels preserve the distinct assignment lifecycle (1.7831ms)
+✔ clinical timeline presents clinical findings, not workflow activity (2.6056ms)
+✔ PHQ-9 only calculates complete valid answers and preserves item answers (2.8774ms)
+✔ Clinical Lens: Shared neutral configuration registry (1.8468ms)
+✔ Clinical Lens: Server-side resolution (0.3902ms)
+✔ Clinical Lens: UI uses lens configuration (26.9904ms)
+✔ Clinical Lens: AI suggestions endpoint resolves lensId (3.2109ms)
+✔ Clinical Lens: Explicitly CBT-specific tools remain untouched (1.8428ms)
+✔ Clinical Summary Approval: draft session displays as draft (1.8879ms)
+✔ Clinical Summary Approval: completed session displays as approved_record (0.6432ms)
+✔ Clinical Summary Approval: parses notes correctly for approved record (3.2639ms)
+✔ Clinical Summary Approval: handles legacy plain text after approval (1.4794ms)
+✔ Clinical Summary: parses valid JSON notes (2.0158ms)
+✔ Clinical Summary: handles plain text as legacy notes (1.3915ms)
+✔ Clinical Summary: handles invalid JSON as legacy notes (0.3256ms)
+✔ Clinical Summary: formats data as JSON string (0.3461ms)
+✔ document library keeps practice documents primary and client records searchable (35.729ms)
+✔ documents view preserves existing document actions through grouped library (2.3442ms)
+✔ practice identity is compact until explicitly edited (2.7447ms)
+✔ practice identity is therapist-owned and document studio consumes it (19.9216ms)
+✔ general document export is the visible canvas rather than preview-finalise API (3.0673ms)
+✔ professional document templates cover practice and prospect workflows (1.8558ms)
+✔ template body creates editable structured copy without client identifiers (0.7111ms)
+✔ clinical session state is server-backed with a one-time retained legacy import (68.8632ms)
+✔ session save and completion use concurrency and transactional RPC boundaries (13.5759ms)
+✔ Zoom session operations validate the durable session belongs to the therapist and client (30.3435ms)
+✔ Google scope helper accepts Calendar grants and rejects identity-only consent (2.3202ms)
+✔ OAuth callback does not report success when Calendar permission is absent (25.2949ms)
+✔ Google status exposes Calendar permission health (2.827ms)
+✔ Google status reads the canonical integrations provider email column (7.2477ms)
+[Google Calendar] Refresh requires new consent: invalid_grant
+✔ refreshes an expired Google token and retries the calendar request silently (59.5409ms)
+✔ only asks for reconnect when Google rejects the refresh token (4.116ms)
+✔ validates range boundaries to prevent 400 errors (0.6128ms)
+✔ Growth & Learning View logic and wording (12.1066ms)
+✔ manual transcript import is authenticated, bounded and idempotent (7.462ms)
+✔ manual file import uses the existing transcript inbox workflow without raw file storage (0.9702ms)
+✔ therapist can paste a Zoom transcript directly into the same protected import path (2.0407ms)
+✔ manual import returns safe therapist-facing validation messages (0.4986ms)
+✖ the full migration chain preserves clinical invariants (2847.4419ms)
+✔ ReflectionWorkspace.vue implements single modal with internal stages (9.6741ms)
+✔ ReflectionWorkspace prevents background scroll when modal is open (19.8715ms)
+✔ Today has one focused before-session preparation state (17.1395ms)
+✖ Overview view requirements (41.0436ms)
+✔ Calendar view requirements (7.5635ms)
+✔ Professional Development Insights View logic and wording (22.1488ms)
+✔ Professional Development Hub-and-Spoke Navigation Architecture (4.5592ms)
+✔ Child Pages Header Consistency (4.2866ms)
+Testing setReflectionSupervisionSelection...
+✓ Success: Update is scoped correctly and returns updated row
+✓ Success: Authentication requirement enforced
+[Reflections] Selection update error: { message: 'DB Error' }
+✓ Success: Database errors return a safe error
+✔ test\reflection-actions.test.js (180.114ms)
+Testing Reflection Detail View logic...
+✓ Success: Can open detail view
+✓ Success: Filter state preserved when opening detail
+✓ Success: Supervision toggle updates both list and detail view
+✓ Success: Can close detail view and filter state remains
+✔ test\reflection-detail-view.test.js (126.1577ms)
+Testing Theme and Search Filtering logic...
+✓ Success: Theme counts are correct
+✓ Success: Theme filtering works
+✓ Success: Search filtering works (body, client, session)
+✓ Success: Combined search + theme filter works
+✓ Success: Empty filtered state confirmed
+✔ test\reflection-filtering.test.js (143.6154ms)
+✔ the reflection workspace preserves its private therapist-only boundary (14.951ms)
+✔ Sprint One keeps reflection and summary ownership explicit in RLS (2.609ms)
+✔ frontend ReflectionWorkspace.vue does NOT contain relationship controls (21.9312ms)
+✔ ReflectionWorkspace.vue has 20,000 character validation (2.6556ms)
+✔ ReflectionWorkspace.vue detail modal is simplified (3.1217ms)
+✔ frontend validation matches database constraints (21.8277ms)
+✔ reflection saving has length validation and error handling (7.8039ms)
+✔ summary generation handles non-JSON responses safely (4.2082ms)
+✔ transcription also uses safe JSON parsing (2.0905ms)
+✔ resource picker separates resource selection from request configuration (20.0843ms)
+▶ Vercel routing configuration
+  ✔ SPA catch-all rewrite is present (3.2207ms)
+  ✔ Schema is present (0.3767ms)
+✔ Vercel routing configuration (36.3136ms)
+✔ therapist workspace exposes scheduling as a header action without sidebar duplication (4.72ms)
+✔ scheduling requires client selection before generating a link (0.8643ms)
+✔ booking link endpoint validates therapist ownership and stores only opaque correlation data (2.2452ms)
+✔ appointments migration enforces therapist ownership with RLS (0.7997ms)
+✔ Session Capture stage rendering wiring (31.3229ms)
+✔ WorkflowIndicator uses Session Capture (24.724ms)
+✔ TranscriptTab renders Session Capture labels (21.9988ms)
+✔ Client Workspace session entry behavior (34.6761ms)
+✔ Session create or resume rejects archived clients before touching sessions (2.1397ms)
+✔ Session create or resume remains retry-safe under concurrent creation (4.8093ms)
+[Supabase Diagnostics] { urlExists: false, urlValid: false, anonKeyExists: false }
+Supabase configuration missing or invalid. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY environment variables.
+✔ working notes normalize only supported string fields (2.9747ms)
+✔ workspace reflection remains structured while body stays readable (0.8902ms)
+✔ SessionWorkspace simplification: Timer moved to Client Workspace (27.467ms)
+✔ SessionWorkspace uses the authenticated linked transcript source without mock fallback (3.926ms)
+✔ SessionWorkspace: Header and layout cleanup (6.0386ms)
+✔ SessionWorkspace: Navigation labels updated (3.5638ms)
+✔ SessionWorkspace simplification: End Session confirmation wiring (3.3045ms)
+✔ sidebar account identity is dynamic and therapist-owned (1.6806ms)
+✔ navigation scrolls independently above a compact account footer (0.3964ms)
+✔ desktop and mobile sidebars receive the same account identity (8.6766ms)
+✔ sidebar groups primary destinations and keeps scheduling as an action (14.1266ms)
+✔ sidebar uses CPD and restrained icon components instead of emoji navigation (3.9592ms)
+✔ account footer keeps settings and sign out in the compact account menu (5.037ms)
+✔ semantic spacing tokens are defined once and exposed to Tailwind (24.713ms)
+✔ priority workspace surfaces use semantic spacing (4.6424ms)
+✔ semantic surface, border, and elevation tokens are defined once and exposed to Tailwind (7.1443ms)
+✔ semantic interaction and motion tokens are defined once and exposed to Tailwind (4.1817ms)
+✔ primary drawers use the shared keyboard focus trap (2.7243ms)
+✔ shared visual decisions have semantic tokens and canonical templates avoid arbitrary colour utilities (15.3034ms)
+✔ SupervisionSummaryTab: New wording and Supervision Pack action (27.264ms)
+✔ Supervision Pack View and Export Flow (86.1642ms)
+✔ Supervision Pack: Client Alias Generation and Selection (6.3015ms)
+✔ Supervision Pack: Month Grouping (37.7204ms)
+✔ Report Export: Option Handling and Clipboard Output (37.3391ms)
+✔ a reflection may be saved empty or short, while summary generation needs enough source material (16.4494ms)
+✔ the summary request is authenticated and delimits source writing (2.2265ms)
+✔ only a bounded, supported draft is accepted (0.8905ms)
+✔ regeneration versions summaries and never overwrites the original reflection (6.8533ms)
+✔ ClientWorkspace.vue integrates live timeline (42.7395ms)
+✔ TimelineItem.vue handles navigation and event-driven presentation (4.9105ms)
+✔ lib/clients.js includes getTimelineEvents helper (9.4601ms)
+✔ multi-record resource and completion workflows call database transactions (21.0386ms)
+✔ privileged transactional functions are not executable by browser roles (3.2836ms)
+✔ tenant policies validate the owner of referenced clinical records (5.8668ms)
+✔ videoProviderService returns provider-neutral labels (1.8453ms)
+✔ videoProviderService does not include provider names in labels (0.4958ms)
+✔ downloads a transcript with an OAuth bearer token (50.7509ms)
+✔ follows a signed non-Zoom redirect without leaking the bearer token (3.2421ms)
+✔ uses a pre-expiry refreshed token before downloading (0.9318ms)
+✔ retries exactly once with a refreshed token after a 401 (1.297ms)
+✔ leaves a persistent 401 for the caller to record as a failure (1.8178ms)
+✔ closestAppointmentMeeting chooses the scheduled Zoom meeting nearest the session (1.0909ms)
+✔ closestAppointmentMeeting ignores meetings outside the bounded matching window (0.2639ms)
+✔ closestAppointmentMeeting ignores appointments without Zoom meeting identifiers (0.1605ms)
+[Zoom Meeting Launch] Meeting lookup unavailable {
+  meetingId: 'stale-id',
+  status: 400,
+  retried: false,
+  zoomCode: 3001,
+  zoomMessage: 'Meeting does not exist'
+}
+[Zoom Meeting Launch] Meeting lookup unavailable {
+  meetingId: 'missing-id',
+  status: 404,
+  retried: false,
+  zoomCode: 3000,
+  zoomMessage: 'Meeting not found'
+}
+[Zoom Meeting Launch] Meeting lookup unavailable {
+  meetingId: 'scope-error-id',
+  status: 400,
+  retried: false,
+  zoomCode: 4711,
+  zoomMessage: 'Invalid access token, does not contain scopes'
+}
+✔ buildZoomAuthorizationUrl requests meeting:read:meeting (1.9636ms)
+▶ resolveZoomHostMeeting parses Zoom error codes
+  ✔ captures zoomCode 3001 as stale (2.1747ms)
+  ✔ captures 404 as stale (1.0392ms)
+  ✔ captures scope error 4711 as 409 (1.1669ms)
+✔ resolveZoomHostMeeting parses Zoom error codes (8.303ms)
+✔ Recovery logic condition in start-session.js (0.2123ms)
+✔ accepts a current Zoom webhook with a matching signature (4.2147ms)
+✔ rejects missing, mismatched and stale Zoom webhook signatures (1.5075ms)
+✔ verifies the exact raw Zoom payload without reserialising JSON (2.5342ms)
+✔ uses a stable delivery key and stores only bounded recording metadata (1.4821ms)
+✔ extracts Scheduler booking lifecycle data from the opaque correlation token (1.8981ms)
+✔ maps Scheduler cancellation and reschedule lifecycle states (0.5017ms)
+ℹ tests 241
+ℹ suites 1
+ℹ pass 237
+ℹ fail 4
 ℹ cancelled 0
 ℹ skipped 0
 ℹ todo 0
-ℹ duration_ms 134.4749
+ℹ duration_ms 3928.8098
 ✖ failing tests:
-test at test\client-follow-ups.test.js:5:1
-✖ Follow-ups service uses correct Supabase table and RLS constraints (8.1796ms)
-  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /if\(!auth\?\.user\)/. Input:
+test at test\client-archive-lifecycle.test.js:28:1
+✖ archived clients cannot receive new active work (2.6304ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /!isSessionWorkspace && !client\.archived/. Input:
 
-  "import { supabase } from './supabase.js'\r\n" +
-    '\r\n' +
-    'function requireSupabase() {\r\n' +
-    "  if (!supabase) throw new Error('Supabase is not configured')\r\n" +
-    '  return supabase\r\n' +
-    '}\r\n' +
-    '\r\n' +
-    'async function authenticatedHeaders() {\r\n' +
-    '  const db = requireSupabase()\r\n' +
-    '  const { data } = await db.auth.getSession()\r\n' +
-    '  const token = data?.session?.access_token\r\n' +
-    '  if (!token) {\r\n' +
-    "    const e = new Error('Authentication required')\r\n" +
-    "    e.code = 'UNAUTHENTICATED'\r\n" +
-    '    throw e\r\n' +
-    '  }\r\n' +
-    '  return {\r\n' +
-    "    'Content-Type': 'application/json',\r\n" +
-    "    'Authorization': `Bearer ${token}`\r\n" +
-    '  }\r\n' +
-    '}\r\n' +
-    '\r\n' +
-    'function mapFollowUp(row) {\r\n' +
-    '  return {\r\n' +
-    '    id: row.id,\r\n' +
-    '    therapistId: row.therapist_id,\r\n' +
-    '    clientId: row.client_id,\r\n' +
-    '    body: row.body,\r\n' +
-    '    completedAt: row.completed_at,\r\n' +
-    '    createdAt: row.created_at,\r\n' +
-    '    updatedAt: row.updated_at\r\n' +
-    '  }\r\n' +
-    '}\r\n' +
-    '\r\n' +
-    'export async function listClientFollowUps(clientId) {\r\n' +
-    '  const db = requireSupabase()\r\n' +
-    '  const { data, error } = await db\r\n' +
-    "    .from('client_follow_ups')\r\n" +
-    "    .select('*')\r\n" +
-    "    .eq('client_id', clientId)\r\n" +
-    "    .order('completed_at', { ascending: true, nullsFirst: true })\r\n" +
-    "    .order('updated_at', { ascending: false })\r\n" +
-    '\r\n' +
-    '  if (error) throw error\r\n' +
-    '  return (data || []).map(mapFollowUp)\r\n' +
-    '}\r\n' +
-    '\r\n' +
-    'export async function createClientFollowUp({ clientId, body }) {\r\n' +
-    '  const db = requireSupabase()\r\n' +
-    '  const { data: auth } = await db.auth.getUser()\r\n' +
-    '  if (!auth?.user) {\r\n' +
-    "    const e = new Error('Authentication required')\r\n" +
-    "    e.code = 'UNAUTHENTICATED'\r\n" +
-    '    throw e\r\n' +
-    '  }\r\n' +
-    '\r\n' +
-    '  const { data, error } = await db\r\n' +
-    "    .from('client_follow_ups')\r\n" +
-    '    .insert({\r\n' +
-    '      therapist_id: auth.user.id,\r\n' +
-    '      client_id: clientId,\r\n' +
-    '      body: body.trim()\r\n' +
-    '    })\r\n' +
-    "    .select('*')\r\n" +
-    '    .single()\r\n' +
-    '\r\n' +
-    '  if (error) throw error\r\n' +
-    '  return mapFollowUp(data)\r\n' +
-    '}\r\n' +
-    '\r\n' +
-    'export async function setClientFollowUpCompleted({ id, completed }) {\r\n' +
-    '  const db = requireSupabase()\r\n' +
-    '  const { data, error } = await db\r\n' +
-    "    .from('client_follow_ups')\r\n" +
-    '    .update({\r\n' +
-    '      completed_at: completed ? new Date().toISOString() : null\r\n' +
-    '    })\r\n' +
-    "    .eq('id', id)\r\n" +
-    "    .select('*')\r\n" +
-    '    .single()\r\n' +
-    '\r\n' +
-    '  if (error) throw error\r\n' +
-    '  return mapFollowUp(data)\r\n' +
-    '}\r\n' +
-    '\r\n' +
-    'export async function updateClientFollowUp({ id, body }) {\r\n' +
-    '  const db = requireSupabase()\r\n' +
-    '  const { data, error } = await db\r\n' +
-    "    .from('client_follow_ups')\r\n" +
-    '    .update({ body: body.trim() })\r\n' +
-    "    .eq('id', id)\r\n" +
-    "    .select('*')\r\n" +
-    '    .single()\r\n' +
-    '\r\n' +
-    '  if (error) throw error\r\n' +
-    '  return mapFollowUp(data)\r\n' +
-    '}\r\n' +
-    '\r\n' +
-    'export async function transcribeAudio(audio) {\r\n' +
-    "  const response = await fetch('/api/ai/transcribe', {\r\n" +
-    "    method: 'POST',\r\n" +
-    '    headers: await authenticatedHeaders(),\r\n' +
-    '    body: JSON.stringify({ audio })\r\n' +
-    '  })\r\n' +
-    '  const payload = await response.json().catch(() => ({}))\r\n' +
-    '  if (!response.ok) {\r\n' +
-    "    const e = new Error(payload?.error?.message || 'Dictation could not be transcribed')\r\n" +
-    "    e.code = payload?.error?.code || 'TRANSCRIPTION_FAILED'\r\n" +
-    '    throw e\r\n' +
-    '  }\r\n' +
-    "  return payload.text || ''\r\n" +
-    '}\r\n'
+  '<template>\r\n' +
+    '  <header class="bg-surface border-b border-border-muted px-inline-lg py-stack-md">\r\n' +
+    '    <div class="flex flex-col md:flex-row md:items-center justify-between gap-stack-md">\r\n' +
+    `      <div class="flex items-center gap-inline-md"><div class="h-10 w-10 rounded-pill bg-avatar flex items-center justify-center text-h3 font-semibold text-ink shrink-0">{{ clientInitials }}</div><div class="flex flex-col min-w-0"><div class="flex items-center gap-inline-sm flex-wrap"><h1 class="text-h2 font-semibold text-ink truncate">{{ client.display_name }}</h1><StatusBadge :status="client.archived ? 'archived' : 'active'" /></div><div class="flex flex-wrap items-center gap-x-inline-md gap-y-0 text-caption text-ink-muted"><span>Next: {{ nextAppointmentLabel }}</span><span>Therapist: {{ therapistLabel }}</span><span v-if="client.archived_at">Archived {{ archiveDate }}</span></div></div></div>\r\n` +
+    `      <div class="flex items-center gap-inline-sm flex-wrap"><button @click="openSupervisionPicker" class="px-inline-md py-stack-xs bg-surface-elevated border border-border text-caption font-medium text-ink-secondary rounded-control hover:bg-surface-subtle transition-colors">Add to Supervision</button><button @click="$emit('create-document')" class="px-inline-md py-stack-xs bg-surface-elevated border border-border text-body-sm font-medium text-ink rounded-control hover:bg-surface-subtle transition-colors" data-testid="create-client-document">Create Document</button><button v-if="!client.archived && !activeSession" @click="joinMeeting" :disabled="joiningMeeting || !nextAppointment?.zoom_meeting_id" class="px-inline-md py-stack-xs bg-surface-elevated border border-border text-caption font-medium text-ink-secondary rounded-control hover:bg-surface-subtle transition-colors disabled:opacity-50 disabled:cursor-not-allowed"><span>{{ joiningMeeting ? 'Opening Zoom…' : videoLabel }}</span></button><button v-if="!activeSession" type="button" :disabled="archiveSaving" @click="requestArchiveChange" class="px-inline-md py-stack-xs bg-surface-elevated border border-border text-body-sm font-medium text-ink-secondary rounded-control hover:bg-surface-subtle disabled:opacity-50" data-testid="client-archive-action">{{ archiveSaving ? 'Saving…' : (client.archived ? 'Restore client' : 'Archive client') }}</button></div>\r\n` +
+    '    </div>\r\n' +
+    '    <div v-if="activeSession" class="mt-stack-md flex flex-col sm:flex-row sm:items-center sm:justify-between gap-stack-sm rounded-panel border-2 border-state-selected bg-surface p-inline-lg py-stack-md shadow-sm" data-testid="active-session-timer-panel">\r\n' +
+    '      <div class="flex items-center gap-inline-md">\r\n' +
+    '        <div class="w-12 h-12 rounded-full bg-state-selected/10 flex items-center justify-center shrink-0">\r\n' +
+    '          <span class="w-3 h-3 rounded-full bg-state-selected animate-pulse"></span>\r\n' +
+    '        </div>\r\n' +
+    '        <div>\r\n' +
+    '          <div class="flex items-center gap-inline-sm">\r\n' +
+    '            <span class="text-body font-bold text-ink">Session in progress</span>\r\n' +
+    '            <span class="text-h3 font-mono font-bold text-ink" aria-live="polite">{{ elapsedTime }}</span>\r\n' +
+    '          </div>\r\n' +
+    '          <p class="text-caption text-ink-muted mt-0.5">Started at {{ formatSessionTime(activeSession.startedAt) }} · Timing continues in both workspaces</p>\r\n' +
+    '        </div>\r\n' +
+    '      </div>\r\n' +
+    '      <div class="flex items-center gap-inline-sm">\r\n' +
+    `        <button @click="rejoinSessionVideo" :disabled="joiningMeeting" class="px-inline-md py-stack-sm bg-surface border border-border text-body-sm font-semibold text-ink rounded-control hover:bg-surface-subtle transition-colors disabled:opacity-50 disabled:cursor-not-allowed">{{ joiningMeeting ? 'Opening Zoom…' : 'Return to Video Session' }}</button>\r\n` +
+    `        <button @click="$emit('open-clinical-workspace')" class="px-inline-md py-stack-sm bg-surface border border-border text-body-sm font-semibold text-ink rounded-control hover:bg-surface-subtle transition-colors">Clinical Workspace</button>\r\n` +
+    `        <button @click="$emit('end-session')" :disabled="sessionBusy" class="px-inline-md py-stack-sm bg-state-danger text-body-sm font-semibold text-white rounded-control hover:bg-opacity-90 transition-colors disabled:opacity-60">{{ sessionBusy ? 'Ending…' : 'End Session' }}</button>\r\n` +
+    '      </div>\r\n' +
+    '    </div>\r\n' +
+    '    <div v-else-if="!client.archived" class="mt-stack-md">\r\n' +
+    `      <button @click="$emit('start-session')" :disabled="sessionBusy" class="px-inline-lg py-stack-sm bg-action-link text-body font-semibold text-on-action rounded-control hover:bg-action-link-hover transition-colors shadow-sm disabled:opacity-60" data-testid="start-session">\r\n` +
+    "        {{ sessionBusy ? 'Starting…' : 'Start Session' }}\r\n" +
+    '      </button>\r\n' +
+    '    </div>\r\n' +
+    '    <div v-if="sessionError" role="alert" class="mt-stack-sm rounded-control border border-state-danger/20 bg-state-danger/5 px-inline-md py-stack-xs text-body-sm font-medium text-state-danger">{{ sessionError }}</div>\r\n' +
+    '    <div v-if="meetingError" role="alert" class="mt-stack-sm rounded-control border border-state-danger/20 bg-state-danger/5 px-inline-md py-stack-xs text-body-sm font-medium text-state-danger">{{ meetingError }}</div>\r\n' +
+    '    <div v-if="archiveError" role="alert" class="mt-stack-sm rounded-control border border-state-danger/20 bg-state-danger/5 px-inline-md py-stack-xs text-body-sm text-state-danger">{{ archiveError }}</div>\r\n' +
+    `    <div v-if="supervisionSuccess" role="status" class="mt-stack-sm inline-flex flex-wrap items-center gap-inline-sm rounded-control border border-state-success/20 bg-state-success-surface px-inline-md py-stack-xs text-body-sm font-medium text-state-success"><span>✓</span><span>{{ supervisionSuccess }}</span><button @click="router.push('/supervision/workspace')" class="ml-inline-xs font-semibold underline">View Supervision Workspace</button></div>\r\n` +
+    '    <ClientSupervisionPicker v-if="supervisionPickerOpen" :client-name="client.display_name" :reflections="supervisionReflections" :sessions="supervisionSessions" :loading="supervisionLoading" :saving="supervisionSaving" :error="supervisionError" @close="closeSupervisionPicker" @confirm="addSelectedToSupervision" />\r\n' +
+    '  </header>\r\n' +
+    '</template>\r\n' +
+    '<script setup>\r\n' +
+    "import { computed, ref } from 'vue';\r\n" +
+    "import { useRouter } from 'vue-router';\r\n" +
+    "import StatusBadge from './StatusBadge.vue'; import ClientSupervisionPicker from './ClientSupervisionPicker.vue';\r\n" +
+    "import { listSessions } from '../../lib/sessions.js'; import { setClientArchived } from '../../lib/clients.js'; import { getPrivateReflectionsForClient } from '../../lib/clientSupervision.js'; import { setReflectionSupervisionSelection } from '../../lib/reflections.js'; import { authenticatedFetch } from '../../lib/api.js'; import { videoProviderService } from '../../lib/videoProvider.js';\r\n" +
+    "const props = defineProps({ client:{type:Object,required:true}, nextAppointment:{type:Object,default:null}, therapistLabel:{type:String,default:'Current therapist'}, activeSession:{type:Object,default:null}, elapsedTime:{type:String,default:'00:00:00'}, sessionBusy:{type:Boolean,default:false}, sessionError:{type:String,default:''} });\r\n" +
+    "const emit = defineEmits(['create-document','client-updated','start-session','open-clinical-workspace','end-session']); const router=useRouter();\r\n" +
+    "const supervisionPickerOpen=ref(false), supervisionReflections=ref([]), supervisionSessions=ref([]), supervisionLoading=ref(false), supervisionSaving=ref(false), supervisionError=ref(''), supervisionSuccess=ref(''), archiveSaving=ref(false), archiveError=ref(''), joiningMeeting=ref(false), meetingError=ref(''); let supervisionSuccessTimer;\r\n" +
+    "async function openSupervisionPicker(){supervisionPickerOpen.value=true;supervisionLoading.value=true;supervisionError.value='';supervisionSuccess.value='';clearTimeout(supervisionSuccessTimer);try{[supervisionReflections.value,supervisionSessions.value]=await Promise.all([getPrivateReflectionsForClient({clientId:props.client.id}),listSessions({clientId:props.client.id})])}catch(error){console.error('Failed to load supervision choices:',error);supervisionError.value='Could not load private reflections for supervision.'}finally{supervisionLoading.value=false}}\r\n" +
+    'function closeSupervisionPicker(){if(!supervisionSaving.value)supervisionPickerOpen.value=false}\r\n' +
+    "async function addSelectedToSupervision(ids){supervisionSaving.value=true;supervisionError.value='';try{const selected=supervisionReflections.value.filter(r=>ids.includes(r.id)&&!r.included_in_supervision);const updated=await Promise.all(selected.map(r=>setReflectionSupervisionSelection({reflectionId:r.id,included:true})));const byId=new Map(updated.map(r=>[r.id,r]));supervisionReflections.value=supervisionReflections.value.map(r=>byId.get(r.id)||r);supervisionPickerOpen.value=false;if(updated.length){supervisionSuccess.value=updated.length===1?'Saved to supervision.':`${updated.length} reflections saved to supervision.`;supervisionSuccessTimer=setTimeout(()=>{supervisionSuccess.value=''},8000)}}catch(error){supervisionError.value='Could not add the selected reflection to supervision.'}finally{supervisionSaving.value=false}}\r\n" +
+    "async function requestArchiveChange(){const archiving=!props.client.archived;const message=archiving?`Archive ${props.client.display_name}? Their records will be retained and the client can be restored later.`:`Restore ${props.client.display_name} to the active caseload?`;if(!window.confirm(message))return;archiveSaving.value=true;archiveError.value='';try{emit('client-updated',await setClientArchived({clientId:props.client.id,archived:archiving}))}catch(error){archiveError.value=archiving?'Could not archive this client.':'Could not restore this client.'}finally{archiveSaving.value=false}}\r\n" +
+    "async function joinMeeting(){if(!props.nextAppointment?.id||!props.nextAppointment?.zoom_meeting_id||joiningMeeting.value)return;joiningMeeting.value=true;meetingError.value='';const popup=window.open('','_blank');if(popup)popup.opener=null;try{const response=await authenticatedFetch('/api/zoom/join-appoin"... 2276 more characters
 
-      at TestContext.<anonymous> (file:///C:/Users/Rob/WebstormProjects/helio-therapist/test/client-follow-ups.test.js:22:10)
+      at TestContext.<anonymous> (file:///C:/Users/Rob/WebstormProjects/helio-therapist/test/client-archive-lifecycle.test.js:29:10)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1047:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+      at Test.postRun (node:internal/test_runner/test:1173:19)
+      at Test.run (node:internal/test_runner/test:1101:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:744:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: '<template>\r\n  <header class="bg-surface border-b border-border-muted px-inline-lg py-stack-md">\r\n    <div class="flex flex-col md:flex-row md:items-center justify-between gap-stack-md">\r\n      <div class="flex items-center gap-inline-md"><div class="h-10 w-10 rounded-pill bg-avatar flex items-center justify-center text-h3 font-semibold text-ink shrink-0">{{ clientInitials }}</div><div class="flex flex-col min-w-0"><div class="flex items-center gap-inline-sm flex-wrap"><h1 class="text-h2 font-semibold text-ink truncate">{{ client.display_name }}</h1><StatusBadge :status="client.archived ? \'archived\' : \'active\'" /></div><div class="flex flex-wrap items-center gap-x-inline-md gap-y-0 text-caption text-ink-muted"><span>Next: {{ nextAppointmentLabel }}</span><span>Therapist: {{ therapistLabel }}</span><span v-if="client.archived_at">Archived {{ archiveDate }}</span></div></div></div>\r\n      <div class="flex items-center gap-inline-sm flex-wrap"><button @click="openSupervisionPicker" class="px-inline-md py-stack-xs bg-surface-elevated border border-border text-caption font-medium text-ink-secondary rounded-control hover:bg-surface-subtle transition-colors">Add to Supervision</button><button @click="$emit(\'create-document\')" class="px-inline-md py-stack-xs bg-surface-elevated border border-border text-body-sm font-medium text-ink rounded-control hover:bg-surface-subtle transition-colors" data-testid="create-client-document">Create Document</button><button v-if="!client.archived && !activeSession" @click="joinMeeting" :disabled="joiningMeeting || !nextAppointment?.zoom_meeting_id" class="px-inline-md py-stack-xs bg-surface-elevated border border-border text-caption font-medium text-ink-secondary rounded-control hover:bg-surface-subtle transition-colors disabled:opacity-50 disabled:cursor-not-allowed"><span>{{ joiningMeeting ? \'Opening Zoom…\' : videoLabel }}</span></button><button v-if="!activeSession" type="button" :disabled="archiveSaving" @click="requestArchiveChange" class="px-inline-md py-stack-xs bg-surface-elevated border border-border text-body-sm font-medium text-ink-secondary rounded-control hover:bg-surface-subtle disabled:opacity-50" data-testid="client-archive-action">{{ archiveSaving ? \'Saving…\' : (client.archived ? \'Restore client\' : \'Archive client\') }}</button></div>\r\n    </div>\r\n    <div v-if="activeSession" class="mt-stack-md flex flex-col sm:flex-row sm:items-center sm:justify-between gap-stack-sm rounded-panel border-2 border-state-selected bg-surface p-inline-lg py-stack-md shadow-sm" data-testid="active-session-timer-panel">\r\n      <div class="flex items-center gap-inline-md">\r\n        <div class="w-12 h-12 rounded-full bg-state-selected/10 flex items-center justify-center shrink-0">\r\n          <span class="w-3 h-3 rounded-full bg-state-selected animate-pulse"></span>\r\n        </div>\r\n        <div>\r\n          <div class="flex items-center gap-inline-sm">\r\n            <span class="text-body font-bold text-ink">Session in progress</span>\r\n            <span class="text-h3 font-mono font-bold text-ink" aria-live="polite">{{ elapsedTime }}</span>\r\n          </div>\r\n          <p class="text-caption text-ink-muted mt-0.5">Started at {{ formatSessionTime(activeSession.startedAt) }} · Timing continues in both workspaces</p>\r\n        </div>\r\n      </div>\r\n      <div class="flex items-center gap-inline-sm">\r\n        <button @click="rejoinSessionVideo" :disabled="joiningMeeting" class="px-inline-md py-stack-sm bg-surface border border-border text-body-sm font-semibold text-ink rounded-control hover:bg-surface-subtle transition-colors disabled:opacity-50 disabled:cursor-not-allowed">{{ joiningMeeting ? \'Opening Zoom…\' : \'Return to Video Session\' }}</button>\r\n        <button @click="$emit(\'open-clinical-workspace\')" class="px-inline-md py-stack-sm bg-surface border border-border text-body-sm font-semibold text-ink rounded-control hover:bg-surface-subtle transition-colors">Clinical Workspace</button>\r\n        <button @click="$emit(\'end-session\')" :disabled="sessionBusy" class="px-inline-md py-stack-sm bg-state-danger text-body-sm font-semibold text-white rounded-control hover:bg-opacity-90 transition-colors disabled:opacity-60">{{ sessionBusy ? \'Ending…\' : \'End Session\' }}</button>\r\n      </div>\r\n    </div>\r\n    <div v-else-if="!client.archived" class="mt-stack-md">\r\n      <button @click="$emit(\'start-session\')" :disabled="sessionBusy" class="px-inline-lg py-stack-sm bg-action-link text-body font-semibold text-on-action rounded-control hover:bg-action-link-hover transition-colors shadow-sm disabled:opacity-60" data-testid="start-session">\r\n        {{ sessionBusy ? \'Starting…\' : \'Start Session\' }}\r\n      </button>\r\n    </div>\r\n    <div v-if="sessionError" role="alert" class="mt-stack-sm rounded-control border border-state-danger/20 bg-state-danger/5 px-inline-md py-stack-xs text-body-sm font-medium text-state-danger">{{ sessionError }}</div>\r\n    <div v-if="meetingError" role="alert" class="mt-stack-sm rounded-control border border-state-danger/20 bg-state-danger/5 px-inline-md py-stack-xs text-body-sm font-medium text-state-danger">{{ meetingError }}</div>\r\n    <div v-if="archiveError" role="alert" class="mt-stack-sm rounded-control border border-state-danger/20 bg-state-danger/5 px-inline-md py-stack-xs text-body-sm text-state-danger">{{ archiveError }}</div>\r\n    <div v-if="supervisionSuccess" role="status" class="mt-stack-sm inline-flex flex-wrap items-center gap-inline-sm rounded-control border border-state-success/20 bg-state-success-surface px-inline-md py-stack-xs text-body-sm font-medium text-state-success"><span>✓</span><span>{{ supervisionSuccess }}</span><button @click="router.push(\'/supervision/workspace\')" class="ml-inline-xs font-semibold underline">View Supervision Workspace</button></div>\r\n    <ClientSupervisionPicker v-if="supervisionPickerOpen" :client-name="client.display_name" :reflections="supervisionReflections" :sessions="supervisionSessions" :loading="supervisionLoading" :saving="supervisionSaving" :error="supervisionError" @close="closeSupervisionPicker" @confirm="addSelectedToSupervision" />\r\n  </header>\r\n</template>\r\n<script setup>\r\nimport { computed, ref } from \'vue\';\r\nimport { useRouter } from \'vue-router\';\r\nimport StatusBadge from \'./StatusBadge.vue\'; import ClientSupervisionPicker from \'./ClientSupervisionPicker.vue\';\r\nimport { listSessions } from \'../../lib/sessions.js\'; import { setClientArchived } from \'../../lib/clients.js\'; import { getPrivateReflectionsForClient } from \'../../lib/clientSupervision.js\'; import { setReflectionSupervisionSelection } from \'../../lib/reflections.js\'; import { authenticatedFetch } from \'../../lib/api.js\'; import { videoProviderService } from \'../../lib/videoProvider.js\';\r\nconst props = defineProps({ client:{type:Object,required:true}, nextAppointment:{type:Object,default:null}, therapistLabel:{type:String,default:\'Current therapist\'}, activeSession:{type:Object,default:null}, elapsedTime:{type:String,default:\'00:00:00\'}, sessionBusy:{type:Boolean,default:false}, sessionError:{type:String,default:\'\'} });\r\nconst emit = defineEmits([\'create-document\',\'client-updated\',\'start-session\',\'open-clinical-workspace\',\'end-session\']); const router=useRouter();\r\nconst supervisionPickerOpen=ref(false), supervisionReflections=ref([]), supervisionSessions=ref([]), supervisionLoading=ref(false), supervisionSaving=ref(false), supervisionError=ref(\'\'), supervisionSuccess=ref(\'\'), archiveSaving=ref(false), archiveError=ref(\'\'), joiningMeeting=ref(false), meetingError=ref(\'\'); let supervisionSuccessTimer;\r\nasync function openSupervisionPicker(){supervisionPickerOpen.value=true;supervisionLoading.value=true;supervisionError.value=\'\';supervisionSuccess.value=\'\';clearTimeout(supervisionSuccessTimer);try{[supervisionReflections.value,supervisionSessions.value]=await Promise.all([getPrivateReflectionsForClient({clientId:props.client.id}),listSessions({clientId:props.client.id})])}catch(error){console.error(\'Failed to load supervision choices:\',error);supervisionError.value=\'Could not load private reflections for supervision.\'}finally{supervisionLoading.value=false}}\r\nfunction closeSupervisionPicker(){if(!supervisionSaving.value)supervisionPickerOpen.value=false}\r\nasync function addSelectedToSupervision(ids){supervisionSaving.value=true;supervisionError.value=\'\';try{const selected=supervisionReflections.value.filter(r=>ids.includes(r.id)&&!r.included_in_supervision);const updated=await Promise.all(selected.map(r=>setReflectionSupervisionSelection({reflectionId:r.id,included:true})));const byId=new Map(updated.map(r=>[r.id,r]));supervisionReflections.value=supervisionReflections.value.map(r=>byId.get(r.id)||r);supervisionPickerOpen.value=false;if(updated.length){supervisionSuccess.value=updated.length===1?\'Saved to supervision.\':`${updated.length} reflections saved to supervision.`;supervisionSuccessTimer=setTimeout(()=>{supervisionSuccess.value=\'\'},8000)}}catch(error){supervisionError.value=\'Could not add the selected reflection to supervision.\'}finally{supervisionSaving.value=false}}\r\nasync function requestArchiveChange(){const archiving=!props.client.archived;const message=archiving?`Archive ${props.client.display_name}? Their records will be retained and the client can be restored later.`:`Restore ${props.client.display_name} to the active caseload?`;if(!window.confirm(message))return;archiveSaving.value=true;archiveError.value=\'\';try{emit(\'client-updated\',await setClientArchived({clientId:props.client.id,archived:archiving}))}catch(error){archiveError.value=archiving?\'Could not archive this client.\':\'Could not restore this client.\'}finally{archiveSaving.value=false}}\r\nasync function joinMeeting(){if(!props.nextAppointment?.id||!props.nextAppointment?.zoom_meeting_id||joiningMeeting.value)return;joiningMeeting.value=true;meetingError.value=\'\';const popup=window.open(\'\',\'_blank\');if(popup)popup.opener=null;try{const response=await authenticatedFetch(\'/api/zoom/join-appoin'... 2276 more characters,
+    expected: /!isSessionWorkspace && !client\.archived/,
+    operator: 'match',
+    diff: 'simple'
+  }
+test at test\client-supervision-entry.test.js:5:1
+✖ Client Workspace supervision entry reuses private reflection mutation (21.2822ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /included: true/. Input:
+
+  '<template>\r\n' +
+    '  <header class="bg-surface border-b border-border-muted px-inline-lg py-stack-md">\r\n' +
+    '    <div class="flex flex-col md:flex-row md:items-center justify-between gap-stack-md">\r\n' +
+    `      <div class="flex items-center gap-inline-md"><div class="h-10 w-10 rounded-pill bg-avatar flex items-center justify-center text-h3 font-semibold text-ink shrink-0">{{ clientInitials }}</div><div class="flex flex-col min-w-0"><div class="flex items-center gap-inline-sm flex-wrap"><h1 class="text-h2 font-semibold text-ink truncate">{{ client.display_name }}</h1><StatusBadge :status="client.archived ? 'archived' : 'active'" /></div><div class="flex flex-wrap items-center gap-x-inline-md gap-y-0 text-caption text-ink-muted"><span>Next: {{ nextAppointmentLabel }}</span><span>Therapist: {{ therapistLabel }}</span><span v-if="client.archived_at">Archived {{ archiveDate }}</span></div></div></div>\r\n` +
+    `      <div class="flex items-center gap-inline-sm flex-wrap"><button @click="openSupervisionPicker" class="px-inline-md py-stack-xs bg-surface-elevated border border-border text-caption font-medium text-ink-secondary rounded-control hover:bg-surface-subtle transition-colors">Add to Supervision</button><button @click="$emit('create-document')" class="px-inline-md py-stack-xs bg-surface-elevated border border-border text-body-sm font-medium text-ink rounded-control hover:bg-surface-subtle transition-colors" data-testid="create-client-document">Create Document</button><button v-if="!client.archived && !activeSession" @click="joinMeeting" :disabled="joiningMeeting || !nextAppointment?.zoom_meeting_id" class="px-inline-md py-stack-xs bg-surface-elevated border border-border text-caption font-medium text-ink-secondary rounded-control hover:bg-surface-subtle transition-colors disabled:opacity-50 disabled:cursor-not-allowed"><span>{{ joiningMeeting ? 'Opening Zoom…' : videoLabel }}</span></button><button v-if="!activeSession" type="button" :disabled="archiveSaving" @click="requestArchiveChange" class="px-inline-md py-stack-xs bg-surface-elevated border border-border text-body-sm font-medium text-ink-secondary rounded-control hover:bg-surface-subtle disabled:opacity-50" data-testid="client-archive-action">{{ archiveSaving ? 'Saving…' : (client.archived ? 'Restore client' : 'Archive client') }}</button></div>\r\n` +
+    '    </div>\r\n' +
+    '    <div v-if="activeSession" class="mt-stack-md flex flex-col sm:flex-row sm:items-center sm:justify-between gap-stack-sm rounded-panel border-2 border-state-selected bg-surface p-inline-lg py-stack-md shadow-sm" data-testid="active-session-timer-panel">\r\n' +
+    '      <div class="flex items-center gap-inline-md">\r\n' +
+    '        <div class="w-12 h-12 rounded-full bg-state-selected/10 flex items-center justify-center shrink-0">\r\n' +
+    '          <span class="w-3 h-3 rounded-full bg-state-selected animate-pulse"></span>\r\n' +
+    '        </div>\r\n' +
+    '        <div>\r\n' +
+    '          <div class="flex items-center gap-inline-sm">\r\n' +
+    '            <span class="text-body font-bold text-ink">Session in progress</span>\r\n' +
+    '            <span class="text-h3 font-mono font-bold text-ink" aria-live="polite">{{ elapsedTime }}</span>\r\n' +
+    '          </div>\r\n' +
+    '          <p class="text-caption text-ink-muted mt-0.5">Started at {{ formatSessionTime(activeSession.startedAt) }} · Timing continues in both workspaces</p>\r\n' +
+    '        </div>\r\n' +
+    '      </div>\r\n' +
+    '      <div class="flex items-center gap-inline-sm">\r\n' +
+    `        <button @click="rejoinSessionVideo" :disabled="joiningMeeting" class="px-inline-md py-stack-sm bg-surface border border-border text-body-sm font-semibold text-ink rounded-control hover:bg-surface-subtle transition-colors disabled:opacity-50 disabled:cursor-not-allowed">{{ joiningMeeting ? 'Opening Zoom…' : 'Return to Video Session' }}</button>\r\n` +
+    `        <button @click="$emit('open-clinical-workspace')" class="px-inline-md py-stack-sm bg-surface border border-border text-body-sm font-semibold text-ink rounded-control hover:bg-surface-subtle transition-colors">Clinical Workspace</button>\r\n` +
+    `        <button @click="$emit('end-session')" :disabled="sessionBusy" class="px-inline-md py-stack-sm bg-state-danger text-body-sm font-semibold text-white rounded-control hover:bg-opacity-90 transition-colors disabled:opacity-60">{{ sessionBusy ? 'Ending…' : 'End Session' }}</button>\r\n` +
+    '      </div>\r\n' +
+    '    </div>\r\n' +
+    '    <div v-else-if="!client.archived" class="mt-stack-md">\r\n' +
+    `      <button @click="$emit('start-session')" :disabled="sessionBusy" class="px-inline-lg py-stack-sm bg-action-link text-body font-semibold text-on-action rounded-control hover:bg-action-link-hover transition-colors shadow-sm disabled:opacity-60" data-testid="start-session">\r\n` +
+    "        {{ sessionBusy ? 'Starting…' : 'Start Session' }}\r\n" +
+    '      </button>\r\n' +
+    '    </div>\r\n' +
+    '    <div v-if="sessionError" role="alert" class="mt-stack-sm rounded-control border border-state-danger/20 bg-state-danger/5 px-inline-md py-stack-xs text-body-sm font-medium text-state-danger">{{ sessionError }}</div>\r\n' +
+    '    <div v-if="meetingError" role="alert" class="mt-stack-sm rounded-control border border-state-danger/20 bg-state-danger/5 px-inline-md py-stack-xs text-body-sm font-medium text-state-danger">{{ meetingError }}</div>\r\n' +
+    '    <div v-if="archiveError" role="alert" class="mt-stack-sm rounded-control border border-state-danger/20 bg-state-danger/5 px-inline-md py-stack-xs text-body-sm text-state-danger">{{ archiveError }}</div>\r\n' +
+    `    <div v-if="supervisionSuccess" role="status" class="mt-stack-sm inline-flex flex-wrap items-center gap-inline-sm rounded-control border border-state-success/20 bg-state-success-surface px-inline-md py-stack-xs text-body-sm font-medium text-state-success"><span>✓</span><span>{{ supervisionSuccess }}</span><button @click="router.push('/supervision/workspace')" class="ml-inline-xs font-semibold underline">View Supervision Workspace</button></div>\r\n` +
+    '    <ClientSupervisionPicker v-if="supervisionPickerOpen" :client-name="client.display_name" :reflections="supervisionReflections" :sessions="supervisionSessions" :loading="supervisionLoading" :saving="supervisionSaving" :error="supervisionError" @close="closeSupervisionPicker" @confirm="addSelectedToSupervision" />\r\n' +
+    '  </header>\r\n' +
+    '</template>\r\n' +
+    '<script setup>\r\n' +
+    "import { computed, ref } from 'vue';\r\n" +
+    "import { useRouter } from 'vue-router';\r\n" +
+    "import StatusBadge from './StatusBadge.vue'; import ClientSupervisionPicker from './ClientSupervisionPicker.vue';\r\n" +
+    "import { listSessions } from '../../lib/sessions.js'; import { setClientArchived } from '../../lib/clients.js'; import { getPrivateReflectionsForClient } from '../../lib/clientSupervision.js'; import { setReflectionSupervisionSelection } from '../../lib/reflections.js'; import { authenticatedFetch } from '../../lib/api.js'; import { videoProviderService } from '../../lib/videoProvider.js';\r\n" +
+    "const props = defineProps({ client:{type:Object,required:true}, nextAppointment:{type:Object,default:null}, therapistLabel:{type:String,default:'Current therapist'}, activeSession:{type:Object,default:null}, elapsedTime:{type:String,default:'00:00:00'}, sessionBusy:{type:Boolean,default:false}, sessionError:{type:String,default:''} });\r\n" +
+    "const emit = defineEmits(['create-document','client-updated','start-session','open-clinical-workspace','end-session']); const router=useRouter();\r\n" +
+    "const supervisionPickerOpen=ref(false), supervisionReflections=ref([]), supervisionSessions=ref([]), supervisionLoading=ref(false), supervisionSaving=ref(false), supervisionError=ref(''), supervisionSuccess=ref(''), archiveSaving=ref(false), archiveError=ref(''), joiningMeeting=ref(false), meetingError=ref(''); let supervisionSuccessTimer;\r\n" +
+    "async function openSupervisionPicker(){supervisionPickerOpen.value=true;supervisionLoading.value=true;supervisionError.value='';supervisionSuccess.value='';clearTimeout(supervisionSuccessTimer);try{[supervisionReflections.value,supervisionSessions.value]=await Promise.all([getPrivateReflectionsForClient({clientId:props.client.id}),listSessions({clientId:props.client.id})])}catch(error){console.error('Failed to load supervision choices:',error);supervisionError.value='Could not load private reflections for supervision.'}finally{supervisionLoading.value=false}}\r\n" +
+    'function closeSupervisionPicker(){if(!supervisionSaving.value)supervisionPickerOpen.value=false}\r\n' +
+    "async function addSelectedToSupervision(ids){supervisionSaving.value=true;supervisionError.value='';try{const selected=supervisionReflections.value.filter(r=>ids.includes(r.id)&&!r.included_in_supervision);const updated=await Promise.all(selected.map(r=>setReflectionSupervisionSelection({reflectionId:r.id,included:true})));const byId=new Map(updated.map(r=>[r.id,r]));supervisionReflections.value=supervisionReflections.value.map(r=>byId.get(r.id)||r);supervisionPickerOpen.value=false;if(updated.length){supervisionSuccess.value=updated.length===1?'Saved to supervision.':`${updated.length} reflections saved to supervision.`;supervisionSuccessTimer=setTimeout(()=>{supervisionSuccess.value=''},8000)}}catch(error){supervisionError.value='Could not add the selected reflection to supervision.'}finally{supervisionSaving.value=false}}\r\n" +
+    "async function requestArchiveChange(){const archiving=!props.client.archived;const message=archiving?`Archive ${props.client.display_name}? Their records will be retained and the client can be restored later.`:`Restore ${props.client.display_name} to the active caseload?`;if(!window.confirm(message))return;archiveSaving.value=true;archiveError.value='';try{emit('client-updated',await setClientArchived({clientId:props.client.id,archived:archiving}))}catch(error){archiveError.value=archiving?'Could not archive this client.':'Could not restore this client.'}finally{archiveSaving.value=false}}\r\n" +
+    "async function joinMeeting(){if(!props.nextAppointment?.id||!props.nextAppointment?.zoom_meeting_id||joiningMeeting.value)return;joiningMeeting.value=true;meetingError.value='';const popup=window.open('','_blank');if(popup)popup.opener=null;try{const response=await authenticatedFetch('/api/zoom/join-appoin"... 2276 more characters
+
+      at TestContext.<anonymous> (file:///C:/Users/Rob/WebstormProjects/helio-therapist/test/client-supervision-entry.test.js:15:10)
       at async Test.run (node:internal/test_runner/test:1054:7)
       at async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3) {
     generatedMessage: true,
     code: 'ERR_ASSERTION',
-    actual: "import { supabase } from './supabase.js'\r\n\r\nfunction requireSupabase() {\r\n  if (!supabase) throw new Error('Supabase is not configured')\r\n  return supabase\r\n}\r\n\r\nasync function authenticatedHeaders() {\r\n  const db = requireSupabase()\r\n  const { data } = await db.auth.getSession()\r\n  const token = data?.session?.access_token\r\n  if (!token) {\r\n    const e = new Error('Authentication required')\r\n    e.code = 'UNAUTHENTICATED'\r\n    throw e\r\n  }\r\n  return {\r\n    'Content-Type': 'application/json',\r\n    'Authorization': `Bearer ${token}`\r\n  }\r\n}\r\n\r\nfunction mapFollowUp(row) {\r\n  return {\r\n    id: row.id,\r\n    therapistId: row.therapist_id,\r\n    clientId: row.client_id,\r\n    body: row.body,\r\n    completedAt: row.completed_at,\r\n    createdAt: row.created_at,\r\n    updatedAt: row.updated_at\r\n  }\r\n}\r\n\r\nexport async function listClientFollowUps(clientId) {\r\n  const db = requireSupabase()\r\n  const { data, error } = await db\r\n    .from('client_follow_ups')\r\n    .select('*')\r\n    .eq('client_id', clientId)\r\n    .order('completed_at', { ascending: true, nullsFirst: true })\r\n    .order('updated_at', { ascending: false })\r\n\r\n  if (error) throw error\r\n  return (data || []).map(mapFollowUp)\r\n}\r\n\r\nexport async function createClientFollowUp({ clientId, body }) {\r\n  const db = requireSupabase()\r\n  const { data: auth } = await db.auth.getUser()\r\n  if (!auth?.user) {\r\n    const e = new Error('Authentication required')\r\n    e.code = 'UNAUTHENTICATED'\r\n    throw e\r\n  }\r\n\r\n  const { data, error } = await db\r\n    .from('client_follow_ups')\r\n    .insert({\r\n      therapist_id: auth.user.id,\r\n      client_id: clientId,\r\n      body: body.trim()\r\n    })\r\n    .select('*')\r\n    .single()\r\n\r\n  if (error) throw error\r\n  return mapFollowUp(data)\r\n}\r\n\r\nexport async function setClientFollowUpCompleted({ id, completed }) {\r\n  const db = requireSupabase()\r\n  const { data, error } = await db\r\n    .from('client_follow_ups')\r\n    .update({\r\n      completed_at: completed ? new Date().toISOString() : null\r\n    })\r\n    .eq('id', id)\r\n    .select('*')\r\n    .single()\r\n\r\n  if (error) throw error\r\n  return mapFollowUp(data)\r\n}\r\n\r\nexport async function updateClientFollowUp({ id, body }) {\r\n  const db = requireSupabase()\r\n  const { data, error } = await db\r\n    .from('client_follow_ups')\r\n    .update({ body: body.trim() })\r\n    .eq('id', id)\r\n    .select('*')\r\n    .single()\r\n\r\n  if (error) throw error\r\n  return mapFollowUp(data)\r\n}\r\n\r\nexport async function transcribeAudio(audio) {\r\n  const response = await fetch('/api/ai/transcribe', {\r\n    method: 'POST',\r\n    headers: await authenticatedHeaders(),\r\n    body: JSON.stringify({ audio })\r\n  })\r\n  const payload = await response.json().catch(() => ({}))\r\n  if (!response.ok) {\r\n    const e = new Error(payload?.error?.message || 'Dictation could not be transcribed')\r\n    e.code = payload?.error?.code || 'TRANSCRIPTION_FAILED'\r\n    throw e\r\n  }\r\n  return payload.text || ''\r\n}\r\n",
-    expected: /if\(!auth\?\.user\)/,
+    actual: '<template>\r\n  <header class="bg-surface border-b border-border-muted px-inline-lg py-stack-md">\r\n    <div class="flex flex-col md:flex-row md:items-center justify-between gap-stack-md">\r\n      <div class="flex items-center gap-inline-md"><div class="h-10 w-10 rounded-pill bg-avatar flex items-center justify-center text-h3 font-semibold text-ink shrink-0">{{ clientInitials }}</div><div class="flex flex-col min-w-0"><div class="flex items-center gap-inline-sm flex-wrap"><h1 class="text-h2 font-semibold text-ink truncate">{{ client.display_name }}</h1><StatusBadge :status="client.archived ? \'archived\' : \'active\'" /></div><div class="flex flex-wrap items-center gap-x-inline-md gap-y-0 text-caption text-ink-muted"><span>Next: {{ nextAppointmentLabel }}</span><span>Therapist: {{ therapistLabel }}</span><span v-if="client.archived_at">Archived {{ archiveDate }}</span></div></div></div>\r\n      <div class="flex items-center gap-inline-sm flex-wrap"><button @click="openSupervisionPicker" class="px-inline-md py-stack-xs bg-surface-elevated border border-border text-caption font-medium text-ink-secondary rounded-control hover:bg-surface-subtle transition-colors">Add to Supervision</button><button @click="$emit(\'create-document\')" class="px-inline-md py-stack-xs bg-surface-elevated border border-border text-body-sm font-medium text-ink rounded-control hover:bg-surface-subtle transition-colors" data-testid="create-client-document">Create Document</button><button v-if="!client.archived && !activeSession" @click="joinMeeting" :disabled="joiningMeeting || !nextAppointment?.zoom_meeting_id" class="px-inline-md py-stack-xs bg-surface-elevated border border-border text-caption font-medium text-ink-secondary rounded-control hover:bg-surface-subtle transition-colors disabled:opacity-50 disabled:cursor-not-allowed"><span>{{ joiningMeeting ? \'Opening Zoom…\' : videoLabel }}</span></button><button v-if="!activeSession" type="button" :disabled="archiveSaving" @click="requestArchiveChange" class="px-inline-md py-stack-xs bg-surface-elevated border border-border text-body-sm font-medium text-ink-secondary rounded-control hover:bg-surface-subtle disabled:opacity-50" data-testid="client-archive-action">{{ archiveSaving ? \'Saving…\' : (client.archived ? \'Restore client\' : \'Archive client\') }}</button></div>\r\n    </div>\r\n    <div v-if="activeSession" class="mt-stack-md flex flex-col sm:flex-row sm:items-center sm:justify-between gap-stack-sm rounded-panel border-2 border-state-selected bg-surface p-inline-lg py-stack-md shadow-sm" data-testid="active-session-timer-panel">\r\n      <div class="flex items-center gap-inline-md">\r\n        <div class="w-12 h-12 rounded-full bg-state-selected/10 flex items-center justify-center shrink-0">\r\n          <span class="w-3 h-3 rounded-full bg-state-selected animate-pulse"></span>\r\n        </div>\r\n        <div>\r\n          <div class="flex items-center gap-inline-sm">\r\n            <span class="text-body font-bold text-ink">Session in progress</span>\r\n            <span class="text-h3 font-mono font-bold text-ink" aria-live="polite">{{ elapsedTime }}</span>\r\n          </div>\r\n          <p class="text-caption text-ink-muted mt-0.5">Started at {{ formatSessionTime(activeSession.startedAt) }} · Timing continues in both workspaces</p>\r\n        </div>\r\n      </div>\r\n      <div class="flex items-center gap-inline-sm">\r\n        <button @click="rejoinSessionVideo" :disabled="joiningMeeting" class="px-inline-md py-stack-sm bg-surface border border-border text-body-sm font-semibold text-ink rounded-control hover:bg-surface-subtle transition-colors disabled:opacity-50 disabled:cursor-not-allowed">{{ joiningMeeting ? \'Opening Zoom…\' : \'Return to Video Session\' }}</button>\r\n        <button @click="$emit(\'open-clinical-workspace\')" class="px-inline-md py-stack-sm bg-surface border border-border text-body-sm font-semibold text-ink rounded-control hover:bg-surface-subtle transition-colors">Clinical Workspace</button>\r\n        <button @click="$emit(\'end-session\')" :disabled="sessionBusy" class="px-inline-md py-stack-sm bg-state-danger text-body-sm font-semibold text-white rounded-control hover:bg-opacity-90 transition-colors disabled:opacity-60">{{ sessionBusy ? \'Ending…\' : \'End Session\' }}</button>\r\n      </div>\r\n    </div>\r\n    <div v-else-if="!client.archived" class="mt-stack-md">\r\n      <button @click="$emit(\'start-session\')" :disabled="sessionBusy" class="px-inline-lg py-stack-sm bg-action-link text-body font-semibold text-on-action rounded-control hover:bg-action-link-hover transition-colors shadow-sm disabled:opacity-60" data-testid="start-session">\r\n        {{ sessionBusy ? \'Starting…\' : \'Start Session\' }}\r\n      </button>\r\n    </div>\r\n    <div v-if="sessionError" role="alert" class="mt-stack-sm rounded-control border border-state-danger/20 bg-state-danger/5 px-inline-md py-stack-xs text-body-sm font-medium text-state-danger">{{ sessionError }}</div>\r\n    <div v-if="meetingError" role="alert" class="mt-stack-sm rounded-control border border-state-danger/20 bg-state-danger/5 px-inline-md py-stack-xs text-body-sm font-medium text-state-danger">{{ meetingError }}</div>\r\n    <div v-if="archiveError" role="alert" class="mt-stack-sm rounded-control border border-state-danger/20 bg-state-danger/5 px-inline-md py-stack-xs text-body-sm text-state-danger">{{ archiveError }}</div>\r\n    <div v-if="supervisionSuccess" role="status" class="mt-stack-sm inline-flex flex-wrap items-center gap-inline-sm rounded-control border border-state-success/20 bg-state-success-surface px-inline-md py-stack-xs text-body-sm font-medium text-state-success"><span>✓</span><span>{{ supervisionSuccess }}</span><button @click="router.push(\'/supervision/workspace\')" class="ml-inline-xs font-semibold underline">View Supervision Workspace</button></div>\r\n    <ClientSupervisionPicker v-if="supervisionPickerOpen" :client-name="client.display_name" :reflections="supervisionReflections" :sessions="supervisionSessions" :loading="supervisionLoading" :saving="supervisionSaving" :error="supervisionError" @close="closeSupervisionPicker" @confirm="addSelectedToSupervision" />\r\n  </header>\r\n</template>\r\n<script setup>\r\nimport { computed, ref } from \'vue\';\r\nimport { useRouter } from \'vue-router\';\r\nimport StatusBadge from \'./StatusBadge.vue\'; import ClientSupervisionPicker from \'./ClientSupervisionPicker.vue\';\r\nimport { listSessions } from \'../../lib/sessions.js\'; import { setClientArchived } from \'../../lib/clients.js\'; import { getPrivateReflectionsForClient } from \'../../lib/clientSupervision.js\'; import { setReflectionSupervisionSelection } from \'../../lib/reflections.js\'; import { authenticatedFetch } from \'../../lib/api.js\'; import { videoProviderService } from \'../../lib/videoProvider.js\';\r\nconst props = defineProps({ client:{type:Object,required:true}, nextAppointment:{type:Object,default:null}, therapistLabel:{type:String,default:\'Current therapist\'}, activeSession:{type:Object,default:null}, elapsedTime:{type:String,default:\'00:00:00\'}, sessionBusy:{type:Boolean,default:false}, sessionError:{type:String,default:\'\'} });\r\nconst emit = defineEmits([\'create-document\',\'client-updated\',\'start-session\',\'open-clinical-workspace\',\'end-session\']); const router=useRouter();\r\nconst supervisionPickerOpen=ref(false), supervisionReflections=ref([]), supervisionSessions=ref([]), supervisionLoading=ref(false), supervisionSaving=ref(false), supervisionError=ref(\'\'), supervisionSuccess=ref(\'\'), archiveSaving=ref(false), archiveError=ref(\'\'), joiningMeeting=ref(false), meetingError=ref(\'\'); let supervisionSuccessTimer;\r\nasync function openSupervisionPicker(){supervisionPickerOpen.value=true;supervisionLoading.value=true;supervisionError.value=\'\';supervisionSuccess.value=\'\';clearTimeout(supervisionSuccessTimer);try{[supervisionReflections.value,supervisionSessions.value]=await Promise.all([getPrivateReflectionsForClient({clientId:props.client.id}),listSessions({clientId:props.client.id})])}catch(error){console.error(\'Failed to load supervision choices:\',error);supervisionError.value=\'Could not load private reflections for supervision.\'}finally{supervisionLoading.value=false}}\r\nfunction closeSupervisionPicker(){if(!supervisionSaving.value)supervisionPickerOpen.value=false}\r\nasync function addSelectedToSupervision(ids){supervisionSaving.value=true;supervisionError.value=\'\';try{const selected=supervisionReflections.value.filter(r=>ids.includes(r.id)&&!r.included_in_supervision);const updated=await Promise.all(selected.map(r=>setReflectionSupervisionSelection({reflectionId:r.id,included:true})));const byId=new Map(updated.map(r=>[r.id,r]));supervisionReflections.value=supervisionReflections.value.map(r=>byId.get(r.id)||r);supervisionPickerOpen.value=false;if(updated.length){supervisionSuccess.value=updated.length===1?\'Saved to supervision.\':`${updated.length} reflections saved to supervision.`;supervisionSuccessTimer=setTimeout(()=>{supervisionSuccess.value=\'\'},8000)}}catch(error){supervisionError.value=\'Could not add the selected reflection to supervision.\'}finally{supervisionSaving.value=false}}\r\nasync function requestArchiveChange(){const archiving=!props.client.archived;const message=archiving?`Archive ${props.client.display_name}? Their records will be retained and the client can be restored later.`:`Restore ${props.client.display_name} to the active caseload?`;if(!window.confirm(message))return;archiveSaving.value=true;archiveError.value=\'\';try{emit(\'client-updated\',await setClientArchived({clientId:props.client.id,archived:archiving}))}catch(error){archiveError.value=archiving?\'Could not archive this client.\':\'Could not restore this client.\'}finally{archiveSaving.value=false}}\r\nasync function joinMeeting(){if(!props.nextAppointment?.id||!props.nextAppointment?.zoom_meeting_id||joiningMeeting.value)return;joiningMeeting.value=true;meetingError.value=\'\';const popup=window.open(\'\',\'_blank\');if(popup)popup.opener=null;try{const response=await authenticatedFetch(\'/api/zoom/join-appoin'... 2276 more characters,
+    expected: /included: true/,
     operator: 'match',
     diff: 'simple'
   }
-test at test\client-follow-ups.test.js:25:1
-✖ Follow-ups UI components follow requirements (5.1063ms)
-  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /<input type="checkbox"/. Input:
+test at test\migration-integration.test.js:8:1
+✖ the full migration chain preserves clinical invariants (2847.4419ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  actual expected
+
+  '20260814073152000_add_client_followcare_uprevisions.sql'
+
+      at TestContext.<anonymous> (file:///C:/Users/Rob/WebstormProjects/helio-therapist/test/migration-integration.test.js:8:1977)
+      at async Test.run (node:internal/test_runner/test:1054:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: '20260814073500_add_client_follow_ups.sql',
+    expected: '20260813152000_add_client_care_revisions.sql',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+test at test\overview-calendar-requirements.test.js:5:1
+✖ Overview view requirements (41.0436ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /sessionId: session\.id/. Input:
 
   '<template>\r\n' +
-    '  <section class="bg-surface-elevated border border-border-muted rounded-panel p-inline-lg">\r\n' +
-    '    <div class="flex justify-between items-center mb-stack-md pt-stack-md">\r\n' +
-    '      <h3 class="text-h3 font-semibold text-ink">Follow-ups</h3>\r\n' +
-    '      <button \r\n' +
-    '        @click="showCapture = true"\r\n' +
-    '        type="button" \r\n' +
-    '        class="text-caption font-medium text-action-link hover:underline"\r\n' +
-    '      >\r\n' +
-    '        Quick capture\r\n' +
-    '      </button>\r\n' +
-    '    </div>\r\n' +
+    '  <div class="max-w-7xl mx-auto px-page py-8 md:py-10 space-y-9">\r\n' +
+    '    <GreetingHeader :eyebrow="eyebrow" :phrase="phrase" :display-name="therapistDisplayName" :supporting="supportingInformation" />\r\n' +
     '\r\n' +
-    '    <div class="pb-stack-md">\r\n' +
-    '      <div v-if="loading && !followUps.length" class="py-stack-md text-center">\r\n' +
-    '        <p class="text-body-sm text-ink-muted">Loading follow-ups...</p>\r\n' +
-    '      </div>\r\n' +
-    '      \r\n' +
-    '      <div v-else-if="!openFollowUps.length" class="py-stack-md text-center border border-dashed border-border rounded-control">\r\n' +
-    '        <p class="text-body-sm text-ink-muted">No follow-ups recorded.</p>\r\n' +
-    '        <button \r\n' +
-    '          @click="showCapture = true"\r\n' +
-    '          type="button"\r\n' +
-    '          class="mt-2 text-action-link font-medium hover:underline text-body-sm"\r\n' +
-    '        >\r\n' +
-    '          Quick capture\r\n' +
-    '        </button>\r\n' +
-    '      </div>\r\n' +
-    '      \r\n' +
-    '      <div v-else class="space-y-stack-sm">\r\n' +
-    '        <div \r\n' +
-    '          v-for="item in openFollowUps" \r\n' +
-    '          :key="item.id"\r\n' +
-    '          class="group flex gap-inline-sm p-inline-md border border-border rounded-control bg-surface hover:border-border-hover transition-colors"\r\n' +
-    '        >\r\n' +
-    '          <input \r\n' +
-    '            type="checkbox" \r\n' +
-    '            :checked="!!item.completedAt"\r\n' +
-    '            @change="toggleComplete(item)"\r\n' +
-    '            class="mt-1 w-4 h-4 rounded border-border text-action-link focus:ring-action-link cursor-pointer"\r\n' +
-    '          />\r\n' +
-    '          <div class="flex-1 min-w-0">\r\n' +
-    '            <p class="text-body-sm text-ink leading-relaxed whitespace-pre-wrap">{{ item.body }}</p>\r\n' +
-    '            <p class="text-caption text-ink-muted mt-1">{{ formatDate(item.createdAt) }}</p>\r\n' +
-    '          </div>\r\n' +
+    '    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-9 items-start">\r\n' +
+    '      <section class="lg:col-span-2 space-y-4">\r\n' +
+    '        <SectionHeader title="Today’s schedule"><template #action><router-link to="/calendar" class="type-ui text-action-link hover:text-action-link-hover underline-offset-4 hover:underline">View calendar →</router-link></template></SectionHeader>\r\n' +
+    '        <SurfaceCard v-if="loading" compact class="text-center"><p class="type-body text-ink-muted animate-pulse">Loading schedule...</p></SurfaceCard>\r\n' +
+    '        <SurfaceCard v-else-if="todayEvents.length === 0" class="text-center"><p class="type-body text-ink-muted">No appointments scheduled for today.</p></SurfaceCard>\r\n' +
+    '        <div v-else class="space-y-2.5">\r\n' +
+    '          <SurfaceCard v-for="event in todayEvents" :key="event.id" compact class="flex flex-wrap md:flex-nowrap items-center justify-between gap-4 group">\r\n' +
+    '            <div class="flex items-center gap-4 min-w-0"><div class="w-[4.25rem] shrink-0 pr-4 border-r border-border-muted"><div class="type-body-medium text-ink">{{ formatTime(event.start) }}</div><div class="type-metadata text-ink-muted mt-1">60 min</div></div><div class="min-w-0"><div class="type-body-medium text-ink truncate">{{ event.clientName }}</div><div class="type-ui text-ink-secondary mt-0.5">{{ event.type }}</div><StatusIndicator class="mt-0.5">{{ formatStatus(event.status) }}</StatusIndicator></div></div>\r\n' +
+    '            <div class="flex items-center gap-2 ml-auto"><AppButton v-if="event.clientId" :to="`/clients/${event.clientId}`">Open client</AppButton><AppButton v-if="event.isEligibleForStart" variant="primary" :disabled="startingEventId === event.id" :aria-busy="startingEventId === event.id" @click="startSession(event)">{{ startingEventId === event.id ? \'Starting…\' : \'Start session\' }}</AppButton></div>\r\n' +
+    '            <p v-if="sessionOpenErrorId === event.id" role="alert" class="w-full type-metadata text-state-danger">Couldn’t start the session. Please try again.</p>\r\n' +
+    '          </SurfaceCard>\r\n' +
     '        </div>\r\n' +
-    '      </div>\r\n' +
+    '      </section>\r\n' +
     '\r\n' +
-    '      <div v-if="completedFollowUps.length > 0" class="mt-stack-md pt-stack-md border-t border-border-muted">\r\n' +
-    '        <button \r\n' +
-    '          @click="showCompleted = !showCompleted"\r\n' +
-    '          type="button"\r\n' +
-    '          class="text-caption text-ink-muted hover:text-ink flex items-center gap-1"\r\n' +
-    '        >\r\n' +
-    "          {{ showCompleted ? 'Hide' : 'Show' }} {{ completedFollowUps.length }} completed\r\n" +
-    '        </button>\r\n' +
-    '        \r\n' +
-    '        <div v-if="showCompleted" class="mt-stack-sm space-y-stack-sm opacity-60">\r\n' +
-    '          <div \r\n' +
-    '            v-for="item in completedFollowUps" \r\n' +
-    '            :key="item.id"\r\n' +
-    '            class="flex gap-inline-sm p-inline-md border border-border rounded-control bg-surface-subtle"\r\n' +
-    '          >\r\n' +
-    '            <input \r\n' +
-    '              type="checkbox" \r\n' +
-    '              checked\r\n' +
-    '              @change="toggleComplete(item)"\r\n' +
-    '              class="mt-1 w-4 h-4 rounded border-border text-ink-muted focus:ring-ink-muted cursor-pointer"\r\n' +
-    '            />\r\n' +
-    '            <div class="flex-1 min-w-0">\r\n' +
-    '              <p class="text-body-sm text-ink-secondary leading-relaxed line-through">{{ item.body }}</p>\r\n' +
-    '            </div>\r\n' +
+    '      <aside class="space-y-6">\r\n' +
+    '        <section class="space-y-3"><p class="type-eyebrow text-ink-muted">Continue working</p><SurfaceCard v-if="pendingWork.length === 0" tone="base" compact class="text-center"><p class="type-metadata text-ink-subtle">No pending drafts or reviews.</p></SurfaceCard><div v-else class="space-y-2.5"><router-link v-for="item in pendingWork" :key="item.id" :to="item.route" class="block focus-visible:rounded-panel"><SurfaceCard compact><div class="type-ui font-semibold text-ink">{{ item.title }}</div><div class="type-metadata text-ink-muted mt-1">{{ item.subtitle }}</div></SurfaceCard></router-link></div></section>\r\n' +
+    '        <section class="space-y-3"><p class="type-eyebrow text-ink-muted">Practice focus</p><SurfaceCard tone="base" compact class="bg-brand-sage-soft/55 border-action-primary/10"><p class="type-ui leading-6 text-ink-secondary">{{ practiceFocusObservation }}</p></SurfaceCard></section>\r\n' +
+    '        <section class="space-y-3"><p class="type-eyebrow text-ink-muted">Development</p><SurfaceCard tone="base" compact class="bg-reflection border-border-reflection"><div class="type-ui font-semibold text-ink">Supervision prep</div><p class="type-metadata text-ink-muted mt-1">{{ reflectionsCount }} reflections are waiting for review.</p><router-link to="/supervision" class="inline-flex mt-2.5 type-ui text-action-link hover:text-action-link-hover underline-offset-4 hover:underline">Go to supervision →</router-link></SurfaceCard></section>\r\n' +
+    '        <section class="space-y-3">\r\n' +
+    '          <p class="type-eyebrow text-ink-muted">Recent activity</p>\r\n' +
+    '          <SurfaceCard v-if="recentActivity.length === 0" tone="muted" compact class="text-center"><p class="type-metadata text-ink-subtle">No recent activity to show.</p></SurfaceCard>\r\n' +
+    '          <div v-else class="border-y border-border-muted divide-y divide-border-muted">\r\n' +
+    `            <component v-for="item in recentActivity" :key="item.id" :is="item.route ? 'router-link' : 'div'" :to="item.route || undefined" class="block py-3 first:pt-2 last:pb-2 group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-state-focus-ring focus-visible:rounded-control">\r\n` +
+    '              <div class="type-ui font-medium text-ink group-hover:text-action-link">{{ item.title }}</div>\r\n' +
+    '              <div class="flex flex-wrap items-center gap-x-2 mt-1 type-metadata text-ink-muted"><span v-if="item.detail">{{ item.detail }}</span><span v-if="item.detail" aria-hidden="true">·</span><time :datetime="item.occurredAt.toISOString()">{{ formatActivityTime(item.occurredAt) }}</time></div>\r\n' +
+    '            </component>\r\n' +
     '          </div>\r\n' +
-    '        </div>\r\n' +
-    '      </div>\r\n' +
+    '        </section>\r\n' +
+    '      </aside>\r\n' +
     '    </div>\r\n' +
-    '\r\n' +
-    '    <QuickCaptureModal \r\n' +
-    '      v-if="showCapture" \r\n' +
-    '      :client-id="clientId"\r\n' +
-    '      @close="showCapture = false"\r\n' +
-    '      @saved="onSaved"\r\n' +
-    '    />\r\n' +
-    '  </section>\r\n' +
+    '    <footer class="pt-5 border-t border-border-muted max-w-3xl"><p class="type-metadata text-ink-subtle leading-relaxed">Showing Helios appointments and completed session history. Google Calendar events appear when connected.</p></footer>\r\n' +
+    '  </div>\r\n' +
     '</template>\r\n' +
     '\r\n' +
     '<script setup>\r\n' +
-    "import { ref, computed, onMounted } from 'vue';\r\n" +
-    "import { listClientFollowUps, setClientFollowUpCompleted } from '../../lib/clientFollowUps.js';\r\n" +
-    "import QuickCaptureModal from './QuickCaptureModal.vue';\r\n" +
+    "import { computed, onMounted, ref } from 'vue'\r\n" +
+    "import { useRouter } from 'vue-router'\r\n" +
+    "import { useCalendar } from '../composables/useCalendar'\r\n" +
+    "import { useGreeting } from '../composables/useGreeting'\r\n" +
+    "import { useTherapistIdentity } from '../composables/useTherapistIdentity'\r\n" +
+    "import { getAllPrivateReflections } from '../lib/reflections'\r\n" +
+    "import { createOrResumeSession } from '../lib/sessions.js'\r\n" +
+    "import { buildRecentActivity } from '../lib/activityFeed.js'\r\n" +
+    "import GreetingHeader from '../components/ui/GreetingHeader.vue'\r\n" +
+    "import SectionHeader from '../components/ui/SectionHeader.vue'\r\n" +
+    "import AppButton from '../components/ui/AppButton.vue'\r\n" +
+    "import SurfaceCard from '../components/ui/SurfaceCard.vue'\r\n" +
+    "import StatusIndicator from '../components/ui/StatusIndicator.vue'\r\n" +
     '\r\n' +
-    'const props = defineProps({\r\n' +
-    '  clientId: { type: String, required: true }\r\n' +
-    '});\r\n' +
+    'const router = useRouter()\r\n' +
+    'const { loading, todayEvents, loadData, sessions, clients } = useCalendar()\r\n' +
+    'const { displayName, loadTherapistIdentity } = useTherapistIdentity()\r\n' +
+    'const { eyebrow, phrase, therapistDisplayName, supportingInformation } = useGreeting({ displayName, appointmentCount: computed(() => todayEvents.value.length) })\r\n' +
+    'const reflections = ref([])\r\n' +
+    'const startingEventId = ref(null)\r\n' +
+    'const sessionOpenErrorId = ref(null)\r\n' +
     '\r\n' +
-    'const followUps = ref([]);\r\n' +
-    'const loading = ref(true);\r\n' +
-    'const showCapture = ref(false);\r\n' +
-    'const showCompleted = ref(false);\r\n' +
-    '\r\n' +
-    'const openFollowUps = computed(() => followUps.value.filter(f => !f.completedAt));\r\n' +
-    'const completedFollowUps = computed(() => followUps.value.filter(f => !!f.completedAt));\r\n' +
-    '\r\n' +
-    'async function load() {\r\n' +
-    '  loading.value = true;\r\n' +
-    '  try {\r\n' +
-    '    followUps.value = await listClientFollowUps(props.clientId);\r\n' +
-    '  } catch (e) {\r\n' +
-    "    console.error('Failed to load follow-ups:', e);\r\n" +
-    '  } finally {\r\n' +
-    '    loading.value = false;\r\n' +
-    '  }\r\n' +
-    '}\r\n' +
-    '\r\n' +
-    'async function toggleComplete(item) {\r\n' +
-    '  const isCompleted = !!item.completedAt;\r\n' +
-    '  try {\r\n' +
-    '    const updated = await setClientFollowUpCompleted({ \r\n' +
-    '      id: item.id, \r\n' +
-    '      completed: !isCompleted \r\n' +
-    '    });\r\n' +
-    '    followUps.value = followUps.value.map(f => f.id === updated.id ? updated : f);\r\n' +
-    '    // Re-sort if needed, though listClientFollowUps does it on load\r\n' +
-    '    followUps.value.sort((a, b) => {\r\n' +
-    '      if (!a.completedAt && b.completedAt) return -1;\r\n' +
-    '      if (a.completedAt && !b.completedAt) return 1;\r\n' +
-    '      return new Date(b.updatedAt) - new Date(a.updatedAt);\r\n' +
-    '    });\r\n' +
-    '  } catch (e) {\r\n' +
-    "    console.error('Failed to update follow-up:', e);\r\n" +
-    '  }\r\n' +
-    '}\r\n' +
-    '\r\n' +
-    'function onSaved(newFollowUp) {\r\n' +
-    '  followUps.value = [newFollowUp, ...followUps.value];\r\n' +
-    '}\r\n' +
-    '\r\n' +
-    'function formatDate(dateString) {\r\n' +
-    "  if (!dateString) return '';\r\n" +
-    "  return new Date(dateString).toLocaleDateString('en-GB', { \r\n" +
-    "    day: 'numeric', \r\n" +
-    "    month: 'short' \r\n" +
-    '  });\r\n' +
-    '}\r\n' +
-    '\r\n' +
-    'onMounted(load);\r\n' +
+    "onMounted(async () => { await Promise.all([loadData(), loadTherapistIdentity()]); try { reflections.value = await getAllPrivateReflections({ limit: 50 }) } catch (e) { console.error('Failed to load reflections', e) } })\r\n" +
+    "async function startSession(event) { if (!event?.clientId || startingEventId.value) return; startingEventId.value = event.id; sessionOpenErrorId.value = null; try { await createOrResumeSession(event.clientId); await router.push({ name: 'ClientWorkspace', params: { clientId: event.clientId } }) } catch (error) { console.error('Failed to start session from overview:', error); sessionOpenErrorId.value = event.id } finally { startingEventId.value = null } }\r\n" +
+    "function formatTime(date) { return new Intl.DateTimeFormat('en-GB', { hour: '2-digit', minute: '2-digit' }).format(date) }\r\n" +
+    "function formatStatus(status) { if (!status) return 'Scheduled'; return status.replace(/_/g, ' ').replace(/\\b\\w/g, l => l.toUpperCase()) }\r\n" +
+    "function formatActivityTime(value) { const date = value instanceof Date ? value : new Date(value); const today = new Date(); const yesterday = new Date(today); yesterday.setDate(today.getDate() - 1); const sameDay = (a, b) => a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate(); const time = new Intl.DateTimeFormat('en-GB', { hour: '2-digit', minute: '2-digit' }).format(date); if (sameDay(date, today)) return `Today, ${time}`; if (sameDay(date, yesterday)) return `Yesterday, ${time}`; return new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }).format(date) }\r\n" +
+    "const pendingWork = computed(() => { const items = []; sessions.value.filter(s => s.notesStatus === 'draft').slice(0, 3).forEach(s => items.push({ id: `session-${s.id}`, title: 'Finish session notes', subtitle: `Draft started on ${new Date(s.startedAt).toLocaleDateString()}`, route: `/clients/${s.clientId}/sessions/${s.id}` })); return items })\r\n" +
+    'const recentActivity = computed(() => buildRecentActivity({ sessions: sessions.value, clients: clients.value, reflections: reflections.value }, { limit: 5 }))\r\n' +
+    'const reflectionsCount = computed(() => reflections.value.filter(r => r.included_in_supervision).length)\r\n' +
+    "const practiceFocusObservation = computed(() => { const draftNotes = sessions.value.filter(s => s.notesStatus === 'draft').length; if (draftNotes > 0) return `${draftNotes} session note${draftNotes === 1 ? '' : 's'} remain${draftNotes === 1 ? 's' : ''} in draft.`; const pendingReflections = reflections.value.filter(r => r.included_in_supervision).length; if (pendingReflections > 0) return `${pendingReflections} reflection${pendingReflections === 1 ? '' : 's'} are waiting for review.`; return 'Your clinical documentation is up to date.' })\r\n" +
     '</script>\r\n'
 
-      at TestContext.<anonymous> (file:///C:/Users/Rob/WebstormProjects/helio-therapist/test/client-follow-ups.test.js:42:10)
+      at TestContext.<anonymous> (file:///C:/Users/Rob/WebstormProjects/helio-therapist/test/overview-calendar-requirements.test.js:24:10)
       at async Test.run (node:internal/test_runner/test:1054:7)
-      at async Test.processPendingSubtests (node:internal/test_runner/test:744:7) {
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3) {
     generatedMessage: true,
     code: 'ERR_ASSERTION',
-    actual: `<template>\r\n  <section class="bg-surface-elevated border border-border-muted rounded-panel p-inline-lg">\r\n    <div class="flex justify-between items-center mb-stack-md pt-stack-md">\r\n      <h3 class="text-h3 font-semibold text-ink">Follow-ups</h3>\r\n      <button \r\n        @click="showCapture = true"\r\n        type="button" \r\n        class="text-caption font-medium text-action-link hover:underline"\r\n      >\r\n        Quick capture\r\n      </button>\r\n    </div>\r\n\r\n    <div class="pb-stack-md">\r\n      <div v-if="loading && !followUps.length" class="py-stack-md text-center">\r\n        <p class="text-body-sm text-ink-muted">Loading follow-ups...</p>\r\n      </div>\r\n      \r\n      <div v-else-if="!openFollowUps.length" class="py-stack-md text-center border border-dashed border-border rounded-control">\r\n        <p class="text-body-sm text-ink-muted">No follow-ups recorded.</p>\r\n        <button \r\n          @click="showCapture = true"\r\n          type="button"\r\n          class="mt-2 text-action-link font-medium hover:underline text-body-sm"\r\n        >\r\n          Quick capture\r\n        </button>\r\n      </div>\r\n      \r\n      <div v-else class="space-y-stack-sm">\r\n        <div \r\n          v-for="item in openFollowUps" \r\n          :key="item.id"\r\n          class="group flex gap-inline-sm p-inline-md border border-border rounded-control bg-surface hover:border-border-hover transition-colors"\r\n        >\r\n          <input \r\n            type="checkbox" \r\n            :checked="!!item.completedAt"\r\n            @change="toggleComplete(item)"\r\n            class="mt-1 w-4 h-4 rounded border-border text-action-link focus:ring-action-link cursor-pointer"\r\n          />\r\n          <div class="flex-1 min-w-0">\r\n            <p class="text-body-sm text-ink leading-relaxed whitespace-pre-wrap">{{ item.body }}</p>\r\n            <p class="text-caption text-ink-muted mt-1">{{ formatDate(item.createdAt) }}</p>\r\n          </div>\r\n        </div>\r\n      </div>\r\n\r\n      <div v-if="completedFollowUps.length > 0" class="mt-stack-md pt-stack-md border-t border-border-muted">\r\n        <button \r\n          @click="showCompleted = !showCompleted"\r\n          type="button"\r\n          class="text-caption text-ink-muted hover:text-ink flex items-center gap-1"\r\n        >\r\n          {{ showCompleted ? 'Hide' : 'Show' }} {{ completedFollowUps.length }} completed\r\n        </button>\r\n        \r\n        <div v-if="showCompleted" class="mt-stack-sm space-y-stack-sm opacity-60">\r\n          <div \r\n            v-for="item in completedFollowUps" \r\n            :key="item.id"\r\n            class="flex gap-inline-sm p-inline-md border border-border rounded-control bg-surface-subtle"\r\n          >\r\n            <input \r\n              type="checkbox" \r\n              checked\r\n              @change="toggleComplete(item)"\r\n              class="mt-1 w-4 h-4 rounded border-border text-ink-muted focus:ring-ink-muted cursor-pointer"\r\n            />\r\n            <div class="flex-1 min-w-0">\r\n              <p class="text-body-sm text-ink-secondary leading-relaxed line-through">{{ item.body }}</p>\r\n            </div>\r\n          </div>\r\n        </div>\r\n      </div>\r\n    </div>\r\n\r\n    <QuickCaptureModal \r\n      v-if="showCapture" \r\n      :client-id="clientId"\r\n      @close="showCapture = false"\r\n      @saved="onSaved"\r\n    />\r\n  </section>\r\n</template>\r\n\r\n<script setup>\r\nimport { ref, computed, onMounted } from 'vue';\r\nimport { listClientFollowUps, setClientFollowUpCompleted } from '../../lib/clientFollowUps.js';\r\nimport QuickCaptureModal from './QuickCaptureModal.vue';\r\n\r\nconst props = defineProps({\r\n  clientId: { type: String, required: true }\r\n});\r\n\r\nconst followUps = ref([]);\r\nconst loading = ref(true);\r\nconst showCapture = ref(false);\r\nconst showCompleted = ref(false);\r\n\r\nconst openFollowUps = computed(() => followUps.value.filter(f => !f.completedAt));\r\nconst completedFollowUps = computed(() => followUps.value.filter(f => !!f.completedAt));\r\n\r\nasync function load() {\r\n  loading.value = true;\r\n  try {\r\n    followUps.value = await listClientFollowUps(props.clientId);\r\n  } catch (e) {\r\n    console.error('Failed to load follow-ups:', e);\r\n  } finally {\r\n    loading.value = false;\r\n  }\r\n}\r\n\r\nasync function toggleComplete(item) {\r\n  const isCompleted = !!item.completedAt;\r\n  try {\r\n    const updated = await setClientFollowUpCompleted({ \r\n      id: item.id, \r\n      completed: !isCompleted \r\n    });\r\n    followUps.value = followUps.value.map(f => f.id === updated.id ? updated : f);\r\n    // Re-sort if needed, though listClientFollowUps does it on load\r\n    followUps.value.sort((a, b) => {\r\n      if (!a.completedAt && b.completedAt) return -1;\r\n      if (a.completedAt && !b.completedAt) return 1;\r\n      return new Date(b.updatedAt) - new Date(a.updatedAt);\r\n    });\r\n  } catch (e) {\r\n    console.error('Failed to update follow-up:', e);\r\n  }\r\n}\r\n\r\nfunction onSaved(newFollowUp) {\r\n  followUps.value = [newFollowUp, ...followUps.value];\r\n}\r\n\r\nfunction formatDate(dateString) {\r\n  if (!dateString) return '';\r\n  return new Date(dateString).toLocaleDateString('en-GB', { \r\n    day: 'numeric', \r\n    month: 'short' \r\n  });\r\n}\r\n\r\nonMounted(load);\r\n</script>\r\n`,
-    expected: /<input type="checkbox"/,
+    actual: '<template>\r\n  <div class="max-w-7xl mx-auto px-page py-8 md:py-10 space-y-9">\r\n    <GreetingHeader :eyebrow="eyebrow" :phrase="phrase" :display-name="therapistDisplayName" :supporting="supportingInformation" />\r\n\r\n    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-9 items-start">\r\n      <section class="lg:col-span-2 space-y-4">\r\n        <SectionHeader title="Today’s schedule"><template #action><router-link to="/calendar" class="type-ui text-action-link hover:text-action-link-hover underline-offset-4 hover:underline">View calendar →</router-link></template></SectionHeader>\r\n        <SurfaceCard v-if="loading" compact class="text-center"><p class="type-body text-ink-muted animate-pulse">Loading schedule...</p></SurfaceCard>\r\n        <SurfaceCard v-else-if="todayEvents.length === 0" class="text-center"><p class="type-body text-ink-muted">No appointments scheduled for today.</p></SurfaceCard>\r\n        <div v-else class="space-y-2.5">\r\n          <SurfaceCard v-for="event in todayEvents" :key="event.id" compact class="flex flex-wrap md:flex-nowrap items-center justify-between gap-4 group">\r\n            <div class="flex items-center gap-4 min-w-0"><div class="w-[4.25rem] shrink-0 pr-4 border-r border-border-muted"><div class="type-body-medium text-ink">{{ formatTime(event.start) }}</div><div class="type-metadata text-ink-muted mt-1">60 min</div></div><div class="min-w-0"><div class="type-body-medium text-ink truncate">{{ event.clientName }}</div><div class="type-ui text-ink-secondary mt-0.5">{{ event.type }}</div><StatusIndicator class="mt-0.5">{{ formatStatus(event.status) }}</StatusIndicator></div></div>\r\n            <div class="flex items-center gap-2 ml-auto"><AppButton v-if="event.clientId" :to="`/clients/${event.clientId}`">Open client</AppButton><AppButton v-if="event.isEligibleForStart" variant="primary" :disabled="startingEventId === event.id" :aria-busy="startingEventId === event.id" @click="startSession(event)">{{ startingEventId === event.id ? \'Starting…\' : \'Start session\' }}</AppButton></div>\r\n            <p v-if="sessionOpenErrorId === event.id" role="alert" class="w-full type-metadata text-state-danger">Couldn’t start the session. Please try again.</p>\r\n          </SurfaceCard>\r\n        </div>\r\n      </section>\r\n\r\n      <aside class="space-y-6">\r\n        <section class="space-y-3"><p class="type-eyebrow text-ink-muted">Continue working</p><SurfaceCard v-if="pendingWork.length === 0" tone="base" compact class="text-center"><p class="type-metadata text-ink-subtle">No pending drafts or reviews.</p></SurfaceCard><div v-else class="space-y-2.5"><router-link v-for="item in pendingWork" :key="item.id" :to="item.route" class="block focus-visible:rounded-panel"><SurfaceCard compact><div class="type-ui font-semibold text-ink">{{ item.title }}</div><div class="type-metadata text-ink-muted mt-1">{{ item.subtitle }}</div></SurfaceCard></router-link></div></section>\r\n        <section class="space-y-3"><p class="type-eyebrow text-ink-muted">Practice focus</p><SurfaceCard tone="base" compact class="bg-brand-sage-soft/55 border-action-primary/10"><p class="type-ui leading-6 text-ink-secondary">{{ practiceFocusObservation }}</p></SurfaceCard></section>\r\n        <section class="space-y-3"><p class="type-eyebrow text-ink-muted">Development</p><SurfaceCard tone="base" compact class="bg-reflection border-border-reflection"><div class="type-ui font-semibold text-ink">Supervision prep</div><p class="type-metadata text-ink-muted mt-1">{{ reflectionsCount }} reflections are waiting for review.</p><router-link to="/supervision" class="inline-flex mt-2.5 type-ui text-action-link hover:text-action-link-hover underline-offset-4 hover:underline">Go to supervision →</router-link></SurfaceCard></section>\r\n        <section class="space-y-3">\r\n          <p class="type-eyebrow text-ink-muted">Recent activity</p>\r\n          <SurfaceCard v-if="recentActivity.length === 0" tone="muted" compact class="text-center"><p class="type-metadata text-ink-subtle">No recent activity to show.</p></SurfaceCard>\r\n          <div v-else class="border-y border-border-muted divide-y divide-border-muted">\r\n            <component v-for="item in recentActivity" :key="item.id" :is="item.route ? \'router-link\' : \'div\'" :to="item.route || undefined" class="block py-3 first:pt-2 last:pb-2 group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-state-focus-ring focus-visible:rounded-control">\r\n              <div class="type-ui font-medium text-ink group-hover:text-action-link">{{ item.title }}</div>\r\n              <div class="flex flex-wrap items-center gap-x-2 mt-1 type-metadata text-ink-muted"><span v-if="item.detail">{{ item.detail }}</span><span v-if="item.detail" aria-hidden="true">·</span><time :datetime="item.occurredAt.toISOString()">{{ formatActivityTime(item.occurredAt) }}</time></div>\r\n            </component>\r\n          </div>\r\n        </section>\r\n      </aside>\r\n    </div>\r\n    <footer class="pt-5 border-t border-border-muted max-w-3xl"><p class="type-metadata text-ink-subtle leading-relaxed">Showing Helios appointments and completed session history. Google Calendar events appear when connected.</p></footer>\r\n  </div>\r\n</template>\r\n\r\n<script setup>\r\nimport { computed, onMounted, ref } from \'vue\'\r\nimport { useRouter } from \'vue-router\'\r\nimport { useCalendar } from \'../composables/useCalendar\'\r\nimport { useGreeting } from \'../composables/useGreeting\'\r\nimport { useTherapistIdentity } from \'../composables/useTherapistIdentity\'\r\nimport { getAllPrivateReflections } from \'../lib/reflections\'\r\nimport { createOrResumeSession } from \'../lib/sessions.js\'\r\nimport { buildRecentActivity } from \'../lib/activityFeed.js\'\r\nimport GreetingHeader from \'../components/ui/GreetingHeader.vue\'\r\nimport SectionHeader from \'../components/ui/SectionHeader.vue\'\r\nimport AppButton from \'../components/ui/AppButton.vue\'\r\nimport SurfaceCard from \'../components/ui/SurfaceCard.vue\'\r\nimport StatusIndicator from \'../components/ui/StatusIndicator.vue\'\r\n\r\nconst router = useRouter()\r\nconst { loading, todayEvents, loadData, sessions, clients } = useCalendar()\r\nconst { displayName, loadTherapistIdentity } = useTherapistIdentity()\r\nconst { eyebrow, phrase, therapistDisplayName, supportingInformation } = useGreeting({ displayName, appointmentCount: computed(() => todayEvents.value.length) })\r\nconst reflections = ref([])\r\nconst startingEventId = ref(null)\r\nconst sessionOpenErrorId = ref(null)\r\n\r\nonMounted(async () => { await Promise.all([loadData(), loadTherapistIdentity()]); try { reflections.value = await getAllPrivateReflections({ limit: 50 }) } catch (e) { console.error(\'Failed to load reflections\', e) } })\r\nasync function startSession(event) { if (!event?.clientId || startingEventId.value) return; startingEventId.value = event.id; sessionOpenErrorId.value = null; try { await createOrResumeSession(event.clientId); await router.push({ name: \'ClientWorkspace\', params: { clientId: event.clientId } }) } catch (error) { console.error(\'Failed to start session from overview:\', error); sessionOpenErrorId.value = event.id } finally { startingEventId.value = null } }\r\nfunction formatTime(date) { return new Intl.DateTimeFormat(\'en-GB\', { hour: \'2-digit\', minute: \'2-digit\' }).format(date) }\r\nfunction formatStatus(status) { if (!status) return \'Scheduled\'; return status.replace(/_/g, \' \').replace(/\\b\\w/g, l => l.toUpperCase()) }\r\nfunction formatActivityTime(value) { const date = value instanceof Date ? value : new Date(value); const today = new Date(); const yesterday = new Date(today); yesterday.setDate(today.getDate() - 1); const sameDay = (a, b) => a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate(); const time = new Intl.DateTimeFormat(\'en-GB\', { hour: \'2-digit\', minute: \'2-digit\' }).format(date); if (sameDay(date, today)) return `Today, ${time}`; if (sameDay(date, yesterday)) return `Yesterday, ${time}`; return new Intl.DateTimeFormat(\'en-GB\', { day: \'numeric\', month: \'short\', hour: \'2-digit\', minute: \'2-digit\' }).format(date) }\r\nconst pendingWork = computed(() => { const items = []; sessions.value.filter(s => s.notesStatus === \'draft\').slice(0, 3).forEach(s => items.push({ id: `session-${s.id}`, title: \'Finish session notes\', subtitle: `Draft started on ${new Date(s.startedAt).toLocaleDateString()}`, route: `/clients/${s.clientId}/sessions/${s.id}` })); return items })\r\nconst recentActivity = computed(() => buildRecentActivity({ sessions: sessions.value, clients: clients.value, reflections: reflections.value }, { limit: 5 }))\r\nconst reflectionsCount = computed(() => reflections.value.filter(r => r.included_in_supervision).length)\r\nconst practiceFocusObservation = computed(() => { const draftNotes = sessions.value.filter(s => s.notesStatus === \'draft\').length; if (draftNotes > 0) return `${draftNotes} session note${draftNotes === 1 ? \'\' : \'s\'} remain${draftNotes === 1 ? \'s\' : \'\'} in draft.`; const pendingReflections = reflections.value.filter(r => r.included_in_supervision).length; if (pendingReflections > 0) return `${pendingReflections} reflection${pendingReflections === 1 ? \'\' : \'s\'} are waiting for review.`; return \'Your clinical documentation is up to date.\' })\r\n</script>\r\n',
+    expected: /sessionId: session\.id/,
     operator: 'match',
     diff: 'simple'
   }
