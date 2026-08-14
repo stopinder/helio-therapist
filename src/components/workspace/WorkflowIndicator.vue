@@ -47,7 +47,7 @@ const scrollContainer = ref(null);
 const activeStepRef = ref(null);
 
 const stages = [
-  'Transcript',
+  'Session Capture',
   'Notes',
   'Reflection',
   'Clinical Record',

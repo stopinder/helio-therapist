@@ -40,14 +40,40 @@ export async function resolveZoomHostMeeting(supabase, integration, meetingId) {
   }
 
   if (!response.ok) {
+    let zoomError = null;
+    const responseForJson = response.clone ? response.clone() : response;
+    try {
+      zoomError = await responseForJson.json();
+    } catch (e) {
+      // Body not JSON or empty
+    }
+
     const status = response.status === 404 ? 404 : (response.status === 403 ? 409 : 502);
-    const message = response.status === 404
+    let message = response.status === 404
       ? 'This Zoom meeting is no longer available.'
       : response.status === 403
         ? 'Zoom needs permission to read this meeting. Reconnect Zoom in Settings.'
         : `Zoom could not load the meeting (${response.status}).`;
-    console.warn('[Zoom Meeting Launch] Meeting lookup unavailable', { meetingId: String(meetingId), status: response.status, retried });
-    throw requestError(message, status);
+
+    if (zoomError?.code === 4711) {
+      message = 'Zoom needs permission to access this meeting. Reconnect Zoom in Settings.';
+    }
+    
+    console.warn('[Zoom Meeting Launch] Meeting lookup unavailable', { 
+      meetingId: String(meetingId), 
+      status: response.status, 
+      retried,
+      zoomCode: zoomError?.code,
+      zoomMessage: zoomError?.message 
+    });
+
+    const error = new Error(message);
+    error.status = zoomError?.code === 4711 ? 409 : status;
+    if (zoomError) {
+      error.zoomCode = zoomError.code;
+      error.zoomMessage = zoomError.message;
+    }
+    throw error;
   }
 
   const meeting = await response.json();
