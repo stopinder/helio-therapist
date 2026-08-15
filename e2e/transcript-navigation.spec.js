@@ -98,7 +98,7 @@ test.describe('Transcript to Session Navigation', () => {
     });
 
     await login(page);
-    await page.getByRole('button', { name: /Zoom meeting 999/ }).click();
+    await page.getByRole('button', { name: /Meeting 999/ }).click();
     
     // "Open session" should be visible for "review-saved" state
     const openBtn = page.getByRole('button', { name: 'Open session' });
@@ -132,8 +132,8 @@ test.describe('Transcript to Session Navigation', () => {
     });
 
     await login(page);
-    await page.getByRole('button', { name: 'Completed' }).click();
-    await page.getByRole('button', { name: /Zoom meeting 888/ }).click();
+    await page.getByRole('button', { name: 'History' }).click();
+    await page.getByRole('button', { name: /Meeting 888/ }).click();
     
     const viewBtn = page.getByRole('button', { name: 'View session' });
     await expect(viewBtn).toBeVisible();
@@ -167,7 +167,7 @@ test.describe('Transcript to Session Navigation', () => {
     });
 
     await login(page);
-    await page.getByRole('button', { name: /Zoom meeting 777/ }).click();
+    await page.getByRole('button', { name: /Meeting 777/ }).click();
     
     await page.getByRole('button', { name: 'Open session' }).click();
 

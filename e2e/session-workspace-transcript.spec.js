@@ -60,7 +60,8 @@ test.describe('Session Workspace transcript source', () => {
   test('shows an intentional empty state when no transcript is linked', async ({ page }) => {
     await page.route('**/api/zoom/transcripts?*', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ transcripts: [] }) }));
     await openWorkspace(page);
-    await expect(page.getByRole('heading', { name: 'No linked transcript' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Session capture in progress' })).toBeVisible();
+    await expect(page.getByText('No transcript is linked to this session yet')).toBeVisible();
   });
 
   test('shows a recoverable error and retries the transcript request', async ({ page }) => {
@@ -71,7 +72,8 @@ test.describe('Session Workspace transcript source', () => {
       return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ transcripts: [{ id: 'transcript-1', sessionRef: sessionId, clientId, text: 'Recovered source transcript' }] }) });
     });
     await openWorkspace(page);
-    await expect(page.getByRole('heading', { name: 'Transcript unavailable' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Session capture unavailable' })).toBeVisible();
+    await expect(page.getByText('Temporary transcript error')).toBeVisible();
     await page.getByRole('button', { name: 'Retry' }).click();
     await expect(page.getByText('Recovered source transcript')).toBeVisible();
     expect(requests).toBe(2);
