@@ -34,6 +34,9 @@ export function useGreeting({ displayName, appointmentCount, now = () => new Dat
   const eyebrow = computed(() => new Intl.DateTimeFormat('en-GB', {
     weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
   }).format(currentDate.value))
+  const currentTime = computed(() => new Intl.DateTimeFormat('en-GB', {
+    hour: 'numeric', minute: '2-digit', hour12: true,
+  }).format(currentDate.value).replace(/\s?(am|pm)$/i, match => match.trim().toLowerCase()))
   const phrase = computed(() => greetingPhraseForHour(currentDate.value.getHours()))
   const therapistDisplayName = computed(() => unref(displayName) || '')
   const supportingInformation = computed(() => {
@@ -41,5 +44,5 @@ export function useGreeting({ displayName, appointmentCount, now = () => new Dat
     return count === 0 ? 'You have no appointments today.' : `You have ${count} appointment${count === 1 ? '' : 's'} today.`
   })
 
-  return { eyebrow, phrase, therapistDisplayName, supportingInformation, refreshGreeting }
+  return { eyebrow, currentTime, phrase, therapistDisplayName, supportingInformation, refreshGreeting }
 }
