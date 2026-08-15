@@ -12,7 +12,7 @@ export default async function handler(req, res) {
       const assignmentId = clean(req.query.assignmentId, 80)
       if (assignmentId) {
         const { data, error } = await supabase.from('client_request_items')
-          .select('id,client_request_id,client_id,status,sent_at,completed_at,reviewed_at,review_note,client_requests(therapist_instruction,due_at,delivery_channel),resource_versions(client_title,form_definition,resource_library_items(title,resource_kind)),client_resource_responses(id,response_kind,structured_answers,submitted_at),outcome_measure_results(scores,calculation_version,completed_at)')
+          .select('id,client_request_id,client_id,status,sent_at,completed_at,reviewed_at,review_note,client_requests(therapist_instruction,due_at,delivery_channel),resource_versions(client_title,form_definition,resource_id,resource_library_items(id,title,resource_kind)),client_resource_responses(id,response_kind,structured_answers,submitted_at),outcome_measure_results(id,scores,calculation_version,completed_at)')
           .eq('id', assignmentId).eq('user_id', user.id).maybeSingle()
         if (error) throw error
         if (!data) return res.status(404).json({ error: 'Assignment not found.' })
@@ -29,7 +29,7 @@ export default async function handler(req, res) {
       if (!clientId) return res.status(400).json({ error: 'Client is required.' })
       const { data, error } = await supabase
         .from('client_request_items')
-        .select('id,client_request_id,status,sent_at,opened_at,completed_at,reviewed_at,review_note,client_requests(therapist_instruction,due_at,delivery_channel),resource_versions(client_title,completion_mode,resource_library_items(title,resource_kind))')
+        .select('id,client_request_id,status,sent_at,opened_at,completed_at,reviewed_at,review_note,client_requests(therapist_instruction,due_at,delivery_channel),resource_versions(client_title,completion_mode,resource_id,resource_library_items(id,title,resource_kind)),outcome_measure_results(id,scores,calculation_version,completed_at)')
         .eq('user_id', user.id).eq('client_id', clientId).order('sent_at', { ascending: false })
       if (error) throw error
       return res.status(200).json({ assignments: data || [] })
