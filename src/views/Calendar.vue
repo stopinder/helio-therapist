@@ -294,8 +294,8 @@
               </div>
             </div>
 
-            <!-- Days Grid -->
-            <div class="flex-1 grid grid-cols-5 h-full relative min-w-0">
+        <!-- Days Grid -->
+            <div class="flex-1 grid grid-cols-7 h-full relative min-w-0">
               <div v-for="day in weekDays" :key="day.date.toISOString()" 
                 class="border-r border-border-muted flex flex-col h-full relative min-w-0"
                 :class="day.isToday ? 'bg-surface-subtle' : ''"
@@ -565,6 +565,10 @@ watch([viewMode, timedGridScrollDay, timedGridScrollWeek], ([newViewMode, newDay
   }
 })
 
+watch(viewMode, () => {
+  refreshEvents()
+})
+
 onMounted(() => {
   refreshEvents()
   window.addEventListener('resize', updateDimensions)
@@ -592,7 +596,7 @@ const currentRangeLabel = computed(() => {
   if (viewMode.value === 'week') {
     const start = getStartOfWeek(viewDate.value)
     const end = new Date(start)
-    end.setDate(end.getDate() + 4) // Friday per instructions "Monday-Friday fitted"
+    end.setDate(end.getDate() + 6) // Full week (7 days)
     
     const options = { day: 'numeric', month: 'short' }
     const yearOptions = { ...options, year: 'numeric' }
@@ -621,7 +625,7 @@ const miniCalendarCells = computed(() => {
 
 const weekDays = computed(() => {
   const start = getStartOfWeek(viewDate.value)
-  return Array.from({ length: 5 }, (_, i) => { // Monday-Friday
+  return Array.from({ length: 7 }, (_, i) => { // Full Week (7 days)
     const date = new Date(start)
     date.setDate(date.getDate() + i)
     return dayData(date)
@@ -801,14 +805,7 @@ function move(dir) {
 }
 
 function goToday() {
-  const today = new Date()
-  console.log('goToday called, today:', today, 'day of week:', today.getDay())
-  viewDate.value = today
-  const day = today.getDay()
-  if (day === 0 || day === 6) {
-    console.log('Switching to day view')
-    viewMode.value = 'day'
-  }
+  viewDate.value = new Date()
   selectedEventId.value = null
   refreshEvents()
 }
