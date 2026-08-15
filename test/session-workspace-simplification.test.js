@@ -21,7 +21,6 @@ test('SessionWorkspace simplification: No live timing', async () => {
   assert.doesNotMatch(workspace, /elapsedTime/)
   assert.doesNotMatch(workspace, /setInterval/)
 
-  // Clinical Workspace itself must not maintain a display clock either.
   assert.doesNotMatch(sessionWorkspace, /elapsedTime/)
   assert.doesNotMatch(sessionWorkspace, /setInterval/)
   assert.doesNotMatch(sessionWorkspace, /clockTimer/)
@@ -54,32 +53,30 @@ test('SessionWorkspace: Header and layout cleanup', async () => {
   const workspace = await readFile(new URL('../src/views/SessionWorkspace.vue', import.meta.url), 'utf8')
 
   assert.doesNotMatch(appShell, /WORKSPACE ACTIVE/i)
-
   assert.match(workspace, /'In Progress'/)
   assert.match(workspace, /'Completed'/)
-
   assert.match(header, /Session type: \{\{ session\.type \}\}/)
   assert.doesNotMatch(header, /<span v-if="isInPerson">In-person session<\/span>/)
-
-  // Notes persist within the Notes workflow; the header must not expose a dead save control.
   assert.doesNotMatch(header, /Save Notes/)
 })
 
-test('SessionWorkspace: Navigation labels updated', async () => {
+test('SessionWorkspace: clinical workflow and Professional Development are separate', async () => {
   const workspace = await readFile(new URL('../src/views/SessionWorkspace.vue', import.meta.url), 'utf8')
   const workflow = await readFile(new URL('../src/components/workspace/WorkflowIndicator.vue', import.meta.url), 'utf8')
 
-  assert.match(workspace, /'Session Capture'/)
-  assert.doesNotMatch(workspace, /'Transcript'/)
+  assert.match(workflow, /aria-label="Clinical workflow stages"/)
   assert.match(workflow, /'Session Capture'/)
-
-  assert.match(workspace, /'Clinical Record'/)
-  assert.doesNotMatch(workspace, /'Clinical Summary'/)
+  assert.match(workflow, /'Notes'/)
+  assert.match(workflow, /'Reflection'/)
   assert.match(workflow, /'Clinical Record'/)
+  assert.doesNotMatch(workflow, /'Professional Development'/)
 
   assert.match(workspace, /'Professional Development'/)
+  assert.match(workspace, /aria-pressed="activeTab === 'Professional Development'"/)
+  assert.match(workspace, /<SupervisionSummaryTab/)
+  assert.doesNotMatch(workspace, /'Transcript'/)
+  assert.doesNotMatch(workspace, /'Clinical Summary'/)
   assert.doesNotMatch(workspace, /'Supervision'/)
-  assert.match(workflow, /'Professional Development'/)
 })
 
 test('SessionWorkspace simplification: End Session boundary', async () => {
@@ -89,12 +86,9 @@ test('SessionWorkspace simplification: End Session boundary', async () => {
 
   assert.doesNotMatch(header, /'end-session'/)
   assert.doesNotMatch(header, /@click="emit\('end-session'\)"/)
-
   assert.doesNotMatch(clientHeader, /'end-session'/)
   assert.doesNotMatch(clientHeader, /@click="\$emit\('end-session'\)"/)
-
   assert.doesNotMatch(workspace, /v-if="showEndSessionConfirmation"/)
   assert.doesNotMatch(workspace, /End this client session\?/)
-
   assert.doesNotMatch(workspace, /completeSessionRecord/)
 })

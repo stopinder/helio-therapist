@@ -1,5 +1,5 @@
 <template>
-  <nav class="bg-surface-subtle border-b border-border-muted" aria-label="Workflow Stages">
+  <nav class="bg-surface-subtle border-b border-border-muted" aria-label="Clinical workflow stages">
     <div class="max-w-6xl mx-auto px-inline-lg overflow-x-auto no-scrollbar" ref="scrollContainer">
       <div class="flex items-center justify-between py-2 min-w-max md:min-w-0 md:justify-start md:gap-4 lg:gap-8">
         <div 
@@ -50,13 +50,12 @@ const stages = [
   'Session Capture',
   'Notes',
   'Reflection',
-  'Clinical Record',
-  'Professional Development'
+  'Clinical Record'
 ];
 
 function isCompleted(index) {
   const activeIndex = stages.indexOf(props.activeStage);
-  return index < activeIndex;
+  return activeIndex >= 0 && index < activeIndex;
 }
 
 watch(() => props.activeStage, () => {
