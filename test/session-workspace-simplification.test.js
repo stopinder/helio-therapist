@@ -6,20 +6,26 @@ test('SessionWorkspace simplification: No live timing', async () => {
   const header = await readFile(new URL('../src/components/workspace/SessionWorkspaceHeader.vue', import.meta.url), 'utf8')
   const clientHeader = await readFile(new URL('../src/components/workspace/ClientWorkspaceHeader.vue', import.meta.url), 'utf8')
   const workspace = await readFile(new URL('../src/views/ClientWorkspace.vue', import.meta.url), 'utf8')
+  const sessionWorkspace = await readFile(new URL('../src/views/SessionWorkspace.vue', import.meta.url), 'utf8')
 
-  // Clinical Workspace Header no longer has live timer
   assert.doesNotMatch(header, /displayTime/)
   assert.doesNotMatch(header, /incrementTimer/)
-  assert.doesNotMatch(header, /\{\{ elapsedTime \}\}/)
+  assert.doesNotMatch(header, /elapsedTime/)
+  assert.doesNotMatch(header, /Timing continues/i)
+  assert.doesNotMatch(header, /Session timing/i)
 
-  // Client Workspace Header also has no live timer
   assert.doesNotMatch(clientHeader, /Session in progress/)
   assert.doesNotMatch(clientHeader, /\{\{ elapsedTime \}\}/)
   assert.doesNotMatch(clientHeader, /active-session-timer-panel/)
 
-  // ClientWorkspace no longer maintains a one-second clock solely for display
   assert.doesNotMatch(workspace, /elapsedTime/)
   assert.doesNotMatch(workspace, /setInterval/)
+
+  // Clinical Workspace itself must not maintain a display clock either.
+  assert.doesNotMatch(sessionWorkspace, /elapsedTime/)
+  assert.doesNotMatch(sessionWorkspace, /setInterval/)
+  assert.doesNotMatch(sessionWorkspace, /clockTimer/)
+  assert.doesNotMatch(sessionWorkspace, /Date\.now\(\)/)
 })
 
 test('SessionWorkspace uses the authenticated linked transcript source without mock fallback', async () => {
@@ -47,39 +53,30 @@ test('SessionWorkspace: Header and layout cleanup', async () => {
   const header = await readFile(new URL('../src/components/workspace/SessionWorkspaceHeader.vue', import.meta.url), 'utf8')
   const workspace = await readFile(new URL('../src/views/SessionWorkspace.vue', import.meta.url), 'utf8')
 
-  // WORKSPACE ACTIVE must NOT be present
   assert.doesNotMatch(appShell, /WORKSPACE ACTIVE/i)
 
-  // Session status mapping exists
   assert.match(workspace, /'In Progress'/)
   assert.match(workspace, /'Completed'/)
 
-  // In-person session type is informational
   assert.match(header, /Session type: \{\{ session\.type \}\}/)
   assert.doesNotMatch(header, /<span v-if="isInPerson">In-person session<\/span>/)
 
-  // Save Notes is disabled as no autosave
-  assert.match(header, /Save Notes/)
-  assert.match(header, /disabled/)
+  // Notes persist within the Notes workflow; the header must not expose a dead save control.
+  assert.doesNotMatch(header, /Save Notes/)
 })
 
 test('SessionWorkspace: Navigation labels updated', async () => {
   const workspace = await readFile(new URL('../src/views/SessionWorkspace.vue', import.meta.url), 'utf8')
   const workflow = await readFile(new URL('../src/components/workspace/WorkflowIndicator.vue', import.meta.url), 'utf8')
 
-  // Transcript -> Session Capture
   assert.match(workspace, /'Session Capture'/)
   assert.doesNotMatch(workspace, /'Transcript'/)
   assert.match(workflow, /'Session Capture'/)
 
-  // Therapist Notes -> Notes
-
-  // Clinical Summary -> Clinical Record
   assert.match(workspace, /'Clinical Record'/)
   assert.doesNotMatch(workspace, /'Clinical Summary'/)
   assert.match(workflow, /'Clinical Record'/)
 
-  // Supervision -> Professional Development
   assert.match(workspace, /'Professional Development'/)
   assert.doesNotMatch(workspace, /'Supervision'/)
   assert.match(workflow, /'Professional Development'/)
@@ -90,21 +87,14 @@ test('SessionWorkspace simplification: End Session boundary', async () => {
   const clientHeader = await readFile(new URL('../src/components/workspace/ClientWorkspaceHeader.vue', import.meta.url), 'utf8')
   const workspace = await readFile(new URL('../src/views/ClientWorkspace.vue', import.meta.url), 'utf8')
 
-  // Clinical Workspace Header does not emit end-session
   assert.doesNotMatch(header, /'end-session'/)
   assert.doesNotMatch(header, /@click="emit\('end-session'\)"/)
 
-  // Client Workspace Header does not emit end-session
   assert.doesNotMatch(clientHeader, /'end-session'/)
   assert.doesNotMatch(clientHeader, /@click="\$emit\('end-session'\)"/)
 
-  // ClientWorkspace has no End Session confirmation modal
   assert.doesNotMatch(workspace, /v-if="showEndSessionConfirmation"/)
   assert.doesNotMatch(workspace, /End this client session\?/)
 
-  // ClientWorkspace does not import/call completeSessionRecord
   assert.doesNotMatch(workspace, /completeSessionRecord/)
-
-  // clinical-record approval/completion remains separate from merely opening the workspace
-  // (Verify navigation-label or workflow status if needed, but here we just ensure End Session is gone)
 })
