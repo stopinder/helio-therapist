@@ -62,32 +62,67 @@ export async function fetchGoogleCalendarEvents({ supabase, userId, integration,
     throw error
   }
 
-  const requestEvents = async (accessToken) => {
-    const params = new URLSearchParams({
-      timeMin: start.toISOString(), timeMax: end.toISOString(), singleEvents: 'true',
-      orderBy: 'startTime', maxResults: '500'
-    })
-    return fetchImpl(`https://www.googleapis.com/calendar/v3/calendars/primary/events?${params}`, {
-      headers: { Authorization: `Bearer ${accessToken}` }
-    })
-  }
-
   if (!integration?.access_token) throw new GoogleCalendarAuthError()
   let activeIntegration = integration
-  let response = await requestEvents(activeIntegration.access_token)
-  if (response.status === 401) {
-    activeIntegration = await refreshGoogleAccessToken({ supabase, userId, integration: activeIntegration, fetchImpl })
-    response = await requestEvents(activeIntegration.access_token)
+
+  const requestWithAuth = async (url) => {
+    let response = await fetchImpl(url, {
+      headers: { Authorization: `Bearer ${activeIntegration.access_token}` }
+    })
+    if (response.status === 401) {
+      activeIntegration = await refreshGoogleAccessToken({ supabase, userId, integration: activeIntegration, fetchImpl })
+      response = await fetchImpl(url, {
+        headers: { Authorization: `Bearer ${activeIntegration.access_token}` }
+      })
+    }
+    return response
   }
-  if (response.status === 401) throw new GoogleCalendarAuthError()
-  if (!response.ok) {
-    const body = await response.json().catch(() => ({}))
-    const error = new Error(body.error?.message || 'Google Calendar could not be read')
-    error.status = response.status
+
+  // 1. Get all calendars the user has access to
+  const listResponse = await requestWithAuth('https://www.googleapis.com/calendar/v3/users/me/calendarList')
+  if (!listResponse.ok) {
+    const body = await listResponse.json().catch(() => ({}))
+    const error = new Error(body.error?.message || 'Could not list Google Calendars')
+    error.status = listResponse.status
     throw error
   }
-  const body = await response.json()
-  return { items: body.items || [], integration: activeIntegration }
+  const listData = await listResponse.json()
+  const calendars = listData.items || [{ id: 'primary' }]
+
+  // 2. Fetch events for each calendar
+  const allEvents = []
+  for (const calendar of calendars) {
+    let pageToken = null
+    do {
+      const params = new URLSearchParams({
+        timeMin: start.toISOString(),
+        timeMax: end.toISOString(),
+        singleEvents: 'true',
+        orderBy: 'startTime',
+        maxResults: '250'
+      })
+      if (pageToken) params.append('pageToken', pageToken)
+
+      const url = `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendar.id)}/events?${params}`
+      const response = await requestWithAuth(url)
+
+      if (!response.ok) {
+        // Skip calendars we can't read, but log if it's not a 403/404
+        if (![403, 404].includes(response.status)) {
+          console.warn(`[Google Calendar] Could not fetch events for ${calendar.id}:`, response.status)
+        }
+        break
+      }
+
+      const data = await response.json()
+      if (data.items) {
+        allEvents.push(...data.items)
+      }
+      pageToken = data.nextPageToken
+    } while (pageToken)
+  }
+
+  return { items: allEvents, integration: activeIntegration }
 }
 
 export async function recordGoogleCalendarSync({ supabase, userId }) {
