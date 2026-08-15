@@ -63,16 +63,19 @@ export function useCalendar() {
 
       if (statusData.error === 'GOOGLE_TOKEN_EXPIRED' || statusData.error === 'GOOGLE_REVOKED') {
         googleError.value = 'RECONNECT_REQUIRED'
+        googleEvents.value = []
         return
       }
 
       if (isGoogleConnected.value) {
         let timeMin, timeMax
         if (customRange) {
+          // Centering the 62-day window around the requested range to keep today/upcoming events visible
           timeMin = new Date(customRange.start)
-          timeMin.setMilliseconds(0)
-          timeMax = new Date(customRange.end)
-          timeMax.setMilliseconds(0)
+          timeMin.setDate(timeMin.getDate() - 25)
+          timeMin.setHours(0, 0, 0, 0)
+          timeMax = new Date(timeMin)
+          timeMax.setDate(timeMax.getDate() + 62)
         } else {
           timeMin = new Date()
           timeMin.setHours(0, 0, 0, 0)
@@ -81,15 +84,30 @@ export function useCalendar() {
           timeMax.setDate(timeMax.getDate() + 62)
         }
 
-        const params = new URLSearchParams({ timeMin: timeMin.toISOString(), timeMax: timeMax.toISOString() })
+        const params = new URLSearchParams({ 
+          timeMin: timeMin.toISOString(), 
+          timeMax: timeMax.toISOString() 
+        })
         const eventsRes = await authenticatedFetch(`/api/google/events?${params.toString()}`, { signal })
         if (eventsRes.ok) {
           const eventsData = await eventsRes.json()
-          googleEvents.value = eventsData.events || []
+          const newEvents = eventsData.events || []
+          
+          // Merge strategy: replace events in the fetched range, keep others
+          const merged = new Map()
+          googleEvents.value.forEach(e => {
+            const d = new Date(e.start)
+            if (d < timeMin || d >= timeMax) {
+              merged.set(e.id, e)
+            }
+          })
+          newEvents.forEach(e => merged.set(e.id, e))
+          googleEvents.value = Array.from(merged.values())
         } else {
           const errData = await eventsRes.json().catch(() => ({}))
           if (errData.code === 'GOOGLE_REAUTH_REQUIRED' || eventsRes.status === 403) {
             googleError.value = 'RECONNECT_REQUIRED'
+            googleEvents.value = []
           } else if (errData.code !== 'GOOGLE_CONNECTION_NOT_FOUND') {
             googleError.value = 'SYNC_FAILED'
             console.error('Google Calendar events fetch failed:', errData)
@@ -163,8 +181,14 @@ export function useCalendar() {
       .filter(Boolean)
 
     const external = googleEvents.value.map(event => {
-      const startTime = new Date(event.start)
-      const endTime = new Date(event.end)
+      // Fix for all-day events: parse YYYY-MM-DD as local time to avoid timezone shifts
+      const startTime = event.allDay && typeof event.start === 'string' && event.start.length === 10
+        ? new Date(event.start + 'T00:00:00')
+        : new Date(event.start)
+      const endTime = event.allDay && typeof event.end === 'string' && event.end.length === 10
+        ? new Date(event.end + 'T00:00:00')
+        : new Date(event.end)
+      
       if (isNaN(startTime.getTime())) return null
 
       const title = (event.summary || '').trim()
