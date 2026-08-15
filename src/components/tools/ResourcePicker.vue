@@ -38,7 +38,7 @@ const emit = defineEmits(['close', 'sent'])
 const dialog = ref(null), searchInput = ref(null), resources = ref([]), query = ref(''), searchStatus = ref('idle'), sending = ref(false), creating = ref(false), error = ref('')
 const draft = useClientRequestDraft(props.client.id)
 let debounceTimer, requestNumber = 0
-const groupLabels = { outcome_measure: 'Outcome measures', worksheet: 'CBT worksheets', psychoeducation: 'Psychoeducation', sleep_diary: 'Sleep resources', behavioural_experiment: 'Behavioural experiments', document: 'Documents', general: 'My custom resources' }
+const groupLabels = { outcome_measure: 'Outcome measures', worksheet: 'Worksheets', psychoeducation: 'Psychoeducation', sleep_diary: 'Sleep resources', behavioural_experiment: 'Behavioural experiments', document: 'Documents', general: 'My custom resources' }
 const typeLabel = type => ({ outcome_measure: 'Outcome measure', questionnaire: 'Questionnaire', document: 'Document', resource: 'Resource' })[type] || 'Resource'
 const visibleGroups = computed(() => {
   const groups = new Map()
