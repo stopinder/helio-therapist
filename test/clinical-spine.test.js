@@ -29,6 +29,17 @@ test('clinical draft and completion use optimistic concurrency and one transacti
   assert.match(migration, /create or replace function public\.complete_session/); assert.match(migration, /client_timeline_events_session_completion_unique/); assert.match(migration, /on conflict \(session_id\) where event_type = 'session_completed'/)
 })
 
+test('clinical record draft dictation stays editable and uses the authenticated transient transcription path', async () => {
+  const clinicalSummary = await read('src/components/workspace/ClinicalSummaryTab.vue')
+  assert.match(clinicalSummary, /navigator\.mediaDevices\.getUserMedia\(\{ audio: true \}\)/)
+  assert.match(clinicalSummary, /authenticatedFetch\('\/api\/ai\/transcribe'/)
+  assert.match(clinicalSummary, /summaryData\[key\] = \[summaryData\[key\]\.trim\(\), text\]/)
+  assert.match(clinicalSummary, /v-if="status === 'draft'" class="flex items-center justify-between gap-3"/)
+  assert.match(clinicalSummary, /Dictation adds editable draft text for you to review before approval\./)
+  assert.match(clinicalSummary, /if \(submitting\.value \|\| activeDictationKey\.value \|\| transcribingKey\.value\) return/)
+  assert.doesNotMatch(clinicalSummary, /audio_storage|upload.*audio|from\('.*audio/i)
+})
+
 test('completed clinical record is rendered read-only and corrections are amendments', async () => {
   const clinicalSummary = await read('src/components/workspace/ClinicalSummaryTab.vue')
   assert.match(clinicalSummary, /This approved record is read-only\. Corrections must be added through an amendment\./); assert.match(clinicalSummary, /<ApprovedClinicalRecordView/); assert.match(clinicalSummary, /Create Record Amendment/); assert.match(clinicalSummary, /completeSessionRecord/)
