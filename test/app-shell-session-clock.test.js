@@ -26,9 +26,9 @@ test('next scheduled appointment is a one-click session entry action', () => {
   assert.match(shell, /window\.open\(data\.startUrl/)
 })
 
-test('schedule appointment remains available as a secondary action beside next session', () => {
-  assert.match(shell, /v-if="\$route\.path!=='\/schedule'"[^>]*class="hidden sm:inline-flex items-center gap-2 button-secondary"/)
-  assert.match(shell, />\+<\/span>Schedule appointment<\/router-link>/)
+test('schedule remains available as a compact secondary action beside next session', () => {
+  assert.match(shell, /v-if="\$route\.path!=='\/schedule'"[^>]*px-2\.5 py-1\.5[^>]*>/)
+  assert.match(shell, />\+<\/span>Schedule<\/router-link>/)
   assert.match(shell, /v-if="nextAppointment"[^>]*class="hidden sm:inline-flex button-primary"/)
 })
 
