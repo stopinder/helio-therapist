@@ -13,7 +13,7 @@
       </div>
       <div class="flex items-center justify-end gap-3 mt-6">
         <span v-if="savedMessage" class="text-body-sm text-state-success" role="status">{{ savedMessage }}</span>
-        <button type="button" :disabled="loading || saving" class="px-4 py-2 bg-state-selected text-white rounded-control hover:opacity-90 disabled:opacity-60" @click="save">{{ saving ? 'Saving…' : 'Save private reflection' }}</button>
+        <button type="button" :disabled="loading || saving" class="button-primary" @click="save">{{ saving ? 'Saving…' : 'Save private reflection' }}</button>
       </div>
     </div>
   </div>
