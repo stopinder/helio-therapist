@@ -5,6 +5,11 @@
       <p class="text-body-sm text-ink-secondary">Private editable working material. These notes are stored separately and are not the approved clinical record.</p>
     </div>
 
+    <div v-if="draftApplied" class="p-3 bg-state-info/10 border border-state-info/20 rounded-panel">
+      <p class="text-caption text-state-info font-medium uppercase tracking-wider">AI-assisted draft · not saved</p>
+      <p class="mt-1 text-body-sm text-ink-secondary">Prepared from the linked transcript after your request. Review and edit every field, then choose Save working notes when you are ready.</p>
+    </div>
+
     <p v-if="loading" class="text-body-sm text-ink-muted">Loading working notes…</p>
     <p v-if="loadError" class="text-body-sm text-state-danger" role="alert">{{ loadError }}</p>
 
@@ -48,7 +53,12 @@ import { onBeforeUnmount, onMounted, reactive, ref } from 'vue';
 import { authenticatedFetch } from '../../lib/api.js';
 import { emptyWorkingNotes, getSessionWorkingNotes, saveSessionWorkingNotes } from '../../lib/workingNotes.js';
 
-const props = defineProps({ clientId: { type: String, required: true }, sessionId: { type: String, required: true } });
+const props = defineProps({
+  clientId: { type: String, required: true },
+  sessionId: { type: String, required: true },
+  initialDraft: { type: Object, default: null }
+});
+const emit = defineEmits(['draft-consumed']);
 const noteSections = { observations: 'Observations', interventions: 'Interventions', themes: 'Themes', followUp: 'Follow-up' };
 const notes = reactive(emptyWorkingNotes());
 const loading = ref(true);
@@ -62,6 +72,7 @@ const activeDictationKey = ref('');
 const transcribingKey = ref('');
 const dictationErrorKey = ref('');
 const dictationError = ref('');
+const draftApplied = ref(false);
 
 let recorder = null;
 let stream = null;
@@ -74,9 +85,17 @@ async function load() {
   savedMessage.value = '';
   try {
     const record = await getSessionWorkingNotes({ sessionId: props.sessionId, clientId: props.clientId });
-    Object.assign(notes, record?.content || emptyWorkingNotes());
+    const saved = record?.content || emptyWorkingNotes();
+    Object.assign(notes, saved);
     version.value = record?.version || 0;
     conflict.value = false;
+
+    const savedHasContent = Object.values(saved).some(value => String(value || '').trim());
+    if (props.initialDraft && !savedHasContent) {
+      Object.assign(notes, emptyWorkingNotes(), props.initialDraft);
+      draftApplied.value = true;
+      emit('draft-consumed');
+    }
   } catch (err) {
     console.error('Failed to load working notes:', err);
     loadError.value = 'Working notes could not be loaded.';
@@ -168,6 +187,7 @@ async function save() {
     });
     Object.assign(notes, record.content);
     version.value = record.version;
+    draftApplied.value = false;
     savedMessage.value = 'Working notes saved.';
   } catch (err) {
     console.error('Failed to save working notes:', err);
