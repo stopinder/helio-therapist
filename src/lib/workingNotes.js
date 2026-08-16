@@ -46,7 +46,7 @@ export async function saveSessionWorkingNotes({ sessionId, clientId, content, ex
   })
 
   if (error) {
-    if (error.code === '40001') {
+    if (error.code === 'P0001' && error.message?.includes('WORKING_NOTES_CONFLICT')) {
       const conflict = new Error('Working notes were updated in another tab')
       conflict.code = 'WORKING_NOTES_CONFLICT'
       throw conflict
