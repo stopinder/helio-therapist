@@ -15,7 +15,11 @@
 <script setup>
 import { computed, ref } from 'vue'; import { authenticatedFetch } from '../../lib/api.js'; import WorkflowStatusPanel from './WorkflowStatusPanel.vue';
 const props=defineProps({transcript:{type:Object,default:null},loading:Boolean,error:{type:String,default:''},activeTab:String}); const emit=defineEmits(['retry','clinical-summary-draft','clinical-note-draft','cbt-care-suggestions']); const preparingDraft=ref(false),draftError=ref('');
-const requestedOutputLabel = computed(() => ({clinical_summary:'Clinical summary requested',draft_note:'Draft clinical note requested',cbt:'CBT reflection requested'})[props.transcript?.requestedLens] || '');
+const requestedOutputLabel = computed(() => ({
+  clinical_summary: 'Clinical summary requested',
+  draft_note: 'Draft clinical note requested',
+  cbt: 'CBT reflection requested'
+})[props.transcript?.requestedLens] || '');
 const canPrepareDraft=computed(()=>['clinical_summary','draft_note','cbt'].includes(props.transcript?.requestedLens));
 const prepareButtonLabel=computed(()=>props.transcript?.requestedLens==='draft_note'?'Prepare draft clinical note':props.transcript?.requestedLens==='cbt'?'Prepare CBT Care suggestions':'Prepare clinical summary draft');
 const prepareHelpText=computed(()=>props.transcript?.requestedLens==='cbt'?'Helio will prepare tentative Gentle CBT Care possibilities from this transcript. Nothing is saved until you review, accept, and explicitly save suggestions in Care.':'Helio will prepare an editable draft from this transcript only after you choose this action. Review and save remain separate steps.');
