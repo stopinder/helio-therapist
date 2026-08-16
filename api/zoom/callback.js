@@ -53,21 +53,20 @@ export default async function handler(req, res) {
       throw new Error('Zoom did not return refreshable tokens');
     }
 
-    // Zoom may include the user id in the token response. If not, we make a
-    // best-effort /users/me request; lack of the optional scope does not block
-    // connection, but the next re-authorisation will complete the account match.
     let zoomUserId = tokens.user_id || tokens.uid || null;
     if (!zoomUserId) {
-      try {
-        zoomUserId = await findZoomUserId(tokens.access_token);
-      } catch {
-        zoomUserId = null;
-      }
+      zoomUserId = await findZoomUserId(tokens.access_token);
+    }
+
+    if (!zoomUserId) {
+      await supabase.from('oauth_states').delete().eq('id', saved.id);
+      return res.redirect(`${appUrl}/settings?zoom=error&message=Zoom+account+identity+could+not+be+verified.+Please+reconnect+Zoom.`);
     }
 
     const integration = {
       user_id: saved.user_id,
       provider: 'zoom',
+      provider_account_id: String(zoomUserId),
       access_token: null,
       refresh_token: null,
       encrypted_access_token: encryptIntegrationToken(tokens.access_token),
@@ -79,8 +78,6 @@ export default async function handler(req, res) {
       scope: tokens.scope || null,
       updated_at: new Date().toISOString()
     };
-
-    if (zoomUserId) integration.provider_account_id = String(zoomUserId);
 
     const { error: saveError } = await supabase
       .from('integrations')
