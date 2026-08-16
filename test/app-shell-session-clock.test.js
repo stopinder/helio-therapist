@@ -20,13 +20,14 @@ test('global session clock reuses scheduled appointments without client identity
 test('next scheduled appointment is a one-click session entry action', () => {
   assert.match(shell, /Join next session/)
   assert.match(shell, /createOrResumeSession/)
-  assert.match(shell, /authenticatedFetch\('\/api\/zoom\/start-session'/)
+  assert.match(shell, /authenticatedFetch\('\/api\/zoom\/join-appointment'/)
+  assert.match(shell, /appointmentId:nextAppointment\.value\.id/)
   assert.match(shell, /router\.push\(`\/clients\/\$\{session\.clientId\}\/sessions\/\$\{session\.id\}`\)/)
   assert.match(shell, /window\.open\(data\.startUrl/)
 })
 
 test('schedule appointment is not the competing global primary action when a next session exists', () => {
-  assert.match(shell, /v-if="nextAppointment"[^>]*>Join next session<\/button>/)
+  assert.match(shell, /v-if="nextAppointment"[^>]*>\{\{ joiningNextSession \? 'Opening…' : 'Join next session' \}\}<\/button>/)
   assert.match(shell, /v-else-if="\$route\.path!=='\/schedule'"/)
 })
 
