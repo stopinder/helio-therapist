@@ -45,13 +45,15 @@ test('Clinical Lens: UI uses lens configuration', async () => {
   assert.match(careFocus, /lens\.terminology\.care/)
 })
 
-test('Clinical Lens: AI suggestions endpoint resolves lensId', async () => {
+test('Clinical Lens: AI suggestions endpoint resolves lensId through the shared prompt builder', async () => {
   const handler = await readFile(new URL('../api/ai/care-suggestions.js', import.meta.url), 'utf8')
+  const promptBuilder = await readFile(new URL('../api/_lib/ai-care-suggestions.js', import.meta.url), 'utf8')
 
   assert.match(handler, /const lensId = String\(req\.body\?\.lensId || ''\)\.trim\(\)/)
   assert.match(handler, /const lensConfig = resolveLensConfig\(lensId\)/)
-  assert.match(handler, /\${lensConfig\.aiFraming} Generate 3-6 discrete possibilities/)
-  assert.match(handler, /Allowed kinds: \${ALLOWED_KINDS\.join\(', '\)}/)
+  assert.match(handler, /buildCareSuggestionsPrompt\(\{ lensConfig, input, steering, currentCare, approvedContext \}\)/)
+  assert.match(promptBuilder, /\${lensConfig\.aiFraming}/)
+  assert.match(promptBuilder, /Allowed kinds: \${lensConfig\.allowedKinds\.join\(', '\)}/)
   assert.doesNotMatch(handler, /req\.body\.aiFraming/)
 })
 
