@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
+process.env.INTEGRATION_ENCRYPTION_KEY = Buffer.from('01234567890123456789012345678901').toString('base64');
 process.env.SUPABASE_URL = 'https://mock.supabase.co';
 process.env.SUPABASE_ANON_KEY = 'mock-anon-key';
 process.env.SUPABASE_SERVICE_ROLE_KEY = 'mock-service-key';
