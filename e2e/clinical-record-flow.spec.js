@@ -153,7 +153,7 @@ test.describe('Clinical Record approval and amendment flow', () => {
 
     await expect(editor).toBeHidden();
     await expect(completedRecord.getByText('Record Amendment 1')).toBeVisible();
-    await expect(completedRecord.getByText('Factual correction')).toBeVisible();
+    await expect(completedRecord.getByText('Factual correction', { exact: true })).toBeVisible();
     await expect(completedRecord.getByText('Client reported four hours of sleep, not five.')).toBeVisible();
     await expect(completedRecord.getByText('Client described increased work stress.')).toBeVisible();
   });
