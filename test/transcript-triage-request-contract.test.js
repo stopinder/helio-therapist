@@ -1,19 +1,18 @@
-import { describe, expect, it } from 'vitest';
+import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
+import test from 'node:test';
 
 const source = readFileSync(new URL('../src/components/workspace/TranscriptTab.vue', import.meta.url), 'utf8');
 
-describe('transcript triage request session boundary', () => {
-  it('surfaces the saved triage request without implying automatic generation', () => {
-    expect(source).toContain('Transcript triage request');
-    expect(source).toContain("clinical_summary: 'Clinical summary requested'");
-    expect(source).toContain("draft_note: 'Draft clinical note requested'");
-    expect(source).toContain("cbt: 'CBT reflection requested'");
-    expect(source).toContain('Nothing has been generated automatically');
-  });
+test('surfaces the saved triage request without implying automatic generation', () => {
+  assert.match(source, /Transcript triage request/);
+  assert.match(source, /clinical_summary: 'Clinical summary requested'/);
+  assert.match(source, /draft_note: 'Draft clinical note requested'/);
+  assert.match(source, /cbt: 'CBT reflection requested'/);
+  assert.match(source, /Nothing has been generated automatically/);
+});
 
-  it('keeps the request separate from Clinical Record approval', () => {
-    expect(source).toContain('this request does not create or approve a Clinical Record');
-    expect(source).not.toContain('Generate requested output');
-  });
+test('keeps the request separate from Clinical Record approval', () => {
+  assert.match(source, /this request does not create or approve a Clinical Record/);
+  assert.doesNotMatch(source, /Generate requested output/);
 });
