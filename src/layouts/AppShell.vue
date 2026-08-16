@@ -16,19 +16,19 @@
     <div class="flex flex-col flex-1 min-w-0 min-h-0 h-full overflow-hidden">
       <header class="h-16 flex items-center justify-between px-inline-lg md:px-6 border-b border-border-muted bg-surface shrink-0">
         <div class="flex items-center gap-inline-md"><button class="md:hidden p-2 -ml-2 text-ink-secondary hover:bg-surface-subtle rounded-control" @click="isMobileMenuOpen=true" aria-label="Open menu"><Bars3Icon class="h-5 w-5" /></button><h2 class="type-body-medium text-ink truncate">{{ currentPageName }}</h2></div>
-        <div class="flex items-center gap-2 md:gap-inline-md">
+        <div class="flex items-center gap-2 md:gap-3">
           <div class="hidden md:flex items-center gap-2 text-ink-secondary whitespace-nowrap" data-testid="global-session-clock" aria-live="off">
             <time class="type-body-medium tabular-nums text-ink" :datetime="now.toISOString()">{{ currentTimeLabel }}</time>
             <span class="text-border" aria-hidden="true">·</span>
             <span v-if="nextAppointment" class="type-metadata">Next session {{ nextSessionTimeLabel }} <span class="text-ink-muted">· {{ nextSessionCountdownLabel }}</span></span>
             <span v-else class="type-metadata text-ink-muted">No upcoming session</span>
           </div>
-          <button type="button" class="inline-flex items-center gap-2 px-3 py-2 rounded-control border type-ui transition-colors" :class="outstandingReminderCount ? 'border-brand-amber/50 bg-brand-amber-soft text-ink' : 'border-border-muted bg-surface text-ink-secondary hover:bg-surface-subtle'" :aria-expanded="showQuickCapture" aria-haspopup="dialog" @click="showQuickCapture=!showQuickCapture">
+          <button type="button" class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-control border type-ui transition-colors" :class="outstandingReminderCount ? 'border-brand-amber/50 bg-brand-amber-soft text-ink' : 'border-border-muted bg-surface text-ink-secondary hover:bg-surface-subtle'" :aria-expanded="showQuickCapture" aria-haspopup="dialog" @click="showQuickCapture=!showQuickCapture">
             <PlusIcon class="h-4 w-4" aria-hidden="true" />
             <span class="hidden sm:inline">Quick capture</span>
             <span v-if="outstandingReminderCount" class="min-w-5 h-5 px-1.5 inline-flex items-center justify-center rounded-pill bg-brand-amber/20 type-metadata font-semibold">{{ outstandingReminderCount }}</span>
           </button>
-          <router-link v-if="$route.path!=='/schedule'" to="/schedule" class="hidden sm:inline-flex items-center gap-2 button-secondary"><span class="leading-none font-normal">+</span>Schedule appointment</router-link>
+          <router-link v-if="$route.path!=='/schedule'" to="/schedule" class="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-control border border-border-muted bg-surface type-ui text-ink-secondary hover:bg-surface-subtle hover:text-ink transition-colors"><span class="leading-none font-normal">+</span>Schedule</router-link>
           <button v-if="nextAppointment" type="button" class="hidden sm:inline-flex button-primary" :disabled="joiningNextSession" @click="joinNextSession">{{ joiningNextSession ? 'Opening…' : 'Join next session' }}</button>
         </div>
       </header>
