@@ -12,9 +12,9 @@ test('Session Capture stage rendering wiring', async () => {
   assert.match(workspace, /v-if="activeTab === 'Session Capture'"/)
   assert.match(workspace, /<TranscriptTab\s+v-if="activeTab === 'Session Capture'"/)
   
-  // Verify other stages also use the new names
-  assert.match(workspace, /v-else-if="activeTab === 'Professional Development'"/)
-  assert.match(workspace, /<SupervisionSummaryTab v-else-if="activeTab === 'Professional Development'"/)
+  // Verify the adjacent professional-development destination uses the canonical CPD label
+  assert.match(workspace, /v-else-if="activeTab === 'CPD'"/)
+  assert.match(workspace, /<SupervisionSummaryTab v-else-if="activeTab === 'CPD'"/)
 })
 
 test('WorkflowIndicator uses Session Capture', async () => {

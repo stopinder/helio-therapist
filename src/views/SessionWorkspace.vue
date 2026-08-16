@@ -1,18 +1,17 @@
 <template>
   <div class="flex flex-col h-full bg-surface-canvas">
     <div v-if="loading" class="flex-1 flex items-center justify-center"><div class="text-ink-muted flex flex-col items-center gap-2"><span class="w-8 h-8 border-4 border-state-selected border-t-transparent rounded-full animate-spin"></span><p>Loading clinical workspace…</p></div></div>
-    <div v-else-if="error" class="flex-1 flex items-center justify-center p-inline-lg"><div class="max-w-md w-full bg-surface p-inline-lg py-stack-lg rounded-card shadow-sm border border-state-danger/20 text-center"><h2 class="text-h2 font-semibold text-state-danger mb-2">Workspace Error</h2><p class="text-ink-secondary mb-6">{{ error }}</p><button @click="loadSession" class="px-inline-md py-stack-sm bg-state-selected text-white rounded-control">Try Again</button></div></div>
+    <div v-else-if="error" class="flex-1 flex items-center justify-center p-inline-lg"><div class="max-w-md w-full bg-surface p-inline-lg py-stack-lg rounded-card shadow-sm border border-state-danger/20 text-center"><h2 class="text-h2 font-semibold text-state-danger mb-2">Workspace Error</h2><p class="text-ink-secondary mb-6">{{ error }}</p><button @click="loadSession" class="button-primary">Try Again</button></div></div>
     <template v-else-if="session">
       <SessionWorkspaceHeader :session="workspaceSession" :joiningMeeting="joiningMeeting" :meetingError="meetingError" @join-meeting="joinMeeting" />
       <WorkflowIndicator :activeStage="activeTab" @select-stage="activeTab = $event" />
-      <div class="border-b border-border-muted bg-surface"><div class="max-w-6xl mx-auto px-inline-lg py-2 flex justify-end"><button type="button" class="text-body-sm px-3 py-1.5 rounded-control transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-state-selected" :class="activeTab === 'Professional Development' ? 'bg-state-selected text-action-link font-semibold' : 'text-ink-muted hover:bg-surface-subtle hover:text-ink'" :aria-pressed="activeTab === 'Professional Development'" @click="activeTab = 'Professional Development'">Professional Development</button></div></div>
       <div class="flex-1 overflow-auto p-inline-lg py-stack-lg"><div class="max-w-6xl mx-auto">
         <TranscriptTab v-if="activeTab === 'Session Capture'" :transcript="transcript" :loading="transcriptLoading" :error="transcriptError" :activeTab="activeTab" @retry="loadTranscript" />
         <TherapistNotesTab v-else-if="activeTab === 'Notes'" :clientId="session.clientId" :sessionId="session.id" />
         <ReflectionTab v-else-if="activeTab === 'Reflection'" :clientId="session.clientId" :sessionId="session.id" />
         <CompletedClinicalRecord v-else-if="activeTab === 'Clinical Record' && session.status === 'completed'" :key="clinicalRecordKey" :session="session" />
         <ClinicalSummaryTab v-else-if="activeTab === 'Clinical Record'" :key="clinicalRecordKey" :session="session" @update:session="handleSessionUpdate" />
-        <SupervisionSummaryTab v-else-if="activeTab === 'Professional Development'" :clientId="session.clientId" :sessionId="session.id" />
+        <SupervisionSummaryTab v-else-if="activeTab === 'CPD'" :clientId="session.clientId" :sessionId="session.id" />
       </div></div>
     </template>
   </div>
