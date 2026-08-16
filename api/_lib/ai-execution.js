@@ -6,7 +6,9 @@ export const AI_FEATURES = Object.freeze({
   REFLECTION_REPHRASE: 'reflection.rephrase',
   SUPERVISION_SUMMARY: 'reflection.supervision_summary',
   TRANSCRIPT_CLINICAL_SUMMARY: 'transcript.clinical_summary',
-  TRANSCRIPT_DRAFT_CLINICAL_NOTE: 'transcript.draft_clinical_note'
+  TRANSCRIPT_DRAFT_CLINICAL_NOTE: 'transcript.draft_clinical_note',
+  CARE_SUGGESTIONS: 'care.suggestions',
+  TRANSCRIPT_CBT_CARE_SUGGESTIONS: 'transcript.cbt_care_suggestions'
 });
 
 const DEFAULT_TEXT_MODEL = 'gpt-4o-mini';
@@ -17,6 +19,7 @@ export function getTextModel(feature) {
   if (feature === AI_FEATURES.REFLECTION_ANALYSIS || feature === AI_FEATURES.REFLECTION_REPHRASE) return process.env.OPENAI_REFLECTION_MODEL || DEFAULT_TEXT_MODEL;
   if (feature === AI_FEATURES.TRANSCRIPT_CLINICAL_SUMMARY) return process.env.OPENAI_CLINICAL_SUMMARY_MODEL || DEFAULT_TEXT_MODEL;
   if (feature === AI_FEATURES.TRANSCRIPT_DRAFT_CLINICAL_NOTE) return process.env.OPENAI_DRAFT_CLINICAL_NOTE_MODEL || DEFAULT_TEXT_MODEL;
+  if (feature === AI_FEATURES.CARE_SUGGESTIONS || feature === AI_FEATURES.TRANSCRIPT_CBT_CARE_SUGGESTIONS) return process.env.OPENAI_CARE_MODEL || DEFAULT_TEXT_MODEL;
   return process.env.OPENAI_SUPERVISION_MODEL || DEFAULT_TEXT_MODEL;
 }
 
