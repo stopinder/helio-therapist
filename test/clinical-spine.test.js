@@ -32,7 +32,7 @@ test('clinical draft and completion use optimistic concurrency and one transacti
   assert.match(sessions, /rpc\('complete_session'/)
   assert.match(sessions, /p_expected_version: session\.version/)
   assert.match(sessions, /error\?\.code === '40001'/)
-  assert.match(sessions, /error\.code = 'SESSION_CONFLICT'/)
+  assert.match(sessions, /conflict\.code = 'SESSION_CONFLICT'/)
 
   assert.match(migration, /create or replace function public\.complete_session/)
   assert.match(migration, /client_timeline_events_session_completion_unique/)
