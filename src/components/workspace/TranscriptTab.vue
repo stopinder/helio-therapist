@@ -15,7 +15,11 @@
 <script setup>
 import { computed, ref } from 'vue'; import { authenticatedFetch } from '../../lib/api.js'; import WorkflowStatusPanel from './WorkflowStatusPanel.vue';
 const props=defineProps({transcript:{type:Object,default:null},loading:Boolean,error:{type:String,default:''},activeTab:String}); const emit=defineEmits(['retry','clinical-summary-draft','clinical-note-draft']); const preparingDraft=ref(false),draftError=ref('');
-const requestedOutputLabel=computed(()=>({clinical_summary:'Clinical summary requested',draft_note:'Draft clinical note requested',cbt:'CBT reflection requested'})[props.transcript?.requestedLens]||'');
+const requestedOutputLabel = computed(() => ({
+  clinical_summary: 'Clinical summary requested',
+  draft_note: 'Draft clinical note requested',
+  cbt: 'CBT reflection requested'
+})[props.transcript?.requestedLens] || '');
 const canPrepareDraft=computed(()=>['clinical_summary','draft_note'].includes(props.transcript?.requestedLens)); const prepareButtonLabel=computed(()=>props.transcript?.requestedLens==='draft_note'?'Prepare draft clinical note':'Prepare clinical summary draft');
 async function prepareRequestedDraft(){if(!props.transcript?.id||preparingDraft.value||!canPrepareDraft.value)return;preparingDraft.value=true;draftError.value='';const isNote=props.transcript.requestedLens==='draft_note';try{const response=await authenticatedFetch(isNote?'/api/ai/transcript-draft-clinical-note':'/api/ai/transcript-clinical-summary',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({transcriptId:props.transcript.id})});const payload=await response.json().catch(()=>({}));if(!response.ok)throw new Error(payload?.error?.message||(isNote?'Draft clinical note preparation is temporarily unavailable.':'Clinical summary drafting is temporarily unavailable.'));emit(isNote?'clinical-note-draft':'clinical-summary-draft',payload.data?.draft||null)}catch(error){draftError.value=error.message||'Draft preparation is temporarily unavailable.'}finally{preparingDraft.value=false}}
 const workflowProgress=[{label:'Recording',status:'In Progress'},{label:'Session Capture',status:'In Progress'},{label:'Notes',status:'Not Started'},{label:'Reflection',status:'Not Started'},{label:'Clinical Summary',status:'Not Started'},{label:'Professional Development',status:'Not Started'}];
