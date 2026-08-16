@@ -4,7 +4,8 @@ import { getSupabaseClient } from './supabase.js';
 export const AI_FEATURES = Object.freeze({
   REFLECTION_ANALYSIS: 'reflection.analysis',
   REFLECTION_REPHRASE: 'reflection.rephrase',
-  SUPERVISION_SUMMARY: 'reflection.supervision_summary'
+  SUPERVISION_SUMMARY: 'reflection.supervision_summary',
+  TRANSCRIPT_CLINICAL_SUMMARY: 'transcript.clinical_summary'
 });
 
 const DEFAULT_TEXT_MODEL = 'gpt-4o-mini';
@@ -19,6 +20,9 @@ export const MODEL_PRICING_USD_PER_MILLION = Object.freeze({
 export function getTextModel(feature) {
   if (feature === AI_FEATURES.REFLECTION_ANALYSIS || feature === AI_FEATURES.REFLECTION_REPHRASE) {
     return process.env.OPENAI_REFLECTION_MODEL || DEFAULT_TEXT_MODEL;
+  }
+  if (feature === AI_FEATURES.TRANSCRIPT_CLINICAL_SUMMARY) {
+    return process.env.OPENAI_CLINICAL_SUMMARY_MODEL || DEFAULT_TEXT_MODEL;
   }
   return process.env.OPENAI_SUPERVISION_MODEL || DEFAULT_TEXT_MODEL;
 }

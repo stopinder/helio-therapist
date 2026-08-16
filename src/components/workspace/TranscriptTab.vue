@@ -6,86 +6,68 @@
     </div>
 
     <div v-else-if="error" class="min-h-64 flex flex-col items-center justify-center gap-4 rounded-panel border border-state-danger/20 bg-surface p-6 text-center">
-      <div>
-        <h3 class="text-h3 font-semibold text-state-danger">Session capture unavailable</h3>
-        <p class="mt-2 text-body text-ink-muted">{{ error }}</p>
-      </div>
-      <button
-        class="px-4 py-2 bg-action-primary text-on-action rounded-control font-medium hover:bg-action-primary-hover"
-        @click="$emit('retry')"
-      >
-        Retry
-      </button>
+      <div><h3 class="text-h3 font-semibold text-state-danger">Session capture unavailable</h3><p class="mt-2 text-body text-ink-muted">{{ error }}</p></div>
+      <button class="px-4 py-2 bg-action-primary text-on-action rounded-control font-medium hover:bg-action-primary-hover" @click="$emit('retry')">Retry</button>
     </div>
 
     <div v-else-if="!transcript" class="min-h-64 flex flex-col items-center justify-center rounded-panel border border-border bg-surface p-8 text-center">
       <h3 class="text-h3 font-semibold text-ink">Session capture in progress</h3>
-      <p class="mt-4 max-w-lg text-body text-ink-muted">
-        No transcript is linked to this session yet, but you can continue working normally. Source material will appear here when available.
-      </p>
-      <p class="mt-6 text-caption text-ink-subtle italic max-w-md">
-        Transcript Inbox is only needed when Helio cannot confidently match an imported transcript.
-      </p>
+      <p class="mt-4 max-w-lg text-body text-ink-muted">No transcript is linked to this session yet, but you can continue working normally. Source material will appear here when available.</p>
+      <p class="mt-6 text-caption text-ink-subtle italic max-w-md">Transcript Inbox is only needed when Helio cannot confidently match an imported transcript.</p>
     </div>
 
     <template v-else>
       <section v-if="requestedOutputLabel" class="rounded-panel border border-border bg-surface-subtle p-4">
         <p class="text-caption font-medium uppercase tracking-wider text-action-link">Transcript triage request</p>
         <h3 class="mt-1 text-body font-semibold text-ink">{{ requestedOutputLabel }}</h3>
-        <p class="mt-2 text-body-sm text-ink-muted">
-          This is the output preference saved during transcript triage. Nothing has been generated automatically, and this request does not create or approve a Clinical Record.
-        </p>
+        <p class="mt-2 text-body-sm text-ink-muted">This is the output preference saved during transcript triage. Nothing has been generated automatically, and this request does not create or approve a Clinical Record.</p>
+        <div v-if="transcript.requestedLens === 'clinical_summary'" class="mt-4 flex flex-col items-start gap-2">
+          <button type="button" class="button-primary" :disabled="preparingDraft" @click="prepareClinicalSummaryDraft">{{ preparingDraft ? 'Preparing draft…' : 'Prepare clinical summary draft' }}</button>
+          <p class="text-caption text-ink-muted">Helio will prepare an editable draft from this transcript only after you choose this action. Review and save remain separate steps.</p>
+          <p v-if="draftError" class="text-body-sm text-state-danger" role="alert">{{ draftError }}</p>
+        </div>
       </section>
 
       <div class="flex flex-col lg:flex-row gap-6">
         <section class="min-w-0 flex-1 rounded-panel border border-border bg-surface p-5">
-          <header class="mb-4">
-            <p class="text-caption font-medium uppercase tracking-wider text-action-link">Session Capture · Transcript</p>
-            <h3 class="mt-1 text-h3 font-semibold text-ink">Source material</h3>
-            <p class="mt-2 text-body-sm text-ink-muted">This is the original transcript linked to this session. Helio has not altered it.</p>
-          </header>
+          <header class="mb-4"><p class="text-caption font-medium uppercase tracking-wider text-action-link">Session Capture · Transcript</p><h3 class="mt-1 text-h3 font-semibold text-ink">Source material</h3><p class="mt-2 text-body-sm text-ink-muted">This is the original transcript linked to this session. Helio has not altered it.</p></header>
           <pre class="max-h-[36rem] overflow-auto whitespace-pre-wrap break-words rounded-panel bg-surface-subtle p-4 font-mono text-body-sm leading-relaxed text-ink-secondary">{{ transcript.text }}</pre>
         </section>
-
-        <div class="w-full lg:w-72">
-          <WorkflowStatusPanel
-            :workflowItems="workflowProgress"
-            :activeStage="activeTab"
-          />
-          <p class="mt-4 rounded-panel border border-border bg-surface-subtle p-4 text-body-sm text-ink-muted">
-            Markers and important moments are unavailable until their persistence workflow is approved.
-          </p>
-        </div>
+        <div class="w-full lg:w-72"><WorkflowStatusPanel :workflowItems="workflowProgress" :activeStage="activeTab" /><p class="mt-4 rounded-panel border border-border bg-surface-subtle p-4 text-body-sm text-ink-muted">Markers and important moments are unavailable until their persistence workflow is approved.</p></div>
       </div>
     </template>
   </div>
 </template>
 
 <script setup>
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
+import { authenticatedFetch } from '../../lib/api.js';
 import WorkflowStatusPanel from './WorkflowStatusPanel.vue';
 
-const props = defineProps({
-  transcript: { type: Object, default: null },
-  loading: Boolean,
-  error: { type: String, default: '' },
-  activeTab: String
-});
+const props = defineProps({ transcript: { type: Object, default: null }, loading: Boolean, error: { type: String, default: '' }, activeTab: String });
+const emit = defineEmits(['retry', 'clinical-summary-draft']);
+const preparingDraft = ref(false);
+const draftError = ref('');
 
-defineEmits(['retry']);
+const requestedOutputLabel = computed(() => ({ clinical_summary: 'Clinical summary requested', draft_note: 'Draft clinical note requested', cbt: 'CBT reflection requested' })[props.transcript?.requestedLens] || '');
 
-const requestedOutputLabel = computed(() => ({
-  clinical_summary: 'Clinical summary requested',
-  draft_note: 'Draft clinical note requested',
-  cbt: 'CBT reflection requested'
-})[props.transcript?.requestedLens] || '');
+async function prepareClinicalSummaryDraft() {
+  if (!props.transcript?.id || preparingDraft.value) return;
+  preparingDraft.value = true;
+  draftError.value = '';
+  try {
+    const response = await authenticatedFetch('/api/ai/transcript-clinical-summary', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ transcriptId: props.transcript.id }) });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(payload?.error?.message || 'Clinical summary drafting is temporarily unavailable.');
+    emit('clinical-summary-draft', payload.data?.draft || null);
+  } catch (error) {
+    draftError.value = error.message || 'Clinical summary drafting is temporarily unavailable.';
+  } finally {
+    preparingDraft.value = false;
+  }
+}
 
 const workflowProgress = [
-  { label: 'Recording', status: 'In Progress' },
-  { label: 'Session Capture', status: 'In Progress' },
-  { label: 'Notes', status: 'Not Started' },
-  { label: 'Reflection', status: 'Not Started' },
-  { label: 'Clinical Summary', status: 'Not Started' },
-  { label: 'Professional Development', status: 'Not Started' }
+  { label: 'Recording', status: 'In Progress' }, { label: 'Session Capture', status: 'In Progress' }, { label: 'Notes', status: 'Not Started' }, { label: 'Reflection', status: 'Not Started' }, { label: 'Clinical Summary', status: 'Not Started' }, { label: 'Professional Development', status: 'Not Started' }
 ];
 </script>

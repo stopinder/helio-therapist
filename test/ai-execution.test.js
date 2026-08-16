@@ -62,6 +62,18 @@ test('AI execution: reflection model override remains backwards compatible', () 
   }
 });
 
+test('AI execution: transcript clinical summary has an independent model override', () => {
+  const previous = process.env.OPENAI_CLINICAL_SUMMARY_MODEL;
+  process.env.OPENAI_CLINICAL_SUMMARY_MODEL = 'test-clinical-summary-model';
+  try {
+    assert.strictEqual(AI_FEATURES.TRANSCRIPT_CLINICAL_SUMMARY, 'transcript.clinical_summary');
+    assert.strictEqual(getTextModel(AI_FEATURES.TRANSCRIPT_CLINICAL_SUMMARY), 'test-clinical-summary-model');
+  } finally {
+    if (previous === undefined) delete process.env.OPENAI_CLINICAL_SUMMARY_MODEL;
+    else process.env.OPENAI_CLINICAL_SUMMARY_MODEL = previous;
+  }
+});
+
 test('AI execution: missing provider configuration is a 503-class error', async () => {
   const previous = process.env.OPENAI_API_KEY;
   delete process.env.OPENAI_API_KEY;
