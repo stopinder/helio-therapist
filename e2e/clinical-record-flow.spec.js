@@ -64,9 +64,16 @@ test.describe('Clinical Record approval and amendment flow', () => {
 
     await page.route('**/rest/v1/sessions*', route => {
       const url = new URL(route.request().url());
-      if (url.searchParams.get('id') === `eq.${sessionId}`) return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(sessionRow) });
+      if (url.searchParams.get('id') === `eq.${sessionId}`) {
+        return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(sessionRow) });
+      }
+      if (url.searchParams.get('client_id') === `eq.${clientId}`) {
+        return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([sessionRow]) });
+      }
       return route.continue();
     });
+
+    await page.route('**/rest/v1/appointments*', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([]) }));
 
     await page.route('**/rest/v1/rpc/save_session_draft', async route => {
       const body = route.request().postDataJSON();
@@ -81,6 +88,7 @@ test.describe('Clinical Record approval and amendment flow', () => {
         notes: body.p_notes,
         status: 'completed',
         notes_status: 'approved',
+        workflow_status: 'approved',
         completed_at: '2026-08-12T10:10:00Z',
         ended_at: '2026-08-12T10:10:00Z',
         version: sessionRow.version + 1,
@@ -106,6 +114,23 @@ test.describe('Clinical Record approval and amendment flow', () => {
       return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(amendment) });
     });
 
+    await page.route('**/api/client-timeline*', route => route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        events: sessionRow.status === 'completed' ? [{
+          id: 'ffffffff-ffff-4fff-8fff-ffffffffffff',
+          event_type: 'session_completed',
+          subject_type: 'session',
+          subject_id: sessionId,
+          session_id: sessionId,
+          occurred_at: sessionRow.completed_at,
+          summary: 'Clinical record approved for this session.'
+        }] : []
+      })
+    }));
+
+    await page.route('**/api/documents*', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ documents: [] }) }));
     await page.route('**/api/zoom/transcripts*', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ transcripts: [] }) }));
   });
 
@@ -122,7 +147,7 @@ test.describe('Clinical Record approval and amendment flow', () => {
     await expect(workspaceShell).toBeVisible({ timeout: 15000 });
   }
 
-  test('approves a draft into a read-only clinical record and appends an amendment', async ({ page }) => {
+  test('approves a draft, appends an amendment, then reopens the immutable record from the client timeline', async ({ page }) => {
     await openWorkspace(page);
     await page.getByRole('button', { name: /Clinical Record/ }).click();
     await page.getByRole('button', { name: /Prepare Empty Clinical Summary Draft/i }).click();
@@ -156,5 +181,21 @@ test.describe('Clinical Record approval and amendment flow', () => {
     await expect(completedRecord.getByText('Factual correction', { exact: true })).toBeVisible();
     await expect(completedRecord.getByText('Client reported four hours of sleep, not five.')).toBeVisible();
     await expect(completedRecord.getByText('Client described increased work stress.')).toBeVisible();
+
+    await page.getByRole('link', { name: 'Client Workspace' }).click();
+    await expect(page).toHaveURL(`/clients/${clientId}`);
+    await page.getByRole('button', { name: 'Timeline' }).click();
+    await expect(page.getByText('Clinical record approved for this session.')).toBeVisible();
+
+    await page.getByText('Clinical record approved for this session.').click();
+    await expect(page).toHaveURL(`/clients/${clientId}/sessions/${sessionId}`);
+    await page.getByRole('button', { name: /Clinical Record/ }).click();
+
+    const reopenedRecord = page.getByTestId('completed-clinical-record');
+    await expect(reopenedRecord).toBeVisible();
+    await expect(reopenedRecord.getByText('This approved record is read-only. Corrections must be added through an amendment.')).toBeVisible();
+    await expect(reopenedRecord.getByText('Client described increased work stress.')).toBeVisible();
+    await expect(reopenedRecord.getByText('Record Amendment 1')).toBeVisible();
+    await expect(reopenedRecord.locator('textarea')).toHaveCount(0);
   });
 });
