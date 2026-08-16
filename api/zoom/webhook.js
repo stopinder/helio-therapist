@@ -88,8 +88,8 @@ async function applySchedulerEvent(supabase, intakeEventId, schedulerEvent) {
   });
 }
 
-async function findSessionLink(supabase, therapistUserId, meetingId) {
-  const { data, error } = await supabase
+export async function findVerifiedSessionLink(supabase, therapistUserId, meetingId) {
+  const { data: link, error } = await supabase
     .from('zoom_session_links')
     .select('client_id, session_ref')
     .eq('therapist_user_id', therapistUserId)
@@ -100,7 +100,23 @@ async function findSessionLink(supabase, therapistUserId, meetingId) {
     return null;
   }
   if (error) throw error;
-  return data || null;
+  if (!link) return null;
+
+  const { data: session, error: sessionError } = await supabase
+    .from('sessions')
+    .select('id')
+    .eq('id', link.session_ref)
+    .eq('user_id', therapistUserId)
+    .eq('client_id', link.client_id)
+    .maybeSingle();
+  if (sessionError) throw sessionError;
+
+  if (!session) {
+    console.warn('[Zoom Webhook] Ignoring invalid session link', { meetingId, therapistUserId });
+    return null;
+  }
+
+  return link;
 }
 
 export default async function handler(req, res) {
@@ -204,7 +220,7 @@ export default async function handler(req, res) {
       return res.status(200).json({ received: true });
     }
 
-    const sessionLink = await findSessionLink(supabase, integration.user_id, meetingId);
+    const sessionLink = await findVerifiedSessionLink(supabase, integration.user_id, meetingId);
     const getToken = (options) => getZoomAccessTokenContext(supabase, integration, options);
     const initialToken = await getToken({ forceRefresh: false });
 
