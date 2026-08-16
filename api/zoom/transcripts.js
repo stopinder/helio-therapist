@@ -95,11 +95,12 @@ export default async function handler(req, res) {
     }
 
     if (req.method === 'PATCH') {
-      const { id, clientId, sessionRef, requestedLens, sourceRetention, reviewChoicesSaved, markComplete } = req.body || {};
+      const { id, expectedUpdatedAt, clientId, sessionRef, requestedLens, sourceRetention, reviewChoicesSaved, markComplete } = req.body || {};
       const allowedLenses = new Set(['clinical_summary', 'draft_note', 'cbt']);
       const allowedRetention = new Set(['keep_until_review', 'delete_after_approved_output']);
 
       if (!id || typeof id !== 'string') return res.status(400).json({ error: 'A transcript id is required.' });
+      if (!expectedUpdatedAt || typeof expectedUpdatedAt !== 'string') return res.status(400).json({ error: 'Reload this transcript before saving changes.' });
       if (clientId !== undefined && clientId !== null && typeof clientId !== 'string') return res.status(400).json({ error: 'Client id must be a client id or null.' });
       if (sessionRef !== undefined && sessionRef !== null && typeof sessionRef !== 'string') return res.status(400).json({ error: 'Session reference must be a session id or null.' });
       if (requestedLens !== undefined && requestedLens !== null && !allowedLenses.has(requestedLens)) return res.status(400).json({ error: 'Choose a supported clinical output.' });
@@ -107,9 +108,10 @@ export default async function handler(req, res) {
       if (reviewChoicesSaved !== undefined && typeof reviewChoicesSaved !== 'boolean') return res.status(400).json({ error: 'Review choice state must be true or false.' });
       if (markComplete !== undefined && typeof markComplete !== 'boolean') return res.status(400).json({ error: 'Completion state must be true or false.' });
 
-      const { data: existing, error: existingError } = await supabase.from('zoom_transcripts').select('id, client_id, session_ref, review_choices_saved_at').eq('id', id).eq('therapist_user_id', user.id).maybeSingle();
+      const { data: existing, error: existingError } = await supabase.from('zoom_transcripts').select('id, client_id, session_ref, review_choices_saved_at, updated_at').eq('id', id).eq('therapist_user_id', user.id).maybeSingle();
       if (existingError) throw existingError;
       if (!existing) return res.status(404).json({ error: 'Transcript not found.' });
+      if (existing.updated_at !== expectedUpdatedAt) return res.status(409).json({ error: 'This transcript changed in another tab or window. Reload it before saving so newer work is not overwritten.' });
 
       if (clientId) {
         const { data: client, error: clientError } = await supabase.from('clients').select('id').eq('id', clientId).eq('user_id', user.id).maybeSingle();
@@ -170,9 +172,9 @@ export default async function handler(req, res) {
       }
       if (markComplete === false) update.completed_at = null;
 
-      const { data, error } = await supabase.from('zoom_transcripts').update(update).eq('id', id).eq('therapist_user_id', user.id).select(transcriptFields).maybeSingle();
+      const { data, error } = await supabase.from('zoom_transcripts').update(update).eq('id', id).eq('therapist_user_id', user.id).eq('updated_at', expectedUpdatedAt).select(transcriptFields).maybeSingle();
       if (error) throw error;
-      if (!data) return res.status(404).json({ error: 'Transcript not found.' });
+      if (!data) return res.status(409).json({ error: 'This transcript changed while you were saving. Reload it before trying again.' });
       return res.status(200).json({ transcript: serialiseTranscript(data) });
     }
 
