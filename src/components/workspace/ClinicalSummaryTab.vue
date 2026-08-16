@@ -129,8 +129,23 @@
               :id="key"
               v-model="summaryData[key]"
               rows="4"
-              class="w-full p-3 rounded-control border border-border bg-surface focus:ring-2 focus:ring-action-link focus:border-action-link outline-none transition-all text-body-sm text-ink"
+              :disabled="Boolean(activeDictationKey) || Boolean(transcribingKey)"
+              class="w-full p-3 rounded-control border border-border bg-surface focus:ring-2 focus:ring-action-link focus:border-action-link outline-none transition-all text-body-sm text-ink disabled:opacity-60"
             ></textarea>
+            <div v-if="status === 'draft'" class="flex items-center justify-between gap-3">
+              <p v-if="dictationErrorKey === key" class="text-caption text-state-danger" role="alert">{{ dictationError }}</p>
+              <span v-else class="text-caption text-ink-muted">Dictation adds editable draft text for you to review before approval.</span>
+              <button
+                type="button"
+                class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-control border border-border bg-surface text-body-sm font-medium text-ink-secondary hover:bg-surface-subtle disabled:opacity-50"
+                :disabled="submitting || (Boolean(activeDictationKey) && activeDictationKey !== key) || (Boolean(transcribingKey) && transcribingKey !== key)"
+                :aria-pressed="activeDictationKey === key"
+                @click="toggleDictation(key)"
+              >
+                <span aria-hidden="true">🎙️</span>
+                {{ dictationButtonLabel(key) }}
+              </button>
+            </div>
           </div>
         </div>
 
@@ -155,14 +170,16 @@
           </p>
           <button 
             @click="saveDraft"
-            class="px-inline-lg py-stack-sm bg-surface-elevated border border-border text-body-sm font-medium text-ink rounded-control hover:bg-surface-subtle transition-colors"
+            :disabled="submitting || Boolean(activeDictationKey) || Boolean(transcribingKey)"
+            class="px-inline-lg py-stack-sm bg-surface-elevated border border-border text-body-sm font-medium text-ink rounded-control hover:bg-surface-subtle transition-colors disabled:opacity-50"
           >
             Save Draft
           </button>
           <button 
             v-if="status === 'draft'"
             @click="markReady"
-            class="px-inline-lg py-stack-sm bg-action-link text-on-action text-body-sm font-medium rounded-control hover:bg-action-link-hover transition-colors shadow-sm"
+            :disabled="submitting || Boolean(activeDictationKey) || Boolean(transcribingKey)"
+            class="px-inline-lg py-stack-sm bg-action-link text-on-action text-body-sm font-medium rounded-control hover:bg-action-link-hover transition-colors shadow-sm disabled:opacity-50"
           >
             Mark Ready for Review
           </button>
@@ -332,7 +349,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, nextTick, watch, onMounted } from 'vue';
+import { ref, reactive, computed, nextTick, watch, onMounted, onBeforeUnmount } from 'vue';
 import StatusBadge from './StatusBadge.vue';
 import ClinicalWorkflowIndicator from './ClinicalWorkflowIndicator.vue';
 import ClinicalRecordMetadata from './ClinicalRecordMetadata.vue';
@@ -340,6 +357,7 @@ import RecordHistoryPanel from './RecordHistoryPanel.vue';
 import ApprovalConfirmationDialog from './ApprovalConfirmationDialog.vue';
 import ApprovedClinicalRecordView from './ApprovedClinicalRecordView.vue';
 import NoticeBanner from './NoticeBanner.vue';
+import { authenticatedFetch } from '../../lib/api.js';
 import { saveSessionDraft, completeSessionRecord } from '../../lib/sessions.js';
 
 const props = defineProps({
@@ -359,6 +377,13 @@ const reviewConfirmed = ref(false);
 const isApprovalDialogOpen = ref(false);
 const submitting = ref(false);
 const legacyNotes = ref('');
+const activeDictationKey = ref('');
+const transcribingKey = ref('');
+const dictationErrorKey = ref('');
+const dictationError = ref('');
+let recorder = null;
+let stream = null;
+let chunks = [];
 
 const checklist = [
   { id: 1, label: 'Session Transcript', available: false, required: true },
@@ -553,8 +578,78 @@ const prepareDraft = async () => {
   scrollAndFocus();
 };
 
+function dictationButtonLabel(key) {
+  if (transcribingKey.value === key) return 'Transcribing…';
+  if (activeDictationKey.value === key) return 'Stop recording';
+  return 'Dictate';
+}
+
+async function toggleDictation(key) {
+  if (status.value !== 'draft') return;
+  if (activeDictationKey.value === key) {
+    recorder?.stop();
+    return;
+  }
+  if (activeDictationKey.value || transcribingKey.value) return;
+
+  dictationErrorKey.value = '';
+  dictationError.value = '';
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    chunks = [];
+    recorder = new MediaRecorder(stream);
+    recorder.ondataavailable = event => {
+      if (event.data.size > 0) chunks.push(event.data);
+    };
+    recorder.onstop = () => processDictation(key);
+    recorder.start();
+    activeDictationKey.value = key;
+  } catch {
+    dictationErrorKey.value = key;
+    dictationError.value = 'Microphone access was not available. You can continue by typing.';
+  }
+}
+
+async function processDictation(key) {
+  activeDictationKey.value = '';
+  stream?.getTracks().forEach(track => track.stop());
+
+  const blob = new Blob(chunks, { type: recorder?.mimeType || 'audio/webm' });
+  if (!blob.size) return;
+
+  transcribingKey.value = key;
+  dictationErrorKey.value = '';
+  dictationError.value = '';
+  try {
+    const audio = await blobToDataUrl(blob);
+    const response = await authenticatedFetch('/api/ai/transcribe', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ audio })
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(payload?.error?.message || 'Dictation could not be transcribed.');
+    const text = String(payload?.text || '').trim();
+    if (text) summaryData[key] = [summaryData[key].trim(), text].filter(Boolean).join(summaryData[key].trim() ? '\n' : '');
+  } catch (err) {
+    dictationErrorKey.value = key;
+    dictationError.value = err.message || 'The recording could not be transcribed. Your audio was not saved.';
+  } finally {
+    transcribingKey.value = '';
+  }
+}
+
+function blobToDataUrl(blob) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+}
+
 const saveDraft = async () => {
-  if (submitting.value) return;
+  if (submitting.value || activeDictationKey.value || transcribingKey.value) return;
   submitting.value = true;
   saveMessage.value = 'Saving…';
   
@@ -589,6 +684,7 @@ const saveDraft = async () => {
 };
 
 const markReady = () => {
+  if (activeDictationKey.value || transcribingKey.value) return;
   status.value = 'ready_for_review';
   scrollAndFocus();
 };
@@ -665,6 +761,11 @@ const scrollAndFocus = () => {
     }
   });
 };
+
+onBeforeUnmount(() => {
+  if (recorder?.state && recorder.state !== 'inactive') recorder.stop();
+  stream?.getTracks().forEach(track => track.stop());
+});
 </script>
 
 <style scoped>
