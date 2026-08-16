@@ -28,8 +28,8 @@
             <span class="hidden sm:inline">Quick capture</span>
             <span v-if="outstandingReminderCount" class="min-w-5 h-5 px-1.5 inline-flex items-center justify-center rounded-pill bg-brand-amber/20 type-metadata font-semibold">{{ outstandingReminderCount }}</span>
           </button>
+          <router-link v-if="$route.path!=='/schedule'" to="/schedule" class="hidden sm:inline-flex items-center gap-2 button-secondary"><span class="leading-none font-normal">+</span>Schedule appointment</router-link>
           <button v-if="nextAppointment" type="button" class="hidden sm:inline-flex button-primary" :disabled="joiningNextSession" @click="joinNextSession">{{ joiningNextSession ? 'Opening…' : 'Join next session' }}</button>
-          <router-link v-else-if="$route.path!=='/schedule'" to="/schedule" :class="['hidden sm:inline-flex items-center gap-2', hasContextualPrimary ? 'button-secondary' : 'button-primary']"><span class="leading-none font-normal">+</span>Schedule appointment</router-link>
         </div>
       </header>
       <main class="flex-1 min-h-0 bg-surface-canvas relative" :class="isFullHeightWorkspace ? 'overflow-hidden' : 'overflow-y-auto overflow-x-hidden'"><slot/></main>
@@ -47,7 +47,7 @@ import { listScheduledAppointments } from '../lib/appointments.js';
 import { createOrResumeSession } from '../lib/sessions.js';
 import { listTherapistReminders } from '../lib/therapistReminders.js';
 import GlobalQuickCapture from '../components/reminders/GlobalQuickCapture.vue';
-const route=useRoute(),router=useRouter(),isMobileMenuOpen=ref(false);const accountIdentity=ref({name:'Signed in',subtitle:'',initials:'·'});const fullHeightWorkspacePaths=new Set(['/calendar','/transcripts']);const isFullHeightWorkspace=computed(()=>fullHeightWorkspacePaths.has(route.path));const contextualPrimaryPaths=new Set(['/clients','/transcripts']);const hasContextualPrimary=computed(()=>contextualPrimaryPaths.has(route.path));
+const route=useRoute(),router=useRouter(),isMobileMenuOpen=ref(false);const accountIdentity=ref({name:'Signed in',subtitle:'',initials:'·'});const fullHeightWorkspacePaths=new Set(['/calendar','/transcripts']);const isFullHeightWorkspace=computed(()=>fullHeightWorkspacePaths.has(route.path));
 const showQuickCapture=ref(false),reminders=ref([]);const openReminders=computed(()=>reminders.value.filter(item=>!item.completedAt));const outstandingReminderCount=computed(()=>openReminders.value.length);
 const now=ref(new Date()),appointments=ref([]),joiningNextSession=ref(false);let clockTimer;
 const nextAppointment=computed(()=>appointments.value.find(item=>new Date(item.starts_at).getTime()>=now.value.getTime())||null);
