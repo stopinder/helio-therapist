@@ -370,21 +370,19 @@ test('Transcript Matching: Auto-matches if session link exists', async () => {
   assert.equal(transcript.session_ref, 'sess-a1')
 })
 
-test('Transcript Matching: MVP fallback for single therapist', async () => {
+test('Transcript Matching: Unknown host is not assigned to the only connected therapist', async () => {
   resetMockDatabase()
-  // Only Therapist B has Zoom
   mockDatabase.integrations = [
-    { 
-      user_id: THERAPIST_B.id, 
-      provider: 'zoom', 
-      provider_account_id: 'zoom-host-b', 
-      encrypted_access_token: encryptIntegrationToken('token-b'), 
-      encrypted_refresh_token: encryptIntegrationToken('ref-b'), 
-      expires_at: '2099-01-01T00:00:00Z' 
+    {
+      user_id: THERAPIST_B.id,
+      provider: 'zoom',
+      provider_account_id: 'zoom-host-b',
+      encrypted_access_token: encryptIntegrationToken('token-b'),
+      encrypted_refresh_token: encryptIntegrationToken('ref-b'),
+      expires_at: '2099-01-01T00:00:00Z'
     }
   ]
-  
-  // Webhook for a host that doesn't match Therapist B
+
   const timestamp = Math.floor(Date.now() / 1000).toString()
   const webhookBody = {
     event: 'recording.completed',
@@ -397,7 +395,7 @@ test('Transcript Matching: MVP fallback for single therapist', async () => {
     }
   }
   const signature = `v0=${crypto.createHmac('sha256', 'test-secret').update(`v0:${timestamp}:`).update(JSON.stringify(webhookBody)).digest('hex')}`
-  
+
   const req = createReq(null, 'POST', webhookBody, {}, {
     'x-zm-request-timestamp': timestamp,
     'x-zm-signature': signature
@@ -408,7 +406,8 @@ test('Transcript Matching: MVP fallback for single therapist', async () => {
 
   assert.equal(res.statusCode, 200)
   const transcript = mockDatabase.zoom_transcripts.find(t => t.zoom_meeting_id === 'meeting-unknown')
-  assert.ok(transcript)
-  assert.equal(transcript.therapist_user_id, THERAPIST_B.id) // Fallback worked
-  assert.equal(transcript.status, 'unassigned')
+  assert.equal(transcript, undefined)
+  const intakeEvent = mockDatabase.zoom_webhook_events.find(event => event.zoom_meeting_id === 'meeting-unknown')
+  assert.ok(intakeEvent)
+  assert.equal(intakeEvent.processing_status, 'unmatched')
 })
