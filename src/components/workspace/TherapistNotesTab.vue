@@ -31,6 +31,7 @@ const noteSections = { observations: 'Observations', interventions: 'Interventio
 const notes = reactive(emptyWorkingNotes());
 const loading = ref(true);
 const saving = ref(false);
+const version = ref(0);
 const error = ref('');
 const savedMessage = ref('');
 
@@ -39,6 +40,7 @@ async function load() {
   try {
     const record = await getSessionWorkingNotes({ sessionId: props.sessionId, clientId: props.clientId });
     Object.assign(notes, record?.content || emptyWorkingNotes());
+    version.value = record?.version || 0;
   } catch (err) { console.error('Failed to load working notes:', err); error.value = 'Working notes could not be loaded.'; }
   finally { loading.value = false; }
 }
@@ -47,11 +49,21 @@ async function save() {
   if (saving.value) return;
   saving.value = true; error.value = ''; savedMessage.value = '';
   try {
-    const record = await saveSessionWorkingNotes({ sessionId: props.sessionId, clientId: props.clientId, content: notes });
+    const record = await saveSessionWorkingNotes({
+      sessionId: props.sessionId,
+      clientId: props.clientId,
+      content: notes,
+      expectedVersion: version.value
+    });
     Object.assign(notes, record.content);
+    version.value = record.version;
     savedMessage.value = 'Working notes saved.';
-  } catch (err) { console.error('Failed to save working notes:', err); error.value = 'Working notes could not be saved. Please try again.'; }
-  finally { saving.value = false; }
+  } catch (err) {
+    console.error('Failed to save working notes:', err);
+    error.value = err.code === 'WORKING_NOTES_CONFLICT'
+      ? 'These working notes were changed in another tab. Reload this page before saving again.'
+      : 'Working notes could not be saved. Please try again.';
+  } finally { saving.value = false; }
 }
 
 onMounted(load);
