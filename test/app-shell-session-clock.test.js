@@ -26,9 +26,10 @@ test('next scheduled appointment is a one-click session entry action', () => {
   assert.match(shell, /window\.open\(data\.startUrl/)
 })
 
-test('schedule appointment is not the competing global primary action when a next session exists', () => {
-  assert.match(shell, /v-if="nextAppointment"[^>]*>\{\{ joiningNextSession \? 'Opening…' : 'Join next session' \}\}<\/button>/)
-  assert.match(shell, /v-else-if="\$route\.path!=='\/schedule'"/)
+test('schedule appointment remains available as a secondary action beside next session', () => {
+  assert.match(shell, /v-if="\$route\.path!=='\/schedule'"[^>]*class="hidden sm:inline-flex items-center gap-2 button-secondary"/)
+  assert.match(shell, />\+<\/span>Schedule appointment<\/router-link>/)
+  assert.match(shell, /v-if="nextAppointment"[^>]*class="hidden sm:inline-flex button-primary"/)
 })
 
 test('clock refreshes while the shell is mounted and cleans up its timer', () => {
