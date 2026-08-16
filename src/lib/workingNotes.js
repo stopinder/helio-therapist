@@ -27,7 +27,7 @@ export async function getSessionWorkingNotes({ sessionId, clientId, supabaseClie
   const client = requireSupabase(supabaseClient)
   const { data, error } = await client
     .from('session_working_notes')
-    .select('session_id,client_id,content,updated_at')
+    .select('session_id,client_id,content,updated_at,version')
     .eq('session_id', sessionId)
     .eq('client_id', clientId)
     .maybeSingle()
@@ -36,26 +36,23 @@ export async function getSessionWorkingNotes({ sessionId, clientId, supabaseClie
   return data ? { ...data, content: normalizeWorkingNotes(data.content) } : null
 }
 
-export async function saveSessionWorkingNotes({ sessionId, clientId, content, supabaseClient } = {}) {
+export async function saveSessionWorkingNotes({ sessionId, clientId, content, expectedVersion = 0, supabaseClient } = {}) {
   const client = requireSupabase(supabaseClient)
-  const { data: auth, error: authError } = await client.auth.getUser()
-  if (authError) throw authError
-  if (!auth.user) throw new Error('Please sign in again')
+  const { data, error } = await client.rpc('save_session_working_notes', {
+    p_session_id: sessionId,
+    p_client_id: clientId,
+    p_content: normalizeWorkingNotes(content),
+    p_expected_version: expectedVersion
+  })
 
-  const payload = {
-    session_id: sessionId,
-    client_id: clientId,
-    user_id: auth.user.id,
-    content: normalizeWorkingNotes(content),
-    updated_at: new Date().toISOString()
+  if (error) {
+    if (error.code === '40001') {
+      const conflict = new Error('Working notes were updated in another tab')
+      conflict.code = 'WORKING_NOTES_CONFLICT'
+      throw conflict
+    }
+    throw error
   }
 
-  const { data, error } = await client
-    .from('session_working_notes')
-    .upsert(payload, { onConflict: 'session_id' })
-    .select('session_id,client_id,content,updated_at')
-    .single()
-
-  if (error) throw error
   return { ...data, content: normalizeWorkingNotes(data.content) }
 }
