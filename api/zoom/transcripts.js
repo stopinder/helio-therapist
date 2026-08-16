@@ -100,7 +100,6 @@ export default async function handler(req, res) {
       const allowedRetention = new Set(['keep_until_review', 'delete_after_approved_output']);
 
       if (!id || typeof id !== 'string') return res.status(400).json({ error: 'A transcript id is required.' });
-      if (!expectedUpdatedAt || typeof expectedUpdatedAt !== 'string') return res.status(400).json({ error: 'Reload this transcript before saving changes.' });
       if (clientId !== undefined && clientId !== null && typeof clientId !== 'string') return res.status(400).json({ error: 'Client id must be a client id or null.' });
       if (sessionRef !== undefined && sessionRef !== null && typeof sessionRef !== 'string') return res.status(400).json({ error: 'Session reference must be a session id or null.' });
       if (requestedLens !== undefined && requestedLens !== null && !allowedLenses.has(requestedLens)) return res.status(400).json({ error: 'Choose a supported clinical output.' });
@@ -111,6 +110,7 @@ export default async function handler(req, res) {
       const { data: existing, error: existingError } = await supabase.from('zoom_transcripts').select('id, client_id, session_ref, review_choices_saved_at, updated_at').eq('id', id).eq('therapist_user_id', user.id).maybeSingle();
       if (existingError) throw existingError;
       if (!existing) return res.status(404).json({ error: 'Transcript not found.' });
+      if (!expectedUpdatedAt || typeof expectedUpdatedAt !== 'string') return res.status(400).json({ error: 'Reload this transcript before saving changes.' });
       if (existing.updated_at !== expectedUpdatedAt) return res.status(409).json({ error: 'This transcript changed in another tab or window. Reload it before saving so newer work is not overwritten.' });
 
       if (clientId) {
