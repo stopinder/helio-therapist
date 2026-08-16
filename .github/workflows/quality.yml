@@ -46,4 +46,7 @@ jobs:
         run: npx playwright install --with-deps chromium
 
       - name: Run focused Session Workspace Playwright coverage
+        env:
+          VITE_SUPABASE_URL: http://127.0.0.1:54321
+          VITE_SUPABASE_ANON_KEY: playwright-anon-key
         run: npx playwright test e2e/session-working-material.spec.js --project=chromium
