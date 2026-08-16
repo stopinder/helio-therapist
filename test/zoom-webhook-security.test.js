@@ -1,6 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import crypto from 'crypto'
+import fs from 'node:fs'
 import { safeZoomWebhookPayload, schedulerAppointmentEvent, verifyZoomWebhookRequest } from '../api/_lib/zoom-webhook.js'
 
 const secret = 'test-webhook-secret'
@@ -74,6 +75,15 @@ test('uses a stable delivery key and stores only bounded recording metadata', ()
   assert.equal(first.deliveryKey, replay.deliveryKey)
   assert.equal(safePayload.payload.object.recording_files[0].download_url, undefined)
   assert.doesNotMatch(JSON.stringify(safePayload), /access_token/)
+})
+
+test('requires the Zoom host account to match the therapist integration before transcript ownership is assigned', () => {
+  const webhookSource = fs.readFileSync(new URL('../api/zoom/webhook.js', import.meta.url), 'utf8')
+
+  assert.match(webhookSource, /\.eq\('provider_account_id', hostId\)/)
+  assert.match(webhookSource, /processing_status: 'unmatched'/)
+  assert.doesNotMatch(webhookSource, /single-therapist MVP account fallback/)
+  assert.doesNotMatch(webhookSource, /zoomIntegrations\?\.length === 1/)
 })
 
 test('extracts Scheduler booking lifecycle data from the opaque correlation token', () => {
