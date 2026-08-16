@@ -35,6 +35,21 @@ test('working notes use versioned RPC persistence and surface stale-save conflic
   assert.match(component, /changed in another tab/)
 })
 
+test('working notes dictation reuses authenticated transient transcription without changing persistence', async () => {
+  const component = await read('../src/components/workspace/TherapistNotesTab.vue')
+  const endpoint = await read('../api/ai/transcribe.js')
+
+  assert.match(component, /navigator\.mediaDevices\.getUserMedia\(\{ audio: true \}\)/)
+  assert.match(component, /new MediaRecorder\(stream\)/)
+  assert.match(component, /authenticatedFetch\('\/api\/ai\/transcribe'/)
+  assert.match(component, /Dictation adds text here for you to review before saving\./)
+  assert.match(component, /notes\[key\] = \[notes\[key\]\.trim\(\), text\]/)
+  assert.match(component, /saveSessionWorkingNotes/)
+  assert.match(endpoint, /requireAuthenticatedUser\(req\)/)
+  assert.match(endpoint, /MAX_AUDIO_BYTES = 3 \* 1024 \* 1024/)
+  assert.doesNotMatch(endpoint, /storage\.from/)
+})
+
 test('workspace reflection remains structured while body stays readable', () => {
   const content = normalizeWorkspaceReflection({ stoodOut: 'A key moment', supervisionQuestions: 'What next?', unknown: 'ignore' })
   assert.deepEqual(content, { ...emptyWorkspaceReflection(), stoodOut: 'A key moment', supervisionQuestions: 'What next?' })
