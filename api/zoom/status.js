@@ -2,16 +2,19 @@ import { requireAuthenticatedUser } from '../_lib/supabase.js';
 
 export default async function handler(req, res) {
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
-  const webhookIntakeVersion = 'transcript-inbox-v2-single-therapist-fallback';
+  const webhookIntakeVersion = 'transcript-inbox-v2-explicit-owner-match';
 
   try {
     const { supabase, user } = await requireAuthenticatedUser(req);
     const { data, error } = await supabase.from('integrations')
-      .select('updated_at, encrypted_refresh_token').eq('user_id', user.id).eq('provider', 'zoom').maybeSingle();
+      .select('updated_at, encrypted_refresh_token, provider_account_id').eq('user_id', user.id).eq('provider', 'zoom').maybeSingle();
     if (error) throw error;
+    const hasCredentials = Boolean(data?.encrypted_refresh_token);
+    const accountMatched = Boolean(data?.provider_account_id);
     res.setHeader('Cache-Control', 'no-store');
     return res.status(200).json({
-      connected: Boolean(data?.encrypted_refresh_token),
+      connected: hasCredentials && accountMatched,
+      reconnect_required: hasCredentials && !accountMatched,
       connected_at: data?.updated_at || null,
       webhook_intake_version: webhookIntakeVersion
     });
