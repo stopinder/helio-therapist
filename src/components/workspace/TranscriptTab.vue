@@ -28,33 +28,44 @@
       </p>
     </div>
 
-    <div v-else class="flex flex-col lg:flex-row gap-6">
-      <section class="min-w-0 flex-1 rounded-panel border border-border bg-surface p-5">
-        <header class="mb-4">
-          <p class="text-caption font-medium uppercase tracking-wider text-action-link">Session Capture · Transcript</p>
-          <h3 class="mt-1 text-h3 font-semibold text-ink">Source material</h3>
-          <p class="mt-2 text-body-sm text-ink-muted">This is the original transcript linked to this session. Helio has not altered it.</p>
-        </header>
-        <pre class="max-h-[36rem] overflow-auto whitespace-pre-wrap break-words rounded-panel bg-surface-subtle p-4 font-mono text-body-sm leading-relaxed text-ink-secondary">{{ transcript.text }}</pre>
+    <template v-else>
+      <section v-if="requestedOutputLabel" class="rounded-panel border border-border bg-surface-subtle p-4">
+        <p class="text-caption font-medium uppercase tracking-wider text-action-link">Transcript triage request</p>
+        <h3 class="mt-1 text-body font-semibold text-ink">{{ requestedOutputLabel }}</h3>
+        <p class="mt-2 text-body-sm text-ink-muted">
+          This is the output preference saved during transcript triage. Nothing has been generated automatically, and this request does not create or approve a Clinical Record.
+        </p>
       </section>
 
-      <div class="w-full lg:w-72">
-        <WorkflowStatusPanel
-          :workflowItems="workflowProgress"
-          :activeStage="activeTab"
-        />
-        <p class="mt-4 rounded-panel border border-border bg-surface-subtle p-4 text-body-sm text-ink-muted">
-          Markers and important moments are unavailable until their persistence workflow is approved.
-        </p>
+      <div class="flex flex-col lg:flex-row gap-6">
+        <section class="min-w-0 flex-1 rounded-panel border border-border bg-surface p-5">
+          <header class="mb-4">
+            <p class="text-caption font-medium uppercase tracking-wider text-action-link">Session Capture · Transcript</p>
+            <h3 class="mt-1 text-h3 font-semibold text-ink">Source material</h3>
+            <p class="mt-2 text-body-sm text-ink-muted">This is the original transcript linked to this session. Helio has not altered it.</p>
+          </header>
+          <pre class="max-h-[36rem] overflow-auto whitespace-pre-wrap break-words rounded-panel bg-surface-subtle p-4 font-mono text-body-sm leading-relaxed text-ink-secondary">{{ transcript.text }}</pre>
+        </section>
+
+        <div class="w-full lg:w-72">
+          <WorkflowStatusPanel
+            :workflowItems="workflowProgress"
+            :activeStage="activeTab"
+          />
+          <p class="mt-4 rounded-panel border border-border bg-surface-subtle p-4 text-body-sm text-ink-muted">
+            Markers and important moments are unavailable until their persistence workflow is approved.
+          </p>
+        </div>
       </div>
-    </div>
+    </template>
   </div>
 </template>
 
 <script setup>
+import { computed } from 'vue';
 import WorkflowStatusPanel from './WorkflowStatusPanel.vue';
 
-defineProps({
+const props = defineProps({
   transcript: { type: Object, default: null },
   loading: Boolean,
   error: { type: String, default: '' },
@@ -62,6 +73,12 @@ defineProps({
 });
 
 defineEmits(['retry']);
+
+const requestedOutputLabel = computed(() => ({
+  clinical_summary: 'Clinical summary requested',
+  draft_note: 'Draft clinical note requested',
+  cbt: 'CBT reflection requested'
+})[props.transcript?.requestedLens] || '');
 
 const workflowProgress = [
   { label: 'Recording', status: 'In Progress' },
