@@ -10,7 +10,7 @@ test('therapist workspace exposes scheduling as a header action without sidebar 
   assert.match(shell, /Schedule appointment/)
   assert.match(shell, /to="\/schedule"/)
   assert.doesNotMatch(shell, /{name:'Schedule',path:'\/schedule'/)
-  assert.match(router, /path:'\/schedule'/)
+  assert.match(router, /path:\s*['"]\/schedule['"]/)
   assert.match(router, /ScheduleAppointment/)
 })
 
