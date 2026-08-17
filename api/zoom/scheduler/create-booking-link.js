@@ -78,6 +78,7 @@ export default async function handler(req, res) {
     return res.status(201).json({
       appointmentId: appointment.id,
       bookingUrl: publicBookingUrl(req, correlationToken),
+      therapistBookingUrl: zoomBookingUrl,
       expiresAt
     });
   } catch (error) {
