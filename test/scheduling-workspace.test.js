@@ -31,7 +31,7 @@ test('booking link endpoint validates therapist ownership and stores only opaque
 })
 
 test('appointments migration enforces therapist ownership with RLS', () => {
-  const migration = read('supabase/migrations/20260808160000_add_appointments.sql')
+  const migration = read('supabase/migrations/20260808164539_add_appointments.sql')
   assert.match(migration, /enable row level security/)
   assert.match(migration, /auth\.uid\(\) = user_id/)
   assert.match(migration, /c\.user_id = auth\.uid\(\)/)
