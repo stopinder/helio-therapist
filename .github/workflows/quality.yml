@@ -12,7 +12,7 @@ permissions:
 jobs:
   test-and-build:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -45,8 +45,15 @@ jobs:
       - name: Install Playwright Chromium
         run: npx playwright install --with-deps chromium
 
-      - name: Run focused Session Workspace Playwright coverage
+      - name: Run clinical and Sprint 6C Playwright acceptance
         env:
           VITE_SUPABASE_URL: http://127.0.0.1:54321
           VITE_SUPABASE_ANON_KEY: playwright-anon-key
-        run: npx playwright test e2e/session-working-material.spec.js e2e/clinical-record-flow.spec.js e2e/transcript-cbt-care.spec.js --project=chromium
+        run: >-
+          npx playwright test
+          e2e/session-working-material.spec.js
+          e2e/clinical-record-flow.spec.js
+          e2e/transcript-cbt-care.spec.js
+          e2e/auth-lifecycle.spec.js
+          e2e/transcript-a11y-responsive.spec.js
+          --project=chromium
