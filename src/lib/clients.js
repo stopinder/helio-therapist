@@ -1,7 +1,7 @@
 import { supabase } from './supabase.js'
 import { withSessionRecovery } from './api.js'
 
-const clientSelect = 'id, user_id, display_name, reference, current_focus, archived, archived_at, created_at, updated_at'
+const clientSelect = 'id, user_id, display_name, reference, current_focus, archived, archived_at, created_at, updated_at, email'
 
 export async function getClient({ clientId }) {
   if (!supabase) throw new Error('Supabase is not configured')
@@ -78,7 +78,7 @@ export async function listUpcomingClientAppointments({ from = new Date() } = {})
 export async function createClient({ name, email = null, note = '' }) {
   if (!supabase) throw new Error('Supabase is not configured')
   const user = await requireUser('add a client')
-  const { data, error } = await withSessionRecovery(() => supabase.from('clients').insert({ user_id: user.id, display_name: name, reference: email || null, current_focus: note || '' }).select(clientSelect).single())
+  const { data, error } = await withSessionRecovery(() => supabase.from('clients').insert({ user_id: user.id, display_name: name, reference: email || null, email: email || null, current_focus: note || '' }).select(clientSelect).single())
   if (error) throw new Error(error.message || 'Failed to create client')
   return { ...data, name: data.display_name, note: data.current_focus }
 }
