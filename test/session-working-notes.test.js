@@ -16,8 +16,8 @@ test('working notes normalize only supported string fields', () => {
 test('working notes use versioned RPC persistence and surface stale-save conflicts', async () => {
   const service = await read('../src/lib/workingNotes.js')
   const component = await read('../src/components/workspace/TherapistNotesTab.vue')
-  const concurrencyMigration = await read('../supabase/migrations/20260816103000_add_working_notes_concurrency.sql')
-  const conflictMigration = await read('../supabase/migrations/20260816120000_fix_working_notes_conflict_signal.sql')
+  const concurrencyMigration = await read('../supabase/migrations/20260816083523_add_working_notes_concurrency.sql')
+  const conflictMigration = await read('../supabase/migrations/20260816090518_fix_working_notes_conflict_signal.sql')
 
   assert.match(concurrencyMigration, /add column if not exists version integer not null default 1/)
   assert.match(concurrencyMigration, /save_session_working_notes/)

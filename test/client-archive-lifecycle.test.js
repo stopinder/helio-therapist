@@ -5,8 +5,8 @@ import { readFile } from 'node:fs/promises'
 const clients = await readFile(new URL('../src/lib/clients.js', import.meta.url), 'utf8')
 const header = await readFile(new URL('../src/components/workspace/ClientWorkspaceHeader.vue', import.meta.url), 'utf8')
 const workspace = await readFile(new URL('../src/views/ClientWorkspace.vue', import.meta.url), 'utf8')
-const migration = await readFile(new URL('../supabase/migrations/20260811172000_client_archive_lifecycle.sql', import.meta.url), 'utf8')
-const guardMigration = await readFile(new URL('../supabase/migrations/20260811181000_enforce_active_client_for_new_work.sql', import.meta.url), 'utf8')
+const migration = await readFile(new URL('../supabase/migrations/20260811152125_client_archive_lifecycle.sql', import.meta.url), 'utf8')
+const guardMigration = await readFile(new URL('../supabase/migrations/20260811154259_enforce_active_client_for_new_work.sql', import.meta.url), 'utf8')
 
 test('client archive is reversible and records an archive timestamp', () => {
   assert.match(clients, /export async function setClientArchived/)

@@ -7,8 +7,8 @@ const read = path => readFile(new URL(`../${path}`, import.meta.url), 'utf8')
 test('working notes are durable, therapist-owned and bound to the matching session/client', async () => {
   const [library, baseMigration, concurrencyMigration] = await Promise.all([
     read('src/lib/workingNotes.js'),
-    read('supabase/migrations/20260812080000_add_session_working_notes.sql'),
-    read('supabase/migrations/20260816103000_add_working_notes_concurrency.sql')
+    read('supabase/migrations/20260812085247_add_session_working_notes.sql'),
+    read('supabase/migrations/20260816083523_add_working_notes_concurrency.sql')
   ])
   assert.match(library, /from\('session_working_notes'\)/)
   assert.match(library, /\.eq\('session_id', sessionId\)/)
