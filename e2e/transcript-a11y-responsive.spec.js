@@ -66,7 +66,9 @@ test.describe('Transcript Workflow - A11y & Responsive', () => {
             await expect(transcriptRow).toBeVisible();
             await transcriptRow.click();
             await expect(page.getByText('Transcript review')).toBeVisible();
-            await expect(page.getByLabel('Client')).toBeVisible();
+            const clientSelect = page.getByLabel('Client');
+            await expect(clientSelect).toBeVisible();
+            await clientSelect.selectOption({ label: 'John Doe' });
             await expect(page.getByRole('button', { name: /Assign client/i })).toBeEnabled();
             await expectNoHorizontalOverflow(page);
         });
