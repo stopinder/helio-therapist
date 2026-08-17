@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 
 const migration = await readFile(
-  new URL('../supabase/migrations/20260816215500_harden_client_care_reference_ownership.sql', import.meta.url),
+  new URL('../supabase/migrations/20260817095700_harden_client_care_reference_ownership.sql', import.meta.url),
   'utf8'
 );
 
