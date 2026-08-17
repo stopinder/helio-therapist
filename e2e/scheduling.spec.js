@@ -12,14 +12,7 @@ function base64Url(value) {
 const now = Math.floor(Date.now() / 1000);
 const fakeAccessToken = [
   base64Url({ alg: 'HS256', typ: 'JWT' }),
-  base64Url({
-    aud: 'authenticated',
-    exp: now + 3600,
-    iat: now,
-    sub: therapistId,
-    email: fakeEmail,
-    role: 'authenticated'
-  }),
+  base64Url({ aud: 'authenticated', exp: now + 3600, iat: now, sub: therapistId, email: fakeEmail, role: 'authenticated' }),
   'playwright-signature'
 ].join('.');
 
@@ -48,62 +41,26 @@ const fakeSession = {
   user: fakeUser
 };
 
+async function mockAuthenticatedTherapist(page) {
+  await page.route('**/auth/v1/token?grant_type=password', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(fakeSession) }));
+  await page.route('**/auth/v1/user', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(fakeUser) }));
+  await page.route('**/rest/v1/clients**', route => route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    headers: { 'Content-Range': '0-0/1' },
+    body: JSON.stringify([{ id: clientId, user_id: therapistId, display_name: 'Playwright Test Client', reference: 'TEST-CLIENT', current_focus: '', archived: false, created_at: '2026-01-01T00:00:00.000Z', updated_at: '2026-01-01T00:00:00.000Z' }])
+  }));
+}
+
 test.describe('Therapist appointment scheduling', () => {
-  test('therapist chooses a client before opening Zoom Scheduler', async ({ page }) => {
-    await page.route('**/auth/v1/token?grant_type=password', async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify(fakeSession)
-      });
-    });
+  test('therapist creates a Helios booking link for a client', async ({ page }) => {
+    await mockAuthenticatedTherapist(page);
+    const hostedUrl = 'http://127.0.0.1:4173/book/secure-playwright-token';
 
-    await page.route('**/auth/v1/user', async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify(fakeUser)
-      });
-    });
-
-    await page.route('**/rest/v1/clients**', async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        headers: { 'Content-Range': '0-0/1' },
-        body: JSON.stringify([{
-          id: clientId,
-          user_id: therapistId,
-          display_name: 'Playwright Test Client',
-          reference: 'TEST-CLIENT',
-          current_focus: '',
-          archived: false,
-          created_at: '2026-01-01T00:00:00.000Z',
-          updated_at: '2026-01-01T00:00:00.000Z'
-        }])
-      });
-    });
-
-    await page.route('**/api/zoom/scheduler/create-booking-link', async (route) => {
-      const request = route.request();
-      expect(request.method()).toBe('POST');
-      expect(request.postDataJSON()).toEqual({ clientId });
-      
-      const count = await page.evaluate(() => {
-        window.__booking_call_count = (window.__booking_call_count || 0) + 1;
-        return window.__booking_call_count;
-      });
-
-      await route.fulfill({
-        status: 201,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          appointmentId: `00000000-0000-4000-8000-00000000000${count}`,
-          bookingUrl: count === 1 
-            ? 'https://scheduler.zoom.us/t/helios-playwright-test'
-            : 'https://scheduler.zoom.us/t/helios-playwright-test-2'
-        })
-      });
+    await page.route('**/api/zoom/scheduler/create-booking-link', async route => {
+      expect(route.request().method()).toBe('POST');
+      expect(route.request().postDataJSON()).toEqual({ clientId });
+      await route.fulfill({ status: 201, contentType: 'application/json', body: JSON.stringify({ appointmentId: '00000000-0000-4000-8000-000000000001', bookingUrl: hostedUrl }) });
     });
 
     await page.goto('/');
@@ -111,37 +68,53 @@ test.describe('Therapist appointment scheduling', () => {
     await page.getByLabel('Password').fill(fakePassword);
     await page.locator('form').getByRole('button', { name: 'Sign in' }).click();
     await expect(page.getByTestId('workspace-shell')).toBeVisible({ timeout: 10_000 });
-
     await page.getByRole('link', { name: 'Schedule appointment', exact: true }).click();
-    await expect(page).toHaveURL(/\/schedule$/);
-    await expect(page.getByRole('heading', { name: 'Schedule appointment' })).toBeVisible();
 
-    const continueButton = page.getByRole('button', { name: 'Continue to available times' });
-    await expect(continueButton).toBeDisabled();
+    const createButton = page.getByRole('button', { name: 'Create booking link' });
+    await expect(createButton).toBeDisabled();
+    await page.getByLabel('Client').selectOption(clientId);
+    await expect(createButton).toBeEnabled();
+    await createButton.click();
 
-    const clientSelect = page.getByLabel('Client');
-    await expect(clientSelect).toBeVisible();
-    await expect(clientSelect.locator('option')).toHaveCount(2);
-    await clientSelect.selectOption(clientId);
-    await expect(continueButton).toBeEnabled();
+    await expect(page.getByText('Helios booking link ready for Playwright Test Client')).toBeVisible();
+    await expect(page.getByRole('link', { name: /Preview page/i })).toHaveAttribute('href', hostedUrl);
+    await expect(page.getByText(/expires after 72 hours/i)).toBeVisible();
+  });
+});
 
-    await continueButton.click();
-    await expect(page.getByText('Booking link ready for Playwright Test Client')).toBeVisible();
-    await expect(page.getByRole('link', { name: /Open booking page/i })).toHaveAttribute(
-      'href',
-      'https://scheduler.zoom.us/t/helios-playwright-test'
-    );
+test.describe('Public hosted booking page', () => {
+  for (const [state, message] of [
+    ['expired', 'It has expired.'],
+    ['used', 'It has already been used.'],
+    ['invalid', 'Please contact your therapist for a new booking link.']
+  ]) {
+    test(`shows ${state} link state without authentication`, async ({ page }) => {
+      await page.route('**/api/booking/**', route => route.fulfill({ status: state === 'invalid' ? 404 : 410, contentType: 'application/json', body: JSON.stringify({ state }) }));
+      await page.goto('/book/test-token');
+      await expect(page.getByTestId('public-booking-page')).toBeVisible();
+      await expect(page.getByText('This booking link is no longer available')).toBeVisible();
+      await expect(page.getByText(message, { exact: false })).toBeVisible();
+      await expect(page.getByTestId('login-page')).toHaveCount(0);
+    });
+  }
 
-    // Test "Schedule another" functionality
-    const scheduleAnotherButton = page.getByRole('button', { name: 'Schedule another' });
-    await expect(scheduleAnotherButton).toBeVisible();
-    
-    await scheduleAnotherButton.click();
-    
-    // Wait for the UI to update with the new link from the second call
-    await expect(page.getByRole('link', { name: /Open booking page/i })).toHaveAttribute(
-      'href',
-      'https://scheduler.zoom.us/t/helios-playwright-test-2'
-    );
+  test('shows therapist branding and the Zoom handoff for a valid link', async ({ page }) => {
+    await page.route('**/api/booking/**', route => route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        state: 'available',
+        therapist: { name: 'Dr Test Therapist', practiceName: 'Test Therapy Practice', professionalTitle: 'Psychotherapist' },
+        bookingUrl: 'https://scheduler.zoom.us/t/private-single-use-link',
+        expiresAt: '2026-08-20T18:00:00.000Z'
+      })
+    }));
+
+    await page.goto('/book/test-token');
+    await expect(page.getByRole('heading', { name: 'Book your appointment' })).toBeVisible();
+    await expect(page.getByText('Test Therapy Practice')).toBeVisible();
+    await expect(page.getByText('Psychotherapist')).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Choose a time' })).toHaveAttribute('href', 'https://scheduler.zoom.us/t/private-single-use-link');
+    await expect(page.getByTestId('login-page')).toHaveCount(0);
   });
 });
