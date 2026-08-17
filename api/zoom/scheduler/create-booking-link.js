@@ -2,11 +2,22 @@ import crypto from 'node:crypto';
 import { requireAuthenticatedUser } from '../../_lib/supabase.js';
 import { getUsableZoomAccessToken } from '../../_lib/zoom-oauth.js';
 import { createZoomSchedulerSingleUseLink, listZoomSchedulerSchedules } from '../../_lib/zoom-scheduler.js';
+import { encryptBookingUrl } from '../../_lib/booking-url-crypto.js';
+
+const BOOKING_LINK_LIFETIME_HOURS = 72;
 
 function withCorrelationToken(rawLink, token) {
   const url = new URL(rawLink);
   url.searchParams.set('utm_content', token);
   return url.toString();
+}
+
+function publicBookingUrl(req, token) {
+  const configuredOrigin = (process.env.PUBLIC_APP_URL || process.env.VITE_APP_URL || '').trim().replace(/\/$/, '');
+  const forwardedProto = String(req.headers['x-forwarded-proto'] || 'https').split(',')[0].trim();
+  const forwardedHost = String(req.headers['x-forwarded-host'] || req.headers.host || '').split(',')[0].trim();
+  const origin = configuredOrigin || (forwardedHost ? `${forwardedProto}://${forwardedHost}` : '');
+  return `${origin}/book/${encodeURIComponent(token)}`;
 }
 
 export default async function handler(req, res) {
@@ -46,6 +57,8 @@ export default async function handler(req, res) {
     const rawLink = result?.scheduling_url || result?.single_use_link || result?.booking_link || result?.link || result?.url;
     if (!rawLink) return res.status(502).json({ error: 'Zoom did not return a booking link' });
 
+    const zoomBookingUrl = withCorrelationToken(rawLink, correlationToken);
+    const expiresAt = new Date(Date.now() + BOOKING_LINK_LIFETIME_HOURS * 60 * 60 * 1000).toISOString();
     const { data: appointment, error: appointmentError } = await supabase
       .from('appointments')
       .insert({
@@ -53,14 +66,20 @@ export default async function handler(req, res) {
         client_id: client.id,
         status: 'booking_link_created',
         correlation_token: correlationToken,
-        zoom_schedule_id: schedule.schedule_id
+        zoom_schedule_id: schedule.schedule_id,
+        booking_expires_at: expiresAt,
+        encrypted_booking_url: encryptBookingUrl(zoomBookingUrl)
       })
       .select('id')
       .single();
     if (appointmentError) throw appointmentError;
 
     res.setHeader('Cache-Control', 'no-store');
-    return res.status(201).json({ appointmentId: appointment.id, bookingUrl: withCorrelationToken(rawLink, correlationToken) });
+    return res.status(201).json({
+      appointmentId: appointment.id,
+      bookingUrl: publicBookingUrl(req, correlationToken),
+      expiresAt
+    });
   } catch (error) {
     console.error('[Zoom Scheduler Booking Link]', { status: error.status || 500, message: error.message });
     return res.status(error.status && error.status < 500 ? error.status : 502).json({ error: error.message || 'Unable to create booking link' });
