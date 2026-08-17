@@ -1,6 +1,6 @@
 <template>
   <div class="max-w-7xl mx-auto px-page py-8 md:py-10 space-y-9">
-    <GreetingHeader :eyebrow="eyebrow" :phrase="phrase" :display-name="therapistDisplayName" :supporting="supportingInformation" />
+    <GreetingHeader :eyebrow="eyebrow" :time="currentTime" :phrase="phrase" :display-name="therapistDisplayName" :supporting="supportingInformation" />
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-9 items-start">
       <section class="lg:col-span-2 space-y-4">
@@ -45,7 +45,7 @@ import StatusIndicator from '../components/ui/StatusIndicator.vue'
 const router = useRouter()
 const { loading, todayEvents, loadData, sessions, clients } = useCalendar()
 const { displayName, loadTherapistIdentity } = useTherapistIdentity()
-const { eyebrow, phrase, therapistDisplayName, supportingInformation } = useGreeting({ displayName, appointmentCount: computed(() => todayEvents.value.length) })
+const { eyebrow, currentTime, phrase, therapistDisplayName, supportingInformation } = useGreeting({ displayName, appointmentCount: computed(() => todayEvents.value.length) })
 const reflections = ref([])
 const startingEventId = ref(null)
 const sessionOpenErrorId = ref(null)
