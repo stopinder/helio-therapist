@@ -14,11 +14,14 @@ test('therapist workspace exposes scheduling as a header action without sidebar 
   assert.match(router, /ScheduleAppointment/)
 })
 
-test('scheduling requires client selection before generating a link', () => {
+test('scheduling requires client selection before showing booking choices', () => {
   const component = read('src/components/ScheduleAppointment.vue')
   assert.match(component, /Choose a client/)
-  assert.match(component, /:disabled="!clientId \|\| loading"/)
-  assert.match(component, /JSON\.stringify\(\{ clientId: clientId\.value \}\)/)
+  assert.match(component, /v-if="clientId && !bookingUrl"/)
+  assert.match(component, /Let client choose/)
+  assert.match(component, /Choose time myself/)
+  assert.match(component, /if\(!clientId\.value\|\|loading\.value\)return/)
+  assert.match(component, /JSON\.stringify\(\{clientId:clientId\.value\}\)/)
 })
 
 test('booking link endpoint validates therapist ownership and stores only opaque correlation data', () => {
