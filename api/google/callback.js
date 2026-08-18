@@ -1,5 +1,6 @@
 import { getSupabaseClient } from '../_lib/supabase.js';
 import { hasGoogleCalendarReadScope } from '../_lib/google-scopes.js';
+import { encryptIntegrationToken } from '../_lib/token-crypto.js';
 
 export default async function handler(req, res) {
   const appUrl = (process.env.APP_URL || 'https://therapyworks.works').replace(/\/$/, '');
@@ -23,11 +24,28 @@ export default async function handler(req, res) {
     const tokenResponse=await fetch('https://oauth2.googleapis.com/token',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams({code,client_id:clientId,client_secret:clientSecret,redirect_uri:redirectUri,grant_type:'authorization_code'})});
     if(!tokenResponse.ok){const tokenError=await tokenResponse.json().catch(()=>({}));console.error('[Google Callback] Token exchange failed:',tokenError);return res.redirect(`${appUrl}/settings?google=error&message=Token+exchange+failed`)}
     const tokens=await tokenResponse.json();
+    if(!tokens.access_token) return res.redirect(`${appUrl}/settings?google=error&message=Google+did+not+return+an+access+token`);
 
-    const {data:existingIntegration,error:existingIntegrationError}=await supabase.from('integrations').select('refresh_token').eq('provider','google').eq('user_id',oauthState.user_id).maybeSingle();
+    const {data:existingIntegration,error:existingIntegrationError}=await supabase.from('integrations').select('encrypted_refresh_token,refresh_token').eq('provider','google').eq('user_id',oauthState.user_id).maybeSingle();
     if(existingIntegrationError){console.error('[Google Callback] Failed to read existing integration:',existingIntegrationError);return res.redirect(`${appUrl}/settings?google=error&message=Unable+to+save+Google+connection`)}
 
-    const integration={user_id:oauthState.user_id,provider:'google',access_token:tokens.access_token,refresh_token:tokens.refresh_token||existingIntegration?.refresh_token||null,expires_at:tokens.expires_in?new Date(Date.now()+tokens.expires_in*1000).toISOString():null,token_type:tokens.token_type,scope:tokens.scope||'',updated_at:new Date().toISOString()};
+    const encryptedRefreshToken = tokens.refresh_token
+      ? encryptIntegrationToken(tokens.refresh_token)
+      : existingIntegration?.encrypted_refresh_token
+        || (existingIntegration?.refresh_token ? encryptIntegrationToken(existingIntegration.refresh_token) : null);
+
+    const integration={
+      user_id:oauthState.user_id,
+      provider:'google',
+      access_token:null,
+      refresh_token:null,
+      encrypted_access_token:encryptIntegrationToken(tokens.access_token),
+      encrypted_refresh_token:encryptedRefreshToken,
+      expires_at:tokens.expires_in?new Date(Date.now()+tokens.expires_in*1000).toISOString():null,
+      token_type:tokens.token_type,
+      scope:tokens.scope||'',
+      updated_at:new Date().toISOString()
+    };
     const {error:upsertError}=await supabase.from('integrations').upsert(integration,{onConflict:'user_id,provider'});
     if(upsertError){console.error('[Google Callback] Integration upsert failed:',upsertError);return res.redirect(`${appUrl}/settings?google=error&message=Unable+to+save+Google+connection`)}
 
