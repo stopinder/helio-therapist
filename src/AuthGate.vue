@@ -23,7 +23,7 @@
             name="recovery-password"
             required
             minlength="8"
-            autocomplete="off"
+            autocomplete="new-password"
             autocapitalize="none"
             spellcheck="false"
             aria-label="New password"
@@ -110,7 +110,7 @@
               name="account-password"
               required
               minlength="8"
-              autocomplete="off"
+              autocomplete="current-password"
               autocapitalize="none"
               spellcheck="false"
               class="min-h-12 w-full rounded-panel border border-border px-3 pr-16 text-ink caret-action-link outline-none focus:border-action-link focus:ring-2 focus:ring-state-selected"
@@ -174,12 +174,46 @@ const errorMessage = ref('')
 let authSubscription
 const handleExpiryRef = ref(null)
 
+const isRecoveryLink = () => {
+  const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''))
+  const queryParams = new URLSearchParams(window.location.search)
+  return hashParams.get('type') === 'recovery' || queryParams.get('type') === 'recovery'
+}
+
+const clearFeedback = () => {
+  message.value = ''
+  errorMessage.value = ''
+}
+
 onMounted(async () => {
   if (!supabase) {
     errorMessage.value = 'MindWorks authentication is not configured.'
     authLoading.value = false
     return
   }
+
+  // Recovery must win over any therapist session already saved in this browser.
+  // Register the listener before getSession() so the recovery event cannot be missed.
+  recovering.value = isRecoveryLink()
+  const listener = supabase.auth.onAuthStateChange((event, nextSession) => {
+    if (event === 'PASSWORD_RECOVERY') {
+      recovering.value = true
+      clearFeedback()
+    }
+
+    if (event === 'SIGNED_OUT') {
+      const currentError = errorMessage.value
+      clearFeedback()
+      if (currentError && currentError.includes('expired')) {
+        errorMessage.value = currentError
+      }
+      if (!isRecoveryLink()) recovering.value = false
+    }
+
+    session.value = nextSession
+    authLoading.value = false
+  })
+  authSubscription = listener.data.subscription
 
   const { data, error } = await supabase.auth.getSession()
   if (error) errorMessage.value = error.message
@@ -191,21 +225,6 @@ onMounted(async () => {
     session.value = null
   }
   window.addEventListener('helios-session-expired', handleExpiryRef.value)
-
-  const listener = supabase.auth.onAuthStateChange((event, nextSession) => {
-    if (event === 'PASSWORD_RECOVERY') recovering.value = true
-    if (event === 'SIGNED_OUT') {
-      const currentError = errorMessage.value
-      clearFeedback()
-      if (currentError && currentError.includes('expired')) {
-        errorMessage.value = currentError
-      }
-      recovering.value = false // Ensure we are not in recovery mode
-    }
-    session.value = nextSession
-    authLoading.value = false
-  })
-  authSubscription = listener.data.subscription
 })
 
 onUnmounted(() => {
@@ -214,11 +233,6 @@ onUnmounted(() => {
     window.removeEventListener('helios-session-expired', handleExpiryRef.value)
   }
 })
-
-const clearFeedback = () => {
-  message.value = ''
-  errorMessage.value = ''
-}
 
 const setMode = (nextMode) => {
   mode.value = nextMode
@@ -269,8 +283,20 @@ const updatePassword = async () => {
   try {
     const { error } = await supabase.auth.updateUser({ password: newPassword.value })
     if (error) throw error
+
+    // Do not leave the recovery account (or a previous therapist) signed in.
+    // Return to a neutral sign-in screen after the password has been changed.
+    const { error: signOutError } = await supabase.auth.signOut()
+    if (signOutError) throw signOutError
+
+    session.value = null
     recovering.value = false
+    newPassword.value = ''
+    email.value = ''
+    password.value = ''
+    mode.value = 'signin'
     window.history.replaceState({}, document.title, window.location.pathname)
+    message.value = 'Password updated. Sign in with your new password.'
   } catch (error) {
     errorMessage.value = error.message
   } finally {
