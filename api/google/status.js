@@ -5,19 +5,21 @@ export default async function handler(req, res) {
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
   try {
     const { supabase, user } = await requireAuthenticatedUser(req);
-    const { data: integration, error: dbError } = await supabase.from('integrations').select('provider_email,last_synced_at,expires_at,refresh_token,access_token,scope').eq('provider', 'google').eq('user_id', user.id).maybeSingle();
+    const { data: integration, error: dbError } = await supabase.from('integrations').select('provider_email,last_synced_at,expires_at,encrypted_refresh_token,encrypted_access_token,refresh_token,access_token,scope').eq('provider', 'google').eq('user_id', user.id).maybeSingle();
     if (dbError) return res.status(500).json({ error: 'Database error', details: dbError.message });
     if (!integration) return res.status(200).json({ connected: false });
 
     const canRead = hasGoogleCalendarReadScope(integration.scope);
     const canWrite = hasGoogleCalendarWriteScope(integration.scope);
-    const healthError = !integration.access_token ? 'GOOGLE_TOKEN_MISSING' : !canRead ? 'GOOGLE_REVOKED' : !canWrite ? 'GOOGLE_CALENDAR_WRITE_SCOPE_MISSING' : null;
+    const hasAccessToken = Boolean(integration.encrypted_access_token || integration.access_token);
+    const hasRefreshToken = Boolean(integration.encrypted_refresh_token || integration.refresh_token);
+    const healthError = !hasAccessToken ? 'GOOGLE_TOKEN_MISSING' : !canRead ? 'GOOGLE_REVOKED' : !canWrite ? 'GOOGLE_CALENDAR_WRITE_SCOPE_MISSING' : null;
     return res.status(200).json({
       connected: true, email: integration.provider_email, last_synced_at: integration.last_synced_at,
-      expires_at: integration.expires_at, has_refresh_token: Boolean(integration.refresh_token),
+      expires_at: integration.expires_at, has_refresh_token: hasRefreshToken,
       calendar_permission: canRead, calendar_write_permission: canWrite,
       calendar_permission_error: !canRead ? 'GOOGLE_CALENDAR_SCOPE_MISSING' : !canWrite ? 'GOOGLE_CALENDAR_WRITE_SCOPE_MISSING' : null,
-      ready_for_scheduling: Boolean(integration.access_token && canRead && canWrite), error: healthError
+      ready_for_scheduling: Boolean(hasAccessToken && canRead && canWrite), error: healthError
     });
   } catch (error) {
     console.error('[Google Status] Internal error:', error);

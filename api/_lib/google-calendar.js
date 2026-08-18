@@ -1,3 +1,5 @@
+import { decryptIntegrationToken, encryptIntegrationToken } from './token-crypto.js'
+
 export class GoogleCalendarAuthError extends Error {
   constructor(message = 'Google Calendar needs permission again') {
     super(message)
@@ -19,18 +21,32 @@ function googleConfiguration() {
   return { clientId, clientSecret }
 }
 
+function accessToken(integration) {
+  if (integration?.encrypted_access_token) return decryptIntegrationToken(integration.encrypted_access_token)
+  return integration?.access_token || null
+}
+
+function refreshToken(integration) {
+  if (integration?.encrypted_refresh_token) return decryptIntegrationToken(integration.encrypted_refresh_token)
+  return integration?.refresh_token || null
+}
+
 export async function refreshGoogleAccessToken({ supabase, userId, integration, fetchImpl = fetch }) {
-  if (!integration?.refresh_token) throw new GoogleCalendarAuthError()
+  const currentRefreshToken = refreshToken(integration)
+  if (!currentRefreshToken) throw new GoogleCalendarAuthError()
   const { clientId, clientSecret } = googleConfiguration()
   const response = await fetchImpl('https://oauth2.googleapis.com/token', {
     method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams({ client_id: clientId, client_secret: clientSecret, refresh_token: integration.refresh_token, grant_type: 'refresh_token' })
+    body: new URLSearchParams({ client_id: clientId, client_secret: clientSecret, refresh_token: currentRefreshToken, grant_type: 'refresh_token' })
   })
   const payload = await response.json().catch(() => ({}))
   if (!response.ok || !payload.access_token) throw new GoogleCalendarAuthError(payload.error_description || 'Google Calendar needs permission again')
+  const nextRefreshToken = payload.refresh_token || currentRefreshToken
   const updated = {
-    access_token: payload.access_token,
-    refresh_token: payload.refresh_token || integration.refresh_token,
+    access_token: null,
+    refresh_token: null,
+    encrypted_access_token: encryptIntegrationToken(payload.access_token),
+    encrypted_refresh_token: encryptIntegrationToken(nextRefreshToken),
     token_type: payload.token_type || integration.token_type || null,
     scope: payload.scope || integration.scope || null,
     expires_at: payload.expires_in ? new Date(Date.now() + payload.expires_in * 1000).toISOString() : integration.expires_at || null,
@@ -42,15 +58,17 @@ export async function refreshGoogleAccessToken({ supabase, userId, integration, 
 }
 
 async function googleRequest({ supabase, userId, integration, url, options = {}, fetchImpl = fetch }) {
-  if (!integration?.access_token) throw new GoogleCalendarAuthError()
   let activeIntegration = integration
+  let currentAccessToken = accessToken(activeIntegration)
+  if (!currentAccessToken) throw new GoogleCalendarAuthError()
   const send = () => fetchImpl(url, {
     ...options,
-    headers: { ...(options.headers || {}), Authorization: `Bearer ${activeIntegration.access_token}` }
+    headers: { ...(options.headers || {}), Authorization: `Bearer ${currentAccessToken}` }
   })
   let response = await send()
   if (response.status === 401) {
     activeIntegration = await refreshGoogleAccessToken({ supabase, userId, integration: activeIntegration, fetchImpl })
+    currentAccessToken = accessToken(activeIntegration)
     response = await send()
   }
   return { response, integration: activeIntegration }
@@ -68,7 +86,7 @@ export function googleCalendarEventPayload({ appointmentId, startsAt, endsAt, ti
 
 export async function syncAppointmentToGoogleCalendar({ supabase, userId, appointment, fetchImpl = fetch }) {
   const { data: integration, error } = await supabase.from('integrations')
-    .select('access_token,refresh_token,token_type,scope,expires_at')
+    .select('access_token,refresh_token,encrypted_access_token,encrypted_refresh_token,token_type,scope,expires_at')
     .eq('provider', 'google').eq('user_id', userId).maybeSingle()
   if (error) throw error
   if (!integration) return { synced: false, reason: 'not-connected' }
