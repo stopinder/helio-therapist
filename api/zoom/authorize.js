@@ -1,13 +1,20 @@
 import crypto from 'crypto';
 import { requireAuthenticatedUser } from '../_lib/supabase.js';
 
+export const ZOOM_OAUTH_SCOPES = [
+  'meeting:read:meeting',
+  'user:read:user',
+  'scheduler:read',
+  'scheduler:write'
+];
+
 export function buildZoomAuthorizationUrl({ clientId, redirectUri, state }) {
   const params = new URLSearchParams({
     response_type: 'code',
     client_id: clientId,
     redirect_uri: redirectUri,
     state,
-    scope: 'meeting:read:meeting user:read:user',
+    scope: ZOOM_OAUTH_SCOPES.join(' '),
     include_granted_scopes: 'true'
   });
   return `https://zoom.us/oauth/authorize?${params.toString()}`;
