@@ -21,19 +21,29 @@ test('OAuth callback does not report success when Calendar permission is absent'
   assert.match(callback,/google=success/);
 });
 
+test('Google OAuth callback stores encrypted credentials and clears plaintext columns',async()=>{
+  const callback=await read('../api/google/callback.js');
+  assert.match(callback,/encryptIntegrationToken\(tokens\.access_token\)/);
+  assert.match(callback,/encrypted_refresh_token:encryptedRefreshToken/);
+  assert.match(callback,/access_token:null/);
+  assert.match(callback,/refresh_token:null/);
+});
+
 test('Google status exposes read, write and scheduling readiness',async()=>{
   const status=await read('../api/google/status.js');
   assert.match(status,/calendar_permission: canRead/);
   assert.match(status,/calendar_write_permission: canWrite/);
-  assert.match(status,/ready_for_scheduling: Boolean\(integration\.access_token && canRead && canWrite\)/);
+  assert.match(status,/ready_for_scheduling: Boolean\(hasAccessToken && canRead && canWrite\)/);
   assert.match(status,/GOOGLE_CALENDAR_SCOPE_MISSING/);
   assert.match(status,/GOOGLE_CALENDAR_WRITE_SCOPE_MISSING/);
   assert.match(status,/GOOGLE_REVOKED/);
 });
 
-test('Google status reads the canonical integrations provider email column',async()=>{
+test('Google status reads encrypted credentials while retaining legacy detection',async()=>{
   const status=await read('../api/google/status.js');
-  assert.match(status,/\.select\('provider_email,last_synced_at,expires_at,refresh_token,access_token,scope'\)/);
+  assert.match(status,/\.select\('provider_email,last_synced_at,expires_at,encrypted_refresh_token,encrypted_access_token,refresh_token,access_token,scope'\)/);
+  assert.match(status,/Boolean\(integration\.encrypted_access_token \|\| integration\.access_token\)/);
+  assert.match(status,/Boolean\(integration\.encrypted_refresh_token \|\| integration\.refresh_token\)/);
   assert.match(status,/email: integration\.provider_email/);
   assert.doesNotMatch(status,/\.select\('email,/);
 });
