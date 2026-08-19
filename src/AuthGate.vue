@@ -251,7 +251,7 @@ const submit = async () => {
         email: email.value,
         password: password.value,
         options: {
-          emailRedirectTo: 'https://therapyworks.works',
+          emailRedirectTo: 'https://helio.works',
           data: { full_name: fullName.value }
         }
       })
@@ -310,7 +310,7 @@ const resetPassword = async () => {
 
   try {
     const { error } = await supabase.auth.resetPasswordForEmail(email.value, {
-      redirectTo: 'https://therapyworks.works'
+      redirectTo: 'https://helio.works'
     })
     if (error) throw error
     message.value = 'Check your email for the password reset link.'
