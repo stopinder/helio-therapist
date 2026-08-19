@@ -63,7 +63,7 @@ test.describe('Authentication Lifecycle', () => {
     await page.getByRole('button',{name:'Forgot your password?'}).click();
     await expect(page.getByText('Check your email for the password reset link.')).toBeVisible();
     expect(recoveryRequest.body.email).toBe(email);
-    expect(new URL(recoveryRequest.url).searchParams.get('redirect_to')).toBe('https://therapyworks.works');
+    expect(new URL(recoveryRequest.url).searchParams.get('redirect_to')).toBe('https://helio.works');
   });
 
   test('password-recovery event shows reset form and saves a new password', async ({ page }) => {
