@@ -9,7 +9,7 @@ test('Clients page uses live Supabase clients and standard UI patterns', async (
   // Data loading remains live and active-only by default, with explicit archive opt-in.
   assert.match(clientsLib, /export async function listClients\({ includeArchived = false } = {}\)/)
   assert.match(clientsLib, /\.from\('clients'\)/)
-  assert.match(clientsLib, /if \(!includeArchived\)\s*{\s*query = query\.eq\('archived', false\)/)
+  assert.match(clientsLib, /if \(!includeArchived\)\s*(?:{\s*)?query = query\.eq\('archived', false\)/)
   assert.match(clientsLib, /\.order\('display_name', { ascending: true }\)/)
 
   assert.match(clientsView, /listClients, createClient, listUpcomingClientAppointments/)
