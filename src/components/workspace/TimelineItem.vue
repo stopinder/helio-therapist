@@ -2,7 +2,7 @@
   <div class="flex gap-inline-md group relative">
     <div class="flex flex-col items-center">
       <div class="w-9 h-9 rounded-pill flex items-center justify-center shrink-0 z-10 border bg-surface-raised transition-colors duration-standard" :class="typeClasses.icon">
-        <component :is="eventIcon" class="h-[1.15rem] w-[1.15rem]" aria-hidden="true" />
+        <component :is="eventIcon" class="workspace-icon" aria-hidden="true" />
       </div>
       <div v-if="!isLast" class="w-px h-full bg-border -mt-1 group-last:hidden"></div>
     </div>
@@ -22,16 +22,16 @@
 <script setup>
 import { computed } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
-import { CalendarDaysIcon, ChartBarIcon, ExclamationTriangleIcon, ArrowUpRightIcon, DocumentTextIcon, FlagIcon } from '@heroicons/vue/24/outline';
+import { CalendarDays, ChartNoAxesColumnIncreasing, CircleAlert, ExternalLink, FileText, Flag } from '@lucide/vue';
 import { timelineEventPresentation } from '../../lib/clinicalExchange.js';
 
 const props = defineProps({ eventType:{type:String,required:true}, date:{type:String,required:true}, description:{type:String,required:true}, subjectType:{type:String,default:null}, subjectId:{type:String,default:null}, sessionId:{type:String,default:null}, isLast:{type:Boolean,default:false} });
 const router=useRouter(); const route=useRoute();
 const presentation=computed(()=>timelineEventPresentation(props.eventType));
 const isNavigatable=computed(()=>(props.subjectType==='session'||props.eventType==='session_completed')&&(props.subjectId||props.sessionId));
-const eventIcon=computed(()=>({session_completed:CalendarDaysIcon,outcome_measure_recorded:ChartBarIcon,risk_assessment_recorded:ExclamationTriangleIcon,referral_recorded:ArrowUpRightIcon,clinical_milestone:FlagIcon}[props.eventType]||DocumentTextIcon));
+const eventIcon=computed(()=>({session_completed:CalendarDays,outcome_measure_recorded:ChartNoAxesColumnIncreasing,risk_assessment_recorded:CircleAlert,referral_recorded:ExternalLink,clinical_milestone:Flag}[props.eventType]||FileText));
 const typeClasses=computed(()=>({
-  session_completed:'text-success border-success/30', outcome_measure_recorded:'text-warning border-warning/30', risk_assessment_recorded:'text-danger border-danger/30', referral_recorded:'text-accent border-accent/30', diagnosis_updated:'text-ink-muted border-border', treatment_plan_updated:'text-ink-muted border-border', clinical_milestone:'text-ink-muted border-border'
+  session_completed:'text-success border-success/30 bg-state-success-surface', outcome_measure_recorded:'text-warning border-warning/30 bg-state-warning-surface', risk_assessment_recorded:'text-danger border-danger/30 bg-state-danger-surface', referral_recorded:'text-accent border-accent/30 bg-brand-sage-soft', diagnosis_updated:'text-ink-muted border-border', treatment_plan_updated:'text-ink-muted border-border', clinical_milestone:'text-focus border-focus/30 bg-brand-amber-soft'
 }[props.eventType]||'text-ink-muted border-border'));
 function handleClick(){if(!isNavigatable.value)return;const sId=props.subjectId||props.sessionId,cId=route.params.clientId;if(cId&&sId)router.push(`/clients/${cId}/sessions/${sId}`)}
 </script>
