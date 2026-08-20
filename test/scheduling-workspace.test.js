@@ -14,8 +14,19 @@ test('therapist workspace exposes scheduling as a header action without sidebar 
   assert.match(router, /ScheduleAppointment/)
 })
 
-test('scheduling requires client selection before showing booking choices', () => {
+test('unscheduled client workspace links directly into scheduling with client context', () => {
+  const header = read('src/components/workspace/ClientWorkspaceHeader.vue')
+  assert.match(header, /v-if="!client\.archived && !nextAppointment"/)
+  assert.match(header, /Schedule appointment/)
+  assert.match(header, /data-testid="schedule-client-appointment"/)
+  assert.match(header, /name: 'ScheduleAppointment', query: \{ clientId: props\.client\.id \}/)
+})
+
+test('scheduling accepts a valid client query and still requires a client before booking', () => {
   const component = read('src/components/ScheduleAppointment.vue')
+  assert.match(component, /useRoute/)
+  assert.match(component, /route\.query\.clientId/)
+  assert.match(component, /clients\.value\.some\(client=>String\(client\.id\)===requestedClientId\)/)
   assert.match(component, /Choose a client/)
   assert.match(component, /v-if="clientId && !bookingUrl"/)
   assert.match(component, /Let client choose/)
