@@ -1,7 +1,7 @@
 import { supabase } from './supabase.js'
 import { withSessionRecovery } from './api.js'
 
-const clientSelect = 'id, user_id, display_name, reference, current_focus, archived, archived_at, created_at, updated_at, email'
+const clientSelect = 'id, user_id, display_name, preferred_name, date_of_birth, phone, email, address, gp_details, emergency_contact, notes, reference, current_focus, archived, archived_at, created_at, updated_at'
 
 export async function getClient({ clientId }) {
   if (!supabase) throw new Error('Supabase is not configured')
@@ -37,7 +37,15 @@ export async function updateClient({ clientId, ...updates }) {
   const user = await requireUser('update a client')
   const { data, error } = await withSessionRecovery(() => supabase.from('clients').update({
     display_name: updates.name,
-    current_focus: updates.note,
+    preferred_name: updates.preferred_name || null,
+    date_of_birth: updates.date_of_birth || null,
+    phone: updates.phone || null,
+    email: updates.email || null,
+    address: updates.address || null,
+    gp_details: updates.gp_details || null,
+    emergency_contact: updates.emergency_contact || null,
+    notes: updates.notes || null,
+    current_focus: updates.note || '',
     updated_at: new Date().toISOString()
   }).eq('id', clientId).eq('user_id', user.id).select(clientSelect).single())
   if (error) throw new Error(error.message || 'Failed to update client')
@@ -60,9 +68,7 @@ export async function setClientArchived({ clientId, archived }) {
 export async function listClients({ includeArchived = false } = {}) {
   if (!supabase) throw new Error('Supabase is not configured')
   let query = supabase.from('clients').select(clientSelect).order('display_name', { ascending: true })
-  if (!includeArchived) {
-    query = query.eq('archived', false)
-  }
+  if (!includeArchived) query = query.eq('archived', false)
   const { data, error } = await withSessionRecovery(() => query)
   if (error) throw new Error(error.message || 'Failed to load clients')
   return (data || []).map(client => ({ ...client, name: client.display_name }))
@@ -78,7 +84,13 @@ export async function listUpcomingClientAppointments({ from = new Date() } = {})
 export async function createClient({ name, email = null, note = '' }) {
   if (!supabase) throw new Error('Supabase is not configured')
   const user = await requireUser('add a client')
-  const { data, error } = await withSessionRecovery(() => supabase.from('clients').insert({ user_id: user.id, display_name: name, reference: email || null, email: email || null, current_focus: note || '' }).select(clientSelect).single())
+  const { data, error } = await withSessionRecovery(() => supabase.from('clients').insert({
+    user_id: user.id,
+    display_name: name,
+    reference: null,
+    email: email || null,
+    current_focus: note || ''
+  }).select(clientSelect).single())
   if (error) throw new Error(error.message || 'Failed to create client')
   return { ...data, name: data.display_name, note: data.current_focus }
 }
