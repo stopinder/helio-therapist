@@ -60,6 +60,13 @@
           <span v-if="mode === 'signup'" class="mt-1 block text-caption text-ink-subtle">At least 8 characters</span>
         </label>
 
+        <p v-if="mode === 'signup'" class="text-caption leading-5 text-ink-muted">
+          Before creating an account, please review the
+          <router-link to="/terms" class="font-medium text-action-link underline underline-offset-2">Terms of Service</router-link>
+          and
+          <router-link to="/privacy" class="font-medium text-action-link underline underline-offset-2">Privacy Notice</router-link>.
+        </p>
+
         <button type="submit" :disabled="submitting" class="min-h-12 w-full rounded-panel bg-action-link px-4 font-medium text-on-action hover:bg-action-link-hover disabled:opacity-50">{{ submitting ? 'Please wait…' : mode === 'signup' ? 'Create account' : 'Sign in' }}</button>
       </form>
 

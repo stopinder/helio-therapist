@@ -35,10 +35,12 @@ test.describe('Gate 3 public routing', () => {
     await expect(page.getByLabel('Full name')).toHaveCount(0);
   });
 
-  test('get-started opens account creation', async ({ page }) => {
+  test('get-started opens account creation with legal information links', async ({ page }) => {
     await page.goto('/get-started', { waitUntil:'domcontentloaded' });
     await expect(page.getByTestId('login-page')).toBeVisible();
     await expect(page.getByText('Create your therapist workspace.')).toBeVisible();
     await expect(page.getByText('Full name')).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Terms of Service' })).toHaveAttribute('href', '/terms');
+    await expect(page.getByRole('link', { name: 'Privacy Notice' })).toHaveAttribute('href', '/privacy');
   });
 });
