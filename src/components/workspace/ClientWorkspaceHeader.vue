@@ -17,6 +17,7 @@
       </div>
 
       <div class="flex items-center gap-inline-sm flex-wrap">
+        <button v-if="!client.archived && !nextAppointment" type="button" @click="scheduleAppointment" class="px-inline-md py-stack-xs bg-surface-elevated border border-border text-body-sm font-medium text-action-link rounded-control hover:bg-surface-subtle transition-colors" data-testid="schedule-client-appointment">Schedule appointment</button>
         <button @click="openSupervisionPicker" class="px-inline-md py-stack-xs bg-surface-elevated border border-border text-caption font-medium text-ink-secondary rounded-control hover:bg-surface-subtle transition-colors">Add to Supervision</button>
         <button @click="$emit('create-document')" class="px-inline-md py-stack-xs bg-surface-elevated border border-border text-body-sm font-medium text-ink rounded-control hover:bg-surface-subtle transition-colors" data-testid="create-client-document">Create Document</button>
         <button v-if="!client.archived && !activeSession" @click="joinMeeting" :disabled="joiningMeeting || !nextAppointment?.zoom_meeting_id" class="px-inline-md py-stack-xs bg-surface-elevated border border-border text-caption font-medium text-ink-secondary rounded-control hover:bg-surface-subtle transition-colors disabled:opacity-50 disabled:cursor-not-allowed"><span>{{ joiningMeeting ? 'Opening Zoom…' : videoLabel }}</span></button>
@@ -70,6 +71,11 @@ const meetingError = ref('')
 const workspaceBusy = ref(false)
 const workspaceError = ref('')
 let supervisionSuccessTimer
+
+function scheduleAppointment() {
+  if (props.client.archived) return
+  router.push({ name: 'ScheduleAppointment', query: { clientId: props.client.id } })
+}
 
 async function openClinicalWorkspace() {
   if (props.client.archived || workspaceBusy.value) return
