@@ -2,23 +2,29 @@
   <div class="space-y-stack-lg max-w-4xl mx-auto" data-testid="clinical-summary-workspace">
     <!-- Preparation State -->
     <div v-if="status === 'not_started'" class="bg-surface-elevated border border-border-muted rounded-panel p-6 shadow-sm">
-      <h3 class="text-h3 font-semibold text-ink mb-6">Preparation for Clinical Summary</h3>
-      
+      <h3 class="text-h3 font-semibold text-ink mb-2">Preparation for Clinical Summary</h3>
+      <p class="text-body-sm text-ink-muted mb-6">Helio checks which working sources currently exist for this session. Availability does not mean a source will be copied into the Clinical Record.</p>
+
       <div class="space-y-8">
         <section>
-          <h4 class="text-body-sm font-bold text-ink uppercase tracking-wider mb-4">Source Material Checklist</h4>
-          <div class="space-y-3">
-            <div v-for="item in checklist" :key="item.id" class="flex items-center gap-3">
-              <div 
-                class="w-5 h-5 rounded border flex items-center justify-center text-xs"
-                :class="item.available ? 'bg-state-success-surface border-state-success text-state-success' : 'bg-surface-subtle border-border text-ink-muted'"
-              >
-                {{ item.available ? '✓' : '' }}
+          <h4 class="text-body-sm font-bold text-ink uppercase tracking-wider mb-4">Session source status</h4>
+          <div class="divide-y divide-border-muted rounded-panel border border-border-muted bg-surface">
+            <div v-for="item in sourceStatus" :key="item.id" class="flex items-start justify-between gap-4 px-4 py-4" :data-testid="`clinical-source-${item.id}`">
+              <div class="flex min-w-0 items-start gap-3">
+                <span class="icon-surface !h-9 !w-9 shrink-0" :class="item.available ? item.iconTone : 'bg-surface-muted text-ink-muted'" aria-hidden="true">
+                  <component :is="item.icon" class="workspace-icon" />
+                </span>
+                <div class="min-w-0">
+                  <p class="text-body-sm font-medium text-ink">{{ item.label }}</p>
+                  <p class="mt-1 text-caption text-ink-muted">{{ item.description }}</p>
+                </div>
               </div>
-              <span class="text-body-sm" :class="item.available ? 'text-ink' : 'text-ink-muted'">
-                {{ item.label }} 
-                <StatusBadge v-if="item.available" status="success" label="Available" class="ml-2" />
-                <StatusBadge v-else-if="item.required" status="high" label="Required" class="ml-2" />
+              <span class="shrink-0 inline-flex items-center gap-1.5 rounded-pill border px-2.5 py-1 text-caption font-medium" :class="item.statusClass">
+                <LoaderCircle v-if="item.state === 'checking'" class="workspace-icon-sm animate-spin" aria-hidden="true" />
+                <CircleCheck v-else-if="item.state === 'available'" class="workspace-icon-sm" aria-hidden="true" />
+                <CircleMinus v-else-if="item.state === 'missing'" class="workspace-icon-sm" aria-hidden="true" />
+                <TriangleAlert v-else class="workspace-icon-sm" aria-hidden="true" />
+                {{ item.statusLabel }}
               </span>
             </div>
           </div>
@@ -29,11 +35,11 @@
             <span class="text-body-sm font-medium text-ink">Workflow Status</span>
             <StatusBadge :status="status" :label="statusLabel" />
           </div>
-          <p class="text-caption text-ink-muted">Start an empty therapist-authored draft. Source material will only be shown as available once that wiring is verified.</p>
+          <p class="text-caption text-ink-muted">You can start an empty therapist-authored draft whether or not source material is available. Nothing is automatically copied into the draft from this status view.</p>
         </section>
 
         <div class="flex flex-col gap-4">
-          <button 
+          <button
             @click="prepareDraft"
             :disabled="!canPrepareDraft"
             class="w-full py-3 bg-action-link text-on-action font-medium rounded-control flex items-center justify-center gap-2 transition-all hover:bg-action-link-hover focus-visible:ring-2 focus-visible:ring-state-focus-ring focus-visible:outline-none"
@@ -41,19 +47,12 @@
           >
             Prepare Empty Clinical Summary Draft
           </button>
-          
-          <div v-if="!canPrepareDraft" class="p-3 bg-state-danger-surface border border-state-danger/20 rounded flex gap-3 text-state-danger">
-            <span class="text-xl">⚠️</span>
-            <p class="text-caption leading-relaxed">
-              Missing required source material: {{ missingRequiredSources }}
-            </p>
-          </div>
 
-          <NoticeBanner 
+          <NoticeBanner
             message="AI-assisted content must be reviewed and approved by the therapist before it becomes part of the clinical record."
           >
             <p class="text-caption text-ink-muted italic border-t border-border pt-2 mt-2">
-              Therapist reflection is private working material and is not automatically included in the clinical record.
+              Therapist reflection is private working material. Helio reports only whether it exists here; it is not automatically included in the draft or Clinical Record.
             </p>
           </NoticeBanner>
         </div>
@@ -73,9 +72,9 @@
 
       <!-- Draft & Review Area -->
       <div v-if="['draft', 'ready_for_review'].includes(status)" class="bg-surface-elevated border border-border-muted rounded-panel p-6 shadow-sm">
-        <NoticeBanner 
+        <NoticeBanner
           v-if="status === 'draft'"
-          type="info" 
+          type="info"
           message="This is a working draft and is not yet part of the clinical record."
           icon="✨"
         >
@@ -90,8 +89,8 @@
           </p>
           <div class="space-y-4">
             <label class="flex items-start gap-3 cursor-pointer group">
-              <input 
-                type="checkbox" 
+              <input
+                type="checkbox"
                 v-model="reviewConfirmed"
                 class="mt-1 h-4 w-4 rounded border-border text-action-link focus:ring-state-focus-ring"
               >
@@ -100,14 +99,14 @@
               </span>
             </label>
             <div class="flex gap-3">
-              <button 
+              <button
                 @click="openApprovalDialog"
                 :disabled="submitting || !reviewConfirmed"
                 class="px-inline-lg py-3 bg-action-primary text-on-action text-body-sm font-bold rounded-control hover:bg-action-primary-hover transition-all disabled:opacity-50 shadow-sm"
               >
                 {{ submitting ? 'Processing...' : 'Approve Clinical Record' }}
               </button>
-              <button 
+              <button
                 @click="status = 'draft'"
                 :disabled="submitting"
                 class="px-inline-lg py-3 bg-surface border border-border text-body-sm font-medium text-ink rounded-control hover:bg-state-hover transition-colors disabled:opacity-50"
@@ -158,7 +157,7 @@
         </div>
 
         <!-- Local persistence notice -->
-        <NoticeBanner 
+        <NoticeBanner
           class="mt-8 mb-0"
           message="Your changes are saved as a draft on the session record."
           icon="📋"
@@ -168,14 +167,14 @@
           <p v-if="saveMessage" class="text-caption text-state-success font-medium animate-pulse flex-1 self-center" aria-live="polite">
             {{ saveMessage }}
           </p>
-          <button 
+          <button
             @click="saveDraft"
             :disabled="submitting || Boolean(activeDictationKey) || Boolean(transcribingKey)"
             class="px-inline-lg py-stack-sm bg-surface-elevated border border-border text-body-sm font-medium text-ink rounded-control hover:bg-surface-subtle transition-colors disabled:opacity-50"
           >
             Save Draft
           </button>
-          <button 
+          <button
             v-if="status === 'draft'"
             @click="markReady"
             :disabled="submitting || Boolean(activeDictationKey) || Boolean(transcribingKey)"
@@ -189,18 +188,18 @@
       <!-- Approved Record View -->
       <div v-if="status === 'approved_record' || status === 'amendment_approved' || status.startsWith('amendment_')" class="space-y-stack-lg">
         <div class="bg-surface-elevated border border-border-muted rounded-panel p-6 shadow-sm">
-          <NoticeBanner 
+          <NoticeBanner
             type="success"
             message="This approved record is read-only. Corrections must be added through an amendment."
             icon="🔒"
           />
 
-          <ClinicalRecordMetadata 
-            :version="1" 
+          <ClinicalRecordMetadata
+            :version="1"
             :timestamp="approvedRecord.timestamp"
           />
 
-          <ApprovedClinicalRecordView 
+          <ApprovedClinicalRecordView
             :fields="summaryFields"
             :data="approvedRecord.content"
           />
@@ -238,7 +237,7 @@
           </div>
 
           <div class="mt-8 pt-6 border-t border-border flex flex-wrap gap-3">
-            <button 
+            <button
               v-if="status === 'approved_record'"
               @click="startAmendment"
               class="px-inline-lg py-stack-sm bg-action-link text-on-action text-body-sm font-medium rounded-control hover:bg-action-link-hover transition-colors shadow-sm"
@@ -258,13 +257,13 @@
         <!-- Amendment Editor -->
         <div v-if="['amendment_draft', 'amendment_ready_for_review'].includes(status)" class="bg-surface-elevated border border-border-muted rounded-panel p-6 shadow-sm animate-in slide-in-from-bottom-4 duration-300">
           <h3 class="text-h3 font-semibold text-ink mb-6">New Record Amendment</h3>
-          
+
           <div v-if="status === 'amendment_ready_for_review'" class="mb-8 p-6 bg-state-selected border border-action-link/30 rounded-panel">
             <h4 class="text-body-sm font-bold text-action-link uppercase tracking-wider mb-2">Review Amendment</h4>
             <div class="space-y-4">
               <label class="flex items-start gap-3 cursor-pointer group">
-                <input 
-                  type="checkbox" 
+                <input
+                  type="checkbox"
                   v-model="reviewConfirmed"
                   class="mt-1 h-4 w-4 rounded border-border text-action-link focus:ring-state-focus-ring"
                 >
@@ -273,14 +272,14 @@
                 </span>
               </label>
               <div class="flex gap-3">
-                <button 
+                <button
                   @click="approveAmendment"
                   :disabled="!reviewConfirmed"
                   class="px-inline-lg py-3 bg-action-primary text-on-action text-body-sm font-bold rounded-control hover:bg-action-primary-hover transition-all disabled:opacity-50 shadow-sm"
                 >
                   Approve Amendment
                 </button>
-                <button 
+                <button
                   @click="status = 'amendment_draft'"
                   class="px-inline-lg py-3 bg-surface border border-border text-body-sm font-medium text-ink rounded-control hover:bg-state-hover transition-colors"
                 >
@@ -316,13 +315,13 @@
           </div>
 
           <div class="mt-8 pt-6 border-t border-border flex justify-end gap-3">
-            <button 
+            <button
               @click="saveDraft"
               class="px-inline-lg py-stack-sm bg-surface-elevated border border-border text-body-sm font-medium text-ink rounded-control hover:bg-surface-subtle transition-colors"
             >
               Save Amendment Draft
             </button>
-            <button 
+            <button
               v-if="status === 'amendment_draft'"
               @click="status = 'amendment_ready_for_review'"
               class="px-inline-lg py-stack-sm bg-action-link text-on-action text-body-sm font-medium rounded-control hover:bg-action-link-hover transition-colors shadow-sm"
@@ -338,7 +337,7 @@
     </div>
 
     <!-- Approval Confirmation Dialog -->
-    <ApprovalConfirmationDialog 
+    <ApprovalConfirmationDialog
       :isOpen="isApprovalDialogOpen"
       title="Create Clinical Record"
       message="You are about to approve the clinical summary for this session."
@@ -350,6 +349,7 @@
 
 <script setup>
 import { ref, reactive, computed, nextTick, watch, onMounted, onBeforeUnmount } from 'vue';
+import { CircleCheck, CircleMinus, FileText, LoaderCircle, NotebookPen, Sparkles, TriangleAlert } from '@lucide/vue';
 import StatusBadge from './StatusBadge.vue';
 import ClinicalWorkflowIndicator from './ClinicalWorkflowIndicator.vue';
 import ClinicalRecordMetadata from './ClinicalRecordMetadata.vue';
@@ -359,11 +359,25 @@ import ApprovedClinicalRecordView from './ApprovedClinicalRecordView.vue';
 import NoticeBanner from './NoticeBanner.vue';
 import { authenticatedFetch } from '../../lib/api.js';
 import { saveSessionDraft, completeSessionRecord } from '../../lib/sessions.js';
+import { getSessionWorkingNotes } from '../../lib/workingNotes.js';
+import { getPrivateReflection, workspaceReflectionBody } from '../../lib/reflections.js';
 
 const props = defineProps({
   session: {
     type: Object,
     required: true
+  },
+  transcript: {
+    type: Object,
+    default: null
+  },
+  transcriptLoading: {
+    type: Boolean,
+    default: false
+  },
+  transcriptError: {
+    type: String,
+    default: ''
   }
 });
 
@@ -381,16 +395,13 @@ const activeDictationKey = ref('');
 const transcribingKey = ref('');
 const dictationErrorKey = ref('');
 const dictationError = ref('');
+const sourceLoading = ref(true);
+const workingNotes = ref(null);
+const privateReflection = ref(null);
+const sourceLoadError = ref('');
 let recorder = null;
 let stream = null;
 let chunks = [];
-
-const checklist = [
-  { id: 1, label: 'Session Transcript', available: false, required: true },
-  { id: 2, label: 'Therapist Notes', available: false, required: true },
-  { id: 3, label: 'Therapist Reflection', available: false, required: false },
-  { id: 4, label: 'Client Feedback', available: false, required: false }
-];
 
 const summaryFields = {
   presentingConcerns: 'Presenting concerns',
@@ -412,8 +423,85 @@ const summaryData = reactive({
   planNextSession: ''
 });
 
+function hasWorkingNoteContent(record) {
+  return Boolean(record?.content && Object.values(record.content).some(value => typeof value === 'string' && value.trim()));
+}
+
+function hasReflectionContent(record) {
+  if (!record) return false;
+  if (typeof record.body === 'string' && record.body.trim()) return true;
+  return Boolean(workspaceReflectionBody(record.workspace_content).trim());
+}
+
+function sourcePresentation({ available, checking = false, error = false }) {
+  if (checking) return { state: 'checking', statusLabel: 'Checking', statusClass: 'border-border bg-surface-subtle text-ink-muted' };
+  if (error) return { state: 'error', statusLabel: 'Could not verify', statusClass: 'border-state-warning/30 bg-state-warning-surface text-state-warning' };
+  if (available) return { state: 'available', statusLabel: 'Available', statusClass: 'border-state-success/20 bg-state-success-surface text-state-success' };
+  return { state: 'missing', statusLabel: 'Not available', statusClass: 'border-border bg-surface-muted text-ink-muted' };
+}
+
+const sourceStatus = computed(() => {
+  const transcriptState = sourcePresentation({
+    available: Boolean(props.transcript?.text?.trim?.()),
+    checking: props.transcriptLoading,
+    error: Boolean(props.transcriptError)
+  });
+  const notesState = sourcePresentation({ available: hasWorkingNoteContent(workingNotes.value), checking: sourceLoading.value, error: Boolean(sourceLoadError.value) });
+  const reflectionState = sourcePresentation({ available: hasReflectionContent(privateReflection.value), checking: sourceLoading.value, error: Boolean(sourceLoadError.value) });
+
+  return [
+    {
+      id: 'transcript',
+      label: 'Session transcript',
+      description: 'Original transcript linked to this session.',
+      icon: FileText,
+      iconTone: 'icon-surface-accent',
+      available: transcriptState.state === 'available',
+      ...transcriptState
+    },
+    {
+      id: 'notes',
+      label: 'Therapist notes',
+      description: 'Editable working notes saved for this session.',
+      icon: NotebookPen,
+      iconTone: 'icon-surface-accent',
+      available: notesState.state === 'available',
+      ...notesState
+    },
+    {
+      id: 'reflection',
+      label: 'Therapist reflection',
+      description: 'Private working reflection. Availability never means automatic inclusion.',
+      icon: Sparkles,
+      iconTone: 'icon-surface-reflection',
+      available: reflectionState.state === 'available',
+      ...reflectionState
+    }
+  ];
+});
+
+async function loadSourceStatus() {
+  if (!props.session?.id || !props.session?.clientId) return;
+  sourceLoading.value = true;
+  sourceLoadError.value = '';
+  try {
+    const [notes, reflection] = await Promise.all([
+      getSessionWorkingNotes({ sessionId: props.session.id, clientId: props.session.clientId }),
+      getPrivateReflection({ sessionId: props.session.id, clientId: props.session.clientId })
+    ]);
+    workingNotes.value = notes;
+    privateReflection.value = reflection;
+  } catch (error) {
+    console.error('Failed to verify clinical summary sources:', error);
+    sourceLoadError.value = 'Some session sources could not be verified.';
+  } finally {
+    sourceLoading.value = false;
+  }
+}
+
 onMounted(() => {
   loadFromSession();
+  loadSourceStatus();
 });
 
 const loadFromSession = () => {
@@ -422,7 +510,7 @@ const loadFromSession = () => {
   // Sync internal status with session status
   if (props.session.status === 'completed') {
     status.value = 'approved_record';
-    
+
     // Load approved record content
     if (props.session.notes) {
       try {
@@ -476,6 +564,10 @@ watch(() => props.session?.notes, (newNotes, oldNotes) => {
   }
 });
 
+watch(() => [props.session?.id, props.session?.clientId], ([newSessionId, newClientId], [oldSessionId, oldClientId]) => {
+  if (newSessionId !== oldSessionId || newClientId !== oldClientId) loadSourceStatus();
+});
+
 const amendmentData = reactive({
   reason: '',
   content: ''
@@ -495,7 +587,7 @@ const approvedAmendment = reactive({
 
 const recordHistory = computed(() => {
   const history = [];
-  
+
   if (status.value === 'approved_record' || status.value === 'amendment_draft' || status.value === 'amendment_ready_for_review' || status.value === 'amendment_approved') {
     history.push({
       title: 'Version 1',
@@ -536,17 +628,7 @@ const recordHistory = computed(() => {
   return history;
 });
 
-const canPrepareDraft = computed(() => {
-  // Allow starting a draft even if source material is not yet verified for this sprint
-  return status.value === 'not_started';
-});
-
-const missingRequiredSources = computed(() => {
-  return checklist
-    .filter(item => item.required && !item.available)
-    .map(item => item.label)
-    .join(', ');
-});
+const canPrepareDraft = computed(() => status.value === 'not_started');
 
 const statusLabel = computed(() => {
   switch (status.value) {
@@ -652,18 +734,18 @@ const saveDraft = async () => {
   if (submitting.value || activeDictationKey.value || transcribingKey.value) return;
   submitting.value = true;
   saveMessage.value = 'Saving…';
-  
+
   try {
     const payload = {
       ...summaryData,
       legacyNotes: legacyNotes.value
     };
-    
+
     const updatedSession = await saveSessionDraft(
       props.session,
       JSON.stringify(payload)
     );
-    
+
     emit('update:session', updatedSession);
     saveMessage.value = 'Draft saved.';
   } catch (error) {
@@ -713,7 +795,7 @@ const confirmApproval = async () => {
 
     emit('update:session', updatedSession);
     saveMessage.value = 'Approved successfully.';
-    
+
     // loadFromSession will be called via the watch on props.session.notes
     // but since we want immediate UI update and scroll:
     status.value = 'approved_record';
@@ -745,7 +827,7 @@ const approveAmendment = () => {
   approvedAmendment.timestamp = new Date().toLocaleString();
   approvedAmendment.reason = amendmentData.reason;
   approvedAmendment.content = amendmentData.content;
-  
+
   status.value = 'amendment_approved';
   scrollAndFocus();
 };
