@@ -26,7 +26,7 @@ test('TimelineItem.vue handles navigation and event-driven presentation', async 
   
   // Presentation logic
   assert.match(content, /import { timelineEventPresentation } from ["']\.\.\/\.\.\/lib\/clinicalExchange\.js["']/)
-  assert.match(content, /const presentation = computed\(\(\) => timelineEventPresentation\(props\.eventType\)\)/)
+  assert.match(content, /const\s+presentation\s*=\s*computed\(\(\)\s*=>\s*timelineEventPresentation\(props\.eventType\)\)/)
   
   // Navigation
   assert.match(content, /function handleClick\(\)/)
