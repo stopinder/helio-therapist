@@ -3,7 +3,7 @@
     <div class="flex items-start justify-between gap-inline-lg mb-stack-lg">
       <PageHeader title="Clients" supporting="Manage your clinical directory." />
       <AppButton variant="primary" @click="showAddClient = true">
-        <UserPlusIcon class="h-5 w-5" aria-hidden="true" />
+        <UserPlus class="workspace-icon" aria-hidden="true" />
         <span>Add Client</span>
       </AppButton>
     </div>
@@ -12,11 +12,16 @@
     <div v-else-if="error" class="bg-surface-elevated border border-state-danger/20 p-inline-lg py-stack-lg rounded-panel text-center"><h2 class="type-section-title text-state-danger mb-stack-sm">Error loading clients</h2><p class="type-body text-ink-secondary mb-stack-lg">{{ error }}</p><AppButton variant="secondary" @click="loadClients">Try again</AppButton></div>
     <template v-else>
       <div v-if="clients.length === 0" class="mb-stack-lg rounded-panel border border-border-muted bg-surface-elevated p-inline-lg py-stack-lg" data-testid="sample-workspace-prompt">
-        <h2 class="type-section-title text-ink">Explore with sample clients</h2>
-        <p class="mt-stack-sm max-w-2xl type-body text-ink-secondary">Add a fictional workspace to see sessions, Care items, appointments, documents and archived-client behaviour. Everything is clearly marked as sample content and uses no real client information.</p>
+        <div class="flex items-start gap-inline-md">
+          <span class="icon-surface icon-surface-reflection" aria-hidden="true"><Sparkles class="workspace-icon" /></span>
+          <div>
+            <h2 class="type-section-title text-ink">Explore with sample clients</h2>
+            <p class="mt-stack-sm max-w-2xl type-body text-ink-secondary">Add a fictional workspace to see sessions, Care items, appointments, documents and archived-client behaviour. Everything is clearly marked as sample content and uses no real client information.</p>
+          </div>
+        </div>
         <div class="mt-stack-md flex flex-wrap items-center gap-inline-md">
           <AppButton variant="secondary" :disabled="seedingSample" @click="seedSampleWorkspace">
-            <SparklesIcon v-if="!seedingSample" class="h-[1.125rem] w-[1.125rem]" aria-hidden="true" />
+            <Sparkles v-if="!seedingSample" class="workspace-icon" aria-hidden="true" />
             <span>{{ seedingSample ? 'Adding sample workspace…' : 'Add sample workspace' }}</span>
           </AppButton>
           <span class="type-metadata text-ink-muted">Optional — you can simply add your first real client instead.</span>
@@ -31,7 +36,7 @@
           <template #default="{ controlClass }">
             <span class="sr-only">Search clients</span>
             <div class="relative">
-              <MagnifyingGlassIcon class="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-ink-muted" aria-hidden="true" />
+              <Search class="pointer-events-none absolute left-3 top-1/2 workspace-icon -translate-y-1/2 text-ink-muted" aria-hidden="true" />
               <input v-model="searchQuery" type="search" placeholder="Search clients by name or reference…" :class="[controlClass, 'pl-10 placeholder:text-ink-muted']" data-testid="client-search" />
             </div>
           </template>
@@ -51,10 +56,10 @@
             <td v-if="statusFilter === 'all'" class="px-inline-lg py-stack-md"><StatusIndicator :tone="client.archived ? 'neutral' : 'success'">{{ client.archived ? 'Archived' : 'Active' }}</StatusIndicator></td>
             <td class="px-inline-lg py-stack-md text-right">
               <button v-if="isSampleClient(client)" type="button" class="mr-inline-md inline-flex items-center gap-1.5 type-ui text-ink-muted hover:text-state-danger disabled:opacity-50" :disabled="removingSampleId===client.id" @click.stop="removeSample(client)">
-                <TrashIcon v-if="removingSampleId!==client.id" class="h-[1.125rem] w-[1.125rem]" aria-hidden="true" />
+                <Trash2 v-if="removingSampleId!==client.id" class="workspace-icon" aria-hidden="true" />
                 <span>{{ removingSampleId===client.id ? 'Removing…' : 'Remove sample' }}</span>
               </button>
-              <ChevronRightIcon class="inline-block h-5 w-5 text-action-link" aria-hidden="true" />
+              <ChevronRight class="inline-block workspace-icon text-action-link" aria-hidden="true" />
             </td>
           </tr></tbody></table>
       </div>
@@ -67,7 +72,7 @@
 <script setup>
 import { computed, ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-import { ChevronRightIcon, MagnifyingGlassIcon, SparklesIcon, TrashIcon, UserPlusIcon } from '@heroicons/vue/24/outline';
+import { ChevronRight, Search, Sparkles, Trash2, UserPlus } from '@lucide/vue';
 import { listClients, createClient, listUpcomingClientAppointments } from '../lib/clients.js';
 import { createSampleWorkspace, deleteSampleClient, isSampleClient } from '../lib/sampleWorkspace.js';
 import AddClientModal from '../components/sidebar/AddClientModal.vue';

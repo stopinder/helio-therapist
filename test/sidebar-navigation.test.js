@@ -15,11 +15,13 @@ test('sidebar groups primary destinations and keeps scheduling as an action',asy
   assert.match(shell,/Schedule appointment/);
 });
 
-test('sidebar uses CPD and restrained icon components instead of emoji navigation',async()=>{
+test('sidebar uses CPD and restrained Lucide components instead of emoji navigation',async()=>{
   const shell=await readFile(shellUrl,'utf8');
   assert.match(shell,/{name:'CPD',path:'\/supervision'/);
-  assert.match(shell,/CalendarDaysIcon/);
-  assert.match(shell,/FolderOpenIcon/);
+  assert.match(shell,/from '@lucide\/vue'/);
+  assert.match(shell,/CalendarDays/);
+  assert.match(shell,/FolderOpen/);
+  assert.match(shell,/GraduationCap/);
   assert.doesNotMatch(shell,/📊|🗓️|➕|👥|📝|📄|🌱|🚪/);
 });
 
@@ -27,7 +29,7 @@ test('account footer keeps settings and sign out in the compact account menu',as
   const shell=await readFile(shellUrl,'utf8');
   assert.match(shell,/aria-haspopup':'menu'/);
   assert.match(shell,/to:'\/settings'/);
-  assert.match(shell,/Cog6ToothIcon/);
-  assert.match(shell,/ArrowRightStartOnRectangleIcon/);
+  assert.match(shell,/Settings/);
+  assert.match(shell,/LogOut/);
   assert.match(shell,/Sign out/);
 });

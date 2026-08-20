@@ -28,7 +28,7 @@ test('next scheduled appointment is a one-click session entry action', () => {
 
 test('schedule remains available as a compact secondary action beside next session', () => {
   assert.match(shell, /v-if="\$route\.path!=='\/schedule'"[^>]*px-2\.5 py-1\.5[^>]*>/)
-  assert.match(shell, /<CalendarDaysIcon[^>]*\/><span>Schedule<\/span>/)
+  assert.match(shell, /<CalendarDays[^>]*\/><span>Schedule<\/span>/)
   assert.match(shell, /v-if="nextAppointment"[^>]*class="hidden sm:inline-flex button-primary"/)
 })
 
