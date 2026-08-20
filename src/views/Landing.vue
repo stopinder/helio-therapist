@@ -1,8 +1,8 @@
 <template>
   <main class="min-h-screen bg-surface-canvas text-ink">
     <header class="mx-auto flex w-full max-w-6xl items-center justify-between px-5 py-5 sm:px-8">
-      <router-link to="/" class="flex items-center gap-2.5" aria-label="Helios home">
-        <span class="flex h-9 w-9 items-center justify-center rounded-pill border border-brand-amber/40 brand-accent-surface brand-mark text-xl" aria-hidden="true">☼</span>
+      <router-link to="/" class="flex items-center gap-2.5 rounded-control focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-offset-2" aria-label="Helios home">
+        <span class="flex h-9 w-9 items-center justify-center rounded-pill border border-brand-amber/40 brand-accent-surface p-1" aria-hidden="true"><HeliosMark class="h-7 w-7" /></span>
         <span class="font-serif text-2xl font-semibold tracking-tight">Helios</span>
       </router-link>
       <nav class="flex items-center gap-2" aria-label="Account access">
@@ -52,3 +52,7 @@
     </footer>
   </main>
 </template>
+
+<script setup>
+import HeliosMark from '../components/brand/HeliosMark.vue'
+</script>
