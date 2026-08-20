@@ -1,7 +1,12 @@
 <template>
   <div class="p-inline-lg py-stack-lg">
     <div class="flex items-start justify-between gap-inline-lg mb-stack-lg">
-      <PageHeader title="Clients" supporting="Manage your clinical directory." />
+      <div class="flex items-start gap-inline-md min-w-0">
+        <span class="icon-surface icon-surface-accent !h-11 !w-11 mt-1" aria-hidden="true">
+          <UsersRound class="workspace-icon-lg" />
+        </span>
+        <PageHeader title="Clients" supporting="Manage your clinical directory." />
+      </div>
       <AppButton variant="primary" @click="showAddClient = true">
         <UserPlus class="workspace-icon" aria-hidden="true" />
         <span>Add Client</span>
@@ -36,7 +41,7 @@
           <template #default="{ controlClass }">
             <span class="sr-only">Search clients</span>
             <div class="relative">
-              <Search class="pointer-events-none absolute left-3 top-1/2 workspace-icon -translate-y-1/2 text-ink-muted" aria-hidden="true" />
+              <Search class="pointer-events-none absolute left-3 top-1/2 workspace-icon -translate-y-1/2 text-accent" aria-hidden="true" />
               <input v-model="searchQuery" type="search" placeholder="Search clients by name or reference…" :class="[controlClass, 'pl-10 placeholder:text-ink-muted']" data-testid="client-search" />
             </div>
           </template>
@@ -49,19 +54,37 @@
 
       <div v-if="filteredClients.length === 0" class="bg-surface-elevated border border-border-muted p-inline-lg py-stack-xl rounded-panel text-center"><p class="type-body text-ink-secondary">{{ searchQuery ? 'No clients match your search.' : emptyStatusMessage }}</p></div>
       <div v-else class="bg-surface-elevated border border-border-muted rounded-panel overflow-hidden">
-        <table class="w-full text-left border-collapse"><thead class="bg-surface-subtle border-b border-border-muted"><tr><th class="px-inline-lg py-stack-md type-eyebrow text-ink-secondary">Client</th><th class="px-inline-lg py-stack-md type-eyebrow text-ink-secondary">Next appointment</th><th v-if="statusFilter === 'all'" class="px-inline-lg py-stack-md type-eyebrow text-ink-secondary">Status</th><th class="px-inline-lg py-stack-md type-eyebrow text-ink-secondary text-right"><span class="sr-only">Client actions</span></th></tr></thead>
-          <tbody class="divide-y divide-border-muted"><tr v-for="client in filteredClients" :key="client.id" tabindex="0" role="link" :aria-label="`Open ${client.display_name}`" class="group cursor-pointer hover:bg-surface-subtle/50 transition-colors" @click="openClient(client.id)" @keydown.enter.prevent="openClient(client.id)" @keydown.space.prevent="openClient(client.id)">
-            <td class="px-inline-lg py-stack-md"><div class="type-body-medium text-ink">{{ client.display_name }}</div><div v-if="client.reference" class="type-metadata text-ink-muted">{{ client.reference }}</div></td>
-            <td class="px-inline-lg py-stack-md type-ui text-ink-secondary">{{ appointmentLabel(client.id) }}</td>
-            <td v-if="statusFilter === 'all'" class="px-inline-lg py-stack-md"><StatusIndicator :tone="client.archived ? 'neutral' : 'success'">{{ client.archived ? 'Archived' : 'Active' }}</StatusIndicator></td>
-            <td class="px-inline-lg py-stack-md text-right">
-              <button v-if="isSampleClient(client)" type="button" class="mr-inline-md inline-flex items-center gap-1.5 type-ui text-ink-muted hover:text-state-danger disabled:opacity-50" :disabled="removingSampleId===client.id" @click.stop="removeSample(client)">
-                <Trash2 v-if="removingSampleId!==client.id" class="workspace-icon" aria-hidden="true" />
-                <span>{{ removingSampleId===client.id ? 'Removing…' : 'Remove sample' }}</span>
-              </button>
-              <ChevronRight class="inline-block workspace-icon text-action-link" aria-hidden="true" />
-            </td>
-          </tr></tbody></table>
+        <table class="w-full text-left border-collapse">
+          <thead class="bg-surface-subtle border-b border-border-muted">
+            <tr>
+              <th class="px-inline-lg py-stack-md type-eyebrow text-ink-secondary"><span class="inline-flex items-center gap-2"><UsersRound class="workspace-icon-sm text-accent" aria-hidden="true" />Client</span></th>
+              <th class="px-inline-lg py-stack-md type-eyebrow text-ink-secondary"><span class="inline-flex items-center gap-2"><CalendarClock class="workspace-icon-sm text-focus" aria-hidden="true" />Next appointment</span></th>
+              <th v-if="statusFilter === 'all'" class="px-inline-lg py-stack-md type-eyebrow text-ink-secondary">Status</th>
+              <th class="px-inline-lg py-stack-md type-eyebrow text-ink-secondary text-right"><span class="sr-only">Client actions</span></th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-border-muted">
+            <tr v-for="client in filteredClients" :key="client.id" tabindex="0" role="link" :aria-label="`Open ${client.display_name}`" class="group cursor-pointer hover:bg-surface-subtle/50 transition-colors" @click="openClient(client.id)" @keydown.enter.prevent="openClient(client.id)" @keydown.space.prevent="openClient(client.id)">
+              <td class="px-inline-lg py-stack-md">
+                <div class="flex items-center gap-3">
+                  <span class="icon-surface icon-surface-accent !h-8 !w-8 !rounded-pill opacity-80 group-hover:opacity-100" aria-hidden="true"><UserRound class="workspace-icon-sm" /></span>
+                  <div><div class="type-body-medium text-ink">{{ client.display_name }}</div><div v-if="client.reference" class="type-metadata text-ink-muted">{{ client.reference }}</div></div>
+                </div>
+              </td>
+              <td class="px-inline-lg py-stack-md type-ui text-ink-secondary">
+                <span class="inline-flex items-center gap-2"><CalendarClock class="workspace-icon-sm" :class="nextAppointments.has(client.id) ? 'text-accent' : 'text-ink-subtle'" aria-hidden="true" />{{ appointmentLabel(client.id) }}</span>
+              </td>
+              <td v-if="statusFilter === 'all'" class="px-inline-lg py-stack-md"><StatusIndicator :tone="client.archived ? 'neutral' : 'success'">{{ client.archived ? 'Archived' : 'Active' }}</StatusIndicator></td>
+              <td class="px-inline-lg py-stack-md text-right">
+                <button v-if="isSampleClient(client)" type="button" class="mr-inline-md inline-flex items-center gap-1.5 type-ui text-ink-muted hover:text-state-danger disabled:opacity-50" :disabled="removingSampleId===client.id" @click.stop="removeSample(client)">
+                  <Trash2 v-if="removingSampleId!==client.id" class="workspace-icon" aria-hidden="true" />
+                  <span>{{ removingSampleId===client.id ? 'Removing…' : 'Remove sample' }}</span>
+                </button>
+                <span class="icon-surface !h-8 !w-8 !rounded-pill border-transparent bg-transparent text-accent group-hover:bg-brand-sage-soft group-hover:border-accent/20" aria-hidden="true"><ChevronRight class="workspace-icon" /></span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
     </template>
 
@@ -72,7 +95,7 @@
 <script setup>
 import { computed, ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-import { ChevronRight, Search, Sparkles, Trash2, UserPlus } from '@lucide/vue';
+import { CalendarClock, ChevronRight, Search, Sparkles, Trash2, UserPlus, UserRound, UsersRound } from '@lucide/vue';
 import { listClients, createClient, listUpcomingClientAppointments } from '../lib/clients.js';
 import { createSampleWorkspace, deleteSampleClient, isSampleClient } from '../lib/sampleWorkspace.js';
 import AddClientModal from '../components/sidebar/AddClientModal.vue';
