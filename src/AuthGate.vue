@@ -1,16 +1,5 @@
 <template>
-  <main v-if="!supabase" class="min-h-screen bg-state-danger-surface flex items-center justify-center p-4">
-    <div class="max-w-md w-full rounded-panel bg-surface p-6 border border-state-danger/20 text-center">
-      <h1 class="text-h2 font-semibold text-state-danger mb-2">Configuration Error</h1>
-      <p class="text-ink-secondary">Supabase URL or Anon Key is missing. Check your .env file.</p>
-    </div>
-  </main>
-
-  <main v-else-if="authLoading" class="min-h-screen bg-surface-muted flex items-center justify-center p-4">
-    <p class="text-body text-ink-muted">Opening MindWorks…</p>
-  </main>
-
-  <main v-else-if="recovering" class="min-h-screen bg-surface-muted flex items-center justify-center px-4 py-8 sm:p-6">
+  <main v-if="recovering" class="min-h-screen bg-surface-muted flex items-center justify-center px-4 py-8 sm:p-6">
     <section class="w-full max-w-md rounded-panel bg-surface-elevated border border-border-muted p-6 sm:p-8">
       <h1 class="text-h1 font-semibold text-ink">Choose a new password</h1>
       <p class="mt-2 text-body text-ink-muted">Use at least 8 characters.</p>
@@ -25,18 +14,30 @@
     </section>
   </main>
 
-  <ClientCompletion v-else-if="isClientCompletion" />
+  <router-view v-else-if="route.meta.public" />
+
+  <main v-else-if="!supabase" class="min-h-screen bg-state-danger-surface flex items-center justify-center p-4">
+    <div class="max-w-md w-full rounded-panel bg-surface p-6 border border-state-danger/20 text-center">
+      <h1 class="text-h2 font-semibold text-state-danger mb-2">Configuration Error</h1>
+      <p class="text-ink-secondary">Supabase URL or Anon Key is missing. Check your .env file.</p>
+    </div>
+  </main>
+
+  <main v-else-if="authLoading" class="min-h-screen bg-surface-muted flex items-center justify-center p-4">
+    <p class="text-body text-ink-muted">Opening Helios…</p>
+  </main>
 
   <AppShell v-else-if="session" data-testid="workspace-shell"><router-view /></AppShell>
 
   <main v-else data-testid="login-page" class="min-h-screen bg-surface-muted flex items-center justify-center px-4 py-8 sm:p-6">
     <section class="w-full max-w-md rounded-panel bg-surface-elevated border border-border-muted p-6 sm:p-8">
-      <h1 class="text-h1 font-semibold text-ink">MindWorks</h1>
+      <router-link to="/" class="type-ui text-action-link">← Helios home</router-link>
+      <h1 class="mt-5 text-h1 font-semibold text-ink">Helios</h1>
       <p class="mt-2 text-body text-ink-muted">{{ mode === 'signup' ? 'Create your therapist workspace.' : 'Sign in to your therapist workspace.' }}</p>
 
       <div class="mt-6 grid grid-cols-2 rounded-panel bg-surface-muted p-1" role="tablist" aria-label="Account access">
-        <button type="button" class="min-h-11 rounded-control px-3 text-body font-medium transition-colors duration-standard ease-out" :class="mode === 'signin' ? 'bg-surface-elevated text-ink' : 'text-ink-muted'" @click="setMode('signin')">Sign in</button>
-        <button type="button" class="min-h-11 rounded-control px-3 text-body font-medium transition-colors duration-standard ease-out" :class="mode === 'signup' ? 'bg-surface-elevated text-ink' : 'text-ink-muted'" @click="setMode('signup')">Create account</button>
+        <router-link to="/sign-in" class="min-h-11 rounded-control px-3 text-body font-medium flex items-center justify-center transition-colors duration-standard ease-out" :class="mode === 'signin' ? 'bg-surface-elevated text-ink' : 'text-ink-muted'">Sign in</router-link>
+        <router-link to="/get-started" class="min-h-11 rounded-control px-3 text-body font-medium flex items-center justify-center transition-colors duration-standard ease-out" :class="mode === 'signup' ? 'bg-surface-elevated text-ink' : 'text-ink-muted'">Create account</router-link>
       </div>
 
       <form class="mt-6 space-y-4" @submit.prevent="submit">
@@ -53,7 +54,7 @@
         <label class="block">
           <span class="text-body font-medium text-ink-secondary">Password</span>
           <div class="relative mt-2">
-            <input id="account-password" v-model="password" :type="showPassword ? 'text' : 'password'" name="account-password" required minlength="8" autocomplete="current-password" autocapitalize="none" spellcheck="false" class="min-h-12 w-full rounded-panel border border-border px-3 pr-16 text-ink caret-action-link outline-none focus:border-action-link focus:ring-2 focus:ring-state-selected" />
+            <input id="account-password" v-model="password" :type="showPassword ? 'text' : 'password'" name="account-password" required minlength="8" :autocomplete="mode === 'signup' ? 'new-password' : 'current-password'" autocapitalize="none" spellcheck="false" class="min-h-12 w-full rounded-panel border border-border px-3 pr-16 text-ink caret-action-link outline-none focus:border-action-link focus:ring-2 focus:ring-state-selected" />
             <button type="button" class="absolute inset-y-0 right-0 min-w-14 px-3 text-body font-medium text-action-link" @click="showPassword = !showPassword">{{ showPassword ? 'Hide' : 'Show' }}</button>
           </div>
           <span v-if="mode === 'signup'" class="mt-1 block text-caption text-ink-subtle">At least 8 characters</span>
@@ -71,18 +72,19 @@
 </template>
 
 <script setup>
-import { onMounted, onUnmounted, ref } from 'vue'
+import { onMounted, onUnmounted, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import AppShell from './layouts/AppShell.vue'
-import ClientCompletion from './components/ClientCompletion.vue'
 import { supabase } from './lib/supabase.js'
 
+const route = useRoute()
+const router = useRouter()
 const session = ref(null)
-const isClientCompletion = window.location.pathname === '/complete'
 const authLoading = ref(true)
 const recovering = ref(false)
 const newPassword = ref('')
 const showNewPassword = ref(false)
-const mode = ref('signin')
+const mode = ref(route.meta.authEntry === 'signup' ? 'signup' : 'signin')
 const fullName = ref('')
 const email = ref('')
 const password = ref('')
@@ -104,14 +106,28 @@ const clearFeedback = () => {
   errorMessage.value = ''
 }
 
+const syncAuthEntry = async () => {
+  if (!route.meta.authEntry) return
+  mode.value = route.meta.authEntry
+  password.value = ''
+  showPassword.value = false
+  clearFeedback()
+  if (!authLoading.value && session.value) await router.replace('/overview')
+}
+
+watch(() => route.fullPath, syncAuthEntry)
+watch([session, authLoading], async () => {
+  if (!authLoading.value && session.value && route.meta.authEntry) await router.replace('/overview')
+})
+
 onMounted(async () => {
+  recovering.value = isRecoveryLink()
   if (!supabase) {
-    errorMessage.value = 'MindWorks authentication is not configured.'
+    errorMessage.value = 'Helios authentication is not configured.'
     authLoading.value = false
     return
   }
 
-  recovering.value = isRecoveryLink()
   const listener = supabase.auth.onAuthStateChange((event, nextSession) => {
     if (event === 'PASSWORD_RECOVERY') {
       recovering.value = true
@@ -133,9 +149,10 @@ onMounted(async () => {
   session.value = data.session
   authLoading.value = false
 
-  handleExpiryRef.value = (event) => {
+  handleExpiryRef.value = async (event) => {
     errorMessage.value = event.detail.message
     session.value = null
+    await router.replace('/sign-in')
   }
   window.addEventListener('helios-session-expired', handleExpiryRef.value)
 })
@@ -145,13 +162,6 @@ onUnmounted(() => {
   if (handleExpiryRef.value) window.removeEventListener('helios-session-expired', handleExpiryRef.value)
 })
 
-const setMode = (nextMode) => {
-  mode.value = nextMode
-  password.value = ''
-  showPassword.value = false
-  clearFeedback()
-}
-
 const submit = async () => {
   submitting.value = true
   clearFeedback()
@@ -160,13 +170,13 @@ const submit = async () => {
       const { data, error } = await supabase.auth.signUp({
         email: email.value,
         password: password.value,
-        options: { emailRedirectTo: 'https://helio.works', data: { full_name: fullName.value } }
+        options: { emailRedirectTo: 'https://helio.works/sign-in', data: { full_name: fullName.value } }
       })
       if (error) throw error
       if (!data.session) {
         message.value = 'If this email can be used to create an account, you’ll receive a confirmation link. Check your inbox, then sign in.'
-        mode.value = 'signin'
         password.value = ''
+        await router.replace('/sign-in')
       }
     } else {
       const { error } = await supabase.auth.signInWithPassword({ email: email.value, password: password.value })
@@ -192,8 +202,8 @@ const updatePassword = async () => {
     newPassword.value = ''
     email.value = ''
     password.value = ''
-    mode.value = 'signin'
-    window.history.replaceState({}, document.title, window.location.pathname)
+    window.history.replaceState({}, document.title, '/sign-in')
+    await router.replace('/sign-in')
     message.value = 'Password updated. Sign in with your new password.'
   } catch (error) {
     errorMessage.value = error.message
@@ -206,7 +216,7 @@ const resetPassword = async () => {
   submitting.value = true
   clearFeedback()
   try {
-    const { error } = await supabase.auth.resetPasswordForEmail(email.value, { redirectTo: 'https://helio.works' })
+    const { error } = await supabase.auth.resetPasswordForEmail(email.value, { redirectTo: 'https://helio.works/sign-in' })
     if (error) throw error
     message.value = 'Check your email for the password reset link.'
   } catch (error) {
