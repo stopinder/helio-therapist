@@ -26,12 +26,14 @@
 </template>
 <script setup>
 import { computed, onMounted, ref } from 'vue'
+import { useRoute } from 'vue-router'
 import { authenticatedFetch } from '../lib/api.js'
 import { listClients } from '../lib/clients.js'
+const route=useRoute()
 const clients=ref([]),clientsLoading=ref(true),clientId=ref(''),loading=ref(false),error=ref(''),bookingUrl=ref(''),copied=ref(false),mode=ref('client')
 const selectedClient=computed(()=>clients.value.find(client=>String(client.id)===String(clientId.value))||null)
 const emailBookingHref=computed(()=>{const email=selectedClient.value?.email?.trim();if(!email||!bookingUrl.value)return'';const subject='Appointment booking link';const body=`Hello ${selectedClient.value?.name || ''},\n\nPlease use this secure Helios link to choose a suitable appointment time:\n\n${bookingUrl.value}\n\nThis link expires after 72 hours.`;return `mailto:${encodeURIComponent(email)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`})
-onMounted(async()=>{try{clients.value=await listClients()}catch(cause){error.value=cause.message||'Unable to load clients'}finally{clientsLoading.value=false}})
+onMounted(async()=>{try{clients.value=await listClients();const requestedClientId=typeof route.query.clientId==='string'?route.query.clientId:'';if(requestedClientId&&clients.value.some(client=>String(client.id)===requestedClientId))clientId.value=requestedClientId}catch(cause){error.value=cause.message||'Unable to load clients'}finally{clientsLoading.value=false}})
 async function createBookingLink(nextMode){if(!clientId.value||loading.value)return;mode.value=nextMode;loading.value=true;error.value='';bookingUrl.value='';copied.value=false;try{const response=await authenticatedFetch('/api/zoom/scheduler/create-booking-link',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({clientId:clientId.value})});const payload=await response.json().catch(()=>({}));if(!response.ok)throw new Error(payload.error||'Unable to create booking link');if(nextMode==='therapist'){if(!payload.therapistBookingUrl)throw new Error('Zoom did not return a therapist scheduling link');window.location.assign(payload.therapistBookingUrl);return}bookingUrl.value=payload.bookingUrl||''}catch(cause){error.value=cause.message||'Unable to create booking link'}finally{loading.value=false}}
 async function copyBookingLink(){if(!bookingUrl.value)return;try{await navigator.clipboard.writeText(bookingUrl.value);copied.value=true}catch{error.value='Unable to copy the link. Open the preview and copy the address from your browser.'}}
 function reset(){bookingUrl.value='';copied.value=false;error.value=''}
