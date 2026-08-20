@@ -2,11 +2,18 @@
   <div class="max-w-7xl mx-auto px-page py-8 md:py-10 space-y-9">
     <GreetingHeader :eyebrow="eyebrow" :phrase="phrase" :display-name="therapistDisplayName" :supporting="supportingInformation" />
 
+    <SurfaceCard v-if="!loading && isNewWorkspace" class="border-action-primary/15 bg-brand-sage-soft/35">
+      <p class="type-eyebrow text-ink-muted">Getting started</p>
+      <h2 class="mt-2 type-body-medium text-ink">Add your first client to begin using your practice workspace.</h2>
+      <p class="mt-1.5 type-ui text-ink-secondary max-w-2xl">Client records give Helios the context needed for appointments, sessions, notes and documents. You can add only the details you need now.</p>
+      <div class="mt-4 flex flex-wrap gap-2"><AppButton to="/clients" variant="primary">Go to clients</AppButton><AppButton to="/settings">Complete practice details</AppButton></div>
+    </SurfaceCard>
+
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-9 items-start">
       <section class="lg:col-span-2 space-y-4">
         <SectionHeader title="Today’s schedule"><template #action><router-link to="/calendar" class="type-ui text-action-link hover:text-action-link-hover underline-offset-4 hover:underline">View calendar →</router-link></template></SectionHeader>
         <SurfaceCard v-if="loading" compact class="text-center"><p class="type-body text-ink-muted animate-pulse">Loading schedule...</p></SurfaceCard>
-        <SurfaceCard v-else-if="todayEvents.length === 0" class="text-center"><p class="type-body text-ink-muted">No appointments scheduled for today.</p></SurfaceCard>
+        <SurfaceCard v-else-if="todayEvents.length === 0" class="text-center"><p class="type-body text-ink-muted">{{ isNewWorkspace ? 'Your schedule will appear here once you add clients and appointments.' : 'No appointments scheduled for today.' }}</p></SurfaceCard>
         <div v-else class="space-y-2.5">
           <SurfaceCard v-for="event in todayEvents" :key="event.id" compact class="flex flex-wrap md:flex-nowrap items-center justify-between gap-4 group">
             <div class="flex items-center gap-4 min-w-0"><div class="w-[4.25rem] shrink-0 pr-4 border-r border-border-muted"><div class="type-body-medium text-ink">{{ formatTime(event.start) }}</div><div class="type-metadata text-ink-muted mt-1">60 min</div></div><div class="min-w-0"><div class="type-body-medium text-ink truncate">{{ event.clientName }}</div><div class="type-ui text-ink-secondary mt-0.5">{{ event.type }}</div><StatusIndicator class="mt-0.5">{{ formatStatus(event.status) }}</StatusIndicator></div></div>
@@ -46,17 +53,16 @@ const router = useRouter()
 const { loading, todayEvents, loadData, sessions, clients } = useCalendar()
 const { displayName, loadTherapistIdentity } = useTherapistIdentity()
 const { eyebrow, phrase, therapistDisplayName, supportingInformation } = useGreeting({ displayName, appointmentCount: computed(() => todayEvents.value.length) })
-const reflections = ref([])
-const startingEventId = ref(null)
-const sessionOpenErrorId = ref(null)
+const reflections = ref([]), startingEventId = ref(null), sessionOpenErrorId = ref(null)
+const isNewWorkspace = computed(() => clients.value.length === 0 && sessions.value.length === 0)
 
 onMounted(async () => { await Promise.all([loadData(), loadTherapistIdentity()]); try { reflections.value = await getAllPrivateReflections({ limit: 50 }) } catch (e) { console.error('Failed to load reflections', e) } })
 async function startSession(event) { if (!event?.clientId || startingEventId.value) return; startingEventId.value = event.id; sessionOpenErrorId.value = null; try { const { session } = await createOrResumeSession(event.clientId); await router.push({ name: 'SessionWorkspace', params: { clientId: event.clientId, sessionId: session.id } }) } catch (error) { console.error('Failed to open session workspace from overview:', error); sessionOpenErrorId.value = event.id } finally { startingEventId.value = null } }
 function formatTime(date) { return new Intl.DateTimeFormat('en-GB', { hour: '2-digit', minute: '2-digit' }).format(date) }
 function formatStatus(status) { if (!status) return 'Scheduled'; return status.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) }
-function formatActivityTime(value) { const date = value instanceof Date ? value : new Date(value); const today = new Date(); const yesterday = new Date(today); yesterday.setDate(today.getDate() - 1); const sameDay = (a, b) => a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate(); const time = new Intl.DateTimeFormat('en-GB', { hour: '2-digit', minute: '2-digit' }).format(date); if (sameDay(date, today)) return `Today, ${time}`; if (sameDay(date, yesterday)) return `Yesterday, ${time}`; return new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }).format(date) }
-const pendingWork = computed(() => { const items = []; sessions.value.filter(s => s.notesStatus === 'draft').slice(0, 3).forEach(s => items.push({ id: `session-${s.id}`, title: 'Finish session notes', subtitle: `Draft started on ${new Date(s.startedAt).toLocaleDateString()}`, route: `/clients/${s.clientId}/sessions/${s.id}` })); return items })
-const recentActivity = computed(() => buildRecentActivity({ sessions: sessions.value, clients: clients.value, reflections: reflections.value }, { limit: 5 }))
-const reflectionsCount = computed(() => reflections.value.filter(r => r.included_in_supervision).length)
-const practiceFocusObservation = computed(() => { const draftNotes = sessions.value.filter(s => s.notesStatus === 'draft').length; if (draftNotes > 0) return `${draftNotes} session note${draftNotes === 1 ? '' : 's'} remain${draftNotes === 1 ? 's' : ''} in draft.`; const pendingReflections = reflections.value.filter(r => r.included_in_supervision).length; if (pendingReflections > 0) return `${pendingReflections} reflection${pendingReflections === 1 ? '' : 's'} are waiting for review.`; return 'Your clinical documentation is up to date.' })
+function formatActivityTime(value) { const date=value instanceof Date?value:new Date(value);const today=new Date();const yesterday=new Date(today);yesterday.setDate(today.getDate()-1);const sameDay=(a,b)=>a.getFullYear()===b.getFullYear()&&a.getMonth()===b.getMonth()&&a.getDate()===b.getDate();const time=new Intl.DateTimeFormat('en-GB',{hour:'2-digit',minute:'2-digit'}).format(date);if(sameDay(date,today))return `Today, ${time}`;if(sameDay(date,yesterday))return `Yesterday, ${time}`;return new Intl.DateTimeFormat('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}).format(date) }
+const pendingWork = computed(() => { const items=[];sessions.value.filter(s=>s.notesStatus==='draft').slice(0,3).forEach(s=>items.push({id:`session-${s.id}`,title:'Finish session notes',subtitle:`Draft started on ${new Date(s.startedAt).toLocaleDateString()}`,route:`/clients/${s.clientId}/sessions/${s.id}`}));return items })
+const recentActivity = computed(() => buildRecentActivity({ sessions:sessions.value,clients:clients.value,reflections:reflections.value },{limit:5}))
+const reflectionsCount = computed(() => reflections.value.filter(r=>r.included_in_supervision).length)
+const practiceFocusObservation = computed(() => { if(isNewWorkspace.value)return 'Start by adding a client when you are ready.';const draftNotes=sessions.value.filter(s=>s.notesStatus==='draft').length;if(draftNotes>0)return `${draftNotes} session note${draftNotes===1?'':'s'} remain${draftNotes===1?'s':''} in draft.`;const pendingReflections=reflections.value.filter(r=>r.included_in_supervision).length;if(pendingReflections>0)return `${pendingReflections} reflection${pendingReflections===1?'':'s'} are waiting for review.`;return 'Your clinical documentation is up to date.' })
 </script>
