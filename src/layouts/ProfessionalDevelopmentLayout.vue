@@ -6,11 +6,7 @@
     </div>
 
     <header v-if="isChildPage" class="h-16 flex items-center px-6 md:px-10 border-b border-border-muted bg-surface/80 backdrop-blur-md z-20 shrink-0 sticky top-0">
-      <router-link 
-        to="/supervision" 
-        class="flex items-center gap-2 text-ink-secondary hover:text-ink transition-colors group focus-visible:ring-2 focus-visible:ring-state-selected rounded-control px-2 py-1 -ml-2"
-        aria-label="Back to Professional Development"
-      >
+      <router-link to="/supervision" class="flex items-center gap-2 text-ink-secondary hover:text-ink transition-colors group focus-visible:ring-2 focus-visible:ring-state-selected rounded-control px-2 py-1 -ml-2" aria-label="Back to Professional Development">
         <span class="text-xl transition-transform group-hover:-translate-x-1">←</span>
         <span class="text-body-sm font-medium">Professional Development</span>
       </router-link>
@@ -19,14 +15,7 @@
     <main class="h-full overflow-auto z-10 relative">
       <router-view v-slot="{ Component }">
         <transition name="fade-up" mode="out-in" appear>
-          <component 
-            :is="Component" 
-            v-bind="childProps"
-            @toggle-supervision="handleToggleSupervision"
-            @open-reflection="handleOpenReflection"
-            @open-ai-reflection="handleOpenAIReflection"
-            @go-to-session="handleGoToSession"
-          />
+          <component :is="Component" v-bind="childProps" @toggle-supervision="handleToggleSupervision" @open-reflection="handleOpenReflection" @open-ai-reflection="handleOpenAIReflection" @go-to-session="handleGoToSession" />
         </transition>
       </router-view>
     </main>
@@ -35,6 +24,7 @@
       v-if="selectedReflection"
       :reflection="selectedReflection"
       :loading="actionLoading === selectedReflection.id"
+      :error="Boolean(actionError)"
       :initial-ai-mode="initialAIMode"
       @close="closeReflectionModal"
       @toggle-supervision="handleToggleSupervision"
@@ -51,15 +41,14 @@ import PrivateReflectionModal from '../components/professional-development/Priva
 
 const route = useRoute();
 const router = useRouter();
-
 const reflections = ref([]);
 const loading = ref(true);
 const actionLoading = ref(null);
+const actionError = ref('');
 const selectedReflection = ref(null);
 const initialAIMode = ref(false);
 
 const isChildPage = computed(() => route.path !== '/supervision');
-
 const themeStats = computed(() => {
   const counts = { All: reflections.value.length };
   const themeList = ['All'];
@@ -72,13 +61,7 @@ const themeStats = computed(() => {
   if (themeList.includes('No theme')) sortedThemes.push('No theme');
   return ['All', ...sortedThemes].map(t => ({ name: t, count: counts[t] }));
 });
-
-const childProps = computed(() => ({
-  reflections: reflections.value,
-  loading: loading.value,
-  actionLoading: actionLoading.value,
-  themes: themeStats.value
-}));
+const childProps = computed(() => ({ reflections: reflections.value, loading: loading.value, actionLoading: actionLoading.value, themes: themeStats.value }));
 
 async function loadData() {
   loading.value = true;
@@ -102,42 +85,26 @@ async function loadData() {
 async function handleToggleSupervision(reflection) {
   if (actionLoading.value) return;
   actionLoading.value = reflection.id;
+  actionError.value = '';
   try {
-    const updated = await setReflectionSupervisionSelection({
-      reflectionId: reflection.id,
-      included: !reflection.included_in_supervision
-    });
+    const updated = await setReflectionSupervisionSelection({ reflectionId: reflection.id, included: !reflection.included_in_supervision });
     const idx = reflections.value.findIndex(r => r.id === reflection.id);
     if (idx !== -1) reflections.value[idx] = { ...reflections.value[idx], ...updated };
     if (selectedReflection.value?.id === reflection.id) selectedReflection.value = { ...selectedReflection.value, ...updated };
   } catch (err) {
     console.error('Toggle error', err);
+    actionError.value = 'Could not update supervision selection.';
   } finally {
     actionLoading.value = null;
   }
 }
 
-function handleOpenReflection(reflection) {
-  initialAIMode.value = false;
-  selectedReflection.value = reflection;
-}
-
-function handleOpenAIReflection(reflection) {
-  initialAIMode.value = true;
-  selectedReflection.value = reflection;
-}
-
-function closeReflectionModal() {
-  selectedReflection.value = null;
-  initialAIMode.value = false;
-}
-
-function handleGoToSession(reflection) {
-  if (reflection.client_id && reflection.session_ref) router.push(`/clients/${reflection.client_id}/sessions/${reflection.session_ref}`);
-}
+function handleOpenReflection(reflection) { actionError.value = ''; initialAIMode.value = false; selectedReflection.value = reflection; }
+function handleOpenAIReflection(reflection) { actionError.value = ''; initialAIMode.value = true; selectedReflection.value = reflection; }
+function closeReflectionModal() { selectedReflection.value = null; initialAIMode.value = false; actionError.value = ''; }
+function handleGoToSession(reflection) { if (reflection.client_id && reflection.session_ref) router.push(`/clients/${reflection.client_id}/sessions/${reflection.session_ref}`); }
 
 onMounted(loadData);
-
 provide('reflections', reflections);
 provide('loadData', loadData);
 </script>
