@@ -3,6 +3,7 @@ import { test, expect } from '@playwright/test';
 test.describe('Gate 3 public routing', () => {
   test('landing page is public and links to account and information routes', async ({ page }) => {
     await page.goto('/', { waitUntil:'domcontentloaded' });
+    await expect(page).toHaveTitle('Helios — Therapist workspace');
     await expect(page.getByRole('heading', { name:'A calmer place for the work around therapy.' })).toBeVisible();
     await expect(page.getByRole('link', { name:'Sign in' }).first()).toHaveAttribute('href', '/sign-in');
     await expect(page.getByRole('link', { name:'Get started' }).first()).toHaveAttribute('href', '/get-started');
@@ -13,16 +14,17 @@ test.describe('Gate 3 public routing', () => {
 
   test('legal and information routes are available without authentication', async ({ page }) => {
     const routes = [
-      ['/terms', 'Terms of Service'],
-      ['/privacy', 'Privacy Notice'],
-      ['/ai-data', 'AI & data processing'],
-      ['/cookies', 'Cookie information'],
-      ['/support', 'Support & contact']
+      ['/terms', 'Terms of Service', 'Terms of Service — Helios'],
+      ['/privacy', 'Privacy Notice', 'Privacy Notice — Helios'],
+      ['/ai-data', 'AI & data processing', 'AI & data processing — Helios'],
+      ['/cookies', 'Cookie information', 'Cookie information — Helios'],
+      ['/support', 'Support & contact', 'Support & contact — Helios']
     ];
 
-    for (const [path, heading] of routes) {
+    for (const [path, heading, title] of routes) {
       await page.goto(path, { waitUntil:'domcontentloaded' });
       await expect(page).toHaveURL(new RegExp(`${path}$`));
+      await expect(page).toHaveTitle(title);
       await expect(page.getByRole('heading', { name: heading, level: 1 })).toBeVisible();
       await expect(page.getByText('Launch draft', { exact: false })).toBeVisible();
     }
@@ -30,6 +32,7 @@ test.describe('Gate 3 public routing', () => {
 
   test('sign-in has a dedicated route', async ({ page }) => {
     await page.goto('/sign-in', { waitUntil:'domcontentloaded' });
+    await expect(page).toHaveTitle('Sign in — Helios');
     await expect(page.getByTestId('login-page')).toBeVisible();
     await expect(page.getByText('Sign in to your therapist workspace.')).toBeVisible();
     await expect(page.getByLabel('Full name')).toHaveCount(0);
@@ -37,6 +40,7 @@ test.describe('Gate 3 public routing', () => {
 
   test('get-started opens account creation with legal information links', async ({ page }) => {
     await page.goto('/get-started', { waitUntil:'domcontentloaded' });
+    await expect(page).toHaveTitle('Get started — Helios');
     await expect(page.getByTestId('login-page')).toBeVisible();
     await expect(page.getByText('Create your therapist workspace.')).toBeVisible();
     await expect(page.getByText('Full name')).toBeVisible();
