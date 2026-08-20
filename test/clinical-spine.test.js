@@ -40,6 +40,24 @@ test('clinical record draft dictation stays editable and uses the authenticated 
   assert.doesNotMatch(clinicalSummary, /audio_storage|upload.*audio|from\('.*audio/i)
 })
 
+test('clinical summary preparation reports real session source availability without fake checkboxes', async () => {
+  const [clinicalSummary, workspace] = await Promise.all([
+    read('src/components/workspace/ClinicalSummaryTab.vue'),
+    read('src/views/SessionWorkspace.vue')
+  ])
+  assert.match(clinicalSummary, /getSessionWorkingNotes/)
+  assert.match(clinicalSummary, /getPrivateReflection/)
+  assert.match(clinicalSummary, /workspaceReflectionBody/)
+  assert.match(clinicalSummary, /Boolean\(props\.transcript\?\.text\?\.trim\?\.\(\)\)/)
+  assert.match(clinicalSummary, /Therapist reflection is private working material\. Helio reports only whether it exists here/)
+  assert.doesNotMatch(clinicalSummary, /Client Feedback/)
+  assert.doesNotMatch(clinicalSummary, /Source Material Checklist/)
+  assert.doesNotMatch(clinicalSummary, /item\.available \? '✓'/)
+  assert.match(workspace, /:transcript="transcript"/)
+  assert.match(workspace, /:transcriptLoading="transcriptLoading"/)
+  assert.match(workspace, /:transcriptError="transcriptError"/)
+})
+
 test('completed clinical record is rendered read-only and corrections are amendments', async () => {
   const clinicalSummary = await read('src/components/workspace/ClinicalSummaryTab.vue')
   assert.match(clinicalSummary, /This approved record is read-only\. Corrections must be added through an amendment\./); assert.match(clinicalSummary, /<ApprovedClinicalRecordView/); assert.match(clinicalSummary, /Create Record Amendment/); assert.match(clinicalSummary, /completeSessionRecord/)
