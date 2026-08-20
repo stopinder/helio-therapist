@@ -1,4 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import Landing from '../views/Landing.vue'
+import AuthEntry from '../views/AuthEntry.vue'
 import Overview from '../views/Overview.vue'
 import Calendar from '../views/Calendar.vue'
 import Clients from '../views/Clients.vue'
@@ -8,6 +10,7 @@ import Transcripts from '../views/Transcripts.vue'
 import Documents from '../views/Documents.vue'
 import Settings from '../views/Settings.vue'
 import PublicBooking from '../views/PublicBooking.vue'
+import ClientCompletion from '../components/ClientCompletion.vue'
 import ScheduleAppointment from '../components/ScheduleAppointment.vue'
 import ProfessionalDevelopmentLayout from '../layouts/ProfessionalDevelopmentLayout.vue'
 import SupervisionHome from '../views/supervision/SupervisionHome.vue'
@@ -17,10 +20,14 @@ import SupervisionGrowth from '../views/supervision/SupervisionGrowth.vue'
 import SupervisionInsights from '../views/supervision/SupervisionInsights.vue'
 
 const routes = [
-  { path: '/', name: 'Overview', component: Overview },
+  { path: '/', name: 'Landing', component: Landing, meta: { public: true } },
+  { path: '/sign-in', name: 'SignIn', component: AuthEntry, meta: { authEntry: 'signin' } },
+  { path: '/get-started', name: 'GetStarted', component: AuthEntry, meta: { authEntry: 'signup' } },
+  { path: '/overview', name: 'Overview', component: Overview },
   { path: '/calendar', name: 'Calendar', component: Calendar },
   { path: '/schedule', name: 'ScheduleAppointment', component: ScheduleAppointment },
   { path: '/book/:token', name: 'PublicBooking', component: PublicBooking, meta: { public: true } },
+  { path: '/complete', name: 'ClientCompletion', component: ClientCompletion, meta: { public: true } },
   { path: '/clients', name: 'Clients', component: Clients },
   { path: '/clients/:clientId', name: 'ClientWorkspace', component: ClientWorkspace },
   { path: '/clients/:clientId/sessions/:sessionId', name: 'SessionWorkspace', component: SessionWorkspace },
