@@ -28,11 +28,25 @@ test('next scheduled appointment is a one-click session entry action', () => {
 
 test('schedule remains available as a compact secondary action beside next session', () => {
   assert.match(shell, /v-if="\$route\.path!=='\/schedule'"[^>]*px-2\.5 py-1\.5[^>]*>/)
-  assert.match(shell, />\+<\/span>Schedule<\/router-link>/)
+  assert.match(shell, /<CalendarDaysIcon[^>]*\/><span>Schedule<\/span>/)
   assert.match(shell, /v-if="nextAppointment"[^>]*class="hidden sm:inline-flex button-primary"/)
 })
 
-test('clock refreshes while the shell is mounted and cleans up its timer', () => {
+test('global clock highlights a confirmed session only within the final 15 minutes', () => {
+  assert.match(shell, /const minutesUntilNextSession=computed/)
+  assert.match(shell, /minutesUntilNextSession\.value>=0&&minutesUntilNextSession\.value<=15/)
+  assert.match(shell, /data-session-approaching="isSessionApproaching \? 'true' : 'false'"/)
+  assert.match(shell, /border border-accent\/30 bg-accent\/10/)
+  assert.match(shell, /isSessionApproaching \? 'font-semibold text-accent' : 'text-ink-muted'/)
+})
+
+test('clock and appointment data refresh while the shell is mounted and clean up their timers', () => {
   assert.match(shell, /window\.setInterval\(\(\)=>\{now\.value=new Date\(\)\},30000\)/)
+  assert.match(shell, /appointmentRefreshTimer=window\.setInterval\(refreshAppointments,60000\)/)
+  assert.match(shell, /window\.addEventListener\('focus',refreshAppointments\)/)
+  assert.match(shell, /document\.addEventListener\('visibilitychange',refreshAppointmentsWhenActive\)/)
   assert.match(shell, /window\.clearInterval\(clockTimer\)/)
+  assert.match(shell, /window\.clearInterval\(appointmentRefreshTimer\)/)
+  assert.match(shell, /window\.removeEventListener\('focus',refreshAppointments\)/)
+  assert.match(shell, /document\.removeEventListener\('visibilitychange',refreshAppointmentsWhenActive\)/)
 })

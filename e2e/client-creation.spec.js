@@ -21,9 +21,10 @@ test.describe('Client Creation', () => {
     // 2. Open Clients page
     await page.getByRole('link', { name: /Clients/i }).click();
     await expect(page.getByRole('heading', { name: 'Clients', exact: true })).toBeVisible();
+    await expect(page.getByTestId('client-search')).toBeVisible();
 
-    // 3. Click "+ Add Client"
-    await page.getByRole('button', { name: '+ Add Client' }).click();
+    // 3. Click Add Client. The visible label stays stable even though the control now uses an SVG icon.
+    await page.getByRole('button', { name: 'Add Client', exact: true }).click();
 
     // 4. Verify modal is open
     await expect(page.getByRole('heading', { name: 'Add Client' })).toBeVisible();
