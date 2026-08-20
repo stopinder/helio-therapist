@@ -11,35 +11,15 @@
   </main>
 
   <main v-else-if="recovering" class="min-h-screen bg-surface-muted flex items-center justify-center px-4 py-8 sm:p-6">
-    <section class="w-full max-w-md rounded-panel bg-surface-elevated border border-border-muted  p-6 sm:p-8">
+    <section class="w-full max-w-md rounded-panel bg-surface-elevated border border-border-muted p-6 sm:p-8">
       <h1 class="text-h1 font-semibold text-ink">Choose a new password</h1>
       <p class="mt-2 text-body text-ink-muted">Use at least 8 characters.</p>
       <form class="mt-6 space-y-4" @submit.prevent="updatePassword">
         <div class="relative">
-          <input
-            id="recovery-password"
-            v-model="newPassword"
-            :type="showNewPassword ? 'text' : 'password'"
-            name="recovery-password"
-            required
-            minlength="8"
-            autocomplete="new-password"
-            autocapitalize="none"
-            spellcheck="false"
-            aria-label="New password"
-            class="min-h-12 w-full rounded-panel border border-border px-3 pr-16 text-ink caret-action-link outline-none focus:border-action-link focus:ring-2 focus:ring-state-selected"
-          />
-          <button
-            type="button"
-            class="absolute inset-y-0 right-0 min-w-14 px-3 text-body font-medium text-action-link"
-            @click="showNewPassword = !showNewPassword"
-          >
-            {{ showNewPassword ? 'Hide' : 'Show' }}
-          </button>
+          <input id="recovery-password" v-model="newPassword" :type="showNewPassword ? 'text' : 'password'" name="recovery-password" required minlength="8" autocomplete="new-password" autocapitalize="none" spellcheck="false" aria-label="New password" class="min-h-12 w-full rounded-panel border border-border px-3 pr-16 text-ink caret-action-link outline-none focus:border-action-link focus:ring-2 focus:ring-state-selected" />
+          <button type="button" class="absolute inset-y-0 right-0 min-w-14 px-3 text-body font-medium text-action-link" @click="showNewPassword = !showNewPassword">{{ showNewPassword ? 'Hide' : 'Show' }}</button>
         </div>
-        <button type="submit" :disabled="submitting" class="min-h-12 w-full rounded-panel bg-action-link px-4 font-medium text-on-action disabled:opacity-50">
-          {{ submitting ? 'Saving…' : 'Save new password' }}
-        </button>
+        <button type="submit" :disabled="submitting" class="min-h-12 w-full rounded-panel bg-action-link px-4 font-medium text-on-action disabled:opacity-50">{{ submitting ? 'Saving…' : 'Save new password' }}</button>
       </form>
       <p v-if="errorMessage" class="mt-4 rounded-panel bg-state-danger-surface p-3 text-body text-state-danger">{{ errorMessage }}</p>
     </section>
@@ -47,103 +27,42 @@
 
   <ClientCompletion v-else-if="isClientCompletion" />
 
-  <AppShell v-else-if="session" data-testid="workspace-shell">
-    <router-view />
-  </AppShell>
+  <AppShell v-else-if="session" data-testid="workspace-shell"><router-view /></AppShell>
 
   <main v-else data-testid="login-page" class="min-h-screen bg-surface-muted flex items-center justify-center px-4 py-8 sm:p-6">
-    <section class="w-full max-w-md rounded-panel bg-surface-elevated border border-border-muted  p-6 sm:p-8">
+    <section class="w-full max-w-md rounded-panel bg-surface-elevated border border-border-muted p-6 sm:p-8">
       <h1 class="text-h1 font-semibold text-ink">MindWorks</h1>
-      <p class="mt-2 text-body text-ink-muted">
-        {{ mode === 'signup' ? 'Create your therapist workspace.' : 'Sign in to your therapist workspace.' }}
-      </p>
+      <p class="mt-2 text-body text-ink-muted">{{ mode === 'signup' ? 'Create your therapist workspace.' : 'Sign in to your therapist workspace.' }}</p>
 
       <div class="mt-6 grid grid-cols-2 rounded-panel bg-surface-muted p-1" role="tablist" aria-label="Account access">
-        <button
-          type="button"
-          class="min-h-11 rounded-control px-3 text-body font-medium transition-colors duration-standard ease-out"
-          :class="mode === 'signin' ? 'bg-surface-elevated text-ink ' : 'text-ink-muted'"
-          @click="setMode('signin')"
-        >
-          Sign in
-        </button>
-        <button
-          type="button"
-          class="min-h-11 rounded-control px-3 text-body font-medium transition-colors duration-standard ease-out"
-          :class="mode === 'signup' ? 'bg-surface-elevated text-ink ' : 'text-ink-muted'"
-          @click="setMode('signup')"
-        >
-          Create account
-        </button>
+        <button type="button" class="min-h-11 rounded-control px-3 text-body font-medium transition-colors duration-standard ease-out" :class="mode === 'signin' ? 'bg-surface-elevated text-ink' : 'text-ink-muted'" @click="setMode('signin')">Sign in</button>
+        <button type="button" class="min-h-11 rounded-control px-3 text-body font-medium transition-colors duration-standard ease-out" :class="mode === 'signup' ? 'bg-surface-elevated text-ink' : 'text-ink-muted'" @click="setMode('signup')">Create account</button>
       </div>
 
       <form class="mt-6 space-y-4" @submit.prevent="submit">
         <label v-if="mode === 'signup'" class="block">
           <span class="text-body font-medium text-ink-secondary">Full name</span>
-          <input
-            v-model.trim="fullName"
-            type="text"
-            required
-            autocomplete="name"
-            class="mt-2 min-h-12 w-full rounded-panel border border-border bg-surface-elevated px-3 text-ink caret-action-link outline-none focus:border-action-link focus:ring-2 focus:ring-state-selected"
-          />
+          <input v-model.trim="fullName" type="text" required autocomplete="name" class="mt-2 min-h-12 w-full rounded-panel border border-border bg-surface-elevated px-3 text-ink caret-action-link outline-none focus:border-action-link focus:ring-2 focus:ring-state-selected" />
         </label>
 
         <label class="block">
           <span class="text-body font-medium text-ink-secondary">Email address</span>
-          <input
-            v-model.trim="email"
-            type="email"
-            required
-            autocomplete="email"
-            class="mt-2 min-h-12 w-full rounded-panel border border-border bg-surface-elevated px-3 text-ink caret-action-link outline-none focus:border-action-link focus:ring-2 focus:ring-state-selected"
-          />
+          <input v-model.trim="email" type="email" required autocomplete="email" class="mt-2 min-h-12 w-full rounded-panel border border-border bg-surface-elevated px-3 text-ink caret-action-link outline-none focus:border-action-link focus:ring-2 focus:ring-state-selected" />
         </label>
 
         <label class="block">
           <span class="text-body font-medium text-ink-secondary">Password</span>
           <div class="relative mt-2">
-            <input
-              id="account-password"
-              v-model="password"
-              :type="showPassword ? 'text' : 'password'"
-              name="account-password"
-              required
-              minlength="8"
-              autocomplete="current-password"
-              autocapitalize="none"
-              spellcheck="false"
-              class="min-h-12 w-full rounded-panel border border-border px-3 pr-16 text-ink caret-action-link outline-none focus:border-action-link focus:ring-2 focus:ring-state-selected"
-            />
-            <button
-              type="button"
-              class="absolute inset-y-0 right-0 min-w-14 px-3 text-body font-medium text-action-link"
-              @click="showPassword = !showPassword"
-            >
-              {{ showPassword ? 'Hide' : 'Show' }}
-            </button>
+            <input id="account-password" v-model="password" :type="showPassword ? 'text' : 'password'" name="account-password" required minlength="8" autocomplete="current-password" autocapitalize="none" spellcheck="false" class="min-h-12 w-full rounded-panel border border-border px-3 pr-16 text-ink caret-action-link outline-none focus:border-action-link focus:ring-2 focus:ring-state-selected" />
+            <button type="button" class="absolute inset-y-0 right-0 min-w-14 px-3 text-body font-medium text-action-link" @click="showPassword = !showPassword">{{ showPassword ? 'Hide' : 'Show' }}</button>
           </div>
           <span v-if="mode === 'signup'" class="mt-1 block text-caption text-ink-subtle">At least 8 characters</span>
         </label>
 
-        <button
-          type="submit"
-          :disabled="submitting"
-          class="min-h-12 w-full rounded-panel bg-action-link px-4 font-medium text-on-action hover:bg-action-link-hover disabled:opacity-50"
-        >
-          {{ submitting ? 'Please wait…' : mode === 'signup' ? 'Create account' : 'Sign in' }}
-        </button>
+        <button type="submit" :disabled="submitting" class="min-h-12 w-full rounded-panel bg-action-link px-4 font-medium text-on-action hover:bg-action-link-hover disabled:opacity-50">{{ submitting ? 'Please wait…' : mode === 'signup' ? 'Create account' : 'Sign in' }}</button>
       </form>
 
-      <button
-        v-if="mode === 'signin'"
-        type="button"
-        :disabled="submitting || !email"
-        class="mt-4 min-h-11 w-full text-body font-medium text-action-link disabled:text-ink-subtle"
-        @click="resetPassword"
-      >
-        Forgot your password?
-      </button>
+      <button v-if="mode === 'signin'" type="button" :disabled="submitting || !email" class="mt-4 min-h-11 w-full text-body font-medium text-action-link disabled:text-ink-subtle" @click="resetPassword">Forgot your password?</button>
 
       <p v-if="message" class="mt-4 rounded-panel bg-state-success-surface p-3 text-body text-state-success">{{ message }}</p>
       <p v-if="errorMessage" class="mt-4 rounded-panel bg-state-danger-surface p-3 text-body text-state-danger">{{ errorMessage }}</p>
@@ -192,24 +111,18 @@ onMounted(async () => {
     return
   }
 
-  // Recovery must win over any therapist session already saved in this browser.
-  // Register the listener before getSession() so the recovery event cannot be missed.
   recovering.value = isRecoveryLink()
   const listener = supabase.auth.onAuthStateChange((event, nextSession) => {
     if (event === 'PASSWORD_RECOVERY') {
       recovering.value = true
       clearFeedback()
     }
-
     if (event === 'SIGNED_OUT') {
       const currentError = errorMessage.value
       clearFeedback()
-      if (currentError && currentError.includes('expired')) {
-        errorMessage.value = currentError
-      }
+      if (currentError && currentError.includes('expired')) errorMessage.value = currentError
       if (!isRecoveryLink()) recovering.value = false
     }
-
     session.value = nextSession
     authLoading.value = false
   })
@@ -229,9 +142,7 @@ onMounted(async () => {
 
 onUnmounted(() => {
   authSubscription?.unsubscribe()
-  if (handleExpiryRef.value) {
-    window.removeEventListener('helios-session-expired', handleExpiryRef.value)
-  }
+  if (handleExpiryRef.value) window.removeEventListener('helios-session-expired', handleExpiryRef.value)
 })
 
 const setMode = (nextMode) => {
@@ -244,29 +155,21 @@ const setMode = (nextMode) => {
 const submit = async () => {
   submitting.value = true
   clearFeedback()
-
   try {
     if (mode.value === 'signup') {
       const { data, error } = await supabase.auth.signUp({
         email: email.value,
         password: password.value,
-        options: {
-          emailRedirectTo: 'https://helio.works',
-          data: { full_name: fullName.value }
-        }
+        options: { emailRedirectTo: 'https://helio.works', data: { full_name: fullName.value } }
       })
       if (error) throw error
-
       if (!data.session) {
-        message.value = 'Account created. Check your email to verify your address, then sign in.'
+        message.value = 'If this email can be used to create an account, you’ll receive a confirmation link. Check your inbox, then sign in.'
         mode.value = 'signin'
         password.value = ''
       }
     } else {
-      const { error } = await supabase.auth.signInWithPassword({
-        email: email.value,
-        password: password.value
-      })
+      const { error } = await supabase.auth.signInWithPassword({ email: email.value, password: password.value })
       if (error) throw error
     }
   } catch (error) {
@@ -279,16 +182,11 @@ const submit = async () => {
 const updatePassword = async () => {
   submitting.value = true
   clearFeedback()
-
   try {
     const { error } = await supabase.auth.updateUser({ password: newPassword.value })
     if (error) throw error
-
-    // Do not leave the recovery account (or a previous therapist) signed in.
-    // Return to a neutral sign-in screen after the password has been changed.
     const { error: signOutError } = await supabase.auth.signOut()
     if (signOutError) throw signOutError
-
     session.value = null
     recovering.value = false
     newPassword.value = ''
@@ -307,11 +205,8 @@ const updatePassword = async () => {
 const resetPassword = async () => {
   submitting.value = true
   clearFeedback()
-
   try {
-    const { error } = await supabase.auth.resetPasswordForEmail(email.value, {
-      redirectTo: 'https://helio.works'
-    })
+    const { error } = await supabase.auth.resetPasswordForEmail(email.value, { redirectTo: 'https://helio.works' })
     if (error) throw error
     message.value = 'Check your email for the password reset link.'
   } catch (error) {
