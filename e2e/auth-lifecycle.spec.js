@@ -18,10 +18,11 @@ test.describe('Authentication Lifecycle', () => {
   });
 
   async function login(page) {
-    await page.goto('/', { waitUntil:'domcontentloaded' });
+    await page.goto('/sign-in', { waitUntil:'domcontentloaded' });
     await page.getByLabel('Email address').fill(email);
     await page.getByLabel('Password').fill('password123');
     await page.locator('form').getByRole('button',{name:'Sign in'}).click();
+    await expect(page).toHaveURL(/\/overview$/);
     await expect(page.getByTestId('workspace-shell')).toBeVisible({ timeout:15000 });
   }
 
@@ -48,6 +49,7 @@ test.describe('Authentication Lifecycle', () => {
   test('session expiry UI transition', async ({ page }) => {
     await login(page);
     await page.evaluate(() => window.dispatchEvent(new CustomEvent('helios-session-expired',{ detail:{ message:'Your session has expired. Please sign in again.' } })));
+    await expect(page).toHaveURL(/\/sign-in$/);
     await expect(page.getByTestId('login-page')).toBeVisible();
     await expect(page.getByText('Your session has expired. Please sign in again.')).toBeVisible();
   });
@@ -58,20 +60,16 @@ test.describe('Authentication Lifecycle', () => {
       recoveryRequest = { url:route.request().url(), body:route.request().postDataJSON() };
       await route.fulfill({ status:200, contentType:'application/json', body:'{}' });
     });
-    await page.goto('/', { waitUntil:'domcontentloaded' });
+    await page.goto('/sign-in', { waitUntil:'domcontentloaded' });
     await page.getByLabel('Email address').fill(email);
     await page.getByRole('button',{name:'Forgot your password?'}).click();
     await expect(page.getByText('Check your email for the password reset link.')).toBeVisible();
     expect(recoveryRequest.body.email).toBe(email);
-    expect(new URL(recoveryRequest.url).searchParams.get('redirect_to')).toBe('https://helio.works');
+    expect(new URL(recoveryRequest.url).searchParams.get('redirect_to')).toBe('https://helio.works/sign-in');
   });
 
-  test('password-recovery event shows reset form and saves a new password', async ({ page }) => {
-    await page.goto('/', { waitUntil:'domcontentloaded' });
-    await page.evaluate(() => {
-      window.dispatchEvent(new HashChangeEvent('hashchange'));
-    });
-    await page.route('**/auth/v1/user*', route => route.fulfill({ status:200, contentType:'application/json', body:JSON.stringify({ id:userId, email }) }));
-    await expect(page.getByTestId('login-page')).toBeVisible();
+  test('password-recovery route can show the reset form', async ({ page }) => {
+    await page.goto('/sign-in?type=recovery', { waitUntil:'domcontentloaded' });
+    await expect(page.getByRole('heading',{name:'Choose a new password'})).toBeVisible();
   });
 });
