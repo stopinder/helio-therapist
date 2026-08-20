@@ -10,7 +10,8 @@ test('lib/clients.js includes createClient with authenticated user check', async
   assert.match(content, /\.from\('clients'\)/)
   assert.match(content, /\.insert\({\s*user_id: user\.id/)
   assert.match(content, /display_name: name/)
-  assert.match(content, /reference: email/)
+  assert.match(content, /reference: null/)
+  assert.match(content, /email: email \|\| null/)
   assert.match(content, /current_focus: note/)
 })
 
