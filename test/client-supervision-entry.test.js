@@ -43,3 +43,15 @@ test('Supervision report supports direct PDF download without changing stored re
   assert.match(workspace, /clientAliases/)
   assert.match(workspace, /includeClientReferences/)
 })
+
+test('Supervision global content options control preview and exported report content', async () => {
+  const preview = await readFile(new URL('../src/components/professional-development/SupervisionReportPreview.vue', import.meta.url), 'utf8')
+  const workspace = await readFile(new URL('../src/views/supervision/SupervisionWorkspace.vue', import.meta.url), 'utf8')
+
+  assert.match(preview, /options\.includeDates && itemOptions\(reflection\)\.includeDate/)
+  assert.match(preview, /options\.includeThemes && itemOptions\(reflection\)\.includeTheme/)
+  assert.match(preview, /options\.includeText && itemOptions\(reflection\)\.includeText/)
+  assert.match(workspace, /exportOptions\.value\.includeDates && opts\.includeDate/)
+  assert.match(workspace, /exportOptions\.value\.includeThemes && opts\.includeTheme/)
+  assert.match(workspace, /exportOptions\.value\.includeText && opts\.includeText/)
+})
