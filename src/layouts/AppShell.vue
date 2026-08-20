@@ -17,10 +17,16 @@
       <header class="h-16 flex items-center justify-between px-inline-lg md:px-6 border-b border-border-muted bg-surface shrink-0">
         <div class="flex items-center gap-inline-md"><button class="md:hidden p-2 -ml-2 text-ink-secondary hover:bg-surface-subtle rounded-control" @click="isMobileMenuOpen=true" aria-label="Open menu"><Bars3Icon class="h-5 w-5" /></button><h2 class="type-body-medium text-ink truncate">{{ currentPageName }}</h2></div>
         <div class="flex items-center gap-2 md:gap-3">
-          <div class="hidden md:flex items-center gap-2 text-ink-secondary whitespace-nowrap" data-testid="global-session-clock" aria-live="off">
+          <div
+            class="hidden md:flex items-center gap-2 whitespace-nowrap transition-colors duration-standard ease-out"
+            :class="isSessionApproaching ? 'rounded-control border border-accent/30 bg-accent/10 px-2.5 py-1.5 text-ink' : 'text-ink-secondary'"
+            data-testid="global-session-clock"
+            :data-session-approaching="isSessionApproaching ? 'true' : 'false'"
+            aria-live="off"
+          >
             <time class="type-body-medium tabular-nums text-ink" :datetime="now.toISOString()">{{ currentTimeLabel }}</time>
             <span class="text-border" aria-hidden="true">·</span>
-            <span v-if="nextAppointment" class="type-metadata">Next session {{ nextSessionTimeLabel }} <span class="text-ink-muted">· {{ nextSessionCountdownLabel }}</span></span>
+            <span v-if="nextAppointment" class="type-metadata">Next session {{ nextSessionTimeLabel }} <span :class="isSessionApproaching ? 'font-semibold text-accent' : 'text-ink-muted'">· {{ nextSessionCountdownLabel }}</span></span>
             <span v-else class="type-metadata text-ink-muted">No upcoming session</span>
           </div>
           <button type="button" class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-control border type-ui transition-colors" :class="outstandingReminderCount ? 'border-brand-amber/50 bg-brand-amber-soft text-ink' : 'border-border-muted bg-surface text-ink-secondary hover:bg-surface-subtle'" :aria-expanded="showQuickCapture" aria-haspopup="dialog" @click="showQuickCapture=!showQuickCapture">
@@ -51,9 +57,11 @@ const route=useRoute(),router=useRouter(),isMobileMenuOpen=ref(false);const acco
 const showQuickCapture=ref(false),reminders=ref([]);const openReminders=computed(()=>reminders.value.filter(item=>!item.completedAt));const outstandingReminderCount=computed(()=>openReminders.value.length);
 const now=ref(new Date()),appointments=ref([]),joiningNextSession=ref(false);let clockTimer,appointmentRefreshTimer;
 const nextAppointment=computed(()=>appointments.value.find(item=>new Date(item.starts_at).getTime()>=now.value.getTime())||null);
+const minutesUntilNextSession=computed(()=>nextAppointment.value?Math.ceil((new Date(nextAppointment.value.starts_at).getTime()-now.value.getTime())/60000):null);
+const isSessionApproaching=computed(()=>minutesUntilNextSession.value!==null&&minutesUntilNextSession.value>=0&&minutesUntilNextSession.value<=15);
 const currentTimeLabel=computed(()=>now.value.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}));
 const nextSessionTimeLabel=computed(()=>nextAppointment.value?new Date(nextAppointment.value.starts_at).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}):'');
-const nextSessionCountdownLabel=computed(()=>{if(!nextAppointment.value)return'';const minutes=Math.max(0,Math.ceil((new Date(nextAppointment.value.starts_at).getTime()-now.value.getTime())/60000));if(minutes<60)return minutes===1?'1 min':`${minutes} min`;const hours=Math.floor(minutes/60),remaining=minutes%60;return remaining?`${hours}h ${remaining}m`:`${hours}h`});
+const nextSessionCountdownLabel=computed(()=>{if(!nextAppointment.value)return'';const minutes=Math.max(0,minutesUntilNextSession.value);if(minutes<60)return minutes===1?'1 min':`${minutes} min`;const hours=Math.floor(minutes/60),remaining=minutes%60;return remaining?`${hours}h ${remaining}m`:`${hours}h`});
 async function refreshReminders(){try{reminders.value=await listTherapistReminders()}catch(error){console.warn('[AppShell] Reminders unavailable',error)}}
 async function refreshAppointments(){try{appointments.value=await listScheduledAppointments()}catch(error){console.warn('[AppShell] Appointments unavailable',error)}}
 function refreshAppointmentsWhenActive(){if(document.visibilityState==='visible')refreshAppointments()}
