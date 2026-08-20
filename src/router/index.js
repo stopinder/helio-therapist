@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import { supabase } from '../lib/supabase.js'
 import Landing from '../views/Landing.vue'
 import AuthEntry from '../views/AuthEntry.vue'
 import Overview from '../views/Overview.vue'
@@ -48,4 +49,12 @@ const routes = [
 ]
 
 const router = createRouter({ history: createWebHistory(), routes })
+
+router.beforeEach(async (to) => {
+  if (to.meta.public || to.meta.authEntry || !supabase) return true
+  const { data } = await supabase.auth.getSession()
+  if (data.session) return true
+  return { path: '/sign-in', query: { redirect: to.fullPath } }
+})
+
 export default router
