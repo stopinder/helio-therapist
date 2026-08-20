@@ -1,12 +1,5 @@
 <template>
-  <div
-    class="fixed inset-0 bg-backdrop/60 backdrop-blur-sm flex items-center justify-center z-[60] p-4 print:p-0 print:bg-white no-print"
-    @click.self="$emit('close')"
-    role="dialog"
-    aria-modal="true"
-    aria-labelledby="export-modal-title"
-    data-testid="supervision-report-preview"
-  >
+  <div class="fixed inset-0 bg-backdrop/60 backdrop-blur-sm flex items-center justify-center z-[60] p-4 print:p-0 print:bg-white no-print" @click.self="$emit('close')" role="dialog" aria-modal="true" aria-labelledby="export-modal-title" data-testid="supervision-report-preview">
     <div class="w-full max-w-5xl bg-surface rounded-panel shadow-overlay max-h-[90vh] flex flex-col overflow-hidden border border-border">
       <div class="p-6 border-b border-border-muted flex justify-between items-center bg-surface-elevated">
         <div><h2 id="export-modal-title" class="text-h2 font-semibold text-ink">Supervision Report Preview</h2><p class="text-caption text-ink-muted mt-1">Review your content and anonymise before downloading, printing or copying.</p></div>
@@ -29,27 +22,22 @@
             <div class="mb-12 pb-6 border-b border-ink"><h1 class="text-h2 font-semibold text-ink uppercase tracking-tight">Supervision Report</h1><p class="text-caption text-ink-muted mt-1">Generated on {{ new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) }}</p></div>
             <div v-if="introduction" class="mb-12"><p class="text-body font-fraunces italic text-ink-secondary whitespace-pre-wrap leading-relaxed">{{ introduction }}</p></div>
             <div v-for="reflection in reflections" :key="'export-' + reflection.id" class="break-inside-avoid mb-12">
-              <div class="flex items-start justify-between mb-4"><div class="flex flex-wrap items-center gap-3"><span v-if="packItemOptions[reflection.id].includeDate" class="type-overline text-ink-muted">{{ formatDate(reflection.created_at) }}</span><span class="w-px h-3 bg-border-muted mx-1" v-if="packItemOptions[reflection.id].includeDate"></span><span v-if="options.includeClientReferences" class="text-body-sm font-semibold text-ink">{{ reflection.clients?.display_name || 'Anonymous' }}</span><span v-else class="text-body-sm font-semibold text-ink">{{ reflection.clients?.display_name ? clientAliases[reflection.clients.display_name] : 'Case Anonymous' }}</span></div><span v-if="packItemOptions[reflection.id].includeTheme && reflection.theme" class="px-2 py-0.5 bg-surface-subtle text-overline font-bold text-ink-secondary uppercase rounded-full border border-border">{{ reflection.theme }}</span></div>
-              <div v-if="packItemOptions[reflection.id].includeText" class="p-6 bg-surface-subtle rounded-panel border-l-2 border-action-primary"><p class="text-body text-ink italic leading-relaxed whitespace-pre-wrap">"{{ reflection.body }}"</p><div v-if="packItemOptions[reflection.id].notes" class="mt-4 pt-4 border-t border-border-muted"><h5 class="type-overline text-ink-muted mb-1">Preparation Note:</h5><p class="text-caption text-ink-secondary whitespace-pre-wrap">{{ packItemOptions[reflection.id].notes }}</p></div></div>
+              <div class="flex items-start justify-between mb-4"><div class="flex flex-wrap items-center gap-3"><span v-if="options.includeDates && itemOptions(reflection).includeDate" class="type-overline text-ink-muted">{{ formatDate(reflection.created_at) }}</span><span class="w-px h-3 bg-border-muted mx-1" v-if="options.includeDates && itemOptions(reflection).includeDate"></span><span v-if="options.includeClientReferences" class="text-body-sm font-semibold text-ink">{{ reflection.clients?.display_name || 'Anonymous' }}</span><span v-else class="text-body-sm font-semibold text-ink">{{ reflection.clients?.display_name ? clientAliases[reflection.clients.display_name] : 'Case Anonymous' }}</span></div><span v-if="options.includeThemes && itemOptions(reflection).includeTheme && reflection.theme" class="px-2 py-0.5 bg-surface-subtle text-overline font-bold text-ink-secondary uppercase rounded-full border border-border">{{ reflection.theme }}</span></div>
+              <div v-if="options.includeText && itemOptions(reflection).includeText" class="p-6 bg-surface-subtle rounded-panel border-l-2 border-action-primary"><p class="text-body text-ink italic leading-relaxed whitespace-pre-wrap">"{{ reflection.body }}"</p><div v-if="itemOptions(reflection).notes" class="mt-4 pt-4 border-t border-border-muted"><h5 class="type-overline text-ink-muted mb-1">Preparation Note:</h5><p class="text-caption text-ink-secondary whitespace-pre-wrap">{{ itemOptions(reflection).notes }}</p></div></div>
+              <div v-else-if="itemOptions(reflection).notes" class="p-6 bg-surface-subtle rounded-panel border-l-2 border-action-primary"><h5 class="type-overline text-ink-muted mb-1">Preparation Note:</h5><p class="text-caption text-ink-secondary whitespace-pre-wrap">{{ itemOptions(reflection).notes }}</p></div>
             </div>
             <div v-if="reflections.length === 0" class="py-12 text-center italic text-ink-muted text-body">No items selected for this report.</div>
           </div>
         </div>
       </div>
-      <div class="p-6 border-t border-border-muted bg-surface flex justify-between items-center no-print">
-        <button @click="$emit('close')" class="button-secondary">Back to Workspace</button>
-        <div class="flex items-center gap-3">
-          <button @click="$emit('copy')" class="button-secondary bg-surface-subtle border-border shadow-sm flex items-center gap-2"><span v-if="copying" class="w-4 h-4 border-2 border-ink border-t-transparent rounded-full animate-spin"></span><span v-else>📋</span>Copy Text</button>
-          <button @click="$emit('download-pdf')" :disabled="downloading" class="button-secondary bg-surface-subtle border-border shadow-sm flex items-center gap-2" data-testid="download-supervision-pdf"><span v-if="downloading" class="w-4 h-4 border-2 border-ink border-t-transparent rounded-full animate-spin"></span><span v-else>↓</span>{{ downloading ? 'Preparing PDF…' : 'Download PDF' }}</button>
-          <button @click="$emit('print')" class="button-primary px-8 shadow-md flex items-center gap-2"><span>🖨️</span>Print Report</button>
-        </div>
-      </div>
+      <div class="p-6 border-t border-border-muted bg-surface flex justify-between items-center no-print"><button @click="$emit('close')" class="button-secondary">Back to Workspace</button><div class="flex items-center gap-3"><button @click="$emit('copy')" class="button-secondary bg-surface-subtle border-border shadow-sm flex items-center gap-2"><span v-if="copying" class="w-4 h-4 border-2 border-ink border-t-transparent rounded-full animate-spin"></span><span v-else>📋</span>Copy Text</button><button @click="$emit('download-pdf')" :disabled="downloading" class="button-secondary bg-surface-subtle border-border shadow-sm flex items-center gap-2" data-testid="download-supervision-pdf"><span v-if="downloading" class="w-4 h-4 border-2 border-ink border-t-transparent rounded-full animate-spin"></span><span v-else>↓</span>{{ downloading ? 'Preparing PDF…' : 'Download PDF' }}</button><button @click="$emit('print')" class="button-primary px-8 shadow-md flex items-center gap-2"><span>🖨️</span>Print Report</button></div></div>
     </div>
   </div>
 </template>
 <script setup>
-defineProps({ reflections: { type: Array, required: true }, options: { type: Object, required: true }, packItemOptions: { type: Object, required: true }, clientAliases: { type: Object, required: true }, introduction: { type: String, default: '' }, copying: { type: Boolean, default: false }, downloading: { type: Boolean, default: false } });
+const props = defineProps({ reflections: { type: Array, required: true }, options: { type: Object, required: true }, packItemOptions: { type: Object, required: true }, clientAliases: { type: Object, required: true }, introduction: { type: String, default: '' }, copying: { type: Boolean, default: false }, downloading: { type: Boolean, default: false } });
 defineEmits(['close', 'update-option', 'update-introduction', 'copy', 'download-pdf', 'print']);
+function itemOptions(reflection) { return props.packItemOptions[reflection.id] || { includeText: true, includeDate: true, includeTheme: true }; }
 function formatDate(dateString) { if (!dateString) return ''; return new Date(dateString).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }); }
 </script>
 <style scoped>@media print { .no-print { display: none !important; } #printable-pack { box-shadow: none !important; border: none !important; padding: 0 !important; max-width: none !important; } }</style>
