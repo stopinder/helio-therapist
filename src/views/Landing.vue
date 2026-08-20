@@ -40,5 +40,15 @@
         </div>
       </aside>
     </section>
+
+    <footer class="border-t border-border-muted">
+      <nav class="mx-auto flex w-full max-w-6xl flex-wrap gap-x-5 gap-y-2 px-5 py-6 text-sm text-ink-secondary sm:px-8" aria-label="Legal and support">
+        <router-link to="/terms" class="hover:text-ink">Terms</router-link>
+        <router-link to="/privacy" class="hover:text-ink">Privacy</router-link>
+        <router-link to="/ai-data" class="hover:text-ink">AI & data</router-link>
+        <router-link to="/cookies" class="hover:text-ink">Cookies</router-link>
+        <router-link to="/support" class="hover:text-ink">Support</router-link>
+      </nav>
+    </footer>
   </main>
 </template>

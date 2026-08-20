@@ -2,6 +2,11 @@ import { createRouter, createWebHistory } from 'vue-router'
 import { supabase } from '../lib/supabase.js'
 import Landing from '../views/Landing.vue'
 import AuthEntry from '../views/AuthEntry.vue'
+import Terms from '../views/Terms.vue'
+import Privacy from '../views/Privacy.vue'
+import AiData from '../views/AiData.vue'
+import Cookies from '../views/Cookies.vue'
+import Support from '../views/Support.vue'
 import Overview from '../views/Overview.vue'
 import Calendar from '../views/Calendar.vue'
 import Clients from '../views/Clients.vue'
@@ -24,6 +29,11 @@ const routes = [
   { path: '/', name: 'Landing', component: Landing, meta: { public: true } },
   { path: '/sign-in', name: 'SignIn', component: AuthEntry, meta: { authEntry: 'signin' } },
   { path: '/get-started', name: 'GetStarted', component: AuthEntry, meta: { authEntry: 'signup' } },
+  { path: '/terms', name: 'Terms', component: Terms, meta: { public: true } },
+  { path: '/privacy', name: 'Privacy', component: Privacy, meta: { public: true } },
+  { path: '/ai-data', name: 'AiData', component: AiData, meta: { public: true } },
+  { path: '/cookies', name: 'Cookies', component: Cookies, meta: { public: true } },
+  { path: '/support', name: 'Support', component: Support, meta: { public: true } },
   { path: '/overview', name: 'Overview', component: Overview },
   { path: '/calendar', name: 'Calendar', component: Calendar },
   { path: '/schedule', name: 'ScheduleAppointment', component: ScheduleAppointment },

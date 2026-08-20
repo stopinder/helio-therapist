@@ -1,0 +1,10 @@
+<template>
+  <PublicPageShell title="Terms of Service" eyebrow="Legal" summary="The proposed terms for therapist use of Helios Therapist.">
+    <section><h2 class="type-subsection">About Helios</h2><p class="mt-2 type-body text-ink-secondary">Helios Therapist is a workspace for therapists to manage practice administration, session work, notes, clinical records and professional reflection. The legal identity and contact details of the service operator must be confirmed before launch.</p></section>
+    <section><h2 class="type-subsection">Professional responsibility</h2><p class="mt-2 type-body text-ink-secondary">Helios supports professional work but does not replace clinical judgement, supervision, professional standards or legal obligations. Therapists remain responsible for reviewing information, deciding what belongs in a clinical record and using the service appropriately for their practice.</p></section>
+    <section><h2 class="type-subsection">AI and transcripts</h2><p class="mt-2 type-body text-ink-secondary">AI-assisted and transcript-derived material is draft or suggestion material for therapist review. It does not become an approved Clinical Record automatically.</p></section>
+    <section><h2 class="type-subsection">Accounts and security</h2><p class="mt-2 type-body text-ink-secondary">Users must keep their account credentials secure and must not use Helios to access information they are not authorised to access. Access may be suspended where reasonably necessary to protect the service, users or data.</p></section>
+    <section><h2 class="type-subsection">Availability and changes</h2><p class="mt-2 type-body text-ink-secondary">The service may change as Helios develops. Final launch terms should specify service availability, payment terms if applicable, termination, liability, governing law and the legal operator before being accepted by users.</p></section>
+  </PublicPageShell>
+</template>
+<script setup>import PublicPageShell from '../components/PublicPageShell.vue'</script>
