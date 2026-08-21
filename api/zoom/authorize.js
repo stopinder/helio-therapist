@@ -5,7 +5,8 @@ export const ZOOM_OAUTH_SCOPES = [
   'meeting:read:meeting',
   'user:read:user',
   'scheduler:read',
-  'scheduler:write'
+  'scheduler:write',
+  'my_notes:read:content'
 ];
 
 export function buildZoomAuthorizationUrl({ clientId, redirectUri, state }) {
