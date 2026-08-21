@@ -75,6 +75,37 @@ export function schedulerAppointmentEvent(body) {
   }
 }
 
+export function myNotesEvent(body) {
+  if (String(body?.event || '') !== 'my_notes.note_generated') return null
+  const object = body?.payload?.object || {}
+  return {
+    noteId: object.note_id ? String(object.note_id) : null,
+    operatorId: body?.payload?.operator_id ? String(body.payload.operator_id) : null,
+    accountId: body?.payload?.account_id ? String(body.payload.account_id) : null,
+    meetingId: object.meeting_id ? String(object.meeting_id) : null,
+    createdTime: object.created_time || null,
+    updatedTime: object.updated_time || null
+  }
+}
+
+export function canonicaliseMyNotesTranscript(transcript) {
+  if (!transcript || !Array.isArray(transcript.items) || transcript.items.length === 0) return ''
+  const speakers = new Map(
+    (Array.isArray(transcript.speakers) ? transcript.speakers : [])
+      .filter(speaker => speaker?.speaker_id)
+      .map(speaker => [String(speaker.speaker_id), String(speaker.display_name || '').trim()])
+  )
+
+  return transcript.items.map(item => {
+    const speakerId = item?.speaker_id ? String(item.speaker_id) : ''
+    const suppliedName = speakers.get(speakerId)
+    const speaker = suppliedName || (speakerId ? `Speaker ${speakerId}` : 'Speaker')
+    const startTime = item?.start_time ? String(item.start_time) : '00:00:00.000'
+    const text = String(item?.text || '').trim()
+    return `[${startTime}] ${speaker}: ${text}`
+  }).join('\n\n')
+}
+
 export function safeZoomWebhookPayload(body) {
   const schedulerEvent = schedulerAppointmentEvent(body)
   if (schedulerEvent) {
@@ -99,6 +130,24 @@ export function safeZoomWebhookPayload(body) {
           tracking: {
             utm_content: schedulerEvent.correlationToken
           }
+        }
+      }
+    }
+  }
+
+  const noteEvent = myNotesEvent(body)
+  if (noteEvent) {
+    return {
+      event: 'my_notes.note_generated',
+      event_ts: body?.event_ts || null,
+      payload: {
+        account_id: noteEvent.accountId,
+        operator_id: noteEvent.operatorId,
+        object: {
+          note_id: noteEvent.noteId,
+          created_time: noteEvent.createdTime,
+          updated_time: noteEvent.updatedTime,
+          meeting_id: noteEvent.meetingId
         }
       }
     }
