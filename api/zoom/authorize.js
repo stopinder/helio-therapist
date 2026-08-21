@@ -7,7 +7,7 @@ export function buildZoomAuthorizationUrl({ clientId, redirectUri, state }) {
     client_id: clientId,
     redirect_uri: redirectUri,
     state,
-    scope: 'meeting:read:meeting',
+    scope: 'meeting:read:meeting my_notes:read:content',
     include_granted_scopes: 'true'
   });
   return `https://zoom.us/oauth/authorize?${params.toString()}`;

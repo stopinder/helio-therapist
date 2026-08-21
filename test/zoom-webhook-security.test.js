@@ -128,3 +128,32 @@ test('maps Scheduler cancellation and reschedule lifecycle states', () => {
   })
   assert.equal(rescheduled.status, 'rescheduled')
 })
+
+test('extracts My Notes metadata without storing transcript content', () => {
+  const myNotesBody = {
+    event: 'my_notes.note_generated',
+    event_ts: 1786263000000,
+    payload: {
+      operator_id: 'zoom-operator-id',
+      operator: 'Therapist Name',
+      account_id: 'account-id',
+      object: {
+        note_id: 'note-id-123',
+        note_name: 'Therapy Session Note',
+        created_time: '2026-08-10T10:00:00Z',
+        updated_time: '2026-08-10T10:05:00Z',
+        meeting_id: '987654321',
+        generated_note_content: 'AI summary should not be stored'
+      }
+    }
+  }
+
+  const safePayload = safeZoomWebhookPayload(myNotesBody)
+  const serialized = JSON.stringify(safePayload)
+
+  assert.equal(safePayload.event, 'my_notes.note_generated')
+  assert.equal(safePayload.payload.operator_id, 'zoom-operator-id')
+  assert.equal(safePayload.payload.object.note_id, 'note-id-123')
+  assert.equal(safePayload.payload.object.meeting_id, '987654321')
+  assert.doesNotMatch(serialized, /AI summary should not be stored|Therapist Name/)
+})

@@ -76,6 +76,7 @@ export function schedulerAppointmentEvent(body) {
 }
 
 export function safeZoomWebhookPayload(body) {
+  const eventType = String(body?.event || 'unknown');
   const schedulerEvent = schedulerAppointmentEvent(body)
   if (schedulerEvent) {
     return {
@@ -102,6 +103,24 @@ export function safeZoomWebhookPayload(body) {
         }
       }
     }
+  }
+
+  if (eventType === 'my_notes.note_generated') {
+    const object = body?.payload?.object || {};
+    return {
+      event: eventType,
+      event_ts: body?.event_ts || null,
+      payload: {
+        operator_id: body.payload?.operator_id || null,
+        object: {
+          note_id: object.note_id || null,
+          note_name: object.note_name || null,
+          created_time: object.created_time || null,
+          updated_time: object.updated_time || null,
+          meeting_id: object.meeting_id || null
+        }
+      }
+    };
   }
 
   const source = body?.payload?.object || {}

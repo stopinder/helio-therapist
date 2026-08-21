@@ -173,7 +173,145 @@ export default async function handler(req, res) {
       return res.status(200).json({ received: true });
     }
 
-    if (eventType !== 'recording.transcript_completed' && eventType !== 'recording.completed') {
+    if (eventType !== 'recording.transcript_completed' && eventType !== 'recording.completed' && eventType !== 'my_notes.note_generated') {
+      return res.status(200).json({ received: true });
+    }
+
+    if (eventType === 'my_notes.note_generated') {
+      const noteId = body.payload?.object?.note_id;
+      const operatorId = body.payload?.operator_id;
+      if (!noteId || !operatorId) {
+        await updateEvent(supabase, intakeEvent.id, {
+          processing_status: 'failed',
+          processing_error: 'My Notes event did not contain a note_id or operator_id'
+        });
+        return res.status(200).json({ received: true });
+      }
+
+      const { data: integration, error: integrationError } = await supabase
+        .from('integrations')
+        .select('user_id, encrypted_access_token, encrypted_refresh_token, expires_at, token_type, scope')
+        .eq('provider', 'zoom')
+        .eq('provider_account_id', operatorId)
+        .maybeSingle();
+
+      if (integrationError) throw integrationError;
+      if (!integration) {
+        await updateEvent(supabase, intakeEvent.id, {
+          processing_status: 'unmatched',
+          processing_error: 'No connected Helio therapist matched this Zoom operator'
+        });
+        return res.status(200).json({ received: true });
+      }
+
+      // Check for scope
+      const scopes = (integration.scope || '').split(' ');
+      if (!scopes.includes('my_notes:read:content')) {
+        await updateEvent(supabase, intakeEvent.id, {
+          processing_status: 'failed',
+          processing_error: 'Missing required my_notes:read:content scope'
+        });
+        console.warn('[Zoom Webhook] My Notes scope missing for therapist', { operatorId, userId: integration.user_id });
+        return res.status(200).json({ received: true });
+      }
+
+      const getToken = (options) => getZoomAccessTokenContext(supabase, integration, options);
+      const initialToken = await getToken({ forceRefresh: false });
+
+      const contentResponse = await fetch(
+        `https://api.zoom.us/v2/my_notes/notes/${encodeURIComponent(noteId)}/content?include=transcript`,
+        { headers: { Authorization: `Bearer ${initialToken.accessToken}` } }
+      );
+
+      if (!contentResponse.ok) {
+        if (contentResponse.status === 401 || contentResponse.status === 403 || contentResponse.status === 429) {
+           throw new Error(`Zoom My Notes API failed with ${contentResponse.status}`);
+        }
+        await updateEvent(supabase, intakeEvent.id, {
+          processing_status: 'failed',
+          processing_error: `Zoom My Notes API returned ${contentResponse.status}`
+        });
+        return res.status(200).json({ received: true });
+      }
+
+      const noteContent = await contentResponse.json();
+      const transcript = noteContent.transcript;
+      if (!transcript || !Array.isArray(transcript.items) || transcript.items.length === 0) {
+        await updateEvent(supabase, intakeEvent.id, {
+          processing_status: 'failed',
+          processing_error: 'Zoom My Notes content did not contain a transcript'
+        });
+        return res.status(200).json({ received: true });
+      }
+
+      // Format canonical text representation
+      const speakerMap = new Map();
+      (transcript.speakers || []).forEach(s => {
+        speakerMap.set(s.speaker_id, s.display_name || `Speaker ${s.speaker_id}`);
+      });
+
+      const readableTranscript = transcript.items.map(item => {
+        const speaker = speakerMap.get(item.speaker_id) || `Speaker ${item.speaker_id}`;
+        const time = item.start_time || '00:00';
+        return `[${time}] ${speaker}: ${item.text}`;
+      }).join('\n\n');
+
+      // Session matching
+      const zoomMeetingId = body.payload?.object?.meeting_id ? String(body.payload.object.meeting_id) : null;
+      let sessionLink = null;
+      if (zoomMeetingId) {
+        sessionLink = await findSessionLink(supabase, integration.user_id, zoomMeetingId);
+      }
+
+      if (!sessionLink) {
+        // Safe auto-link logic
+        const noteCreatedTime = body.payload?.object?.created_time;
+        if (noteCreatedTime) {
+          const createdDate = new Date(noteCreatedTime);
+          const windowStart = new Date(createdDate.getTime() - 60 * 60 * 1000).toISOString(); // 1 hour before
+          const windowEnd = new Date(createdDate.getTime() + 5 * 60 * 1000).toISOString(); // 5 mins after (in case note generated immediately)
+
+          // Find sessions for this therapist awaiting transcript
+          const { data: candidates, error: candidateError } = await supabase
+            .from('zoom_session_links')
+            .select('client_id, session_ref')
+            .eq('therapist_user_id', integration.user_id)
+            .eq('status', 'started')
+            .gte('created_at', windowStart)
+            .lte('created_at', windowEnd);
+
+          if (!candidateError && candidates?.length === 1) {
+             sessionLink = candidates[0];
+             console.info('[Zoom Webhook] My Notes auto-linked to session', { noteId, sessionRef: sessionLink.session_ref });
+          }
+        }
+      }
+
+      const { error: transcriptError } = await supabase.from('zoom_transcripts').upsert({
+        therapist_user_id: integration.user_id,
+        zoom_note_id: noteId,
+        zoom_meeting_id: zoomMeetingId,
+        original_format: 'JSON',
+        original_transcript: readableTranscript,
+        structured_transcript: transcript,
+        source: 'zoom_my_notes',
+        client_id: sessionLink?.client_id || null,
+        session_ref: sessionLink?.session_ref || null,
+        status: sessionLink ? 'ready' : 'unassigned',
+        updated_at: new Date().toISOString()
+      }, { onConflict: 'therapist_user_id,zoom_note_id' });
+
+      if (transcriptError) throw transcriptError;
+
+      if (sessionLink) {
+        await supabase.from('zoom_session_links')
+          .update({ status: 'transcript_received', updated_at: new Date().toISOString() })
+          .eq('therapist_user_id', integration.user_id)
+          .eq('session_ref', sessionLink.session_ref);
+      }
+
+      await updateEvent(supabase, intakeEvent.id, { processing_status: 'stored' });
+      console.info('[Zoom Webhook] My Notes transcript stored', { noteId, linkedToSession: Boolean(sessionLink) });
       return res.status(200).json({ received: true });
     }
 

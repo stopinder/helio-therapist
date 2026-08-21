@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
 import { requireAuthenticatedUser } from '../_lib/supabase.js';
 
-const transcriptFields = 'id, zoom_meeting_id, zoom_meeting_uuid, original_format, original_transcript, source, status, client_id, session_ref, received_at, updated_at, requested_lens, source_retention, review_choices_saved_at, completed_at';
+const transcriptFields = 'id, zoom_meeting_id, zoom_meeting_uuid, zoom_note_id, structured_transcript, original_format, original_transcript, source, status, client_id, session_ref, received_at, updated_at, requested_lens, source_retention, review_choices_saved_at, completed_at';
 const MAX_MANUAL_TRANSCRIPT_BYTES = 2 * 1024 * 1024;
 const MANUAL_SOURCE = 'zoom_manual';
 
@@ -10,6 +10,8 @@ function serialiseTranscript(row) {
     id: row.id,
     meetingId: row.zoom_meeting_id,
     meetingUuid: row.zoom_meeting_uuid,
+    noteId: row.zoom_note_id,
+    structuredTranscript: row.structured_transcript,
     format: row.original_format,
     text: row.original_transcript,
     source: row.source,
@@ -133,6 +135,7 @@ export default async function handler(req, res) {
     }
 
     if (req.method === 'PATCH') {
+      console.log('[DEBUG] PATCH body:', req.body);
       const { id, clientId, sessionRef, requestedLens, sourceRetention, reviewChoicesSaved, markComplete } = req.body || {};
       const allowedLenses = new Set(['clinical_summary', 'draft_note', 'cbt']);
       const allowedRetention = new Set(['keep_until_review', 'delete_after_approved_output']);
@@ -248,12 +251,13 @@ export default async function handler(req, res) {
         .eq('id', id)
         .eq('therapist_user_id', user.id)
         .select(transcriptFields)
-        .maybeSingle();
+        .single();
 
       if (error) throw error;
       if (!data) return res.status(404).json({ error: 'Transcript not found.' });
 
-      return res.status(200).json({ transcript: serialiseTranscript(data) });
+      const serialised = serialiseTranscript(data);
+      return res.status(200).json({ transcript: serialised });
     }
 
     return res.status(405).json({ error: 'Method not allowed.' });
