@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
 import { requireAuthenticatedUser } from '../_lib/supabase.js';
 
-const transcriptFields = 'id, zoom_meeting_id, zoom_meeting_uuid, original_format, original_transcript, source, status, client_id, session_ref, received_at, updated_at, requested_lens, source_retention, review_choices_saved_at, completed_at';
+const transcriptFields = 'id, zoom_meeting_id, zoom_meeting_uuid, zoom_note_id, structured_transcript, original_format, original_transcript, source, status, client_id, session_ref, received_at, updated_at, requested_lens, source_retention, review_choices_saved_at, completed_at';
 const MAX_MANUAL_TRANSCRIPT_BYTES = 2 * 1024 * 1024;
 const MANUAL_SOURCE = 'zoom_manual';
 
@@ -10,6 +10,8 @@ function serialiseTranscript(row) {
     id: row.id,
     meetingId: row.zoom_meeting_id,
     meetingUuid: row.zoom_meeting_uuid,
+    noteId: row.zoom_note_id,
+    structuredTranscript: row.structured_transcript,
     format: row.original_format,
     text: row.original_transcript,
     source: row.source,
