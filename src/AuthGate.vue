@@ -118,7 +118,7 @@ const syncAuthEntry = async () => {
   mode.value = route.meta.authEntry
   password.value = ''
   showPassword.value = false
-  clearFeedback()
+  if (!errorMessage.value.includes('expired')) clearFeedback()
   if (!authLoading.value && session.value) await router.replace('/overview')
 }
 

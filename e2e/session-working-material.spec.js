@@ -40,7 +40,8 @@ test.describe('Session Workspace Working Material', () => {
   });
 
   async function openWorkspace(page) {
-    await page.goto(`/clients/${clientId}/sessions/${sessionId}`, { waitUntil: 'domcontentloaded' });
+    const workspaceUrl = `/clients/${clientId}/sessions/${sessionId}`;
+    await page.goto(workspaceUrl, { waitUntil: 'domcontentloaded' });
     const loginEmail = page.getByLabel('Email address');
     const workspaceShell = page.getByTestId('workspace-shell');
     await expect(loginEmail.or(workspaceShell)).toBeVisible({ timeout: 15000 });
@@ -48,6 +49,8 @@ test.describe('Session Workspace Working Material', () => {
       await loginEmail.fill(email);
       await page.getByLabel('Password').fill(password);
       await page.locator('form').getByRole('button', { name: 'Sign in' }).click();
+      await expect(workspaceShell).toBeVisible({ timeout: 15000 });
+      await page.goto(workspaceUrl, { waitUntil: 'domcontentloaded' });
     }
     await expect(workspaceShell).toBeVisible({ timeout: 15000 });
     await expect(page.getByText('Test Client')).toBeVisible();
