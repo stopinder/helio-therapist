@@ -16,7 +16,7 @@ test.describe('Transcript Workflow - A11y & Responsive', () => {
         'playwright-signature'
     ].join('.');
 
-    async function ensureWorkspaceLoaded(page) {
+    async function ensureWorkspaceLoaded(page, targetPath = '/transcripts') {
         const email = page.getByLabel('Email address');
         const shell = page.getByTestId('workspace-shell');
         await expect(email.or(shell)).toBeVisible({ timeout: 15000 });
@@ -24,6 +24,8 @@ test.describe('Transcript Workflow - A11y & Responsive', () => {
             await email.fill(MOCK_EMAIL);
             await page.getByLabel('Password').fill(MOCK_PASSWORD);
             await page.locator('form').getByRole('button', { name: 'Sign in' }).click();
+            await expect(shell).toBeVisible({ timeout: 15000 });
+            await page.goto(targetPath, { waitUntil: 'domcontentloaded' });
         }
         await expect(shell).toBeVisible({ timeout: 15000 });
     }

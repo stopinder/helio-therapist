@@ -33,7 +33,20 @@ test.describe('Clinical Record approval and amendment flow', () => {
     await page.route('**/api/zoom/transcripts*', route => route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({transcripts:[]})}));
   });
 
-  async function openWorkspace(page) { await page.goto(`/clients/${clientId}/sessions/${sessionId}`,{waitUntil:'domcontentloaded'}); const loginEmail=page.getByLabel('Email address'),workspaceShell=page.getByTestId('workspace-shell'); await expect(loginEmail.or(workspaceShell)).toBeVisible({timeout:15000}); if(await loginEmail.isVisible()){await loginEmail.fill(email);await page.getByLabel('Password').fill(password);await page.locator('form').getByRole('button',{name:'Sign in'}).click()} await expect(workspaceShell).toBeVisible({timeout:15000}); }
+  async function openWorkspace(page) {
+    const workspaceUrl = `/clients/${clientId}/sessions/${sessionId}`;
+    await page.goto(workspaceUrl,{waitUntil:'domcontentloaded'});
+    const loginEmail=page.getByLabel('Email address'),workspaceShell=page.getByTestId('workspace-shell');
+    await expect(loginEmail.or(workspaceShell)).toBeVisible({timeout:15000});
+    if(await loginEmail.isVisible()){
+      await loginEmail.fill(email);
+      await page.getByLabel('Password').fill(password);
+      await page.locator('form').getByRole('button',{name:'Sign in'}).click();
+      await expect(workspaceShell).toBeVisible({timeout:15000});
+      await page.goto(workspaceUrl,{waitUntil:'domcontentloaded'});
+    }
+    await expect(workspaceShell).toBeVisible({timeout:15000});
+  }
 
   test('approves a draft, shows completion handoff, approves an amendment, then reopens the immutable record', async ({ page }) => {
     await openWorkspace(page); await page.getByRole('button',{name:/Clinical Record/}).click(); await page.getByRole('button',{name:/Prepare Empty Clinical Summary Draft/i}).click(); await page.getByLabel('Presenting concerns').fill('Client described increased work stress.'); await page.getByLabel('Plan for next session').fill('Review coping strategies and sleep routine.'); await page.getByRole('button',{name:'Mark Ready for Review'}).click(); await page.getByLabel('I have reviewed this summary.').check(); await page.getByRole('button',{name:'Approve Clinical Record'}).click();

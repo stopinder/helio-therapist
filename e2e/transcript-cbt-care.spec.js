@@ -52,7 +52,8 @@ test.describe('Transcript CBT Care handoff', () => {
       return json([]);
     });
 
-    await page.goto(`/clients/${clientId}/sessions/${sessionId}`, { waitUntil:'domcontentloaded' });
+    const sessionPath = `/clients/${clientId}/sessions/${sessionId}`;
+    await page.goto(sessionPath, { waitUntil:'domcontentloaded' });
     const loginEmail = page.getByLabel('Email address');
     const workspaceShell = page.getByTestId('workspace-shell');
     await expect(loginEmail.or(workspaceShell)).toBeVisible({ timeout:15000 });
@@ -60,6 +61,8 @@ test.describe('Transcript CBT Care handoff', () => {
       await loginEmail.fill(email);
       await page.getByLabel('Password').fill(password);
       await page.locator('form').getByRole('button', { name:'Sign in' }).click();
+      await expect(workspaceShell).toBeVisible({ timeout:15000 });
+      await page.goto(sessionPath, { waitUntil:'domcontentloaded' });
     }
 
     await expect(page.getByText('CBT reflection requested')).toBeVisible({ timeout:15000 });
