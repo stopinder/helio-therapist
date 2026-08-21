@@ -132,7 +132,11 @@ test.describe('Zoom My Notes transcript inbox', () => {
     await performLogin(page);
     await expect(page.getByTestId('workspace-shell')).toBeVisible({ timeout: 15000 });
 
-    await expect(page.getByRole('heading', { name: 'Transcript Inbox' })).toBeVisible();
+    // Current auth flow returns to the default workspace after sign-in.
+    // Navigate explicitly to the protected transcript route once the session exists.
+    await page.goto('/transcripts');
+    await expect(page.getByRole('heading', { name: 'Transcript Inbox' })).toBeVisible({ timeout: 15000 });
+
     const row = page.getByRole('button', { name: /Meeting 987654321/ });
     await expect(row).toBeVisible();
     await expect(row).toContainText('Needs client');
