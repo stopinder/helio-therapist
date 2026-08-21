@@ -9,7 +9,7 @@ import assert from 'node:assert/strict';
 import { resolveZoomHostMeeting } from '../api/_lib/zoom-meeting-launch.js';
 import { buildZoomAuthorizationUrl } from '../api/zoom/authorize.js';
 
-test('buildZoomAuthorizationUrl requests meeting, identity and Scheduler scopes', () => {
+test('buildZoomAuthorizationUrl requests meeting, identity, Scheduler and My Notes scopes', () => {
   const url = buildZoomAuthorizationUrl({
     clientId: 'client-123',
     redirectUri: 'https://app.com/callback',
@@ -21,7 +21,7 @@ test('buildZoomAuthorizationUrl requests meeting, identity and Scheduler scopes'
   assert.strictEqual(parsed.pathname, '/oauth/authorize');
   assert.strictEqual(parsed.searchParams.get('client_id'), 'client-123');
   const scopes = new Set(parsed.searchParams.get('scope').split(' '));
-  assert.deepEqual(scopes, new Set(['meeting:read:meeting', 'user:read:user', 'scheduler:read', 'scheduler:write']));
+  assert.deepEqual(scopes, new Set(['meeting:read:meeting', 'user:read:user', 'scheduler:read', 'scheduler:write', 'my_notes:read:content']));
   assert.strictEqual(parsed.searchParams.get('include_granted_scopes'), 'true');
 });
 

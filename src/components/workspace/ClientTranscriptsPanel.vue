@@ -66,7 +66,11 @@ async function load() {
 }
 
 function toggleTranscript(id) { expandedId.value = expandedId.value === id ? null : id }
-function titleFor(transcript) { return transcript.meetingId?.startsWith?.('manual-') ? 'Imported Zoom transcript' : transcript.meetingId ? `Zoom meeting ${transcript.meetingId}` : 'Zoom transcript' }
+function titleFor(transcript) {
+  if (transcript.source === 'zoom_my_notes') return 'Zoom My Notes transcript'
+  if (transcript.meetingId?.startsWith?.('manual-')) return 'Imported Zoom transcript'
+  return transcript.meetingId ? `Zoom meeting ${transcript.meetingId}` : 'Zoom transcript'
+}
 function formatDate(value) { return value ? new Date(value).toLocaleString(undefined, { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '' }
 
 watch(() => props.clientId, () => { expandedId.value = null; load() })
