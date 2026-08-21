@@ -35,6 +35,9 @@
       <h1 class="mt-5 text-h1 font-semibold text-ink">Helios</h1>
       <p class="mt-2 text-body text-ink-muted">{{ mode === 'signup' ? 'Create your therapist workspace.' : 'Sign in to your therapist workspace.' }}</p>
 
+      <p v-if="message" data-testid="auth-success-message" class="mt-5 rounded-panel bg-state-success-surface p-3 text-body text-state-success">{{ message }}</p>
+      <p v-if="errorMessage" class="mt-5 rounded-panel bg-state-danger-surface p-3 text-body text-state-danger">{{ errorMessage }}</p>
+
       <div class="mt-6 grid grid-cols-2 rounded-panel bg-surface-muted p-1" role="tablist" aria-label="Account access">
         <router-link to="/sign-in" class="min-h-11 rounded-control px-3 text-body font-medium flex items-center justify-center transition-colors duration-standard ease-out" :class="mode === 'signin' ? 'bg-surface-elevated text-ink' : 'text-ink-muted'">Sign in</router-link>
         <router-link to="/get-started" class="min-h-11 rounded-control px-3 text-body font-medium flex items-center justify-center transition-colors duration-standard ease-out" :class="mode === 'signup' ? 'bg-surface-elevated text-ink' : 'text-ink-muted'">Create account</router-link>
@@ -71,9 +74,6 @@
       </form>
 
       <button v-if="mode === 'signin'" type="button" :disabled="submitting || !email" class="mt-4 min-h-11 w-full text-body font-medium text-action-link disabled:text-ink-subtle" @click="resetPassword">Forgot your password?</button>
-
-      <p v-if="message" class="mt-4 rounded-panel bg-state-success-surface p-3 text-body text-state-success">{{ message }}</p>
-      <p v-if="errorMessage" class="mt-4 rounded-panel bg-state-danger-surface p-3 text-body text-state-danger">{{ errorMessage }}</p>
     </section>
   </main>
 </template>
@@ -181,8 +181,9 @@ const submit = async () => {
       })
       if (error) throw error
       if (!data.session) {
-        message.value = 'If this email can be used to create an account, you’ll receive a confirmation link. Check your inbox, then sign in.'
+        message.value = 'Confirmation email sent. Check your inbox and confirm your email address before signing in.'
         password.value = ''
+        mode.value = 'signin'
         await router.replace('/sign-in')
       }
     } else {
