@@ -1,15 +1,31 @@
 import { test, expect } from '@playwright/test';
 
 test.describe('Gate 3 public routing', () => {
-  test('landing page is public and links to account and information routes', async ({ page }) => {
+  test('landing page is public, substantive and links to account and information routes', async ({ page }) => {
     await page.goto('/', { waitUntil:'domcontentloaded' });
     await expect(page).toHaveTitle('Helios — Therapist workspace');
     await expect(page.getByRole('heading', { name:'A calmer place for the work around therapy.' })).toBeVisible();
+    await expect(page.getByRole('heading', { name:'Everything in one place' })).toBeVisible();
+    await expect(page.getByRole('heading', { name:'A workspace for the real flow of your practice.' })).toBeVisible();
+    await expect(page.getByRole('heading', { name:'A workspace that feels like yours.' })).toBeVisible();
+    await expect(page.getByRole('heading', { name:'Professional practice, not consumer wellness.' })).toBeVisible();
+    await expect(page.getByText('Clinical Records are deliberate')).toBeVisible();
+    await expect(page.getByText('Approved records are immutable; later corrections are append-only amendments.')).toBeVisible();
     await expect(page.getByRole('link', { name:'Sign in' }).first()).toHaveAttribute('href', '/sign-in');
     await expect(page.getByRole('link', { name:'Get started' }).first()).toHaveAttribute('href', '/get-started');
     await expect(page.getByRole('link', { name:'Privacy' })).toHaveAttribute('href', '/privacy');
     await expect(page.getByRole('link', { name:'AI & data' })).toHaveAttribute('href', '/ai-data');
     await expect(page.getByRole('link', { name:'Support' })).toHaveAttribute('href', '/support');
+  });
+
+  test('landing page remains readable at mobile width', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto('/', { waitUntil:'domcontentloaded' });
+    await expect(page.getByRole('heading', { name:'A calmer place for the work around therapy.' })).toBeVisible();
+    await expect(page.getByRole('heading', { name:'Everything in one place' })).toBeVisible();
+    await expect(page.getByRole('heading', { name:'Before the session' })).toBeVisible();
+    await expect(page.getByRole('heading', { name:'Your judgement, always' })).toBeVisible();
+    await expect(page.getByRole('link', { name:'Get started' }).last()).toBeVisible();
   });
 
   test('legal and information routes are available without authentication', async ({ page }) => {
