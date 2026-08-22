@@ -60,6 +60,11 @@
           <span v-if="mode === 'signup'" class="mt-1 block text-caption text-ink-subtle">At least 8 characters</span>
         </label>
 
+        <label v-if="mode === 'signup'" class="flex items-start gap-3 rounded-panel border border-border-muted bg-surface-muted p-3">
+          <input v-model="marketingEmailConsent" type="checkbox" class="mt-1 h-4 w-4 rounded border-border text-action-link focus:ring-action-link" />
+          <span class="text-caption leading-5 text-ink-muted">Send me occasional Helios product updates, practical tips and news. You can unsubscribe at any time.</span>
+        </label>
+
         <p v-if="mode === 'signup'" class="text-caption leading-5 text-ink-muted">
           Before creating an account, please review the
           <router-link to="/terms" class="font-medium text-action-link underline underline-offset-2">Terms of Service</router-link>
@@ -95,6 +100,7 @@ const mode = ref(route.meta.authEntry === 'signup' ? 'signup' : 'signin')
 const fullName = ref('')
 const email = ref('')
 const password = ref('')
+const marketingEmailConsent = ref(false)
 const showPassword = ref(false)
 const submitting = ref(false)
 const message = ref('')
@@ -169,6 +175,19 @@ onUnmounted(() => {
   if (handleExpiryRef.value) window.removeEventListener('helios-session-expired', handleExpiryRef.value)
 })
 
+const notifySignup = async (user) => {
+  if (!user?.id || !user?.email) return
+  try {
+    await fetch('/api/signup/welcome', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId: user.id, email: user.email })
+    })
+  } catch (error) {
+    console.warn('[Signup welcome] notification unavailable', error)
+  }
+}
+
 const submit = async () => {
   submitting.value = true
   clearFeedback()
@@ -177,12 +196,17 @@ const submit = async () => {
       const { data, error } = await supabase.auth.signUp({
         email: email.value,
         password: password.value,
-        options: { emailRedirectTo: 'https://helio.works/sign-in', data: { full_name: fullName.value } }
+        options: {
+          emailRedirectTo: 'https://helio.works/sign-in',
+          data: { full_name: fullName.value, marketing_email_consent: marketingEmailConsent.value }
+        }
       })
       if (error) throw error
+      await notifySignup(data.user)
       if (!data.session) {
         message.value = 'If this email can be used to create an account, you’ll receive a confirmation link. Check your inbox, then sign in.'
         password.value = ''
+        marketingEmailConsent.value = false
         await router.replace('/sign-in')
       }
     } else {
