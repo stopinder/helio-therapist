@@ -7,6 +7,11 @@ const migration = await readFile(
   'utf8'
 )
 
+const executableSql = migration
+  .split('\n')
+  .filter(line => !line.trimStart().startsWith('--'))
+  .join('\n')
+
 test('RLS optimization preserves the existing ownership policy set', () => {
   for (const policy of [
     'Users manage own appointments',
@@ -27,8 +32,8 @@ test('RLS optimization preserves the existing ownership policy set', () => {
 })
 
 test('optimized policies use init-plan friendly authenticated identity checks', () => {
-  assert.doesNotMatch(migration, /(?<!select )auth\.uid\(\)/)
-  assert.ok((migration.match(/select auth\.uid\(\)/g) || []).length >= 10)
+  assert.doesNotMatch(executableSql, /(?<!select )auth\.uid\(\)/)
+  assert.ok((executableSql.match(/select auth\.uid\(\)/g) || []).length >= 10)
 })
 
 test('migration adds only the focused active foreign-key indexes', () => {
