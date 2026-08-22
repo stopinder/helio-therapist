@@ -34,3 +34,11 @@ test('practice branding migration keeps logos private and owner scoped', async (
   assert.match(migration, /storage\.foldername\(name\)/)
   assert.match(migration, /auth\.uid\(\)/)
 })
+
+test('practice logo path can be updated without broadening profile update grants', async () => {
+  const migration = await read('../supabase/migrations/20260822113000_grant_practice_logo_update.sql')
+  assert.match(migration, /grant update \(practice_logo_path\)/)
+  assert.match(migration, /on public\.profiles/)
+  assert.match(migration, /to authenticated/)
+  assert.doesNotMatch(migration, /grant update on public\.profiles/)
+})
