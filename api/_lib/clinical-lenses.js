@@ -7,7 +7,7 @@ const CLINICAL_LENSES = {
   integrative: {
     id: 'integrative',
     aiFraming: 'You support a qualified therapist maintaining a flexible, integrative clinical view.',
-    allowedKinds: ['narrative', 'themes', 'interventions', 'outcomes']
+    allowedKinds: ['current_focus', 'narrative', 'themes', 'interventions', 'outcomes']
   }
 };
 
