@@ -12,6 +12,20 @@ test('signup marketing consent is explicit and optional', () => {
   assert.match(authGate, /marketing_email_consent: marketingEmailConsent\.value/)
 })
 
+test('signup guidance survives the redirect to sign in', () => {
+  const redirectIndex = authGate.indexOf("await router.replace('/sign-in')", authGate.indexOf("if (!data.session)"))
+  const messageIndex = authGate.indexOf('If this email can be used to create an account', redirectIndex)
+  assert.ok(redirectIndex >= 0)
+  assert.ok(messageIndex > redirectIndex)
+  assert.match(authGate, /use your existing password or reset it below/)
+})
+
+test('sign in failure gives useful generic guidance without revealing account existence', () => {
+  assert.match(authGate, /Email or password is incorrect/)
+  assert.match(authGate, /confirm your email before signing in/)
+  assert.doesNotMatch(authGate, /No account exists for this email/)
+})
+
 test('welcome endpoint verifies the Supabase user before sending', () => {
   assert.match(endpoint, /auth\.admin\.getUserById\(userId\)/)
   assert.match(endpoint, /data\.user\.email\?\.toLowerCase\(\) !== email/)
