@@ -41,6 +41,16 @@ test('requires explicit Zoom account ownership and has no single-therapist fallb
   assert.doesNotMatch(webhookSource, /single-therapist MVP account fallback|zoomIntegrations\?\.length === 1/)
 })
 
+test('acknowledges durable webhook intake before expensive Zoom processing', () => {
+  const webhookSource = fs.readFileSync(new URL('../api/zoom/webhook.js', import.meta.url), 'utf8')
+  const acknowledgement = webhookSource.indexOf("res.status(200).json({ received: true });")
+  const processing = webhookSource.indexOf('await processAcceptedWebhook(', acknowledgement)
+  assert.ok(acknowledgement >= 0)
+  assert.ok(processing > acknowledgement)
+  assert.match(webhookSource, /Intake failed before acknowledgement/)
+  assert.match(webhookSource, /Background processing failed/)
+})
+
 test('sanitises My Notes webhook payload without storing note content', () => {
   const noteBody = { event: 'my_notes.note_generated', event_ts: 1, payload: { account_id: 'account', operator_id: 'operator', object: { note_id: 'note-1', note_name: 'Private session title', created_time: '2026-08-21T10:00:00Z', updated_time: '2026-08-21T10:05:00Z', meeting_id: '123456789', content: 'must not be stored' } } }
   assert.deepEqual(myNotesEvent(noteBody), { noteId: 'note-1', operatorId: 'operator', accountId: 'account', meetingId: '123456789', createdTime: '2026-08-21T10:00:00Z', updatedTime: '2026-08-21T10:05:00Z' })
