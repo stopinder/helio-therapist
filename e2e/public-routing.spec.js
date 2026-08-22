@@ -4,11 +4,10 @@ test.describe('Gate 3 public routing', () => {
   test('landing page is public, substantive and links to account and information routes', async ({ page }) => {
     await page.goto('/', { waitUntil:'domcontentloaded' });
     await expect(page).toHaveTitle('Helios — Therapist workspace');
-    await expect(page.getByRole('heading', { name:'A calmer place for the work around therapy.' })).toBeVisible();
-    await expect(page.getByRole('heading', { name:'Everything in one place' })).toBeVisible();
-    await expect(page.getByRole('heading', { name:'A workspace for the real flow of your practice.' })).toBeVisible();
-    await expect(page.getByRole('heading', { name:'A workspace that feels like yours.' })).toBeVisible();
-    await expect(page.getByRole('heading', { name:'Professional practice, not consumer wellness.' })).toBeVisible();
+    await expect(page.getByRole('heading', { name:'Less to hold in your head. More space for the therapy.' })).toBeVisible();
+    await expect(page.getByRole('heading', { name:'Continuity before, during, after — and between sessions.' })).toBeVisible();
+    await expect(page.getByRole('heading', { name:'The tools you already use, brought back into one clinical flow.' })).toBeVisible();
+    await expect(page.getByRole('heading', { name:'Your development has continuity too.' })).toBeVisible();
     await expect(page.getByText('Clinical Records are deliberate')).toBeVisible();
     await expect(page.getByText('Approved records are immutable; later corrections are append-only amendments.')).toBeVisible();
     await expect(page.getByRole('link', { name:'Sign in' }).first()).toHaveAttribute('href', '/sign-in');
@@ -21,9 +20,9 @@ test.describe('Gate 3 public routing', () => {
   test('landing page remains readable at mobile width', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto('/', { waitUntil:'domcontentloaded' });
-    await expect(page.getByRole('heading', { name:'A calmer place for the work around therapy.' })).toBeVisible();
-    await expect(page.getByRole('heading', { name:'Everything in one place' })).toBeVisible();
+    await expect(page.getByRole('heading', { name:'Less to hold in your head. More space for the therapy.' })).toBeVisible();
     await expect(page.getByRole('heading', { name:'Before the session' })).toBeVisible();
+    await expect(page.getByRole('heading', { name:'Between sessions' })).toBeVisible();
     await expect(page.getByRole('heading', { name:'Your judgement, always' })).toBeVisible();
     await expect(page.getByRole('link', { name:'Get started' }).last()).toBeVisible();
   });
@@ -44,6 +43,24 @@ test.describe('Gate 3 public routing', () => {
       await expect(page.getByRole('heading', { name: heading, level: 1 })).toBeVisible();
       await expect(page.getByText('Launch draft', { exact: false })).toBeVisible();
     }
+  });
+
+  test('public information names the confirmed support contact and current processing providers', async ({ page }) => {
+    await page.goto('/support', { waitUntil:'domcontentloaded' });
+    await expect(page.getByRole('link', { name:'hello@helio.works' }).first()).toHaveAttribute('href', 'mailto:hello@helio.works');
+
+    await page.goto('/privacy', { waitUntil:'domcontentloaded' });
+    await expect(page.getByText('Supabase', { exact:false })).toBeVisible();
+    await expect(page.getByText('Vercel', { exact:false })).toBeVisible();
+    await expect(page.getByText('Resend', { exact:false })).toBeVisible();
+    await expect(page.getByText('Google', { exact:false })).toBeVisible();
+    await expect(page.getByText('Zoom', { exact:false })).toBeVisible();
+
+    await page.goto('/ai-data', { waitUntil:'domcontentloaded' });
+    await expect(page.getByText('OpenAI', { exact:false })).toBeVisible();
+
+    await page.goto('/cookies', { waitUntil:'domcontentloaded' });
+    await expect(page.getByText('does not include advertising or analytics tracking', { exact:false })).toBeVisible();
   });
 
   test('sign-in has a dedicated route', async ({ page }) => {
