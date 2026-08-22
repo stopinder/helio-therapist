@@ -175,13 +175,12 @@ onUnmounted(() => {
   if (handleExpiryRef.value) window.removeEventListener('helios-session-expired', handleExpiryRef.value)
 })
 
-const notifySignup = async (user) => {
-  if (!user?.id || !user?.email) return
+const notifySignup = async (accessToken) => {
+  if (!accessToken) return
   try {
     await fetch('/api/signup/welcome', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ userId: user.id, email: user.email })
+      headers: { Authorization: `Bearer ${accessToken}` }
     })
   } catch (error) {
     console.warn('[Signup welcome] notification unavailable', error)
@@ -202,7 +201,7 @@ const submit = async () => {
         }
       })
       if (error) throw error
-      await notifySignup(data.user)
+      if (data.session?.access_token) await notifySignup(data.session.access_token)
       if (!data.session) {
         password.value = ''
         marketingEmailConsent.value = false
@@ -210,10 +209,11 @@ const submit = async () => {
         message.value = 'If this email can be used to create an account, you’ll receive a confirmation link. Check your inbox before signing in. If you already have a Helios account, use your existing password or reset it below.'
       }
     } else {
-      const { error } = await supabase.auth.signInWithPassword({ email: email.value, password: password.value })
+      const { data, error } = await supabase.auth.signInWithPassword({ email: email.value, password: password.value })
       if (error) {
         throw new Error('Email or password is incorrect. If you just created an account, confirm your email before signing in. You can also reset your password below.')
       }
+      if (data.session?.access_token) await notifySignup(data.session.access_token)
     }
   } catch (error) {
     errorMessage.value = error.message

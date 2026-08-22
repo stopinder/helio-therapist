@@ -1,7 +1,8 @@
-import { getSupabaseClient } from '../_lib/supabase.js';
+import { requireAuthenticatedUser } from '../_lib/supabase.js';
 
 const RESEND_API = 'https://api.resend.com';
 const DEFAULT_FROM = 'Helios <hello@helio.works>';
+const WELCOME_WINDOW_MS = 24 * 60 * 60 * 1000;
 
 function escapeHtml(value = '') {
   return String(value)
@@ -64,8 +65,8 @@ async function sendWelcome({ email, fullName, userId }) {
       from,
       to: [email],
       subject: 'Welcome to Helios',
-      html: `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;color:#172033;line-height:1.6"><h1 style="font-size:26px">Welcome to Helios, ${safeName}</h1><p>Your therapist workspace is ready to set up.</p><p>Once you confirm your email and sign in, start by adding your practice details, then connect Google Calendar and Zoom when you are ready.</p><p><a href="https://helio.works/sign-in" style="color:#3157d5">Open Helios</a></p><p style="color:#667085;font-size:14px">This is an account email from Helios. Marketing emails are controlled separately by the preference you selected when signing up.</p></div>`,
-      text: `Welcome to Helios, ${firstName}.\n\nYour therapist workspace is ready to set up. Once you confirm your email and sign in, start by adding your practice details, then connect Google Calendar and Zoom when you are ready.\n\nOpen Helios: https://helio.works/sign-in\n\nThis is an account email from Helios. Marketing emails are controlled separately by the preference you selected when signing up.`
+      html: `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;color:#172033;line-height:1.6"><h1 style="font-size:26px">Welcome to Helios, ${safeName}</h1><p>Your therapist workspace is ready to set up.</p><p>Start by adding your practice details, then connect Google Calendar and Zoom when you are ready.</p><p><a href="https://helio.works/overview" style="color:#3157d5">Open Helios</a></p><p style="color:#667085;font-size:14px">This is an account email from Helios. Marketing emails are controlled separately by the preference you selected when signing up.</p></div>`,
+      text: `Welcome to Helios, ${firstName}.\n\nYour therapist workspace is ready to set up. Start by adding your practice details, then connect Google Calendar and Zoom when you are ready.\n\nOpen Helios: https://helio.works/overview\n\nThis is an account email from Helios. Marketing emails are controlled separately by the preference you selected when signing up.`
     })
   });
 }
@@ -74,29 +75,24 @@ export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
   try {
-    const userId = String(req.body?.userId || '').trim();
-    const email = String(req.body?.email || '').trim().toLowerCase();
-    if (!userId || !email) return res.status(400).json({ error: 'Missing signup details' });
+    const { user } = await requireAuthenticatedUser(req);
+    const email = String(user.email || '').trim().toLowerCase();
+    if (!email) return res.status(202).json({ accepted: true });
 
-    const supabase = getSupabaseClient();
-    const { data, error } = await supabase.auth.admin.getUserById(userId);
-    if (error || !data?.user || data.user.email?.toLowerCase() !== email) {
+    const createdAt = Date.parse(user.created_at || '');
+    if (!Number.isFinite(createdAt) || Date.now() - createdAt > WELCOME_WINDOW_MS) {
       return res.status(202).json({ accepted: true });
     }
 
-    const createdAt = Date.parse(data.user.created_at || '');
-    if (!Number.isFinite(createdAt) || Date.now() - createdAt > 10 * 60 * 1000) {
-      return res.status(202).json({ accepted: true });
-    }
-
-    const fullName = String(data.user.user_metadata?.full_name || '').trim();
-    const subscribed = data.user.user_metadata?.marketing_email_consent === true;
+    const fullName = String(user.user_metadata?.full_name || '').trim();
+    const subscribed = user.user_metadata?.marketing_email_consent === true;
 
     await syncContact({ email, fullName, subscribed });
-    await sendWelcome({ email, fullName, userId });
+    await sendWelcome({ email, fullName, userId: user.id });
 
     return res.status(200).json({ sent: true });
   } catch (error) {
+    if (error.status === 401) return res.status(401).json({ error: 'Authentication required' });
     console.error('[Signup welcome]', error.message, error.details || '');
     return res.status(202).json({ accepted: true });
   }

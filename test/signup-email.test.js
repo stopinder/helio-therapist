@@ -5,6 +5,7 @@ import { readFile } from 'node:fs/promises'
 const authGate = await readFile(new URL('../src/AuthGate.vue', import.meta.url), 'utf8')
 const endpoint = await readFile(new URL('../api/signup/welcome.js', import.meta.url), 'utf8')
 const migration = await readFile(new URL('../supabase/migrations/20260822122932_add_marketing_email_consent.sql', import.meta.url), 'utf8')
+const resourceExchangeMigration = await readFile(new URL('../supabase/migrations/20260721120000_add_clinical_resource_exchange_architecture.sql', import.meta.url), 'utf8')
 
 test('signup marketing consent is explicit and optional', () => {
   assert.match(authGate, /marketingEmailConsent = ref\(false\)/)
@@ -26,11 +27,20 @@ test('sign in failure gives useful generic guidance without revealing account ex
   assert.doesNotMatch(authGate, /No account exists for this email/)
 })
 
-test('welcome endpoint verifies the Supabase user before sending', () => {
-  assert.match(endpoint, /auth\.admin\.getUserById\(userId\)/)
-  assert.match(endpoint, /data\.user\.email\?\.toLowerCase\(\) !== email/)
-  assert.match(endpoint, /Date\.now\(\) - createdAt > 10 \* 60 \* 1000/)
+test('welcome endpoint derives identity from an authenticated session', () => {
+  assert.match(endpoint, /requireAuthenticatedUser\(req\)/)
+  assert.match(endpoint, /const email = String\(user\.email/)
+  assert.doesNotMatch(endpoint, /req\.body\?\.userId/)
+  assert.doesNotMatch(endpoint, /req\.body\?\.email/)
+  assert.doesNotMatch(endpoint, /auth\.admin\.getUserById/)
+  assert.match(endpoint, /Date\.now\(\) - createdAt > WELCOME_WINDOW_MS/)
   assert.match(endpoint, /Idempotency-Key/)
+})
+
+test('frontend sends only the authenticated access token to the welcome endpoint', () => {
+  assert.match(authGate, /Authorization: `Bearer \$\{accessToken\}`/)
+  assert.doesNotMatch(authGate, /JSON\.stringify\(\{ userId: user\.id, email: user\.email \}\)/)
+  assert.match(authGate, /if \(data\.session\?\.access_token\) await notifySignup\(data\.session\.access_token\)/)
 })
 
 test('Resend receives only account identity and marketing subscription state', () => {
@@ -46,4 +56,10 @@ test('marketing consent is stored on the existing therapist profile', () => {
   assert.match(migration, /add column if not exists marketing_email_consent_at timestamptz/)
   assert.match(migration, /new\.raw_user_meta_data ->> 'marketing_email_consent'/)
   assert.match(migration, /insert into public\.profiles \(id, full_name, marketing_email_consent_at\)/)
+})
+
+test('client response storage remains private and server-mediated', () => {
+  assert.match(resourceExchangeMigration, /values \('client-resource-responses', 'client-resource-responses', false, 10485760\)/)
+  assert.match(resourceExchangeMigration, /Keep client returns private\. No client-facing policy is intentionally created here\./)
+  assert.doesNotMatch(resourceExchangeMigration, /create policy[^;]*client-resource-responses/is)
 })
