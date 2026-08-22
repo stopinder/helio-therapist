@@ -3,6 +3,20 @@ import { test, expect } from '@playwright/test';
 test.describe('Settings Workspace Workflow', () => {
   const email = process.env.PLAYWRIGHT_TEST_EMAIL || 'therapist@example.com';
   const password = process.env.PLAYWRIGHT_TEST_PASSWORD || 'playwright-password';
+  const userId = 'mock-user-id';
+
+  function base64Url(value) {
+    return Buffer.from(JSON.stringify(value)).toString('base64url');
+  }
+
+  function mockToken() {
+    const now = Math.floor(Date.now() / 1000);
+    return [
+      base64Url({ alg: 'HS256', typ: 'JWT' }),
+      base64Url({ aud: 'authenticated', exp: now + 3600, iat: now, sub: userId, email, role: 'authenticated' }),
+      'playwright-signature'
+    ].join('.');
+  }
 
   async function mockSignIn(page) {
     await page.route('**/auth/v1/token*', async (route) => {
@@ -10,17 +24,20 @@ test.describe('Settings Workspace Workflow', () => {
         status: 200,
         contentType: 'application/json',
         body: JSON.stringify({
-          access_token: 'mock-token',
+          access_token: mockToken(),
           refresh_token: 'mock-refresh',
           expires_in: 3600,
           token_type: 'bearer',
-          user: {
-            id: 'mock-user-id',
-            email,
-            aud: 'authenticated',
-            role: 'authenticated'
-          }
+          user: { id: userId, email, aud: 'authenticated', role: 'authenticated' }
         })
+      });
+    });
+
+    await page.route('**/auth/v1/user', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ id: userId, email, aud: 'authenticated', role: 'authenticated' })
       });
     });
   }
@@ -31,7 +48,7 @@ test.describe('Settings Workspace Workflow', () => {
         status: 200,
         contentType: 'application/json',
         body: JSON.stringify([{
-          id: 'mock-user-id',
+          id: userId,
           full_name: 'Test Therapist',
           professional_title: 'Psychotherapist',
           practice_name: 'Test Practice',
@@ -65,20 +82,12 @@ test.describe('Settings Workspace Workflow', () => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify({
-          connected: true,
-          email: 'therapist@example.com',
-          last_synced_at: new Date().toISOString()
-        })
+        body: JSON.stringify({ connected: true, email: 'therapist@example.com', last_synced_at: new Date().toISOString() })
       });
     });
 
     await page.route('**/api/zoom/status', async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({ connected: false })
-      });
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ connected: false }) });
     });
 
     await signInAndOpenSettings(page);
@@ -111,11 +120,7 @@ test.describe('Settings Workspace Workflow', () => {
     await expect(connectButton).toBeVisible();
 
     await page.route('**/api/google/authorize', async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({ url: 'https://accounts.google.com/o/oauth2/v2/auth?mock=1' })
-      });
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ url: 'https://accounts.google.com/o/oauth2/v2/auth?mock=1' }) });
     });
 
     await connectButton.click();
@@ -130,20 +135,12 @@ test.describe('Settings Workspace Workflow', () => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify({
-          connected: true,
-          email: 'therapist@example.com',
-          error: 'GOOGLE_TOKEN_EXPIRED'
-        })
+        body: JSON.stringify({ connected: true, email: 'therapist@example.com', error: 'GOOGLE_TOKEN_EXPIRED' })
       });
     });
 
     await page.route('**/api/zoom/status', async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({ connected: false })
-      });
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ connected: false }) });
     });
 
     await signInAndOpenSettings(page);
@@ -154,11 +151,7 @@ test.describe('Settings Workspace Workflow', () => {
     await expect(reconnectButton).toBeVisible();
 
     await page.route('**/api/google/authorize', async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({ url: 'https://accounts.google.com/o/oauth2/v2/auth?mock=reconnect' })
-      });
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ url: 'https://accounts.google.com/o/oauth2/v2/auth?mock=reconnect' }) });
     });
 
     await reconnectButton.click();
