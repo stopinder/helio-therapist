@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 
-const migrationUrl = new URL('../supabase/migrations/20260818190000_protect_completed_session_deletion.sql', import.meta.url);
+const migrationUrl = new URL('../supabase/migrations/20260818181530_protect_completed_session_deletion.sql', import.meta.url);
 
 test('completed clinical sessions are protected from deletion at database level', async () => {
   const sql = await readFile(migrationUrl, 'utf8');

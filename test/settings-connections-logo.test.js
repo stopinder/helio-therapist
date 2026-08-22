@@ -26,7 +26,7 @@ test('Settings provides private practice logo upload replace and removal', async
 })
 
 test('practice branding migration keeps logos private and owner scoped', async () => {
-  const migration = await read('../supabase/migrations/20260822093000_add_practice_logo.sql')
+  const migration = await read('../supabase/migrations/20260822112939_add_practice_logo.sql')
   assert.match(migration, /practice_logo_path text/)
   assert.match(migration, /'practice-branding'/)
   assert.match(migration, /false,\s*2097152/)
@@ -36,7 +36,7 @@ test('practice branding migration keeps logos private and owner scoped', async (
 })
 
 test('practice logo path can be updated without broadening profile update grants', async () => {
-  const migration = await read('../supabase/migrations/20260822113000_grant_practice_logo_update.sql')
+  const migration = await read('../supabase/migrations/20260822112946_grant_practice_logo_update.sql')
   assert.match(migration, /grant update \(practice_logo_path\)/)
   assert.match(migration, /on public\.profiles/)
   assert.match(migration, /to authenticated/)

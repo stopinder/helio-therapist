@@ -4,7 +4,7 @@ import { readFile } from 'node:fs/promises';
 const read=path=>readFile(new URL(path,import.meta.url),'utf8');
 
 test('working documents expose deletion while finalised documents remain protected',async()=>{
-  const [panel,service,migration]=await Promise.all([read('../src/components/workspace/ClientDocumentsPanel.vue'),read('../src/lib/clientDocuments.js'),read('../supabase/migrations/20260822050000_protect_finalised_document_deletion.sql')]);
+  const [panel,service,migration]=await Promise.all([read('../src/components/workspace/ClientDocumentsPanel.vue'),read('../src/lib/clientDocuments.js'),read('../supabase/migrations/20260822065123_protect_finalised_document_deletion.sql')]);
   assert.match(panel,/Delete draft/);assert.match(panel,/deleteClientDocument/);assert.match(service,/\.in\('status',\['draft','review'\]\)/);assert.match(service,/Finalised documents cannot be deleted/);assert.match(migration,/status in \('draft', 'review'\)/);assert.doesNotMatch(migration,/status = 'completed'/);
 });
 
