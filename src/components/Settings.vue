@@ -16,7 +16,7 @@
           <button v-else @click="disconnectZoom" class="min-h-touch px-3 py-2 text-body-sm text-state-danger">Disconnect</button>
         </div>
       </div>
-      <p class="mt-3 px-1 text-caption text-ink-subtle">Connect services once so Helios can use supported calendar, appointment and transcript workflows.</p>
+      <p class="mt-3 px-1 text-caption text-ink-subtle">Connect services once so Helios can use supported calendar, appointment and transcript workflows. Video links are chosen when scheduling or working with an appointment rather than stored as a separate default setting.</p>
     </section>
 
     <section class="mb-12" data-testid="settings-practice-profile">
