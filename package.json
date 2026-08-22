@@ -21,7 +21,6 @@
     "@heroicons/vue": "^2.2.0",
     "@lucide/vue": "^1.31.0",
     "@supabase/supabase-js": "^2.89.0",
-    "@vercel/functions": "^3.9.3",
     "cookie": "^2.0.1",
     "openai": "^6.15.0",
     "pdfkit": "^0.19.1",
