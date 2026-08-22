@@ -16,7 +16,7 @@
       <h1 class="mt-3 font-serif text-4xl font-semibold tracking-tight sm:text-5xl">{{ title }}</h1>
       <p v-if="summary" class="mt-5 text-lg leading-8 text-ink-secondary">{{ summary }}</p>
       <div class="mt-8 rounded-xl border border-brand-amber/30 bg-brand-amber/10 p-4 text-sm leading-6 text-ink-secondary">
-        Launch draft — this information must be reviewed and approved by an appropriately qualified professional before public launch.
+        Testing / beta — this information applies to current Helios use. Helios is still evolving, so these terms and notices may be updated as the service changes.
       </div>
       <div class="mt-10 space-y-9">
         <slot />
