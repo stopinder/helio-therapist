@@ -1,46 +1,14 @@
 import { test, expect } from '@playwright/test';
 
 test.describe('Settings Workspace Workflow', () => {
-  const email = process.env.PLAYWRIGHT_TEST_EMAIL || 'therapist@example.com';
-  const password = process.env.PLAYWRIGHT_TEST_PASSWORD || 'playwright-password';
-  const userId = 'mock-user-id';
+  const email = process.env.PLAYWRIGHT_TEST_EMAIL;
+  const password = process.env.PLAYWRIGHT_TEST_PASSWORD;
 
-  function base64Url(value) {
-    return Buffer.from(JSON.stringify(value)).toString('base64url');
-  }
-
-  function mockToken() {
-    const now = Math.floor(Date.now() / 1000);
-    return [
-      base64Url({ alg: 'HS256', typ: 'JWT' }),
-      base64Url({ aud: 'authenticated', exp: now + 3600, iat: now, sub: userId, email, role: 'authenticated' }),
-      'playwright-signature'
-    ].join('.');
-  }
-
-  async function mockSignIn(page) {
-    await page.route('**/auth/v1/token*', async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          access_token: mockToken(),
-          refresh_token: 'mock-refresh',
-          expires_in: 3600,
-          token_type: 'bearer',
-          user: { id: userId, email, aud: 'authenticated', role: 'authenticated' }
-        })
-      });
-    });
-
-    await page.route('**/auth/v1/user', async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({ id: userId, email, aud: 'authenticated', role: 'authenticated' })
-      });
-    });
-  }
+  test.beforeEach(async () => {
+    if (!email || !password) {
+      test.skip(true, 'Skipping authenticated test: PLAYWRIGHT_TEST_EMAIL and PLAYWRIGHT_TEST_PASSWORD are not set.');
+    }
+  });
 
   async function mockProfile(page) {
     await page.route('**/rest/v1/profiles*', async (route) => {
@@ -48,7 +16,6 @@ test.describe('Settings Workspace Workflow', () => {
         status: 200,
         contentType: 'application/json',
         body: JSON.stringify([{
-          id: userId,
           full_name: 'Test Therapist',
           professional_title: 'Psychotherapist',
           practice_name: 'Test Practice',
@@ -64,12 +31,9 @@ test.describe('Settings Workspace Workflow', () => {
 
   async function signInAndOpenSettings(page) {
     await page.goto('/');
-    const emailField = page.getByLabel('Email address');
-    if (await emailField.isVisible()) {
-      await emailField.fill(email);
-      await page.getByLabel('Password').fill(password);
-      await page.locator('form').getByRole('button', { name: 'Sign in' }).click();
-    }
+    await page.getByLabel('Email address').fill(email);
+    await page.getByLabel('Password').fill(password);
+    await page.locator('form').getByRole('button', { name: 'Sign in' }).click();
 
     const settingsLink = page.locator('aside').getByRole('link', { name: /Settings/i });
     await expect(settingsLink).toBeVisible({ timeout: 15000 });
@@ -79,7 +43,6 @@ test.describe('Settings Workspace Workflow', () => {
 
   test('renders connections first and launches Google OAuth flow', async ({ page }) => {
     await mockProfile(page);
-    await mockSignIn(page);
 
     await page.route('**/api/google/status', async (route) => {
       await route.fulfill({
@@ -132,7 +95,6 @@ test.describe('Settings Workspace Workflow', () => {
 
   test('handles Google reconnect required state', async ({ page }) => {
     await mockProfile(page);
-    await mockSignIn(page);
 
     await page.route('**/api/google/status', async (route) => {
       await route.fulfill({
