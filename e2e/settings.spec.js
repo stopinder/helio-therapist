@@ -1,14 +1,8 @@
 import { test, expect } from '@playwright/test';
 
 test.describe('Settings Workspace Workflow', () => {
-  const email = process.env.PLAYWRIGHT_TEST_EMAIL;
-  const password = process.env.PLAYWRIGHT_TEST_PASSWORD;
-
-  test.beforeEach(async ({ page }) => {
-    if (!email || !password) {
-      test.skip(true, 'Skipping authenticated test: PLAYWRIGHT_TEST_EMAIL and PLAYWRIGHT_TEST_PASSWORD are not set.');
-    }
-  });
+  const email = process.env.PLAYWRIGHT_TEST_EMAIL || 'therapist@example.com';
+  const password = process.env.PLAYWRIGHT_TEST_PASSWORD || 'playwright-password';
 
   async function mockSignIn(page) {
     await page.route('**/auth/v1/token*', async (route) => {
