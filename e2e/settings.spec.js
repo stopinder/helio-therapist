@@ -64,9 +64,12 @@ test.describe('Settings Workspace Workflow', () => {
 
   async function signInAndOpenSettings(page) {
     await page.goto('/');
-    await page.getByLabel('Email address').fill(email);
-    await page.getByLabel('Password').fill(password);
-    await page.locator('form').getByRole('button', { name: 'Sign in' }).click();
+    const emailField = page.getByLabel('Email address');
+    if (await emailField.isVisible()) {
+      await emailField.fill(email);
+      await page.getByLabel('Password').fill(password);
+      await page.locator('form').getByRole('button', { name: 'Sign in' }).click();
+    }
 
     const settingsLink = page.locator('aside').getByRole('link', { name: /Settings/i });
     await expect(settingsLink).toBeVisible({ timeout: 15000 });
