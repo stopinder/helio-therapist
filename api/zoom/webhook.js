@@ -43,7 +43,6 @@ async function applySchedulerEvent(supabase, intakeEventId, schedulerEvent) {
   const { data: appointment, error } = await supabase.from('appointments').update(update).eq('correlation_token', schedulerEvent.correlationToken).select('id,user_id,status,starts_at,ends_at,timezone').maybeSingle();
   if (error) throw error;
   if (!appointment) { await updateEvent(supabase, intakeEventId, { processing_status: 'unmatched', processing_error: 'No appointment matched the Scheduler correlation token' }); return; }
-
   try {
     const googleResult = await syncAppointmentToGoogleCalendar({ supabase, userId: appointment.user_id, appointment });
     console.info('[Zoom Webhook] Google Calendar sync', { appointmentId: appointment.id, ...googleResult });
@@ -51,17 +50,15 @@ async function applySchedulerEvent(supabase, intakeEventId, schedulerEvent) {
     console.warn('[Zoom Webhook] Google Calendar sync unavailable', { appointmentId: appointment.id, message: googleError.message });
   }
   await updateEvent(supabase, intakeEventId, { processing_status: 'stored', processing_error: null });
-  console.info('[Zoom Webhook] Scheduler appointment updated', { event: schedulerEvent.eventType, appointmentId: appointment.id, status: schedulerEvent.status });
 }
 
 export async function findVerifiedSessionLink(supabase, therapistUserId, meetingId) {
   const { data: link, error } = await supabase.from('zoom_session_links').select('client_id, session_ref').eq('therapist_user_id', therapistUserId).eq('zoom_meeting_id', meetingId).maybeSingle();
-  if (error?.code === 'PGRST205' || error?.code === '42P01') { console.warn('[Zoom Webhook] Session-link lookup unavailable', { code: error.code }); return null; }
+  if (error?.code === 'PGRST205' || error?.code === '42P01') return null;
   if (error) throw error; if (!link) return null;
   const { data: session, error: sessionError } = await supabase.from('sessions').select('id').eq('id', link.session_ref).eq('user_id', therapistUserId).eq('client_id', link.client_id).maybeSingle();
   if (sessionError) throw sessionError;
-  if (!session) { console.warn('[Zoom Webhook] Ignoring invalid session link', { meetingId, therapistUserId }); return null; }
-  return link;
+  return session ? link : null;
 }
 
 async function findUniqueAwaitingSession(supabase, therapistUserId, createdTime) {
@@ -69,60 +66,30 @@ async function findUniqueAwaitingSession(supabase, therapistUserId, createdTime)
   if (Number.isNaN(createdAt.getTime())) return null;
   const windowStart = new Date(createdAt.getTime() - 90 * 60 * 1000).toISOString();
   const windowEnd = new Date(createdAt.getTime() + 15 * 60 * 1000).toISOString();
-  const { data: candidates, error } = await supabase.from('sessions')
-    .select('id,client_id,occurred_at')
-    .eq('user_id', therapistUserId)
-    .eq('workflow_status', 'awaiting_transcript')
-    .gte('occurred_at', windowStart)
-    .lte('occurred_at', windowEnd)
-    .order('occurred_at', { ascending: false })
-    .limit(2);
+  const { data: candidates, error } = await supabase.from('sessions').select('id,client_id,occurred_at').eq('user_id', therapistUserId).eq('workflow_status', 'awaiting_transcript').gte('occurred_at', windowStart).lte('occurred_at', windowEnd).order('occurred_at', { ascending: false }).limit(2);
   if (error) throw error;
   if (!candidates || candidates.length !== 1) return null;
   const candidate = candidates[0];
-  const { data: existing, error: transcriptError } = await supabase.from('zoom_transcripts')
-    .select('id')
-    .eq('therapist_user_id', therapistUserId)
-    .eq('session_ref', candidate.id)
-    .limit(1);
+  const { data: existing, error: transcriptError } = await supabase.from('zoom_transcripts').select('id').eq('therapist_user_id', therapistUserId).eq('session_ref', candidate.id).limit(1);
   if (transcriptError) throw transcriptError;
   return existing?.length ? null : { client_id: candidate.client_id, session_ref: candidate.id };
 }
 
 async function markSessionTranscriptReceived(supabase, therapistUserId, sessionLink) {
   if (!sessionLink?.session_ref) return;
-  const { error } = await supabase.from('sessions')
-    .update({ workflow_status: 'transcript_received' })
-    .eq('id', sessionLink.session_ref)
-    .eq('user_id', therapistUserId)
-    .eq('client_id', sessionLink.client_id)
-    .eq('workflow_status', 'awaiting_transcript');
+  const { error } = await supabase.from('sessions').update({ workflow_status: 'transcript_received' }).eq('id', sessionLink.session_ref).eq('user_id', therapistUserId).eq('client_id', sessionLink.client_id).eq('workflow_status', 'awaiting_transcript');
   if (error) throw error;
 }
 
 async function processMyNotesEvent(supabase, intakeEventId, noteEvent) {
   if (!noteEvent?.noteId || !noteEvent?.operatorId) {
-    await updateEvent(supabase, intakeEventId, { processing_status: 'failed', processing_error: 'My Notes event did not contain a note id or operator id' });
-    return;
+    await updateEvent(supabase, intakeEventId, { processing_status: 'failed', processing_error: 'My Notes event did not contain a note id or operator id' }); return;
   }
-
-  const { data: integration, error: integrationError } = await supabase.from('integrations')
-    .select('user_id, encrypted_access_token, encrypted_refresh_token, expires_at, token_type, scope')
-    .eq('provider', 'zoom')
-    .eq('provider_account_id', noteEvent.operatorId)
-    .maybeSingle();
+  const { data: integration, error: integrationError } = await supabase.from('integrations').select('user_id, encrypted_access_token, encrypted_refresh_token, expires_at, token_type, scope').eq('provider', 'zoom').eq('provider_account_id', noteEvent.operatorId).maybeSingle();
   if (integrationError) throw integrationError;
-  if (!integration) {
-    await updateEvent(supabase, intakeEventId, { processing_status: 'unmatched', processing_error: 'No connected Helio therapist matched this Zoom operator' });
-    return;
-  }
-
+  if (!integration) { await updateEvent(supabase, intakeEventId, { processing_status: 'unmatched', processing_error: 'No connected Helio therapist matched this Zoom operator' }); return; }
   const scopes = String(integration.scope || '').split(/\s+/).filter(Boolean);
-  if (!scopes.includes('my_notes:read:content')) {
-    await updateEvent(supabase, intakeEventId, { processing_status: 'failed', processing_error: 'Reconnect Zoom to grant My Notes transcript access' });
-    return;
-  }
-
+  if (!scopes.includes('my_notes:read:content')) { await updateEvent(supabase, intakeEventId, { processing_status: 'failed', processing_error: 'Reconnect Zoom to grant My Notes transcript access' }); return; }
   const getToken = (options) => getZoomAccessTokenContext(supabase, integration, options);
   let token = await getToken({ forceRefresh: false });
   let contentResponse = await fetch(`https://api.zoom.us/v2/my_notes/notes/${encodeURIComponent(noteEvent.noteId)}/content?include=transcript`, { headers: { Authorization: `Bearer ${token.accessToken}` } });
@@ -131,40 +98,49 @@ async function processMyNotesEvent(supabase, intakeEventId, noteEvent) {
     contentResponse = await fetch(`https://api.zoom.us/v2/my_notes/notes/${encodeURIComponent(noteEvent.noteId)}/content?include=transcript`, { headers: { Authorization: `Bearer ${token.accessToken}` } });
   }
   if (!contentResponse.ok) throw new Error(`Zoom My Notes content request failed with ${contentResponse.status}`);
-
   const noteContent = await contentResponse.json();
   const structuredTranscript = noteContent?.transcript;
   const originalTranscript = canonicaliseMyNotesTranscript(structuredTranscript);
-  if (!originalTranscript) {
-    await updateEvent(supabase, intakeEventId, { processing_status: 'failed', processing_error: 'Zoom My Notes content did not contain transcript items' });
-    return;
-  }
-
+  if (!originalTranscript) { await updateEvent(supabase, intakeEventId, { processing_status: 'failed', processing_error: 'Zoom My Notes content did not contain transcript items' }); return; }
   let sessionLink = noteEvent.meetingId ? await findVerifiedSessionLink(supabase, integration.user_id, noteEvent.meetingId) : null;
   if (!sessionLink) sessionLink = await findUniqueAwaitingSession(supabase, integration.user_id, noteEvent.createdTime);
-
   const now = new Date().toISOString();
-  const { error: transcriptError } = await supabase.from('zoom_transcripts').upsert({
-    therapist_user_id: integration.user_id,
-    zoom_note_id: noteEvent.noteId,
-    zoom_meeting_id: noteEvent.meetingId,
-    zoom_meeting_uuid: null,
-    zoom_recording_file_id: null,
-    original_format: 'JSON',
-    original_transcript: originalTranscript,
-    structured_transcript: structuredTranscript,
-    source: 'zoom_my_notes',
-    client_id: sessionLink?.client_id || null,
-    session_ref: sessionLink?.session_ref || null,
-    status: sessionLink ? 'ready' : 'unassigned',
-    updated_at: now
-  }, { onConflict: 'therapist_user_id,zoom_note_id' });
+  const { error: transcriptError } = await supabase.from('zoom_transcripts').upsert({ therapist_user_id: integration.user_id, zoom_note_id: noteEvent.noteId, zoom_meeting_id: noteEvent.meetingId, zoom_meeting_uuid: null, zoom_recording_file_id: null, original_format: 'JSON', original_transcript: originalTranscript, structured_transcript: structuredTranscript, source: 'zoom_my_notes', client_id: sessionLink?.client_id || null, session_ref: sessionLink?.session_ref || null, status: sessionLink ? 'ready' : 'unassigned', updated_at: now }, { onConflict: 'therapist_user_id,zoom_note_id' });
   if (transcriptError) throw transcriptError;
-
   if (sessionLink) {
     await markSessionTranscriptReceived(supabase, integration.user_id, sessionLink);
     await supabase.from('zoom_session_links').update({ status: 'transcript_received', updated_at: now }).eq('therapist_user_id', integration.user_id).eq('session_ref', sessionLink.session_ref);
   }
+  await updateEvent(supabase, intakeEventId, { processing_status: 'stored', processing_error: null });
+}
+
+async function processAcceptedWebhook({ supabase, intakeEventId, body, eventType, schedulerEvent, noteEvent, recording, meetingId, hostId }) {
+  if (schedulerEvent) { await applySchedulerEvent(supabase, intakeEventId, schedulerEvent); return; }
+  if (noteEvent) { await processMyNotesEvent(supabase, intakeEventId, noteEvent); return; }
+  if (eventType !== 'recording.transcript_completed' && eventType !== 'recording.completed') {
+    await updateEvent(supabase, intakeEventId, { processing_status: 'stored', processing_error: null }); return;
+  }
+  if (!hostId || !meetingId) { await updateEvent(supabase, intakeEventId, { processing_status: 'failed', processing_error: 'Recording event did not contain a Zoom host id or meeting id' }); return; }
+  let file = transcriptFile(recording);
+  const { data: integration, error: integrationError } = await supabase.from('integrations').select('user_id, encrypted_access_token, encrypted_refresh_token, expires_at, token_type, scope').eq('provider', 'zoom').eq('provider_account_id', hostId).maybeSingle();
+  if (integrationError) throw integrationError;
+  if (!integration) { await updateEvent(supabase, intakeEventId, { processing_status: 'unmatched', processing_error: 'No connected Helio therapist matched this Zoom host' }); return; }
+  const sessionLink = await findVerifiedSessionLink(supabase, integration.user_id, meetingId);
+  const getToken = (options) => getZoomAccessTokenContext(supabase, integration, options);
+  const initialToken = await getToken({ forceRefresh: false });
+  const recordingsResponse = await fetch(`https://api.zoom.us/v2/meetings/${encodeURIComponent(meetingId)}/recordings`, { headers: { Authorization: `Bearer ${initialToken.accessToken}` } });
+  if (recordingsResponse.ok) { const canonicalFile = transcriptFile(await recordingsResponse.json()); if (canonicalFile?.download_url && canonicalFile?.id) file = canonicalFile; }
+  if (!file?.download_url || !file?.id) { await updateEvent(supabase, intakeEventId, { processing_status: 'received', processing_error: 'Recording received before a downloadable transcript file was available' }); return; }
+  const transcriptInfo = await fetch(`https://api.zoom.us/v2/meetings/${encodeURIComponent(meetingId)}/transcript`, { headers: { Authorization: `Bearer ${initialToken.accessToken}` } });
+  let transcriptDownloadUrl = file.download_url;
+  if (transcriptInfo.ok) { const metadata = await transcriptInfo.json(); if (metadata.download_url) transcriptDownloadUrl = metadata.download_url; }
+  const downloadResult = await downloadZoomTranscriptWithRetry(transcriptDownloadUrl, async ({ forceRefresh }) => forceRefresh ? getToken({ forceRefresh: true }) : initialToken);
+  if (!downloadResult.response.ok) throw new Error(`Zoom transcript download failed with ${downloadResult.response.status}`);
+  const originalTranscript = await downloadResult.response.text();
+  if (!originalTranscript.trim()) throw new Error('Zoom returned an empty transcript');
+  const { error: transcriptError } = await supabase.from('zoom_transcripts').upsert({ therapist_user_id: integration.user_id, zoom_meeting_id: meetingId, zoom_meeting_uuid: recording.uuid ? String(recording.uuid) : null, zoom_recording_file_id: String(file.id), original_format: String(file.file_extension || 'VTT').toUpperCase(), original_transcript: originalTranscript, source: 'zoom_cloud', client_id: sessionLink?.client_id || null, session_ref: sessionLink?.session_ref || null, status: sessionLink ? 'ready' : 'unassigned', updated_at: new Date().toISOString() }, { onConflict: 'therapist_user_id,zoom_recording_file_id' });
+  if (transcriptError) throw transcriptError;
+  if (sessionLink) await supabase.from('zoom_session_links').update({ status: 'transcript_received', updated_at: new Date().toISOString() }).eq('therapist_user_id', integration.user_id).eq('zoom_meeting_id', meetingId);
   await updateEvent(supabase, intakeEventId, { processing_status: 'stored', processing_error: null });
 }
 
@@ -180,36 +156,30 @@ export default async function handler(req, res) {
   }
   const verification = verifyZoomWebhookRequest({ headers: req.headers, body, rawBody, secret });
   if (!verification.valid) return res.status(401).json({ error: 'Invalid webhook signature' });
-  const recording = body.payload?.object || {}; const eventType = body.event || 'unknown'; const schedulerEvent = schedulerAppointmentEvent(body); const noteEvent = myNotesEvent(body);
-  const meetingId = schedulerEvent?.meetingId || noteEvent?.meetingId || (recording.id ? String(recording.id) : null); const hostId = recording.host_id ? String(recording.host_id) : null;
+  const recording = body.payload?.object || {};
+  const eventType = body.event || 'unknown';
+  const schedulerEvent = schedulerAppointmentEvent(body);
+  const noteEvent = myNotesEvent(body);
+  const meetingId = schedulerEvent?.meetingId || noteEvent?.meetingId || (recording.id ? String(recording.id) : null);
+  const hostId = recording.host_id ? String(recording.host_id) : null;
+  let supabase; let intakeEvent;
   try {
-    const supabase = getSupabaseClient();
-    const { data: intakeEvent, error: intakeError } = await supabase.from('zoom_webhook_events').insert({ delivery_key: verification.deliveryKey, event_type: eventType, zoom_meeting_id: meetingId, zoom_host_id: hostId, payload: safeZoomWebhookPayload(body) }).select('id').single();
-    if (intakeError?.code === '23505') return res.status(200).json({ received: true, duplicate: true });
-    if (intakeError) throw intakeError;
-    if (schedulerEvent) { await applySchedulerEvent(supabase, intakeEvent.id, schedulerEvent); return res.status(200).json({ received: true }); }
-    if (noteEvent) { await processMyNotesEvent(supabase, intakeEvent.id, noteEvent); return res.status(200).json({ received: true }); }
-    if (eventType !== 'recording.transcript_completed' && eventType !== 'recording.completed') return res.status(200).json({ received: true });
-    if (!hostId || !meetingId) { await updateEvent(supabase, intakeEvent.id, { processing_status: 'failed', processing_error: 'Recording event did not contain a Zoom host id or meeting id' }); return res.status(200).json({ received: true }); }
+    supabase = getSupabaseClient();
+    const result = await supabase.from('zoom_webhook_events').insert({ delivery_key: verification.deliveryKey, event_type: eventType, zoom_meeting_id: meetingId, zoom_host_id: hostId, payload: safeZoomWebhookPayload(body) }).select('id').single();
+    if (result.error?.code === '23505') return res.status(200).json({ received: true, duplicate: true });
+    if (result.error) throw result.error;
+    intakeEvent = result.data;
+  } catch (error) {
+    console.error('[Zoom Webhook] Intake failed before acknowledgement', { message: error.message, meetingId, eventType });
+    return res.status(500).json({ error: 'Webhook intake failed' });
+  }
 
-    let file = transcriptFile(recording);
-    const { data: integration, error: integrationError } = await supabase.from('integrations').select('user_id, encrypted_access_token, encrypted_refresh_token, expires_at, token_type, scope').eq('provider', 'zoom').eq('provider_account_id', hostId).maybeSingle();
-    if (integrationError) throw integrationError;
-    if (!integration) { await updateEvent(supabase, intakeEvent.id, { processing_status: 'unmatched', processing_error: 'No connected Helio therapist matched this Zoom host' }); return res.status(200).json({ received: true }); }
-    const sessionLink = await findVerifiedSessionLink(supabase, integration.user_id, meetingId);
-    const getToken = (options) => getZoomAccessTokenContext(supabase, integration, options); const initialToken = await getToken({ forceRefresh: false });
-    const recordingsResponse = await fetch(`https://api.zoom.us/v2/meetings/${encodeURIComponent(meetingId)}/recordings`, { headers: { Authorization: `Bearer ${initialToken.accessToken}` } });
-    if (recordingsResponse.ok) { const canonicalFile = transcriptFile(await recordingsResponse.json()); if (canonicalFile?.download_url && canonicalFile?.id) file = canonicalFile; }
-    if (!file?.download_url || !file?.id) { await updateEvent(supabase, intakeEvent.id, { processing_status: 'received', processing_error: 'Recording received before a downloadable transcript file was available' }); return res.status(200).json({ received: true }); }
-    const transcriptInfo = await fetch(`https://api.zoom.us/v2/meetings/${encodeURIComponent(meetingId)}/transcript`, { headers: { Authorization: `Bearer ${initialToken.accessToken}` } });
-    let transcriptDownloadUrl = file.download_url; if (transcriptInfo.ok) { const metadata = await transcriptInfo.json(); if (metadata.download_url) transcriptDownloadUrl = metadata.download_url; }
-    const downloadResult = await downloadZoomTranscriptWithRetry(transcriptDownloadUrl, async ({ forceRefresh }) => forceRefresh ? getToken({ forceRefresh: true }) : initialToken);
-    if (!downloadResult.response.ok) throw new Error(`Zoom transcript download failed with ${downloadResult.response.status}`);
-    const originalTranscript = await downloadResult.response.text(); if (!originalTranscript.trim()) throw new Error('Zoom returned an empty transcript');
-    const { error: transcriptError } = await supabase.from('zoom_transcripts').upsert({ therapist_user_id: integration.user_id, zoom_meeting_id: meetingId, zoom_meeting_uuid: recording.uuid ? String(recording.uuid) : null, zoom_recording_file_id: String(file.id), original_format: String(file.file_extension || 'VTT').toUpperCase(), original_transcript: originalTranscript, source: 'zoom_cloud', client_id: sessionLink?.client_id || null, session_ref: sessionLink?.session_ref || null, status: sessionLink ? 'ready' : 'unassigned', updated_at: new Date().toISOString() }, { onConflict: 'therapist_user_id,zoom_recording_file_id' });
-    if (transcriptError) throw transcriptError;
-    if (sessionLink) await supabase.from('zoom_session_links').update({ status: 'transcript_received', updated_at: new Date().toISOString() }).eq('therapist_user_id', integration.user_id).eq('zoom_meeting_id', meetingId);
-    await updateEvent(supabase, intakeEvent.id, { processing_status: 'stored' });
-  } catch (error) { console.error('[Zoom Webhook] Intake failed', { message: error.message, meetingId, eventType }); }
-  return res.status(200).json({ received: true });
+  res.status(200).json({ received: true });
+
+  try {
+    await processAcceptedWebhook({ supabase, intakeEventId: intakeEvent.id, body, eventType, schedulerEvent, noteEvent, recording, meetingId, hostId });
+  } catch (error) {
+    console.error('[Zoom Webhook] Background processing failed', { message: error.message, meetingId, eventType });
+    await updateEvent(supabase, intakeEvent.id, { processing_status: 'failed', processing_error: String(error.message || 'Background processing failed').slice(0, 500) });
+  }
 }
