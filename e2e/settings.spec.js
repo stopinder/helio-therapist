@@ -10,17 +10,63 @@ test.describe('Settings Workspace Workflow', () => {
     }
   });
 
-  test('should render settings and launch Google OAuth flow', async ({ page }) => {
-    // Mock profiles
+  async function mockSignIn(page) {
+    await page.route('**/auth/v1/token*', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          access_token: 'mock-token',
+          refresh_token: 'mock-refresh',
+          expires_in: 3600,
+          token_type: 'bearer',
+          user: {
+            id: 'mock-user-id',
+            email,
+            aud: 'authenticated',
+            role: 'authenticated'
+          }
+        })
+      });
+    });
+  }
+
+  async function mockProfile(page) {
     await page.route('**/rest/v1/profiles*', async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify([{ id: 'mock-user-id', role: 'therapist' }])
+        body: JSON.stringify([{
+          id: 'mock-user-id',
+          full_name: 'Test Therapist',
+          professional_title: 'Psychotherapist',
+          practice_name: 'Test Practice',
+          document_email: 'practice@example.com',
+          document_phone: '',
+          practice_website: '',
+          practice_address: '',
+          practice_logo_path: null
+        }])
       });
     });
+  }
 
-    // Mock Google status
+  async function signInAndOpenSettings(page) {
+    await page.goto('/');
+    await page.getByLabel('Email address').fill(email);
+    await page.getByLabel('Password').fill(password);
+    await page.locator('form').getByRole('button', { name: 'Sign in' }).click();
+
+    const settingsLink = page.locator('aside').getByRole('link', { name: /Settings/i });
+    await expect(settingsLink).toBeVisible({ timeout: 15000 });
+    await settingsLink.click();
+    await expect(page).toHaveURL(/\/settings/);
+  }
+
+  test('renders connections first and launches Google OAuth flow', async ({ page }) => {
+    await mockProfile(page);
+    await mockSignIn(page);
+
     await page.route('**/api/google/status', async (route) => {
       await route.fulfill({
         status: 200,
@@ -33,7 +79,6 @@ test.describe('Settings Workspace Workflow', () => {
       });
     });
 
-    // Mock Zoom status
     await page.route('**/api/zoom/status', async (route) => {
       await route.fulfill({
         status: 200,
@@ -42,48 +87,35 @@ test.describe('Settings Workspace Workflow', () => {
       });
     });
 
-    // Mock Sign In
-    await page.route('**/auth/v1/token*', async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          access_token: 'mock-token',
-          refresh_token: 'mock-refresh',
-          expires_in: 3600,
-          token_type: 'bearer',
-          user: { 
-            id: 'mock-user-id', 
-            email,
-            aud: 'authenticated',
-            role: 'authenticated'
-          }
-        })
-      });
+    await signInAndOpenSettings(page);
+
+    const connections = page.getByTestId('settings-connections');
+    const practice = page.getByTestId('settings-practice-profile');
+    await expect(connections).toBeVisible();
+    await expect(practice).toBeVisible();
+    await expect(connections.getByText('Google Calendar', { exact: true })).toBeVisible();
+    await expect(connections.getByText('Connected', { exact: true })).toBeVisible();
+    await expect(connections.getByText('therapist@example.com')).toBeVisible();
+    await expect(connections.getByText('Zoom', { exact: true })).toBeVisible();
+    await expect(connections.getByText('Not connected', { exact: true })).toBeVisible();
+    await expect(practice.getByText('Practice logo', { exact: true })).toBeVisible();
+    await expect(practice.getByText('Upload logo', { exact: true })).toBeVisible();
+
+    const connectionBox = await connections.boundingBox();
+    const practiceBox = await practice.boundingBox();
+    expect(connectionBox).not.toBeNull();
+    expect(practiceBox).not.toBeNull();
+    expect(connectionBox.y).toBeLessThan(practiceBox.y);
+
+    await page.route('**/api/google/disconnect', async (route) => {
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: true }) });
     });
+    page.once('dialog', dialog => dialog.accept());
+    await connections.getByRole('button', { name: 'Disconnect' }).first().click();
 
-    await page.goto('/');
-    await page.getByLabel('Email address').fill(email);
-    await page.getByLabel('Password').fill(password);
-    await page.locator('form').getByRole('button', { name: 'Sign in' }).click();
+    const connectButton = connections.getByRole('button', { name: 'Connect', exact: true }).first();
+    await expect(connectButton).toBeVisible();
 
-    // Wait for AppShell
-    const settingsLink = page.locator('aside').getByRole('link', { name: /Settings/i });
-    await expect(settingsLink).toBeVisible({ timeout: 15000 });
-    await settingsLink.click();
-
-    await expect(page).toHaveURL(/\/settings/);
-    
-    // Check for Google Calendar connection info
-    await expect(page.getByText('Google Calendar', { exact: true })).toBeVisible();
-    await expect(page.getByText('✓ Connected')).toBeVisible();
-    await expect(page.getByText('therapist@example.com')).toBeVisible();
-
-    // Check for Zoom connection info
-    await expect(page.locator('section').filter({ hasText: 'Integrations' }).getByText('Zoom', { exact: true })).toBeVisible();
-    await expect(page.locator('section').filter({ hasText: 'Integrations' }).getByText('Not connected')).toBeVisible();
-
-    // Mock Google Authorize
     await page.route('**/api/google/authorize', async (route) => {
       await route.fulfill({
         status: 200,
@@ -92,40 +124,14 @@ test.describe('Settings Workspace Workflow', () => {
       });
     });
 
-    // Disconnect Google and reconnect
-    await page.locator('details summary').first().click();
-    
-    // Mock disconnect
-    await page.route('**/api/google/disconnect', async (route) => {
-      await route.fulfill({ status: 200, body: JSON.stringify({ success: true }) });
-    });
-    
-    page.once('dialog', dialog => dialog.accept());
-    await page.getByRole('button', { name: 'Disconnect Google Calendar' }).click();
-    
-    // Mock Google status as disconnected
-    await page.route('**/api/google/status', async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({ connected: false })
-      });
-    });
-    
-    // Wait for UI to update (the component might not poll, so we might need to trigger a re-fetch or just expect it to change if the component handles it)
-    // Actually Settings.vue updates googleStatus.value = 'Not connected' on success.
-    
-    // Now should show "Connect"
-    const connectButton = page.getByRole('button', { name: 'Connect', exact: true }).first();
-    await expect(connectButton).toBeVisible();
-    
-    // Clicking connect should redirect
     await connectButton.click();
     await expect(page).toHaveURL(/accounts\.google\.com/);
   });
 
-  test('should handle reconnect required state', async ({ page }) => {
-    // Mock Google status with error
+  test('handles Google reconnect required state', async ({ page }) => {
+    await mockProfile(page);
+    await mockSignIn(page);
+
     await page.route('**/api/google/status', async (route) => {
       await route.fulfill({
         status: 200,
@@ -137,8 +143,7 @@ test.describe('Settings Workspace Workflow', () => {
         })
       });
     });
-    
-    // Mock Zoom status
+
     await page.route('**/api/zoom/status', async (route) => {
       await route.fulfill({
         status: 200,
@@ -147,40 +152,13 @@ test.describe('Settings Workspace Workflow', () => {
       });
     });
 
-    // Mock Sign In
-    await page.route('**/auth/v1/token*', async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          access_token: 'mock-token',
-          refresh_token: 'mock-refresh',
-          expires_in: 3600,
-          token_type: 'bearer',
-          user: { 
-            id: 'mock-user-id', 
-            email,
-            aud: 'authenticated',
-            role: 'authenticated'
-          }
-        })
-      });
-    });
+    await signInAndOpenSettings(page);
 
-    await page.goto('/');
-    await page.getByLabel('Email address').fill(email);
-    await page.getByLabel('Password').fill(password);
-    await page.locator('form').getByRole('button', { name: 'Sign in' }).click();
-
-    const settingsLink = page.locator('aside').getByRole('link', { name: /Settings/i });
-    await expect(settingsLink).toBeVisible({ timeout: 15000 });
-    await settingsLink.click();
-
-    await expect(page.getByText('⚠ Reconnect Required')).toBeVisible();
-    const reconnectButton = page.getByRole('button', { name: 'Reconnect' });
+    const connections = page.getByTestId('settings-connections');
+    await expect(connections.getByText('Reconnect Required', { exact: true })).toBeVisible();
+    const reconnectButton = connections.getByRole('button', { name: 'Reconnect' });
     await expect(reconnectButton).toBeVisible();
-    
-    // Mock Google Authorize
+
     await page.route('**/api/google/authorize', async (route) => {
       await route.fulfill({
         status: 200,
@@ -188,7 +166,7 @@ test.describe('Settings Workspace Workflow', () => {
         body: JSON.stringify({ url: 'https://accounts.google.com/o/oauth2/v2/auth?mock=reconnect' })
       });
     });
-    
+
     await reconnectButton.click();
     await expect(page).toHaveURL(/accounts\.google\.com/);
   });
