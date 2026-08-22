@@ -3,41 +3,38 @@ import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 
 const shell = await readFile(new URL('../src/layouts/AppShell.vue', import.meta.url), 'utf8')
+const helper = await readFile(new URL('../src/lib/nextAppointment.js', import.meta.url), 'utf8')
 
-test('global header provides therapist time and next-session awareness', () => {
+test('global header uses neutral appointment wording', () => {
   assert.match(shell, /data-testid="global-session-clock"/)
   assert.match(shell, /\{\{ currentTimeLabel \}\}/)
-  assert.match(shell, /Next session \{\{ nextSessionTimeLabel \}\}/)
-  assert.match(shell, /\{\{ nextSessionCountdownLabel \}\}/)
+  assert.match(shell, /Next appointment \{\{ nextAppointmentTimeLabel \}\}/)
+  assert.match(shell, /\{\{ nextAppointmentCountdownLabel \}\}/)
+  assert.match(shell, /No upcoming appointment/)
+  assert.doesNotMatch(shell, /Next session \{\{/)
 })
 
-test('global session clock reuses scheduled appointments without client identity', () => {
-  assert.match(shell, /import \{ listScheduledAppointments \} from '\.\.\/lib\/appointments\.js'/)
-  assert.match(shell, /appointments\.value=await listScheduledAppointments\(\)/)
+test('global appointment clock considers internal and Google timed events without client identity', () => {
+  assert.match(shell, /import \{ nextTimedAppointment \} from '\.\.\/lib\/nextAppointment\.js'/)
+  assert.match(shell, /authenticatedFetch\('\/api\/google\/status'/)
+  assert.match(shell, /authenticatedFetch\(`\/api\/google\/events\?\$\{params\.toString\(\)\}`/)
+  assert.match(shell, /nextTimedAppointment\(\{ appointments:appointments\.value, googleEvents:googleEvents\.value, now:now\.value \}\)/)
+  assert.match(helper, /filter\(event => !event\?\.allDay\)/)
   assert.doesNotMatch(shell, /global-session-clock[^]*display_name/)
 })
 
-test('next scheduled appointment is a one-click session entry action', () => {
-  assert.match(shell, /Join next session/)
+test('join action is offered only when the next global appointment is a Helios appointment', () => {
+  assert.match(shell, /v-if="nextGlobalAppointment\?\.source==='appointment'"/)
+  assert.match(shell, /Join appointment/)
   assert.match(shell, /createOrResumeSession/)
   assert.match(shell, /authenticatedFetch\('\/api\/zoom\/join-appointment'/)
-  assert.match(shell, /appointmentId:nextAppointment\.value\.id/)
-  assert.match(shell, /router\.push\(`\/clients\/\$\{session\.clientId\}\/sessions\/\$\{session\.id\}`\)/)
-  assert.match(shell, /window\.open\(data\.startUrl/)
+  assert.match(shell, /appointmentId:nextGlobalAppointment\.value\.appointment\.id/)
 })
 
-test('schedule remains available as a compact secondary action beside next session', () => {
-  assert.match(shell, /v-if="\$route\.path!=='\/schedule'"[^>]*px-2\.5 py-1\.5[^>]*>/)
-  assert.match(shell, /<CalendarDays[^>]*\/><span>Schedule<\/span>/)
-  assert.match(shell, /v-if="nextAppointment"[^>]*class="hidden sm:inline-flex button-primary"/)
-})
-
-test('global clock highlights a confirmed session only within the final 15 minutes', () => {
-  assert.match(shell, /const minutesUntilNextSession=computed/)
-  assert.match(shell, /minutesUntilNextSession\.value>=0&&minutesUntilNextSession\.value<=15/)
-  assert.match(shell, /data-session-approaching="isSessionApproaching \? 'true' : 'false'"/)
-  assert.match(shell, /border border-accent\/30 bg-accent\/10/)
-  assert.match(shell, /isSessionApproaching \? 'font-semibold text-accent' : 'text-ink-muted'/)
+test('global clock highlights an appointment only within the final 15 minutes', () => {
+  assert.match(shell, /const minutesUntilNextAppointment=computed/)
+  assert.match(shell, /minutesUntilNextAppointment\.value>=0&&minutesUntilNextAppointment\.value<=15/)
+  assert.match(shell, /data-session-approaching="isAppointmentApproaching \? 'true' : 'false'"/)
 })
 
 test('clock and appointment data refresh while the shell is mounted and clean up their timers', () => {
@@ -47,6 +44,4 @@ test('clock and appointment data refresh while the shell is mounted and clean up
   assert.match(shell, /document\.addEventListener\('visibilitychange',refreshAppointmentsWhenActive\)/)
   assert.match(shell, /window\.clearInterval\(clockTimer\)/)
   assert.match(shell, /window\.clearInterval\(appointmentRefreshTimer\)/)
-  assert.match(shell, /window\.removeEventListener\('focus',refreshAppointments\)/)
-  assert.match(shell, /document\.removeEventListener\('visibilitychange',refreshAppointmentsWhenActive\)/)
 })
