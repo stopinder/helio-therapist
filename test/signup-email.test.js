@@ -4,7 +4,7 @@ import { readFile } from 'node:fs/promises'
 
 const authGate = await readFile(new URL('../src/AuthGate.vue', import.meta.url), 'utf8')
 const endpoint = await readFile(new URL('../api/signup/welcome.js', import.meta.url), 'utf8')
-const migration = await readFile(new URL('../supabase/migrations/20260822142000_add_marketing_email_consent.sql', import.meta.url), 'utf8')
+const migration = await readFile(new URL('../supabase/migrations/20260822122932_add_marketing_email_consent.sql', import.meta.url), 'utf8')
 
 test('signup marketing consent is explicit and optional', () => {
   assert.match(authGate, /marketingEmailConsent = ref\(false\)/)
