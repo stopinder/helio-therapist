@@ -21,8 +21,8 @@
       </nav>
     </header>
 
-    <section class="mx-auto grid w-full max-w-[1540px] gap-10 px-5 pb-10 pt-7 sm:px-8 sm:pt-10 lg:grid-cols-[.92fr_1.08fr] lg:items-center lg:gap-12 lg:pb-12 lg:pt-8 xl:grid-cols-[.88fr_1.12fr] xl:gap-14">
-      <div class="max-w-xl lg:pl-4 xl:pl-8">
+    <section class="mx-auto grid w-full max-w-[1480px] gap-10 px-5 pb-10 pt-7 sm:px-8 sm:pt-10 lg:grid-cols-[1.08fr_.92fr] lg:items-center lg:gap-12 lg:pb-12 lg:pt-8 xl:gap-16">
+      <div class="max-w-2xl lg:pl-4 xl:pl-8">
         <p class="type-eyebrow text-action-link">Therapist workspace</p>
         <h1 class="mt-4 font-serif text-5xl font-semibold leading-[1.04] tracking-[-0.035em] text-ink sm:text-6xl">A calmer place for the work around therapy.</h1>
         <p class="mt-6 text-lg leading-8 text-ink-secondary">Helios brings appointments, client context, session preparation, working notes, Clinical Records and professional reflection into one focused workspace.</p>
@@ -33,90 +33,15 @@
         <p class="mt-5 text-sm leading-6 text-ink-muted">Therapist judgement stays central. AI and transcript output remain assistive working material until you decide what to keep.</p>
       </div>
 
-      <div class="relative min-w-0 w-full py-2 sm:py-4" aria-label="Representative Helios practice workspace">
-        <div class="absolute -inset-x-3 inset-y-6 -z-10 rounded-[30px] bg-brand-sage-soft/80 sm:-inset-x-5 sm:inset-y-4" aria-hidden="true"></div>
-        <div class="relative w-full overflow-hidden rounded-[20px] border border-border bg-surface-elevated shadow-elevated">
-          <div class="flex items-center justify-between border-b border-border bg-surface-muted px-5 py-4 sm:px-6">
-            <div class="flex items-center gap-2.5">
-              <svg class="h-6 w-6 text-brand-amber" viewBox="0 0 48 48" fill="none" aria-hidden="true">
-                <path d="M10 31h28M15 31a9 9 0 0 1 18 0M24 10v6M11 18l4 4M37 18l-4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-              </svg>
-              <span class="font-serif text-xl font-semibold">Helios</span>
-            </div>
-            <span class="rounded-pill bg-state-selected px-3 py-1.5 text-xs font-medium text-action-link">Practice overview</span>
-          </div>
-
-          <div class="grid min-h-[445px] grid-cols-[96px_1fr] sm:grid-cols-[124px_1fr] lg:grid-cols-[132px_1fr]">
-            <aside class="border-r border-border bg-surface-muted p-3.5" aria-label="Representative Helios navigation">
-              <div class="space-y-1.5 text-[11px] leading-5 text-ink-muted">
-                <div class="rounded-control bg-state-selected px-2.5 py-2 font-medium text-action-link">Overview</div>
-                <div class="px-2.5 py-1.5">Calendar</div>
-                <div class="px-2.5 py-1.5">Clients</div>
-                <div class="px-2.5 py-1.5">Transcripts</div>
-                <div class="px-2.5 py-1.5">Documents</div>
-                <div class="px-2.5 py-1.5">CPD</div>
-              </div>
-            </aside>
-
-            <div class="overflow-hidden bg-surface px-4 py-5 sm:px-6 lg:px-7 lg:py-6">
-              <div class="flex items-start justify-between gap-4">
-                <div>
-                  <p class="type-eyebrow text-ink-muted">Today</p>
-                  <h2 class="mt-1 type-subsection text-ink">Your practice at a glance</h2>
-                </div>
-                <span class="hidden rounded-pill bg-brand-sage-soft px-3 py-1 text-[11px] font-medium text-action-link sm:inline-flex">Practice</span>
-              </div>
-
-              <div class="mt-5 grid gap-4 md:grid-cols-[1.45fr_.9fr]">
-                <section class="space-y-3" aria-label="Today's schedule preview">
-                  <div class="flex items-center justify-between"><p class="text-xs font-semibold text-ink">Today’s schedule</p><span class="text-[11px] text-action-link">View calendar →</span></div>
-                  <div class="rounded-control border border-border bg-surface-elevated p-3.5 shadow-sm">
-                    <div class="flex items-center gap-3">
-                      <div class="w-14 shrink-0 border-r border-border-muted pr-3"><p class="text-xs font-semibold text-ink">09:00</p><p class="mt-1 text-[10px] text-ink-muted">Session</p></div>
-                      <div class="min-w-0 flex-1"><p class="truncate text-xs font-medium text-ink">Client A</p><p class="mt-0.5 text-[11px] text-ink-muted">Preparation available</p></div>
-                      <span class="hidden rounded-control border border-border px-2 py-1 text-[10px] font-medium text-ink-secondary sm:inline-flex">Open client</span>
-                    </div>
-                  </div>
-                  <div class="rounded-control border border-action-primary/30 bg-state-selected p-3.5 shadow-sm">
-                    <div class="flex items-center gap-3">
-                      <div class="w-14 shrink-0 border-r border-border-muted pr-3"><p class="text-xs font-semibold text-ink">11:30</p><p class="mt-1 text-[10px] text-ink-muted">Session</p></div>
-                      <div class="min-w-0 flex-1"><p class="truncate text-xs font-medium text-ink">Client B</p><p class="mt-0.5 text-[11px] text-ink-muted">Current focus close to hand</p></div>
-                      <span class="hidden rounded-control bg-action-link px-2 py-1 text-[10px] font-medium text-on-action sm:inline-flex">Prepare</span>
-                    </div>
-                  </div>
-                  <div class="rounded-control border border-border bg-surface-muted p-3.5">
-                    <div class="flex items-center justify-between gap-3">
-                      <div><p class="text-[10px] font-semibold uppercase tracking-[.12em] text-ink-muted">Next client</p><p class="mt-1 text-xs font-semibold text-ink">Preparation in one place</p></div>
-                      <span class="rounded-pill bg-surface-elevated px-2.5 py-1 text-[10px] font-medium text-action-link">Before session</span>
-                    </div>
-                    <div class="mt-3 grid grid-cols-2 gap-2">
-                      <div class="rounded-control border border-border-muted bg-surface-elevated p-2.5"><p class="text-[10px] font-semibold text-ink">Current focus</p><p class="mt-1 text-[10px] leading-4 text-ink-muted">Relevant context nearby</p></div>
-                      <div class="rounded-control border border-border-muted bg-surface-elevated p-2.5"><p class="text-[10px] font-semibold text-ink">Recent development</p><p class="mt-1 text-[10px] leading-4 text-ink-muted">Useful context surfaced</p></div>
-                    </div>
-                  </div>
-                </section>
-
-                <aside class="hidden space-y-4 md:block" aria-label="Working material preview">
-                  <div>
-                    <p class="text-[10px] font-semibold uppercase tracking-[.12em] text-ink-muted">Continue working</p>
-                    <div class="mt-2 rounded-control border border-border bg-surface-elevated p-3.5 shadow-sm"><p class="text-xs font-semibold text-ink">Session draft</p><p class="mt-1 text-[11px] leading-4 text-ink-muted">Editable working material remains distinct from the Clinical Record.</p></div>
-                  </div>
-                  <div>
-                    <p class="text-[10px] font-semibold uppercase tracking-[.12em] text-ink-muted">When ready</p>
-                    <div class="mt-2 rounded-control border border-action-primary/20 bg-brand-sage-soft p-3.5"><p class="text-xs font-semibold text-ink">Review &amp; approve</p><p class="mt-1 text-[11px] leading-4 text-ink-secondary">Clinical Records are created deliberately after therapist review.</p></div>
-                  </div>
-                </aside>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="absolute -bottom-3 right-6 hidden w-[270px] rounded-[16px] border border-border bg-surface-overlay p-4.5 shadow-elevated xl:block" aria-hidden="true">
-          <p class="text-[10px] font-semibold uppercase tracking-[.12em] text-ink-muted">Clinical workspace</p>
-          <p class="mt-1.5 text-sm font-semibold text-ink">Working draft</p>
-          <div class="mt-3 space-y-2"><div class="h-2 w-full rounded-full bg-border-muted"></div><div class="h-2 w-[86%] rounded-full bg-border-muted"></div><div class="h-2 w-[68%] rounded-full bg-state-selected"></div></div>
-          <div class="mt-3 flex items-center justify-between border-t border-border-muted pt-3"><span class="text-[10px] text-ink-muted">Editable</span><span class="rounded-control bg-action-link px-2.5 py-1.5 text-[10px] font-medium text-on-action">Review record</span></div>
-        </div>
+      <div class="relative min-w-0 w-full" aria-label="Representative Helios practice workspace">
+        <div class="absolute -inset-4 -z-10 rounded-[32px] bg-brand-sage-soft sm:-inset-5" aria-hidden="true"></div>
+        <img
+          src="/helios-product-preview.svg"
+          alt="Helios practice overview showing today's sessions, client preparation and editable working material"
+          class="block w-full rounded-[24px] border border-border shadow-elevated"
+          width="960"
+          height="640"
+        />
       </div>
     </section>
 
