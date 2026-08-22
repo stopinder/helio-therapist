@@ -26,6 +26,7 @@ export const CLINICAL_LENSES = {
     label: 'Integrative',
     description: 'A flexible, non-prescriptive approach that draws from multiple therapeutic modalities as needed.',
     sections: {
+      current_focus: { label: 'Current Focus', emptyState: 'No current focus defined.' },
       narrative: { label: 'Clinical Narrative', emptyState: 'The story of the work is emerging...' },
       themes: { label: 'Key Themes', emptyState: 'Important threads will appear here.' },
       interventions: { label: 'Interventions', emptyState: 'Documenting what was tried.' },
