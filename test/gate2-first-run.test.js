@@ -14,7 +14,7 @@ test('signup confirmation is truthful without confirming account existence', () 
 })
 
 test('settings edits the existing therapist-owned practice profile', () => {
-  assert.match(settings, /Professional profile/)
+  assert.match(settings, /Practice & professional details/)
   assert.match(settings, /full_name,professional_title,practice_name,document_email,document_phone,practice_website,practice_address/)
   assert.match(settings, /supabase\.auth\.getUser\(\)/)
   assert.match(settings, /from\('profiles'\)\.upsert/)
