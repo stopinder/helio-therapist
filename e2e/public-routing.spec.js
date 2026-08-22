@@ -45,11 +45,16 @@ test.describe('Gate 3 public routing', () => {
     }
   });
 
-  test('public information names the confirmed support contact and current processing providers', async ({ page }) => {
+  test('public information names the confirmed support contact, launch scope and current processing providers', async ({ page }) => {
     await page.goto('/support', { waitUntil:'domcontentloaded' });
     await expect(page.getByRole('link', { name:'hello@helio.works' }).first()).toHaveAttribute('href', 'mailto:hello@helio.works');
 
+    await page.goto('/terms', { waitUntil:'domcontentloaded' });
+    await expect(page.getByText('individual therapists operating their own professional practice', { exact:false })).toBeVisible();
+    await expect(page.getByText('multi-user clinic accounts are not currently supported', { exact:false })).toBeVisible();
+
     await page.goto('/privacy', { waitUntil:'domcontentloaded' });
+    await expect(page.getByText('individual therapists using a single account', { exact:false })).toBeVisible();
     await expect(page.getByText('Supabase', { exact:false })).toBeVisible();
     await expect(page.getByText('Vercel', { exact:false })).toBeVisible();
     await expect(page.getByText('Resend', { exact:false })).toBeVisible();
