@@ -41,20 +41,15 @@ test.describe('Gate 3 public routing', () => {
       await expect(page).toHaveURL(new RegExp(`${path}$`));
       await expect(page).toHaveTitle(title);
       await expect(page.getByRole('heading', { name: heading, level: 1 })).toBeVisible();
-      await expect(page.getByText('Launch draft', { exact: false })).toBeVisible();
+      await expect(page.getByText('Testing / beta', { exact: false })).toBeVisible();
     }
   });
 
-  test('public information names the confirmed support contact, launch scope and current processing providers', async ({ page }) => {
+  test('public information names the confirmed support contact and current processing providers', async ({ page }) => {
     await page.goto('/support', { waitUntil:'domcontentloaded' });
     await expect(page.getByRole('link', { name:'hello@helio.works' }).first()).toHaveAttribute('href', 'mailto:hello@helio.works');
 
-    await page.goto('/terms', { waitUntil:'domcontentloaded' });
-    await expect(page.getByText('individual therapists operating their own professional practice', { exact:false })).toBeVisible();
-    await expect(page.getByText('multi-user clinic accounts are not currently supported', { exact:false })).toBeVisible();
-
     await page.goto('/privacy', { waitUntil:'domcontentloaded' });
-    await expect(page.getByText('individual therapists using a single account', { exact:false })).toBeVisible();
     await expect(page.getByText('Supabase', { exact:false })).toBeVisible();
     await expect(page.getByText('Vercel', { exact:false })).toBeVisible();
     await expect(page.getByText('Resend', { exact:false })).toBeVisible();
@@ -63,9 +58,21 @@ test.describe('Gate 3 public routing', () => {
 
     await page.goto('/ai-data', { waitUntil:'domcontentloaded' });
     await expect(page.getByText('OpenAI', { exact:false })).toBeVisible();
+    await expect(page.getByText('not used to train its models by default', { exact:false })).toBeVisible();
 
     await page.goto('/cookies', { waitUntil:'domcontentloaded' });
     await expect(page.getByText('does not include advertising or analytics tracking', { exact:false })).toBeVisible();
+  });
+
+  test('current terms scope Helios to individual therapist accounts', async ({ page }) => {
+    await page.goto('/terms', { waitUntil:'domcontentloaded' });
+    await expect(page.getByText('individual therapists operating their own professional practice', { exact:false })).toBeVisible();
+    await expect(page.getByText('multi-user clinic accounts are not currently supported', { exact:false })).toBeVisible();
+    await expect(page.getByText('Testing and beta service', { exact:true })).toBeVisible();
+
+    await page.goto('/privacy', { waitUntil:'domcontentloaded' });
+    await expect(page.getByText('individual therapists using a single account', { exact:false })).toBeVisible();
+    await expect(page.getByText('does not currently provide organisational, clinic-administrator or shared multi-practitioner accounts', { exact:false })).toBeVisible();
   });
 
   test('sign-in has a dedicated route', async ({ page }) => {
