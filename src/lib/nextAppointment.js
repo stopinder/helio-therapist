@@ -1,15 +1,12 @@
-function isLinkedAppointment(appointment) {
-  return Boolean(appointment?.zoom_meeting_id || appointment?.zoom_event_id || appointment?.google_event_id)
+function isSampleAppointment(appointment) {
+  return Boolean(appointment?.is_sample || String(appointment?.client_reference || '').startsWith('SAMPLE-'))
 }
 
 export function nextTimedAppointment({ appointments = [], googleEvents = [], now = new Date() } = {}) {
   const nowMs = now.getTime()
 
-  // The global header should only advertise appointments that have been confirmed
-  // by an external scheduling/calendar source. Provisional/orphan rows can remain
-  // in the operational table without becoming a false countdown or Join action.
   const internal = appointments
-    .filter(isLinkedAppointment)
+    .filter(appointment => !isSampleAppointment(appointment))
     .map(appointment => ({
       source: 'appointment',
       start: appointment?.starts_at ? new Date(appointment.starts_at) : null,
