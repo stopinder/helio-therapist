@@ -11,6 +11,15 @@ const EMPTY_WORKSPACE_REFLECTION = Object.freeze({
   nextSession: ''
 });
 
+const EMPTY_REFLECTIVE_MAP = Object.freeze({
+  innerPosition: '',
+  protectiveIntention: '',
+  trigger: '',
+  impact: '',
+  spaceCreated: '',
+  supervisionQuestion: ''
+});
+
 async function getClient(supabaseClient) {
   if (!supabaseClient && !supabase) {
     const module = await import('./supabase.js');
@@ -25,16 +34,65 @@ export function emptyWorkspaceReflection() {
   return { ...EMPTY_WORKSPACE_REFLECTION };
 }
 
-export function normalizeWorkspaceReflection(content) {
+export function emptyReflectiveMap() {
+  return { ...EMPTY_REFLECTIVE_MAP };
+}
+
+export function normalizeReflectiveMap(content) {
   const source = content && typeof content === 'object' && !Array.isArray(content) ? content : {};
   return Object.fromEntries(
+    Object.keys(EMPTY_REFLECTIVE_MAP).map(key => [key, typeof source[key] === 'string' ? source[key] : ''])
+  );
+}
+
+export function normalizeWorkspaceReflection(content) {
+  const source = content && typeof content === 'object' && !Array.isArray(content) ? content : {};
+  const normalized = Object.fromEntries(
     Object.keys(EMPTY_WORKSPACE_REFLECTION).map(key => [key, typeof source[key] === 'string' ? source[key] : ''])
   );
+  if (source.reflectiveMap) normalized.reflectiveMap = normalizeReflectiveMap(source.reflectiveMap);
+  return normalized;
 }
 
 export function workspaceReflectionBody(content) {
   const reflection = normalizeWorkspaceReflection(content);
-  return Object.values(reflection).map(value => value.trim()).filter(Boolean).join('\n\n');
+  return Object.keys(EMPTY_WORKSPACE_REFLECTION)
+    .map(key => reflection[key])
+    .map(value => value.trim())
+    .filter(Boolean)
+    .join('\n\n');
+}
+
+export async function saveReflectionMapping({ supabaseClient, reflectionId, mapping }) {
+  const client = await getClient(supabaseClient);
+  const { data: { user } } = await client.auth.getUser();
+  if (!user) throw new Error('Not authenticated');
+
+  const { data: existing, error: fetchError } = await client
+    .from('private_reflections')
+    .select('id, workspace_content')
+    .eq('id', reflectionId)
+    .eq('user_id', user.id)
+    .single();
+  if (fetchError || !existing) throw new Error('Could not load reflection mapping');
+
+  const workspaceContent = existing.workspace_content && typeof existing.workspace_content === 'object' && !Array.isArray(existing.workspace_content)
+    ? existing.workspace_content
+    : {};
+  const nextWorkspaceContent = {
+    ...workspaceContent,
+    reflectiveMap: normalizeReflectiveMap(mapping)
+  };
+
+  const { data, error } = await client
+    .from('private_reflections')
+    .update({ workspace_content: nextWorkspaceContent, updated_at: new Date().toISOString() })
+    .eq('id', reflectionId)
+    .eq('user_id', user.id)
+    .select()
+    .single();
+  if (error) throw new Error(error.message || 'Could not save reflection mapping');
+  return data;
 }
 
 export async function createSupervisionReflection({ supabaseClient, clientId, sessionId, body, supervisionQuestion, theme = '', urgency = 'normal' }) {

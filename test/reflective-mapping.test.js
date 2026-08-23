@@ -1,0 +1,65 @@
+import test from 'node:test'
+import assert from 'node:assert/strict'
+import {
+  emptyReflectiveMap,
+  normalizeReflectiveMap,
+  normalizeWorkspaceReflection,
+  workspaceReflectionBody
+} from '../src/lib/reflections.js'
+
+test('reflective mapping starts with an empty therapist-authored map', () => {
+  assert.deepEqual(emptyReflectiveMap(), {
+    innerPosition: '',
+    protectiveIntention: '',
+    trigger: '',
+    impact: '',
+    spaceCreated: '',
+    supervisionQuestion: ''
+  })
+})
+
+test('reflective mapping normalizes values without accepting arbitrary keys', () => {
+  assert.deepEqual(normalizeReflectiveMap({ innerPosition: 'The rescuer', trigger: 'Client distress', invented: 'no' }), {
+    innerPosition: 'The rescuer',
+    protectiveIntention: '',
+    trigger: 'Client distress',
+    impact: '',
+    spaceCreated: '',
+    supervisionQuestion: ''
+  })
+})
+
+test('workspace reflection preserves a structured reflective map', () => {
+  const normalized = normalizeWorkspaceReflection({
+    stoodOut: 'A difficult silence',
+    reflectiveMap: { innerPosition: 'The organiser', protectiveIntention: 'Keep things moving' }
+  })
+  assert.equal(normalized.reflectiveMap.innerPosition, 'The organiser')
+  assert.equal(normalized.reflectiveMap.protectiveIntention, 'Keep things moving')
+})
+
+test('structured mapping stays out of the generated reflection body', () => {
+  const body = workspaceReflectionBody({
+    stoodOut: 'A difficult silence',
+    reflectiveMap: { innerPosition: 'The organiser' }
+  })
+  assert.equal(body, 'A difficult silence')
+  assert.doesNotMatch(body, /The organiser/)
+})
+
+test('free-text reflection language is not treated as structured mapping', () => {
+  const normalized = normalizeWorkspaceReflection({
+    stoodOut: 'I noticed a part of me wanted to rescue the client.'
+  })
+  assert.equal(normalized.reflectiveMap, undefined)
+  assert.match(normalized.stoodOut, /wanted to rescue/)
+})
+
+test('therapist wording remains intact rather than assigning a predefined position', () => {
+  const normalized = normalizeReflectiveMap({
+    innerPosition: 'The bit of me that needed to get it right',
+    protectiveIntention: 'Avoid letting the client down'
+  })
+  assert.equal(normalized.innerPosition, 'The bit of me that needed to get it right')
+  assert.equal(normalized.protectiveIntention, 'Avoid letting the client down')
+})

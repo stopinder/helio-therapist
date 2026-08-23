@@ -1,25 +1,91 @@
 <template>
-  <div class="p-4 md:p-10 max-w-6xl mx-auto space-y-12 md:space-y-16 pb-24">
-    <header class="animate-fadeUp"><div class="flex items-center gap-3"><h1 class="text-h2 font-semibold text-ink">Growth & Learning</h1><span class="px-2 py-0.5 bg-surface-subtle text-ink-secondary text-overline font-bold uppercase tracking-wider rounded-pill border border-border-muted">Workspace</span></div></header>
-    <section class="max-w-3xl animate-fadeUp" style="animation-delay: 0.1s"><h2 class="text-3xl md:text-h1 font-fraunces italic text-ink leading-tight mb-4">What is your reflective practice showing you about the therapist you are becoming?</h2><p class="text-body text-ink-muted">Identify patterns, strengths and opportunities for development.</p></section>
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-12">
-      <section class="space-y-6 animate-fadeUp" style="animation-delay: 0.2s"><h3 class="text-overline font-bold text-ink-muted uppercase tracking-widest">Emerging Strengths</h3><div v-if="strengths.length > 0" class="space-y-4"><div v-for="strength in strengths" :key="strength.name" class="bg-surface-elevated p-6 rounded-2xl border border-border-muted shadow-sm"><div class="flex items-start justify-between mb-2"><h4 class="text-h4 font-semibold text-ink">{{ strength.name }}</h4><span class="text-xs font-bold uppercase tracking-tighter px-2 py-0.5 bg-surface-subtle text-ink-subtle rounded-pill border border-border-muted">{{ strength.status }}</span></div><p class="text-caption text-ink-muted leading-relaxed">{{ strength.description }}</p></div></div><div v-else class="bg-surface-subtle/50 p-10 rounded-3xl border border-dashed border-border-muted flex flex-col items-center text-center"><span class="text-3xl mb-4">🌱</span><p class="text-body-sm text-ink-muted font-fraunces italic">Continue reflecting to see your clinical strengths emerge here.</p></div></section>
-      <section class="space-y-6 animate-fadeUp" style="animation-delay: 0.3s"><h3 class="text-overline font-bold text-ink-muted uppercase tracking-widest">Theme Landscape</h3><div v-if="landscapeThemes.length > 0" class="flex flex-wrap gap-3 content-start"><div v-for="theme in landscapeThemes" :key="theme.name" class="bg-surface-elevated px-6 py-3 rounded-full border border-border-muted shadow-sm flex items-center gap-3 transition-transform hover:scale-105" :class="[theme.size === 'lg' ? 'text-lg font-semibold' : theme.size === 'md' ? 'text-base font-medium' : 'text-sm font-medium']"><span class="text-ink">{{ theme.name }}</span><span class="text-xs bg-surface-subtle px-2 py-0.5 rounded-full text-ink-muted font-bold">{{ theme.count }}</span></div></div><div v-else class="bg-surface-subtle/50 p-10 rounded-3xl border border-dashed border-border-muted flex flex-col items-center text-center h-full justify-center"><p class="text-body-sm text-ink-muted font-fraunces italic">Your recurring themes will appear as you build your practice history.</p></div></section>
-    </div>
-    <section class="space-y-8 animate-fadeUp" style="animation-delay: 0.4s"><div class="flex items-end justify-between"><div><h3 class="text-overline font-bold text-ink-muted uppercase tracking-widest mb-2">Learning Goals</h3><p class="text-caption text-ink-subtle italic">Learning goals are currently kept only for this visit.</p></div><button @click="addGoal" class="px-5 py-2 bg-ink text-surface rounded-full text-caption font-semibold hover:bg-ink-secondary transition-colors shadow-sm">Add Goal</button></div><div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"><div v-for="(goal,index) in learningGoals" :key="index" class="bg-surface-elevated p-8 rounded-[2rem] border transition-all relative group" :class="goal.completed ? 'border-border-muted opacity-60' : 'border-border shadow-sm'"><div class="flex justify-between items-start mb-6"><input type="checkbox" v-model="goal.completed" class="w-5 h-5 rounded-full border-border-muted text-ink focus:ring-ink transition-all cursor-pointer" aria-label="Mark goal as complete"><button @click="removeGoal(index)" class="text-ink-subtle hover:text-ink-muted opacity-0 group-hover:opacity-100 transition-opacity" aria-label="Remove goal"><span class="text-xl">×</span></button></div><textarea v-model="goal.text" rows="3" class="w-full bg-transparent border-none focus:ring-0 p-0 text-body font-medium text-ink resize-none placeholder:text-ink-subtle" placeholder="Describe your learning goal..." aria-label="Learning goal description"></textarea></div><div v-if="learningGoals.length === 0" @click="addGoal" class="bg-surface-subtle/30 border-2 border-dashed border-border-muted rounded-[2rem] p-8 flex flex-col items-center justify-center cursor-pointer hover:bg-surface-subtle/50 transition-colors min-h-[160px]"><span class="text-ink-muted text-caption font-semibold">Add a learning goal for this visit</span></div></div></section>
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-12">
-      <section class="space-y-6 animate-fadeUp" style="animation-delay: 0.5s"><h3 class="text-overline font-bold text-ink-muted uppercase tracking-widest">Ethical Considerations</h3><div class="bg-surface-subtle p-8 rounded-3xl border border-border-muted"><p class="text-body-sm text-ink-muted leading-relaxed mb-6 italic font-fraunces">Themes to keep under consideration in your next supervision session.</p><ul v-if="ethicalThemes.length > 0" class="space-y-4"><li v-for="theme in ethicalThemes" :key="theme" class="flex items-center gap-3 text-caption text-ink font-medium"><span class="w-1.5 h-1.5 bg-ink-subtle rounded-full"></span>{{ theme }}</li></ul><p v-else class="text-caption text-ink-subtle">No specific ethical patterns detected in recent reflections.</p><div class="mt-8 pt-6 border-t border-border-muted/50"><router-link to="/supervision/workspace" class="text-caption font-bold text-ink hover:text-ink-secondary transition-colors flex items-center gap-2">Prepare for Supervision <span>→</span></router-link></div></div></section>
-      <section class="space-y-6 animate-fadeUp" style="animation-delay: 0.6s"><h3 class="text-overline font-bold text-ink-muted uppercase tracking-widest">CPD Opportunities</h3><div class="grid grid-cols-1 sm:grid-cols-2 gap-4"><div v-for="opp in cpdOpportunities" :key="opp.title" class="bg-surface-elevated p-6 rounded-2xl border border-border-muted shadow-sm"><div class="text-xl mb-3">{{ opp.icon }}</div><h4 class="text-caption font-bold text-ink mb-1">{{ opp.title }}</h4><p class="text-xs text-ink-muted leading-snug">{{ opp.description }}</p></div></div></section>
-    </div>
+  <div class="mx-auto max-w-6xl space-y-10 p-4 pb-20 md:p-10">
+    <header class="max-w-4xl space-y-4">
+      <p class="type-eyebrow text-action-link">Professional development</p>
+      <h1 class="text-3xl font-semibold tracking-[-0.03em] text-ink md:text-4xl">Development</h1>
+      <p class="max-w-3xl text-base leading-7 text-ink-secondary">Turn repeated observations into deliberate learning without asking Helios to decide what kind of therapist you are.</p>
+    </header>
+
+    <section class="grid gap-8 lg:grid-cols-[1fr_.9fr]">
+      <div>
+        <p class="type-eyebrow text-ink-muted">Evidence from your reflections</p>
+        <h2 class="mt-2 text-2xl font-semibold text-ink">What has your attention?</h2>
+        <p class="mt-2 text-sm leading-6 text-ink-secondary">These are counts, not interpretations. A frequent theme may be a strength, a challenge, a feature of your caseload, or something else entirely.</p>
+        <div v-if="topThemes.length" class="mt-5 overflow-hidden rounded-panel border border-border">
+          <div v-for="theme in topThemes" :key="theme.name" class="flex items-center justify-between border-b border-border-muted bg-surface-raised px-5 py-4 last:border-b-0">
+            <span class="text-sm font-semibold text-ink">{{ theme.name }}</span>
+            <span class="text-sm text-ink-muted">{{ theme.count }} {{ theme.count === 1 ? 'reflection' : 'reflections' }}</span>
+          </div>
+        </div>
+        <p v-else class="mt-5 rounded-panel border border-dashed border-border p-6 text-sm text-ink-muted">No reflection themes have been recorded yet.</p>
+      </div>
+
+      <aside class="rounded-panel border border-border bg-surface-muted p-6">
+        <p class="type-eyebrow text-ink-muted">From pattern to learning</p>
+        <div class="mt-5 space-y-5 text-sm leading-6 text-ink-secondary">
+          <p><strong class="text-ink">1. Notice.</strong> What keeps appearing in the work or in you?</p>
+          <p><strong class="text-ink">2. Map.</strong> What tends to activate it, and what might the response be trying to protect?</p>
+          <p><strong class="text-ink">3. Supervise.</strong> Test your understanding with another human rather than treating a private inference as truth.</p>
+          <p><strong class="text-ink">4. Develop.</strong> Choose a small learning priority and notice what changes in practice.</p>
+        </div>
+        <router-link to="/supervision/workspace" class="mt-6 inline-flex text-sm font-semibold text-action-link">Prepare for supervision →</router-link>
+      </aside>
+    </section>
+
+    <section class="border-y border-border-muted py-8">
+      <div class="grid gap-6 lg:grid-cols-[.75fr_1.25fr]">
+        <div>
+          <p class="type-eyebrow text-ink-muted">Learning priorities</p>
+          <h2 class="mt-2 text-2xl font-semibold text-ink">Make the next step explicit.</h2>
+          <p class="mt-2 text-sm leading-6 text-ink-secondary">Persistent goals will be introduced as a proper therapist-owned record. Until that model is implemented, Helios will not pretend temporary browser text is saved CPD.</p>
+        </div>
+        <div class="space-y-3">
+          <div v-for="prompt in learningPrompts" :key="prompt" class="rounded-control border border-border bg-surface-raised px-5 py-4 text-sm leading-6 text-ink-secondary">{{ prompt }}</div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <div class="mb-5 max-w-3xl">
+        <p class="type-eyebrow text-ink-muted">Ways to follow through</p>
+        <h2 class="mt-2 text-2xl font-semibold text-ink">Choose the activity after the question.</h2>
+        <p class="mt-2 text-sm leading-6 text-ink-secondary">CPD activity should follow a learning need, not be generated as generic personalised advice.</p>
+      </div>
+      <div class="grid overflow-hidden rounded-panel border border-border bg-border md:grid-cols-2 lg:grid-cols-4">
+        <article v-for="route in developmentRoutes" :key="route.title" class="bg-surface-raised p-6">
+          <h3 class="text-base font-semibold text-ink">{{ route.title }}</h3>
+          <p class="mt-2 text-sm leading-6 text-ink-secondary">{{ route.description }}</p>
+        </article>
+      </div>
+    </section>
   </div>
 </template>
+
 <script setup>
-import { ref, computed } from 'vue';
-const props=defineProps({reflections:{type:Array,default:()=>[]},loading:Boolean,themes:{type:Array,default:()=>[]}});
-const learningGoals=ref([]); function addGoal(){learningGoals.value.unshift({text:'',completed:false})} function removeGoal(index){learningGoals.value.splice(index,1)}
-const strengths=computed(()=>{if(props.reflections.length<3)return[];const defs=[{name:'Relational Awareness',themes:['Transference','Countertransference','Relationship'],description:'You are noticing subtle shifts in the therapeutic relationship more frequently.'},{name:'Reflective Curiosity',themes:['Identity','Self-reflection','Internal World'],description:'Your practice shows a deepening interest in your own internal responses to clinical work.'},{name:'Ethical Sensitivity',themes:['Boundaries','Ethics','Power'],description:'A consistent attention to professional boundaries and ethical nuances is emerging.'},{name:'Emotional Attunement',themes:['Feeling','Affect','Containment'],description:'You are demonstrating increased capacity for staying with difficult emotional states.'}];const counts={};props.reflections.forEach(r=>{if(r.theme)counts[r.theme]=(counts[r.theme]||0)+1});return defs.map(def=>{const hits=def.themes.reduce((a,t)=>a+(counts[t]||0),0);return hits>=2?{...def,status:hits>5?'Emerging across recent reflections':'Appearing more frequently'}:null}).filter(Boolean).slice(0,3)});
-const landscapeThemes=computed(()=>{const filtered=props.themes.filter(t=>t.name!=='All'&&t.name!=='No theme');if(!filtered.length)return[];const max=Math.max(...filtered.map(t=>t.count));return filtered.map(t=>({...t,size:t.count===max?'lg':t.count>max/2?'md':'sm'})).sort((a,b)=>b.count-a.count)});
-const ethicalThemes=computed(()=>{const keys=['Boundaries','Ethics','Power','Dual Relationship','Conflict'],results=new Set();props.reflections.forEach(r=>{if(r.theme&&keys.includes(r.theme))results.add(r.theme)});return Array.from(results).slice(0,3)});
-const cpdOpportunities=computed(()=>[{title:'Reading',icon:'📚',description:'Theoretical texts related to your recent themes.'},{title:'Supervision',icon:'🤝',description:'Bring emerging patterns to your next clinical supervision.'},{title:'Peer Discussion',icon:'💭',description:'Explore these themes in a safe peer group setting.'},{title:'Reflective Journaling',icon:'📓',description:'Continue deep-diving into identity-based reflections.'}]);
+import { computed } from 'vue'
+
+const props = defineProps({
+  reflections: { type: Array, default: () => [] },
+  loading: Boolean,
+  themes: { type: Array, default: () => [] }
+})
+
+const topThemes = computed(() => props.themes
+  .filter(theme => theme.name !== 'All' && theme.name !== 'No theme')
+  .sort((a, b) => b.count - a.count)
+  .slice(0, 6))
+
+const learningPrompts = [
+  'What would I like to be able to notice earlier in the room?',
+  'What inner response would I like to understand rather than suppress?',
+  'What do I want to take to supervision before drawing a conclusion?',
+  'What small change in my practice would give me useful evidence over the next few sessions?'
+]
+
+const developmentRoutes = [
+  { title: 'Human supervision', description: 'Bring a pattern, uncertainty or inner response into collaborative scrutiny.' },
+  { title: 'Focused reading', description: 'Choose theory or research because it addresses a learning question you have already identified.' },
+  { title: 'Skills practice', description: 'Experiment deliberately with a clinical stance or intervention and reflect on what happens.' },
+  { title: 'Further reflection', description: 'Stay curious when the pattern is not yet clear enough to turn into a learning objective.' }
+]
 </script>
-<style scoped>.font-fraunces{font-family:'Fraunces',serif}</style>
