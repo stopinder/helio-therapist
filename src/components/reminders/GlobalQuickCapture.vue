@@ -28,12 +28,23 @@
       </template>
 
       <div v-else class="px-4 py-4">
-        <textarea ref="reflectionEditor" v-model="reflectionBody" rows="6" maxlength="20000" autofocus class="w-full resize-none rounded-control border border-border bg-surface-elevated px-3 py-3 type-ui leading-6 text-ink placeholder:text-ink-subtle focus:border-action-link focus:outline-none focus:ring-2 focus:ring-state-focus-ring" placeholder="Capture what came to you…" :disabled="savingReflection || isTranscribing" @keydown.meta.enter.prevent="saveReflection" @keydown.ctrl.enter.prevent="saveReflection" />
+        <div class="relative">
+          <textarea ref="reflectionEditor" v-model="reflectionBody" rows="6" maxlength="20000" autofocus class="w-full resize-none rounded-control border border-border bg-surface-elevated px-3 py-3 pr-12 type-ui leading-6 text-ink placeholder:text-ink-subtle focus:border-action-link focus:outline-none focus:ring-2 focus:ring-state-focus-ring" placeholder="Capture what came to you…" :disabled="savingReflection || isTranscribing" @keydown.meta.enter.prevent="saveReflection" @keydown.ctrl.enter.prevent="saveReflection" />
+          <button
+            type="button"
+            class="absolute bottom-2.5 right-2.5 inline-flex h-8 w-8 items-center justify-center rounded-control border transition-colors"
+            :class="isRecording ? 'border-state-danger/40 bg-state-danger/10 text-state-danger' : 'border-border-muted bg-surface text-ink-muted hover:bg-surface-subtle hover:text-ink'"
+            :disabled="isTranscribing || savingReflection"
+            :aria-label="isRecording ? 'Stop dictation' : 'Dictate reflection'"
+            :title="isRecording ? 'Stop dictation' : 'Dictate reflection'"
+            @click="isRecording ? stopRecording() : startRecording()"
+          >
+            <Square v-if="isRecording" class="workspace-icon-sm" aria-hidden="true" />
+            <Mic v-else class="workspace-icon-sm" aria-hidden="true" />
+          </button>
+        </div>
         <div class="mt-3 flex items-center justify-between gap-3">
-          <div>
-            <button v-if="!isRecording" type="button" class="button-secondary" :disabled="isTranscribing || savingReflection" @click="startRecording">{{ isTranscribing ? 'Adding…' : '🎙 Dictate' }}</button>
-            <button v-else type="button" class="button-secondary" @click="stopRecording">Stop · {{ elapsed }}</button>
-          </div>
+          <span class="type-metadata text-ink-muted" aria-live="polite">{{ dictationStatus }}</span>
           <button type="button" class="button-primary" :disabled="!reflectionBody.trim() || savingReflection || isRecording || isTranscribing" @click="saveReflection">{{ savingReflection ? 'Saving…' : 'Save reflection' }}</button>
         </div>
         <p v-if="error" class="mt-3 type-metadata text-state-danger" role="alert">{{ error }}</p>
@@ -44,6 +55,7 @@
 
 <script setup>
 import { computed, onBeforeUnmount, ref } from 'vue'
+import { Mic, Square } from '@lucide/vue'
 import { authenticatedFetch } from '../../lib/api.js'
 import { createQuickReflection } from '../../lib/reflections.js'
 import { createTherapistReminder, setTherapistReminderCompleted } from '../../lib/therapistReminders.js'
@@ -54,6 +66,7 @@ const mode = ref('reminder'), body = ref(''), reflectionBody = ref(''), reflecti
 const saving = ref(false), savingReflection = ref(false), completingId = ref(null), error = ref('')
 const recorder = ref(null), audioChunks = ref([]), isRecording = ref(false), isTranscribing = ref(false), seconds = ref(0), timer = ref(null)
 const elapsed = computed(() => `00:${String(seconds.value).padStart(2, '0')}`)
+const dictationStatus = computed(() => isRecording.value ? `Recording · ${elapsed.value}` : isTranscribing.value ? 'Adding dictation…' : '')
 
 async function saveReminder() { if (!body.value.trim() || saving.value) return; saving.value = true; error.value = ''; try { const reminder = await createTherapistReminder({ body: body.value }); window.dispatchEvent(new CustomEvent('helios-reminders-changed')); emit('saved', reminder); emit('close') } catch { error.value = 'Could not save this reminder. Please try again.' } finally { saving.value = false } }
 async function saveReflection() { if (!reflectionBody.value.trim() || savingReflection.value) return; savingReflection.value = true; error.value = ''; try { const reflection = await createQuickReflection({ body: reflectionBody.value }); window.dispatchEvent(new CustomEvent('helios-reflections-changed')); emit('reflection-saved', reflection); emit('close') } catch { error.value = 'Could not save this reflection. Please try again.' } finally { savingReflection.value = false } }
