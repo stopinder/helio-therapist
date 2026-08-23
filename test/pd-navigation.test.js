@@ -12,9 +12,9 @@ test('Professional Development keeps hub-and-spoke navigation architecture', () 
   assert.strictEqual(layoutContent.includes('sticky top-0'), true, 'Child page header should remain sticky')
 })
 
-test('Professional Development routes retain clear page headings after the redesign', () => {
+test('Professional Development routes retain clear page headings', () => {
   const expectations = {
-    'SupervisionHome.vue': ['<header', 'Your practice', 'Daily pause', 'Something worth noticing', 'Your practice map', 'What would help today?'],
+    'SupervisionHome.vue': ['<header', '>Practice</', 'Discovery', 'Practice map'],
     'SupervisionReflections.vue': ['<header', 'Reflections'],
     'SupervisionWorkspace.vue': ['<header', 'Supervision'],
     'SupervisionGrowth.vue': ['<header', 'Development'],
@@ -26,12 +26,18 @@ test('Professional Development routes retain clear page headings after the redes
   }
 })
 
-test('CPD home prioritises reflection and curiosity over supervision', () => {
+test('CPD home surfaces discovery without assigning reflective homework', () => {
   const content = readFileSync(join(process.cwd(), 'src/views/supervision/SupervisionHome.vue'), 'utf8')
-  assert.strictEqual(content.includes('A place to become the therapist you want to be.'), true)
-  assert.strictEqual(content.includes('dailyPauses'), true, 'Home should contain rotating daily reflective material')
-  assert.strictEqual(content.includes('Helios can suggest connections, but you decide what belongs in your map.'), true)
-  assert.strictEqual(content.includes('This is one route through the space, not the destination for every reflection.'), true)
-  assert.strictEqual(content.includes('GreetingHeader'), false, 'CPD home should not use a generic time-of-day greeting')
-  assert.strictEqual(content.includes('useGreeting'), false, 'CPD home should not depend on generic greeting logic')
+  assert.strictEqual(content.includes('dailyPauses'), true, 'Home should retain a small rotating quote')
+  assert.strictEqual(content.includes('Something worth noticing'), false)
+  assert.strictEqual(content.includes('What would help today?'), false)
+  assert.strictEqual(content.includes('Follow your curiosity'), false)
+  assert.strictEqual(content.includes('What are you carrying'), false)
+  assert.strictEqual(content.includes('Stay with this'), false)
+  assert.strictEqual(content.includes('Start a reflection'), false)
+  assert.strictEqual(content.includes('Helios has not inferred'), false)
+  assert.strictEqual(content.includes('Clinical Record'), false)
+  assert.strictEqual(content.includes('GreetingHeader'), false)
+  assert.strictEqual(content.includes('useGreeting'), false)
+  assert.strictEqual(content.includes('const discovery = computed'), true, 'Home should derive a discovery from real recorded recurrence')
 })
