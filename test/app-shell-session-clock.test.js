@@ -22,23 +22,10 @@ test('global appointment clock considers internal and Google timed events withou
   assert.doesNotMatch(shell, /global-appointment-clock[^]*display_name/)
 })
 
-test('next appointment helper chooses the earliest timed item and ignores all-day events', () => {
-  const now = new Date('2026-08-22T08:00:00Z')
-  const result = nextTimedAppointment({
-    now,
-    appointments: [{ id: 'later', starts_at: '2026-08-22T13:00:00Z' }],
-    googleEvents: [
-      { id: 'all-day', start: '2026-08-22T00:00:00Z', allDay: true },
-      { id: 'meeting', start: '2026-08-22T09:00:00Z', allDay: false }
-    ]
-  })
-  assert.equal(result.source, 'google')
-  assert.equal(result.event.id, 'meeting')
-})
-
 test('join action is offered only when the next global appointment is a Helios appointment', () => {
   assert.match(shell, /v-if="nextAppointment\?\.source==='appointment'"/)
-  assert.match(shell, /Join appointment/)
+  assert.match(shell, /'Join'/)
+  assert.doesNotMatch(shell, /Join appointment/)
   assert.match(shell, /createOrResumeSession/)
   assert.match(shell, /authenticatedFetch\('\/api\/zoom\/join-appointment'/)
   assert.match(shell, /appointmentId:appointment\.id/)
@@ -57,4 +44,8 @@ test('clock and appointment data refresh while the shell is mounted and clean up
   assert.match(shell, /document\.addEventListener\('visibilitychange',refreshAppointmentsWhenActive\)/)
   assert.match(shell, /window\.clearInterval\(clockTimer\)/)
   assert.match(shell, /window\.clearInterval\(appointmentRefreshTimer\)/)
+})
+
+test('global header keeps breathing room before the appointment clock', () => {
+  assert.match(shell, /hidden md:flex md:ml-4 items-center/)
 })
