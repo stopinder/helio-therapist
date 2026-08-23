@@ -14,7 +14,7 @@ test('Professional Development keeps hub-and-spoke navigation architecture', () 
 
 test('Professional Development routes retain clear page headings after the redesign', () => {
   const expectations = {
-    'SupervisionHome.vue': ['<header', 'Professional Development'],
+    'SupervisionHome.vue': ['<header', 'Professional development'],
     'SupervisionReflections.vue': ['<header', 'Reflections'],
     'SupervisionWorkspace.vue': ['<header', 'Supervision'],
     'SupervisionGrowth.vue': ['<header', 'Development'],
