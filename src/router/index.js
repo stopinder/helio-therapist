@@ -59,7 +59,15 @@ const routes = [
   { path: '/settings', name: 'Settings', component: Settings, meta: { title: 'Settings — Helios' } }
 ]
 
-const router = createRouter({ history: createWebHistory(), routes })
+const router = createRouter({
+  history: createWebHistory(),
+  routes,
+  scrollBehavior(to, from, savedPosition) {
+    if (savedPosition) return savedPosition
+    if (to.hash) return { el: to.hash }
+    return { top: 0 }
+  }
+})
 
 router.beforeEach(async (to) => {
   if (to.meta.public || to.meta.authEntry || !supabase) return true
