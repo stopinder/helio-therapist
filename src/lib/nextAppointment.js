@@ -1,7 +1,13 @@
+function isSampleAppointment(appointment) {
+  const reference = appointment?.client_reference || appointment?.clients?.reference || ''
+  return Boolean(appointment?.is_sample || String(reference).startsWith('SAMPLE-'))
+}
+
 export function nextTimedAppointment({ appointments = [], googleEvents = [], now = new Date() } = {}) {
   const nowMs = now.getTime()
 
   const internal = appointments
+    .filter(appointment => !isSampleAppointment(appointment))
     .map(appointment => ({
       source: 'appointment',
       start: appointment?.starts_at ? new Date(appointment.starts_at) : null,

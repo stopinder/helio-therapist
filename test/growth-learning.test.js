@@ -2,26 +2,26 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 
-test('Development view uses evidence-led learning language', async () => {
+test('Growth view keeps learning therapist-led and grounded in recorded material', async () => {
   const content = await readFile(new URL('../src/views/supervision/SupervisionGrowth.vue', import.meta.url), 'utf8')
-  assert.match(content, /Professional development/)
-  assert.match(content, />Development</)
-  assert.match(content, /Turn repeated observations into deliberate learning/)
-  assert.match(content, /These are counts, not interpretations/)
-  assert.match(content, /What keeps appearing in the work or in you\?/)
-  assert.match(content, /What tends to activate it, and what might the response be trying to protect\?/)
-  assert.match(content, /Test your understanding with another human/)
-  assert.match(content, /Persistent goals will be introduced as a proper therapist-owned record/)
-  assert.match(content, /CPD activity should follow a learning need/)
-  assert.match(content, /Human supervision/)
-  assert.match(content, /Focused reading/)
-  assert.match(content, /Skills practice/)
-  assert.match(content, /Further reflection/)
-  assert.match(content, /to="\/supervision\/workspace"/)
+
+  assert.match(content, />Growth</)
+  assert.match(content, /Your learning edge/)
+  assert.match(content, /without turning reflection into another task list/)
+  assert.match(content, /From your reflections/)
+  assert.match(content, /What keeps drawing your attention\?/)
+  assert.match(content, /Frequency is not a judgement about importance, competence or meaning/)
+  assert.match(content, /Growth does not have to begin with a goal/)
+  assert.match(content, /Earlier recognition/)
+  assert.match(content, /More room to respond/)
+  assert.match(content, /A different outcome/)
+  assert.match(content, /to="\/supervision\/insights"/)
   assert.match(content, /const topThemes = computed/)
   assert.match(content, /props\.themes/)
+
+  assert.doesNotMatch(content, /Turn repeated observations into deliberate learning/)
+  assert.doesNotMatch(content, /Persistent goals will be introduced as a proper therapist-owned record/)
+  assert.doesNotMatch(content, /CPD activity should follow a learning need/)
   assert.doesNotMatch(content, /const learningGoals\s*=\s*ref/)
-  assert.doesNotMatch(content, /Learning goals are currently kept only for this visit/)
-  assert.doesNotMatch(content, /Emerging Strengths/)
   assert.doesNotMatch(content, /you are demonstrating/i)
 })
