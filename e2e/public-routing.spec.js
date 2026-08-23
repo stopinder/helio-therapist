@@ -4,7 +4,11 @@ test.describe('Gate 3 public routing', () => {
   test('landing page is public, substantive and links to account and information routes', async ({ page }) => {
     await page.goto('/', { waitUntil:'domcontentloaded' });
     await expect(page).toHaveTitle('Helios — Therapist workspace');
-    await expect(page.getByRole('heading', { name:'Less to hold in your head. More space for the therapy.' })).toBeVisible();
+    await expect(page.getByRole('heading', { name:'Keep the clinical thread. Carry less of it in your head.' })).toBeVisible();
+    await expect(page.getByText('AI-supported clinical workspace', { exact:true })).toBeVisible();
+    await expect(page.getByRole('img', { name:/Representative Helios workspace/ })).toBeVisible();
+    await expect(page.getByText('Calendar', { exact:true }).first()).toBeVisible();
+    await expect(page.getByText('CPD', { exact:true }).first()).toBeVisible();
     await expect(page.getByRole('heading', { name:'Continuity before, during, after — and between sessions.' })).toBeVisible();
     await expect(page.getByRole('heading', { name:'The tools you already use, brought back into one clinical flow.' })).toBeVisible();
     await expect(page.getByRole('heading', { name:'Your development has continuity too.' })).toBeVisible();
@@ -20,7 +24,8 @@ test.describe('Gate 3 public routing', () => {
   test('landing page remains readable at mobile width', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto('/', { waitUntil:'domcontentloaded' });
-    await expect(page.getByRole('heading', { name:'Less to hold in your head. More space for the therapy.' })).toBeVisible();
+    await expect(page.getByRole('heading', { name:'Keep the clinical thread. Carry less of it in your head.' })).toBeVisible();
+    await expect(page.getByRole('img', { name:/Representative Helios workspace/ })).toBeVisible();
     await expect(page.getByRole('heading', { name:'Before the session' })).toBeVisible();
     await expect(page.getByRole('heading', { name:'Between sessions' })).toBeVisible();
     await expect(page.getByRole('heading', { name:'Your judgement, always' })).toBeVisible();
