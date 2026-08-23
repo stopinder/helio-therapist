@@ -1,6 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
+import { heliosWelcomeEmail } from '../api/_lib/emails/heliosWelcomeEmail.js'
 
 const authGate = await readFile(new URL('../src/AuthGate.vue', import.meta.url), 'utf8')
 const endpoint = await readFile(new URL('../api/signup/welcome.js', import.meta.url), 'utf8')
@@ -35,6 +36,22 @@ test('welcome endpoint derives identity from an authenticated session', () => {
   assert.doesNotMatch(endpoint, /auth\.admin\.getUserById/)
   assert.match(endpoint, /Date\.now\(\) - createdAt > WELCOME_WINDOW_MS/)
   assert.match(endpoint, /Idempotency-Key/)
+})
+
+test('welcome endpoint uses the dedicated branded template', () => {
+  assert.match(endpoint, /heliosWelcomeEmail/)
+  assert.match(endpoint, /const \{ subject, html, text \} = heliosWelcomeEmail\(\{ firstName \}\)/)
+})
+
+test('welcome template contains branded HTML, CTA and plain-text fallback', () => {
+  const email = heliosWelcomeEmail({ firstName: '<Robert>', openHeliosUrl: 'https://helio.works/overview?x=1&y=2' })
+  assert.equal(email.subject, 'Welcome to Helios')
+  assert.match(email.html, /CLINICAL WORKSPACE/)
+  assert.match(email.html, /Open Helios/)
+  assert.match(email.html, /&lt;Robert&gt;/)
+  assert.match(email.html, /https:\/\/helio\.works\/overview\?x=1&amp;y=2/)
+  assert.match(email.text, /Welcome to Helios, <Robert>/)
+  assert.match(email.text, /Open Helios:/)
 })
 
 test('frontend sends only the authenticated access token to the welcome endpoint', () => {
