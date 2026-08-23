@@ -43,7 +43,7 @@ export function heliosWelcomeEmail({
           <tr>
             <td style="padding:38px 40px 40px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#172033;">
               <h1 style="margin:0 0 22px;font-family:Georgia,'Times New Roman',serif;font-size:30px;line-height:1.2;font-weight:600;letter-spacing:-0.02em;color:#172033;">Welcome to Helios, ${safeName}</h1>
-              <p style="margin:0 0 18px;font-size:16px;line-height:1.7;color:#394253;">Thanks for joining Helios.</p>
+              <p style="margin:0 0 18px;font-size:16px;line-height:1.7;color:#394253;">You’re in. Thanks for joining Helios.</p>
               <p style="margin:0 0 18px;font-size:16px;line-height:1.7;color:#394253;">Helios is being built as a calm clinical workspace for psychotherapists — bringing together the practical parts of practice with space for reflection and professional growth.</p>
               <p style="margin:0 0 30px;font-size:16px;line-height:1.7;color:#394253;">You’re joining while Helios is still being shaped, so your experience of using it genuinely matters.</p>
               <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin:0 0 30px;">
@@ -53,7 +53,7 @@ export function heliosWelcomeEmail({
                   </td>
                 </tr>
               </table>
-              <p style="margin:0;font-size:15px;line-height:1.7;color:#667085;">Take your time exploring. You can add your practice details and connect Google Calendar or Zoom whenever you’re ready.</p>
+              <p style="margin:0;font-size:15px;line-height:1.7;color:#667085;">Take your time exploring. Your practice details and integrations can be adjusted whenever you’re ready.</p>
             </td>
           </tr>
           <tr>
@@ -78,7 +78,7 @@ export function heliosWelcomeEmail({
   const text = `
 Welcome to Helios, ${firstName || 'there'}.
 
-Thanks for joining Helios.
+You’re in. Thanks for joining Helios.
 
 Helios is being built as a calm clinical workspace for psychotherapists — bringing together the practical parts of practice with space for reflection and professional growth.
 
@@ -87,7 +87,7 @@ You’re joining while Helios is still being shaped, so your experience of using
 Open Helios:
 ${openHeliosUrl}
 
-Take your time exploring. You can add your practice details and connect Google Calendar or Zoom whenever you’re ready.
+Take your time exploring. Your practice details and integrations can be adjusted whenever you’re ready.
 
 Helios
 A calm workspace for clinical practice.
