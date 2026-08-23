@@ -12,10 +12,8 @@ export const videoProviderService = {
   },
 
   getVideoActionLabel(session) {
-    if (!session) return 'Join video session';
-    const provider = session.videoProvider === 'zoom' ? 'Zoom' : 'video session';
-    const action = session.status === 'In Progress' ? 'Return to' : 'Join';
-    return `${action} ${provider}`;
+    if (!session) return 'Join';
+    return session.status === 'In Progress' ? 'Return' : 'Join';
   },
 
   canJoinSession(session) {
