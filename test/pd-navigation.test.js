@@ -12,9 +12,9 @@ test('Professional Development keeps hub-and-spoke navigation architecture', () 
   assert.strictEqual(layoutContent.includes('sticky top-0'), true, 'Child page header should remain sticky')
 })
 
-test('Professional Development routes retain clear page headings after the redesign', () => {
+test('Professional Development routes retain clear page headings', () => {
   const expectations = {
-    'SupervisionHome.vue': ['<header', 'Professional development'],
+    'SupervisionHome.vue': ['<header', '>Practice</', 'Discovery', 'Practice map'],
     'SupervisionReflections.vue': ['<header', 'Reflections'],
     'SupervisionWorkspace.vue': ['<header', 'Supervision'],
     'SupervisionGrowth.vue': ['<header', 'Development'],
@@ -24,4 +24,20 @@ test('Professional Development routes retain clear page headings after the redes
     const content = readFileSync(join(process.cwd(), 'src/views/supervision', view), 'utf8')
     for (const text of requiredText) assert.strictEqual(content.includes(text), true, `${view} should include ${text}`)
   }
+})
+
+test('CPD home surfaces discovery without assigning reflective homework', () => {
+  const content = readFileSync(join(process.cwd(), 'src/views/supervision/SupervisionHome.vue'), 'utf8')
+  assert.strictEqual(content.includes('dailyPauses'), true, 'Home should retain a small rotating quote')
+  assert.strictEqual(content.includes('Something worth noticing'), false)
+  assert.strictEqual(content.includes('What would help today?'), false)
+  assert.strictEqual(content.includes('Follow your curiosity'), false)
+  assert.strictEqual(content.includes('What are you carrying'), false)
+  assert.strictEqual(content.includes('Stay with this'), false)
+  assert.strictEqual(content.includes('Start a reflection'), false)
+  assert.strictEqual(content.includes('Helios has not inferred'), false)
+  assert.strictEqual(content.includes('Clinical Record'), false)
+  assert.strictEqual(content.includes('GreetingHeader'), false)
+  assert.strictEqual(content.includes('useGreeting'), false)
+  assert.strictEqual(content.includes('const discovery = computed'), true, 'Home should derive a discovery from real recorded recurrence')
 })

@@ -1,125 +1,170 @@
 <template>
-  <div class="mx-auto max-w-6xl space-y-10 p-4 md:p-10">
-    <header class="space-y-5">
-      <p class="type-eyebrow text-action-link">Professional development</p>
-      <GreetingHeader
-        :phrase="phrase"
-        :display-name="therapistDisplayName"
-        supporting="A private place to reflect, notice recurring patterns in your work, prepare for supervision and carry learning forward."
-      />
-      <div class="max-w-3xl border-l-2 border-border px-5 py-1 text-sm leading-6 text-ink-secondary">
-        <p><strong class="text-ink">Reflective mapping</strong> is an invitation to notice recurring inner positions: what becomes activated, what it may be trying to protect, what it fears, and what helps you return to a steadier clinical stance.</p>
-        <p class="mt-2 text-ink-muted">These are observations for your own consideration, not assessments of competence and not part of a client Clinical Record.</p>
+  <div class="mx-auto max-w-7xl p-4 pb-20 md:p-10">
+    <header class="border-b border-border-muted pb-7">
+      <div class="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+        <div>
+          <p class="type-eyebrow text-action-link">Your practice</p>
+          <h1 class="mt-3 text-3xl font-semibold tracking-[-0.035em] text-ink md:text-4xl">Practice</h1>
+        </div>
+        <blockquote class="max-w-xl text-sm leading-6 text-ink-muted">“{{ dailyPause.quote }}” <span class="whitespace-nowrap">— {{ dailyPause.attribution }}</span></blockquote>
       </div>
     </header>
 
-    <section aria-labelledby="pd-flow-heading">
-      <div class="mb-5 flex items-end justify-between gap-4">
-        <div>
-          <p class="type-eyebrow text-ink-muted">The development loop</p>
-          <h2 id="pd-flow-heading" class="mt-2 text-2xl font-semibold tracking-[-0.02em] text-ink">Reflect → notice → supervise → develop</h2>
-        </div>
-      </div>
-
-      <div class="grid overflow-hidden rounded-panel border border-border bg-border md:grid-cols-2 lg:grid-cols-4">
-        <router-link
-          v-for="(card, index) in destinationCards"
-          :key="card.title"
-          :to="card.path"
-          class="group bg-surface-raised p-6 transition-colors hover:bg-surface-muted"
-        >
-          <div class="flex items-center justify-between gap-4">
-            <span class="text-xs font-semibold uppercase tracking-[0.14em] text-ink-muted">0{{ index + 1 }}</span>
-            <span class="text-sm text-ink-muted transition-transform group-hover:translate-x-0.5">→</span>
+    <main class="space-y-12 pt-9">
+      <section aria-labelledby="discovery-heading">
+        <article v-if="discovery" class="grid overflow-hidden rounded-panel border border-border bg-surface-raised lg:grid-cols-[minmax(0,1fr)_240px]">
+          <div class="p-7 md:p-10">
+            <p class="type-eyebrow text-action-link">Discovery</p>
+            <h2 id="discovery-heading" class="mt-4 max-w-3xl text-2xl font-semibold tracking-[-0.025em] text-ink md:text-3xl">{{ discovery.title }}</h2>
+            <p class="mt-5 max-w-3xl text-base leading-7 text-ink-secondary">{{ discovery.body }}</p>
+            <router-link to="/supervision/insights" class="mt-7 inline-flex text-sm font-semibold text-action-link">Open this →</router-link>
           </div>
-          <h3 class="mt-8 text-lg font-semibold text-ink">{{ card.title }}</h3>
-          <p class="mt-2 text-sm leading-6 text-ink-secondary">{{ card.description }}</p>
-        </router-link>
-      </div>
-    </section>
+          <div class="flex items-end border-t border-border-muted bg-surface-muted p-7 lg:border-l lg:border-t-0">
+            <div>
+              <p class="text-5xl font-semibold tracking-[-0.05em] text-ink">{{ discovery.count }}</p>
+              <p class="mt-2 text-sm leading-6 text-ink-muted">{{ discovery.countLabel }}</p>
+            </div>
+          </div>
+        </article>
 
-    <section class="grid gap-4 lg:grid-cols-3" aria-labelledby="continue-heading">
-      <h2 id="continue-heading" class="sr-only">Continue your professional development</h2>
-
-      <article class="surface-card flex min-h-[210px] flex-col justify-between p-6">
-        <div>
-          <p class="type-eyebrow text-ink-muted">Latest reflection</p>
-          <p v-if="lastReflection" class="mt-4 line-clamp-4 text-base leading-7 text-ink">“{{ lastReflection.body }}”</p>
-          <p v-else class="mt-4 text-sm text-ink-muted">No reflections yet. Begin with something from your work that feels worth holding onto.</p>
-        </div>
-        <div class="mt-6 flex items-center justify-between border-t border-border-muted pt-4">
-          <span class="text-xs text-ink-muted">{{ lastReflectionDate }}</span>
-          <button v-if="lastReflection" type="button" class="text-sm font-semibold text-action-link" @click="$emit('open-reflection', lastReflection)">Open reflection</button>
-        </div>
-      </article>
-
-      <router-link to="/supervision/insights" class="surface-card flex min-h-[210px] flex-col justify-between p-6 hover:bg-surface-muted">
-        <div>
+        <div v-else class="rounded-panel border border-border bg-surface-raised px-7 py-10 md:px-10">
           <p class="type-eyebrow text-ink-muted">Practice map</p>
-          <p class="mt-4 text-4xl font-semibold text-ink">{{ mappedReflectionCount }}</p>
-          <p class="mt-1 text-sm text-ink-muted">reflections contributing to your current picture</p>
+          <h2 id="discovery-heading" class="mt-3 text-2xl font-semibold text-ink">Your map will take shape as you work.</h2>
+          <p class="mt-3 max-w-2xl text-sm leading-6 text-ink-secondary">Reflections and things you choose to map will begin to reveal recurrence and change here.</p>
         </div>
-        <p class="mt-6 border-t border-border-muted pt-4 text-sm text-ink-secondary">Notice recurring themes and inner positions without turning them into fixed labels.</p>
-      </router-link>
+      </section>
 
-      <router-link to="/supervision/workspace" class="surface-card flex min-h-[210px] flex-col justify-between p-6 hover:bg-surface-muted">
-        <div>
-          <p class="type-eyebrow text-ink-muted">Supervision</p>
-          <p class="mt-4 text-4xl font-semibold text-ink">{{ packCount }}</p>
-          <p class="mt-1 text-sm text-ink-muted">items selected for your next pack</p>
+      <section v-if="practiceThreads.length" aria-labelledby="map-heading">
+        <div class="mb-5 flex items-end justify-between gap-4">
+          <div>
+            <p class="type-eyebrow text-ink-muted">Practice map</p>
+            <h2 id="map-heading" class="mt-2 text-2xl font-semibold text-ink">Threads taking shape</h2>
+          </div>
+          <router-link to="/supervision/insights" class="text-sm font-semibold text-action-link">Full map →</router-link>
         </div>
-        <p class="mt-6 border-t border-border-muted pt-4 text-sm text-ink-secondary">Move observations into a human supervision conversation before deciding what they mean.</p>
-      </router-link>
-    </section>
+
+        <div class="grid overflow-hidden rounded-panel border border-border bg-border md:grid-cols-2 lg:grid-cols-4">
+          <router-link v-for="thread in practiceThreads" :key="`${thread.kind}-${thread.label}`" to="/supervision/insights" class="group min-h-[190px] bg-surface-raised p-6 hover:bg-surface-muted">
+            <div class="flex items-start justify-between gap-4">
+              <span class="type-eyebrow text-ink-muted">{{ thread.kind }}</span>
+              <span class="text-xs font-semibold text-ink-muted">{{ thread.count }}×</span>
+            </div>
+            <h3 class="mt-8 text-lg font-semibold text-ink">{{ thread.label }}</h3>
+            <p v-if="thread.context" class="mt-3 text-sm leading-6 text-ink-secondary">{{ thread.context }}</p>
+          </router-link>
+        </div>
+      </section>
+
+      <nav class="border-y border-border-muted" aria-label="Practice tools">
+        <div class="grid md:grid-cols-4">
+          <router-link v-for="item in navigation" :key="item.path" :to="item.path" class="group flex items-center justify-between border-b border-border-muted px-4 py-5 last:border-b-0 md:border-b-0 md:border-r md:last:border-r-0">
+            <span class="text-sm font-semibold text-ink">{{ item.label }}</span>
+            <span class="text-action-link transition-transform group-hover:translate-x-1">→</span>
+          </router-link>
+        </div>
+      </nav>
+    </main>
   </div>
 </template>
 
 <script setup>
-import { computed, onMounted } from 'vue'
-import GreetingHeader from '../../components/ui/GreetingHeader.vue'
-import { useGreeting } from '../../composables/useGreeting.js'
-import { useTherapistIdentity } from '../../composables/useTherapistIdentity.js'
+import { computed } from 'vue'
 
 const props = defineProps({
   reflections: { type: Array, default: () => [] },
   loading: Boolean
 })
 
-defineEmits(['open-reflection'])
-
-const { displayName, loadTherapistIdentity } = useTherapistIdentity()
-const { phrase, therapistDisplayName } = useGreeting({ displayName })
-
-const destinationCards = [
-  {
-    title: 'Reflections',
-    path: '/supervision/reflections',
-    description: 'Return to the therapist-owned reflections that sit outside the client Clinical Record.'
-  },
-  {
-    title: 'Practice Map',
-    path: '/supervision/insights',
-    description: 'Notice recurring themes, inner positions, triggers and protective intentions across time.'
-  },
-  {
-    title: 'Supervision',
-    path: '/supervision/workspace',
-    description: 'Curate what deserves a collaborative conversation and prepare it without exposing unnecessary client identity.'
-  },
-  {
-    title: 'Development',
-    path: '/supervision/growth',
-    description: 'Turn what you are noticing into questions, learning priorities and deliberate follow-through.'
-  }
+const dailyPauses = [
+  { quote: 'Curiosity creates a little more room between what we feel and what we do next.', attribution: 'Helios' },
+  { quote: 'A repeated response is not a verdict. It is something we can become interested in.', attribution: 'Helios' },
+  { quote: 'Sometimes development begins with noticing the moment we most want the session to be different.', attribution: 'Helios' },
+  { quote: 'The aim is not to become unaffected by the work, but to remain available within it.', attribution: 'Helios' },
+  { quote: 'Our responses to the work can become information when we have enough room to notice them.', attribution: 'Helios' },
+  { quote: 'Learning becomes part of practice when we begin to recognise it in the room.', attribution: 'Helios' },
+  { quote: 'What repeats can become familiar enough to notice before it takes over.', attribution: 'Helios' },
+  { quote: 'A little more awareness can create a little more choice.', attribution: 'Helios' }
 ]
 
-const lastReflection = computed(() => props.reflections[0])
-const lastReflectionDate = computed(() => {
-  if (!lastReflection.value) return ''
-  return new Date(lastReflection.value.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
-})
-const packCount = computed(() => props.reflections.filter(reflection => reflection.included_in_supervision).length)
-const mappedReflectionCount = computed(() => props.reflections.filter(reflection => reflection.body || reflection.theme || reflection.workspace_content).length)
+const dayNumber = Math.floor(new Date().setHours(0, 0, 0, 0) / 86400000)
+const dailyPause = computed(() => dailyPauses[Math.abs(dayNumber) % dailyPauses.length])
 
-onMounted(loadTherapistIdentity)
+function reflectiveMapFor(reflection) {
+  const map = reflection?.workspace_content?.reflectiveMap
+  return map && typeof map === 'object' && !Array.isArray(map) ? map : null
+}
+
+const mappedReflections = computed(() => props.reflections
+  .map(reflection => ({ reflection, map: reflectiveMapFor(reflection) }))
+  .filter(({ map }) => map && Object.values(map).some(value => typeof value === 'string' && value.trim())))
+
+const themeCounts = computed(() => {
+  const counts = new Map()
+  for (const reflection of props.reflections) {
+    const theme = String(reflection.theme || '').trim()
+    if (!theme) continue
+    const key = theme.toLocaleLowerCase()
+    const entry = counts.get(key) || { label: theme, count: 0 }
+    entry.count += 1
+    counts.set(key, entry)
+  }
+  return [...counts.values()].sort((a, b) => b.count - a.count)
+})
+
+const positionCounts = computed(() => {
+  const counts = new Map()
+  for (const { map } of mappedReflections.value) {
+    const label = String(map.innerPosition || '').trim()
+    if (!label) continue
+    const key = label.toLocaleLowerCase()
+    const entry = counts.get(key) || { label, count: 0, context: '' }
+    entry.count += 1
+    if (map.protectiveIntention) entry.context = String(map.protectiveIntention).trim()
+    counts.set(key, entry)
+  }
+  return [...counts.values()].sort((a, b) => b.count - a.count)
+})
+
+const practiceThreads = computed(() => {
+  const positions = positionCounts.value.filter(item => item.count > 1).slice(0, 2).map(item => ({ ...item, kind: 'Inner position' }))
+  const themes = themeCounts.value.filter(item => item.count > 1).slice(0, 2).map(item => ({ ...item, kind: 'Recurring theme', context: '' }))
+  return [...positions, ...themes].slice(0, 4)
+})
+
+const discovery = computed(() => {
+  const position = positionCounts.value.find(item => item.count > 1)
+  if (position) {
+    return {
+      title: `“${position.label}” has appeared more than once.`,
+      body: position.context
+        ? `Across ${position.count} mapped reflections, you used the same language for this response. Most recently you described it as trying to ${lowercaseFirst(position.context)}.`
+        : `Across ${position.count} mapped reflections, you used the same language for this response.`,
+      count: position.count,
+      countLabel: 'mapped reflections carry this thread'
+    }
+  }
+
+  const theme = themeCounts.value.find(item => item.count > 1)
+  if (theme) {
+    return {
+      title: `“${theme.label}” is recurring.`,
+      body: `It appears in ${theme.count} of your recorded reflections.`,
+      count: theme.count,
+      countLabel: 'reflections carry this theme'
+    }
+  }
+
+  return null
+})
+
+function lowercaseFirst(value) {
+  return value ? value.charAt(0).toLocaleLowerCase() + value.slice(1) : value
+}
+
+const navigation = [
+  { label: 'Reflections', path: '/supervision/reflections' },
+  { label: 'Practice Map', path: '/supervision/insights' },
+  { label: 'Development', path: '/supervision/growth' },
+  { label: 'Consultation', path: '/supervision/workspace' }
+]
 </script>
