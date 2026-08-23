@@ -1,5 +1,6 @@
 function isSampleAppointment(appointment) {
-  return Boolean(appointment?.is_sample || String(appointment?.client_reference || '').startsWith('SAMPLE-'))
+  const reference = appointment?.client_reference || appointment?.clients?.reference || ''
+  return Boolean(appointment?.is_sample || String(reference).startsWith('SAMPLE-'))
 }
 
 export function nextTimedAppointment({ appointments = [], googleEvents = [], now = new Date() } = {}) {
