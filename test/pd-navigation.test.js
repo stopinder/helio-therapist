@@ -26,6 +26,30 @@ test('Professional Development routes retain clear page headings', () => {
   }
 })
 
+test('CPD home puts the three primary practice destinations first', () => {
+  const content = readFileSync(join(process.cwd(), 'src/views/supervision/SupervisionHome.vue'), 'utf8')
+  const navIndex = content.indexOf('aria-label="Practice destinations"')
+  const discoveryIndex = content.indexOf('aria-labelledby="discovery-heading"')
+
+  assert.notStrictEqual(navIndex, -1, 'Home should include primary practice destinations')
+  assert.notStrictEqual(discoveryIndex, -1, 'Home should retain discovery content')
+  assert.ok(navIndex < discoveryIndex, 'Primary destinations should appear before discovery content')
+
+  const expectedDestinations = [
+    ["label: 'Reflections'", "description: 'What has stayed with you.'", "path: '/supervision/reflections'"],
+    ["label: 'Map'", "description: 'What is recurring or beginning to take shape.'", "path: '/supervision/insights'"],
+    ["label: 'Growth'", "description: 'Your learning edge.'", "path: '/supervision/growth'"]
+  ]
+  for (const destination of expectedDestinations) {
+    for (const text of destination) assert.strictEqual(content.includes(text), true, `Home should include ${text}`)
+  }
+
+  assert.strictEqual(content.includes("label: 'Practice Map'"), false)
+  assert.strictEqual(content.includes("label: 'Development'"), false)
+  assert.strictEqual(content.includes("label: 'Consultation'"), false)
+  assert.strictEqual(content.includes("path: '/supervision/workspace'"), false)
+})
+
 test('CPD home surfaces discovery without assigning reflective homework', () => {
   const content = readFileSync(join(process.cwd(), 'src/views/supervision/SupervisionHome.vue'), 'utf8')
   assert.strictEqual(content.includes('dailyPauses'), true, 'Home should retain a small rotating quote')

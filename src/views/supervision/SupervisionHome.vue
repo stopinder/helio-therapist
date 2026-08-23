@@ -11,6 +11,21 @@
     </header>
 
     <main class="space-y-12 pt-9">
+      <nav class="grid border-y border-border-muted md:grid-cols-3" aria-label="Practice destinations">
+        <router-link
+          v-for="item in navigation"
+          :key="item.path"
+          :to="item.path"
+          class="group flex min-h-[132px] items-start justify-between gap-5 border-b border-border-muted px-5 py-6 transition-colors last:border-b-0 hover:bg-surface-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-state-selected md:border-b-0 md:border-r md:last:border-r-0"
+        >
+          <div>
+            <h2 class="text-lg font-semibold text-ink">{{ item.label }}</h2>
+            <p class="mt-2 max-w-xs text-sm leading-6 text-ink-secondary">{{ item.description }}</p>
+          </div>
+          <span class="mt-0.5 text-action-link transition-transform group-hover:translate-x-1" aria-hidden="true">→</span>
+        </router-link>
+      </nav>
+
       <section aria-labelledby="discovery-heading">
         <article v-if="discovery" class="grid overflow-hidden rounded-panel border border-border bg-surface-raised lg:grid-cols-[minmax(0,1fr)_240px]">
           <div class="p-7 md:p-10">
@@ -54,15 +69,6 @@
           </router-link>
         </div>
       </section>
-
-      <nav class="border-y border-border-muted" aria-label="Practice tools">
-        <div class="grid md:grid-cols-4">
-          <router-link v-for="item in navigation" :key="item.path" :to="item.path" class="group flex items-center justify-between border-b border-border-muted px-4 py-5 last:border-b-0 md:border-b-0 md:border-r md:last:border-r-0">
-            <span class="text-sm font-semibold text-ink">{{ item.label }}</span>
-            <span class="text-action-link transition-transform group-hover:translate-x-1">→</span>
-          </router-link>
-        </div>
-      </nav>
     </main>
   </div>
 </template>
@@ -162,9 +168,8 @@ function lowercaseFirst(value) {
 }
 
 const navigation = [
-  { label: 'Reflections', path: '/supervision/reflections' },
-  { label: 'Practice Map', path: '/supervision/insights' },
-  { label: 'Development', path: '/supervision/growth' },
-  { label: 'Consultation', path: '/supervision/workspace' }
+  { label: 'Reflections', description: 'What has stayed with you.', path: '/supervision/reflections' },
+  { label: 'Map', description: 'What is recurring or beginning to take shape.', path: '/supervision/insights' },
+  { label: 'Growth', description: 'Your learning edge.', path: '/supervision/growth' }
 ]
 </script>
