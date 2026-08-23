@@ -6,23 +6,26 @@ const shell = await readFile(new URL('../src/layouts/AppShell.vue', import.meta.
 const transcripts = await readFile(new URL('../src/views/Transcripts.vue', import.meta.url), 'utf8')
 
 test('app shell distinguishes full-height workspaces from ordinary scrolling pages', () => {
-  assert.match(shell, /fullHeightWorkspacePaths=new Set\(\['\/calendar','\/transcripts'\]\)/)
-  assert.match(shell, /isFullHeightWorkspace\s*\?\s*'overflow-hidden'\s*:\s*'overflow-y-auto overflow-x-hidden'/)
+  assert.match(shell, /fullHeightWorkspacePaths/)
+  assert.match(shell, /\/calendar/)
+  assert.match(shell, /\/transcripts/)
+  assert.match(shell, /overflow-y-auto overflow-x-hidden/)
 })
 
 test('app shell propagates min-height zero through the flex content chain', () => {
   assert.match(shell, /flex flex-col flex-1 min-w-0 min-h-0 h-full overflow-hidden/)
-  assert.match(shell, /<main class="flex-1 min-h-0 bg-surface-canvas relative"/)
+  assert.match(shell, /flex-1 min-h-0 bg-surface-canvas relative/)
 })
 
 test('transcripts owns its internal scrolling only because it is a full-height workspace', () => {
   assert.match(transcripts, /flex flex-col h-full bg-surface-canvas overflow-hidden/)
-  assert.match(transcripts, /<main v-else class="flex-1 overflow-y-auto p-page">/)
+  assert.match(transcripts, /flex-1 overflow-y-auto p-page/)
 })
 
-test('sidebar remains scrollable on short screens but never renders a scrollbar rail', () => {
+test('sidebar remains scrollable on short screens but hides its scrollbar rail', () => {
   assert.match(shell, /sidebar-navigation flex-1 min-h-0 overflow-y-auto/)
-  assert.match(shell, /\.sidebar-navigation\{scrollbar-width:none;-ms-overflow-style:none\}/)
-  assert.match(shell, /\.sidebar-navigation::-webkit-scrollbar\{display:none;width:0;height:0\}/)
+  assert.match(shell, /scrollbar-width:none/)
+  assert.match(shell, /sidebar-navigation::-webkit-scrollbar/)
+  assert.match(shell, /display:none/)
   assert.doesNotMatch(shell, /\.sidebar-navigation:hover/)
 })

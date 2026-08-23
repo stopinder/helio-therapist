@@ -51,6 +51,7 @@ export function normalizeWorkspaceReflection(content) {
     Object.keys(EMPTY_WORKSPACE_REFLECTION).map(key => [key, typeof source[key] === 'string' ? source[key] : ''])
   );
   if (source.reflectiveMap) normalized.reflectiveMap = normalizeReflectiveMap(source.reflectiveMap);
+  if (source.captureSource === 'quick_capture') normalized.captureSource = 'quick_capture';
   return normalized;
 }
 
@@ -61,6 +62,22 @@ export function workspaceReflectionBody(content) {
     .map(value => value.trim())
     .filter(Boolean)
     .join('\n\n');
+}
+
+export async function createQuickReflection({ supabaseClient, body }) {
+  const client = await getClient(supabaseClient);
+  const text = String(body || '').trim();
+  if (!text) throw new Error('Write or dictate a reflection before saving');
+  if (text.length > 20000) throw new Error('Reflection is too long');
+  const { data: { user } } = await client.auth.getUser();
+  if (!user) throw new Error('Not authenticated');
+  const { data, error } = await client
+    .from('private_reflections')
+    .insert({ user_id: user.id, body: text, workspace_content: { captureSource: 'quick_capture' } })
+    .select()
+    .single();
+  if (error) throw new Error(error.message || 'Could not save quick reflection');
+  return data;
 }
 
 export async function saveReflectionMapping({ supabaseClient, reflectionId, mapping }) {

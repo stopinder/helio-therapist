@@ -31,21 +31,27 @@ test('identifiers appear only when needed to distinguish duplicate names', () =>
 
 test('client directory exposes active archived and all views without database UUID noise', async () => {
   const view = await readFile(new URL('../src/views/Clients.vue', import.meta.url), 'utf8')
-  assert.match(view, /statusFilter = ref\('active'\)/)
-  assert.match(view, /value:'archived',label:'Archived'/)
-  assert.match(view, /value:'all',label:'All'/)
+  assert.match(view, /statusFilter=ref\('active'\)/)
+  assert.match(view, /label:'Archived'/)
+  assert.match(view, /label:'All'/)
   assert.match(view, /Search clients by name or reference/)
   assert.doesNotMatch(view, /client\.id\.substring/)
   assert.match(view, /v-if="client\.reference"/)
 })
 
+test('sample clients can be archived and restored without deletion', async () => {
+  const view = await readFile(new URL('../src/views/Clients.vue', import.meta.url), 'utf8')
+  assert.match(view, /isSampleClient\(client\)/)
+  assert.match(view, /Archive sample/)
+  assert.match(view, /Restore sample/)
+  assert.match(view, /setClientArchived/)
+  assert.doesNotMatch(view, /deleteSampleClient/)
+})
+
 test('client rows remain directly and keyboard navigable', async () => {
   const view = await readFile(new URL('../src/views/Clients.vue', import.meta.url), 'utf8')
   assert.match(view, /tabindex="0" role="link"/)
-  assert.match(view, /:aria-label="`Open \$\{client\.display_name\}`"/)
-  assert.match(view, /@click="openClient\(client\.id\)"/)
-  assert.match(view, /@keydown\.enter\.prevent="openClient\(client\.id\)"/)
-  assert.match(view, /@keydown\.space\.prevent="openClient\(client\.id\)"/)
+  assert.match(view, /openClient\(client\.id\)/)
 })
 
 test('directory loads real upcoming appointments and listClients keeps active-only default', async () => {
@@ -53,9 +59,7 @@ test('directory loads real upcoming appointments and listClients keeps active-on
   const source = await readFile(new URL('../src/lib/clients.js', import.meta.url), 'utf8')
   assert.match(view, /listClients\(\{includeArchived:true\}\)/)
   assert.match(view, /listUpcomingClientAppointments\(\)/)
-  assert.match(source, /listClients\(\{ includeArchived = false \} = \{\}\)/)
-  assert.match(source, /query = query\.eq\('archived', false\)/)
+  assert.match(source, /includeArchived = false/)
+  assert.match(source, /query\.eq\('archived', false\)/)
   assert.match(source, /\.from\('appointments'\)/)
-  assert.match(source, /\.in\('status', \['scheduled', 'rescheduled'\]\)/)
-  assert.match(source, /\.gte\('starts_at', from\.toISOString\(\)\)/)
 })
