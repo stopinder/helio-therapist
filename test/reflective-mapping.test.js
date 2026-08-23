@@ -46,4 +46,21 @@ describe('reflective mapping', () => {
     expect(body).toBe('A difficult silence')
     expect(body).not.toContain('The organiser')
   })
+
+  it('does not treat free-text reflection language as structured mapping', () => {
+    const normalized = normalizeWorkspaceReflection({
+      stoodOut: 'I noticed a part of me wanted to rescue the client.'
+    })
+    expect(normalized.reflectiveMap).toBeUndefined()
+    expect(normalized.stoodOut).toContain('wanted to rescue')
+  })
+
+  it('keeps therapist wording intact rather than assigning a predefined position', () => {
+    const normalized = normalizeReflectiveMap({
+      innerPosition: 'The bit of me that needed to get it right',
+      protectiveIntention: 'Avoid letting the client down'
+    })
+    expect(normalized.innerPosition).toBe('The bit of me that needed to get it right')
+    expect(normalized.protectiveIntention).toBe('Avoid letting the client down')
+  })
 })
