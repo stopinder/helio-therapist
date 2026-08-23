@@ -6,9 +6,9 @@
     </div>
 
     <header v-if="isChildPage" class="h-16 flex items-center px-6 md:px-10 border-b border-border-muted bg-surface/80 backdrop-blur-md z-20 shrink-0 sticky top-0">
-      <router-link to="/supervision" class="flex items-center gap-2 text-ink-secondary hover:text-ink transition-colors group focus-visible:ring-2 focus-visible:ring-state-selected rounded-control px-2 py-1 -ml-2" aria-label="Back to Professional Development">
+      <router-link to="/supervision" class="flex items-center gap-2 text-ink-secondary hover:text-ink transition-colors group focus-visible:ring-2 focus-visible:ring-state-selected rounded-control px-2 py-1 -ml-2" aria-label="Back to Practice">
         <span class="text-xl transition-transform group-hover:-translate-x-1">←</span>
-        <span class="text-body-sm font-medium">Professional Development</span>
+        <span class="text-body-sm font-medium">Practice</span>
       </router-link>
     </header>
 
