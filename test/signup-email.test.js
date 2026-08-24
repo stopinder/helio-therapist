@@ -57,7 +57,7 @@ test('welcome template contains branded HTML, CTA and plain-text fallback', () =
 test('frontend sends only the authenticated access token to the welcome endpoint', () => {
   assert.match(authGate, /Authorization: `Bearer \$\{accessToken\}`/)
   assert.doesNotMatch(authGate, /JSON\.stringify\(\{ userId: user\.id, email: user\.email \}\)/)
-  assert.match(authGate, /if \(data\.session\?\.access_token\) await notifySignup\(data\.session\.access_token\)/)
+  assert.match(authGate, /if \(data\.session\?\.access_token\)\s*\{?\s*await notifySignup\(data\.session\.access_token\)/)
 })
 
 test('Resend receives only account identity and marketing subscription state', () => {

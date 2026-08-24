@@ -13,8 +13,15 @@ test('app shell distinguishes full-height workspaces from ordinary scrolling pag
 })
 
 test('app shell propagates min-height zero through the flex content chain', () => {
-  assert.match(shell, /flex flex-col flex-1 min-w-0 min-h-0 h-full overflow-hidden/)
-  assert.match(shell, /flex-1 min-h-0 bg-surface-canvas relative/)
+  const shellContentClass = shell.match(/<div class="([^"]*overflow-hidden[^"]*)">\s*<header/)?.[1] || ''
+  const mainClass = shell.match(/<main class="([^"]*)" :class="isFullHeightWorkspace/)?.[1] || ''
+
+  for (const className of ['flex', 'flex-col', 'flex-1', 'min-w-0', 'min-h-0', 'h-full', 'overflow-hidden']) {
+    assert.ok(shellContentClass.split(/\s+/).includes(className), `shell content is missing ${className}`)
+  }
+  for (const className of ['flex-1', 'min-h-0', 'bg-surface-canvas', 'relative']) {
+    assert.ok(mainClass.split(/\s+/).includes(className), `main content is missing ${className}`)
+  }
 })
 
 test('transcripts owns its internal scrolling only because it is a full-height workspace', () => {

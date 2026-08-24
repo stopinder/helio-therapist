@@ -21,7 +21,7 @@ test('buildZoomAuthorizationUrl requests meeting, identity, Scheduler and My Not
   assert.strictEqual(parsed.pathname, '/oauth/authorize');
   assert.strictEqual(parsed.searchParams.get('client_id'), 'client-123');
   const scopes = new Set(parsed.searchParams.get('scope').split(' '));
-  assert.deepEqual(scopes, new Set(['meeting:read:meeting', 'user:read:user', 'scheduler:read', 'scheduler:write', 'my_notes:read:content']));
+  assert.deepEqual(scopes, new Set(['meeting:read:meeting', 'user:read:user', 'scheduler:read', 'scheduler:write', 'my_notes:read:content', 'my_notes:read:note']));
   assert.strictEqual(parsed.searchParams.get('include_granted_scopes'), 'true');
 });
 
