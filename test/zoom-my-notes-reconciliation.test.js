@@ -37,3 +37,12 @@ test('reconciliation is authenticated, therapist-scoped and deduplicates by Zoom
   assert.match(helperSource, /my_notes:read:note/);
   assert.match(helperSource, /my_notes:read:content/);
 });
+
+test('transcripts workspace offers a manual Zoom Notes reconciliation action', () => {
+  const viewSource = fs.readFileSync(new URL('../src/views/Transcripts.vue', import.meta.url), 'utf8');
+
+  assert.match(viewSource, /Check Zoom Notes/);
+  assert.match(viewSource, /authenticatedFetch\('\/api\/zoom\/reconcile-my-notes', \{ method: 'POST' \}\)/);
+  assert.match(viewSource, /inboxKey\.value \+= 1/);
+  assert.match(viewSource, /No missing transcripts found\./);
+});
