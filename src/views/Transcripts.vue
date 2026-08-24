@@ -20,6 +20,12 @@
           <button
             type="button"
             class="button-secondary"
+            :disabled="checkingZoom"
+            @click="checkZoomNotes"
+          >{{ checkingZoom ? 'Checking Zoom…' : 'Check Zoom Notes' }}</button>
+          <button
+            type="button"
+            class="button-secondary"
             :aria-expanded="showPasteImport"
             @click="togglePasteImport"
           >{{ showPasteImport ? 'Close paste' : 'Paste transcript' }}</button>
@@ -76,6 +82,7 @@ const error = ref('')
 const importError = ref('')
 const importSuccess = ref('')
 const importing = ref(false)
+const checkingZoom = ref(false)
 const fileInput = ref(null)
 const inboxKey = ref(0)
 const showPasteImport = ref(false)
@@ -98,6 +105,27 @@ function togglePasteImport() {
   showPasteImport.value = !showPasteImport.value
   importError.value = ''
   importSuccess.value = ''
+}
+
+async function checkZoomNotes() {
+  checkingZoom.value = true
+  importError.value = ''
+  importSuccess.value = ''
+  try {
+    const response = await authenticatedFetch('/api/zoom/reconcile-my-notes', { method: 'POST' })
+    const data = await response.json().catch(() => ({}))
+    if (!response.ok) throw new Error(data.error || 'Unable to check Zoom Notes.')
+    if (data.imported > 0) {
+      inboxKey.value += 1
+      importSuccess.value = `${data.imported} ${data.imported === 1 ? 'transcript' : 'transcripts'} imported from Zoom.`
+    } else {
+      importSuccess.value = 'Zoom Notes checked. No missing transcripts found.'
+    }
+  } catch (err) {
+    importError.value = err.message || 'Unable to check Zoom Notes.'
+  } finally {
+    checkingZoom.value = false
+  }
 }
 
 async function submitTranscriptImport(filename, text) {
