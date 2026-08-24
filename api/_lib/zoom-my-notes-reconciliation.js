@@ -33,7 +33,8 @@ async function zoomJson(getToken, url) {
   }
 
   if (!response.ok) {
-    const error = new Error(`Zoom My Notes request failed with ${response.status}`);
+    const responseText = await response.text().catch(() => '');
+    const error = new Error(`Zoom My Notes request failed with ${response.status}${responseText ? `: ${responseText}` : ''}`);
     error.status = response.status;
     throw error;
   }
@@ -130,7 +131,7 @@ export async function reconcileZoomMyNotes({ supabase, integration, therapistUse
   }
 
   const getToken = (options) => getZoomAccessTokenContext(supabase, integration, options);
-  const listPayload = await zoomJson(getToken, 'https://api.zoom.us/v2/my_notes/notes?page_size=30');
+  const listPayload = await zoomJson(getToken, 'https://api.zoom.us/v2/my_notes/notes');
   const notes = normaliseZoomNoteList(listPayload);
   if (!notes.length) return { checked: 0, imported: 0 };
 
