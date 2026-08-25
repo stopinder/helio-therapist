@@ -1,7 +1,7 @@
 <template>
   <div class="flex h-screen overflow-hidden bg-surface-canvas text-ink">
     <Transition name="slide">
-      <aside v-if="isMobileMenuOpen" class="fixed inset-y-0 left-0 z-50 flex w-64 flex-col border-r border-border-muted bg-sidebar shadow-overlay md:hidden">
+      <aside v-if="isMobileMenuOpen" class="fixed inset-y-0 left-0 z-50 flex w-64 flex-col border-r border-border-muted bg-sidebar shadow-overlay lg:hidden">
         <div class="flex h-16 shrink-0 items-center justify-between border-b border-border-muted px-5">
           <router-link to="/" class="flex items-center gap-2.5 rounded-control" aria-label="Helios home">
             <span class="icon-surface icon-surface-reflection rounded-pill"><Sun class="workspace-icon" aria-hidden="true" /></span>
@@ -31,9 +31,9 @@
       </aside>
     </Transition>
 
-    <Transition name="fade"><div v-if="isMobileMenuOpen" class="fixed inset-0 z-40 bg-backdrop backdrop-blur-sm md:hidden" @click="isMobileMenuOpen=false"></div></Transition>
+    <Transition name="fade"><div v-if="isMobileMenuOpen" class="fixed inset-0 z-40 bg-backdrop backdrop-blur-sm lg:hidden" @click="isMobileMenuOpen=false"></div></Transition>
 
-    <aside class="hidden h-full w-64 shrink-0 flex-col border-r border-border-muted bg-sidebar md:flex">
+    <aside class="hidden h-full w-64 shrink-0 flex-col border-r border-border-muted bg-sidebar lg:flex">
       <div class="flex h-16 shrink-0 items-center border-b border-border-muted px-5">
         <router-link to="/" class="flex items-center gap-2.5 rounded-control" aria-label="Helios home">
           <span class="icon-surface icon-surface-reflection rounded-pill"><Sun class="workspace-icon" aria-hidden="true" /></span>
@@ -63,7 +63,7 @@
 
     <div class="flex h-full min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
       <header class="flex h-16 shrink-0 items-center justify-between border-b border-border-muted bg-surface px-inline-lg md:px-6">
-        <div class="flex items-center gap-inline-md"><button class="-ml-2 rounded-control p-2 text-ink-secondary hover:bg-surface-subtle md:hidden" aria-label="Open menu" @click="isMobileMenuOpen=true"><Menu class="workspace-icon-lg" /></button><h2 class="truncate type-body-medium text-ink">{{ currentPageName }}</h2></div>
+        <div class="flex items-center gap-inline-md"><button class="-ml-2 rounded-control p-2 text-ink-secondary hover:bg-surface-subtle lg:hidden" aria-label="Open menu" @click="isMobileMenuOpen=true"><Menu class="workspace-icon-lg" /></button><h2 class="truncate type-body-medium text-ink">{{ currentPageName }}</h2></div>
         <div class="flex items-center gap-2">
           <div class="hidden items-center gap-2.5 whitespace-nowrap text-ink-muted lg:flex" data-testid="global-appointment-clock" :data-appointment-approaching="isAppointmentApproaching?'true':'false'" aria-live="off"><time class="type-ui tabular-nums font-medium text-ink-secondary" :datetime="now.toISOString()">{{ currentTimeLabel }}</time><span class="h-4 w-px bg-border-muted" aria-hidden="true"></span><span v-if="nextAppointment" class="type-metadata" :class="isAppointmentApproaching?'text-ink-secondary':'text-ink-muted'">Next {{ nextAppointmentTimeLabel }}<span class="ml-1.5" :class="isAppointmentApproaching?'font-semibold text-accent':'text-ink-subtle'">{{ nextAppointmentCountdownLabel }}</span></span><span v-else class="type-metadata text-ink-subtle">No upcoming appointment</span></div>
           <span class="mx-1 hidden h-6 w-px bg-border-muted lg:block" aria-hidden="true"></span>
