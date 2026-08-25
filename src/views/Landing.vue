@@ -19,6 +19,96 @@
 
     <section id="trust" class="scroll-mt-6 border-y border-border-muted bg-surface-raised"><div class="mx-auto grid w-full max-w-[1200px] gap-8 px-5 py-14 sm:px-8 lg:grid-cols-3"><div><p class="type-eyebrow text-action-link">Trust &amp; control</p><h2 class="mt-3 text-3xl font-semibold tracking-[-0.03em]">Software that respects clinical judgement.</h2></div><article><p class="font-semibold">Drafts are drafts</p><p class="mt-2 type-body text-ink-secondary">Session working material stays editable and is not presented as an approved Clinical Record.</p></article><article><p class="font-semibold">AI stays subordinate</p><p class="mt-2 type-body text-ink-secondary">Assistance is contextual and reviewable. The therapist decides what is useful and what belongs in the professional record.</p></article></div></section>
     <section class="mx-auto flex w-full max-w-[1200px] flex-col gap-6 px-5 py-14 sm:px-8 lg:flex-row lg:items-center lg:justify-between"><div><p class="type-eyebrow text-action-link">Helios</p><h2 class="mt-2 text-3xl font-semibold tracking-[-0.03em]">A calmer, connected place for the work around therapy.</h2></div><router-link to="/get-started" class="w-fit rounded-control bg-action-primary px-5 py-3 text-sm font-semibold text-on-action hover:bg-action-primary-hover">Get started</router-link></section>
-    <footer class="border-t border-border-muted"><div class="mx-auto flex w-full max-w-[1200px] flex-col gap-4 px-5 py-7 text-sm text-ink-muted sm:px-8 md:flex-row md:items-center md:justify-between"><router-link to="/" class="font-semibold text-ink">Helios</router-link><nav class="flex flex-wrap gap-x-5 gap-y-2"><router-link to="/privacy" class="hover:text-ink">Privacy</router-link><router-link to="/terms" class="hover:text-ink">Terms</router-link><router-link to="/ai-data" class="hover:text-ink">AI &amp; data</router-link><router-link to="/support" class="hover:text-ink">Support</router-link></nav></div></footer>
+    <footer class="border-t border-border-muted bg-surface-raised">
+      <div
+          class="mx-auto grid w-full max-w-[1200px] gap-10 px-5 py-12 sm:px-8 lg:grid-cols-[1.35fr_.65fr] lg:items-end"
+      >
+        <div class="max-w-2xl">
+          <div class="flex items-center gap-3">
+            <svg
+                class="h-8 w-8 text-brand-amber"
+                viewBox="0 0 48 48"
+                fill="none"
+                aria-hidden="true"
+            >
+              <path
+                  d="M9 31h30"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+              />
+              <path
+                  d="M15 31a9 9 0 0 1 18 0"
+                  stroke="currentColor"
+                  stroke-width="2"
+              />
+              <path
+                  d="M24 8v7M9.5 14.5l5 5M38.5 14.5l-5 5M5 26h7M36 26h7"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+              />
+            </svg>
+
+            <span class="text-lg font-semibold tracking-[-0.02em]">
+          Helios
+        </span>
+          </div>
+
+          <h2 class="mt-6 text-xl font-semibold tracking-[-0.02em] text-ink">
+            Built from clinical practice, for clinical practice.
+          </h2>
+
+          <p class="mt-3 max-w-xl text-sm leading-6 text-ink-secondary">
+            Helios is developed through Chrysalis Therapy Services by Robert Ormston,
+            a practising psychotherapist. It is shaped by the realities of therapeutic
+            work — continuity, reflection, professional responsibility and reducing
+            unnecessary cognitive load.
+          </p>
+
+          <div class="mt-6 border-l-2 border-brand-amber pl-4">
+            <p class="text-sm font-semibold text-ink">
+              Robert Ormston
+            </p>
+            <p class="mt-1 text-sm text-ink-secondary">
+              Chrysalis Therapy Services
+            </p>
+            <p class="mt-1 text-sm text-ink-secondary">
+              Member of the British Association for Counselling and Psychotherapy
+              (BACP)
+            </p>
+          </div>
+        </div>
+
+        <div class="lg:text-right">
+          <p class="text-xs font-semibold uppercase tracking-[0.14em] text-ink-muted">
+            Helios clinical workspace
+          </p>
+
+          <nav
+              class="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-sm text-ink-secondary lg:justify-end"
+              aria-label="Legal and support"
+          >
+            <router-link to="/privacy" class="hover:text-ink">
+              Privacy
+            </router-link>
+            <router-link to="/terms" class="hover:text-ink">
+              Terms
+            </router-link>
+            <router-link to="/ai-data" class="hover:text-ink">
+              AI &amp; data
+            </router-link>
+            <router-link to="/support" class="hover:text-ink">
+              Support
+            </router-link>
+          </nav>
+
+          <p class="mt-6 text-xs leading-5 text-ink-muted">
+            © {{ new Date().getFullYear() }} Helios.
+            Built by therapists, for therapists.
+          </p>
+        </div>
+      </div>
+    </footer>
   </main>
 </template>
