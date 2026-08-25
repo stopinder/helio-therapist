@@ -41,7 +41,11 @@ test('permanent sidebar is desktop-only and narrower layouts use the menu drawer
   assert.match(shell, /bg-sidebar shadow-overlay lg:hidden/)
   assert.match(shell, /bg-backdrop backdrop-blur-sm lg:hidden/)
   assert.match(shell, /bg-sidebar lg:flex/)
-  assert.match(shell, /aria-label="Open menu"[^>]*lg:hidden/)
+
+  const openMenuButton = shell.match(/<button[^>]*aria-label="Open menu"[^>]*>/)?.[0] || ''
+  assert.ok(openMenuButton, 'Open menu button is missing')
+  assert.match(openMenuButton, /class="[^"]*\blg:hidden\b[^"]*"/)
+
   assert.doesNotMatch(shell, /bg-sidebar shadow-overlay md:hidden/)
   assert.doesNotMatch(shell, /bg-sidebar md:flex/)
 })
