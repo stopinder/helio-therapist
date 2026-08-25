@@ -8,15 +8,21 @@ function listItems(payload) {
   return [];
 }
 
-export function normaliseZoomNoteList(payload) {
+export function normaliseZoomNoteList(payload, fallbackMeetingId = null) {
   return listItems(payload)
     .map((note) => ({
       noteId: note?.note_id ? String(note.note_id) : null,
-      meetingId: note?.meeting_id ? String(note.meeting_id) : null,
+      meetingId: note?.meeting_id ? String(note.meeting_id) : fallbackMeetingId ? String(fallbackMeetingId) : null,
       createdTime: note?.created_time || note?.created_at || null,
-      updatedTime: note?.updated_time || note?.updated_at || null
+      updatedTime: note?.updated_time || note?.modified_time || note?.updated_at || null
     }))
     .filter((note) => note.noteId);
+}
+
+export function normaliseZoomMeetingIds(payload) {
+  return (Array.isArray(payload?.meetings) ? payload.meetings : [])
+    .map((meeting) => meeting?.id ? String(meeting.id) : null)
+    .filter(Boolean);
 }
 
 async function zoomJson(getToken, url) {
@@ -40,6 +46,57 @@ async function zoomJson(getToken, url) {
   }
 
   return response.json();
+}
+
+async function recentKnownMeetingIds(supabase, therapistUserId) {
+  const ids = new Set();
+
+  const { data: links, error: linksError } = await supabase
+    .from('zoom_session_links')
+    .select('zoom_meeting_id, created_at')
+    .eq('therapist_user_id', therapistUserId)
+    .not('zoom_meeting_id', 'is', null)
+    .order('created_at', { ascending: false })
+    .limit(20);
+
+  if (linksError?.code !== 'PGRST205' && linksError?.code !== '42P01' && linksError) throw linksError;
+  for (const row of links || []) {
+    if (row.zoom_meeting_id) ids.add(String(row.zoom_meeting_id));
+  }
+
+  const { data: sessions, error: sessionsError } = await supabase
+    .from('sessions')
+    .select('zoom_meeting_id, occurred_at')
+    .eq('user_id', therapistUserId)
+    .not('zoom_meeting_id', 'is', null)
+    .order('occurred_at', { ascending: false })
+    .limit(20);
+
+  if (sessionsError) throw sessionsError;
+  for (const row of sessions || []) {
+    if (row.zoom_meeting_id) ids.add(String(row.zoom_meeting_id));
+  }
+
+  return ids;
+}
+
+async function discoverRecentMeetingIds(getToken, supabase, therapistUserId) {
+  const ids = await recentKnownMeetingIds(supabase, therapistUserId);
+  const payload = await zoomJson(
+    getToken,
+    'https://api.zoom.us/v2/users/me/meetings?type=previous_meetings&page_size=30'
+  );
+
+  for (const meetingId of normaliseZoomMeetingIds(payload)) ids.add(meetingId);
+  return [...ids].slice(0, 30);
+}
+
+async function listNotesForMeeting(getToken, meetingId) {
+  const payload = await zoomJson(
+    getToken,
+    `https://api.zoom.us/v2/my_notes/notes?meeting_id=${encodeURIComponent(meetingId)}`
+  );
+  return normaliseZoomNoteList(payload, meetingId);
 }
 
 async function verifiedSessionLink(supabase, therapistUserId, meetingId) {
@@ -131,9 +188,17 @@ export async function reconcileZoomMyNotes({ supabase, integration, therapistUse
   }
 
   const getToken = (options) => getZoomAccessTokenContext(supabase, integration, options);
-  const listPayload = await zoomJson(getToken, 'https://api.zoom.us/v2/my_notes/notes');
-  const notes = normaliseZoomNoteList(listPayload);
-  if (!notes.length) return { checked: 0, imported: 0 };
+  const meetingIds = await discoverRecentMeetingIds(getToken, supabase, therapistUserId);
+  if (!meetingIds.length) return { checked: 0, imported: 0 };
+
+  const notesById = new Map();
+  for (const meetingId of meetingIds) {
+    const meetingNotes = await listNotesForMeeting(getToken, meetingId);
+    for (const note of meetingNotes) notesById.set(note.noteId, note);
+  }
+
+  const notes = [...notesById.values()];
+  if (!notes.length) return { checked: meetingIds.length, imported: 0 };
 
   const noteIds = notes.map((note) => note.noteId);
   const { data: existingRows, error: existingError } = await supabase
@@ -188,5 +253,5 @@ export async function reconcileZoomMyNotes({ supabase, integration, therapistUse
     imported += 1;
   }
 
-  return { checked: notes.length, imported };
+  return { checked: meetingIds.length, imported };
 }
