@@ -43,6 +43,7 @@
 
 <script setup>
 import { ref } from 'vue'
+import { captureAnalyticsEvent } from '../lib/analytics.js'
 
 const email = ref('')
 const consent = ref(false)
@@ -68,6 +69,7 @@ async function subscribe() {
     const data = await response.json().catch(() => ({}))
     if (!response.ok) throw new Error(data.error || 'Unable to subscribe right now.')
 
+    captureAnalyticsEvent('marketing_opt_in_completed', { source: 'landing' })
     message.value = 'Thanks — you’re on the Helios updates list.'
     email.value = ''
     consent.value = false
