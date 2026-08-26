@@ -1,6 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { supabase } from '../lib/supabase.js'
-import Landing from '../views/Landing.vue'
+import PublicLanding from '../views/PublicLanding.vue'
 import AuthEntry from '../views/AuthEntry.vue'
 import Terms from '../views/Terms.vue'
 import Privacy from '../views/Privacy.vue'
@@ -26,7 +26,7 @@ import SupervisionGrowth from '../views/supervision/SupervisionGrowth.vue'
 import SupervisionInsights from '../views/supervision/SupervisionInsights.vue'
 
 const routes = [
-  { path: '/', name: 'Landing', component: Landing, meta: { public: true, title: 'Helios — Therapist workspace' } },
+  { path: '/', name: 'Landing', component: PublicLanding, meta: { public: true, title: 'Helios — Therapist workspace' } },
   { path: '/sign-in', name: 'SignIn', component: AuthEntry, meta: { authEntry: 'signin', title: 'Sign in — Helios' } },
   { path: '/get-started', name: 'GetStarted', component: AuthEntry, meta: { authEntry: 'signup', title: 'Get started — Helios' } },
   { path: '/terms', name: 'Terms', component: Terms, meta: { public: true, title: 'Terms of Service — Helios' } },
