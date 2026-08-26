@@ -16,17 +16,17 @@ test('sidebar account identity is dynamic and therapist-owned', () => {
   assert.doesNotMatch(shell, /'RO'/)
 })
 
-test('navigation scrolls independently above a compact account footer', () => {
-  assert.match(shell, /flex-1 min-h-0 overflow-y-auto/)
-  assert.match(shell, /shrink-0 border-t border-border-muted px-3 py-2 bg-sidebar/)
-  assert.match(shell, /w-full min-h-touch flex items-center/)
-  assert.match(shell, /aria-expanded/)
-  assert.match(shell, /aria-haspopup':'menu'/)
+test('navigation scrolls independently from the account controls', () => {
+  assert.match(shell, /sidebar-navigation flex-1 min-h-0 overflow-y-auto/)
+  assert.match(shell, /aria-haspopup="menu"/)
+  assert.match(shell, /:aria-expanded="accountMenuOpen"/)
   assert.match(shell, /Settings/)
   assert.match(shell, /Sign out/)
 })
 
-test('desktop and mobile sidebars receive the same account identity', () => {
-  const matches = shell.match(/<SidebarAccount :account="accountIdentity"/g) || []
-  assert.equal(matches.length, 2)
+test('desktop and mobile sidebars expose the same account identity control', () => {
+  const nameBindings = shell.match(/\{\{ accountIdentity\.name \}\}/g) || []
+  const menuTriggers = shell.match(/aria-haspopup="menu"/g) || []
+  assert.equal(nameBindings.length, 2)
+  assert.equal(menuTriggers.length, 2)
 })
