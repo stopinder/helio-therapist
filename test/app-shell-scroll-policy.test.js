@@ -37,15 +37,15 @@ test('sidebar remains scrollable on short screens but hides its scrollbar rail',
   assert.doesNotMatch(shell, /\.sidebar-navigation:hover/)
 })
 
-test('permanent sidebar is desktop-only and narrower layouts use the menu drawer', () => {
-  assert.match(shell, /bg-sidebar shadow-overlay lg:hidden/)
-  assert.match(shell, /bg-backdrop backdrop-blur-sm lg:hidden/)
-  assert.match(shell, /bg-sidebar lg:flex/)
+test('permanent sidebar is used from tablet and desktop widths while phones use the menu drawer', () => {
+  assert.match(shell, /bg-sidebar shadow-overlay md:hidden/)
+  assert.match(shell, /bg-backdrop backdrop-blur-sm md:hidden/)
+  assert.match(shell, /bg-sidebar md:flex/)
 
   const openMenuButton = shell.match(/<button[^>]*aria-label="Open menu"[^>]*>/)?.[0] || ''
   assert.ok(openMenuButton, 'Open menu button is missing')
-  assert.match(openMenuButton, /class="[^"]*\blg:hidden\b[^"]*"/)
+  assert.match(openMenuButton, /class="[^"]*\bmd:hidden\b[^"]*"/)
 
-  assert.doesNotMatch(shell, /bg-sidebar shadow-overlay md:hidden/)
-  assert.doesNotMatch(shell, /bg-sidebar md:flex/)
+  assert.doesNotMatch(shell, /bg-sidebar shadow-overlay lg:hidden/)
+  assert.doesNotMatch(shell, /bg-sidebar lg:flex/)
 })
