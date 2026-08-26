@@ -9,6 +9,15 @@
           </router-link>
           <button class="-mr-2 p-2 text-ink-subtle hover:text-ink-secondary" aria-label="Close menu" @click="isMobileMenuOpen=false"><X class="workspace-icon-lg" /></button>
         </div>
+        <div class="relative shrink-0 border-b border-border-muted bg-sidebar px-3 py-2">
+          <div v-if="accountMenuOpen" class="absolute top-[3.35rem] left-3 right-3 z-50 rounded-panel border border-border-muted bg-surface-overlay p-1.5 shadow-overlay" role="menu">
+            <router-link to="/settings" class="flex min-h-touch items-center gap-2.5 rounded-control px-3 type-ui text-ink-secondary hover:bg-surface-subtle hover:text-ink" role="menuitem" @click="accountMenuOpen=false"><Settings class="workspace-icon-sm" aria-hidden="true" /><span>Settings</span></router-link>
+            <button type="button" class="flex min-h-touch w-full items-center gap-2.5 rounded-control px-3 text-left type-ui text-ink-secondary hover:bg-surface-subtle hover:text-ink" role="menuitem" @click="accountMenuOpen=false;handleSignOut()"><LogOut class="workspace-icon-sm" aria-hidden="true" /><span>Sign out</span></button>
+          </div>
+          <button type="button" class="flex min-h-touch w-full items-center gap-3 rounded-control px-2 text-left hover:bg-surface-subtle" aria-haspopup="menu" :aria-expanded="accountMenuOpen" @click="accountMenuOpen=!accountMenuOpen">
+            <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-pill bg-action-primary type-metadata font-semibold text-on-action">{{ accountIdentity.initials }}</span><span class="min-w-0 flex-1 truncate type-ui font-semibold text-ink">{{ accountIdentity.name }}</span><MoreHorizontal class="workspace-icon shrink-0 text-ink-muted" aria-hidden="true" />
+          </button>
+        </div>
         <nav class="sidebar-navigation flex-1 min-h-0 overflow-y-auto px-3 py-4 space-y-5">
           <section v-for="group in navGroups" :key="group.label">
             <p class="px-3 mb-2 type-eyebrow text-ink-subtle">{{ group.label }}</p>
@@ -19,15 +28,6 @@
             </div>
           </section>
         </nav>
-        <div class="relative shrink-0 border-t border-border-muted bg-sidebar px-3 py-2">
-          <div v-if="accountMenuOpen" class="absolute bottom-[3.35rem] left-3 right-3 z-50 rounded-panel border border-border-muted bg-surface-overlay p-1.5 shadow-overlay" role="menu">
-            <router-link to="/settings" class="flex min-h-touch items-center gap-2.5 rounded-control px-3 type-ui text-ink-secondary hover:bg-surface-subtle hover:text-ink" role="menuitem" @click="accountMenuOpen=false"><Settings class="workspace-icon-sm" aria-hidden="true" /><span>Settings</span></router-link>
-            <button type="button" class="flex min-h-touch w-full items-center gap-2.5 rounded-control px-3 text-left type-ui text-ink-secondary hover:bg-surface-subtle hover:text-ink" role="menuitem" @click="accountMenuOpen=false;handleSignOut()"><LogOut class="workspace-icon-sm" aria-hidden="true" /><span>Sign out</span></button>
-          </div>
-          <button type="button" class="flex min-h-touch w-full items-center gap-3 rounded-control px-2 text-left hover:bg-surface-subtle" aria-haspopup="menu" :aria-expanded="accountMenuOpen" @click="accountMenuOpen=!accountMenuOpen">
-            <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-pill bg-action-primary type-metadata font-semibold text-on-action">{{ accountIdentity.initials }}</span><span class="min-w-0 flex-1 truncate type-ui font-semibold text-ink">{{ accountIdentity.name }}</span><MoreHorizontal class="workspace-icon shrink-0 text-ink-muted" aria-hidden="true" />
-          </button>
-        </div>
       </aside>
     </Transition>
 
@@ -40,6 +40,15 @@
           <span class="leading-none"><span class="block font-serif text-[1.35rem] font-semibold text-ink">Helios</span><span class="mt-1 block text-[0.58rem] uppercase tracking-[0.16em] text-ink-muted">Practice</span></span>
         </router-link>
       </div>
+      <div class="relative shrink-0 border-b border-border-muted bg-sidebar px-3 py-2">
+        <div v-if="accountMenuOpen" class="absolute top-[3.35rem] left-3 right-3 z-50 rounded-panel border border-border-muted bg-surface-overlay p-1.5 shadow-overlay" role="menu">
+          <router-link to="/settings" class="flex min-h-touch items-center gap-2.5 rounded-control px-3 type-ui text-ink-secondary hover:bg-surface-subtle hover:text-ink" role="menuitem" @click="accountMenuOpen=false"><Settings class="workspace-icon-sm" aria-hidden="true" /><span>Settings</span></router-link>
+          <button type="button" class="flex min-h-touch w-full items-center gap-2.5 rounded-control px-3 text-left type-ui text-ink-secondary hover:bg-surface-subtle hover:text-ink" role="menuitem" @click="accountMenuOpen=false;handleSignOut()"><LogOut class="workspace-icon-sm" aria-hidden="true" /><span>Sign out</span></button>
+        </div>
+        <button type="button" class="flex min-h-touch w-full items-center gap-3 rounded-control px-2 text-left hover:bg-surface-subtle" aria-haspopup="menu" :aria-expanded="accountMenuOpen" @click="accountMenuOpen=!accountMenuOpen">
+          <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-pill bg-action-primary type-metadata font-semibold text-on-action">{{ accountIdentity.initials }}</span><span class="min-w-0 flex-1 truncate type-ui font-semibold text-ink">{{ accountIdentity.name }}</span><MoreHorizontal class="workspace-icon shrink-0 text-ink-muted" aria-hidden="true" />
+        </button>
+      </div>
       <nav class="sidebar-navigation flex-1 min-h-0 overflow-y-auto px-3 py-4 space-y-5">
         <section v-for="group in navGroups" :key="group.label">
           <p class="px-3 mb-2 type-eyebrow text-ink-subtle">{{ group.label }}</p>
@@ -50,15 +59,6 @@
           </div>
         </section>
       </nav>
-      <div class="relative shrink-0 border-t border-border-muted bg-sidebar px-3 py-2">
-        <div v-if="accountMenuOpen" class="absolute bottom-[3.35rem] left-3 right-3 z-50 rounded-panel border border-border-muted bg-surface-overlay p-1.5 shadow-overlay" role="menu">
-          <router-link to="/settings" class="flex min-h-touch items-center gap-2.5 rounded-control px-3 type-ui text-ink-secondary hover:bg-surface-subtle hover:text-ink" role="menuitem" @click="accountMenuOpen=false"><Settings class="workspace-icon-sm" aria-hidden="true" /><span>Settings</span></router-link>
-          <button type="button" class="flex min-h-touch w-full items-center gap-2.5 rounded-control px-3 text-left type-ui text-ink-secondary hover:bg-surface-subtle hover:text-ink" role="menuitem" @click="accountMenuOpen=false;handleSignOut()"><LogOut class="workspace-icon-sm" aria-hidden="true" /><span>Sign out</span></button>
-        </div>
-        <button type="button" class="flex min-h-touch w-full items-center gap-3 rounded-control px-2 text-left hover:bg-surface-subtle" aria-haspopup="menu" :aria-expanded="accountMenuOpen" @click="accountMenuOpen=!accountMenuOpen">
-          <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-pill bg-action-primary type-metadata font-semibold text-on-action">{{ accountIdentity.initials }}</span><span class="min-w-0 flex-1 truncate type-ui font-semibold text-ink">{{ accountIdentity.name }}</span><MoreHorizontal class="workspace-icon shrink-0 text-ink-muted" aria-hidden="true" />
-        </button>
-      </div>
     </aside>
 
     <div class="flex h-full min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
