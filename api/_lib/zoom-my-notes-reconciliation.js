@@ -19,12 +19,6 @@ export function normaliseZoomNoteList(payload, fallbackMeetingId = null) {
     .filter((note) => note.noteId);
 }
 
-export function normaliseZoomMeetingIds(payload) {
-  return (Array.isArray(payload?.meetings) ? payload.meetings : [])
-    .map((meeting) => meeting?.id ? String(meeting.id) : null)
-    .filter(Boolean);
-}
-
 async function zoomJson(getToken, url) {
   let token = await getToken({ forceRefresh: false });
   let response = await fetch(url, {
@@ -77,17 +71,6 @@ async function recentKnownMeetingIds(supabase, therapistUserId) {
     if (row.zoom_meeting_id) ids.add(String(row.zoom_meeting_id));
   }
 
-  return ids;
-}
-
-async function discoverRecentMeetingIds(getToken, supabase, therapistUserId) {
-  const ids = await recentKnownMeetingIds(supabase, therapistUserId);
-  const payload = await zoomJson(
-    getToken,
-    'https://api.zoom.us/v2/users/me/meetings?type=previous_meetings&page_size=30'
-  );
-
-  for (const meetingId of normaliseZoomMeetingIds(payload)) ids.add(meetingId);
   return [...ids].slice(0, 30);
 }
 
@@ -188,7 +171,7 @@ export async function reconcileZoomMyNotes({ supabase, integration, therapistUse
   }
 
   const getToken = (options) => getZoomAccessTokenContext(supabase, integration, options);
-  const meetingIds = await discoverRecentMeetingIds(getToken, supabase, therapistUserId);
+  const meetingIds = await recentKnownMeetingIds(supabase, therapistUserId);
   if (!meetingIds.length) return { checked: 0, imported: 0 };
 
   const notesById = new Map();
