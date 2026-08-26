@@ -12,7 +12,8 @@ const SAFE_PUBLIC_PATHS = new Set([
   '/get-started'
 ])
 
-const posthogKey = import.meta.env.VITE_POSTHOG_KEY || ''
+// PostHog project tokens are public ingestion identifiers, not secret API credentials.
+const posthogKey = import.meta.env.VITE_POSTHOG_KEY || 'phc_CPqQxDJeFyQKRAWz2MoW6Sggk7uaEo9jVbNC5X5enP3j'
 const posthogHost = (import.meta.env.VITE_POSTHOG_HOST || 'https://eu.i.posthog.com').replace(/\/$/, '')
 
 export function getAnalyticsConsent() {
@@ -51,7 +52,7 @@ function getVisitorId() {
 }
 
 export function captureAnalyticsEvent(event, properties = {}) {
-  if (!posthogKey || getAnalyticsConsent() !== true) return false
+  if (getAnalyticsConsent() !== true) return false
 
   const payload = {
     api_key: posthogKey,
@@ -85,9 +86,16 @@ export function capturePublicPageView(route) {
 
 export function installPublicCtaTracking() {
   const handler = (event) => {
-    const link = event.target?.closest?.('a[href="/get-started"]')
-    if (!link || window.location.pathname !== '/') return
-    captureAnalyticsEvent('landing_cta_clicked', { source: 'landing' })
+    const signupLink = event.target?.closest?.('a[href="/get-started"]')
+    if (signupLink && window.location.pathname === '/') {
+      captureAnalyticsEvent('landing_cta_clicked', { source: 'landing' })
+      return
+    }
+
+    const signupButton = event.target?.closest?.('button[type="submit"]')
+    if (signupButton && window.location.pathname === '/get-started') {
+      captureAnalyticsEvent('signup_started', { source: 'get_started' })
+    }
   }
 
   document.addEventListener('click', handler)
