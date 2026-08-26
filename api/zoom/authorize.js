@@ -3,7 +3,6 @@ import { requireAuthenticatedUser } from '../_lib/supabase.js';
 
 export const ZOOM_OAUTH_SCOPES = [
   'meeting:read:meeting',
-  'meeting:read:list_meetings',
   'user:read:user',
   'scheduler:read',
   'scheduler:write',
