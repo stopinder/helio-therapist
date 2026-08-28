@@ -19,12 +19,18 @@
       <div v-else-if="visibleTranscripts.length" class="inbox-list">
         <button v-for="transcript in visibleTranscripts" :key="transcript.id" class="transcript-row" @click="openTranscript(transcript)">
           <span class="row-main">
-            <strong>{{ rowTitle(transcript) }}</strong>
+            <span class="row-header">
+              <strong>{{ rowTitle(transcript) }}</strong>
+              <button class="chevron" type="button" :aria-expanded="expandedRows.has(transcript.id)" @click="toggleExpand(transcript.id, $event)">
+                <span class="sr-only">{{ expandedRows.has(transcript.id) ? 'Collapse' : 'Expand' }}</span>
+                <span aria-hidden="true">{{ expandedRows.has(transcript.id) ? '▾' : '▸' }}</span>
+              </button>
+            </span>
             <small>{{ formatDate(transcript.receivedAt) }}<template v-if="transcript.meetingId"> · Meeting {{ transcript.meetingId }}</template></small>
             <p v-if="!transcript.clientId" class="transcript-preview">{{ transcriptPreview(transcript) }}</p>
           </span>
           <StatusIndicator v-if="filterMode === 'attention'" :tone="workflowTone(transcript)">{{ workflowState(transcript).label }}</StatusIndicator>
-          <span class="open">{{ filterMode === 'history' ? 'View' : primaryAction(transcript) }} <span aria-hidden="true">›</span></span>
+          <span v-if="expandedRows.has(transcript.id)" class="open">{{ filterMode === 'history' ? 'View' : primaryAction(transcript) }} <span aria-hidden="true">›</span></span>
         </button>
         <div v-if="hasMoreHistory" class="load-more-row"><button class="load-more" type="button" @click="historyLimit += historyPageSize">Load more</button></div>
       </div>
@@ -64,7 +70,7 @@ import StatusIndicator from './ui/StatusIndicator.vue'
 const props = defineProps({ clients: { type: Array, default: () => [] }, openTranscriptId: { type: [String, Number], default: null } })
 const router = useRouter()
 const transcripts = ref([]), selected = ref(null), selectedClientId = ref(''), selectedSessionRef = ref(''), selectedLens = ref(''), sourceRetention = ref('keep_until_review')
-const editingClient = ref(false), editingSession = ref(false), editingChoices = ref(false), searchQuery = ref(''), filterMode = ref('attention'), showRaw = ref(false)
+const editingClient = ref(false), editingSession = ref(false), editingChoices = ref(false), searchQuery = ref(''), filterMode = ref('attention'), showRaw = ref(false), expandedRows = ref(new Set())
 const loading = ref(true), saving = ref(false), errorMessage = ref(''), successMessage = ref(''), sessionRecords = ref([])
 const historyPageSize = 20
 const historyLimit = ref(historyPageSize)
@@ -88,7 +94,8 @@ function labelFor(transcript){ return transcript.meetingId ? `Zoom meeting ${tra
 function rowTitle(transcript){ return clientName(transcript.clientId) || labelFor(transcript) }
 function transcriptPreview(transcript){
   if (!transcript.text) return '';
-  const preview = transcript.text.replace(/\s+/g, ' ').trim().slice(0, 100);
+  const cleaned = transcript.text.replace(/\[\d{2}:\d{2}:\d{2}\.\d{3}\]/g, '').replace(/\s+/g, ' ').trim();
+  const preview = cleaned.slice(0, 100);
   return preview.length >= 100 ? `${preview}…` : preview;
 }
 function workflowState(transcript){ if(!transcript?.clientId||transcript.status==='unassigned')return{id:'needs-client',label:'Needs client'};if(!transcript.sessionRef)return{id:'needs-session',label:'Needs session'};if(!transcript.reviewChoicesSavedAt)return{id:'needs-review',label:'Needs review'};if(transcript.completedAt)return{id:'complete',label:'Triage complete'};return{id:'review-saved',label:'Review choices saved'} }
@@ -98,6 +105,11 @@ function clientName(clientId){ return props.clients.find(client=>client.id===cli
 function sessionOptionLabel(session){ const state=({planned:'Planned',in_progress:'In progress',completed:'Completed',closed:'Closed'})[session.status]||'Completed';return `${formatDate(session.startedAt||session.createdAt)} · ${state}` }
 async function loadSessionRecords(){ try{sessionRecords.value=await listSessions()}catch(error){errorMessage.value=error?.message||'Unable to load sessions.';sessionRecords.value=[]} }
 function replaceTranscript(transcript){const index=transcripts.value.findIndex(item=>item.id===transcript.id);if(index>=0)transcripts.value[index]=transcript;selected.value=transcript}
+function toggleExpand(id, event) {
+  event.stopPropagation();
+  if (expandedRows.value.has(id)) expandedRows.value.delete(id);
+  else expandedRows.value.add(id);
+}
 function openTranscript(transcript){
   selected.value=transcript;
   selectedClientId.value=transcript.clientId||'';
