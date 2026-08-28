@@ -60,16 +60,20 @@ test('reconcileZoomMyNotes uses Canvas Search when scope is present', async (t) 
       canvasSearchCalled = true;
       const body = JSON.parse(options.body);
       assert.deepEqual(body.file_types, ['note']);
+      assert.ok(body.created_time_from, 'created_time_from should be present');
+      assert.ok(body.created_time_to, 'created_time_to should be present');
+      assert.strictEqual(body.from, undefined, 'Old "from" field should NOT be present');
+      assert.strictEqual(body.to, undefined, 'Old "to" field should NOT be present');
       return {
         ok: true,
         json: async () => ({
-          results: [
+          files: [
             {
               file_id: 'canvas-note-1',
               file_name: 'Standalone Note',
               file_type: 'note',
-              created_at: '2026-08-25T10:00:00Z',
-              modified_at: '2026-08-25T10:05:00Z'
+              created_time: '2026-08-25T10:00:00Z',
+              modified_time: '2026-08-25T10:05:00Z'
             }
           ]
         })

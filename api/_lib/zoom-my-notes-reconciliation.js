@@ -2,6 +2,7 @@ import { getZoomAccessTokenContext } from './zoom-oauth.js';
 import { canonicaliseMyNotesTranscript } from './zoom-webhook.js';
 
 function listItems(payload) {
+  if (Array.isArray(payload?.files)) return payload.files;
   if (Array.isArray(payload?.notes)) return payload.notes;
   if (Array.isArray(payload?.items)) return payload.items;
   if (Array.isArray(payload?.results)) return payload.results;
@@ -186,8 +187,8 @@ async function listNotesFromCanvasSearch(getToken) {
       'POST',
       {
         file_types: ['note'],
-        from,
-        to,
+        created_time_from: from,
+        created_time_to: to,
         page_size: 50,
         next_page_token: nextPageToken || undefined
       }
@@ -196,8 +197,8 @@ async function listNotesFromCanvasSearch(getToken) {
     const items = listItems(payload).map((file) => ({
       noteId: file?.file_id ? String(file.file_id) : null,
       meetingId: file?.meeting_id ? String(file.meeting_id) : null,
-      createdTime: file?.created_at || null,
-      updatedTime: file?.modified_at || null
+      createdTime: file?.created_time || file?.created_at || null,
+      updatedTime: file?.modified_time || file?.modified_at || null
     })).filter(n => n.noteId);
 
     notes.push(...items);
