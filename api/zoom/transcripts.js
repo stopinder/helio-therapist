@@ -70,6 +70,35 @@ export default async function handler(req, res) {
       return res.status(200).json({ transcripts: (data || []).map(serialiseTranscript) });
     }
 
+    if (req.method === 'DELETE') {
+      const { id } = req.body || {};
+      if (!id || typeof id !== 'string') return res.status(400).json({ error: 'A transcript id is required.' });
+
+      const { data: existing, error: existingError } = await supabase.from('zoom_transcripts').select('id, therapist_user_id, status, client_id, session_ref, review_choices_saved_at, completed_at').eq('id', id).maybeSingle();
+      if (existingError) throw existingError;
+      if (!existing) return res.status(404).json({ error: 'Transcript not found.' });
+
+      if (existing.therapist_user_id !== user.id) {
+        return res.status(404).json({ error: 'Transcript not found.' });
+      }
+
+      const isUnassigned = 
+        existing.status === 'unassigned' &&
+        existing.client_id === null &&
+        existing.session_ref === null &&
+        existing.review_choices_saved_at === null &&
+        existing.completed_at === null;
+
+      if (!isUnassigned) {
+        return res.status(403).json({ error: 'This transcript has already been assigned or reviewed and cannot be deleted.' });
+      }
+
+      const { error: deleteError } = await supabase.from('zoom_transcripts').delete().eq('id', id).eq('therapist_user_id', user.id);
+      if (deleteError) throw deleteError;
+
+      return res.status(204).end();
+    }
+
     if (req.method === 'POST') {
       const manualImport = normaliseManualImport(req.body || {});
       if (manualImport.error) return res.status(400).json({ error: manualImport.error });
