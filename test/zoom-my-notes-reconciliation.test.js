@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import { normaliseZoomNoteList } from '../api/_lib/zoom-my-notes-reconciliation.js';
 
-test('normaliseZoomNoteList keeps only identifiers and matching metadata needed for reconciliation', () => {
+test('normaliseZoomNoteList preserves note_name as title', () => {
   const notes = normaliseZoomNoteList({
     notes: [
       {
@@ -21,9 +21,9 @@ test('normaliseZoomNoteList keeps only identifiers and matching metadata needed 
     noteId: 'note-1',
     meetingId: '123456789',
     createdTime: '2026-08-24T09:00:00Z',
-    updatedTime: '2026-08-24T10:00:00Z'
+    updatedTime: '2026-08-24T10:00:00Z',
+    title: 'Private therapy session'
   }]);
-  assert.doesNotMatch(JSON.stringify(notes), /Private therapy session/);
 });
 
 test('meeting-scoped note responses inherit the meeting id used for lookup', () => {

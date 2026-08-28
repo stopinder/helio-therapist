@@ -80,6 +80,7 @@ export function myNotesEvent(body) {
   const object = body?.payload?.object || {}
   return {
     noteId: object.note_id ? String(object.note_id) : null,
+    noteName: object.note_name ? String(object.note_name).trim() : null,
     operatorId: body?.payload?.operator_id ? String(body.payload.operator_id) : null,
     accountId: body?.payload?.account_id ? String(body.payload.account_id) : null,
     meetingId: object.meeting_id ? String(object.meeting_id) : null,
@@ -145,6 +146,7 @@ export function safeZoomWebhookPayload(body) {
         operator_id: noteEvent.operatorId,
         object: {
           note_id: noteEvent.noteId,
+          note_name: noteEvent.noteName,
           created_time: noteEvent.createdTime,
           updated_time: noteEvent.updatedTime,
           meeting_id: noteEvent.meetingId

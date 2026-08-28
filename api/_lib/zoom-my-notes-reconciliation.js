@@ -15,7 +15,8 @@ export function normaliseZoomNoteList(payload, fallbackMeetingId = null) {
       noteId: note?.note_id ? String(note.note_id) : null,
       meetingId: note?.meeting_id ? String(note.meeting_id) : fallbackMeetingId ? String(fallbackMeetingId) : null,
       createdTime: note?.created_time || note?.created_at || null,
-      updatedTime: note?.updated_time || note?.modified_time || note?.updated_at || null
+      updatedTime: note?.updated_time || note?.modified_time || note?.updated_at || null,
+      title: note?.note_name ? String(note.note_name).trim() : null
     }))
     .filter((note) => note.noteId);
 }
@@ -198,7 +199,8 @@ async function listNotesFromCanvasSearch(getToken) {
       noteId: file?.file_id ? String(file.file_id) : null,
       meetingId: file?.meeting_id ? String(file.meeting_id) : null,
       createdTime: file?.created_time || file?.created_at || null,
-      updatedTime: file?.modified_time || file?.modified_at || null
+      updatedTime: file?.modified_time || file?.modified_at || null,
+      title: file?.file_name ? String(file.file_name).trim() : null
     })).filter(n => n.noteId);
 
     notes.push(...items);
@@ -268,6 +270,7 @@ export async function reconcileZoomMyNotes({ supabase, integration, therapistUse
 
     const meetingId = note.meetingId || (content?.meeting_id ? String(content.meeting_id) : null);
     const createdTime = note.createdTime || content?.created_time || null;
+    const sourceTitle = (content?.note_name ? String(content.note_name).trim() : null) || note.title || null;
 
     let sessionLink = await verifiedSessionLink(supabase, therapistUserId, meetingId);
     if (!sessionLink) sessionLink = await uniqueAwaitingSession(supabase, therapistUserId, createdTime);
@@ -285,6 +288,7 @@ export async function reconcileZoomMyNotes({ supabase, integration, therapistUse
         original_transcript: originalTranscript,
         structured_transcript: structuredTranscript,
         source: 'zoom_my_notes',
+        source_title: sourceTitle,
         client_id: sessionLink?.client_id || null,
         session_ref: sessionLink?.session_ref || null,
         status: sessionLink ? 'ready' : 'unassigned',

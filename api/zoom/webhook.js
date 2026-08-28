@@ -105,7 +105,8 @@ async function processMyNotesEvent(supabase, intakeEventId, noteEvent) {
   let sessionLink = noteEvent.meetingId ? await findVerifiedSessionLink(supabase, integration.user_id, noteEvent.meetingId) : null;
   if (!sessionLink) sessionLink = await findUniqueAwaitingSession(supabase, integration.user_id, noteEvent.createdTime);
   const now = new Date().toISOString();
-  const { error: transcriptError } = await supabase.from('zoom_transcripts').upsert({ therapist_user_id: integration.user_id, zoom_note_id: noteEvent.noteId, zoom_meeting_id: noteEvent.meetingId, zoom_meeting_uuid: null, zoom_recording_file_id: null, original_format: 'JSON', original_transcript: originalTranscript, structured_transcript: structuredTranscript, source: 'zoom_my_notes', client_id: sessionLink?.client_id || null, session_ref: sessionLink?.session_ref || null, status: sessionLink ? 'ready' : 'unassigned', updated_at: now }, { onConflict: 'therapist_user_id,zoom_note_id' });
+  const sourceTitle = noteEvent.noteName || noteContent.note_name || null;
+  const { error: transcriptError } = await supabase.from('zoom_transcripts').upsert({ therapist_user_id: integration.user_id, zoom_note_id: noteEvent.noteId, zoom_meeting_id: noteEvent.meetingId, zoom_meeting_uuid: null, zoom_recording_file_id: null, original_format: 'JSON', original_transcript: originalTranscript, structured_transcript: structuredTranscript, source: 'zoom_my_notes', source_title: sourceTitle, client_id: sessionLink?.client_id || null, session_ref: sessionLink?.session_ref || null, status: sessionLink ? 'ready' : 'unassigned', updated_at: now }, { onConflict: 'therapist_user_id,zoom_note_id' });
   if (transcriptError) throw transcriptError;
   if (sessionLink) {
     await markSessionTranscriptReceived(supabase, integration.user_id, sessionLink);

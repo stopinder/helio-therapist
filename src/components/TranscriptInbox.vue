@@ -91,7 +91,7 @@ const hasMoreHistory = computed(() => filterMode.value === 'history' && visibleT
 function setFilter(id){ filterMode.value=id; historyLimit.value=historyPageSize }
 function formatDate(value){ return new Date(value).toLocaleString(undefined,{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}) }
 function labelFor(transcript){ return transcript.meetingId ? `Zoom meeting ${transcript.meetingId}` : 'Zoom transcript' }
-function rowTitle(transcript){ return clientName(transcript.clientId) || labelFor(transcript) }
+function rowTitle(transcript){ return clientName(transcript.clientId) || transcript.sourceTitle || labelFor(transcript) }
 function transcriptPreview(transcript){
   if (!transcript.text) return '';
   const cleaned = transcript.text.replace(/\[\d{2}:\d{2}:\d{2}\.\d{3}\]/g, '').replace(/\s+/g, ' ').trim();
