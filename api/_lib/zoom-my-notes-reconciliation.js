@@ -257,12 +257,22 @@ export async function reconcileZoomMyNotes({ supabase, integration, therapistUse
 
   let imported = 0;
   for (const note of notes) {
-    if (existingIds.has(note.noteId)) continue;
-
     const content = await zoomJson(
       getToken,
       `https://api.zoom.us/v2/my_notes/notes/${encodeURIComponent(note.noteId)}/content?include=transcript`
     );
+
+    const sourceTitle = (content?.note_name ? String(content.note_name).trim() : null) || note.title || null;
+
+    if (existingIds.has(note.noteId)) {
+      const { error: updateError } = await supabase
+        .from('zoom_transcripts')
+        .update({ source_title: sourceTitle })
+        .eq('therapist_user_id', therapistUserId)
+        .eq('zoom_note_id', note.noteId);
+      if (updateError) throw updateError;
+      continue;
+    }
 
     const structuredTranscript = content?.transcript;
     const originalTranscript = canonicaliseMyNotesTranscript(structuredTranscript);
@@ -270,7 +280,6 @@ export async function reconcileZoomMyNotes({ supabase, integration, therapistUse
 
     const meetingId = note.meetingId || (content?.meeting_id ? String(content.meeting_id) : null);
     const createdTime = note.createdTime || content?.created_time || null;
-    const sourceTitle = (content?.note_name ? String(content.note_name).trim() : null) || note.title || null;
 
     let sessionLink = await verifiedSessionLink(supabase, therapistUserId, meetingId);
     if (!sessionLink) sessionLink = await uniqueAwaitingSession(supabase, therapistUserId, createdTime);
