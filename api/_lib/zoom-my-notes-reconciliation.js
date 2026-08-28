@@ -19,16 +19,26 @@ export function normaliseZoomNoteList(payload, fallbackMeetingId = null) {
     .filter((note) => note.noteId);
 }
 
-async function zoomJson(getToken, url) {
+async function zoomJson(getToken, url, method = 'GET', body = null) {
   let token = await getToken({ forceRefresh: false });
   let response = await fetch(url, {
-    headers: { Authorization: `Bearer ${token.accessToken}` }
+    method,
+    headers: {
+      Authorization: `Bearer ${token.accessToken}`,
+      ...(body ? { 'Content-Type': 'application/json' } : {})
+    },
+    ...(body ? { body: JSON.stringify(body) } : {})
   });
 
   if (response.status === 401) {
     token = await getToken({ forceRefresh: true });
     response = await fetch(url, {
-      headers: { Authorization: `Bearer ${token.accessToken}` }
+      method,
+      headers: {
+        Authorization: `Bearer ${token.accessToken}`,
+        ...(body ? { 'Content-Type': 'application/json' } : {})
+      },
+      ...(body ? { body: JSON.stringify(body) } : {})
     });
   }
 
@@ -162,6 +172,41 @@ async function markSessionTranscriptReceived(supabase, therapistUserId, sessionL
   if (linkError) throw linkError;
 }
 
+async function listNotesFromCanvasSearch(getToken) {
+  const notes = [];
+  let nextPageToken = '';
+
+  const from = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString().split('.')[0] + 'Z';
+  const to = new Date().toISOString().split('.')[0] + 'Z';
+
+  do {
+    const payload = await zoomJson(
+      getToken,
+      'https://api.zoom.us/v2/docs/file_search',
+      'POST',
+      {
+        file_types: ['note'],
+        from,
+        to,
+        page_size: 50,
+        next_page_token: nextPageToken || undefined
+      }
+    );
+
+    const items = listItems(payload).map((file) => ({
+      noteId: file?.file_id ? String(file.file_id) : null,
+      meetingId: file?.meeting_id ? String(file.meeting_id) : null,
+      createdTime: file?.created_at || null,
+      updatedTime: file?.modified_at || null
+    })).filter(n => n.noteId);
+
+    notes.push(...items);
+    nextPageToken = payload?.next_page_token;
+  } while (nextPageToken && notes.length < 200);
+
+  return notes;
+}
+
 export async function reconcileZoomMyNotes({ supabase, integration, therapistUserId }) {
   const scopes = new Set(String(integration?.scope || '').split(/\s+/).filter(Boolean));
   if (!scopes.has('my_notes:read:note') || !scopes.has('my_notes:read:content')) {
@@ -171,17 +216,31 @@ export async function reconcileZoomMyNotes({ supabase, integration, therapistUse
   }
 
   const getToken = (options) => getZoomAccessTokenContext(supabase, integration, options);
-  const meetingIds = await recentKnownMeetingIds(supabase, therapistUserId);
-  if (!meetingIds.length) return { checked: 0, imported: 0 };
 
   const notesById = new Map();
+  let checkedCount = 0;
+
+  if (scopes.has('canvas:write:file_search')) {
+    const canvasNotes = await listNotesFromCanvasSearch(getToken);
+    for (const note of canvasNotes) notesById.set(note.noteId, note);
+    checkedCount = canvasNotes.length;
+  }
+
+  const meetingIds = await recentKnownMeetingIds(supabase, therapistUserId);
   for (const meetingId of meetingIds) {
     const meetingNotes = await listNotesForMeeting(getToken, meetingId);
-    for (const note of meetingNotes) notesById.set(note.noteId, note);
+    for (const note of meetingNotes) {
+      if (!notesById.has(note.noteId)) {
+        notesById.set(note.noteId, note);
+      }
+    }
+  }
+  if (!scopes.has('canvas:write:file_search')) {
+    checkedCount = meetingIds.length;
   }
 
   const notes = [...notesById.values()];
-  if (!notes.length) return { checked: meetingIds.length, imported: 0 };
+  if (!notes.length) return { checked: checkedCount, imported: 0 };
 
   const noteIds = notes.map((note) => note.noteId);
   const { data: existingRows, error: existingError } = await supabase
@@ -236,5 +295,5 @@ export async function reconcileZoomMyNotes({ supabase, integration, therapistUse
     imported += 1;
   }
 
-  return { checked: meetingIds.length, imported };
+  return { checked: checkedCount, imported };
 }
