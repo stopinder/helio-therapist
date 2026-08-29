@@ -29,7 +29,27 @@ export async function refreshZoomAccessToken(supabase, integration) {
     body: new URLSearchParams({ grant_type: 'refresh_token', refresh_token: refreshToken })
   });
 
-  if (!response.ok) throw new Error(`Zoom token refresh failed with ${response.status}`);
+  if (!response.ok) {
+    let details = '';
+    try {
+      const body = await response.json();
+      const safe = {};
+      const allowed = ['reason', 'error', 'error_description', 'code', 'message'];
+      for (const key of allowed) {
+        if (body[key]) safe[key] = body[key];
+      }
+      details = Object.keys(safe).length ? `: ${JSON.stringify(safe)}` : '';
+      
+      if (safe.error === 'invalid_grant' || safe.error === 'invalid_request') {
+        const error = new Error(`Zoom connection requires reconnection${details}`);
+        error.status = 409;
+        throw error;
+      }
+    } catch (e) {
+      if (e.status) throw e;
+    }
+    throw new Error(`Zoom token refresh failed with ${response.status}${details}`);
+  }
 
   const tokens = await response.json();
   if (!tokens.access_token) throw new Error('Zoom did not return an access token');

@@ -1,4 +1,4 @@
-import { getZoomAccessTokenContext } from './zoom-oauth.js';
+import { getZoomAccessTokenContext, isZoomTokenExpiring } from './zoom-oauth.js';
 import { canonicaliseMyNotesTranscript } from './zoom-webhook.js';
 
 function listItems(payload) {
@@ -21,7 +21,7 @@ export function normaliseZoomNoteList(payload, fallbackMeetingId = null) {
     .filter((note) => note.noteId);
 }
 
-async function zoomJson(getToken, url, method = 'GET', body = null) {
+export async function zoomJson(getToken, url, method = 'GET', body = null) {
   let token = await getToken({ forceRefresh: false });
   let response = await fetch(url, {
     method,
@@ -33,15 +33,17 @@ async function zoomJson(getToken, url, method = 'GET', body = null) {
   });
 
   if (response.status === 401) {
-    token = await getToken({ forceRefresh: true });
-    response = await fetch(url, {
-      method,
-      headers: {
-        Authorization: `Bearer ${token.accessToken}`,
-        ...(body ? { 'Content-Type': 'application/json' } : {})
-      },
-      ...(body ? { body: JSON.stringify(body) } : {})
-    });
+    if (token.refreshed || isZoomTokenExpiring(token.expiresAt)) {
+      token = await getToken({ forceRefresh: true });
+      response = await fetch(url, {
+        method,
+        headers: {
+          Authorization: `Bearer ${token.accessToken}`,
+          ...(body ? { 'Content-Type': 'application/json' } : {})
+        },
+        ...(body ? { body: JSON.stringify(body) } : {})
+      });
+    }
   }
 
   if (!response.ok) {
