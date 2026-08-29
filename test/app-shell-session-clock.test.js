@@ -51,7 +51,7 @@ test('a real Helios appointment remains eligible even without integration ids', 
 
 test('Join remains visible but is enabled only for a joinable Helios appointment', () => {
   assert.match(shell, /canJoinNextAppointment/)
-  assert.match(shell, /:disabled="!canJoinNextAppointment \|\| joiningNextAppointment"/)
+  assert.match(shell, /:disabled="!canJoinNextAppointment\s*\|\|\s*joiningNextAppointment"/)
   assert.match(shell, /Join/)
   assert.match(shell, /createOrResumeSession/)
   assert.match(shell, /\/api\/zoom\/join-appointment/)
@@ -59,7 +59,7 @@ test('Join remains visible but is enabled only for a joinable Helios appointment
 
 test('global clock highlights an appointment only within the final 15 minutes', () => {
   assert.match(shell, /minutesUntilNextAppointment/)
-  assert.match(shell, /<=15/)
+  assert.match(shell, /<=\s*15/)
   assert.match(shell, /data-appointment-approaching/)
 })
 

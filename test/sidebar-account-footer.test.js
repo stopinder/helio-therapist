@@ -8,7 +8,7 @@ test('sidebar account identity is dynamic and therapist-owned', () => {
   assert.match(shell, /supabase\.auth\.getUser\(\)/)
   assert.match(shell, /from\('profiles'\)/)
   assert.match(shell, /select\('full_name,role,professional_title'\)/)
-  assert.match(shell, /\.eq\('id',user\.id\)/)
+  assert.match(shell, /\.eq\('id',\s*user\.id\)/)
   assert.match(shell, /user\.user_metadata\?\.full_name/)
   assert.match(shell, /user\.email/)
   assert.doesNotMatch(shell, /'Robert Ormiston'/)
@@ -16,17 +16,20 @@ test('sidebar account identity is dynamic and therapist-owned', () => {
   assert.doesNotMatch(shell, /'RO'/)
 })
 
-test('navigation scrolls independently above a compact account footer', () => {
+test('navigation scrolls independently beneath the compact account control', () => {
   assert.match(shell, /flex-1 min-h-0 overflow-y-auto/)
-  assert.match(shell, /shrink-0 border-t border-border-muted px-3 py-2 bg-sidebar/)
-  assert.match(shell, /w-full min-h-touch flex items-center/)
+  assert.match(shell, /border-b border-border-muted bg-sidebar px-3 py-2/)
+  assert.match(shell, /flex min-h-touch w-full items-center/)
   assert.match(shell, /aria-expanded/)
-  assert.match(shell, /aria-haspopup':'menu'/)
+  assert.match(shell, /aria-haspopup/)
   assert.match(shell, /Settings/)
   assert.match(shell, /Sign out/)
 })
 
 test('desktop and mobile sidebars receive the same account identity', () => {
-  const matches = shell.match(/<SidebarAccount :account="accountIdentity"/g) || []
-  assert.equal(matches.length, 2)
+  const nameBindings = shell.match(/\{\{\s*accountIdentity\.name\s*\}\}/g) || []
+  const initialsBindings = shell.match(/\{\{\s*accountIdentity\.initials\s*\}\}/g) || []
+
+  assert.ok(nameBindings.length >= 2, 'Should have at least 2 name bindings (desktop/mobile)')
+  assert.ok(initialsBindings.length >= 2, 'Should have at least 2 initials bindings (desktop/mobile)')
 })

@@ -17,10 +17,10 @@ test('Clients.vue integrates AddClientModal correctly', async () => {
   assert.match(content, /AddClientModal/)
   assert.match(content, /v-if="showAddClient"/)
   assert.match(content, /@submit="handleAddClient"/)
-  assert.match(content, /showAddClient = true/)
+  assert.match(content, /showAddClient\s*=\s*true/)
   assert.match(content, /handleAddClient/)
-  assert.match(content, /createClient\(clientData\)/)
-  assert.match(content, /clients\.value\.push\(newClient\)/)
+  assert.match(content, /await createClient\(data\)/)
+  assert.match(content, /clients\.value\.push\(c\)/)
 })
 
 test('AddClientModal gives first-time users labelled, accessible fields', async () => {

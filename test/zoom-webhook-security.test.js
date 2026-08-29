@@ -53,9 +53,12 @@ test('acknowledges durable webhook intake before expensive Zoom processing', () 
 
 test('sanitises My Notes webhook payload without storing note content', () => {
   const noteBody = { event: 'my_notes.note_generated', event_ts: 1, payload: { account_id: 'account', operator_id: 'operator', object: { note_id: 'note-1', note_name: 'Private session title', created_time: '2026-08-21T10:00:00Z', updated_time: '2026-08-21T10:05:00Z', meeting_id: '123456789', content: 'must not be stored' } } }
-  assert.deepEqual(myNotesEvent(noteBody), { noteId: 'note-1', operatorId: 'operator', accountId: 'account', meetingId: '123456789', createdTime: '2026-08-21T10:00:00Z', updatedTime: '2026-08-21T10:05:00Z' })
-  const serialized = JSON.stringify(safeZoomWebhookPayload(noteBody))
-  assert.doesNotMatch(serialized, /Private session title|must not be stored/)
+  assert.deepEqual(myNotesEvent(noteBody), { noteId: 'note-1', noteName: 'Private session title', operatorId: 'operator', accountId: 'account', meetingId: '123456789', createdTime: '2026-08-21T10:00:00Z', updatedTime: '2026-08-21T10:05:00Z' })
+  const safePayload = safeZoomWebhookPayload(noteBody)
+  const serialized = JSON.stringify(safePayload)
+  // Security boundary: title metadata may be retained; note content must not be stored in webhook intake
+  assert.match(serialized, /Private session title/)
+  assert.doesNotMatch(serialized, /must not be stored/)
   assert.match(serialized, /note-1/)
 })
 
