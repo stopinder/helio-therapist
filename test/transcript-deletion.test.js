@@ -2,6 +2,10 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import crypto from 'node:crypto'
 import transcriptsHandler from '../api/zoom/transcripts.js'
+import { createClient } from '@supabase/supabase-js'
+
+process.env.SUPABASE_URL = 'https://example.supabase.co'
+process.env.SUPABASE_SERVICE_ROLE_KEY = 'mock-key'
 
 const THERAPIST_A = { id: 'therapist-a', email: 'a@example.com' }
 const THERAPIST_B = { id: 'therapist-b', email: 'b@example.com' }
