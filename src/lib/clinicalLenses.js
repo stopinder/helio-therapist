@@ -4,7 +4,7 @@ export const CLINICAL_LENSES = {
     label: 'Gentle CBT',
     description: 'A trauma-informed, collaborative approach focusing on the connection between thoughts, feelings, and behaviors.',
     sections: {
-      current_focus: { label: 'Current Focus', emptyState: 'No current focus defined.' },
+      current_focus: { label: 'Aims and objectives', emptyState: 'No aims or objectives recorded yet.' },
       shared_understanding: { label: 'Shared Understanding', emptyState: 'Working towards a shared formulation...' },
       trying: { label: 'Trying', emptyState: 'Collaborative experiments and new behaviors.' },
       change_noticed: { label: 'Change Noticed', emptyState: 'Documenting shifts and progress.' },
@@ -26,7 +26,7 @@ export const CLINICAL_LENSES = {
     label: 'Integrative',
     description: 'A flexible, non-prescriptive approach that draws from multiple therapeutic modalities as needed.',
     sections: {
-      current_focus: { label: 'Current Focus', emptyState: 'No current focus defined.' },
+      current_focus: { label: 'Aims and objectives', emptyState: 'No aims or objectives recorded yet.' },
       narrative: { label: 'Clinical Narrative', emptyState: 'The story of the work is emerging...' },
       themes: { label: 'Key Themes', emptyState: 'Important threads will appear here.' },
       interventions: { label: 'Interventions', emptyState: 'Documenting what was tried.' },

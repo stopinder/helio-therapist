@@ -10,5 +10,5 @@ test('working documents expose deletion while finalised documents remain protect
 
 test('Overview current focus can be entered explicitly by the therapist',async()=>{
   const focus=await read('../src/components/workspace/CurrentCareFocus.vue');
-  assert.match(focus,/\+ Add current focus/);assert.match(focus,/kind:'current_focus'/);assert.match(focus,/origin:'clinician'/);assert.match(focus,/Save current focus/);
+  assert.match(focus,/\+ Add aim or objective/);assert.match(focus,/kind:'current_focus'/);assert.match(focus,/origin:'clinician'/);assert.match(focus,/Save aim or objective/);
 });
