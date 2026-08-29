@@ -55,24 +55,16 @@ async function loopsRequest(path, options = {}) {
 async function syncLoopsMarketing({ email, fullName, userId, signupDate }) {
   const firstName = fullName.trim().split(/\s+/)[0] || '';
   
-  // Create or update contact
-  await loopsRequest('/contacts/create', {
-    method: 'POST',
-    body: JSON.stringify({
-      email,
-      firstName,
-      userId,
-      signupDate,
-      subscribed: true
-    })
-  });
-
-  // Send marketing_consent_granted event
+  // Send event which also creates/updates the contact
   await loopsRequest('/events/send', {
     method: 'POST',
     body: JSON.stringify({
       email,
-      eventName: 'marketing_consent_granted'
+      userId,
+      eventName: 'marketing_consent_granted',
+      firstName,
+      signupDate,
+      subscribed: true
     })
   });
 }

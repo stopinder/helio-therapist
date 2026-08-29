@@ -80,3 +80,26 @@ test('client response storage remains private and server-mediated', () => {
   assert.match(resourceExchangeMigration, /Keep client returns private\. No client-facing policy is intentionally created here\./)
   assert.doesNotMatch(resourceExchangeMigration, /create policy[^;]*client-resource-responses/is)
 })
+
+test('Loops sync uses a single /events/send request for opted-in signups', () => {
+  assert.match(endpoint, /const LOOPS_API = 'https:\/\/app\.loops\.so\/api\/v1'/)
+  assert.match(endpoint, /await loopsRequest\('\/events\/send'/)
+  assert.doesNotMatch(endpoint, /loopsRequest\('\/contacts\/create'/)
+  
+  // Verify expected fields in the payload
+  assert.match(endpoint, /eventName: 'marketing_consent_granted'/)
+  assert.match(endpoint, /userId/)
+  assert.match(endpoint, /firstName/)
+  assert.match(endpoint, /signupDate/)
+  assert.match(endpoint, /subscribed: true/)
+
+  // Verify it stays inside the consent condition
+  assert.match(endpoint, /if \(subscribed\) \{\s*await syncLoopsMarketing/)
+})
+
+test('No clinical data is sent to Loops', () => {
+  const loopsSection = endpoint.slice(endpoint.indexOf('async function syncLoopsMarketing'), endpoint.indexOf('async function syncContact'))
+  for (const clinicalTerm of ['client', 'session', 'transcript', 'diagnosis', 'note', 'record']) {
+    assert.doesNotMatch(loopsSection, new RegExp(clinicalTerm, 'i'))
+  }
+})
