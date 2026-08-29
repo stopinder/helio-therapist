@@ -6,12 +6,12 @@ test('Transcript visibility toggle requirements', async () => {
   const transcriptTab = await readFile(new URL('../src/components/workspace/TranscriptTab.vue', import.meta.url), 'utf8')
 
   // Requirement: source-material heading/provenance remains visible
-  assert.match(transcriptTab, /Source material/)
-  assert.match(transcriptTab, /This is the original transcript linked to this session/)
+  assert.match(transcriptTab, /Session capture ready/)
+  assert.match(transcriptTab, /Zoom transcript linked to this session/)
 
   // Requirement: View transcript button exists
-  assert.match(transcriptTab, /View transcript/)
-  assert.match(transcriptTab, /Hide transcript/)
+  assert.match(transcriptTab, /View original transcript/)
+  assert.match(transcriptTab, /Hide original transcript/)
 
   // Requirement: isTranscriptVisible state initialized to false
   assert.match(transcriptTab, /isTranscriptVisible=ref\(false\)/)
@@ -30,5 +30,5 @@ test('Transcript visibility toggle requirements', async () => {
   assert.match(transcriptTab, /<button type="button"/)
 
   // Requirement: Control text changes based on state
-  assert.match(transcriptTab, /isTranscriptVisible \? 'Hide transcript' : 'View transcript'/)
+  assert.match(transcriptTab, /isTranscriptVisible \? 'Hide original transcript' : 'View original transcript'/)
 })

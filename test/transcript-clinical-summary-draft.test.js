@@ -37,7 +37,7 @@ test('endpoint requires therapist ownership, saved clinical-summary intent, and 
 });
 
 test('generation is therapist-triggered and remains unsaved until the existing draft action', () => {
-  assert.match(transcriptTab, /Prepare clinical summary draft/);
+  assert.match(transcriptTab, /prepareRequestedDraft/);
   assert.match(transcriptTab, /Review and save remain separate steps/);
   assert.match(workspace, /AI-assisted draft · not saved/);
   assert.match(workspace, /temporary until you choose Save Draft/);

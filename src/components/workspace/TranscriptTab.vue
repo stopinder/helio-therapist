@@ -2,13 +2,46 @@
   <div class="flex flex-col gap-stack-md">
     <div v-if="loading" class="min-h-64 flex flex-col items-center justify-center gap-3 rounded-panel border border-border bg-surface p-6 text-center"><span class="w-8 h-8 border-4 border-state-selected border-t-transparent rounded-full animate-spin"></span><p class="text-body text-ink-muted">Checking session capture…</p></div>
     <div v-else-if="error" class="min-h-64 flex flex-col items-center justify-center gap-4 rounded-panel border border-state-danger/20 bg-surface p-6 text-center"><div><h3 class="text-h3 font-semibold text-state-danger">Session capture unavailable</h3><p class="mt-2 text-body text-ink-muted">{{ error }}</p></div><button class="px-4 py-2 bg-action-primary text-on-action rounded-control font-medium hover:bg-action-primary-hover" @click="$emit('retry')">Retry</button></div>
-    <div v-else-if="!transcript" class="min-h-64 flex flex-col items-center justify-center rounded-panel border border-border bg-surface p-8 text-center"><h3 class="text-h3 font-semibold text-ink">Session capture in progress</h3><p class="mt-4 max-w-lg text-body text-ink-muted">No transcript is linked to this session yet, but you can continue working normally. Source material will appear here when available.</p><p class="mt-6 text-caption text-ink-subtle italic max-w-md">Transcript Inbox is only needed when Helio cannot confidently match an imported transcript.</p></div>
+    <div v-else-if="!transcript" class="min-h-48 flex flex-col items-center justify-center rounded-panel border border-border bg-surface p-6 text-center">
+      <h3 class="text-h3 font-semibold text-ink">Waiting for session capture</h3>
+      <p class="mt-2 max-w-lg text-body-sm text-ink-muted">Your Zoom transcript will be linked to this session when it becomes available. You can continue working in Helio normally.</p>
+      <p class="mt-4 text-caption text-ink-subtle italic max-w-md">Transcript Inbox is only needed when Helio cannot confidently match an imported transcript.</p>
+    </div>
     <template v-else>
-      <section v-if="requestedOutputLabel" class="rounded-panel border border-border bg-surface-subtle p-4">
-        <p class="text-caption font-medium uppercase tracking-wider text-action-link">Transcript triage request</p><h3 class="mt-1 text-body font-semibold text-ink">{{ requestedOutputLabel }}</h3><p class="mt-2 text-body-sm text-ink-muted">This is the output preference saved during transcript triage. Nothing has been generated automatically, and this request does not create or approve a Clinical Record.</p>
-        <div v-if="canPrepareDraft" class="mt-4 flex flex-col items-start gap-2"><button type="button" class="button-primary" :disabled="preparingDraft" @click="prepareRequestedDraft">{{ preparingDraft ? 'Preparing…' : prepareButtonLabel }}</button><p class="text-caption text-ink-muted">{{ prepareHelpText }}</p><p v-if="draftError" class="text-body-sm text-state-danger" role="alert">{{ draftError }}</p></div>
-      </section>
-      <div class="flex flex-col lg:flex-row gap-6"><section class="min-w-0 flex-1 rounded-panel border border-border bg-surface p-5"><header class="mb-4"><p class="text-caption font-medium uppercase tracking-wider text-action-link">Session Capture · Transcript</p><h3 class="mt-1 text-h3 font-semibold text-ink">Source material</h3><p class="mt-2 text-body-sm text-ink-muted">This is the original transcript linked to this session. Helio has not altered it.</p><div class="mt-4"><button type="button" class="text-body-sm font-medium text-action-link hover:text-action-link-hover" :aria-expanded="isTranscriptVisible" aria-controls="session-transcript-content" @click="isTranscriptVisible = !isTranscriptVisible">{{ isTranscriptVisible ? 'Hide transcript' : 'View transcript' }}</button></div></header><pre v-if="isTranscriptVisible" id="session-transcript-content" class="max-h-[36rem] overflow-auto whitespace-pre-wrap break-words rounded-panel bg-surface-subtle p-4 font-mono text-body-sm leading-relaxed text-ink-secondary">{{ transcript.text }}</pre></section><div class="w-full lg:w-72"><WorkflowStatusPanel :workflowItems="workflowProgress" :activeStage="activeTab" /><p class="mt-4 rounded-panel border border-border bg-surface-subtle p-4 text-body-sm text-ink-muted">Markers and important moments are unavailable until their persistence workflow is approved.</p></div></div>
+      <div class="flex flex-col lg:flex-row gap-6">
+        <div class="flex-1 flex flex-col gap-6">
+          <section class="rounded-panel border border-border bg-surface p-5">
+            <header class="mb-4">
+              <p class="text-caption font-medium uppercase tracking-wider text-action-link">Session capture ready</p>
+              <h3 class="mt-1 text-h3 font-semibold text-ink">Zoom transcript linked to this session</h3>
+            </header>
+            <div class="mt-4 p-4 rounded-panel bg-surface-subtle border border-border">
+              <h4 class="text-body font-semibold text-ink">Quick clinical summary</h4>
+              <p class="mt-1 text-body-sm text-ink-muted">Helio can prepare an editable summary of the session for therapist review, grounded only in this transcript. This is not an approved Clinical Record.</p>
+              <div v-if="canPrepareDraft" class="mt-4 flex flex-col items-start gap-2">
+                <button type="button" class="button-primary" :disabled="preparingDraft" @click="prepareRequestedDraft">
+                  {{ preparingDraft ? 'Preparing…' : prepareButtonLabel }}
+                </button>
+                <p class="text-caption text-ink-muted">{{ prepareHelpText }}</p>
+                <p v-if="draftError" class="text-body-sm text-state-danger" role="alert">{{ draftError }}</p>
+              </div>
+              <div v-else class="mt-2 text-body-sm text-ink-secondary italic">
+                {{ requestedOutputLabel || 'No specific triage request found for this transcript.' }}
+              </div>
+            </div>
+            <div class="mt-6 border-t border-border pt-4">
+              <button type="button" class="text-body-sm font-medium text-action-link hover:text-action-link-hover" :aria-expanded="isTranscriptVisible" aria-controls="session-transcript-content" @click="isTranscriptVisible = !isTranscriptVisible">
+                {{ isTranscriptVisible ? 'Hide original transcript' : 'View original transcript' }}
+              </button>
+              <pre v-if="isTranscriptVisible" id="session-transcript-content" class="mt-4 max-h-[36rem] overflow-auto whitespace-pre-wrap break-words rounded-panel bg-surface-subtle p-4 font-mono text-body-sm leading-relaxed text-ink-secondary">{{ transcript.text }}</pre>
+            </div>
+          </section>
+        </div>
+        <div class="w-full lg:w-72">
+          <WorkflowStatusPanel :workflowItems="workflowProgress" :activeStage="activeTab" />
+          <p class="mt-4 rounded-panel border border-border bg-surface-subtle p-4 text-body-sm text-ink-muted">Markers and important moments are unavailable until their persistence workflow is approved.</p>
+        </div>
+      </div>
     </template>
   </div>
 </template>
