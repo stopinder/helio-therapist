@@ -21,5 +21,5 @@ test('Client Workspace overview uses live sources and honest empty states', asyn
   assert.match(appointments, /\.in\('status', \['scheduled', 'rescheduled'\]\)/)
   assert.match(header, /nextAppointmentLabel/)
   assert.match(header, /therapistLabel/)
-  assert.match(attention, /No clinical attention items are recorded for this client\./)
+  assert.match(attention, /No current focus recorded\./)
 })
