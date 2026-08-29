@@ -2,6 +2,7 @@ import { requireAuthenticatedUser } from '../_lib/supabase.js';
 import { heliosWelcomeEmail } from '../_lib/emails/heliosWelcomeEmail.js';
 
 const RESEND_API = 'https://api.resend.com';
+const LOOPS_API = 'https://app.loops.so/api/v1';
 const DEFAULT_FROM = 'Helios <hello@helio.works>';
 const WELCOME_WINDOW_MS = 24 * 60 * 60 * 1000;
 
@@ -26,6 +27,54 @@ async function resendRequest(path, options = {}) {
   }
 
   return response.status === 204 ? null : response.json();
+}
+
+async function loopsRequest(path, options = {}) {
+  const apiKey = (process.env.LOOPS_API_KEY || '').trim();
+  if (!apiKey) return; // Non-blocking if API key is missing
+
+  try {
+    const response = await fetch(`${LOOPS_API}${path}`, {
+      ...options,
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+        ...(options.headers || {})
+      }
+    });
+
+    if (!response.ok) {
+      const body = await response.text();
+      console.warn(`[Loops sync] Request failed (${response.status}):`, body.slice(0, 500));
+    }
+  } catch (error) {
+    console.warn('[Loops sync] Network error:', error.message);
+  }
+}
+
+async function syncLoopsMarketing({ email, fullName, userId, signupDate }) {
+  const firstName = fullName.trim().split(/\s+/)[0] || '';
+  
+  // Create or update contact
+  await loopsRequest('/contacts/create', {
+    method: 'POST',
+    body: JSON.stringify({
+      email,
+      firstName,
+      userId,
+      signupDate,
+      subscribed: true
+    })
+  });
+
+  // Send marketing_consent_granted event
+  await loopsRequest('/events/send', {
+    method: 'POST',
+    body: JSON.stringify({
+      email,
+      eventName: 'marketing_consent_granted'
+    })
+  });
 }
 
 async function syncContact({ email, fullName, subscribed }) {
@@ -78,6 +127,15 @@ export default async function handler(req, res) {
 
     const fullName = String(user.user_metadata?.full_name || '').trim();
     const subscribed = user.user_metadata?.marketing_email_consent === true;
+
+    if (subscribed) {
+      await syncLoopsMarketing({
+        email,
+        fullName,
+        userId: user.id,
+        signupDate: user.created_at
+      });
+    }
 
     await syncContact({ email, fullName, subscribed });
     await sendWelcome({ email, fullName, userId: user.id });
