@@ -198,6 +198,7 @@
           <ClinicalRecordMetadata 
             :version="1" 
             :timestamp="approvedRecord.timestamp"
+            :author="therapistName"
           />
 
           <ApprovedClinicalRecordView 
@@ -233,7 +234,7 @@
               </div>
             </div>
             <div class="mt-6 text-caption text-ink-muted">
-              Approved by: Robert Ormiston (Mock) • {{ approvedAmendment.timestamp }}
+              Approved by: {{ therapistName || 'Therapist' }} • {{ approvedAmendment.timestamp }}
             </div>
           </div>
 
@@ -364,6 +365,10 @@ const props = defineProps({
   session: {
     type: Object,
     required: true
+  },
+  therapistName: {
+    type: String,
+    default: ''
   }
 });
 
@@ -495,13 +500,14 @@ const approvedAmendment = reactive({
 
 const recordHistory = computed(() => {
   const history = [];
+  const authorName = props.therapistName || 'Therapist';
   
   if (status.value === 'approved_record' || status.value === 'amendment_draft' || status.value === 'amendment_ready_for_review' || status.value === 'amendment_approved') {
     history.push({
       title: 'Version 1',
       status: 'approved_record',
       statusLabel: 'Approved',
-      author: 'Robert Ormiston',
+      author: authorName,
       approvedDate: approvedRecord.timestamp
     });
   }
@@ -511,7 +517,7 @@ const recordHistory = computed(() => {
       title: 'Amendment 1',
       status: 'amendment_draft',
       statusLabel: 'Draft',
-      author: 'Robert Ormiston',
+      author: authorName,
       createdDate: new Date().toLocaleString()
     });
   } else if (status.value === 'amendment_ready_for_review') {
@@ -519,7 +525,7 @@ const recordHistory = computed(() => {
       title: 'Amendment 1',
       status: 'amendment_ready_for_review',
       statusLabel: 'Ready for Review',
-      author: 'Robert Ormiston',
+      author: authorName,
       createdDate: new Date().toLocaleString()
     });
   } else if (status.value === 'amendment_approved') {
@@ -527,7 +533,7 @@ const recordHistory = computed(() => {
       title: 'Amendment 1',
       status: 'amendment_approved',
       statusLabel: 'Approved',
-      author: 'Robert Ormiston',
+      author: authorName,
       approvedDate: approvedAmendment.timestamp,
       reason: approvedAmendment.reason
     });

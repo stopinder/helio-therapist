@@ -2,7 +2,7 @@
   <div class="space-y-stack-lg max-w-4xl mx-auto" data-testid="completed-clinical-record">
     <div class="bg-surface-elevated border border-border-muted rounded-panel p-6 shadow-sm">
       <NoticeBanner type="success" message="This approved record is read-only. Corrections must be added through an amendment." icon="🔒" />
-      <ClinicalRecordMetadata :version="1" :timestamp="recordTimestamp" />
+      <ClinicalRecordMetadata :version="1" :timestamp="recordTimestamp" :author="therapistName" />
       <ApprovedClinicalRecordView :fields="summaryFields" :data="recordContent" />
       <div v-if="legacyNotes" class="mt-8 pt-8 border-t border-border">
         <h4 class="text-caption font-bold text-ink-muted uppercase tracking-wider mb-4">Legacy Session Notes</h4>
@@ -68,7 +68,10 @@ import RecordHistoryPanel from './RecordHistoryPanel.vue'
 import { authenticatedFetch } from '../../lib/api.js'
 import { approveClinicalRecordAmendment, listClinicalRecordAmendments } from '../../lib/clinicalRecordAmendments.js'
 
-const props = defineProps({ session: { type: Object, required: true } })
+const props = defineProps({ 
+  session: { type: Object, required: true },
+  therapistName: { type: String, default: '' }
+})
 const summaryFields = { presentingConcerns:'Presenting concerns', sessionThemes:'Session themes', interventionsUsed:'Interventions used', clientResponse:'Client response', riskSafeguarding:'Risk and safeguarding', progressGoals:'Progress toward goals', planNextSession:'Plan for next session' }
 const amendments = ref([]), editing = ref(false), saving = ref(false), reviewConfirmed = ref(false), loadError = ref(''), saveError = ref('')
 const activeDictationKey = ref(''), transcribingKey = ref(''), dictationErrorKey = ref(''), dictationError = ref('')
@@ -80,8 +83,8 @@ const recordContent = computed(() => { const value={ ...(parsedNotes.value || {}
 const legacyNotes = computed(() => parsedNotes.value?.legacyNotes || (!parsedNotes.value ? props.session.notes || '' : ''))
 const canApprove = computed(() => reviewConfirmed.value && draft.reason.trim() && draft.content.trim())
 const recordHistory = computed(() => [
-  { title:'Version 1', status:'approved_record', statusLabel:'Approved', author:'Therapist', approvedDate:recordTimestamp.value },
-  ...amendments.value.map(item => ({ title:`Amendment ${item.sequenceNumber}`, status:'amendment_approved', statusLabel:'Approved', author:'Therapist', approvedDate:formatDateTime(item.approvedAt), reason:item.reason }))
+  { title:'Version 1', status:'approved_record', statusLabel:'Approved', author:props.therapistName || 'Therapist', approvedDate:recordTimestamp.value },
+  ...amendments.value.map(item => ({ title:`Amendment ${item.sequenceNumber}`, status:'amendment_approved', statusLabel:'Approved', author:props.therapistName || 'Therapist', approvedDate:formatDateTime(item.approvedAt), reason:item.reason }))
 ])
 
 onMounted(loadAmendments)
