@@ -175,8 +175,12 @@ export default async function handler(req, res) {
         if (sessionRef && !effectiveClientId) return res.status(400).json({ error: 'Assign a client before linking a session.' });
         if (sessionRef && !(await validateSession(sessionRef, effectiveClientId))) return res.status(404).json({ error: 'That session was not found for this client.' });
         update.session_ref = sessionRef || null;
-        update.review_choices_saved_at = null;
-        update.completed_at = null;
+        if (clientChanged) {
+          update.review_choices_saved_at = null;
+          update.completed_at = null;
+        } else {
+          update.completed_at = null;
+        }
       }
 
       if (requestedLens !== undefined) update.requested_lens = requestedLens || null;
