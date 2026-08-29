@@ -57,7 +57,17 @@ test('welcome template contains branded HTML, CTA and plain-text fallback', () =
 test('frontend sends only the authenticated access token to the welcome endpoint', () => {
   assert.match(authGate, /Authorization: `Bearer \$\{accessToken\}`/)
   assert.doesNotMatch(authGate, /JSON\.stringify\(\{ userId: user\.id, email: user\.email \}\)/)
-  assert.match(authGate, /if \(data\.session\?\.access_token\)\s*\{?\s*await notifySignup\(data\.session\.access_token\)/)
+})
+
+test('welcome notification is triggered by the auth state listener, not submit handlers', () => {
+  // Verify it's in the listener
+  assert.match(authGate, /if \(event === 'SIGNED_IN' && nextSession\?\.access_token\)\s*\{?\s*notifySignup\(nextSession\.access_token\)/)
+
+  // Verify it is non-blocking
+  assert.doesNotMatch(authGate, /await notifySignup\(nextSession\.access_token\)/)
+
+  // Verify it's removed from submit handlers
+  assert.doesNotMatch(authGate, /notifySignup\(data\.session\.access_token\)/)
 })
 
 test('Resend receives only account identity and marketing subscription state', () => {

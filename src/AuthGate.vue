@@ -133,6 +133,18 @@ watch([session, authLoading], async () => {
   if (!authLoading.value && session.value && route.meta.authEntry) await router.replace('/overview')
 })
 
+const notifySignup = async (accessToken) => {
+  if (!accessToken) return
+  try {
+    await fetch('/api/signup/welcome', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${accessToken}` }
+    })
+  } catch (error) {
+    console.warn('[Signup welcome] notification unavailable', error)
+  }
+}
+
 onMounted(async () => {
   recovering.value = isRecoveryLink()
   if (!supabase) {
@@ -145,6 +157,9 @@ onMounted(async () => {
     if (event === 'PASSWORD_RECOVERY') {
       recovering.value = true
       clearFeedback()
+    }
+    if (event === 'SIGNED_IN' && nextSession?.access_token) {
+      notifySignup(nextSession.access_token)
     }
     if (event === 'SIGNED_OUT') {
       const currentError = errorMessage.value
@@ -175,18 +190,6 @@ onUnmounted(() => {
   if (handleExpiryRef.value) window.removeEventListener('helios-session-expired', handleExpiryRef.value)
 })
 
-const notifySignup = async (accessToken) => {
-  if (!accessToken) return
-  try {
-    await fetch('/api/signup/welcome', {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${accessToken}` }
-    })
-  } catch (error) {
-    console.warn('[Signup welcome] notification unavailable', error)
-  }
-}
-
 const submit = async () => {
   submitting.value = true
   clearFeedback()
@@ -201,7 +204,6 @@ const submit = async () => {
         }
       })
       if (error) throw error
-      if (data.session?.access_token) await notifySignup(data.session.access_token)
       if (!data.session) {
         password.value = ''
         marketingEmailConsent.value = false
@@ -213,7 +215,6 @@ const submit = async () => {
       if (error) {
         throw new Error('Email or password is incorrect. If you just created an account, confirm your email before signing in. You can also reset your password below.')
       }
-      if (data.session?.access_token) await notifySignup(data.session.access_token)
     }
   } catch (error) {
     errorMessage.value = error.message
