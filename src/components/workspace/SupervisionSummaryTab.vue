@@ -2,15 +2,18 @@
   <div class="space-y-stack-lg max-w-4xl mx-auto">
     <div class="bg-surface-elevated border border-border-muted rounded-panel p-6 shadow-sm">
       <div class="flex items-center justify-between mb-8">
-        <h3 class="text-h3 font-semibold text-ink">Professional Development</h3>
+        <div>
+          <h3 class="text-h3 font-semibold text-ink">Professional Development</h3>
+          <p class="mt-2 text-body-sm text-ink-muted">Use this session's private reflection as part of your ongoing reflective practice and supervision preparation. This material is separate from the client's Clinical Record.</p>
+        </div>
         <div v-if="loading" class="flex items-center gap-2 text-body-sm text-ink-muted">
           <span class="w-4 h-4 border-2 border-state-selected border-t-transparent rounded-full animate-spin"></span>
           Checking Pack status...
         </div>
-        <div v-else class="flex flex-col items-end gap-2">
+        <div v-else-if="reflection" class="flex flex-col items-end gap-2">
           <button 
             @click="toggleSupervisionPack"
-            :disabled="updating || !reflection"
+            :disabled="updating"
             class="px-inline-md py-stack-xs border text-body-sm font-medium rounded-control transition-all flex items-center gap-2"
             :class="[
               reflection?.included_in_supervision 
@@ -22,16 +25,27 @@
             {{ reflection?.included_in_supervision ? 'Remove from Supervision Pack' : 'Add to Supervision Pack' }}
           </button>
           <p v-if="error" class="text-xs text-state-danger">{{ error }}</p>
-          <p v-if="!reflection && !loading" class="text-xs text-ink-muted">Complete Reflection to enable Pack action</p>
         </div>
       </div>
 
-      <div class="space-y-8">
-        <div v-for="section in placeholderSections" :key="section.title" class="p-6 border border-border rounded-panel bg-surface-subtle">
-          <h4 class="text-body-sm font-bold text-ink uppercase tracking-wider mb-3">{{ section.title }}</h4>
-          <p class="text-body-sm text-ink-muted italic leading-relaxed">
-            {{ section.description }}
+      <div v-if="!loading && !reflection" class="py-12 text-center border border-dashed border-border rounded-panel bg-surface-subtle">
+        <h4 class="text-body-md font-semibold text-ink mb-2">Complete your private reflection first</h4>
+        <p class="text-body-sm text-ink-muted mb-6">A reflection can then be selected for supervision.</p>
+        <button type="button" class="button-primary" @click="$emit('open-reflection')">Go to Reflection</button>
+      </div>
+
+      <div v-else-if="!loading" class="space-y-8">
+        <div class="p-6 border border-border rounded-panel bg-surface-subtle">
+          <h4 class="text-body-sm font-bold text-ink uppercase tracking-wider mb-3">Supervision question</h4>
+          <p class="text-body-sm leading-relaxed" :class="reflection.workspace_content?.supervisionQuestions ? 'text-ink' : 'text-ink-muted italic'">
+            {{ reflection.workspace_content?.supervisionQuestions || 'No supervision question recorded for this reflection.' }}
           </p>
+        </div>
+
+        <div class="flex justify-end pt-4 border-t border-border-muted">
+          <RouterLink :to="{ name: 'SupervisionHome' }" class="text-body-sm font-medium text-action-link hover:text-action-link-hover">
+            Open Professional Development &rarr;
+          </RouterLink>
         </div>
       </div>
     </div>
@@ -40,6 +54,7 @@
 
 <script setup>
 import { ref, onMounted, watch } from 'vue';
+import { RouterLink } from 'vue-router';
 import { getPrivateReflection, setReflectionSupervisionSelection } from '../../lib/reflections.js';
 
 const props = defineProps({
@@ -53,33 +68,12 @@ const props = defineProps({
   }
 });
 
+const emit = defineEmits(['open-reflection']);
+
 const reflection = ref(null);
 const loading = ref(true);
 const updating = ref(false);
 const error = ref('');
-
-const placeholderSections = [
-  { 
-    title: 'Supervision Questions', 
-    description: 'Key therapist-owned professional development areas identified for clinical supervision will appear here.' 
-  },
-  { 
-    title: 'Anonymised Case Themes', 
-    description: 'Core therapist-owned professional development areas extracted from session content and therapist reflection.' 
-  },
-  { 
-    title: 'Therapist Reflection Summary', 
-    description: 'A curated summary of the therapist\'s internal experience and therapist-owned professional development areas.' 
-  },
-  { 
-    title: 'Ethical Considerations', 
-    description: 'Identification of any ethical or boundary therapist-owned professional development areas requiring supervision input.' 
-  },
-  { 
-    title: 'Action Points', 
-    description: 'Planned follow-up actions and therapist-owned professional development areas.' 
-  }
-];
 
 async function fetchReflection() {
   loading.value = true;

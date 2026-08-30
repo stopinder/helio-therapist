@@ -11,8 +11,9 @@ test('SupervisionSummaryTab: New wording and Supervision Pack action', async () 
   assert.match(content, /Remove from Supervision Pack/)
   assert.doesNotMatch(content, /Add to Supervision Agenda/)
 
-  // Update placeholder section wording
-  assert.match(content, /therapist-owned professional development areas/)
+  // Header and intro
+  assert.match(content, /Professional Development/)
+  assert.match(content, /reflective practice and supervision preparation/)
 
   // Interactive logic
   assert.match(content, /toggleSupervisionPack/)

@@ -20,7 +20,7 @@
         <ReflectionTab v-else-if="activeTab === 'Reflection'" :clientId="session.clientId" :sessionId="session.id" />
         <CompletedClinicalRecord v-else-if="activeTab === 'Clinical Record' && session.status === 'completed'" :key="clinicalRecordKey" :session="session" :therapistName="therapistName" />
         <template v-else-if="activeTab === 'Clinical Record'"><div v-if="aiClinicalSummaryDraft" class="mb-4 rounded-panel border border-state-info/20 bg-state-info/10 p-4"><p class="text-caption font-medium uppercase tracking-wider text-state-info">AI-assisted draft · not saved</p><p class="mt-1 text-body-sm text-ink-secondary">Helio prepared this editable draft from the linked transcript after your request. Review every field. It remains temporary until you choose Save Draft, and it is not a Clinical Record unless you later complete the separate review and approval steps.</p></div><ClinicalSummaryTab :key="clinicalRecordKey" :session="clinicalSummarySession" :therapistName="therapistName" @update:session="handleSessionUpdate" /></template>
-        <SupervisionSummaryTab v-else-if="activeTab === 'CPD'" :clientId="session.clientId" :sessionId="session.id" />
+        <SupervisionSummaryTab v-else-if="activeTab === 'CPD'" :clientId="session.clientId" :sessionId="session.id" @open-reflection="activeTab = 'Reflection'" />
       </div></div>
     </template>
   </div>
