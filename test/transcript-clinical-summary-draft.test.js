@@ -4,6 +4,7 @@ import test from 'node:test';
 import {
   applySpeakerIdentities,
   buildClinicalSummaryInput,
+  clinicalSummarySystemPrompt,
   CLINICAL_SUMMARY_FIELDS,
   splitClinicalSummaryTranscript,
   validateClinicalSummaryResponse,
@@ -31,17 +32,41 @@ test('session capture input rejects only unusably short transcripts and chunks l
   assert.equal(chunks.join('\n'), longTranscript);
 });
 
-test('regeneration keeps therapist guidance distinct and honours removed sections', () => {
+test('regeneration gives therapist guidance authority while staying transcript-grounded', () => {
   const currentDraft = Object.fromEntries(CLINICAL_SUMMARY_FIELDS.map(key => [key, `${key} draft`]));
+  const guidance = 'Emphasise that the client described the argument as the main concern and shorten unrelated material.';
   const prompt = buildClinicalSummaryInput('x'.repeat(100), {
-    therapistGuidance: 'The client clarified this after the session.',
+    therapistGuidance: guidance,
     currentDraft,
     dismissedFields: ['riskSafeguarding']
   });
+
   assert.match(prompt, /<therapist_guidance>/);
-  assert.match(prompt, /therapist-provided context/);
-  assert.match(prompt, /<current_working_draft>/);
+  assert.match(prompt, new RegExp(guidance.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
+  assert.match(prompt, /materially revise/i);
+  assert.match(prompt, /therapist guidance/i);
+  assert.match(prompt, /current draft/i);
+  assert.match(prompt, /secondary/i);
+  assert.match(prompt, /unrelated.*stable/i);
   assert.match(prompt, /Return an empty string for them: riskSafeguarding/);
+  assert.match(prompt, /not.*approved Clinical Record/i);
+});
+
+test('regeneration request includes therapist guidance, current draft, and dismissed fields', () => {
+  assert.match(transcriptTab, /therapistGuidance:regenerate\?therapistGuidance\.value:''/);
+  assert.match(transcriptTab, /currentDraft:regenerate\?captureDraft\.value:null/);
+  assert.match(transcriptTab, /dismissedFields:regenerate\?dismissedFields\.value:\[\]/);
+  assert.match(endpoint, /buildClinicalSummaryInput\(chunk, \{ therapistGuidance, currentDraft, dismissedFields \}\)/);
+});
+
+test('session capture prompt remains concise, evidence-bound, and clinically cautious', () => {
+  assert.match(clinicalSummarySystemPrompt, /transcript-grounded/i);
+  assert.match(clinicalSummarySystemPrompt, /client report/i);
+  assert.match(clinicalSummarySystemPrompt, /therapist action/i);
+  assert.match(clinicalSummarySystemPrompt, /chronology/i);
+  assert.match(clinicalSummarySystemPrompt, /empty string/i);
+  assert.match(clinicalSummarySystemPrompt, /do not infer diagnoses, risk, intent, treatment response/i);
+  assert.match(clinicalSummarySystemPrompt, /avoid.*repet/i);
 });
 
 test('speaker identities are applied to a prompt copy without changing the source', () => {
