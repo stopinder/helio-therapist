@@ -1,0 +1,71 @@
+name: Session Capture Prerequisites Gate
+
+on:
+  push:
+    branches:
+      - ci/verify-session-capture-prerequisites
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Refresh lockfile for dependency overrides
+        run: npm install --package-lock-only --ignore-scripts --no-fund
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts --no-fund
+
+      - name: Run focused prerequisite tests
+        run: node --test test/transcript-visibility.test.js test/app-shell-scroll-policy.test.js test/app-shell-session-clock.test.js test/calendar-component.test.js
+
+      - name: Run all unit tests and surface first failure
+        shell: bash
+        run: |
+          set +e
+          npm test > /tmp/npm-test.log 2>&1
+          status=$?
+          set -e
+
+          if [ "$status" -ne 0 ]; then
+            node <<'NODE'
+          const { readFileSync } = require('node:fs')
+          const lines = readFileSync('/tmp/npm-test.log', 'utf8').split(/\r?\n/)
+          const failure = lines.findIndex(line => /^not ok\b/.test(line.trim()))
+
+          if (failure === -1) {
+            console.log(lines.slice(-120).join('\n'))
+          } else {
+            const start = Math.max(0, failure - 1)
+            let end = lines.findIndex((line, index) => index > failure && line.trim() === '...')
+            if (end === -1) end = Math.min(lines.length - 1, failure + 120)
+            console.log(lines.slice(start, end + 1).join('\n'))
+          }
+          NODE
+          fi
+
+          exit "$status"
+
+      - name: Build production bundle
+        run: npm run build
+
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Run transcript accessibility Playwright coverage
+        env:
+          VITE_SUPABASE_URL: http://127.0.0.1:54321
+          VITE_SUPABASE_ANON_KEY: playwright-anon-key
+        run: npx playwright test e2e/transcript-a11y-responsive.spec.js --project=chromium
