@@ -44,9 +44,11 @@ test('requires explicit Zoom account ownership and has no single-therapist fallb
 test('acknowledges durable webhook intake before expensive Zoom processing', () => {
   const webhookSource = fs.readFileSync(new URL('../api/zoom/webhook.js', import.meta.url), 'utf8')
   const acknowledgement = webhookSource.indexOf("res.status(200).json({ received: true });")
-  const processing = webhookSource.indexOf('await processAcceptedWebhook(', acknowledgement)
+  const processing = webhookSource.indexOf('processAcceptedWebhook(')
   assert.ok(acknowledgement >= 0)
-  assert.ok(processing > acknowledgement)
+  assert.ok(processing >= 0)
+  assert.ok(processing < acknowledgement)
+  assert.match(webhookSource, /waitUntil\(processing\)/)
   assert.match(webhookSource, /Intake failed before acknowledgement/)
   assert.match(webhookSource, /Background processing failed/)
 })
