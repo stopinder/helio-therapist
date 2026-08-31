@@ -65,8 +65,26 @@
       <header class="flex h-16 shrink-0 items-center justify-between border-b border-border-muted bg-surface px-inline-lg md:px-6">
         <div class="flex items-center gap-inline-md"><button class="-ml-2 rounded-control p-2 text-ink-secondary hover:bg-surface-subtle md:hidden" aria-label="Open menu" @click="isMobileMenuOpen=true"><Menu class="workspace-icon-lg" /></button><h2 class="truncate type-body-medium text-ink">{{ currentPageName }}</h2></div>
         <div class="flex items-center gap-2">
-          <div class="hidden items-center gap-2.5 whitespace-nowrap text-ink-muted lg:flex" data-testid="global-appointment-clock" :data-appointment-approaching="isAppointmentApproaching?'true':'false'" aria-live="off"><time class="type-ui tabular-nums font-medium text-ink-secondary" :datetime="now.toISOString()">{{ currentTimeLabel }}</time><span class="h-4 w-px bg-border-muted" aria-hidden="true"></span><span v-if="nextAppointment" class="type-metadata" :class="isAppointmentApproaching?'text-ink-secondary':'text-ink-muted'">Next {{ nextAppointmentTimeLabel }}<span class="ml-1.5" :class="isAppointmentApproaching?'font-semibold text-accent':'text-ink-subtle'">{{ nextAppointmentCountdownLabel }}</span></span><span v-else class="type-metadata text-ink-subtle">No upcoming appointment</span></div>
-          <span class="mx-1 hidden h-6 w-px bg-border-muted lg:block" aria-hidden="true"></span>
+          <div class="hidden items-center gap-2.5 whitespace-nowrap text-ink-muted sm:flex" data-testid="global-appointment-clock" :data-appointment-status="appointmentStatus" aria-live="polite">
+            <time class="type-ui tabular-nums font-medium text-ink-secondary" :datetime="now.toISOString()">{{ currentTimeLabel }}</time>
+            <span class="h-4 w-px bg-border-muted" aria-hidden="true"></span>
+            <span v-if="nextAppointment" class="type-metadata flex items-center gap-1.5" :class="{
+              'text-ink-muted': appointmentStatus === 'neutral',
+              'text-ink-secondary': appointmentStatus === 'approaching',
+              'text-brand-amber font-medium': appointmentStatus === 'warning',
+              'text-state-danger font-semibold': appointmentStatus === 'imminent'
+            }">
+              <span>Next {{ nextAppointmentTimeLabel }}</span>
+              <span class="tabular-nums" :class="{
+                'text-ink-subtle': appointmentStatus === 'neutral',
+                'text-ink-secondary font-medium': appointmentStatus === 'approaching',
+                'text-brand-amber font-semibold': appointmentStatus === 'warning',
+                'text-state-danger font-bold': appointmentStatus === 'imminent'
+              }">{{ nextAppointmentCountdownLabel }}</span>
+            </span>
+            <span v-else class="type-metadata text-ink-subtle">No upcoming appointment</span>
+          </div>
+          <span class="mx-1 hidden h-6 w-px bg-border-muted sm:block" aria-hidden="true"></span>
           <button type="button" class="inline-flex h-9 items-center gap-1.5 whitespace-nowrap rounded-control border px-3 type-ui transition-colors" :class="outstandingReminderCount?'border-brand-amber/40 bg-brand-amber-soft/60 text-ink':'border-border-muted bg-surface text-ink-secondary hover:bg-surface-subtle'" :aria-expanded="showQuickCapture" aria-haspopup="dialog" @click="showQuickCapture=!showQuickCapture"><Plus class="workspace-icon-sm text-focus" aria-hidden="true" /><span class="hidden sm:inline">Quick capture</span><span v-if="outstandingReminderCount" class="inline-flex h-5 min-w-5 items-center justify-center rounded-pill bg-brand-amber/15 px-1.5 type-metadata font-semibold">{{ outstandingReminderCount }}</span></button>
           <router-link v-if="$route.path!=='/schedule'" to="/schedule" class="hidden h-9 items-center gap-1.5 whitespace-nowrap rounded-control border border-border-muted bg-surface px-3 type-ui text-ink-secondary transition-colors hover:bg-surface-subtle hover:text-ink sm:inline-flex"><CalendarDays class="workspace-icon-sm text-accent" aria-hidden="true" /><span>Schedule</span></router-link>
           <button type="button" class="hidden h-9 min-w-[4.25rem] items-center justify-center whitespace-nowrap rounded-control border px-3 type-ui font-semibold transition-colors sm:inline-flex" :class="canJoinNextAppointment?'border-action-primary bg-action-primary text-on-action hover:bg-action-primary-hover':'border-border-muted bg-surface-subtle text-ink-subtle cursor-default'" :disabled="!canJoinNextAppointment||joiningNextAppointment" :title="canJoinNextAppointment?'Join next appointment':'No joinable appointment'" @click="joinNextAppointment">{{ joiningNextAppointment?'Opening…':'Join' }}</button>
@@ -112,7 +130,14 @@ let appointmentRefreshTimer
 const nextAppointment = computed(() => nextTimedAppointment({ appointments: appointments.value, googleEvents: googleEvents.value, now: now.value }))
 const canJoinNextAppointment = computed(() => nextAppointment.value?.source === 'appointment' && Boolean(nextAppointment.value.appointment?.zoom_meeting_id))
 const minutesUntilNextAppointment = computed(() => nextAppointment.value ? Math.ceil((nextAppointment.value.start.getTime() - now.value.getTime()) / 60000) : null)
-const isAppointmentApproaching = computed(() => minutesUntilNextAppointment.value !== null && minutesUntilNextAppointment.value >= 0 && minutesUntilNextAppointment.value <= 15)
+const appointmentStatus = computed(() => {
+  if (minutesUntilNextAppointment.value === null || minutesUntilNextAppointment.value < 0) return 'none'
+  if (minutesUntilNextAppointment.value <= 5) return 'imminent'
+  if (minutesUntilNextAppointment.value <= 15) return 'warning'
+  if (minutesUntilNextAppointment.value <= 30) return 'approaching'
+  return 'neutral'
+})
+const isAppointmentApproaching = computed(() => appointmentStatus.value !== 'neutral' && appointmentStatus.value !== 'none')
 const currentTimeLabel = computed(() => now.value.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }))
 const nextAppointmentTimeLabel = computed(() => nextAppointment.value ? nextAppointment.value.start.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) : '')
 const nextAppointmentCountdownLabel = computed(() => {
