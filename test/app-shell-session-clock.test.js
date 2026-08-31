@@ -57,10 +57,15 @@ test('Join remains visible but is enabled only for a joinable Helios appointment
   assert.match(shell, /\/api\/zoom\/join-appointment/)
 })
 
-test('global clock highlights an appointment only within the final 15 minutes', () => {
+test('global clock exposes proximity states and highlights the final 15 minutes', () => {
   assert.match(shell, /minutesUntilNextAppointment/)
+  assert.match(shell, /<=\s*30/)
   assert.match(shell, /<=\s*15/)
-  assert.match(shell, /data-appointment-approaching/)
+  assert.match(shell, /<=\s*5/)
+  assert.match(shell, /:data-appointment-status="appointmentStatus"/)
+  assert.match(shell, /appointmentStatus === 'approaching'/)
+  assert.match(shell, /appointmentStatus === 'warning'/)
+  assert.match(shell, /appointmentStatus === 'imminent'/)
 })
 
 test('clock and appointment data refresh while the shell is mounted', () => {
