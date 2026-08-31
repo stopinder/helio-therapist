@@ -1,0 +1,45 @@
+name: Session Capture Accessibility Gate
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Refresh lockfile for dependency overrides
+        run: npm install --package-lock-only --ignore-scripts --no-fund
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts --no-fund
+
+      - name: Run focused transcript visibility test
+        run: node --test test/transcript-visibility.test.js
+
+      - name: Run all unit tests
+        run: npm test
+
+      - name: Build production bundle
+        run: npm run build
+
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Run transcript accessibility Playwright coverage
+        env:
+          VITE_SUPABASE_URL: http://127.0.0.1:54321
+          VITE_SUPABASE_ANON_KEY: playwright-anon-key
+        run: npx playwright test e2e/transcript-a11y-responsive.spec.js --project=chromium
