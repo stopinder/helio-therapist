@@ -17,7 +17,7 @@ test('Calendar component template and logic requirements', async (t) => {
 
   await t.test('Escape closes the action surface', () => {
     // Check for global Escape listener
-    assert.match(calendarSource, /window\.addEventListener\('keydown', handleGlobalEsc\)/)
+    assert.match(calendarSource, /window\.addEventListener\(\s*'keydown',\s*handleGlobalEsc\s*\)/)
     assert.match(calendarSource, /if \(e\.key === 'Escape'\) \{/)
     assert.match(calendarSource, /selectedEventId\.value = null/)
   })
