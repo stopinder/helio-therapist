@@ -31,6 +31,19 @@ test('session capture input rejects only unusably short transcripts and chunks l
   assert.equal(chunks.join('\n'), longTranscript);
 });
 
+test('regeneration keeps therapist guidance distinct and honours removed sections', () => {
+  const currentDraft = Object.fromEntries(CLINICAL_SUMMARY_FIELDS.map(key => [key, `${key} draft`]));
+  const prompt = buildClinicalSummaryInput('x'.repeat(100), {
+    therapistGuidance: 'The client clarified this after the session.',
+    currentDraft,
+    dismissedFields: ['riskSafeguarding']
+  });
+  assert.match(prompt, /<therapist_guidance>/);
+  assert.match(prompt, /therapist-provided context/);
+  assert.match(prompt, /<current_working_draft>/);
+  assert.match(prompt, /Return an empty string for them: riskSafeguarding/);
+});
+
 test('speaker identities are applied to a prompt copy without changing the source', () => {
   const source = '[00:00:01] Speaker 1: Hello\n[00:00:03] Speaker 2: Hi';
   const relabelled = applySpeakerIdentities(source, { 'Speaker 1': 'Therapist', 'Speaker 2': 'Client' });
@@ -48,8 +61,9 @@ test('endpoint requires therapist ownership, confirmed identities, and a current
 
 test('generation is therapist-triggered, chunked, editable, and remains outside Clinical Record', () => {
   assert.match(transcriptTab, /prepareSessionCapture/);
-  assert.match(transcriptTab, /Editable working material · not saved/);
-  assert.match(transcriptTab, /Notes, Reflection and Clinical Record remain separate steps/);
+  assert.match(transcriptTab, /AI-assisted working material/);
+  assert.match(transcriptTab, /Regenerate with my input/);
+  assert.match(transcriptTab, /Mark Session Capture reviewed/);
   assert.match(endpoint, /splitClinicalSummaryTranscript/);
   assert.match(endpoint, /clinicalSummaryMergeSystemPrompt/);
   assert.doesNotMatch(workspace, /clinical-summary-draft/);

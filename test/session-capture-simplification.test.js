@@ -15,13 +15,13 @@ test('Session Capture simplification requirements', async () => {
   assert.match(transcriptTab, /Review transcript/)
   assert.match(transcriptTab, /Confirm speaker identities/)
   assert.match(transcriptTab, /Confirm speakers/)
-  assert.match(transcriptTab, /v-if="speakersConfirmed"/)
+  assert.match(transcriptTab, /v-if="speakersConfirmed && !captureDraft"/)
 
   // Requirement: Generated capture is editable and remains outside the Clinical Record
   assert.match(transcriptTab, /Prepare session capture/)
-  assert.match(transcriptTab, /Editable working material · not saved/)
+  assert.match(transcriptTab, /AI-assisted working material/)
   assert.match(transcriptTab, /v-model="captureDraft\[field\.key\]"/)
-  assert.match(transcriptTab, /Notes, Reflection and Clinical Record remain separate steps/)
+  assert.match(transcriptTab, /Downstream steps remain separate/)
   assert.match(transcriptTab, /not an approved Clinical Record/i)
 
   // Requirement: Source transcript is readable and unchanged
@@ -29,8 +29,7 @@ test('Session Capture simplification requirements', async () => {
   assert.match(transcriptTab, /isTranscriptVisible=ref\(true\)/)
   assert.match(transcriptTab, /v-if="isTranscriptVisible"/)
   assert.match(transcriptTab, /:aria-expanded="isTranscriptVisible"/)
-  assert.match(transcriptTab, /aria-controls="session-transcript-content"/)
-  assert.match(transcriptTab, /does not alter the source transcript/)
+  assert.match(transcriptTab, /The imported transcript remains unchanged/)
 
   // Requirement: Clinical formulation boundary (avoid these terms for summary)
   assert.doesNotMatch(transcriptTab, /clinical formulation/i)

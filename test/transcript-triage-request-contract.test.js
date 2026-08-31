@@ -7,12 +7,12 @@ const source = readFileSync(new URL('../src/components/workspace/TranscriptTab.v
 test('requires speaker confirmation before therapist-triggered session capture', () => {
   assert.match(source, /Confirm speaker identities/);
   assert.match(source, /Confirm speakers/);
-  assert.match(source, /v-if="speakersConfirmed"/);
+  assert.match(source, /v-if="speakersConfirmed && !captureDraft"/);
   assert.match(source, /Prepare session capture/);
 });
 
 test('keeps the request separate from Clinical Record approval', () => {
-  assert.match(source, /Editable working material · not saved/);
-  assert.match(source, /Notes, Reflection and Clinical Record remain separate steps/);
-  assert.match(source, /is not an approved Clinical Record/i);
+  assert.match(source, /AI-assisted working material/);
+  assert.match(source, /Downstream steps remain separate/);
+  assert.match(source, /not an approved Clinical Record/i);
 });
