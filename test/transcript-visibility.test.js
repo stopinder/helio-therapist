@@ -9,14 +9,14 @@ test('Transcript visibility toggle requirements', async () => {
   assert.match(transcriptTab, /Session source/)
   assert.match(transcriptTab, /Linked transcript/)
 
-  // Requirement: View transcript button exists
+  // Requirement: transcript disclosure control exists
   assert.match(transcriptTab, /Review transcript/)
   assert.match(transcriptTab, /Hide transcript/)
 
-  // Requirement: transcript is immediately readable before confirmation
-  assert.match(transcriptTab, /isTranscriptVisible=ref\(true\)/)
+  // Requirement: transcript is collapsed by default to reduce cognitive load
+  assert.match(transcriptTab, /isTranscriptVisible=ref\(false\)/)
 
-  // Requirement: transcript text hidden initially (using v-if or v-show with the state)
+  // Requirement: transcript content follows the disclosure state
   assert.match(transcriptTab, /v-if="isTranscriptVisible"/)
 
   // Requirement: aria-expanded reflects the state
