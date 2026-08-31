@@ -31,8 +31,32 @@ jobs:
       - name: Run focused transcript visibility test
         run: node --test test/transcript-visibility.test.js
 
-      - name: Run all unit tests
-        run: npm test
+      - name: Run all unit tests and surface first failure
+        shell: bash
+        run: |
+          set +e
+          npm test > /tmp/npm-test.log 2>&1
+          status=$?
+          set -e
+
+          if [ "$status" -ne 0 ]; then
+            node <<'NODE'
+          const { readFileSync } = require('node:fs')
+          const lines = readFileSync('/tmp/npm-test.log', 'utf8').split(/\r?\n/)
+          const failure = lines.findIndex(line => /^not ok\b/.test(line.trim()))
+
+          if (failure === -1) {
+            console.log(lines.slice(-120).join('\n'))
+          } else {
+            const start = Math.max(0, failure - 1)
+            let end = lines.findIndex((line, index) => index > failure && line.trim() === '...')
+            if (end === -1) end = Math.min(lines.length - 1, failure + 120)
+            console.log(lines.slice(start, end + 1).join('\n'))
+          }
+          NODE
+          fi
+
+          exit "$status"
 
       - name: Build production bundle
         run: npm run build
