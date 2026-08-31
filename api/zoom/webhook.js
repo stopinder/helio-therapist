@@ -4,6 +4,7 @@ import { getZoomAccessTokenContext } from '../_lib/zoom-oauth.js';
 import { downloadZoomTranscriptWithRetry } from '../_lib/zoom-download.js';
 import { syncAppointmentToGoogleCalendar } from '../_lib/google-calendar.js';
 import { canonicaliseMyNotesTranscript, myNotesEvent, safeZoomWebhookPayload, schedulerAppointmentEvent, verifyZoomWebhookRequest } from '../_lib/zoom-webhook.js';
+import { waitUntil } from '@vercel/functions';
 
 export const config = { api: { bodyParser: false } };
 
@@ -175,12 +176,12 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: 'Webhook intake failed' });
   }
 
-  res.status(200).json({ received: true });
+  const processing = processAcceptedWebhook({ supabase, intakeEventId: intakeEvent.id, body, eventType, schedulerEvent, noteEvent, recording, meetingId, hostId })
+    .catch(async (error) => {
+      console.error('[Zoom Webhook] Background processing failed', { message: error.message, meetingId, eventType });
+      await updateEvent(supabase, intakeEvent.id, { processing_status: 'failed', processing_error: String(error.message || 'Background processing failed').slice(0, 500) });
+    });
 
-  try {
-    await processAcceptedWebhook({ supabase, intakeEventId: intakeEvent.id, body, eventType, schedulerEvent, noteEvent, recording, meetingId, hostId });
-  } catch (error) {
-    console.error('[Zoom Webhook] Background processing failed', { message: error.message, meetingId, eventType });
-    await updateEvent(supabase, intakeEvent.id, { processing_status: 'failed', processing_error: String(error.message || 'Background processing failed').slice(0, 500) });
-  }
+  waitUntil(processing);
+  return res.status(200).json({ received: true });
 }
