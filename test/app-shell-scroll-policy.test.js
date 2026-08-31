@@ -31,9 +31,9 @@ test('transcripts owns its internal scrolling only because it is a full-height w
 
 test('sidebar remains scrollable on short screens but hides its scrollbar rail', () => {
   assert.match(shell, /sidebar-navigation flex-1 min-h-0 overflow-y-auto/)
-  assert.match(shell, /scrollbar-width:none/)
+  assert.match(shell, /scrollbar-width:\s*none/)
   assert.match(shell, /sidebar-navigation::-webkit-scrollbar/)
-  assert.match(shell, /display:none/)
+  assert.match(shell, /display:\s*none/)
   assert.doesNotMatch(shell, /\.sidebar-navigation:hover/)
 })
 
