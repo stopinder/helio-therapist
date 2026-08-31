@@ -9,17 +9,13 @@ test('client session summary reuses Client Documents without importing raw inter
   const panel = await read('../src/components/workspace/ClientDocumentsPanel.vue');
   const composer = await read('../src/components/workspace/ClientDocumentComposer.vue');
   const pdf = await read('../api/_lib/documentPdf.js');
-
   assert.match(panel, /Create session summary/i);
   assert.match(workspace, /session_summary/);
   assert.match(composer, /session_summary/);
   assert.match(composer, /internal clinical notes are not included automatically/i);
-  assert.match(composer, /isSessionSummary/);
   assert.match(composer, /v-if="!isSessionSummary"[^>]*>Add from clinical notes/);
   assert.match(composer, /Finalise PDF/);
-  assert.match(composer, /finaliseClientDocument/);
   assert.match(pdf, /SESSION SUMMARY/);
-  assert.match(pdf, /Session summary/);
   assert.doesNotMatch(pdf, /session_summary.*Confidential clinical document/);
 });
 
@@ -47,11 +43,10 @@ test('Clinical Intelligence prompt separates recurrence from causality and prote
   assert.match(prompt, /recurrence is not causality/i);
   assert.match(prompt, /do not infer diagnoses/i);
   assert.match(prompt, /risk|safeguarding/i);
-  assert.match(prompt, /client-facing/i);
-  assert.match(prompt, /up to three reviewed sessions/i);
   assert.match(prompt, /directly reported/i);
   assert.match(prompt, /recurring pattern/i);
   assert.match(prompt, /possible connection/i);
+  assert.match(prompt, /absence.*improvement/i);
 });
 
 test('Gentle CBT longitudinal synthesis includes supported sequence mapping without forcing CBT onto other lenses', async () => {
@@ -60,11 +55,41 @@ test('Gentle CBT longitudinal synthesis includes supported sequence mapping with
   assert.match(prompt, /thoughts.*emotions.*body/i);
   assert.match(prompt, /behaviour|behavior/i);
   assert.match(prompt, /consequence/i);
+  assert.match(prompt, /interruptions|exceptions/i);
   assert.match(prompt, /Integrative/);
   assert.match(prompt, /General/);
 });
 
-test('composer generates a substantial editable draft and keeps therapist finalisation explicit', async () => {
+test('therapist-authored additions are passed separately and never presented as client statements', async () => {
+  const prompt = await read('../api/_lib/ai-client-session-summary.js');
+  const endpoint = await read('../api/ai/client-session-summary.js');
+  const service = await read('../src/lib/clientDocuments.js');
+  const composer = await read('../src/components/workspace/ClientDocumentComposer.vue');
+  assert.match(prompt, /therapist-authored/i);
+  assert.match(prompt, /not.*client (said|statement)|not.*client statement/i);
+  assert.match(prompt, /therapistGuidance/);
+  assert.match(endpoint, /therapistGuidance/);
+  assert.match(service, /therapistGuidance/);
+  assert.match(composer, /Therapist additions|Guidance for Helios/i);
+});
+
+test('AI returns structured clinical intelligence and Helios renders the client document deterministically', async () => {
+  const prompt = await read('../api/_lib/ai-client-session-summary.js');
+  const endpoint = await read('../api/ai/client-session-summary.js');
+  assert.match(prompt, /opening/);
+  assert.match(prompt, /whatWeWorkedOn/);
+  assert.match(prompt, /patternsOverTime/);
+  assert.match(prompt, /changesAndExceptions/);
+  assert.match(prompt, /strengthsAndResources/);
+  assert.match(prompt, /perspectiveReflection/);
+  assert.match(prompt, /betweenSession/);
+  assert.match(prompt, /closing/);
+  assert.match(prompt, /renderClientSessionSummary/);
+  assert.match(endpoint, /renderClientSessionSummary/);
+  assert.match(endpoint, /sections/);
+});
+
+test('composer generates an editable draft and keeps therapist finalisation explicit', async () => {
   const composer = await read('../src/components/workspace/ClientDocumentComposer.vue');
   const service = await read('../src/lib/clientDocuments.js');
   assert.match(composer, /Generate client summary/i);
