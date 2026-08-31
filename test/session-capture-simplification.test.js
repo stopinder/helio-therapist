@@ -9,28 +9,28 @@ test('Session Capture simplification requirements', async () => {
   assert.match(transcriptTab, /Waiting for session capture/)
   assert.match(transcriptTab, /Your Zoom transcript will be linked to this session when it becomes available/)
 
-  // Requirement: Ready state (transcript exists)
-  assert.match(transcriptTab, /Session capture ready/)
-  assert.match(transcriptTab, /Zoom transcript linked to this session/)
+  // Requirement: Linked source is reviewed before speaker confirmation and generation
+  assert.match(transcriptTab, /Session source/)
+  assert.match(transcriptTab, /Linked transcript/)
+  assert.match(transcriptTab, /Review transcript/)
+  assert.match(transcriptTab, /Confirm speaker identities/)
+  assert.match(transcriptTab, /Confirm speakers/)
+  assert.match(transcriptTab, /v-if="speakersConfirmed"/)
 
-  // Requirement: Quick clinical summary section
-  assert.match(transcriptTab, /Quick clinical summary/)
-  assert.match(transcriptTab, /Helio can prepare an editable summary of the session for therapist review/)
+  // Requirement: Generated capture is editable and remains outside the Clinical Record
+  assert.match(transcriptTab, /Prepare session capture/)
+  assert.match(transcriptTab, /Editable working material · not saved/)
+  assert.match(transcriptTab, /v-model="captureDraft\[field\.key\]"/)
+  assert.match(transcriptTab, /Notes, Reflection and Clinical Record remain separate steps/)
   assert.match(transcriptTab, /not an approved Clinical Record/i)
 
-  // Requirement: Original transcript toggle (collapsed by default)
-  assert.match(transcriptTab, /View original transcript/)
-  assert.match(transcriptTab, /Hide original transcript/)
-  assert.match(transcriptTab, /isTranscriptVisible=ref\(false\)/)
+  // Requirement: Source transcript is readable and unchanged
+  assert.match(transcriptTab, /Hide transcript/)
+  assert.match(transcriptTab, /isTranscriptVisible=ref\(true\)/)
   assert.match(transcriptTab, /v-if="isTranscriptVisible"/)
   assert.match(transcriptTab, /:aria-expanded="isTranscriptVisible"/)
   assert.match(transcriptTab, /aria-controls="session-transcript-content"/)
-
-  // Requirement: Preserve draft_note and cbt paths
-  assert.match(transcriptTab, /draft_note: 'Draft clinical note requested'/)
-  assert.match(transcriptTab, /cbt: 'CBT reflection requested'/)
-  assert.match(transcriptTab, /prepareButtonLabel=computed/)
-  assert.match(transcriptTab, /prepareRequestedDraft/)
+  assert.match(transcriptTab, /does not alter the source transcript/)
 
   // Requirement: Clinical formulation boundary (avoid these terms for summary)
   assert.doesNotMatch(transcriptTab, /clinical formulation/i)

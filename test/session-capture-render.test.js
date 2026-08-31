@@ -25,7 +25,9 @@ test('WorkflowIndicator uses Session Capture', async () => {
 
 test('TranscriptTab renders Session Capture labels', async () => {
   const transcriptTab = await readFile(new URL('../src/components/workspace/TranscriptTab.vue', import.meta.url), 'utf8')
-  assert.match(transcriptTab, /Session capture ready/)
+  assert.match(transcriptTab, /Linked transcript/)
+  assert.match(transcriptTab, /Confirm speaker identities/)
+  assert.match(transcriptTab, /Prepare session capture/)
   assert.match(transcriptTab, /Waiting for session capture/)
   assert.match(transcriptTab, /Checking session capture…/)
 })
