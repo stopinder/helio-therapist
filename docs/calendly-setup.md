@@ -1,7 +1,7 @@
 # Calendly connection setup
 
-MindWorks currently uses a Calendly personal access token for its private MVP.
-The therapist enters the token once in Settings. MindWorks validates it directly
+Helios currently uses a Calendly personal access token for its private MVP.
+The therapist enters the token once in Settings. Helios validates it directly
 with Calendly and stores it in the existing server-only `integrations` table,
 scoped to the signed-in Supabase user.
 
@@ -21,9 +21,9 @@ for this connection method.
 5. Copy the token when Calendly displays it. Do not put it in source code,
    Vercel variables, chat, email, or a committed `.env` file.
 
-## Connect MindWorks
+## Connect Helios
 
-1. Sign in at `https://therapyworks.works`.
+1. Sign in at `https://helio.works`.
 2. Open **Settings**.
 3. Select **Connect** beside Calendly.
 4. Paste the token into the secure connection form and select
@@ -32,7 +32,7 @@ for this connection method.
 
 ## Webhooks
 
-When booking synchronization is introduced, MindWorks will generate a random
+When booking synchronization is introduced, Helios will generate a random
 webhook signing key and supply it while creating the Calendly webhook
 subscription. It is not another credential the therapist needs to obtain from
 Calendly.
