@@ -3,7 +3,7 @@ import { hasGoogleCalendarReadScope } from '../_lib/google-scopes.js';
 import { encryptIntegrationToken } from '../_lib/token-crypto.js';
 
 export default async function handler(req, res) {
-  const appUrl = (process.env.APP_URL || 'https://therapyworks.works').replace(/\/$/, '');
+  const appUrl = 'https://helio.works';
 
   try {
     const { code, state } = req.query;
