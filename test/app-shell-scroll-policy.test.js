@@ -14,7 +14,7 @@ test('app shell distinguishes full-height workspaces from ordinary scrolling pag
 
 test('app shell propagates min-height zero through the flex content chain', () => {
   const shellContentClass = shell.match(/<div class="([^"]*overflow-hidden[^"]*)">\s*<header/)?.[1] || ''
-  const mainClass = shell.match(/<main class="([^"]*)" :class="isFullHeightWorkspace/)?.[1] || ''
+  const mainClass = shell.match(/<main\s+class="([^"]*)"\s+:class="isFullHeightWorkspace/)?.[1] || ''
 
   for (const className of ['flex', 'flex-col', 'flex-1', 'min-w-0', 'min-h-0', 'h-full', 'overflow-hidden']) {
     assert.ok(shellContentClass.split(/\s+/).includes(className), `shell content is missing ${className}`)
@@ -31,9 +31,9 @@ test('transcripts owns its internal scrolling only because it is a full-height w
 
 test('sidebar remains scrollable on short screens but hides its scrollbar rail', () => {
   assert.match(shell, /sidebar-navigation flex-1 min-h-0 overflow-y-auto/)
-  assert.match(shell, /scrollbar-width:none/)
+  assert.match(shell, /scrollbar-width:\s*none/)
   assert.match(shell, /sidebar-navigation::-webkit-scrollbar/)
-  assert.match(shell, /display:none/)
+  assert.match(shell, /display:\s*none/)
   assert.doesNotMatch(shell, /\.sidebar-navigation:hover/)
 })
 

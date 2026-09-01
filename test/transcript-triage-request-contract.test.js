@@ -4,15 +4,15 @@ import test from 'node:test';
 
 const source = readFileSync(new URL('../src/components/workspace/TranscriptTab.vue', import.meta.url), 'utf8');
 
-test('surfaces the saved triage request without implying automatic generation', () => {
-  assert.match(source, /Quick clinical summary/);
-  assert.match(source, /clinical_summary: 'Clinical summary requested'/);
-  assert.match(source, /draft_note: 'Draft clinical note requested'/);
-  assert.match(source, /cbt: 'CBT reflection requested'/);
-  assert.match(source, /Helio will prepare an editable draft from this transcript only after you choose this action/);
+test('requires speaker confirmation before therapist-triggered session capture', () => {
+  assert.match(source, /Confirm speaker identities/);
+  assert.match(source, /Confirm speakers/);
+  assert.match(source, /v-if="speakersConfirmed && !captureDraft"/);
+  assert.match(source, /Prepare session capture/);
 });
 
 test('keeps the request separate from Clinical Record approval', () => {
-  assert.match(source, /Review and save remain separate steps/);
-  assert.match(source, /is not an approved Clinical Record/i);
+  assert.match(source, /AI-assisted working material/);
+  assert.match(source, /Downstream steps remain separate/);
+  assert.match(source, /not an approved Clinical Record/i);
 });

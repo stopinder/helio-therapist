@@ -37,7 +37,7 @@ test('SessionWorkspace uses the authenticated linked transcript source without m
   assert.match(workspace, /authenticatedFetch/)
   assert.match(workspace, /sessionRef:String\(session\.value\.id\)/)
   assert.match(workspace, /clientId:String\(session\.value\.clientId\)/)
-  assert.match(transcriptTab, /Session capture ready/)
+  assert.match(transcriptTab, /Linked transcript/)
   assert.match(transcriptTab, /Waiting for session capture/)
   assert.match(transcriptTab, /Session capture unavailable/)
   assert.doesNotMatch(transcriptTab, /demonstration data/)

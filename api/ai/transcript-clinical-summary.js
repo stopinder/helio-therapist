@@ -1,9 +1,13 @@
 import { requireAuthenticatedUser } from '../_lib/supabase.js';
 import { AI_FEATURES, runTextAI } from '../_lib/ai-execution.js';
 import {
+  applySpeakerIdentities,
   buildClinicalSummaryInput,
+  buildClinicalSummaryMergeInput,
+  clinicalSummaryMergeSystemPrompt,
   clinicalSummarySystemPrompt,
   CLINICAL_SUMMARY_PROMPT_VERSION,
+  splitClinicalSummaryTranscript,
   validateClinicalSummaryResponse
 } from '../_lib/ai-clinical-summary.js';
 
@@ -17,13 +21,21 @@ export default async function handler(req, res) {
   try {
     const { supabase, user } = await requireAuthenticatedUser(req);
     const bodyKeys = Object.keys(req.body || {});
-    if (bodyKeys.length !== 1 || bodyKeys[0] !== 'transcriptId') {
+    if (bodyKeys.some(key => !['transcriptId', 'speakerIdentities', 'therapistGuidance', 'currentDraft', 'dismissedFields'].includes(key))) {
       return res.status(400).json({ success: false, error: { code: 'INVALID_REQUEST', message: 'Invalid request body' } });
     }
 
-    const { transcriptId } = req.body;
+    const { transcriptId, speakerIdentities = {}, therapistGuidance = '', currentDraft = null, dismissedFields = [] } = req.body;
     if (!transcriptId || typeof transcriptId !== 'string' || !/^[0-9a-f-]{36}$/i.test(transcriptId)) {
       return res.status(400).json({ success: false, error: { code: 'INVALID_TRANSCRIPT_ID', message: 'Invalid transcript ID format' } });
+    }
+    const identities = Object.entries(speakerIdentities || {});
+    const allowedIdentities = new Set(['Therapist', 'Client', 'Other participant']);
+    if (!speakerIdentities || typeof speakerIdentities !== 'object' || Array.isArray(speakerIdentities) || identities.length > 20 || identities.some(([label, identity]) => !label.trim() || label.length > 80 || !allowedIdentities.has(identity))) {
+      return res.status(400).json({ success: false, error: { code: 'INVALID_SPEAKER_IDENTITIES', message: 'Confirm the speaker identities before preparing the session capture.' } });
+    }
+    if (typeof therapistGuidance !== 'string' || therapistGuidance.length > 20000 || (currentDraft !== null && !validateClinicalSummaryResponse(currentDraft)) || !Array.isArray(dismissedFields) || dismissedFields.some(key => typeof key !== 'string')) {
+      return res.status(400).json({ success: false, error: { code: 'INVALID_REVIEW_INPUT', message: 'The Session Capture review input is invalid.' } });
     }
 
     const { data: transcript, error: transcriptError } = await supabase
@@ -34,9 +46,6 @@ export default async function handler(req, res) {
       .maybeSingle();
     if (transcriptError) throw transcriptError;
     if (!transcript) return res.status(404).json({ success: false, error: { code: 'TRANSCRIPT_NOT_FOUND', message: 'Transcript not found or access denied' } });
-    if (transcript.requested_lens !== 'clinical_summary' || !transcript.review_choices_saved_at) {
-      return res.status(409).json({ success: false, error: { code: 'CLINICAL_SUMMARY_NOT_REQUESTED', message: 'Save Clinical summary as the transcript triage request before preparing a draft.' } });
-    }
     if (!transcript.client_id || !transcript.session_ref) {
       return res.status(409).json({ success: false, error: { code: 'TRANSCRIPT_NOT_LINKED', message: 'Link this transcript to a client and session before preparing a draft.' } });
     }
@@ -53,32 +62,49 @@ export default async function handler(req, res) {
     if (session.status === 'completed') {
       return res.status(409).json({ success: false, error: { code: 'CLINICAL_RECORD_ALREADY_APPROVED', message: 'This session already has an approved Clinical Record.' } });
     }
-    if (String(session.notes || '').trim()) {
-      return res.status(409).json({ success: false, error: { code: 'CLINICAL_DRAFT_EXISTS', message: 'A Clinical Summary draft already exists. Open Clinical Record to continue reviewing it.' } });
+    const promptTranscript = applySpeakerIdentities(transcript.original_transcript, speakerIdentities);
+    const chunks = splitClinicalSummaryTranscript(promptTranscript);
+    const partialDrafts = [];
+    for (const chunk of chunks) {
+      const { completion } = await runTextAI({
+        feature: AI_FEATURES.TRANSCRIPT_CLINICAL_SUMMARY,
+        userId: user.id,
+        promptVersion: CLINICAL_SUMMARY_PROMPT_VERSION,
+        messages: [
+          { role: 'system', content: clinicalSummarySystemPrompt },
+          { role: 'user', content: buildClinicalSummaryInput(chunk, { therapistGuidance, currentDraft, dismissedFields }) }
+        ],
+        responseFormat: { type: 'json_object' },
+        temperature: 0.2,
+        maxTokens: 1400
+      });
+      const partialDraft = validateClinicalSummaryResponse(completion.choices?.[0]?.message?.content);
+      if (!partialDraft) return res.status(502).json({ success: false, error: { code: 'INVALID_AI_RESPONSE', message: 'Session capture is temporarily unavailable.' } });
+      partialDrafts.push(partialDraft);
     }
 
-    const input = buildClinicalSummaryInput(transcript.original_transcript);
-    const { completion } = await runTextAI({
-      feature: AI_FEATURES.TRANSCRIPT_CLINICAL_SUMMARY,
-      userId: user.id,
-      promptVersion: CLINICAL_SUMMARY_PROMPT_VERSION,
-      messages: [
-        { role: 'system', content: clinicalSummarySystemPrompt },
-        { role: 'user', content: input }
-      ],
-      responseFormat: { type: 'json_object' },
-      temperature: 0.2,
-      maxTokens: 1400
-    });
-
-    const draft = validateClinicalSummaryResponse(completion.choices?.[0]?.message?.content);
-    if (!draft) {
-      return res.status(502).json({ success: false, error: { code: 'INVALID_AI_RESPONSE', message: 'Clinical summary drafting is temporarily unavailable.' } });
+    let draft = partialDrafts[0];
+    if (partialDrafts.length > 1) {
+      const { completion } = await runTextAI({
+        feature: AI_FEATURES.TRANSCRIPT_CLINICAL_SUMMARY,
+        userId: user.id,
+        promptVersion: CLINICAL_SUMMARY_PROMPT_VERSION,
+        messages: [
+          { role: 'system', content: clinicalSummaryMergeSystemPrompt },
+          { role: 'user', content: buildClinicalSummaryMergeInput(partialDrafts) }
+        ],
+        responseFormat: { type: 'json_object' },
+        temperature: 0.1,
+        maxTokens: 1800
+      });
+      draft = validateClinicalSummaryResponse(completion.choices?.[0]?.message?.content);
+      if (!draft) return res.status(502).json({ success: false, error: { code: 'INVALID_AI_RESPONSE', message: 'Session capture is temporarily unavailable.' } });
     }
 
-    return res.status(200).json({ success: true, data: { draft } });
+    for (const key of dismissedFields) if (Object.hasOwn(draft, key)) draft[key] = '';
+    return res.status(200).json({ success: true, data: { draft, promptVersion: CLINICAL_SUMMARY_PROMPT_VERSION } });
   } catch (error) {
-    if (error.code === 'TRANSCRIPT_TOO_SHORT' || error.code === 'TRANSCRIPT_TOO_LONG') {
+    if (error.code === 'TRANSCRIPT_TOO_SHORT') {
       return res.status(error.status || 422).json({ success: false, error: { code: error.code, message: error.message } });
     }
     if (error.name === 'OpenAIConnectionTimeoutError' || error.status === 504) {
