@@ -1,4 +1,4 @@
-export const CLIENT_SESSION_SUMMARY_PROMPT_VERSION = 'client-session-summary-v3';
+export const CLIENT_SESSION_SUMMARY_PROMPT_VERSION = 'client-session-summary-v4';
 export const CLIENT_SESSION_SUMMARY_LENSES = Object.freeze(['general', 'gentle_cbt', 'integrative']);
 export const CLIENT_SESSION_SUMMARY_FIELDS = Object.freeze(['opening','whatWeWorkedOn','patternsOverTime','changesAndExceptions','strengthsAndResources','perspectiveReflection','betweenSession','closing']);
 
@@ -25,7 +25,19 @@ Current accepted Care context is therapist-reviewed working context, not verbati
 Do not infer diagnoses, risk, intent, motivation, treatment response, trauma history, or clinical conclusions that are not explicitly supported.
 Do not include safeguarding or risk material, therapist-only hypotheses, private reflections, or supervision content in this client-facing output.
 If only one reviewed session is supplied, do not claim a longitudinal pattern. Describe tentative connections as tentative.
-Prefer specific supported observations, sequence, change, exception and continuity over generic therapeutic language.
+Prefer specific supported observations, sequence, change, exception and continuity over generic therapeutic language. Avoid generic encouragement that could apply to any client.
+
+Give each client-facing section a distinct job:
+- opening: orient the client to the current session and the most important current context. Do not use it to summarise every theme.
+- whatWeWorkedOn: describe the concrete topics explored, therapist action or intervention, and the client's response where supported.
+- patternsOverTime: include only patterns supported in two or more reviewed sessions. State what recurred and, when supported, the contexts in which it appeared. Leave this empty for a single-session window unless the source itself explicitly establishes earlier recurrence.
+- changesAndExceptions: identify explicit change, stability, interruption or exception. Say what was different and what evidence shows the difference; do not manufacture improvement.
+- strengthsAndResources: identify specific client capacities, choices, relationships, coping responses or resources demonstrated in the evidence. Do not substitute praise or generic strengths language.
+- perspectiveReflection: apply the selected perspective only to supported evidence. Offer useful synthesis without diagnosis or causal certainty, and preserve ambiguity where appropriate.
+- betweenSession: include agreed actions, experiments, questions to notice, or unfinished work that has a clear source. Do not invent homework.
+- closing: briefly name the most useful thread to carry forward into the next session. Do not repeat the whole summary.
+
+Do not repeat the same point across sections. When one fact could fit several sections, place the detail in the section where it adds the most clinical value and refer to it elsewhere only if the new sentence adds a genuinely different comparison, consequence, exception or next step.
 Return JSON only with exactly these string fields: ${CLIENT_SESSION_SUMMARY_FIELDS.join(', ')}. Use an empty string when evidence is insufficient.`;
 
 const lensRules = {
