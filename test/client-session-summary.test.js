@@ -1,6 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
+import {
+  buildClinicalIntelligenceEvidenceMap,
+  renderClientSessionSummary
+} from '../api/_lib/ai-client-session-summary.js';
 
 const read = path => readFile(new URL(path, import.meta.url), 'utf8');
 
@@ -49,6 +53,38 @@ test('Clinical Intelligence prompt separates recurrence from causality and prote
   assert.match(prompt, /absence.*improvement/i);
 });
 
+test('Clinical Intelligence builds a source-aware evidence map before client prose', () => {
+  const map = buildClinicalIntelligenceEvidenceMap({
+    captures: [
+      { sessionId: 's3', occurredAt: '2026-08-30', content: { summary: 'Work criticism led to worry and repeated checking.' } },
+      { sessionId: 's2', occurredAt: '2026-08-23', content: { summary: 'After uncertain feedback, client worried and checked messages repeatedly.' } },
+      { sessionId: 's1', occurredAt: '2026-08-16', content: { summary: 'Client felt calmer after asking a colleague for perspective.' } }
+    ],
+    careItems: [{ kind: 'current_focus', body: 'Self-criticism around uncertainty at work.' }],
+    therapistGuidance: 'Notice the exception when another perspective helped.'
+  });
+
+  assert.equal(map.reviewedSessions.length, 3);
+  assert.equal(map.reviewedSessions[0].position, 'current');
+  assert.equal(map.reviewedSessions[1].position, 'previous_1');
+  assert.equal(map.currentAcceptedCareContext[0].sourceType, 'accepted_care');
+  assert.equal(map.therapistAuthoredContext.sourceType, 'therapist_guidance');
+  assert.match(map.therapistAuthoredContext.content, /exception/i);
+  assert.deepEqual(map.comparisonTasks, ['recurrence', 'change', 'stability', 'exceptions', 'resources', 'unfinished_threads', 'possible_connections']);
+});
+
+test('Clinical Intelligence quality contract requires staged comparison and evidence thresholds', async () => {
+  const prompt = await read('../api/_lib/ai-client-session-summary.js');
+  assert.match(prompt, /evidence map/i);
+  assert.match(prompt, /two or more reviewed sessions/i);
+  assert.match(prompt, /current observation/i);
+  assert.match(prompt, /change|stability/i);
+  assert.match(prompt, /exception/i);
+  assert.match(prompt, /unfinished thread/i);
+  assert.match(prompt, /source type/i);
+  assert.match(prompt, /draft the client-facing sections only after/i);
+});
+
 test('Gentle CBT longitudinal synthesis includes supported sequence mapping without forcing CBT onto other lenses', async () => {
   const prompt = await read('../api/_lib/ai-client-session-summary.js');
   assert.match(prompt, /antecedent|situation or trigger/i);
@@ -56,6 +92,8 @@ test('Gentle CBT longitudinal synthesis includes supported sequence mapping with
   assert.match(prompt, /behaviour|behavior/i);
   assert.match(prompt, /consequence/i);
   assert.match(prompt, /interruptions|exceptions/i);
+  assert.match(prompt, /short-term|short term/i);
+  assert.match(prompt, /longer-term|longer term/i);
   assert.match(prompt, /Integrative/);
   assert.match(prompt, /General/);
 });
@@ -87,6 +125,20 @@ test('AI returns structured clinical intelligence and Helios renders the client 
   assert.match(prompt, /renderClientSessionSummary/);
   assert.match(endpoint, /renderClientSessionSummary/);
   assert.match(endpoint, /sections/);
+
+  const rendered = renderClientSessionSummary({
+    opening: 'Work has felt more uncertain this week.',
+    whatWeWorkedOn: 'We explored what happens after critical feedback.',
+    patternsOverTime: 'Across recent sessions, uncertainty has repeatedly been followed by worry and checking.',
+    changesAndExceptions: 'Asking for another perspective interrupted the checking on one occasion.',
+    strengthsAndResources: 'You noticed the pattern sooner and reached out for support.',
+    perspectiveReflection: 'The checking may settle uncertainty briefly while also keeping attention on the threat.',
+    betweenSession: 'Notice what happens before the urge to re-check and what helps you respond differently.',
+    closing: 'We will carry this thread into the next session.'
+  }, 'gentle_cbt');
+  assert.match(rendered, /Patterns across our recent work/);
+  assert.match(rendered, /interrupted the checking/);
+  assert.match(rendered, /gentle CBT perspective/i);
 });
 
 test('composer generates an editable draft and keeps therapist finalisation explicit', async () => {
