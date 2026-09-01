@@ -13,15 +13,19 @@ export const AI_FEATURES = Object.freeze({
 });
 
 const DEFAULT_TEXT_MODEL = 'gpt-4o-mini';
-export const AI_PRICING_VERSION = 'openai-2024-07-18';
-export const MODEL_PRICING_USD_PER_MILLION = Object.freeze({ 'gpt-4o-mini': { input: 0.15, cachedInput: 0.075, output: 0.60 } });
+const CLIENT_SESSION_SUMMARY_MODEL = 'gpt-5.6-terra';
+export const AI_PRICING_VERSION = 'openai-2026-07-30';
+export const MODEL_PRICING_USD_PER_MILLION = Object.freeze({
+  'gpt-4o-mini': { input: 0.15, cachedInput: 0.075, output: 0.60 },
+  'gpt-5.6-terra': { input: 2.00, cachedInput: 0.20, output: 12.00 }
+});
 
 export function getTextModel(feature) {
   if (feature === AI_FEATURES.REFLECTION_ANALYSIS || feature === AI_FEATURES.REFLECTION_REPHRASE) return process.env.OPENAI_REFLECTION_MODEL || DEFAULT_TEXT_MODEL;
   if (feature === AI_FEATURES.TRANSCRIPT_CLINICAL_SUMMARY) return process.env.OPENAI_CLINICAL_SUMMARY_MODEL || DEFAULT_TEXT_MODEL;
   if (feature === AI_FEATURES.TRANSCRIPT_DRAFT_CLINICAL_NOTE) return process.env.OPENAI_DRAFT_CLINICAL_NOTE_MODEL || DEFAULT_TEXT_MODEL;
   if (feature === AI_FEATURES.CARE_SUGGESTIONS || feature === AI_FEATURES.TRANSCRIPT_CBT_CARE_SUGGESTIONS) return process.env.OPENAI_CARE_MODEL || DEFAULT_TEXT_MODEL;
-  if (feature === AI_FEATURES.CLIENT_SESSION_SUMMARY) return process.env.OPENAI_CLIENT_SUMMARY_MODEL || process.env.OPENAI_CLINICAL_SUMMARY_MODEL || DEFAULT_TEXT_MODEL;
+  if (feature === AI_FEATURES.CLIENT_SESSION_SUMMARY) return process.env.OPENAI_CLIENT_SUMMARY_MODEL || CLIENT_SESSION_SUMMARY_MODEL;
   return process.env.OPENAI_SUPERVISION_MODEL || DEFAULT_TEXT_MODEL;
 }
 
