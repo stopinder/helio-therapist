@@ -5,6 +5,10 @@ import {
   buildClinicalIntelligenceEvidenceMap,
   renderClientSessionSummary
 } from '../api/_lib/ai-client-session-summary.js';
+import {
+  CLINICAL_INTELLIGENCE_CASES,
+  CLINICAL_INTELLIGENCE_EVALUATION_RUBRIC
+} from './fixtures/clinical-intelligence-evaluation.js';
 
 const read = path => readFile(new URL(path, import.meta.url), 'utf8');
 
@@ -63,7 +67,6 @@ test('Clinical Intelligence builds a source-aware evidence map before client pro
     careItems: [{ kind: 'current_focus', body: 'Self-criticism around uncertainty at work.' }],
     therapistGuidance: 'Notice the exception when another perspective helped.'
   });
-
   assert.equal(map.reviewedSessions.length, 3);
   assert.equal(map.reviewedSessions[0].position, 'current');
   assert.equal(map.reviewedSessions[1].position, 'previous_1');
@@ -83,6 +86,22 @@ test('Clinical Intelligence quality contract requires staged comparison and evid
   assert.match(prompt, /unfinished thread/i);
   assert.match(prompt, /source type/i);
   assert.match(prompt, /draft the client-facing sections only after/i);
+});
+
+test('Clinical Intelligence evaluation benchmark covers core therapist quality dimensions', () => {
+  assert.ok(CLINICAL_INTELLIGENCE_CASES.length >= 3);
+  assert.deepEqual(CLINICAL_INTELLIGENCE_EVALUATION_RUBRIC, [
+    'factual_grounding', 'longitudinal_usefulness', 'specificity', 'client_readability',
+    'exceptions_and_resources', 'actionable_continuity', 'provenance_safety',
+    'unsupported_inference', 'repetition'
+  ]);
+  assert.ok(CLINICAL_INTELLIGENCE_CASES.some(item => item.lens === 'gentle_cbt' && item.captures.length === 3));
+  assert.ok(CLINICAL_INTELLIGENCE_CASES.some(item => item.lens === 'integrative' && item.captures.length === 3));
+  assert.ok(CLINICAL_INTELLIGENCE_CASES.some(item => item.lens === 'general' && item.captures.length === 1));
+  for (const item of CLINICAL_INTELLIGENCE_CASES) {
+    assert.ok(item.expectedSignals);
+    assert.ok(Array.isArray(item.expectedSignals.avoid));
+  }
 });
 
 test('Gentle CBT longitudinal synthesis includes supported sequence mapping without forcing CBT onto other lenses', async () => {
@@ -125,7 +144,6 @@ test('AI returns structured clinical intelligence and Helios renders the client 
   assert.match(prompt, /renderClientSessionSummary/);
   assert.match(endpoint, /renderClientSessionSummary/);
   assert.match(endpoint, /sections/);
-
   const rendered = renderClientSessionSummary({
     opening: 'Work has felt more uncertain this week.',
     whatWeWorkedOn: 'We explored what happens after critical feedback.',
