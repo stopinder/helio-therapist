@@ -7,8 +7,8 @@ const read = path => readFile(new URL(path, import.meta.url), 'utf8');
 test('ClientDocumentsPanel implements the refined hierarchy and archived boundaries', async () => {
   const panel = await read('../src/components/workspace/ClientDocumentsPanel.vue');
 
-  assert.match(panel, /Letters, reports and clinical documents created for this client\./);
-  assert.match(panel, /Create a letter, report or clinical summary when you need one\./);
+  assert.match(panel, /Letters, reports and client-facing documents created for this client\./);
+  assert.match(panel, /Create a client session summary, letter, report or clinical summary when you need one\./);
 
   assert.match(panel, /visibleDocuments=computed\(\(\)=>props\.documents\.filter\(document=>!deletedIds\.value\.has\(document\.id\)\)\)/);
   assert.match(panel, /draftDocuments=computed\(\(\)=>visibleDocuments\.value\.filter\(document=>document\.status!==['"]completed['"]\)\)/);
@@ -32,6 +32,6 @@ test('ClientDocumentsPanel implements the refined hierarchy and archived boundar
 test('ClientWorkspace provides the correct archived state to Documents panel', async () => {
   const workspace = await read('../src/views/ClientWorkspace.vue');
   assert.match(workspace, /<ClientDocumentsPanel v-else-if="activeTab === 'Documents'"[^>]*:archived="client\.archived"/);
-  assert.match(workspace, /function newDocument\(\)\{if\(client\.value\?\.archived\)return/);
+  assert.match(workspace, /function newDocument\(documentType='other'\)\{if\(client\.value\?\.archived\)return/);
   assert.match(workspace, /function editDocument\(document\)\{if\(client\.value\?\.archived\)return/);
 });

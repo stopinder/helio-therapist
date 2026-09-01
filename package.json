@@ -15,6 +15,7 @@
     "test:e2e:headed": "playwright test --headed",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:report": "playwright show-report"
+    ,"evaluate:clinical-intelligence": "node scripts/evaluate-clinical-intelligence.mjs"
   },
   "dependencies": {
     "@fontsource/noto-sans": "^5.3.0",
