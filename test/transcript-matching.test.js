@@ -142,13 +142,14 @@ function signedWebhook(hostId='zoom-host-a') {
   const signature=`v0=${crypto.createHmac('sha256','test-secret').update(`v0:${timestamp}:`).update(JSON.stringify(body)).digest('hex')}`
   return { req:createReq(null,'POST',body,{}, {'x-zm-request-timestamp':timestamp,'x-zm-signature':signature}), body }
 }
+const flushBackgroundProcessing = () => new Promise(resolve => setTimeout(resolve, 0))
 
 test('Transcript Matching: Unmatched transcript remains unassigned', async () => {
-  resetMockDatabase(); const {req}=signedWebhook(); const res=createRes(); await webhookHandler(req,res); assert.equal(res.statusCode,200); const transcript=mockDatabase.zoom_transcripts.find(t=>t.zoom_meeting_id==='meeting-123'); assert.ok(transcript); assert.equal(transcript.status,'unassigned'); assert.equal(transcript.client_id,null)
+  resetMockDatabase(); const {req}=signedWebhook(); const res=createRes(); await webhookHandler(req,res); await flushBackgroundProcessing(); assert.equal(res.statusCode,200); const transcript=mockDatabase.zoom_transcripts.find(t=>t.zoom_meeting_id==='meeting-123'); assert.ok(transcript); assert.equal(transcript.status,'unassigned'); assert.equal(transcript.client_id,null)
 })
 
 test('Transcript Matching: Auto-matches if session link exists', async () => {
-  resetMockDatabase(); mockDatabase.zoom_session_links=[{ therapist_user_id:THERAPIST_A.id, client_id:'client-a1', session_ref:'sess-a1', zoom_meeting_id:'meeting-123', status:'started' }]; const {req}=signedWebhook(); const res=createRes(); await webhookHandler(req,res); assert.equal(res.statusCode,200); const transcript=mockDatabase.zoom_transcripts.find(t=>t.zoom_meeting_id==='meeting-123'); assert.ok(transcript); assert.equal(transcript.status,'ready'); assert.equal(transcript.client_id,'client-a1'); assert.equal(transcript.session_ref,'sess-a1')
+  resetMockDatabase(); mockDatabase.zoom_session_links=[{ therapist_user_id:THERAPIST_A.id, client_id:'client-a1', session_ref:'sess-a1', zoom_meeting_id:'meeting-123', status:'started' }]; const {req}=signedWebhook(); const res=createRes(); await webhookHandler(req,res); await flushBackgroundProcessing(); assert.equal(res.statusCode,200); const transcript=mockDatabase.zoom_transcripts.find(t=>t.zoom_meeting_id==='meeting-123'); assert.ok(transcript); assert.equal(transcript.status,'ready'); assert.equal(transcript.client_id,'client-a1'); assert.equal(transcript.session_ref,'sess-a1')
 })
 
 test('Transcript Matching: Unknown host is not assigned to the only connected therapist', async () => {

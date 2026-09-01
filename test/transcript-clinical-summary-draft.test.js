@@ -2,8 +2,10 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import {
+  applySpeakerIdentities,
   buildClinicalSummaryInput,
   CLINICAL_SUMMARY_FIELDS,
+  splitClinicalSummaryTranscript,
   validateClinicalSummaryResponse,
   validateClinicalSummaryTranscript
 } from '../api/_lib/ai-clinical-summary.js';
@@ -20,27 +22,54 @@ test('clinical summary draft validation accepts exactly the editable Clinical Su
   assert.equal(validateClinicalSummaryResponse(JSON.stringify({ ...payload, diagnosis: 'invented' })), null);
 });
 
-test('clinical summary draft input rejects transcripts outside the supported size boundary', () => {
+test('session capture input rejects only unusably short transcripts and chunks long transcripts', () => {
   assert.throws(() => validateClinicalSummaryTranscript('too short'), error => error.code === 'TRANSCRIPT_TOO_SHORT');
-  assert.throws(() => validateClinicalSummaryTranscript('x'.repeat(60001)), error => error.code === 'TRANSCRIPT_TOO_LONG');
   assert.match(buildClinicalSummaryInput('x'.repeat(100)), /<session_transcript>/);
+  const longTranscript = Array.from({ length: 1000 }, (_, index) => `[00:00:${index}] Speaker 1: ${'x'.repeat(70)}`).join('\n');
+  const chunks = splitClinicalSummaryTranscript(longTranscript, 10000);
+  assert.ok(chunks.length > 1);
+  assert.equal(chunks.join('\n'), longTranscript);
 });
 
-test('endpoint requires therapist ownership, saved clinical-summary intent, and a current owned session', () => {
+test('regeneration uses therapist guidance as fresh context and honours removed sections', () => {
+  const prompt = buildClinicalSummaryInput('x'.repeat(100), {
+    therapistGuidance: 'The client clarified this after the session.',
+    dismissedFields: ['riskSafeguarding']
+  });
+  assert.match(prompt, /<therapist_guidance>/);
+  assert.match(prompt, /therapist-provided context/);
+  assert.doesNotMatch(prompt, /<current_working_draft>/);
+  assert.match(prompt, /Return an empty string for them: riskSafeguarding/);
+});
+
+test('speaker identities are applied to a prompt copy without changing the source', () => {
+  const source = '[00:00:01] Speaker 1: Hello\n[00:00:03] Speaker 2: Hi';
+  const relabelled = applySpeakerIdentities(source, { 'Speaker 1': 'Therapist', 'Speaker 2': 'Client' });
+  assert.equal(relabelled, '[00:00:01] Therapist: Hello\n[00:00:03] Client: Hi');
+  assert.equal(source, '[00:00:01] Speaker 1: Hello\n[00:00:03] Speaker 2: Hi');
+});
+
+test('endpoint requires therapist ownership, confirmed identities, and a current owned session', () => {
   assert.match(endpoint, /eq\('therapist_user_id', user\.id\)/);
-  assert.match(endpoint, /transcript\.requested_lens !== 'clinical_summary'/);
-  assert.match(endpoint, /!transcript\.review_choices_saved_at/);
+  assert.match(endpoint, /INVALID_SPEAKER_IDENTITIES/);
   assert.match(endpoint, /eq\('user_id', user\.id\)/);
   assert.match(endpoint, /eq\('client_id', transcript\.client_id\)/);
   assert.match(endpoint, /session\.status === 'completed'/);
-  assert.match(endpoint, /String\(session\.notes \|\| ''\)\.trim\(\)/);
 });
 
-test('generation is therapist-triggered and remains unsaved until the existing draft action', () => {
-  assert.match(transcriptTab, /prepareRequestedDraft/);
-  assert.match(transcriptTab, /Review and save remain separate steps/);
-  assert.match(workspace, /AI-assisted draft · not saved/);
-  assert.match(workspace, /temporary until you choose Save Draft/);
+test('generation is therapist-triggered, chunked, editable, and remains outside Clinical Record', () => {
+  assert.match(transcriptTab, /prepareSessionCapture/);
+  assert.match(transcriptTab, /AI-assisted working material/);
+  assert.match(transcriptTab, /Regenerate with my input/);
+  assert.match(transcriptTab, /Mark Session Capture reviewed/);
+  assert.match(endpoint, /splitClinicalSummaryTranscript/);
+  assert.match(endpoint, /clinicalSummaryMergeSystemPrompt/);
+  assert.doesNotMatch(workspace, /clinical-summary-draft/);
   assert.doesNotMatch(endpoint, /save_session_draft/);
   assert.doesNotMatch(endpoint, /complete_session/);
+});
+
+test('regenerate with my input does not preserve the current draft as AI input', () => {
+  assert.doesNotMatch(transcriptTab, /currentDraft:regenerate\?captureDraft\.value:null/);
+  assert.match(transcriptTab, /therapistGuidance:regenerate\?therapistGuidance\.value:''/);
 });

@@ -2,7 +2,7 @@
   <div class="space-y-stack-lg max-w-4xl mx-auto" data-testid="clinical-summary-workspace">
     <!-- Preparation State -->
     <div v-if="status === 'not_started'" class="bg-surface-elevated border border-border-muted rounded-panel p-6 shadow-sm">
-      <h3 class="text-h3 font-semibold text-ink mb-6">Preparation for Clinical Summary</h3>
+      <h3 class="text-h3 font-semibold text-ink mb-6">Prepare Clinical Record</h3>
       
       <div class="space-y-8">
         <section>
@@ -29,17 +29,31 @@
             <span class="text-body-sm font-medium text-ink">Workflow Status</span>
             <StatusBadge :status="status" :label="statusLabel" />
           </div>
-          <p class="text-caption text-ink-muted">Start an empty therapist-authored draft. Source material will only be shown as available once that wiring is verified.</p>
+          <p class="text-caption text-ink-muted">{{ reviewedCapture ? 'Your reviewed Session Capture is available as working source material. Choose what to carry into this separate Clinical Record draft.' : 'No reviewed Session Capture is available yet. You can return to Session Capture or begin an empty therapist-authored draft.' }}</p>
         </section>
+
+        <section v-if="reviewedCapture" class="rounded-panel border border-state-info/20 bg-state-info/10 p-4">
+          <p class="text-caption font-semibold uppercase tracking-wider text-state-info">Reviewed Session Capture · AI-assisted source</p>
+          <h4 class="mt-1 text-body font-semibold text-ink">Clinical suggestions are ready to use</h4>
+          <p class="mt-1 text-body-sm text-ink-secondary">These remain editable working suggestions. Starting a draft does not approve the Clinical Record.</p>
+          <div class="mt-4 grid gap-3">
+            <label v-for="(label, key) in summaryFields" :key="key" class="flex items-start gap-3 text-body-sm text-ink-secondary">
+              <input v-model="selectedCaptureFields" type="checkbox" :value="key" class="mt-1 h-4 w-4 rounded border-border text-action-link focus:ring-state-focus-ring" />
+              <span><strong class="font-medium text-ink">{{ label }}</strong><span class="block mt-0.5 line-clamp-2">{{ reviewedCapture.content[key] || 'No supported material' }}</span></span>
+            </label>
+          </div>
+        </section>
+
+        <p v-if="captureLoadError" class="text-body-sm text-state-danger" role="alert">{{ captureLoadError }}</p>
 
         <div class="flex flex-col gap-4">
           <button 
-            @click="prepareDraft"
+            @click="reviewedCapture ? prepareDraftFromCapture() : prepareDraft()"
             :disabled="!canPrepareDraft"
             class="w-full py-3 bg-action-link text-on-action font-medium rounded-control flex items-center justify-center gap-2 transition-all hover:bg-action-link-hover focus-visible:ring-2 focus-visible:ring-state-focus-ring focus-visible:outline-none"
             :class="{ 'opacity-50 cursor-not-allowed': !canPrepareDraft }"
           >
-            Prepare Empty Clinical Summary Draft
+            {{ reviewedCapture ? 'Prepare draft from reviewed Session Capture' : 'Prepare empty Clinical Record draft' }}
           </button>
           
           <div v-if="!canPrepareDraft" class="p-3 bg-state-danger-surface border border-state-danger/20 rounded flex gap-3 text-state-danger">
@@ -81,6 +95,18 @@
         >
           <p class="text-caption text-ink-muted italic">Therapist reflection is private working material and is not automatically included.</p>
         </NoticeBanner>
+
+        <section v-if="reviewedCapture && status === 'draft'" class="mb-8 rounded-panel border border-state-info/20 bg-state-info/10 p-4">
+          <p class="text-caption font-semibold uppercase tracking-wider text-state-info">From reviewed Session Capture</p>
+          <p class="mt-1 text-body-sm text-ink-secondary">Use or replace individual draft fields. Session Capture remains separate and unchanged.</p>
+          <div class="mt-4 grid gap-3">
+            <div v-for="(label, key) in summaryFields" :key="key" class="flex flex-wrap items-start justify-between gap-3 border-t border-state-info/10 pt-3 first:border-0 first:pt-0">
+              <div class="min-w-0 flex-1"><p class="text-body-sm font-medium text-ink">{{ label }}</p><p class="mt-0.5 line-clamp-2 text-caption text-ink-muted">{{ reviewedCapture.content[key] || 'No supported material' }}</p></div>
+              <button v-if="reviewedCapture.content[key] && summaryData[key] !== reviewedCapture.content[key]" type="button" class="shrink-0 px-3 py-1.5 rounded-control border border-border bg-surface text-caption font-medium text-ink" @click="useCaptureField(key)">{{ summaryData[key] ? 'Replace draft field' : 'Use in draft' }}</button>
+              <span v-else-if="reviewedCapture.content[key]" class="text-caption font-medium text-state-success">In draft</span>
+            </div>
+          </div>
+        </section>
 
         <!-- Review Panel -->
         <div v-if="status === 'ready_for_review'" class="mb-8 p-6 bg-state-selected border border-action-link/30 rounded-panel">
@@ -360,6 +386,7 @@ import ApprovedClinicalRecordView from './ApprovedClinicalRecordView.vue';
 import NoticeBanner from './NoticeBanner.vue';
 import { authenticatedFetch } from '../../lib/api.js';
 import { saveSessionDraft, completeSessionRecord } from '../../lib/sessions.js';
+import { getSessionCapture } from '../../lib/sessionCaptures.js';
 
 const props = defineProps({
   session: {
@@ -386,16 +413,19 @@ const activeDictationKey = ref('');
 const transcribingKey = ref('');
 const dictationErrorKey = ref('');
 const dictationError = ref('');
+const reviewedCapture = ref(null);
+const selectedCaptureFields = ref([]);
+const captureLoadError = ref('');
 let recorder = null;
 let stream = null;
 let chunks = [];
 
-const checklist = [
-  { id: 1, label: 'Session Transcript', available: false, required: true },
-  { id: 2, label: 'Therapist Notes', available: false, required: true },
+const checklist = computed(() => [
+  { id: 1, label: 'Reviewed Session Capture', available: Boolean(reviewedCapture.value), required: false },
+  { id: 2, label: 'Therapist Notes', available: false, required: false },
   { id: 3, label: 'Therapist Reflection', available: false, required: false },
   { id: 4, label: 'Client Feedback', available: false, required: false }
-];
+]);
 
 const summaryFields = {
   presentingConcerns: 'Presenting concerns',
@@ -417,9 +447,24 @@ const summaryData = reactive({
   planNextSession: ''
 });
 
-onMounted(() => {
+onMounted(async () => {
   loadFromSession();
+  await loadReviewedCapture();
 });
+
+async function loadReviewedCapture() {
+  captureLoadError.value = '';
+  try {
+    const capture = await getSessionCapture({ sessionId: props.session.id, clientId: props.session.clientId });
+    reviewedCapture.value = capture?.status === 'reviewed' ? capture : null;
+    selectedCaptureFields.value = reviewedCapture.value
+      ? Object.keys(summaryFields).filter(key => reviewedCapture.value.content[key])
+      : [];
+  } catch (error) {
+    console.error('Failed to load reviewed Session Capture:', error);
+    captureLoadError.value = 'Reviewed Session Capture could not be loaded.';
+  }
+}
 
 const loadFromSession = () => {
   if (!props.session) return;
@@ -548,7 +593,7 @@ const canPrepareDraft = computed(() => {
 });
 
 const missingRequiredSources = computed(() => {
-  return checklist
+  return checklist.value
     .filter(item => item.required && !item.available)
     .map(item => item.label)
     .join(', ');
@@ -583,6 +628,20 @@ const prepareDraft = async () => {
   status.value = 'draft';
   scrollAndFocus();
 };
+
+const prepareDraftFromCapture = async () => {
+  if (!reviewedCapture.value) return prepareDraft();
+  for (const key of selectedCaptureFields.value) {
+    if (reviewedCapture.value.content[key]) summaryData[key] = reviewedCapture.value.content[key];
+  }
+  status.value = 'draft';
+  scrollAndFocus();
+};
+
+function useCaptureField(key) {
+  const suggestion = reviewedCapture.value?.content?.[key];
+  if (suggestion) summaryData[key] = suggestion;
+}
 
 function dictationButtonLabel(key) {
   if (transcribingKey.value === key) return 'Transcribing…';
