@@ -13,8 +13,8 @@ test('Transcript visibility toggle requirements', async () => {
   assert.match(transcriptTab, /Review transcript/)
   assert.match(transcriptTab, /Hide transcript/)
 
-  // Requirement: transcript is immediately readable before confirmation
-  assert.match(transcriptTab, /isTranscriptVisible=ref\(true\)/)
+  // Requirement: raw transcript stays collapsed until the therapist asks to review it
+  assert.match(transcriptTab, /isTranscriptVisible=ref\(false\)/)
 
   // Requirement: transcript text hidden initially (using v-if or v-show with the state)
   assert.match(transcriptTab, /v-if="isTranscriptVisible"/)

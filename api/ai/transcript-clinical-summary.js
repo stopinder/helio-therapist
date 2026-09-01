@@ -21,11 +21,11 @@ export default async function handler(req, res) {
   try {
     const { supabase, user } = await requireAuthenticatedUser(req);
     const bodyKeys = Object.keys(req.body || {});
-    if (bodyKeys.some(key => !['transcriptId', 'speakerIdentities', 'therapistGuidance', 'currentDraft', 'dismissedFields'].includes(key))) {
+    if (bodyKeys.some(key => !['transcriptId', 'speakerIdentities', 'therapistGuidance', 'dismissedFields'].includes(key))) {
       return res.status(400).json({ success: false, error: { code: 'INVALID_REQUEST', message: 'Invalid request body' } });
     }
 
-    const { transcriptId, speakerIdentities = {}, therapistGuidance = '', currentDraft = null, dismissedFields = [] } = req.body;
+    const { transcriptId, speakerIdentities = {}, therapistGuidance = '', dismissedFields = [] } = req.body;
     if (!transcriptId || typeof transcriptId !== 'string' || !/^[0-9a-f-]{36}$/i.test(transcriptId)) {
       return res.status(400).json({ success: false, error: { code: 'INVALID_TRANSCRIPT_ID', message: 'Invalid transcript ID format' } });
     }
@@ -34,7 +34,7 @@ export default async function handler(req, res) {
     if (!speakerIdentities || typeof speakerIdentities !== 'object' || Array.isArray(speakerIdentities) || identities.length > 20 || identities.some(([label, identity]) => !label.trim() || label.length > 80 || !allowedIdentities.has(identity))) {
       return res.status(400).json({ success: false, error: { code: 'INVALID_SPEAKER_IDENTITIES', message: 'Confirm the speaker identities before preparing the session capture.' } });
     }
-    if (typeof therapistGuidance !== 'string' || therapistGuidance.length > 20000 || (currentDraft !== null && !validateClinicalSummaryResponse(currentDraft)) || !Array.isArray(dismissedFields) || dismissedFields.some(key => typeof key !== 'string')) {
+    if (typeof therapistGuidance !== 'string' || therapistGuidance.length > 20000 || !Array.isArray(dismissedFields) || dismissedFields.some(key => typeof key !== 'string')) {
       return res.status(400).json({ success: false, error: { code: 'INVALID_REVIEW_INPUT', message: 'The Session Capture review input is invalid.' } });
     }
 
@@ -72,7 +72,7 @@ export default async function handler(req, res) {
         promptVersion: CLINICAL_SUMMARY_PROMPT_VERSION,
         messages: [
           { role: 'system', content: clinicalSummarySystemPrompt },
-          { role: 'user', content: buildClinicalSummaryInput(chunk, { therapistGuidance, currentDraft, dismissedFields }) }
+          { role: 'user', content: buildClinicalSummaryInput(chunk, { therapistGuidance, dismissedFields }) }
         ],
         responseFormat: { type: 'json_object' },
         temperature: 0.2,

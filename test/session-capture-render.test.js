@@ -31,3 +31,10 @@ test('TranscriptTab renders Session Capture labels', async () => {
   assert.match(transcriptTab, /Waiting for session capture/)
   assert.match(transcriptTab, /Checking session capture…/)
 })
+
+test('raw transcript is collapsed by default and remains available for review', async () => {
+  const transcriptTab = await readFile(new URL('../src/components/workspace/TranscriptTab.vue', import.meta.url), 'utf8')
+  assert.match(transcriptTab, /isTranscriptVisible=ref\(false\)/)
+  assert.match(transcriptTab, /Review transcript/)
+  assert.match(transcriptTab, /:aria-expanded="isTranscriptVisible"/)
+})

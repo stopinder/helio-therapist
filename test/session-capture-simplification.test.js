@@ -26,7 +26,7 @@ test('Session Capture simplification requirements', async () => {
 
   // Requirement: Source transcript is readable and unchanged
   assert.match(transcriptTab, /Hide transcript/)
-  assert.match(transcriptTab, /isTranscriptVisible=ref\(true\)/)
+  assert.match(transcriptTab, /isTranscriptVisible=ref\(false\)/)
   assert.match(transcriptTab, /v-if="isTranscriptVisible"/)
   assert.match(transcriptTab, /:aria-expanded="isTranscriptVisible"/)
   assert.match(transcriptTab, /The imported transcript remains unchanged/)

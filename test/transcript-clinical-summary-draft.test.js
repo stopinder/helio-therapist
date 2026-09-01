@@ -31,16 +31,14 @@ test('session capture input rejects only unusably short transcripts and chunks l
   assert.equal(chunks.join('\n'), longTranscript);
 });
 
-test('regeneration keeps therapist guidance distinct and honours removed sections', () => {
-  const currentDraft = Object.fromEntries(CLINICAL_SUMMARY_FIELDS.map(key => [key, `${key} draft`]));
+test('regeneration uses therapist guidance as fresh context and honours removed sections', () => {
   const prompt = buildClinicalSummaryInput('x'.repeat(100), {
     therapistGuidance: 'The client clarified this after the session.',
-    currentDraft,
     dismissedFields: ['riskSafeguarding']
   });
   assert.match(prompt, /<therapist_guidance>/);
   assert.match(prompt, /therapist-provided context/);
-  assert.match(prompt, /<current_working_draft>/);
+  assert.doesNotMatch(prompt, /<current_working_draft>/);
   assert.match(prompt, /Return an empty string for them: riskSafeguarding/);
 });
 
@@ -69,4 +67,9 @@ test('generation is therapist-triggered, chunked, editable, and remains outside 
   assert.doesNotMatch(workspace, /clinical-summary-draft/);
   assert.doesNotMatch(endpoint, /save_session_draft/);
   assert.doesNotMatch(endpoint, /complete_session/);
+});
+
+test('regenerate with my input does not preserve the current draft as AI input', () => {
+  assert.doesNotMatch(transcriptTab, /currentDraft:regenerate\?captureDraft\.value:null/);
+  assert.match(transcriptTab, /therapistGuidance:regenerate\?therapistGuidance\.value:''/);
 });

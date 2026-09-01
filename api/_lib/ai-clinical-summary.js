@@ -39,13 +39,11 @@ export function validateClinicalSummaryTranscript(text) {
   return transcript;
 }
 
-export function buildClinicalSummaryInput(transcript, { therapistGuidance = '', currentDraft = null, dismissedFields = [] } = {}) {
+export function buildClinicalSummaryInput(transcript, { therapistGuidance = '', dismissedFields = [] } = {}) {
   const text = validateClinicalSummaryTranscript(transcript);
   const guidance = String(therapistGuidance || '').trim().slice(0, 20000);
-  const draft = currentDraft && typeof currentDraft === 'object' ? validateClinicalSummaryResponse(currentDraft) : null;
   const dismissed = dismissedFields.filter(key => CLINICAL_SUMMARY_FIELDS.includes(key));
   return `Prepare the editable draft from the source transcript below.
-${draft ? `Revise the existing therapist-reviewed working draft. Preserve useful therapist edits unless the guidance asks for a change.\n<current_working_draft>\n${JSON.stringify(draft)}\n</current_working_draft>` : ''}
 ${guidance ? `Treat the following as therapist-provided context. It may supplement the transcript, but do not present it as something said in the transcript.\n<therapist_guidance>\n${guidance}\n</therapist_guidance>` : ''}
 ${dismissed.length ? `The therapist removed these sections for this review cycle. Return an empty string for them: ${dismissed.join(', ')}.` : ''}
 <session_transcript>
