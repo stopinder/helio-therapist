@@ -22,9 +22,21 @@
         <div class="flex items-start justify-between gap-inline-md">
           <div class="min-w-0">
             <p class="text-body-sm font-medium text-ink">{{ titleFor(transcript) }}</p>
-            <p class="text-caption text-ink-muted mt-0.5">{{ formatDate(transcript.receivedAt) }}<template v-if="transcript.sessionRef"> · Linked to session</template></p>
+            <p class="text-caption text-ink-muted mt-0.5">{{ formatDate(transcript.receivedAt) }}<template v-if="transcript.sessionRef"> · Linked to session</template><template v-else> · Needs session</template></p>
           </div>
-          <button type="button" class="text-body-sm font-medium text-action-link hover:underline shrink-0" @click="toggleTranscript(transcript.id)">{{ expandedId === transcript.id ? 'Hide' : 'View' }}</button>
+          <div class="flex items-center gap-inline-md shrink-0">
+            <button type="button" class="text-body-sm font-medium text-action-link hover:underline" @click="toggleTranscript(transcript.id)">{{ expandedId === transcript.id ? 'Hide' : 'View' }}</button>
+            <router-link
+              v-if="!transcript.sessionRef"
+              :to="{ path: '/transcripts', query: { transcript: transcript.id, returnClientId: props.clientId } }"
+              class="text-body-sm font-semibold text-action-link hover:underline"
+            >Link session</router-link>
+            <router-link
+              v-else
+              :to="{ path: '/transcripts', query: { transcript: transcript.id, returnClientId: props.clientId } }"
+              class="text-body-sm font-medium text-action-link hover:underline"
+            >Review</router-link>
+          </div>
         </div>
         <div v-if="expandedId === transcript.id" class="mt-stack-md border-t border-border-muted pt-stack-md">
           <p class="text-caption text-ink-muted mb-stack-sm">Original transcript · unchanged source</p>
