@@ -5,13 +5,21 @@ import { hasGoogleCalendarReadScope, hasGoogleCalendarWriteScope } from '../api/
 
 const read=path=>readFile(new URL(path,import.meta.url),'utf8');
 
-test('Google scope helper accepts Calendar grants and rejects identity-only consent',()=>{
+test('Google scope helper accepts least-privilege Calendar grants and rejects identity-only consent',()=>{
   assert.equal(hasGoogleCalendarReadScope('openid https://www.googleapis.com/auth/userinfo.email'),false);
-  assert.equal(hasGoogleCalendarReadScope('https://www.googleapis.com/auth/calendar.readonly https://www.googleapis.com/auth/userinfo.email'),true);
+  assert.equal(hasGoogleCalendarReadScope('https://www.googleapis.com/auth/calendar.calendarlist.readonly https://www.googleapis.com/auth/calendar.events https://www.googleapis.com/auth/userinfo.email'),true);
+  assert.equal(hasGoogleCalendarReadScope('https://www.googleapis.com/auth/calendar.events'),true);
   assert.equal(hasGoogleCalendarReadScope('https://www.googleapis.com/auth/calendar'),true);
-  assert.equal(hasGoogleCalendarWriteScope('https://www.googleapis.com/auth/calendar.readonly'),false);
+  assert.equal(hasGoogleCalendarWriteScope('https://www.googleapis.com/auth/calendar.calendarlist.readonly'),false);
   assert.equal(hasGoogleCalendarWriteScope('https://www.googleapis.com/auth/calendar.events'),true);
   assert.equal(hasGoogleCalendarWriteScope('https://www.googleapis.com/auth/calendar'),true);
+});
+
+test('Google authorization requests the least-privilege Calendar scopes',async()=>{
+  const authorize=await read('../api/google/authorize.js');
+  assert.match(authorize,/https:\/\/www\.googleapis\.com\/auth\/calendar\.calendarlist\.readonly/);
+  assert.match(authorize,/https:\/\/www\.googleapis\.com\/auth\/calendar\.events/);
+  assert.doesNotMatch(authorize,/https:\/\/www\.googleapis\.com\/auth\/calendar\.readonly/);
 });
 
 test('OAuth callback does not report success when Calendar permission is absent',async()=>{
