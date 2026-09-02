@@ -16,6 +16,12 @@
 
     <main v-else class="flex-1 overflow-y-auto p-page">
       <div class="max-w-[68rem] mx-auto mb-stack-md">
+        <div v-if="returnClientId" class="mb-stack-md">
+          <router-link
+            :to="{ name: 'ClientWorkspace', params: { clientId: returnClientId }, query: { tab: 'Transcripts' } }"
+            class="text-body-sm font-medium text-action-link hover:underline"
+          >← Back to client transcripts</router-link>
+        </div>
         <div class="flex justify-end gap-inline-sm">
           <button
             type="button"
@@ -71,11 +77,13 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { computed, ref, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
 import TranscriptInbox from '../components/TranscriptInbox.vue'
 import { listClients } from '../lib/clients.js'
 import { authenticatedFetch } from '../lib/api.js'
 
+const route = useRoute()
 const clients = ref([])
 const loading = ref(true)
 const error = ref('')
@@ -88,6 +96,7 @@ const inboxKey = ref(0)
 const showPasteImport = ref(false)
 const pastedTranscript = ref('')
 const MAX_IMPORT_BYTES = 2 * 1024 * 1024
+const returnClientId = computed(() => typeof route.query.returnClientId === 'string' ? route.query.returnClientId : '')
 
 async function load() {
   loading.value = true

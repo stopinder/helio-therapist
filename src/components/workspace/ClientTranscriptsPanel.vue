@@ -5,7 +5,7 @@
         <h3 class="text-h3 font-semibold text-ink">Transcripts</h3>
         <p class="text-body-sm text-ink-muted mt-1">Original source transcripts assigned to this client.</p>
       </div>
-      <router-link to="/transcripts" class="text-body-sm font-medium text-action-link hover:underline">Transcript Inbox</router-link>
+      <router-link :to="{ path: '/transcripts', query: { returnClientId: props.clientId } }" class="text-body-sm font-medium text-action-link hover:underline">Transcript Inbox</router-link>
     </div>
 
     <div v-if="loading" class="py-stack-xl text-center text-body-sm text-ink-subtle">Loading transcripts…</div>
