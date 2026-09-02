@@ -5,6 +5,7 @@ import test from 'node:test'
 const workspaceSource = fs.readFileSync(new URL('../src/views/ClientWorkspace.vue', import.meta.url), 'utf8')
 const panelSource = fs.readFileSync(new URL('../src/components/workspace/ClientTranscriptsPanel.vue', import.meta.url), 'utf8')
 const transcriptsViewSource = fs.readFileSync(new URL('../src/views/Transcripts.vue', import.meta.url), 'utf8')
+const transcriptInboxSource = fs.readFileSync(new URL('../src/components/TranscriptInbox.vue', import.meta.url), 'utf8')
 const apiSource = fs.readFileSync(new URL('../api/zoom/transcripts.js', import.meta.url), 'utf8')
 
 test('client workspace exposes a real transcripts tab', () => {
@@ -21,8 +22,21 @@ test('client transcript panel only renders transcripts assigned to the current c
   assert.match(panelSource, /Original transcript · unchanged source/)
 })
 
+test('client transcript without a session exposes the existing session-link workflow', () => {
+  assert.match(panelSource, /v-if="!transcript\.sessionRef"/)
+  assert.match(panelSource, /Needs session/)
+  assert.match(panelSource, /Link session/)
+  assert.match(panelSource, /transcript:\s*transcript\.id/)
+  assert.match(panelSource, /returnClientId:\s*props\.clientId/)
+  assert.match(transcriptsViewSource, /route\.query\.transcript/)
+  assert.match(transcriptsViewSource, /:open-transcript-id="openTranscriptId"/)
+  assert.match(transcriptInboxSource, /openTranscriptId/)
+  assert.match(transcriptInboxSource, /No sessions for this client yet\. Create one from this transcript when you are ready\./)
+  assert.match(transcriptInboxSource, /Create session/)
+})
+
 test('client transcript inbox navigation preserves a return to the client transcripts tab', () => {
-  assert.match(panelSource, /query:\s*\{\s*returnClientId:\s*props\.clientId\s*\}/)
+  assert.match(panelSource, /returnClientId:\s*props\.clientId/)
   assert.match(transcriptsViewSource, /route\.query\.returnClientId/)
   assert.match(transcriptsViewSource, /name:\s*'ClientWorkspace'/)
   assert.match(transcriptsViewSource, /query:\s*\{\s*tab:\s*'Transcripts'\s*\}/)
