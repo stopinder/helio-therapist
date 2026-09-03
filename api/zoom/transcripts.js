@@ -13,6 +13,7 @@ function serialiseTranscript(row) {
     noteId: row.zoom_note_id,
     sourceTitle: row.source_title,
     structuredTranscript: row.structured_transcript,
+    sourceSummary: row.structured_transcript?.zoomNote?.generatedContent || null,
     format: row.original_format,
     text: row.original_transcript,
     source: row.source,
