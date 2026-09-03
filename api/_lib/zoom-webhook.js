@@ -107,6 +107,18 @@ export function canonicaliseMyNotesTranscript(transcript) {
   }).join('\n\n')
 }
 
+export function structuredZoomNoteContent(content) {
+  const transcript = content?.transcript;
+  if (!transcript || typeof transcript !== 'object' || Array.isArray(transcript)) return transcript;
+
+  return {
+    ...transcript,
+    zoomNote: {
+      generatedContent: typeof content.generated_note_content === 'string' ? content.generated_note_content : ''
+    }
+  };
+}
+
 export function safeZoomWebhookPayload(body) {
   const schedulerEvent = schedulerAppointmentEvent(body)
   if (schedulerEvent) {
