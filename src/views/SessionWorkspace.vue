@@ -15,7 +15,7 @@
             <RouterLink :to="{ name: 'ScheduleAppointment', query: { clientId: session.clientId } }" class="px-inline-md py-stack-xs bg-action-link text-on-action text-body-sm font-medium rounded-control hover:bg-action-link-hover">Schedule next appointment</RouterLink>
           </div>
         </section>
-        <TranscriptTab v-if="activeTab === 'Session Capture'" :transcript="transcript" :clientId="session.clientId" :sessionId="session.id" :loading="transcriptLoading" :error="transcriptError" :activeTab="activeTab" @retry="loadTranscript" />
+        <TranscriptTab v-if="activeTab === 'Session Capture'" :transcript="transcript" :clientId="session.clientId" :sessionId="session.id" :sessionStatus="session.status" :loading="transcriptLoading" :error="transcriptError" :activeTab="activeTab" @retry="loadTranscript" />
         <TherapistNotesTab v-else-if="activeTab === 'Notes'" :clientId="session.clientId" :sessionId="session.id" :initialDraft="aiClinicalNoteDraft" @draft-consumed="aiClinicalNoteDraft = null" />
         <ReflectionTab v-else-if="activeTab === 'Reflection'" :clientId="session.clientId" :sessionId="session.id" />
         <CompletedClinicalRecord v-else-if="activeTab === 'Clinical Record' && session.status === 'completed'" :key="clinicalRecordKey" :session="session" :therapistName="therapistName" />

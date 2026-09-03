@@ -59,9 +59,6 @@ export default async function handler(req, res) {
       .maybeSingle();
     if (sessionError) throw sessionError;
     if (!session) return res.status(409).json({ success: false, error: { code: 'SESSION_NOT_AVAILABLE', message: 'Link this transcript to a current session before preparing a draft.' } });
-    if (session.status === 'completed') {
-      return res.status(409).json({ success: false, error: { code: 'CLINICAL_RECORD_ALREADY_APPROVED', message: 'This session already has an approved Clinical Record.' } });
-    }
     const promptTranscript = applySpeakerIdentities(transcript.original_transcript, speakerIdentities);
     const chunks = splitClinicalSummaryTranscript(promptTranscript);
     const partialDrafts = [];
@@ -102,7 +99,7 @@ export default async function handler(req, res) {
     }
 
     for (const key of dismissedFields) if (Object.hasOwn(draft, key)) draft[key] = '';
-    return res.status(200).json({ success: true, data: { draft, promptVersion: CLINICAL_SUMMARY_PROMPT_VERSION } });
+    return res.status(200).json({ success: true, data: { draft, promptVersion: CLINICAL_SUMMARY_PROMPT_VERSION, retrospective: session.status === 'completed' } });
   } catch (error) {
     if (error.code === 'TRANSCRIPT_TOO_SHORT') {
       return res.status(error.status || 422).json({ success: false, error: { code: error.code, message: error.message } });

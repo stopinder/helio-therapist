@@ -3,7 +3,7 @@ import { getSupabaseClient } from '../_lib/supabase.js';
 import { getZoomAccessTokenContext } from '../_lib/zoom-oauth.js';
 import { downloadZoomTranscriptWithRetry } from '../_lib/zoom-download.js';
 import { syncAppointmentToGoogleCalendar } from '../_lib/google-calendar.js';
-import { canonicaliseMyNotesTranscript, myNotesEvent, safeZoomWebhookPayload, schedulerAppointmentEvent, verifyZoomWebhookRequest } from '../_lib/zoom-webhook.js';
+import { canonicaliseMyNotesTranscript, myNotesEvent, safeZoomWebhookPayload, schedulerAppointmentEvent, structuredZoomNoteContent, verifyZoomWebhookRequest } from '../_lib/zoom-webhook.js';
 import { waitUntil } from '@vercel/functions';
 
 export const config = { api: { bodyParser: false } };
@@ -101,13 +101,14 @@ async function processMyNotesEvent(supabase, intakeEventId, noteEvent) {
   if (!contentResponse.ok) throw new Error(`Zoom My Notes content request failed with ${contentResponse.status}`);
   const noteContent = await contentResponse.json();
   const structuredTranscript = noteContent?.transcript;
+  const structuredContent = structuredZoomNoteContent(noteContent);
   const originalTranscript = canonicaliseMyNotesTranscript(structuredTranscript);
   if (!originalTranscript) { await updateEvent(supabase, intakeEventId, { processing_status: 'failed', processing_error: 'Zoom My Notes content did not contain transcript items' }); return; }
   let sessionLink = noteEvent.meetingId ? await findVerifiedSessionLink(supabase, integration.user_id, noteEvent.meetingId) : null;
   if (!sessionLink) sessionLink = await findUniqueAwaitingSession(supabase, integration.user_id, noteEvent.createdTime);
   const now = new Date().toISOString();
   const sourceTitle = noteEvent.noteName || noteContent.note_name || null;
-  const { error: transcriptError } = await supabase.from('zoom_transcripts').upsert({ therapist_user_id: integration.user_id, zoom_note_id: noteEvent.noteId, zoom_meeting_id: noteEvent.meetingId, zoom_meeting_uuid: null, zoom_recording_file_id: null, original_format: 'JSON', original_transcript: originalTranscript, structured_transcript: structuredTranscript, source: 'zoom_my_notes', source_title: sourceTitle, client_id: sessionLink?.client_id || null, session_ref: sessionLink?.session_ref || null, status: sessionLink ? 'ready' : 'unassigned', updated_at: now }, { onConflict: 'therapist_user_id,zoom_note_id' });
+  const { error: transcriptError } = await supabase.from('zoom_transcripts').upsert({ therapist_user_id: integration.user_id, zoom_note_id: noteEvent.noteId, zoom_meeting_id: noteEvent.meetingId, zoom_meeting_uuid: null, zoom_recording_file_id: null, original_format: 'JSON', original_transcript: originalTranscript, structured_transcript: structuredContent, source: 'zoom_my_notes', source_title: sourceTitle, client_id: sessionLink?.client_id || null, session_ref: sessionLink?.session_ref || null, status: sessionLink ? 'ready' : 'unassigned', updated_at: now }, { onConflict: 'therapist_user_id,zoom_note_id' });
   if (transcriptError) throw transcriptError;
   if (sessionLink) {
     await markSessionTranscriptReceived(supabase, integration.user_id, sessionLink);
