@@ -28,3 +28,17 @@ test('Helio Session Capture is generated from the raw transcript, never Zoom sum
   assert.match(endpoint, /applySpeakerIdentities\(transcript\.original_transcript, speakerIdentities\)/);
   assert.doesNotMatch(endpoint, /sourceSummary|generated_note_content|zoomNote/);
 });
+
+
+test('completed sessions can create retrospective capture without reopening the approved record', () => {
+  const endpoint = fs.readFileSync(new URL('../api/ai/transcript-clinical-summary.js', import.meta.url), 'utf8');
+  const sessionCapture = fs.readFileSync(new URL('../src/components/workspace/TranscriptTab.vue', import.meta.url), 'utf8');
+  const workspace = fs.readFileSync(new URL('../src/views/SessionWorkspace.vue', import.meta.url), 'utf8');
+
+  assert.doesNotMatch(endpoint, /CLINICAL_RECORD_ALREADY_APPROVED/);
+  assert.match(endpoint, /retrospective: session\.status === 'completed'/);
+  assert.match(workspace, /:sessionStatus="session\.status"/);
+  assert.match(sessionCapture, /sessionStatus:\{type:String,default:''\}/);
+  assert.match(sessionCapture, /retrospective Session Capture remains separate and cannot alter or replace that record/);
+  assert.match(sessionCapture, /approved record remains locked and unchanged/);
+});
