@@ -1,5 +1,7 @@
 import { getZoomAccessTokenContext, isZoomTokenExpiring } from './zoom-oauth.js';
-import { canonicaliseMyNotesTranscript } from './zoom-webhook.js';
+import { canonicaliseMyNotesTranscript, structuredZoomNoteContent } from './zoom-webhook.js';
+
+export { structuredZoomNoteContent } from './zoom-webhook.js';
 
 function listItems(payload) {
   if (Array.isArray(payload?.files)) return payload.files;
@@ -265,11 +267,13 @@ export async function reconcileZoomMyNotes({ supabase, integration, therapistUse
     );
 
     const sourceTitle = (content?.note_name ? String(content.note_name).trim() : null) || note.title || null;
+    const structuredContent = structuredZoomNoteContent(content);
+    const now = new Date().toISOString();
 
     if (existingIds.has(note.noteId)) {
       const { error: updateError } = await supabase
         .from('zoom_transcripts')
-        .update({ source_title: sourceTitle })
+        .update({ source_title: sourceTitle, structured_transcript: structuredContent, updated_at: now })
         .eq('therapist_user_id', therapistUserId)
         .eq('zoom_note_id', note.noteId);
       if (updateError) throw updateError;
@@ -286,7 +290,6 @@ export async function reconcileZoomMyNotes({ supabase, integration, therapistUse
     let sessionLink = await verifiedSessionLink(supabase, therapistUserId, meetingId);
     if (!sessionLink) sessionLink = await uniqueAwaitingSession(supabase, therapistUserId, createdTime);
 
-    const now = new Date().toISOString();
     const { error: transcriptError } = await supabase
       .from('zoom_transcripts')
       .upsert({
@@ -297,7 +300,7 @@ export async function reconcileZoomMyNotes({ supabase, integration, therapistUse
         zoom_recording_file_id: null,
         original_format: 'JSON',
         original_transcript: originalTranscript,
-        structured_transcript: structuredTranscript,
+        structured_transcript: structuredContent,
         source: 'zoom_my_notes',
         source_title: sourceTitle,
         client_id: sessionLink?.client_id || null,
