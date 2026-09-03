@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import { normaliseZoomNoteList } from '../api/_lib/zoom-my-notes-reconciliation.js';
+import { normaliseZoomNoteList, structuredZoomNoteContent } from '../api/_lib/zoom-my-notes-reconciliation.js';
 
 test('normaliseZoomNoteList preserves note_name as title', () => {
   const notes = normaliseZoomNoteList({
@@ -31,6 +31,18 @@ test('meeting-scoped note responses inherit the meeting id used for lookup', () 
   assert.equal(notes[0].meetingId, '987654321');
 });
 
+test('Zoom generated note content is preserved alongside its transcript', () => {
+  const structured = structuredZoomNoteContent({
+    generated_note_content: '## Key outcomes\n\nA clinically useful Zoom summary.',
+    transcript: { items: [{ text: 'Session words' }], speakers: [] }
+  });
+
+  assert.deepEqual(structured.items, [{ text: 'Session words' }]);
+  assert.deepEqual(structured.zoomNote, {
+    generatedContent: '## Key outcomes\n\nA clinically useful Zoom summary.'
+  });
+});
+
 test('reconciliation is authenticated, therapist-scoped, meeting-scoped and deduplicates by Zoom note id', () => {
   const endpointSource = fs.readFileSync(new URL('../api/zoom/reconcile-my-notes.js', import.meta.url), 'utf8');
   const helperSource = fs.readFileSync(new URL('../api/_lib/zoom-my-notes-reconciliation.js', import.meta.url), 'utf8');
@@ -43,6 +55,9 @@ test('reconciliation is authenticated, therapist-scoped, meeting-scoped and dedu
   assert.match(helperSource, /my_notes:read:note/);
   assert.match(helperSource, /my_notes:read:content/);
   assert.match(helperSource, /my_notes\/notes\?meeting_id=/);
+  assert.match(helperSource, /structured_transcript: structuredContent/);
+  const webhookHelperSource = fs.readFileSync(new URL('../api/_lib/zoom-webhook.js', import.meta.url), 'utf8');
+  assert.match(webhookHelperSource, /generated_note_content/);
   assert.doesNotMatch(helperSource, /users\/me\/meetings/);
 });
 
