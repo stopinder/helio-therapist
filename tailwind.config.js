@@ -11,7 +11,7 @@ module.exports = {
         reflection: 'var(--surface-reflection)', 'reflection-hover': 'var(--surface-reflection-hover)', 'border-reflection': 'var(--border-reflection)', 'border-reflection-tag': 'var(--border-reflection-tag)', 'state-reflection-focus': 'var(--state-reflection-focus)',
         sidebar: 'var(--surface-sidebar)', avatar: 'var(--surface-avatar)', backdrop: 'var(--surface-backdrop)', 'brand-amber': 'var(--brand-amber)', 'brand-amber-soft': 'var(--brand-amber-soft)', 'brand-sage-soft': 'var(--brand-sage-soft)',
       },
-      fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'], serif: ['Newsreader', 'Georgia', 'serif'] },
+      fontFamily: { sans: ['DM Sans', 'system-ui', 'sans-serif'], serif: ['Fraunces', 'Georgia', 'serif'] },
       fontSize: {
         display: ['2.625rem', { lineHeight: '2.9rem', letterSpacing: '-0.035em' }], h1: ['2rem', { lineHeight: '2.35rem', letterSpacing: '-0.025em' }], h2: ['1.375rem', { lineHeight: '1.8rem', letterSpacing: '-0.015em' }], h3: ['1.0625rem', { lineHeight: '1.5rem' }], body: ['0.9375rem', { lineHeight: '1.55rem' }], 'body-long': ['1rem', { lineHeight: '1.8rem' }], 'body-sm': ['0.8125rem', { lineHeight: '1.3rem' }], caption: ['0.75rem', { lineHeight: '1.05rem' }], overline: ['0.6875rem', { lineHeight: '1rem', letterSpacing: '0.11em' }],
       },
