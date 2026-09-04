@@ -196,17 +196,17 @@ test.describe('Calendar Session Start Workflow', () => {
 
     // 4. Verify navigation
     await expect(page).toHaveURL(new RegExp(`/clients/${clientId}/sessions/${sessionId}`));
-    await expect(page.getByRole('navigation', { name: 'Workflow Stages' })).toBeVisible();
+    await expect(page.getByRole('navigation', { name: 'Session workspace navigation' })).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Test Client' })).toBeVisible();
   });
 
   test('therapist starts a session from Overview', async ({ page }) => {
     // 1. Ensure we are on Overview
     await page.getByRole('navigation').getByRole('link', { name: /Overview/i }).click();
-    await expect(page).toHaveURL(/\/$/);
+    await expect(page).toHaveURL(/\/overview$/);
     await expect(page.getByRole('heading', { name: /Good afternoon|Good morning|Good evening/i })).toBeVisible();
 
-    // 2. Find Clinical Workspace button in Today's Schedule
+    // 2. Find the singular Clinical Workspace action in the next-session focal point
     const startButton = page.getByRole('button', { name: 'Clinical Workspace' });
     await expect(startButton).toBeVisible();
 
@@ -215,7 +215,7 @@ test.describe('Calendar Session Start Workflow', () => {
 
     // 4. Verify navigation
     await expect(page).toHaveURL(new RegExp(`/clients/${clientId}/sessions/${sessionId}`));
-    await expect(page.getByRole('navigation', { name: 'Workflow Stages' })).toBeVisible();
+    await expect(page.getByRole('navigation', { name: 'Session workspace navigation' })).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Test Client' })).toBeVisible();
   });
 
