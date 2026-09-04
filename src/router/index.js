@@ -1,29 +1,30 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { supabase } from '../lib/supabase.js'
-import Landing from '../views/Landing.vue'
-import AuthEntry from '../views/AuthEntry.vue'
-import Terms from '../views/Terms.vue'
-import Privacy from '../views/Privacy.vue'
-import AiData from '../views/AiData.vue'
-import Cookies from '../views/Cookies.vue'
-import Support from '../views/Support.vue'
-import Overview from '../views/Overview.vue'
-import Calendar from '../views/Calendar.vue'
-import Clients from '../views/Clients.vue'
-import ClientWorkspace from '../views/ClientWorkspace.vue'
-import SessionWorkspace from '../views/SessionWorkspace.vue'
-import Transcripts from '../views/Transcripts.vue'
-import Documents from '../views/Documents.vue'
-import Settings from '../views/Settings.vue'
-import PublicBooking from '../views/PublicBooking.vue'
-import ClientCompletion from '../components/ClientCompletion.vue'
-import ScheduleAppointment from '../components/ScheduleAppointment.vue'
-import ProfessionalDevelopmentLayout from '../layouts/ProfessionalDevelopmentLayout.vue'
-import SupervisionHome from '../views/supervision/SupervisionHome.vue'
-import SupervisionReflections from '../views/supervision/SupervisionReflections.vue'
-import SupervisionWorkspace from '../views/supervision/SupervisionWorkspace.vue'
-import SupervisionGrowth from '../views/supervision/SupervisionGrowth.vue'
-import SupervisionInsights from '../views/supervision/SupervisionInsights.vue'
+
+const Landing = () => import('../views/Landing.vue')
+const AuthEntry = () => import('../views/AuthEntry.vue')
+const Terms = () => import('../views/Terms.vue')
+const Privacy = () => import('../views/Privacy.vue')
+const AiData = () => import('../views/AiData.vue')
+const Cookies = () => import('../views/Cookies.vue')
+const Support = () => import('../views/Support.vue')
+const Overview = () => import('../views/Overview.vue')
+const Calendar = () => import('../views/Calendar.vue')
+const Clients = () => import('../views/Clients.vue')
+const ClientWorkspace = () => import('../views/ClientWorkspace.vue')
+const SessionWorkspace = () => import('../views/SessionWorkspace.vue')
+const Transcripts = () => import('../views/Transcripts.vue')
+const Documents = () => import('../views/Documents.vue')
+const Settings = () => import('../views/Settings.vue')
+const PublicBooking = () => import('../views/PublicBooking.vue')
+const ClientCompletion = () => import('../components/ClientCompletion.vue')
+const ScheduleAppointment = () => import('../components/ScheduleAppointment.vue')
+const ProfessionalDevelopmentLayout = () => import('../layouts/ProfessionalDevelopmentLayout.vue')
+const SupervisionHome = () => import('../views/supervision/SupervisionHome.vue')
+const SupervisionReflections = () => import('../views/supervision/SupervisionReflections.vue')
+const SupervisionWorkspace = () => import('../views/supervision/SupervisionWorkspace.vue')
+const SupervisionGrowth = () => import('../views/supervision/SupervisionGrowth.vue')
+const SupervisionInsights = () => import('../views/supervision/SupervisionInsights.vue')
 
 const routes = [
   { path: '/', name: 'Landing', component: Landing, meta: { public: true, title: 'Helios — Therapist workspace' } },
