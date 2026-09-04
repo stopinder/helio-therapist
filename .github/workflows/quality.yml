@@ -36,6 +36,13 @@ jobs:
         continue-on-error: true
         run: npm audit --audit-level=high
 
+      - name: Run focused Midnight Meridian tests
+        run: >-
+          node --test
+          --test-name-pattern="Overview view requirements|Midnight Meridian"
+          test/overview-calendar-requirements.test.js
+          test/midnight-meridian-composition.test.js
+
       # Temporary: keep broad checks visible without blocking delivery.
       # Restore these as blocking checks when GitHub issue #179 is resolved.
       - name: Run tests (non-blocking)
@@ -48,6 +55,16 @@ jobs:
 
       - name: Install Playwright Chromium
         run: npx playwright install --with-deps chromium
+
+      - name: Run Overview session-start Playwright acceptance
+        env:
+          VITE_SUPABASE_URL: http://127.0.0.1:54321
+          VITE_SUPABASE_ANON_KEY: playwright-anon-key
+        run: >-
+          npx playwright test
+          e2e/calendar-session-start.spec.js
+          --grep "therapist starts a session from Overview"
+          --project=chromium
 
       - name: Run Zoom My Notes Playwright acceptance
         env:
