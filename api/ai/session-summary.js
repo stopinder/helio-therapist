@@ -90,6 +90,38 @@ Rules:
    DO NOT use "recurring", "accepted_care", or "therapist_guidance".
 10. patternsOverTime should normally be empty unless the source explicitly describes an established historical pattern.
 
+11. Use tentative language for inferred psychological meaning.
+    Developmental, relational, attachment, nervous-system, parts-based,
+    CBT-style, or other clinical connections must not be stated as fact
+    unless the source explicitly establishes them.
+    Prefer language such as:
+    - “may help explain…”
+    - “could be connected with…”
+    - “we wondered whether…”
+    - “this may be worth continuing to explore…”
+
+12. Avoid repetition across sections.
+    Do not restate the same event, formulation, childhood history, or
+    therapeutic interpretation in multiple sections unless it is necessary
+    for meaning.
+    Ordinarily, the same core formulation should appear in no more than
+    two sections.
+
+13. Each section should add something new.
+    - opening = current context and overall session focus
+    - whatWeWorkedOn = main material explored
+    - patternsOverTime = only genuinely historical/repeated patterns
+    - changesAndExceptions = explicit shifts or differences
+    - strengthsAndResources = capacities/supports
+    - perspectiveReflection = synthesis/clinical meaning, stated tentatively
+    - betweenSession = agreed intentions/resources
+    - closing = brief forward-looking integration, not a recap of the whole summary
+
+14. Prefer precision over exhaustiveness.
+    Preserve clinically meaningful detail, but omit duplicated background.
+    Aim for a substantial client-ready summary that is roughly 10–15%
+    tighter than a version that repeats the same themes across sections.
+
 Return JSON only with exactly two fields:
 - sections: an object with fields: opening, whatWeWorkedOn, patternsOverTime, changesAndExceptions, strengthsAndResources, perspectiveReflection, betweenSession, closing.
 - claims: an array of sentences used, each with { section, text, sourceIds, evidenceStrength }. 
