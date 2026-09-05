@@ -113,7 +113,8 @@ sourceIds for these claims must include "${transcript.id}".`;
       ],
       responseFormat: { type: 'json_object' },
       temperature: 0.3,
-      maxTokens: 3000
+      maxTokens: 3000,
+      timeout: 60000
     });
 
     const structured = validateClientSessionSummaryResponse(completion.choices?.[0]?.message?.content, new Set([transcript.id]));
@@ -138,6 +139,17 @@ sourceIds for these claims must include "${transcript.id}".`;
     });
   } catch (error) {
     console.error('[Session Summary] Error:', error.message);
+    
+    if (error.name === 'APITimeoutError' || error.status === 408 || error.code === 'ETIMEDOUT') {
+      return res.status(504).json({
+        success: false,
+        error: {
+          code: 'TIMEOUT',
+          message: 'Session summary generation is temporarily unavailable.'
+        }
+      });
+    }
+
     const status = error.status || 500;
     return res.status(status).json({ 
       success: false, 
