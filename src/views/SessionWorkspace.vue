@@ -15,6 +15,14 @@
               <div class="flex items-center gap-3">
                 <span v-if="copySuccess" class="text-body-sm text-state-success" role="status">Copied!</span>
                 <button 
+                  v-if="summaryDocument?.content?.body"
+                  @click="generateSummary"
+                  :disabled="isGenerating"
+                  class="text-body-sm font-medium text-action-link hover:underline disabled:opacity-50"
+                >
+                  Regenerate
+                </button>
+                <button 
                   @click="copySummary" 
                   :disabled="!summaryDocument?.content?.body" 
                   class="px-inline-md py-stack-xs bg-surface-elevated border border-border text-body-sm font-medium text-ink rounded-control hover:bg-surface-subtle disabled:opacity-50"
@@ -25,16 +33,36 @@
             </div>
 
             <div class="bg-surface rounded-panel border border-border p-6 shadow-sm">
-              <div v-if="summaryDocument" class="prose prose-sm max-w-none">
+              <div v-if="isGenerating" class="py-12 text-center text-ink-muted bg-surface-subtle rounded-panel border border-dashed border-border flex flex-col items-center gap-3">
+                <span class="w-8 h-8 border-4 border-state-selected border-t-transparent rounded-full animate-spin"></span>
+                <p>Preparing summary…</p>
+              </div>
+              <div v-else-if="generationError" class="py-8 px-6 text-center bg-state-danger/5 rounded-panel border border-state-danger/20">
+                <p class="text-state-danger text-body-sm mb-4">{{ generationError }}</p>
+                <button @click="generateSummary" class="button-primary py-stack-xs px-inline-md text-body-sm">Retry</button>
+              </div>
+              <div v-else-if="summaryDocument" class="space-y-4">
                 <textarea 
                   v-model="summaryDocument.content.body" 
                   class="w-full min-h-[20rem] p-4 border border-border rounded-control bg-surface-subtle text-body focus:border-action-link focus:ring-1 focus:ring-action-link outline-none transition-all"
                   placeholder="No session summary yet."
                   @input="handleSummaryInput"
                 ></textarea>
+                
+                <div v-if="summaryDocument.sourceManifest?.length" class="flex items-center justify-end">
+                  <span class="text-body-xs text-ink-muted">
+                    Generated from Zoom summary + transcript
+                  </span>
+                </div>
               </div>
               <div v-else class="py-12 text-center text-ink-muted bg-surface-subtle rounded-panel border border-dashed border-border">
-                <p>No session summary yet.</p>
+                <div v-if="transcript" class="flex flex-col items-center gap-4">
+                  <p>No session summary yet.</p>
+                  <button @click="generateSummary" :disabled="isGenerating" class="button-primary py-stack-xs px-inline-md">
+                    Generate summary
+                  </button>
+                </div>
+                <p v-else>No session transcript or Zoom summary is available yet.</p>
               </div>
             </div>
           </section>
@@ -100,7 +128,7 @@ import { useRoute, RouterLink } from 'vue-router';
 import { supabase } from '../lib/supabase.js'; 
 import { getSession } from '../lib/sessions.js'; 
 import { getClient } from '../lib/clients.js'; 
-import { findSessionSummary, createClientDocumentDraft, saveClientDocumentDraft } from '../lib/clientDocuments.js';
+import { findSessionSummary, createClientDocumentDraft, saveClientDocumentDraft, generateSessionSummary } from '../lib/clientDocuments.js';
 import { authenticatedFetch } from '../lib/api.js'; 
 import SessionWorkspaceHeader from '../components/workspace/SessionWorkspaceHeader.vue'; 
 import ReflectionTab from '../components/workspace/ReflectionTab.vue'; 
@@ -112,7 +140,53 @@ const showTranscript = ref(false);
 const showReflection = ref(false);
 const copySuccess = ref(false);
 const copyError = ref('');
+const isGenerating = ref(false);
+const generationError = ref('');
 let saveTimer = null;
+
+async function generateSummary() {
+  if (!session.value || isGenerating.value) return;
+  isGenerating.value = true;
+  generationError.value = '';
+  
+  try {
+    const transcriptId = transcript.value?.id;
+    const result = await generateSessionSummary({
+      clientId: session.value.clientId,
+      sessionId: session.value.id,
+      transcriptId
+    });
+    
+    if (summaryDocument.value) {
+      // Preserve history if needed, but here we update the draft
+      const updated = await saveClientDocumentDraft(summaryDocument.value, { 
+        content: { 
+          ...summaryDocument.value.content, 
+          body: result.draft.body,
+          history: [
+            ...(summaryDocument.value.content.history || []),
+            { body: summaryDocument.value.content.body, timestamp: new Date().toISOString(), type: 'pre_regeneration' }
+          ]
+        },
+        sourceManifest: result.sources
+      });
+      summaryDocument.value = updated;
+    } else {
+      summaryDocument.value = await createClientDocumentDraft({
+        client: client.value,
+        title: `Session Summary - ${workspaceSession.value.date}`,
+        documentType: 'session_summary',
+        content: { body: result.draft.body },
+        sourceManifest: result.sources
+      });
+    }
+  } catch (err) {
+    generationError.value = err.message || 'Summary generation failed. Please try again.';
+    console.error('Generation failed:', err);
+  } finally {
+    isGenerating.value = false;
+  }
+}
 
 async function copySummary() {
   if (!summaryDocument.value?.content?.body) return;
