@@ -19,16 +19,18 @@
         <textarea :id="key" v-model="notes[key]" rows="4" :disabled="loading || saving || conflict || Boolean(activeDictationKey) || Boolean(transcribingKey)" class="w-full p-3 rounded-control border border-border bg-surface focus:ring-2 focus:ring-action-link focus:border-action-link outline-none transition-all text-body-sm text-ink disabled:opacity-60" :placeholder="`Enter ${label.toLowerCase()}...`"></textarea>
         <div class="flex items-center justify-between gap-3">
           <p v-if="dictationErrorKey === key" class="text-caption text-state-danger" role="alert">{{ dictationError }}</p>
-          <span v-else class="text-caption text-ink-muted">Dictation adds text here for you to review before saving.</span>
+          <span v-else class="text-caption text-ink-muted">Use the microphone to add text here for review before saving.</span>
           <button
             type="button"
-            class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-control border border-border bg-surface text-body-sm font-medium text-ink-secondary hover:bg-surface-subtle disabled:opacity-50"
+            class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-control border border-border bg-surface text-ink-secondary hover:bg-surface-subtle disabled:opacity-50"
+            :class="activeDictationKey === key ? 'border-state-danger/40 bg-state-danger/10 text-state-danger' : ''"
             :disabled="loading || saving || conflict || (Boolean(activeDictationKey) && activeDictationKey !== key) || (Boolean(transcribingKey) && transcribingKey !== key)"
             :aria-pressed="activeDictationKey === key"
+            :aria-label="recordingButtonLabel(key)"
+            :title="recordingButtonLabel(key)"
             @click="toggleDictation(key)"
           >
-            <span aria-hidden="true">🎙️</span>
-            {{ dictationButtonLabel(key) }}
+            <Mic class="workspace-icon-sm" aria-hidden="true" />
           </button>
         </div>
       </div>
@@ -49,6 +51,7 @@
 </template>
 
 <script setup>
+import { Mic } from '@lucide/vue';
 import { onBeforeUnmount, onMounted, reactive, ref } from 'vue';
 import { authenticatedFetch } from '../../lib/api.js';
 import { emptyWorkingNotes, getSessionWorkingNotes, saveSessionWorkingNotes } from '../../lib/workingNotes.js';
@@ -104,10 +107,10 @@ async function load() {
   }
 }
 
-function dictationButtonLabel(key) {
-  if (transcribingKey.value === key) return 'Transcribing…';
+function recordingButtonLabel(key) {
+  if (transcribingKey.value === key) return 'Transcribing recording';
   if (activeDictationKey.value === key) return 'Stop recording';
-  return 'Dictate';
+  return 'Start microphone recording';
 }
 
 async function toggleDictation(key) {
@@ -153,7 +156,7 @@ async function processDictation(key) {
       body: JSON.stringify({ audio })
     });
     const payload = await response.json().catch(() => ({}));
-    if (!response.ok) throw new Error(payload?.error?.message || 'Dictation could not be transcribed.');
+    if (!response.ok) throw new Error(payload?.error?.message || 'The recording could not be transcribed.');
     const text = String(payload?.text || '').trim();
     if (text) notes[key] = [notes[key].trim(), text].filter(Boolean).join(notes[key].trim() ? '\n' : '');
   } catch (err) {
