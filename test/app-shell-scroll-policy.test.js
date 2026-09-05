@@ -4,6 +4,8 @@ import { readFile } from 'node:fs/promises'
 
 const shell = await readFile(new URL('../src/layouts/AppShell.vue', import.meta.url), 'utf8')
 const transcripts = await readFile(new URL('../src/views/Transcripts.vue', import.meta.url), 'utf8')
+const appHeader = await readFile(new URL('../src/components/shell/AppHeader.vue', import.meta.url), 'utf8')
+const appSidebar = await readFile(new URL('../src/components/shell/AppSidebar.vue', import.meta.url), 'utf8')
 
 test('app shell distinguishes full-height workspaces from ordinary scrolling pages', () => {
   assert.match(shell, /fullHeightWorkspacePaths/)
@@ -13,11 +15,17 @@ test('app shell distinguishes full-height workspaces from ordinary scrolling pag
 })
 
 test('app shell propagates min-height zero through the flex content chain', () => {
-  const shellContentClass = shell.match(/<div class="([^"]*overflow-hidden[^"]*)">\s*<header/)?.[1] || ''
-  const mainClass = shell.match(/<main class="([^"]*)" :class="isFullHeightWorkspace/)?.[1] || ''
+  const shellContentClass = shell.match(/<div class="([^"]*overflow-hidden[^"]*)"\s*>[\s\S]*?<AppHeader/)?.[1] || ''
+  const mainClass = shell.match(/<main\s+class="([^"]*)"\s+:class="isFullHeightWorkspace/)?.[1] || ''
 
+  // shellContentClass should match the inner wrapper, but it picked up the outer root div
+  // We need to be more specific to skip the outer div.
+  const innerContentMatch = shell.match(/<\/aside>\s*<div class="([^"]*overflow-hidden[^"]*)"\s*>[\s\S]*?<AppHeader/);
+  const innerContentClass = innerContentMatch?.[1] || '';
+
+  const classes = innerContentClass.split(/\s+/).filter(Boolean)
   for (const className of ['flex', 'flex-col', 'flex-1', 'min-w-0', 'min-h-0', 'h-full', 'overflow-hidden']) {
-    assert.ok(shellContentClass.split(/\s+/).includes(className), `shell content is missing ${className}`)
+    assert.ok(classes.includes(className), `shell content is missing ${className} (found: ${innerContentClass})`)
   }
   for (const className of ['flex-1', 'min-h-0', 'bg-surface-canvas', 'relative']) {
     assert.ok(mainClass.split(/\s+/).includes(className), `main content is missing ${className}`)
@@ -30,11 +38,11 @@ test('transcripts owns its internal scrolling only because it is a full-height w
 })
 
 test('sidebar remains scrollable on short screens but hides its scrollbar rail', () => {
-  assert.match(shell, /sidebar-navigation flex-1 min-h-0 overflow-y-auto/)
-  assert.match(shell, /scrollbar-width:none/)
-  assert.match(shell, /sidebar-navigation::-webkit-scrollbar/)
-  assert.match(shell, /display:none/)
-  assert.doesNotMatch(shell, /\.sidebar-navigation:hover/)
+  assert.match(appSidebar, /sidebar-navigation flex-1 min-h-0 overflow-y-auto/)
+  assert.match(appSidebar, /scrollbar-width\s*:\s*none/)
+  assert.match(appSidebar, /sidebar-navigation::-webkit-scrollbar/)
+  assert.match(appSidebar, /display\s*:\s*none/)
+  assert.doesNotMatch(appSidebar, /\.sidebar-navigation:hover/)
 })
 
 test('permanent sidebar is used from tablet and desktop widths while phones use the menu drawer', () => {
@@ -42,7 +50,7 @@ test('permanent sidebar is used from tablet and desktop widths while phones use 
   assert.match(shell, /bg-backdrop backdrop-blur-sm md:hidden/)
   assert.match(shell, /bg-sidebar md:flex/)
 
-  const openMenuButton = shell.match(/<button[^>]*aria-label="Open menu"[^>]*>/)?.[0] || ''
+  const openMenuButton = appHeader.match(/<button[^>]*aria-label="Open menu"[^>]*>/)?.[0] || ''
   assert.ok(openMenuButton, 'Open menu button is missing')
   assert.match(openMenuButton, /class="[^"]*\bmd:hidden\b[^"]*"/)
 

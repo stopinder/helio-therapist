@@ -8,10 +8,8 @@ const transcriptsViewSource = fs.readFileSync(new URL('../src/views/Transcripts.
 const transcriptInboxSource = fs.readFileSync(new URL('../src/components/TranscriptInbox.vue', import.meta.url), 'utf8')
 const apiSource = fs.readFileSync(new URL('../api/zoom/transcripts.js', import.meta.url), 'utf8')
 
-test('client workspace exposes a real transcripts tab', () => {
-  assert.match(workspaceSource, /'Transcripts'/)
-  assert.match(workspaceSource, /activeTab === 'Transcripts'/)
-  assert.match(workspaceSource, /<ClientTranscriptsPanel/)
+test('client workspace exposes a real transcripts section', () => {
+  assert.match(workspaceSource, /ClientTranscriptsPanel/)
   assert.match(workspaceSource, /:client-id="String\(route\.params\.clientId\)"/)
 })
 

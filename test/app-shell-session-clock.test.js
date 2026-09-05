@@ -4,13 +4,14 @@ import { readFile } from 'node:fs/promises'
 import { nextTimedAppointment } from '../src/lib/nextAppointment.js'
 
 const shell = await readFile(new URL('../src/layouts/AppShell.vue', import.meta.url), 'utf8')
+const header = await readFile(new URL('../src/components/shell/AppHeader.vue', import.meta.url), 'utf8')
 
 test('global header shows compact appointment context', () => {
-  assert.match(shell, /data-testid="global-appointment-clock"/)
-  assert.match(shell, /currentTimeLabel/)
-  assert.match(shell, /nextAppointmentTimeLabel/)
-  assert.match(shell, /nextAppointmentCountdownLabel/)
-  assert.match(shell, /No upcoming appointment/)
+  assert.match(header, /data-testid="global-appointment-clock"/)
+  assert.match(header, /currentTimeLabel/)
+  assert.match(header, /nextAppointmentTimeLabel/)
+  assert.match(header, /nextAppointmentCountdownLabel/)
+  assert.match(header, /No upcoming appointment/)
 })
 
 test('global appointment clock loads Helios and Google timed events', () => {
@@ -51,8 +52,8 @@ test('a real Helios appointment remains eligible even without integration ids', 
 
 test('Join remains visible but is enabled only for a joinable Helios appointment', () => {
   assert.match(shell, /canJoinNextAppointment/)
-  assert.match(shell, /:disabled="!canJoinNextAppointment\s*\|\|\s*joiningNextAppointment"/)
-  assert.match(shell, /Join/)
+  assert.match(header, /:disabled="!canJoinNextAppointment\s*\|\|\s*joiningNextAppointment"/)
+  assert.match(header, /Join/)
   assert.match(shell, /createOrResumeSession/)
   assert.match(shell, /\/api\/zoom\/join-appointment/)
 })
@@ -60,7 +61,7 @@ test('Join remains visible but is enabled only for a joinable Helios appointment
 test('global clock highlights an appointment only within the final 15 minutes', () => {
   assert.match(shell, /minutesUntilNextAppointment/)
   assert.match(shell, /<=\s*15/)
-  assert.match(shell, /data-appointment-approaching/)
+  assert.match(header, /:data-appointment-status="appointmentStatus"/)
 })
 
 test('clock and appointment data refresh while the shell is mounted', () => {
@@ -71,6 +72,6 @@ test('clock and appointment data refresh while the shell is mounted', () => {
 })
 
 test('global controls use the same compact height', () => {
-  const compactControls = shell.match(/h-9/g) || []
+  const compactControls = header.match(/h-9/g) || []
   assert.ok(compactControls.length >= 3, 'Quick capture, Schedule and Join should all use h-9')
 })

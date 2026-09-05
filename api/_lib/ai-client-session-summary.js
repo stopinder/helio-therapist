@@ -117,23 +117,56 @@ export function buildClientSessionSummaryInput({ lens = 'general', window = 'las
 }
 
 export function validateClientSessionSummaryResponse(value, validSourceIds = null) {
-  let parsed=value; if(typeof value==='string'){try{parsed=JSON.parse(value)}catch{return null}}
-  if(!parsed||typeof parsed!=='object'||Array.isArray(parsed))return null;
+  let parsed=value; if(typeof value==='string'){try{parsed=JSON.parse(value)}catch{
+    console.warn('[Session Summary] AI response validation failed: invalid_json');
+    return null;
+  }}
+  if(!parsed||typeof parsed!=='object'||Array.isArray(parsed)) {
+    console.warn('[Session Summary] AI response validation failed: invalid_claim_shape'); // or similar
+    return null;
+  }
   const sectionsInput=parsed.sections;
-  if(!sectionsInput||typeof sectionsInput!=='object'||Array.isArray(sectionsInput))return null;
-  const keys=Object.keys(sectionsInput); if(keys.length!==CLIENT_SESSION_SUMMARY_FIELDS.length||!CLIENT_SESSION_SUMMARY_FIELDS.every(key=>keys.includes(key)))return null;
-  const sections={}; for(const key of CLIENT_SESSION_SUMMARY_FIELDS){if(typeof sectionsInput[key]!=='string')return null;sections[key]=sectionsInput[key].trim().slice(0,7000)}
-  if(!Array.isArray(parsed.claims))return null;
+  if(!sectionsInput||typeof sectionsInput!=='object'||Array.isArray(sectionsInput)) {
+    console.warn('[Session Summary] AI response validation failed: missing_sections');
+    return null;
+  }
+  const keys=Object.keys(sectionsInput); if(keys.length!==CLIENT_SESSION_SUMMARY_FIELDS.length||!CLIENT_SESSION_SUMMARY_FIELDS.every(key=>keys.includes(key))) {
+    console.warn('[Session Summary] AI response validation failed: invalid_section_keys');
+    return null;
+  }
+  const sections={}; for(const key of CLIENT_SESSION_SUMMARY_FIELDS){if(typeof sectionsInput[key]!=='string') {
+    console.warn(`[Session Summary] AI response validation failed: invalid_section_type (${key})`);
+    return null;
+  }sections[key]=sectionsInput[key].trim().slice(0,7000)}
+  if(!Array.isArray(parsed.claims)) {
+    console.warn('[Session Summary] AI response validation failed: invalid_claim_shape');
+    return null;
+  }
   const claims=[];
   for(const claim of parsed.claims){
-    if(!claim||!CLIENT_SESSION_SUMMARY_FIELDS.includes(claim.section)||typeof claim.text!=='string'||!claim.text.trim()||!Array.isArray(claim.sourceIds)||!claim.sourceIds.length||!EVIDENCE_STRENGTHS.has(claim.evidenceStrength))return null;
+    if(!claim||!CLIENT_SESSION_SUMMARY_FIELDS.includes(claim.section)||typeof claim.text!=='string'||!claim.text.trim()||!Array.isArray(claim.sourceIds)||!claim.sourceIds.length||!EVIDENCE_STRENGTHS.has(claim.evidenceStrength)) {
+      console.warn('[Session Summary] AI response validation failed: invalid_claim_shape_or_strength');
+      return null;
+    }
     const sourceIds=[...new Set(claim.sourceIds.filter(id=>typeof id==='string'))];
-    if(sourceIds.length!==claim.sourceIds.length||(validSourceIds&&sourceIds.some(id=>!validSourceIds.has(id))))return null;
-    if(claim.evidenceStrength==='recurring'&&sourceIds.filter(id=>id.startsWith('session:')).length<2)return null;
-    if(!sections[claim.section].toLocaleLowerCase().includes(claim.text.trim().toLocaleLowerCase()))return null;
+    if(sourceIds.length!==claim.sourceIds.length||(validSourceIds&&sourceIds.some(id=>!validSourceIds.has(id)))) {
+      console.warn('[Session Summary] AI response validation failed: invalid_source_id');
+      return null;
+    }
+    if(claim.evidenceStrength==='recurring'&&sourceIds.filter(id=>id.startsWith('session:')).length<2) {
+      console.warn('[Session Summary] AI response validation failed: invalid_evidence_strength (recurring requires 2 sessions)');
+      return null;
+    }
+    if(!sections[claim.section].toLocaleLowerCase().includes(claim.text.trim().toLocaleLowerCase())) {
+      console.warn('[Session Summary] AI response validation failed: claim_not_present_in_section');
+      return null;
+    }
     claims.push({section:claim.section,text:claim.text.trim().slice(0,2000),sourceIds,evidenceStrength:claim.evidenceStrength});
   }
-  for(const key of CLIENT_SESSION_SUMMARY_FIELDS)if(sections[key]&&!claims.some(claim=>claim.section===key))return null;
+  for(const key of CLIENT_SESSION_SUMMARY_FIELDS)if(sections[key]&&!claims.some(claim=>claim.section===key)) {
+    console.warn(`[Session Summary] AI response validation failed: missing_claim_for_nonempty_section (${key})`);
+    return null;
+  }
   return {sections,claims};
 }
 

@@ -27,7 +27,6 @@
               </button>
             </span>
             <small>{{ formatDate(transcript.receivedAt) }}<template v-if="transcript.meetingId"> · Meeting {{ transcript.meetingId }}</template></small>
-            <p v-if="!transcript.clientId" class="transcript-preview">{{ transcriptPreview(transcript) }}</p>
           </span>
           <StatusIndicator v-if="filterMode === 'attention'" :tone="workflowTone(transcript)">{{ workflowState(transcript).label }}</StatusIndicator>
           <span v-if="expandedRows.has(transcript.id)" class="open">{{ filterMode === 'history' ? 'View' : primaryAction(transcript) }} <span aria-hidden="true">›</span></span>
@@ -97,12 +96,6 @@ function setFilter(id){ filterMode.value=id; historyLimit.value=historyPageSize 
 function formatDate(value){ return new Date(value).toLocaleString(undefined,{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}) }
 function labelFor(transcript){ return transcript.meetingId ? `Zoom meeting ${transcript.meetingId}` : 'Zoom transcript' }
 function rowTitle(transcript){ return clientName(transcript.clientId) || transcript.sourceTitle || labelFor(transcript) }
-function transcriptPreview(transcript){
-  if (!transcript.text) return '';
-  const cleaned = transcript.text.replace(/\[\d{2}:\d{2}:\d{2}\.\d{3}\]/g, '').replace(/\s+/g, ' ').trim();
-  const preview = cleaned.slice(0, 100);
-  return preview.length >= 100 ? `${preview}…` : preview;
-}
 function workflowState(transcript){ if(!transcript?.clientId||transcript.status==='unassigned')return{id:'needs-client',label:'Needs client'};if(!transcript.sessionRef)return{id:'needs-session',label:'Needs session'};if(!transcript.reviewChoicesSavedAt)return{id:'needs-review',label:'Needs review'};if(transcript.completedAt)return{id:'complete',label:'Triage complete'};return{id:'review-saved',label:'Review choices saved'} }
 function workflowTone(transcript){ return ({'needs-client':'warning','needs-session':'neutral','needs-review':'warning','review-saved':'success','complete':'success'})[workflowState(transcript).id] || 'neutral' }
 function primaryAction(transcript){ return ({'needs-client':'Assign client','needs-session':'Link session','needs-review':'Review transcript','review-saved':'Open session',complete:'View'})[workflowState(transcript).id] }

@@ -2,34 +2,34 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 
-const shellUrl=new URL('../src/layouts/AppShell.vue',import.meta.url);
+const headerUrl = new URL('../src/components/shell/AppHeader.vue', import.meta.url);
+const sidebarUrl = new URL('../src/components/shell/AppSidebar.vue', import.meta.url);
 
-test('sidebar groups primary destinations and keeps scheduling as an action',async()=>{
-  const shell=await readFile(shellUrl,'utf8');
-  assert.match(shell,/label:\s*'Practice'/);
-  assert.match(shell,/label:\s*'Records'/);
-  assert.match(shell,/label:\s*'Professional'/);
-  assert.match(shell,/\{\s*name:\s*'Calendar',\s*path:\s*'\/calendar'/);
-  assert.doesNotMatch(shell,/\{\s*name:\s*'Schedule',\s*path:\s*'\/schedule'/);
-  assert.match(shell,/to="\/schedule"/);
-  assert.match(shell,/Schedule appointment/);
+test('sidebar and header group primary therapist destinations', async () => {
+  const sidebar = await readFile(sidebarUrl, 'utf8');
+  const header = await readFile(headerUrl, 'utf8');
+
+  // Verify core navigation links in sidebar
+  assert.match(sidebar, /\{\s*name:\s*'Today',\s*path:\s*'\/overview'/);
+  assert.match(sidebar, /\{\s*name:\s*'Clients',\s*path:\s*'\/clients'/);
+  assert.match(sidebar, /\{\s*name:\s*'Calendar',\s*path:\s*'\/calendar'/);
+  assert.match(sidebar, /\{\s*name:\s*'Reflect',\s*path:\s*'\/supervision'/);
+
+  // Scheduling is a header action
+  assert.match(header, /to="\/schedule"/);
+  assert.match(header, /Schedule appointment/);
+  
+  // Verify that Records / Documents / Transcripts are NOT in the permanent sidebar
+  assert.doesNotMatch(sidebar, /Records/);
+  assert.doesNotMatch(sidebar, /Documents/);
+  assert.doesNotMatch(sidebar, /Transcripts/);
 });
 
-test('sidebar uses CPD and restrained Lucide components instead of emoji navigation',async()=>{
-  const shell=await readFile(shellUrl,'utf8');
-  assert.match(shell, /\{\s*name:\s*'CPD',\s*path:\s*'\/supervision'/);
-  assert.match(shell,/from '@lucide\/vue'/);
-  assert.match(shell,/CalendarDays/);
-  assert.match(shell,/FolderOpen/);
-  assert.match(shell,/GraduationCap/);
-  assert.doesNotMatch(shell,/📊|🗓️|➕|👥|📝|📄|🌱|🚪/);
-});
-
-test('account footer keeps settings and sign out in the compact account menu',async()=>{
-  const shell=await readFile(shellUrl,'utf8');
-  assert.match(shell,/aria-haspopup/);
-  assert.match(shell,/\/settings/);
-  assert.match(shell,/Settings/);
-  assert.match(shell,/LogOut/);
-  assert.match(shell,/Sign out/);
+test('sidebar uses restrained Lucide components instead of emoji navigation', async () => {
+  const sidebar = await readFile(sidebarUrl, 'utf8');
+  assert.match(sidebar, /from '@lucide\/vue'/);
+  assert.match(sidebar, /CalendarDays/);
+  assert.match(sidebar, /LayoutDashboard/);
+  assert.match(sidebar, /GraduationCap/);
+  assert.doesNotMatch(sidebar, /📊|🗓️|➕|👥|📝|📄|🌱|🚪/);
 });

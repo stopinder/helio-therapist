@@ -6,7 +6,9 @@ import {
   buildUsageRecord,
   estimateTextCostUsd,
   getTextModel,
-  runTextAI
+  runTextAI,
+  buildTokenLimitParams,
+  buildTemperatureParams
 } from '../api/_lib/ai-execution.js';
 
 test('AI execution: known model cost is estimated from input and output tokens', () => {
@@ -85,4 +87,34 @@ test('AI execution: missing provider configuration is a 503-class error', async 
   } finally {
     if (previous !== undefined) process.env.OPENAI_API_KEY = previous;
   }
+});
+
+test('AI execution: buildTokenLimitParams maps maxTokens correctly by model', () => {
+  // gpt-5.6-terra requires max_completion_tokens
+  const terraParams = buildTokenLimitParams('gpt-5.6-terra', 1000);
+  assert.strictEqual(terraParams.max_completion_tokens, 1000);
+  assert.ok(!('max_tokens' in terraParams));
+
+  // gpt-4o-mini retains max_tokens
+  const miniParams = buildTokenLimitParams('gpt-4o-mini', 500);
+  assert.strictEqual(miniParams.max_tokens, 500);
+  assert.ok(!('max_completion_tokens' in miniParams));
+
+  // undefined maxTokens emits neither parameter
+  const emptyParams = buildTokenLimitParams('gpt-5.6-terra', undefined);
+  assert.deepStrictEqual(emptyParams, {});
+});
+
+test('AI execution: buildTemperatureParams omits temperature for gpt-5.6-terra', () => {
+  // gpt-5.6-terra should omit temperature
+  const terraParams = buildTemperatureParams('gpt-5.6-terra', 0.7);
+  assert.deepStrictEqual(terraParams, {});
+
+  // gpt-4o-mini should include temperature
+  const miniParams = buildTemperatureParams('gpt-4o-mini', 0.7);
+  assert.strictEqual(miniParams.temperature, 0.7);
+
+  // undefined temperature emits neither parameter
+  const emptyParams = buildTemperatureParams('gpt-4o-mini', undefined);
+  assert.deepStrictEqual(emptyParams, {});
 });
