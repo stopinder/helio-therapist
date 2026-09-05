@@ -36,7 +36,33 @@ test('Transcript and Reflection are present but secondary/collapsible', () => {
   assert.match(source, /Therapist reflection/i)
 })
 
-test('Copy summary action exists', () => {
-  assert.match(source, /Copy summary/i)
-  assert.match(source, /navigator\.clipboard\.writeText/)
+test('TranscriptTab is NOT mounted by SessionWorkspace', () => {
+  assert.strictEqual(source.includes('<TranscriptTab'), false, 'TranscriptTab should be removed')
+})
+
+test('transcript text is rendered directly only when expanded', () => {
+  assert.match(source, /v-if="showTranscript"/)
+  assert.match(source, /\{\{\s*transcript\.text\s*\}\}/)
+})
+
+test('Session summary persistence uses clientDocuments/document draft helpers', () => {
+  assert.match(source, /import \{[^}]*saveClientDocumentDraft[^}]*\} from ['"]\.\.\/lib\/clientDocuments\.js['"]/)
+  assert.match(source, /saveClientDocumentDraft\(summaryDocument\.value/)
+})
+
+test('SessionWorkspace does NOT call saveSessionDraft for the summary', () => {
+  assert.strictEqual(source.includes('saveSessionDraft'), false, 'saveSessionDraft should be removed')
+})
+
+test('summary body comes from document content, not session.notes', () => {
+  assert.match(source, /v-model="summaryDocument\.content\.body"/)
+  assert.doesNotMatch(source, /v-model="session\.notes"/)
+})
+
+test('Copy summary copies the edited document body', () => {
+  assert.match(source, /navigator\.clipboard\.writeText\(summaryDocument\.value\.content\.body\)/)
+})
+
+test('copy is disabled for empty content', () => {
+  assert.match(source, /:disabled="!summaryDocument\?\.content\?\.body"/)
 })

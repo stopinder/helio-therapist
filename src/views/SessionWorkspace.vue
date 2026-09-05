@@ -16,7 +16,7 @@
                 <span v-if="copySuccess" class="text-body-sm text-state-success" role="status">Copied!</span>
                 <button 
                   @click="copySummary" 
-                  :disabled="!session.notes" 
+                  :disabled="!summaryDocument?.content?.body" 
                   class="px-inline-md py-stack-xs bg-surface-elevated border border-border text-body-sm font-medium text-ink rounded-control hover:bg-surface-subtle disabled:opacity-50"
                 >
                   Copy summary
@@ -25,12 +25,12 @@
             </div>
 
             <div class="bg-surface rounded-panel border border-border p-6 shadow-sm">
-              <div v-if="session.notes" class="prose prose-sm max-w-none">
+              <div v-if="summaryDocument" class="prose prose-sm max-w-none">
                 <textarea 
-                  v-model="session.notes" 
+                  v-model="summaryDocument.content.body" 
                   class="w-full min-h-[20rem] p-4 border border-border rounded-control bg-surface-subtle text-body focus:border-action-link focus:ring-1 focus:ring-action-link outline-none transition-all"
                   placeholder="No session summary yet."
-                  @input="handleNotesInput"
+                  @input="handleSummaryInput"
                 ></textarea>
               </div>
               <div v-else class="py-12 text-center text-ink-muted bg-surface-subtle rounded-panel border border-dashed border-border">
@@ -52,15 +52,18 @@
                 <span class="text-ink-muted transition-transform duration-200" :class="{ 'rotate-180': showTranscript }">▼</span>
               </button>
               <div v-if="showTranscript" class="border-t border-border p-6 bg-surface-subtle">
-                <TranscriptTab 
-                  :transcript="transcript" 
-                  :clientId="session.clientId" 
-                  :sessionId="session.id" 
-                  :loading="transcriptLoading" 
-                  :error="transcriptError" 
-                  activeTab="Session Capture" 
-                  @retry="loadTranscript" 
-                />
+                <div v-if="transcriptLoading" class="flex items-center justify-center p-8">
+                  <span class="w-6 h-6 border-2 border-state-selected border-t-transparent rounded-full animate-spin"></span>
+                </div>
+                <div v-else-if="transcriptError" class="text-state-danger text-body-sm p-4 text-center">
+                  {{ transcriptError }}
+                </div>
+                <div v-else-if="!transcript" class="text-ink-muted text-body-sm p-8 text-center">
+                  Linked transcript is not available yet.
+                </div>
+                <pre v-else class="whitespace-pre-wrap break-words font-mono text-body-sm leading-relaxed text-ink-secondary max-h-[36rem] overflow-auto">
+{{ transcript.text }}
+                </pre>
               </div>
             </section>
 
@@ -92,49 +95,71 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed, watch } from 'vue'; 
-import { useRoute, useRouter, RouterLink } from 'vue-router'; 
+import { ref, onMounted, computed } from 'vue'; 
+import { useRoute, RouterLink } from 'vue-router'; 
 import { supabase } from '../lib/supabase.js'; 
-import { getSession, saveSessionDraft } from '../lib/sessions.js'; 
+import { getSession } from '../lib/sessions.js'; 
 import { getClient } from '../lib/clients.js'; 
+import { findSessionSummary, createClientDocumentDraft, saveClientDocumentDraft } from '../lib/clientDocuments.js';
 import { authenticatedFetch } from '../lib/api.js'; 
 import SessionWorkspaceHeader from '../components/workspace/SessionWorkspaceHeader.vue'; 
-import TranscriptTab from '../components/workspace/TranscriptTab.vue'; 
 import ReflectionTab from '../components/workspace/ReflectionTab.vue'; 
 
 const route = useRoute(); 
 const session = ref(null), client = ref(null), loading = ref(true), error = ref(''), transcript = ref(null), transcriptLoading = ref(false), transcriptError = ref(''), joiningMeeting = ref(false), meetingError = ref(''), therapistName = ref('');
+const summaryDocument = ref(null);
 const showTranscript = ref(false);
 const showReflection = ref(false);
 const copySuccess = ref(false);
-const aiClinicalNoteDraft = ref(null);
+const copyError = ref('');
 let saveTimer = null;
 
 async function copySummary() {
-  if (!session.value?.notes) return;
+  if (!summaryDocument.value?.content?.body) return;
+  copyError.value = '';
   try {
-    await navigator.clipboard.writeText(session.value.notes);
+    await navigator.clipboard.writeText(summaryDocument.value.content.body);
     copySuccess.value = true;
     setTimeout(() => { copySuccess.value = false; }, 2000);
   } catch (err) {
+    copyError.value = 'Failed to copy to clipboard. Please select and copy manually.';
     console.error('Failed to copy summary:', err);
   }
 }
 
-function handleNotesInput() {
+async function handleSummaryInput() {
   clearTimeout(saveTimer);
   saveTimer = setTimeout(async () => {
-    if (!session.value) return;
+    if (!summaryDocument.value) return;
     try {
-      const updated = await saveSessionDraft(session.value, session.value.notes);
-      session.value.version = updated.version;
+      const updated = await saveClientDocumentDraft(summaryDocument.value, { content: summaryDocument.value.content });
+      summaryDocument.value.version = updated.version;
     } catch (err) {
       console.error('Failed to auto-save summary:', err);
     }
   }, 1000);
 }
 async function joinMeeting(){if(!session.value?.id||!session.value?.clientId||joiningMeeting.value)return;joiningMeeting.value=true;meetingError.value='';try{const response=await authenticatedFetch('/api/zoom/start-session',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({clientId:session.value.clientId,sessionRef:session.value.id})});const data=await response.json().catch(()=>({}));if(!response.ok)throw new Error(data.error||'Unable to open Zoom for this session.');if(!data.startUrl)throw new Error('Zoom did not return a meeting link.');window.open(data.startUrl,'_blank','noopener,noreferrer')}catch(err){meetingError.value=err?.message||'Unable to open Zoom for this session.'}finally{joiningMeeting.value=false}}
-async function loadTherapistProfile(){if(!supabase)return;try{const {data:{user}}=await supabase.auth.getUser();if(!user)return;const {data:profile}=await supabase.from('profiles').select('full_name').eq('id',user.id).maybeSingle();const metadataName=typeof user.user_metadata?.full_name==='string'?user.user_metadata.full_name.trim():'';therapistName.value=profile?.full_name?.trim()||metadataName||''}catch(e){console.warn('[Session] Could not load therapist identity',e)}} async function loadSession(){loading.value=true;error.value='';aiClinicalNoteDraft.value=null;try{const {clientId,sessionId}=route.params;const [sessionData,clientData]=await Promise.all([getSession({clientId,sessionId}),getClient({clientId}),loadTherapistProfile()]);session.value=sessionData;client.value=clientData;loadTranscript()}catch(e){error.value='The session could not be loaded.'}finally{loading.value=false}}
+async function loadTherapistProfile(){if(!supabase)return;try{const {data:{user}}=await supabase.auth.getUser();if(!user)return;const {data:profile}=await supabase.from('profiles').select('full_name').eq('id',user.id).maybeSingle();const metadataName=typeof user.user_metadata?.full_name==='string'?user.user_metadata.full_name.trim():'';therapistName.value=profile?.full_name?.trim()||metadataName||''}catch(e){console.warn('[Session] Could not load therapist identity',e)}} 
+
+async function loadSession(){
+  loading.value=true;
+  error.value='';
+  try{
+    const {clientId,sessionId}=route.params;
+    const [sessionData,clientData]=await Promise.all([getSession({clientId,sessionId}),getClient({clientId}),loadTherapistProfile()]);
+    session.value=sessionData;
+    client.value=clientData;
+    
+    summaryDocument.value = await findSessionSummary({ clientId, sessionId });
+    
+    loadTranscript();
+  }catch(e){
+    error.value='The session could not be loaded.'
+  }finally{
+    loading.value=false
+  }
+}
 async function loadTranscript(){if(!session.value?.id||!session.value?.clientId)return;transcriptLoading.value=true;transcriptError.value='';transcript.value=null;try{const params=new URLSearchParams({sessionRef:String(session.value.id),clientId:String(session.value.clientId)});const response=await authenticatedFetch(`/api/zoom/transcripts?${params.toString()}`);const data=await response.json().catch(()=>({}));if(!response.ok)throw new Error(data.error||'Unable to load the linked transcript.');transcript.value=data.transcripts?.[0]||null}catch(err){transcriptError.value=err?.message||'Unable to load the linked transcript.'}finally{transcriptLoading.value=false}}
 const workspaceSession=computed(()=>{if(!session.value)return null;const dateObj=new Date(session.value.startedAt),isValidDate=!isNaN(dateObj.getTime());return{id:session.value.id,clientId:session.value.clientId,status:session.value.status==='in_progress'?'In Progress':(session.value.status==='completed'?'Completed':session.value.status),clientName:client.value?.display_name||client.value?.name||'Unknown Client',date:isValidDate?dateObj.toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'}):'Pending',time:isValidDate?dateObj.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',hour12:true}):'',type:'Clinical session',videoProvider:'zoom',isInPerson:false}}); onMounted(loadSession);
 </script>
