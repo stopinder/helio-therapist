@@ -109,7 +109,7 @@ Return JSON only with exactly two fields:
       ],
       responseFormat: { type: 'json_object' },
       temperature: 0.3,
-      maxTokens: 3000,
+      maxTokens: 6000,
       timeout: 60000
     });
 
