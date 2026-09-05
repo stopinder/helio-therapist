@@ -6,7 +6,8 @@ import {
   buildUsageRecord,
   estimateTextCostUsd,
   getTextModel,
-  runTextAI
+  runTextAI,
+  buildTokenLimitParams
 } from '../api/_lib/ai-execution.js';
 
 test('AI execution: known model cost is estimated from input and output tokens', () => {
@@ -85,4 +86,20 @@ test('AI execution: missing provider configuration is a 503-class error', async 
   } finally {
     if (previous !== undefined) process.env.OPENAI_API_KEY = previous;
   }
+});
+
+test('AI execution: buildTokenLimitParams maps maxTokens correctly by model', () => {
+  // gpt-5.6-terra requires max_completion_tokens
+  const terraParams = buildTokenLimitParams('gpt-5.6-terra', 1000);
+  assert.strictEqual(terraParams.max_completion_tokens, 1000);
+  assert.ok(!('max_tokens' in terraParams));
+
+  // gpt-4o-mini retains max_tokens
+  const miniParams = buildTokenLimitParams('gpt-4o-mini', 500);
+  assert.strictEqual(miniParams.max_tokens, 500);
+  assert.ok(!('max_completion_tokens' in miniParams));
+
+  // undefined maxTokens emits neither parameter
+  const emptyParams = buildTokenLimitParams('gpt-5.6-terra', undefined);
+  assert.deepStrictEqual(emptyParams, {});
 });
