@@ -7,7 +7,8 @@ import {
   estimateTextCostUsd,
   getTextModel,
   runTextAI,
-  buildTokenLimitParams
+  buildTokenLimitParams,
+  buildTemperatureParams
 } from '../api/_lib/ai-execution.js';
 
 test('AI execution: known model cost is estimated from input and output tokens', () => {
@@ -101,5 +102,19 @@ test('AI execution: buildTokenLimitParams maps maxTokens correctly by model', ()
 
   // undefined maxTokens emits neither parameter
   const emptyParams = buildTokenLimitParams('gpt-5.6-terra', undefined);
+  assert.deepStrictEqual(emptyParams, {});
+});
+
+test('AI execution: buildTemperatureParams omits temperature for gpt-5.6-terra', () => {
+  // gpt-5.6-terra should omit temperature
+  const terraParams = buildTemperatureParams('gpt-5.6-terra', 0.7);
+  assert.deepStrictEqual(terraParams, {});
+
+  // gpt-4o-mini should include temperature
+  const miniParams = buildTemperatureParams('gpt-4o-mini', 0.7);
+  assert.strictEqual(miniParams.temperature, 0.7);
+
+  // undefined temperature emits neither parameter
+  const emptyParams = buildTemperatureParams('gpt-4o-mini', undefined);
   assert.deepStrictEqual(emptyParams, {});
 });
