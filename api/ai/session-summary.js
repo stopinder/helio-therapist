@@ -65,20 +65,8 @@ export default async function handler(req, res) {
     
     // We adapt the source into a shape buildClientSessionSummaryInput expects: reviewed session capture
     // But we bypass the session_capture_drafts table as requested.
-    const mockCapture = {
-      id: transcript.id,
-      sessionId: session.id,
-      occurredAt: new Date().toISOString(), // Fallback if needed
-      content: {
-        // We put the transcript and zoom summary into a structure the AI can use.
-        // The existing clientSessionSummarySystemPrompt uses reviewed captures.
-        // We'll provide a single "capture" that is actually our raw source.
-        transcript: transcript.original_transcript,
-        zoomSummary: transcript.zoom_generated_summary
-      }
-    };
-
-    const generationId = randomUUID(), generatedAt = new Date().toISOString();
+    const generationId = randomUUID();
+    const generatedAt = new Date().toISOString();
     
     // Custom prompt injection to handle raw transcript/zoom summary instead of structured capture
     const systemPrompt = `You are Helios Clinical Intelligence preparing a long, warm, client-ready therapy summary.
@@ -95,11 +83,19 @@ Rules:
 6. DO NOT use SOAP, diagnostic coding, or institutional language.
 7. DO NOT manufacture claims not grounded in the source.
 8. DO NOT include private therapist reflections or supervision material.
+9. Allowed evidenceStrength values for this single-session task:
+   - current_observation
+   - explicit_change
+   - tentative_connection
+   DO NOT use "recurring", "accepted_care", or "therapist_guidance".
+10. patternsOverTime should normally be empty unless the source explicitly describes an established historical pattern.
 
 Return JSON only with exactly two fields:
 - sections: an object with fields: opening, whatWeWorkedOn, patternsOverTime, changesAndExceptions, strengthsAndResources, perspectiveReflection, betweenSession, closing.
 - claims: an array of sentences used, each with { section, text, sourceIds, evidenceStrength }. 
-sourceIds for these claims must include "${transcript.id}".`;
+  Every non-empty section must have at least one corresponding claim.
+  Every claim text must appear verbatim within its section.
+  sourceIds must contain only "${transcript.id}".`;
 
     const userInput = `Generate a long client-facing session summary based on the provided Zoom material for the session on ${new Date().toLocaleDateString()}.`;
 
