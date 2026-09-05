@@ -11,58 +11,90 @@
           <!-- Primary Section: Session Summary -->
           <section class="space-y-6">
             <div class="flex items-center justify-between">
-              <h2 class="text-h2 font-semibold text-ink">Session summary</h2>
+              <h2 class="font-serif text-h2 text-ink">Session summary</h2>
               <div class="flex items-center gap-3">
                 <span v-if="copySuccess" class="text-body-sm text-state-success" role="status">Copied!</span>
+                
+                <template v-if="summaryDocument?.content?.body && !isGenerating">
+                  <button 
+                    v-if="!isEditingSummary"
+                    @click="isEditingSummary = true"
+                    class="text-body-sm font-medium text-action-link hover:underline"
+                  >
+                    Edit
+                  </button>
+                  <button 
+                    v-else
+                    @click="isEditingSummary = false"
+                    class="text-body-sm font-medium text-action-link hover:underline"
+                  >
+                    Done reading
+                  </button>
+                </template>
+
                 <button 
                   v-if="summaryDocument?.content?.body"
                   @click="generateSummary"
                   :disabled="isGenerating"
-                  class="text-body-sm font-medium text-action-link hover:underline disabled:opacity-50"
+                  class="text-body-sm font-medium text-ink-muted hover:text-ink disabled:opacity-50"
                 >
                   Regenerate
                 </button>
                 <button 
                   @click="copySummary" 
                   :disabled="!summaryDocument?.content?.body" 
-                  class="px-inline-md py-stack-xs bg-surface-elevated border border-border text-body-sm font-medium text-ink rounded-control hover:bg-surface-subtle disabled:opacity-50"
+                  class="button-secondary !min-h-0 py-1.5 px-3 text-body-sm shadow-sm"
                 >
                   Copy summary
                 </button>
               </div>
             </div>
 
-            <div class="bg-surface rounded-panel border border-border p-6 shadow-sm">
-              <div v-if="isGenerating" class="py-12 text-center text-ink-muted bg-surface-subtle rounded-panel border border-dashed border-border flex flex-col items-center gap-3">
+            <div class="relative min-h-[12rem]">
+              <div v-if="isGenerating" class="py-24 text-center text-ink-muted bg-surface rounded-panel border border-dashed border-border flex flex-col items-center gap-3 shadow-sm">
                 <span class="w-8 h-8 border-4 border-state-selected border-t-transparent rounded-full animate-spin"></span>
-                <p>Preparing summary…</p>
+                <p class="type-body-medium">Preparing session summary…</p>
               </div>
-              <div v-else-if="generationError" class="py-8 px-6 text-center bg-state-danger/5 rounded-panel border border-state-danger/20">
+              
+              <div v-else-if="generationError" class="py-12 px-6 text-center bg-state-danger-surface rounded-panel border border-state-danger/20 shadow-sm">
                 <p class="text-state-danger text-body-sm mb-4">{{ generationError }}</p>
                 <button @click="generateSummary" class="button-primary py-stack-xs px-inline-md text-body-sm">Retry</button>
               </div>
-              <div v-else-if="summaryDocument" class="space-y-4">
-                <textarea 
-                  v-model="summaryDocument.content.body" 
-                  class="w-full min-h-[20rem] p-4 border border-border rounded-control bg-surface-subtle text-body focus:border-action-link focus:ring-1 focus:ring-action-link outline-none transition-all"
-                  placeholder="No session summary yet."
-                  @input="handleSummaryInput"
-                ></textarea>
-                
-                <div v-if="summaryDocument.sourceManifest?.length" class="flex items-center justify-end">
-                  <span class="text-body-xs text-ink-muted">
-                    Generated from Zoom summary + transcript
-                  </span>
+
+              <template v-else-if="summaryDocument">
+                <!-- Reading View -->
+                <SessionSummaryDocument 
+                  v-if="!isEditingSummary"
+                  :body="summaryDocument.content.body"
+                  :clientName="client?.name"
+                  :date="workspaceSession.date"
+                />
+
+                <!-- Editing View -->
+                <div v-else class="bg-surface rounded-panel border border-border p-6 shadow-sm animate-expandIn">
+                  <textarea 
+                    v-model="summaryDocument.content.body" 
+                    class="w-full min-h-[30rem] p-6 border border-border rounded-control bg-surface-subtle type-body-long focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-all resize-y"
+                    placeholder="No session summary yet."
+                    @input="handleSummaryInput"
+                  ></textarea>
+                  
+                  <div v-if="summaryDocument.sourceManifest?.length" class="mt-4 flex items-center justify-end">
+                    <span class="type-metadata text-ink-muted">
+                      Generated from Zoom summary + transcript
+                    </span>
+                  </div>
                 </div>
-              </div>
-              <div v-else class="py-12 text-center text-ink-muted bg-surface-subtle rounded-panel border border-dashed border-border">
+              </template>
+
+              <div v-else class="py-24 text-center text-ink-muted bg-surface rounded-panel border border-dashed border-border shadow-sm">
                 <div v-if="transcript" class="flex flex-col items-center gap-4">
-                  <p>No session summary yet.</p>
+                  <p class="type-body-medium">No session summary yet.</p>
                   <button @click="generateSummary" :disabled="isGenerating" class="button-primary py-stack-xs px-inline-md">
                     Generate summary
                   </button>
                 </div>
-                <p v-else>No session transcript or Zoom summary is available yet.</p>
+                <p v-else class="type-body-medium">No session transcript or Zoom summary is available yet.</p>
               </div>
             </div>
           </section>
@@ -132,10 +164,12 @@ import { findSessionSummary, createClientDocumentDraft, saveClientDocumentDraft,
 import { authenticatedFetch } from '../lib/api.js'; 
 import SessionWorkspaceHeader from '../components/workspace/SessionWorkspaceHeader.vue'; 
 import ReflectionTab from '../components/workspace/ReflectionTab.vue'; 
+import SessionSummaryDocument from '../components/workspace/SessionSummaryDocument.vue';
 
 const route = useRoute(); 
 const session = ref(null), client = ref(null), loading = ref(true), error = ref(''), transcript = ref(null), transcriptLoading = ref(false), transcriptError = ref(''), joiningMeeting = ref(false), meetingError = ref(''), therapistName = ref('');
 const summaryDocument = ref(null);
+const isEditingSummary = ref(false);
 const showTranscript = ref(false);
 const showReflection = ref(false);
 const copySuccess = ref(false);

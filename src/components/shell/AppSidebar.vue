@@ -1,19 +1,19 @@
 <template>
-  <div class="flex h-full flex-col">
-    <div class="flex h-16 shrink-0 items-center justify-between border-b border-border-muted px-5">
-      <router-link to="/overview" class="flex items-center gap-2.5 rounded-control" aria-label="Helios home">
-        <span class="icon-surface icon-surface-reflection rounded-pill">
+  <div class="flex h-full flex-col bg-sidebar text-sidebar-fg">
+    <div class="flex h-16 shrink-0 items-center justify-between border-b border-sidebar-border px-5">
+      <router-link to="/overview" class="flex items-center gap-2.5 rounded-control focus-visible:outline-sidebar-muted" aria-label="Helios home">
+        <span class="icon-surface icon-surface-reflection rounded-pill border-none">
           <Sun class="workspace-icon" aria-hidden="true" />
         </span>
         <span class="leading-none">
-          <span class="block font-serif text-[1.35rem] font-semibold text-ink">Helios</span>
-          <span class="mt-1 block text-[0.58rem] uppercase tracking-[0.16em] text-ink-muted">Practice</span>
+          <span class="block font-serif text-[1.35rem] font-semibold text-sidebar-fg">Helios</span>
+          <span class="mt-1 block text-[0.58rem] uppercase tracking-[0.16em] text-sidebar-muted">Practice</span>
         </span>
       </router-link>
 
       <button
         v-if="mobile"
-        class="-mr-2 p-2 text-ink-subtle hover:text-ink-secondary"
+        class="-mr-2 p-2 text-sidebar-muted hover:text-sidebar-fg"
         aria-label="Close menu"
         @click="$emit('close')"
       >
@@ -50,39 +50,44 @@
 
       <button
         type="button"
-        class="flex min-h-touch w-full items-center gap-3 rounded-control px-2 text-left hover:bg-surface-subtle"
+        class="flex min-h-touch w-full items-center gap-3 rounded-control px-2 text-left hover:bg-sidebar-hover transition-colors focus-visible:outline-sidebar-muted"
         aria-haspopup="menu"
         :aria-expanded="accountMenuOpen"
         @click="accountMenuOpen=!accountMenuOpen"
       >
-        <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-pill bg-action-primary type-metadata font-semibold text-on-action">
+        <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-pill bg-brand-amber type-metadata font-semibold text-white">
           {{ accountIdentity.initials }}
         </span>
         <span class="min-w-0 flex-1 truncate">
-          <span class="block truncate type-ui font-semibold text-ink">{{ accountIdentity.name }}</span>
-          <span v-if="accountIdentity.subtitle" class="mt-0.5 block truncate type-metadata text-ink-muted">
+          <span class="block truncate type-ui font-semibold text-sidebar-fg">{{ accountIdentity.name }}</span>
+          <span v-if="accountIdentity.subtitle" class="mt-0.5 block truncate type-metadata text-sidebar-muted">
             {{ accountIdentity.subtitle }}
           </span>
         </span>
-        <MoreHorizontal class="workspace-icon shrink-0 text-ink-muted" aria-hidden="true" />
+        <MoreHorizontal class="workspace-icon shrink-0 text-sidebar-muted" aria-hidden="true" />
       </button>
     </div>
 
     <nav class="sidebar-navigation flex-1 min-h-0 overflow-y-auto px-3 py-4 space-y-5">
       <section v-for="group in navGroups" :key="group.label">
-        <p class="px-3 mb-2 type-eyebrow text-ink-subtle">{{ group.label }}</p>
+        <p class="px-3 mb-2 type-eyebrow text-sidebar-muted/60">{{ group.label }}</p>
         <div class="space-y-1">
           <router-link
             v-for="item in group.items"
             :key="item.name"
             :to="item.path"
-            class="flex items-center gap-2.5 min-h-touch px-2.5 rounded-control type-ui transition-colors"
+            class="group relative flex items-center gap-2.5 min-h-touch px-2.5 rounded-control type-ui transition-all duration-150"
             :class="isNavActive(item.path)
-              ? 'bg-state-selected text-ink font-semibold'
-              : 'text-ink-secondary hover:bg-surface-subtle hover:text-ink'"
+              ? 'bg-sidebar-active text-sidebar-fg font-semibold shadow-[inset_0_1px_1px_rgba(255,255,255,0.05)]'
+              : 'text-sidebar-muted hover:bg-sidebar-hover hover:text-sidebar-fg hover:translate-x-0.5'"
             @click="handleNavigation"
           >
-            <span class="icon-surface !h-7 !w-7" :class="item.iconTone">
+            <div 
+              v-if="isNavActive(item.path)"
+              class="absolute left-0 top-2.5 bottom-2.5 w-1 rounded-full bg-brand-amber"
+              aria-hidden="true"
+            />
+            <span class="icon-surface !h-7 !w-7 border-none" :class="item.iconTone">
               <component :is="item.icon" class="workspace-icon-sm" aria-hidden="true" />
             </span>
             <span>{{ item.name }}</span>
