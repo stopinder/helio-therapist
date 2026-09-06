@@ -17,18 +17,14 @@
       </div>
 
       <div class="flex items-center gap-inline-sm flex-wrap">
-        <button v-if="!client.archived && !nextAppointment" type="button" @click="scheduleAppointment" class="px-inline-md py-stack-xs bg-surface-elevated border border-border text-body-sm font-medium text-action-link rounded-control hover:bg-surface-subtle transition-colors" data-testid="schedule-client-appointment">Schedule appointment</button>
         <button @click="openSupervisionPicker" class="px-inline-md py-stack-xs bg-surface-elevated border border-border text-caption font-medium text-ink-secondary rounded-control hover:bg-surface-subtle transition-colors">Add to Supervision</button>
         <button @click="$emit('create-document')" class="px-inline-md py-stack-xs bg-surface-elevated border border-border text-body-sm font-medium text-ink rounded-control hover:bg-surface-subtle transition-colors" data-testid="create-client-document">Create Document</button>
-        <button v-if="!client.archived && !activeSession" @click="joinMeeting" :disabled="joiningMeeting || !nextAppointment?.zoom_meeting_id" class="px-inline-md py-stack-xs bg-surface-elevated border border-border text-caption font-medium text-ink-secondary rounded-control hover:bg-surface-subtle transition-colors disabled:opacity-50 disabled:cursor-not-allowed"><span>{{ joiningMeeting ? 'Opening Zoom…' : videoLabel }}</span></button>
-        <button v-if="!client.archived && activeSession" @click="rejoinSessionVideo" :disabled="joiningMeeting" class="px-inline-md py-stack-xs bg-surface-elevated border border-border text-caption font-medium text-ink-secondary rounded-control hover:bg-surface-subtle transition-colors disabled:opacity-50 disabled:cursor-not-allowed">{{ joiningMeeting ? 'Opening Zoom…' : 'Reopen Zoom' }}</button>
         <button v-if="!client.archived" type="button" :disabled="workspaceBusy || sessionBusy" @click="openClinicalWorkspace" class="px-inline-md py-stack-xs bg-action-link text-on-action text-body-sm font-semibold rounded-control hover:bg-action-link-hover transition-colors disabled:opacity-60" data-testid="open-clinical-workspace">{{ workspaceBusy ? 'Opening…' : 'Clinical Workspace' }}</button>
         <button v-if="!activeSession" type="button" :disabled="archiveSaving" @click="requestArchiveChange" class="px-inline-md py-stack-xs bg-surface-elevated border border-border text-body-sm font-medium text-ink-secondary rounded-control hover:bg-surface-subtle disabled:opacity-50" data-testid="client-archive-action">{{ archiveSaving ? 'Saving…' : (client.archived ? 'Restore client' : 'Archive client') }}</button>
       </div>
     </div>
 
     <div v-if="sessionError || workspaceError" role="alert" class="mt-stack-sm rounded-control border border-state-danger/20 bg-state-danger/5 px-inline-md py-stack-xs text-body-sm font-medium text-state-danger">{{ workspaceError || sessionError }}</div>
-    <div v-if="meetingError" role="alert" class="mt-stack-sm rounded-control border border-state-danger/20 bg-state-danger/5 px-inline-md py-stack-xs text-body-sm font-medium text-state-danger">{{ meetingError }}</div>
     <div v-if="archiveError" role="alert" class="mt-stack-sm rounded-control border border-state-danger/20 bg-state-danger/5 px-inline-md py-stack-xs text-body-sm text-state-danger">{{ archiveError }}</div>
     <div v-if="supervisionSuccess" role="status" aria-live="polite" class="mt-stack-sm inline-flex flex-wrap items-center gap-inline-sm rounded-control border border-state-success/20 bg-state-success-surface px-inline-md py-stack-xs text-body-sm font-medium text-state-success"><span>✓</span><span>{{ supervisionSuccess }}</span><button @click="router.push('/supervision/workspace')" class="ml-inline-xs font-semibold underline">View Supervision Workspace</button></div>
     <ClientSupervisionPicker v-if="supervisionPickerOpen" :client-name="client.display_name" :reflections="supervisionReflections" :sessions="supervisionSessions" :loading="supervisionLoading" :saving="supervisionSaving" :error="supervisionError" @close="closeSupervisionPicker" @confirm="addSelectedToSupervision" />
@@ -44,8 +40,6 @@ import { createOrResumeSession, listSessions } from '../../lib/sessions.js'
 import { setClientArchived } from '../../lib/clients.js'
 import { getPrivateReflectionsForClient } from '../../lib/clientSupervision.js'
 import { setReflectionSupervisionSelection } from '../../lib/reflections.js'
-import { authenticatedFetch } from '../../lib/api.js'
-import { videoProviderService } from '../../lib/videoProvider.js'
 
 const props = defineProps({
   client: { type: Object, required: true },
@@ -66,16 +60,9 @@ const supervisionError = ref('')
 const supervisionSuccess = ref('')
 const archiveSaving = ref(false)
 const archiveError = ref('')
-const joiningMeeting = ref(false)
-const meetingError = ref('')
 const workspaceBusy = ref(false)
 const workspaceError = ref('')
 let supervisionSuccessTimer
-
-function scheduleAppointment() {
-  if (props.client.archived) return
-  router.push({ name: 'ScheduleAppointment', query: { clientId: props.client.id } })
-}
 
 async function openClinicalWorkspace() {
   if (props.client.archived || workspaceBusy.value) return
@@ -131,6 +118,7 @@ async function addSelectedToSupervision(ids) {
     supervisionSaving.value = false
   }
 }
+
 async function requestArchiveChange() {
   const archiving = !props.client.archived
   const message = archiving
@@ -143,42 +131,6 @@ async function requestArchiveChange() {
   catch { archiveError.value = archiving ? 'Could not archive this client.' : 'Could not restore this client.' }
   finally { archiveSaving.value = false }
 }
-async function joinMeeting() {
-  if (!props.nextAppointment?.id || !props.nextAppointment?.zoom_meeting_id || joiningMeeting.value) return
-  joiningMeeting.value = true
-  meetingError.value = ''
-  const popup = window.open('', '_blank')
-  if (popup) popup.opener = null
-  try {
-    const response = await authenticatedFetch('/api/zoom/join-appointment', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ clientId: props.client.id, appointmentId: props.nextAppointment.id }) })
-    const data = await response.json().catch(() => ({}))
-    if (!response.ok || !data.startUrl) throw new Error(data.error || 'Unable to open the Zoom appointment.')
-    if (popup) popup.location.replace(data.startUrl)
-    else window.open(data.startUrl, '_blank', 'noopener,noreferrer')
-  } catch (error) {
-    if (popup) popup.close()
-    meetingError.value = error?.message || 'Unable to open the Zoom appointment.'
-  } finally { joiningMeeting.value = false }
-}
-async function rejoinSessionVideo() {
-  if (!props.activeSession?.id || joiningMeeting.value) return
-  joiningMeeting.value = true
-  meetingError.value = ''
-  const popup = window.open('', '_blank')
-  if (popup) popup.opener = null
-  try {
-    const response = await authenticatedFetch('/api/zoom/start-session', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ clientId: props.client.id, sessionRef: props.activeSession.id }) })
-    const data = await response.json().catch(() => ({}))
-    if (!response.ok || !data.startUrl) throw new Error(data.error || 'Unable to reopen the Zoom session.')
-    if (popup) popup.location.replace(data.startUrl)
-    else window.open(data.startUrl, '_blank', 'noopener,noreferrer')
-  } catch (error) {
-    if (popup) popup.close()
-    meetingError.value = error?.message || 'Unable to reopen the Zoom session.'
-  } finally { joiningMeeting.value = false }
-}
-
-const videoLabel = computed(() => videoProviderService.getVideoActionLabel({ videoProvider: 'zoom', meetingUrl: props.nextAppointment?.zoom_meeting_id ? 'available' : null, status: 'Scheduled' }))
 const archiveDate = computed(() => props.client.archived_at ? new Date(props.client.archived_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '')
 const clientInitials = computed(() => props.client.display_name ? props.client.display_name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() : '??')
 const nextAppointmentLabel = computed(() => props.nextAppointment?.starts_at ? new Date(props.nextAppointment.starts_at).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : 'Not scheduled')

@@ -8,9 +8,21 @@
           <div class="flex flex-wrap items-center gap-x-inline-md gap-y-0 text-caption text-ink-muted"><span class="font-medium">Session type: {{ session.type }}</span><span>{{ session.date }} at {{ session.time }}</span></div>
         </div>
       </div>
-      <div class="flex items-center gap-inline-sm flex-wrap">
-        <button @click="emit('join-meeting')" :disabled="isInPerson || joiningMeeting" :aria-busy="joiningMeeting" class="px-inline-md py-stack-xs bg-surface-elevated border border-border text-caption font-medium text-ink-secondary rounded-control hover:bg-surface-subtle disabled:opacity-50">{{ joiningMeeting ? 'Opening Zoom…' : videoLabel }}</button>
-        <RouterLink :to="`/clients/${session.clientId}`" class="px-inline-md py-stack-xs bg-surface-elevated border border-border text-body-sm font-medium text-ink rounded-control hover:bg-surface-subtle">Client Workspace</RouterLink>
+      <div class="flex items-center gap-inline-sm">
+        <button
+          @click="emit('join-meeting')"
+          :disabled="isInPerson || joiningMeeting"
+          :aria-busy="joiningMeeting"
+          class="px-inline-sm py-stack-xs bg-sidebar text-sidebar-fg text-body-sm font-medium rounded-control hover:bg-sidebar-active disabled:opacity-50 transition-colors"
+        >
+          {{ joiningMeeting ? 'Opening Zoom…' : videoLabel }}
+        </button>
+        <RouterLink
+          :to="`/clients/${session.clientId}`"
+          class="px-inline-sm py-stack-xs bg-sidebar text-sidebar-fg text-body-sm font-medium rounded-control hover:bg-sidebar-active transition-colors"
+        >
+          Client Workspace
+        </RouterLink>
       </div>
     </div>
     <p v-if="!isInPerson" class="mt-stack-sm text-caption text-ink-muted">Zoom opens the video call in a separate tab. Keep Clinical Workspace open in Helio for session capture, notes and review.</p>
