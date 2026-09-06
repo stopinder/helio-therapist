@@ -24,7 +24,49 @@
       </section>
 
       <aside class="space-y-6">
-        <section class="space-y-3"><p class="type-eyebrow text-ink-muted">Continue working</p><SurfaceCard v-if="pendingWork.length === 0" tone="base" compact class="text-center"><p class="type-metadata text-ink-subtle">No pending drafts or reviews.</p></SurfaceCard><div v-else class="space-y-2.5"><router-link v-for="item in pendingWork" :key="item.id" :to="item.route" class="block focus-visible:rounded-panel"><SurfaceCard compact><div class="type-ui font-semibold text-ink">{{ item.title }}</div><div class="type-metadata text-ink-muted mt-1">{{ item.subtitle }}</div></SurfaceCard></router-link></div></section>
+        <section class="space-y-3">
+          <p class="type-eyebrow text-ink-muted">Continue working</p>
+          <div class="space-y-2.5">
+            <SurfaceCard tone="base" compact>
+              <div class="flex items-center justify-between gap-4">
+                <div>
+                  <div class="type-ui font-semibold text-ink">Zoom notes</div>
+                  <div class="type-metadata text-ink-muted mt-1">
+                    <span v-if="zoomImportResult?.success">{{ zoomImportResult.count }} note{{ zoomImportResult.count === 1 ? '' : 's' }} imported. </span>
+                    <span v-else-if="zoomImportResult?.error" class="text-state-danger">{{ zoomImportResult.error }}. </span>
+                    <span v-else>Import notes from recent Zoom meetings.</span>
+                  </div>
+                </div>
+                <AppButton :disabled="isCheckingZoom" :aria-busy="isCheckingZoom" @click="checkZoomNotes">
+                  {{ isCheckingZoom ? 'Checking…' : 'Check for new notes' }}
+                </AppButton>
+              </div>
+            </SurfaceCard>
+
+            <router-link v-if="unmatchedCount > 0" to="/transcripts" class="block focus-visible:rounded-panel">
+              <SurfaceCard tone="warning" compact class="border-state-warning-subtle/30 bg-state-warning-subtle/10">
+                <div class="flex items-center justify-between gap-4">
+                  <div>
+                    <div class="type-ui font-semibold text-ink">{{ unmatchedCount }} Zoom note{{ unmatchedCount === 1 ? '' : 's' }} need{{ unmatchedCount === 1 ? 's' : '' }} matching</div>
+                    <div class="type-metadata text-ink-muted mt-1">Link these to the correct session.</div>
+                  </div>
+                  <div class="type-ui text-action-link font-medium">Match note</div>
+                </div>
+              </SurfaceCard>
+            </router-link>
+
+            <SurfaceCard v-if="pendingWork.length === 0 && unmatchedCount === 0" tone="base" compact class="text-center">
+              <p class="type-metadata text-ink-subtle">No pending drafts or reviews.</p>
+            </SurfaceCard>
+            
+            <router-link v-for="item in pendingWork" :key="item.id" :to="item.route" class="block focus-visible:rounded-panel">
+              <SurfaceCard compact>
+                <div class="type-ui font-semibold text-ink">{{ item.title }}</div>
+                <div class="type-metadata text-ink-muted mt-1">{{ item.subtitle }}</div>
+              </SurfaceCard>
+            </router-link>
+          </div>
+        </section>
         <section class="space-y-3"><p class="type-eyebrow text-ink-muted">Practice focus</p><SurfaceCard tone="base" compact class="bg-brand-sage-soft/55 border-action-primary/10"><p class="type-ui leading-6 text-ink-secondary">{{ practiceFocusObservation }}</p></SurfaceCard></section>
         <section class="space-y-3"><p class="type-eyebrow text-ink-muted">Development</p><SurfaceCard tone="base" compact class="bg-reflection border-border-reflection"><div class="type-ui font-semibold text-ink">Supervision prep</div><p class="type-metadata text-ink-muted mt-1">{{ reflectionsCount }} reflections are waiting for review.</p><router-link to="/supervision" class="inline-flex mt-2.5 type-ui text-action-link hover:text-action-link-hover underline-offset-4 hover:underline">Go to supervision →</router-link></SurfaceCard></section>
         <section class="space-y-3"><p class="type-eyebrow text-ink-muted">Recent activity</p><SurfaceCard v-if="recentActivity.length === 0" tone="muted" compact class="text-center"><p class="type-metadata text-ink-subtle">No recent activity to show.</p></SurfaceCard><div v-else class="border-y border-border-muted divide-y divide-border-muted"><component v-for="item in recentActivity" :key="item.id" :is="item.route ? 'router-link' : 'div'" :to="item.route || undefined" class="block py-3 first:pt-2 last:pb-2 group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-state-focus-ring focus-visible:rounded-control"><div class="type-ui font-medium text-ink group-hover:text-action-link">{{ item.title }}</div><div class="flex flex-wrap items-center gap-x-2 mt-1 type-metadata text-ink-muted"><span v-if="item.detail">{{ item.detail }}</span><span v-if="item.detail" aria-hidden="true">·</span><time :datetime="item.occurredAt.toISOString()">{{ formatActivityTime(item.occurredAt) }}</time></div></component></div></section>
@@ -43,6 +85,8 @@ import { useTherapistIdentity } from '../composables/useTherapistIdentity'
 import { getAllPrivateReflections } from '../lib/reflections'
 import { createOrResumeSession } from '../lib/sessions.js'
 import { buildRecentActivity } from '../lib/activityFeed.js'
+import { authenticatedFetch } from '../lib/api.js'
+import { supabase } from '../lib/supabase.js'
 import GreetingHeader from '../components/ui/GreetingHeader.vue'
 import SectionHeader from '../components/ui/SectionHeader.vue'
 import AppButton from '../components/ui/AppButton.vue'
@@ -54,9 +98,42 @@ const { loading, todayEvents, loadData, sessions, clients } = useCalendar()
 const { displayName, loadTherapistIdentity } = useTherapistIdentity()
 const { eyebrow, phrase, therapistDisplayName, supportingInformation } = useGreeting({ displayName, appointmentCount: computed(() => todayEvents.value.length) })
 const reflections = ref([]), startingEventId = ref(null), sessionOpenErrorId = ref(null)
+const isCheckingZoom = ref(false), zoomImportResult = ref(null), unmatchedCount = ref(0)
 const isNewWorkspace = computed(() => clients.value.length === 0 && sessions.value.length === 0)
 
-onMounted(async () => { await Promise.all([loadData(), loadTherapistIdentity()]); try { reflections.value = await getAllPrivateReflections({ limit: 50 }) } catch (e) { console.error('Failed to load reflections', e) } })
+onMounted(async () => { 
+  await Promise.all([loadData(), loadTherapistIdentity(), updateUnmatchedCount()]); 
+  try { reflections.value = await getAllPrivateReflections({ limit: 50 }) } catch (e) { console.error('Failed to load reflections', e) } 
+})
+
+async function updateUnmatchedCount() {
+  try {
+    const { count, error } = await supabase.from('zoom_transcripts').select('*', { count: 'exact', head: true }).is('session_id', null)
+    if (!error) unmatchedCount.value = count || 0
+  } catch (e) {
+    console.error('Failed to update unmatched count', e)
+  }
+}
+
+async function checkZoomNotes() {
+  if (isCheckingZoom.value) return
+  isCheckingZoom.value = true
+  zoomImportResult.value = null
+  try {
+    const response = await authenticatedFetch('/api/zoom/reconcile-my-notes', { method: 'POST' })
+    const data = await response.json()
+    if (response.ok) {
+      zoomImportResult.value = { success: true, count: data.reconciledCount || 0 }
+      await Promise.all([loadData(), updateUnmatchedCount()])
+    } else {
+      zoomImportResult.value = { success: false, error: data.error || 'Failed to check Zoom notes' }
+    }
+  } catch (e) {
+    zoomImportResult.value = { success: false, error: 'Network error' }
+  } finally {
+    isCheckingZoom.value = false
+  }
+}
 async function startSession(event) { if (!event?.clientId || startingEventId.value) return; startingEventId.value = event.id; sessionOpenErrorId.value = null; try { const { session } = await createOrResumeSession(event.clientId); await router.push({ name: 'SessionWorkspace', params: { clientId: event.clientId, sessionId: session.id } }) } catch (error) { console.error('Failed to open session workspace from overview:', error); sessionOpenErrorId.value = event.id } finally { startingEventId.value = null } }
 function formatTime(date) { return new Intl.DateTimeFormat('en-GB', { hour: '2-digit', minute: '2-digit' }).format(date) }
 function formatStatus(status) { if (!status) return 'Scheduled'; return status.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) }

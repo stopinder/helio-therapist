@@ -33,7 +33,7 @@ test('Calendar component template and logic requirements', async (t) => {
   await t.test('Loading, error/Retry and empty states', () => {
     assert.match(calendarSource, /v-if="loading && !normalizedEvents\.length"/)
     assert.match(calendarSource, /v-else-if="error"/)
-    assert.match(calendarSource, /@click="loadData".*>Retry<\/button>/)
+    assert.match(calendarSource, /@click="loadData"[\s\S]*?>\s*Retry\s*<\/button>/)
     assert.match(calendarSource, /No appointments today/)
     assert.match(calendarSource, /No upcoming appointments/)
     // Removed mobile-only "No appointments for this day" check as it might have changed structure
