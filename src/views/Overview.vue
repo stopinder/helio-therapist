@@ -1,5 +1,5 @@
 <template>
-  <div class="max-w-7xl mx-auto px-page py-8 md:py-10 space-y-9">
+  <div class="max-w-7xl mx-auto px-page py-8 md:py-10 space-y-9 helios-teal-prototype">
     <GreetingHeader :eyebrow="eyebrow" :phrase="phrase" :display-name="therapistDisplayName" :supporting="supportingInformation" />
 
     <SurfaceCard v-if="!loading && isNewWorkspace" class="border-action-primary/15 bg-brand-sage-soft/35">

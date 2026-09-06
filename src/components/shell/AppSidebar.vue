@@ -1,5 +1,5 @@
 <template>
-  <div class="flex h-full flex-col bg-sidebar text-sidebar-fg">
+  <div class="flex h-full flex-col bg-sidebar text-sidebar-fg helios-teal-prototype">
     <div class="flex h-16 shrink-0 items-center justify-between border-b border-sidebar-border px-5">
       <router-link to="/overview" class="flex items-center gap-2.5 rounded-control focus-visible:outline-sidebar-muted" aria-label="Helios home">
         <span class="icon-surface icon-surface-reflection rounded-pill border-none">
