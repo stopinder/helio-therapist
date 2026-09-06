@@ -29,7 +29,7 @@
           :class="{
             'text-ink-muted': appointmentStatus === 'neutral',
             'text-ink-secondary': appointmentStatus === 'approaching',
-            'text-brand-amber font-medium': appointmentStatus === 'warning',
+            'text-accent font-medium': appointmentStatus === 'warning',
             'text-state-danger font-semibold': appointmentStatus === 'imminent'
           }"
         >
@@ -45,7 +45,7 @@
         type="button"
         class="inline-flex h-9 items-center gap-1.5 whitespace-nowrap rounded-control border px-3 type-ui transition-colors"
         :class="outstandingReminderCount
-          ? 'border-brand-amber/40 bg-brand-amber-soft/60 text-ink'
+          ? 'border-accent/40 bg-brand-amber-soft/60 text-ink'
           : 'border-border-muted bg-surface text-ink-secondary hover:bg-surface-subtle'"
         :aria-expanded="quickCaptureOpen"
         aria-haspopup="dialog"
@@ -55,7 +55,7 @@
         <span class="hidden sm:inline">Quick capture</span>
         <span
           v-if="outstandingReminderCount"
-          class="inline-flex h-5 min-w-5 items-center justify-center rounded-pill bg-brand-amber/15 px-1.5 type-metadata font-semibold"
+          class="inline-flex h-5 min-w-5 items-center justify-center rounded-pill bg-accent/15 px-1.5 type-metadata font-semibold"
         >
           {{ outstandingReminderCount }}
         </span>

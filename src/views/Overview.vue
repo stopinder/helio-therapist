@@ -2,7 +2,7 @@
   <div class="max-w-7xl mx-auto px-page py-8 md:py-10 space-y-9">
     <GreetingHeader :eyebrow="eyebrow" :phrase="phrase" :display-name="therapistDisplayName" :supporting="supportingInformation" />
 
-    <SurfaceCard v-if="!loading && isNewWorkspace" class="border-action-primary/15 bg-brand-sage-soft/35">
+    <SurfaceCard v-if="!loading && isNewWorkspace" class="border-accent/15 bg-accent/5">
       <p class="type-eyebrow text-ink-muted">Getting started</p>
       <h2 class="mt-2 type-body-medium text-ink">Add your first client to begin using your practice workspace.</h2>
       <p class="mt-1.5 type-ui text-ink-secondary max-w-2xl">Client records give Helios the context needed for appointments, sessions, notes and documents. You can add only the details you need now.</p>
@@ -67,7 +67,7 @@
             </router-link>
           </div>
         </section>
-        <section class="space-y-3"><p class="type-eyebrow text-ink-muted">Practice focus</p><SurfaceCard tone="base" compact class="bg-brand-sage-soft/55 border-action-primary/10"><p class="type-ui leading-6 text-ink-secondary">{{ practiceFocusObservation }}</p></SurfaceCard></section>
+        <section class="space-y-3"><p class="type-eyebrow text-ink-muted">Practice focus</p><SurfaceCard tone="base" compact class="bg-accent/5 border-accent/10"><p class="type-ui leading-6 text-ink-secondary">{{ practiceFocusObservation }}</p></SurfaceCard></section>
         <section class="space-y-3"><p class="type-eyebrow text-ink-muted">Development</p><SurfaceCard tone="base" compact class="bg-reflection border-border-reflection"><div class="type-ui font-semibold text-ink">Supervision prep</div><p class="type-metadata text-ink-muted mt-1">{{ reflectionsCount }} reflections are waiting for review.</p><router-link to="/supervision" class="inline-flex mt-2.5 type-ui text-action-link hover:text-action-link-hover underline-offset-4 hover:underline">Go to supervision →</router-link></SurfaceCard></section>
         <section class="space-y-3"><p class="type-eyebrow text-ink-muted">Recent activity</p><SurfaceCard v-if="recentActivity.length === 0" tone="muted" compact class="text-center"><p class="type-metadata text-ink-subtle">No recent activity to show.</p></SurfaceCard><div v-else class="border-y border-border-muted divide-y divide-border-muted"><component v-for="item in recentActivity" :key="item.id" :is="item.route ? 'router-link' : 'div'" :to="item.route || undefined" class="block py-3 first:pt-2 last:pb-2 group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-state-focus-ring focus-visible:rounded-control"><div class="type-ui font-medium text-ink group-hover:text-action-link">{{ item.title }}</div><div class="flex flex-wrap items-center gap-x-2 mt-1 type-metadata text-ink-muted"><span v-if="item.detail">{{ item.detail }}</span><span v-if="item.detail" aria-hidden="true">·</span><time :datetime="item.occurredAt.toISOString()">{{ formatActivityTime(item.occurredAt) }}</time></div></component></div></section>
       </aside>

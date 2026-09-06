@@ -55,7 +55,7 @@
         :aria-expanded="accountMenuOpen"
         @click="accountMenuOpen=!accountMenuOpen"
       >
-        <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-pill bg-brand-amber type-metadata font-semibold text-white">
+        <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-pill bg-accent type-metadata font-semibold text-white">
           {{ accountIdentity.initials }}
         </span>
         <span class="min-w-0 flex-1 truncate">
@@ -84,7 +84,7 @@
           >
             <div 
               v-if="isNavActive(item.path)"
-              class="absolute left-0 top-2.5 bottom-2.5 w-1 rounded-full bg-brand-amber"
+              class="absolute left-0 top-2.5 bottom-2.5 w-1 rounded-full bg-accent"
               aria-hidden="true"
             />
             <span class="icon-surface !h-7 !w-7 border-none" :class="item.iconTone">
