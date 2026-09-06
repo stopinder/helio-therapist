@@ -87,11 +87,10 @@
                           <p class="text-xs font-semibold">Client B · 11:30</p>
                           <span class="text-[10px] text-accent font-medium">Continuity cue available</span>
                         </div>
-                        <p class="mt-1.5 text-[11px] text-ink-secondary leading-relaxed">Recent thread: Exploring recurring themes of avoidance in professional relationships. Shift noted last session.</p>
+                        <p class="mt-1.5 text-[11px] text-ink-secondary leading-relaxed">Recent thread: Avoidance in professional relationships. A shift emerged last session.</p>
                       </div>
                       <div class="px-3 py-2.5 flex items-center justify-between bg-surface-muted/30">
-                        <p class="text-[10px] text-ink-muted italic">"Helios remembers what matters..."</p>
-                        <span class="rounded-control bg-accent px-2 py-0.5 text-[10px] font-medium text-white">Prepare</span>
+                        <span class="rounded-control bg-action-primary px-2 py-0.5 text-[10px] font-medium text-white">Prepare</span>
                       </div>
                     </div>
                     <div class="mt-4 article rounded-control border border-border-muted bg-surface p-3">
@@ -124,19 +123,19 @@
       <div class="mx-auto grid w-full max-w-[1540px] px-5 sm:grid-cols-2 sm:px-8 lg:grid-cols-4 xl:px-12">
         <div class="border-b border-border-muted py-6 sm:border-r lg:border-b-0 lg:pr-6 text-ink">
           <p class="type-eyebrow text-accent">Client continuity</p>
-          <p class="mt-2 text-sm text-ink-secondary">The relevant thread stays with the client across sessions, not scattered across notes.</p>
+          <p class="mt-2 text-sm text-ink-secondary">The relevant thread stays with the client across sessions.</p>
         </div>
         <div class="border-b border-border-muted py-6 sm:pl-6 lg:border-b-0 lg:border-r lg:pr-6 text-ink">
           <p class="type-eyebrow text-accent">Session understanding</p>
-          <p class="mt-2 text-sm text-ink-secondary">Turn a session into thoughtful, editable material you can actually use in your practice.</p>
+          <p class="mt-2 text-sm text-ink-secondary">Turn a session into thoughtful, editable material you can actually use.</p>
         </div>
         <div class="border-b border-border-muted py-6 sm:border-b-0 sm:border-r lg:pl-6 lg:pr-6 text-ink">
           <p class="type-eyebrow text-accent">Contextual capture</p>
-          <p class="mt-2 text-sm text-ink-secondary">Zoom notes and transcripts appear in the right client context instead of admin silos.</p>
+          <p class="mt-2 text-sm text-ink-secondary">Zoom notes and transcripts return to the relevant client context.</p>
         </div>
         <div class="py-6 sm:pl-6 text-ink">
           <p class="type-eyebrow text-accent">Therapist judgement</p>
-          <p class="mt-2 text-sm text-ink-secondary">Helios surfaces possibilities. The therapist decides what they mean and what remains.</p>
+          <p class="mt-2 text-sm text-ink-secondary">Helios surfaces possibilities. You decide what they mean.</p>
         </div>
       </div>
     </section>
@@ -145,29 +144,29 @@
       <div class="grid gap-10 lg:grid-cols-[.72fr_1.28fr] lg:gap-16">
         <div>
           <p class="type-eyebrow text-accent">Practice flow</p>
-          <h2 class="mt-3 text-3xl font-semibold tracking-[-0.03em] sm:text-4xl">Clinical continuity for the real therapist day.</h2>
-          <p class="mt-4 type-body-long text-ink-secondary">Helios is built around the relationship with the client, not the administrative lifecycle of a single note.</p>
+          <h2 class="mt-3 text-3xl font-semibold tracking-[-0.03em] sm:text-4xl">Continuity across the therapist’s day.</h2>
+          <p class="mt-4 type-body-long text-ink-secondary">Helios keeps the client relationship in view before, after and across sessions.</p>
         </div>
         <div class="grid gap-px overflow-hidden rounded-panel border border-border bg-border sm:grid-cols-2">
           <article class="bg-surface-raised p-6">
             <p class="type-eyebrow text-ink-muted">Before the session</p>
             <h3 class="mt-2 type-subsection">Continuity cue</h3>
-            <p class="mt-3 type-body text-ink-secondary">See the recent thread, current focus and anything unfinished without reconstructing the client from memory.</p>
+            <p class="mt-3 type-body text-ink-secondary">See the recent thread, current focus and anything unfinished.</p>
           </article>
           <article class="bg-surface-raised p-6">
             <p class="type-eyebrow text-ink-muted">After the session</p>
             <h3 class="mt-2 type-subsection">Session Summaries</h3>
-            <p class="mt-3 type-body text-ink-secondary">Turn source material into a thoughtful Session Summary that remains editable before you copy or use it.</p>
+            <p class="mt-3 type-body text-ink-secondary">Turn source material into an editable Session Summary you can review and use.</p>
           </article>
           <article class="bg-surface-raised p-6">
             <p class="type-eyebrow text-ink-muted">Across sessions</p>
             <h3 class="mt-2 type-subsection">Longitudinal themes</h3>
-            <p class="mt-3 type-body text-ink-secondary">Keep themes, shifts, exceptions and unfinished threads visible as the work develops over time.</p>
+            <p class="mt-3 type-body text-ink-secondary">Keep themes, shifts, exceptions and unfinished threads visible over time.</p>
           </article>
           <article class="bg-surface-raised p-6">
             <p class="type-eyebrow text-ink-muted">For your practice</p>
             <h3 class="mt-2 type-subsection">Private reflection</h3>
-            <p class="mt-3 type-body text-ink-secondary">Reflect on recurring professional themes in your work without mixing private reflection into the client record.</p>
+            <p class="mt-3 type-body text-ink-secondary">Reflect on recurring themes in your own work, separate from the client record.</p>
           </article>
         </div>
       </div>
@@ -179,7 +178,7 @@
           <div>
             <p class="type-eyebrow text-accent">Client-centred workspace</p>
             <h2 class="mt-3 text-3xl font-semibold tracking-[-0.03em] sm:text-4xl">The client stays at the centre.</h2>
-            <p class="mt-4 type-body-long text-ink-secondary">Helios treats the client relationship as the long-running workspace. Sessions are events within that relationship, contributing to a developing clinical picture.</p>
+            <p class="mt-4 type-body-long text-ink-secondary">The client is the long-running workspace. Sessions add to a developing picture rather than becoming separate pieces of admin.</p>
             <div class="mt-8 grid grid-cols-2 gap-4">
               <div>
                 <p class="font-semibold text-sm">Overview</p>
@@ -236,7 +235,7 @@
             <div class="space-y-3 font-serif">
               <p class="text-sm font-semibold">Summary of session #14</p>
               <p class="text-xs leading-relaxed text-ink-secondary">We explored the tension between your desire for connection and the fear of vulnerability. You noticed that when you feel unheard, you tend to withdraw rather than state your needs directly...</p>
-              <p class="text-[11px] italic text-ink-muted mt-4 border-t border-border pt-3 text-ink">"This summary is for your own reflection between sessions. You can edit it below."</p>
+              <p class="text-[11px] italic text-ink-muted mt-4 border-t border-border pt-3 text-ink">"A clear summary of what you explored together, ready for your therapist to review and edit."</p>
             </div>
             <div class="mt-6 flex justify-end gap-2">
               <span class="rounded-control border border-border px-3 py-1 text-[10px] font-medium">Edit Summary</span>
@@ -247,19 +246,19 @@
         <div class="order-1 lg:order-2">
           <p class="type-eyebrow text-accent">Session understanding</p>
           <h2 class="mt-3 text-3xl font-semibold tracking-[-0.03em] sm:text-4xl">From a session to something genuinely useful.</h2>
-          <p class="mt-4 type-body-long text-ink-secondary">Helios can generate a clinically thoughtful, client-facing Session Summary from your source material. It remains a draft for you to review, edit, and deliberately use, separate from your formal records.</p>
+          <p class="mt-4 type-body-long text-ink-secondary">Helios can turn session source material into a thoughtful client-facing Session Summary. You review and edit it before deciding how to use it.</p>
           <ul class="mt-6 space-y-3 text-sm text-ink-secondary">
             <li class="flex items-start gap-2">
               <span class="text-accent mt-0.5">·</span>
-              <span>Review clinically intelligent summaries</span>
+              <span>Review a clinically thoughtful summary</span>
             </li>
             <li class="flex items-start gap-2">
               <span class="text-accent mt-0.5">·</span>
-              <span>Edit to match your specific therapeutic voice</span>
+              <span>Edit it in your therapeutic voice</span>
             </li>
             <li class="flex items-start gap-2">
               <span class="text-accent mt-0.5">·</span>
-              <span>Deliberately copy to share with the client</span>
+              <span>Copy it deliberately when you are ready</span>
             </li>
           </ul>
         </div>
@@ -276,15 +275,15 @@
         <div class="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           <article class="p-6 rounded-panel bg-surface-raised border border-border text-ink">
             <h3 class="font-semibold text-sm">Themes & Shifts</h3>
-            <p class="mt-2 text-xs text-ink-secondary leading-relaxed">Identify patterns that repeat over months of work, and notice the moments where something genuinely changes.</p>
+            <p class="mt-2 text-xs text-ink-secondary leading-relaxed">Notice recurring patterns and the moments when something genuinely changes.</p>
           </article>
           <article class="p-6 rounded-panel bg-surface-raised border border-border text-ink">
             <h3 class="font-semibold text-sm">Unfinished Threads</h3>
-            <p class="mt-2 text-xs text-ink-secondary leading-relaxed">Exceptions and questions from previous sessions are surfaced so they don't get lost in the noise.</p>
+            <p class="mt-2 text-xs text-ink-secondary leading-relaxed">Bring forward questions and exceptions that might otherwise be lost.</p>
           </article>
           <article class="p-6 rounded-panel bg-surface-raised border border-border text-ink">
              <h3 class="font-semibold text-sm">Provisional Observations</h3>
-             <p class="mt-2 text-xs text-ink-secondary leading-relaxed">Helios highlights possibilities for you to evaluate. Interpretation remains the authoritative role of the therapist.</p>
+             <p class="mt-2 text-xs text-ink-secondary leading-relaxed">Helios surfaces possibilities for you to evaluate. Interpretation remains yours.</p>
           </article>
         </div>
       </div>
@@ -295,20 +294,20 @@
         <div>
           <p class="type-eyebrow text-accent">Source material</p>
           <h2 class="mt-3 text-3xl font-semibold tracking-[-0.03em] sm:text-4xl">Your session happens where therapy happens.</h2>
-          <p class="mt-4 type-body-long text-ink-secondary">Bring transcript material into the relevant client and session context, whether it arrives through Zoom capture, a file import, or pasted text.</p>
+          <p class="mt-4 type-body-long text-ink-secondary">Bring source material back into the relevant client and session context through Zoom, file import or pasted text.</p>
         </div>
         <div class="grid gap-3">
           <div class="grid grid-cols-[110px_minmax(0,1fr)] items-center rounded-control border border-border-muted bg-surface-raised p-4">
             <p class="text-sm font-semibold text-ink">Zoom</p>
-            <p class="text-sm text-ink-secondary">Supported meeting and My Notes transcript workflows feed into the relevant client context.</p>
+            <p class="text-sm text-ink-secondary">Supported Zoom and My Notes transcripts return to the relevant client context.</p>
           </div>
           <div class="grid grid-cols-[110px_minmax(0,1fr)] items-center rounded-control border border-border-muted bg-surface-raised p-4 text-ink">
             <p class="text-sm font-semibold">Flexible Import</p>
-            <p class="text-sm text-ink-secondary">Bring in .vtt/.txt files or paste transcript text from any other setting you use.</p>
+            <p class="text-sm text-ink-secondary">Import .vtt/.txt files or paste transcript text from other settings.</p>
           </div>
           <div class="grid grid-cols-[110px_minmax(0,1fr)] items-center rounded-control border border-accent/20 bg-accent/5 p-4 text-ink">
             <p class="text-sm font-semibold text-accent">Contextual</p>
-            <p class="text-sm text-ink-secondary">Captured material joins the client’s working context rather than staying in a separate admin silo.</p>
+            <p class="text-sm text-ink-secondary">Captured material stays with the client rather than becoming another admin destination.</p>
           </div>
         </div>
       </div>
@@ -335,7 +334,7 @@
           <article class="bg-surface-raised p-6">
             <p class="type-eyebrow text-ink-muted">Calendly</p>
             <h3 class="mt-2 type-subsection">Secure connection</h3>
-            <p class="mt-3 type-body text-ink-secondary">Connect securely to Calendly. Sync is a developing capability, keeping your schedule connected without complexity.</p>
+            <p class="mt-3 type-body text-ink-secondary">Connect your Calendly account securely. Broader booking synchronisation is still developing.</p>
           </article>
         </div>
       </div>
@@ -346,7 +345,7 @@
         <div>
           <p class="type-eyebrow text-accent">Professional development</p>
           <h2 class="mt-3 text-3xl font-semibold tracking-[-0.03em] sm:text-4xl">Your own work deserves continuity too.</h2>
-          <p class="mt-4 type-body-long text-ink-secondary">Helios gives reflective practice its own professional workspace. Notice recurring themes in your own work over time, separate from client Clinical Records.</p>
+          <p class="mt-4 type-body-long text-ink-secondary">Keep private reflection and supervision preparation in their own professional space, separate from client records.</p>
         </div>
         <div class="grid grid-cols-2 gap-px overflow-hidden rounded-panel border border-border bg-border text-ink">
           <div class="bg-surface-raised p-5">
@@ -377,11 +376,11 @@
         </div>
         <article class="text-ink">
           <p class="font-semibold text-sm">Summaries are editable</p>
-          <p class="mt-2 text-xs text-ink-secondary leading-relaxed">Client-facing material remains a draft for you to review, edit, and use only when you decide.</p>
+          <p class="mt-2 text-xs text-ink-secondary leading-relaxed">Client-facing summaries stay editable until you decide they are ready.</p>
         </article>
         <article class="text-ink">
           <p class="font-semibold text-sm">Reflections are private</p>
-          <p class="mt-2 text-xs text-ink-secondary leading-relaxed">Your professional thoughts stay separate from the formal Clinical Record and client-facing summaries.</p>
+          <p class="mt-2 text-xs text-ink-secondary leading-relaxed">Your professional reflection stays separate from client-facing material and formal records.</p>
         </article>
       </div>
     </section>
