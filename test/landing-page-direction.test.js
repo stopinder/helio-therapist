@@ -7,6 +7,11 @@ describe('Landing Page Direction', () => {
   const landingPath = path.join(process.cwd(), 'src', 'views', 'Landing.vue');
   const landingSource = fs.readFileSync(landingPath, 'utf8');
 
+  test('Practice flow section matches tightened copy', () => {
+    assert.match(landingSource, /Continuity across the therapist’s day\./);
+    assert.match(landingSource, /Helios keeps the client relationship in view before, after and across sessions\./);
+  });
+
   test('Hero section matches therapist-first direction', () => {
     assert.match(landingSource, /See your clients\. Helios remembers what matters\./);
     assert.match(landingSource, /A calm workspace for sessions, continuity and clinical understanding/);
@@ -45,6 +50,7 @@ describe('Landing Page Direction', () => {
   test('Session Summary is emphasized', () => {
     assert.match(landingSource, /From a session to something genuinely useful/);
     assert.match(landingSource, /client-facing Session Summary/);
+    assert.match(landingSource, /A clear summary of what you explored together, ready for your therapist to review and edit/);
   });
 
   test('Therapist reflection (Reflect) is present instead of CPD', () => {
@@ -59,6 +65,8 @@ describe('Landing Page Direction', () => {
 
   test('Trust and Control section matches new direction', () => {
     assert.match(landingSource, /Clinical judgement stays with you/);
+    assert.match(landingSource, /Client-facing summaries stay editable until you decide they are ready/);
+    assert.match(landingSource, /Your professional reflection stays separate from client-facing material/);
   });
 
   test('Legal and account routes remain present', () => {
