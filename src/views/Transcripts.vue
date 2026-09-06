@@ -44,7 +44,7 @@
 
       <p v-if="importError" class="max-w-[68rem] mx-auto mb-stack-md text-body-sm text-state-danger" role="alert">{{ importError }}</p>
       <p v-else-if="importSuccess" class="max-w-[68rem] mx-auto mb-stack-md text-body-sm text-state-success" role="status">{{ importSuccess }}</p>
-      <TranscriptInbox :key="inboxKey" :clients="clients" :open-transcript-id="openTranscriptId" />
+      <TranscriptInbox :key="inboxKey" :clients="clients" :open-transcript-id="openTranscriptId" @client-added="load" />
     </main>
   </div>
 </template>
