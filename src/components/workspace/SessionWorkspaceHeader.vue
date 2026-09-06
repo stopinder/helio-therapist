@@ -8,18 +8,18 @@
           <div class="flex flex-wrap items-center gap-x-inline-md gap-y-0 text-caption text-ink-muted"><span class="font-medium">Session type: {{ session.type }}</span><span>{{ session.date }} at {{ session.time }}</span></div>
         </div>
       </div>
-      <div class="flex items-center gap-inline-sm flex-wrap">
+      <div class="flex items-center gap-inline-sm">
         <button
           @click="emit('join-meeting')"
           :disabled="isInPerson || joiningMeeting"
           :aria-busy="joiningMeeting"
-          class="px-inline-md py-stack-xs bg-sidebar text-sidebar-fg font-medium rounded-control hover:bg-sidebar-hover disabled:opacity-50 transition-colors"
+          class="px-inline-sm py-stack-xs bg-sidebar text-sidebar-fg text-body-sm font-medium rounded-control hover:bg-sidebar-active disabled:opacity-50 transition-colors"
         >
           {{ joiningMeeting ? 'Opening Zoom…' : videoLabel }}
         </button>
         <RouterLink
           :to="`/clients/${session.clientId}`"
-          class="px-inline-md py-stack-xs bg-sidebar text-sidebar-fg text-body-sm font-medium rounded-control hover:bg-sidebar-hover transition-colors"
+          class="px-inline-sm py-stack-xs bg-sidebar text-sidebar-fg text-body-sm font-medium rounded-control hover:bg-sidebar-active transition-colors"
         >
           Client Workspace
         </RouterLink>
