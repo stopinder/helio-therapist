@@ -32,7 +32,14 @@
                 <div>
                   <div class="type-ui font-semibold text-ink">Zoom notes</div>
                   <div class="type-metadata text-ink-muted mt-1">
-                    <span v-if="zoomImportResult?.success">{{ zoomImportResult.count }} note{{ zoomImportResult.count === 1 ? '' : 's' }} imported. </span>
+                    <div v-if="zoomImportResult?.success" class="flex flex-col gap-1">
+                      <span>{{ zoomImportResult.count }} note{{ zoomImportResult.count === 1 ? '' : 's' }} imported.</span>
+                      <div v-if="zoomImportResult.count === 1" class="flex">
+                        <router-link v-if="zoomImportResult.imports[0].matched" :to="{ name: 'SessionWorkspace', params: { clientId: zoomImportResult.imports[0].clientId, sessionId: zoomImportResult.imports[0].sessionId } }" class="text-action-link hover:underline">Open session →</router-link>
+                        <router-link v-else :to="`/transcripts?transcript=${zoomImportResult.imports[0].transcriptId}`" class="text-action-link hover:underline">View transcript →</router-link>
+                      </div>
+                      <router-link v-else-if="zoomImportResult.count > 1" to="/transcripts" class="text-action-link hover:underline">Review imported notes →</router-link>
+                    </div>
                     <span v-else-if="zoomImportResult?.error" class="text-state-danger">{{ zoomImportResult.error }}. </span>
                     <span v-else>Import notes from recent Zoom meetings.</span>
                   </div>
@@ -123,7 +130,11 @@ async function checkZoomNotes() {
     const response = await authenticatedFetch('/api/zoom/reconcile-my-notes', { method: 'POST' })
     const data = await response.json()
     if (response.ok) {
-      zoomImportResult.value = { success: true, count: data.reconciledCount || 0 }
+      zoomImportResult.value = { 
+        success: true, 
+        count: data.imported || 0,
+        imports: data.imports || []
+      }
       await Promise.all([loadData(), updateUnmatchedCount()])
     } else {
       zoomImportResult.value = { success: false, error: data.error || 'Failed to check Zoom notes' }

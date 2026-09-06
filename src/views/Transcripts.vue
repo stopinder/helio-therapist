@@ -16,17 +16,22 @@
 
     <main v-else class="flex-1 overflow-y-auto p-page">
       <div class="max-w-[68rem] mx-auto mb-stack-md">
-        <div v-if="returnClientId" class="mb-stack-md">
-          <router-link
-            :to="{ name: 'ClientWorkspace', params: { clientId: returnClientId }, query: { tab: 'Transcripts' } }"
-            class="text-body-sm font-medium text-action-link hover:underline"
-          >← Back to client transcripts</router-link>
-        </div>
-        <div class="flex justify-end gap-inline-sm">
-          <button type="button" class="button-secondary" :disabled="checkingZoom" @click="checkZoomNotes">{{ checkingZoom ? 'Checking Zoom…' : 'Check Zoom Notes' }}</button>
-          <button type="button" class="button-secondary" :aria-expanded="showPasteImport" @click="togglePasteImport">{{ showPasteImport ? 'Close paste' : 'Paste transcript' }}</button>
-          <input ref="fileInput" class="sr-only" type="file" accept=".vtt,.txt,text/vtt,text/plain" @change="importTranscriptFile" />
-          <button type="button" class="button-secondary" :disabled="importing" @click="fileInput?.click()">{{ importing ? 'Importing…' : 'Choose file' }}</button>
+        <div class="flex items-center justify-between mb-stack-md">
+          <div v-if="returnClientId">
+            <router-link
+              :to="{ name: 'ClientWorkspace', params: { clientId: returnClientId }, query: { tab: 'Transcripts' } }"
+              class="text-body-sm font-medium text-action-link hover:underline"
+            >← Back to client transcripts</router-link>
+          </div>
+          <div v-else>
+            <AppButton variant="secondary" @click="goBack">← Back</AppButton>
+          </div>
+          <div class="flex gap-inline-sm">
+            <button type="button" class="button-secondary" :disabled="checkingZoom" @click="checkZoomNotes">{{ checkingZoom ? 'Checking Zoom…' : 'Check Zoom Notes' }}</button>
+            <button type="button" class="button-secondary" :aria-expanded="showPasteImport" @click="togglePasteImport">{{ showPasteImport ? 'Close paste' : 'Paste transcript' }}</button>
+            <input ref="fileInput" class="sr-only" type="file" accept=".vtt,.txt,text/vtt,text/plain" @change="importTranscriptFile" />
+            <button type="button" class="button-secondary" :disabled="importing" @click="fileInput?.click()">{{ importing ? 'Importing…' : 'Choose file' }}</button>
+          </div>
         </div>
 
         <section v-if="showPasteImport" class="mt-stack-md rounded-panel border border-border-muted bg-surface p-stack-lg" aria-label="Paste transcript">
@@ -46,12 +51,14 @@
 
 <script setup>
 import { computed, ref, onMounted } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import TranscriptInbox from '../components/TranscriptInbox.vue'
+import AppButton from '../components/ui/AppButton.vue'
 import { listClients } from '../lib/clients.js'
 import { authenticatedFetch } from '../lib/api.js'
 
 const route = useRoute()
+const router = useRouter()
 const clients = ref([])
 const loading = ref(true)
 const error = ref('')
@@ -73,6 +80,14 @@ async function load() {
   try { clients.value = await listClients() }
   catch (err) { error.value = err.message || 'Failed to initialize transcripts workspace.' }
   finally { loading.value = false }
+}
+
+function goBack() {
+  if (window.history.length > 1) {
+    router.back()
+  } else {
+    router.push('/')
+  }
 }
 
 function togglePasteImport() { showPasteImport.value = !showPasteImport.value; importError.value = ''; importSuccess.value = '' }
