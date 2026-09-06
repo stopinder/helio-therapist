@@ -15,6 +15,20 @@ test('Overview Today workflow integration for Zoom notes', async () => {
   // Requirement: success/import count is presented
   assert.match(overview, /note\{\{ zoomImportResult\.count === 1 \? '' : 's' \}\} imported/)
   
+  // Requirement: matched import includes session/client navigation IDs and renders "Open session"
+  assert.match(overview, /zoomImportResult\.imports\[0\]\.matched/)
+  assert.match(overview, /:to="\{ name: 'SessionWorkspace', params: \{ clientId: zoomImportResult\.imports\[0\]\.clientId, sessionId: zoomImportResult\.imports\[0\]\.sessionId \} \}"/)
+  assert.match(overview, /Open session →/)
+
+  // Requirement: unmatched import includes transcript ID and renders "View transcript"
+  assert.match(overview, /:to="`\/transcripts\?transcript=\$\{zoomImportResult\.imports\[0\]\.transcriptId\}`"/)
+  assert.match(overview, /View transcript →/)
+
+  // Requirement: several imports render "Review imported notes"
+  assert.match(overview, /v-else-if="zoomImportResult\.count > 1"/)
+  assert.match(overview, /to="\/transcripts"/)
+  assert.match(overview, /Review imported notes →/)
+  
   // Requirement: unmatched notes produce a discoverable matching action
   assert.match(overview, /unmatchedCount === 1 \? '' : 's' \}\} need\{\{ unmatchedCount === 1 \? 's' : '' \}\} matching/)
   assert.match(overview, /Match note/)

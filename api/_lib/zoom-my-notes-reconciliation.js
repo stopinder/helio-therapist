@@ -258,6 +258,7 @@ export async function reconcileZoomMyNotes({ supabase, integration, therapistUse
   const existingIds = new Set((existingRows || []).map((row) => String(row.zoom_note_id || '')).filter(Boolean));
 
   let imported = 0;
+  const newImports = [];
   for (const note of notes) {
     const content = await zoomJson(
       getToken,
@@ -287,7 +288,7 @@ export async function reconcileZoomMyNotes({ supabase, integration, therapistUse
     if (!sessionLink) sessionLink = await uniqueAwaitingSession(supabase, therapistUserId, createdTime);
 
     const now = new Date().toISOString();
-    const { error: transcriptError } = await supabase
+    const { data: insertedTranscript, error: transcriptError } = await supabase
       .from('zoom_transcripts')
       .upsert({
         therapist_user_id: therapistUserId,
@@ -304,12 +305,21 @@ export async function reconcileZoomMyNotes({ supabase, integration, therapistUse
         session_ref: sessionLink?.session_ref || null,
         status: sessionLink ? 'ready' : 'unassigned',
         updated_at: now
-      }, { onConflict: 'therapist_user_id,zoom_note_id' });
+      }, { onConflict: 'therapist_user_id,zoom_note_id' })
+      .select('id')
+      .single();
 
     if (transcriptError) throw transcriptError;
     await markSessionTranscriptReceived(supabase, therapistUserId, sessionLink, now);
+    
+    newImports.push({
+      transcriptId: insertedTranscript.id,
+      clientId: sessionLink?.client_id || null,
+      sessionId: sessionLink?.session_ref || null,
+      matched: !!sessionLink
+    });
     imported += 1;
   }
 
-  return { checked: checkedCount, imported };
+  return { checked: checkedCount, imported, imports: newImports };
 }

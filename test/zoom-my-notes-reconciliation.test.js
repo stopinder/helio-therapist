@@ -46,6 +46,17 @@ test('reconciliation is authenticated, therapist-scoped, meeting-scoped and dedu
   assert.doesNotMatch(helperSource, /users\/me\/meetings/);
 });
 
+test('reconciliation returns navigation metadata for new imports', () => {
+  const helperSource = fs.readFileSync(new URL('../api/_lib/zoom-my-notes-reconciliation.js', import.meta.url), 'utf8');
+
+  assert.match(helperSource, /imports: newImports/);
+  assert.match(helperSource, /newImports\.push\(\{/);
+  assert.match(helperSource, /transcriptId: insertedTranscript\.id/);
+  assert.match(helperSource, /clientId: sessionLink\?\.client_id/);
+  assert.match(helperSource, /sessionId: sessionLink\?\.session_ref/);
+  assert.match(helperSource, /matched: !!sessionLink/);
+});
+
 test('transcripts workspace offers a manual Zoom Notes reconciliation action', () => {
   const viewSource = fs.readFileSync(new URL('../src/views/Transcripts.vue', import.meta.url), 'utf8');
 
