@@ -23,7 +23,33 @@ body { background:var(--surface-canvas); }
  --surface-sidebar:#243E35; --sidebar-foreground:#F4F0E7; --sidebar-muted:#A4B4AD; --sidebar-border:rgb(244 240 231 / .12); --sidebar-hover:rgb(244 240 231 / .08); --sidebar-active:rgb(244 240 231 / .12); --surface-avatar:#E1E8E3; --surface-backdrop:rgb(32 36 31 / .42); --brand-amber:var(--focus); --brand-amber-soft:#F3E5D1; --brand-sage-soft:#E1E8E3;
  --radius-control:.85rem; --radius-panel:1.2rem; --radius-pill:9999px; --control-target:2.75rem;
  --motion-fast:120ms; --motion-standard:180ms; --motion-slow:250ms; --motion-ease:cubic-bezier(.2,.8,.2,1);
- --space-inline-xs:.25rem; --space-inline-sm:.5rem; --space-inline-md:.875rem; --space-inline-lg:1.125rem; --space-stack-xs:.25rem; --space-stack-sm:.5rem; --space-stack-md:.875rem; --space-stack-lg:1.125rem; --space-stack-xl:1.75rem; --space-stack-2xl:2.25rem; --space-section:3.25rem; --space-page:1.25rem;
+  --space-inline-xs:.25rem; --space-inline-sm:.5rem; --space-inline-md:.875rem; --space-inline-lg:1.125rem; --space-stack-xs:.25rem; --space-stack-sm:.5rem; --space-stack-md:.875rem; --space-stack-lg:1.125rem; --space-stack-xl:1.75rem; --space-stack-2xl:2.25rem; --space-section:3.25rem; --space-page:1.25rem;
+}
+
+.helios-palette-prototype {
+  --brand-violet-deep: #3E0F8D;
+  --brand-violet-soft: #9564DD;
+  --brand-yellow-warm: #E4DA72;
+  --brand-neutral-light: #EEEEEE;
+
+  --accent: var(--brand-violet-deep);
+  --accent-hover: var(--brand-violet-soft);
+  --focus: var(--brand-violet-soft);
+  
+  --surface-sidebar: var(--brand-violet-deep);
+  --sidebar-foreground: #FFFFFF;
+  --sidebar-muted: var(--brand-neutral-light);
+  --sidebar-border: rgba(238, 238, 238, 0.15);
+  --sidebar-hover: rgba(149, 100, 221, 0.2);
+  --sidebar-active: rgba(149, 100, 221, 0.3);
+  
+  --brand-amber: var(--brand-yellow-warm);
+  --brand-amber-soft: rgba(228, 218, 114, 0.2);
+  
+  --action-link: var(--brand-violet-deep);
+  --action-link-hover: var(--brand-violet-soft);
+  
+  --surface-canvas: var(--brand-neutral-light);
 }
 @media(min-width:768px){:root{--space-page:2.5rem}} @media(min-width:1280px){:root{--space-page:3.25rem}}
 
