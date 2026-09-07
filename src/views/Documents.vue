@@ -4,9 +4,9 @@
       <div>
         <p class="type-overline text-ink-muted">Practice library</p>
         <h1 class="type-h1 text-ink">Documents</h1>
-        <p class="type-body text-ink-secondary mt-2">Create polished therapist-owned documents and keep reusable practice material in one place.</p>
+        <p class="type-body text-ink-secondary mt-2">Create client or practice documents from one place, then keep retained client documents with the relevant client record.</p>
       </div>
-      <button type="button" class="button-primary" @click="startCreate">Create Document</button>
+      <button type="button" class="button-primary" data-testid="create-document" @click="openCreateChooser">Create Document</button>
     </header>
 
     <PracticeIdentityEditor @updated="profile = $event" />
@@ -14,6 +14,70 @@
     <DocumentLibrary v-else :documents="docs" @edit="edit" @download="download" />
     <div v-if="error" class="rounded-control bg-state-danger/10 text-state-danger p-4">{{ error }}</div>
   </div>
+
+  <teleport to="body">
+    <div v-if="createChooserOpen" class="fixed inset-0 z-[70] bg-black/45 grid place-items-center p-4" data-testid="document-create-chooser">
+      <section class="w-full max-w-lg rounded-panel border border-border bg-surface-elevated shadow-2xl" role="dialog" aria-modal="true" aria-labelledby="document-create-heading">
+        <header class="px-5 py-4 border-b border-border-muted flex items-start justify-between gap-4">
+          <div>
+            <p class="type-overline text-ink-muted">New document</p>
+            <h2 id="document-create-heading" class="text-h3 font-semibold text-ink">Choose where this document belongs</h2>
+          </div>
+          <button type="button" class="button-secondary" @click="closeCreateChooser">Close</button>
+        </header>
+
+        <div class="p-5 space-y-4">
+          <label class="block">
+            <span class="text-caption font-semibold">Document for</span>
+            <select v-model="creationScope" class="mt-1 w-full p-2.5 border border-border rounded-control bg-surface" data-testid="document-scope-select">
+              <option value="client">Client</option>
+              <option value="practice">Practice</option>
+            </select>
+          </label>
+
+          <template v-if="creationScope === 'client'">
+            <label class="block">
+              <span class="text-caption font-semibold">Client</span>
+              <select v-model="selectedClientId" class="mt-1 w-full p-2.5 border border-border rounded-control bg-surface" :disabled="clientsLoading" data-testid="document-client-select">
+                <option value="" disabled>{{ clientsLoading ? 'Loading clients…' : 'Select a client' }}</option>
+                <option v-for="client in clients" :key="client.id" :value="client.id">{{ client.display_name }}</option>
+              </select>
+            </label>
+
+            <label class="block">
+              <span class="text-caption font-semibold">Document type</span>
+              <select v-model="newClientDocumentType" class="mt-1 w-full p-2.5 border border-border rounded-control bg-surface" data-testid="document-type-select">
+                <option value="other">General document</option>
+                <option value="session_summary">Session summary</option>
+                <option value="clinical_summary">Clinical summary</option>
+                <option value="progress_report">Progress report</option>
+                <option value="care_letter">Care letter</option>
+              </select>
+            </label>
+
+            <p class="text-caption text-ink-muted">The client determines whose clinical record the document belongs to. The recipient can be entered separately inside the document.</p>
+            <p v-if="clientsError" class="text-body-sm text-state-danger">{{ clientsError }}</p>
+          </template>
+
+          <p v-else class="text-body-sm text-ink-secondary">Practice documents are not attached to a client record and use the existing practice templates.</p>
+        </div>
+
+        <footer class="px-5 py-4 border-t border-border-muted flex justify-end gap-2">
+          <button type="button" class="button-secondary" @click="closeCreateChooser">Cancel</button>
+          <button type="button" class="button-primary" :disabled="creationScope === 'client' && !selectedClient" data-testid="document-create-continue" @click="continueCreate">Continue</button>
+        </footer>
+      </section>
+    </div>
+  </teleport>
+
+  <ClientDocumentComposer
+    v-if="clientComposerOpen && selectedClient"
+    :client="selectedClient"
+    :initial-document-type="newClientDocumentType"
+    @close="closeClientComposer"
+    @saved="clientDocumentSaved"
+    @show-documents="showSelectedClientDocuments"
+  />
 
   <teleport to="body">
     <div v-if="composerOpen" class="fixed inset-0 z-[70] bg-black/45 flex" data-testid="professional-document-composer">
@@ -70,25 +134,83 @@
 
 <script setup>
 import { computed, onMounted, reactive, ref } from 'vue'
+import { useRouter } from 'vue-router'
+import { listClients } from '../lib/clients.js'
 import { createUnscopedDocumentDraft, downloadDocument, listDocuments, saveDocumentDraft } from '../lib/documents.js'
 import { DOCUMENT_TEMPLATES, getDocumentTemplate, templateBody } from '../lib/documentTemplates.js'
 import PracticeIdentityEditor from '../components/documents/PracticeIdentityEditor.vue'
 import DocumentLibrary from '../components/documents/DocumentLibrary.vue'
+import ClientDocumentComposer from '../components/workspace/ClientDocumentComposer.vue'
 
+const router = useRouter()
 const docs = ref([]), loading = ref(true), error = ref(''), composerOpen = ref(false), current = ref(null), busy = ref(false), modalError = ref(''), saveMessage = ref('Not saved yet'), baseline = ref('')
+const createChooserOpen = ref(false), creationScope = ref('client'), clients = ref([]), clientsLoading = ref(false), clientsError = ref(''), selectedClientId = ref(''), newClientDocumentType = ref('other'), clientComposerOpen = ref(false)
 const profile = ref({ fullName: '', practiceName: '', professionalTitle: '', email: '', phone: '', website: '', address: '', footer: '' })
 const templates = DOCUMENT_TEMPLATES
 const form = reactive({ scope: 'practice', documentType: 'agreement', title: '', recipient: '', purpose: '', body: '' })
 const selectedTemplate = computed(() => getDocumentTemplate(form.documentType))
+const selectedClient = computed(() => clients.value.find(client => client.id === selectedClientId.value) || null)
 const snapshot = () => JSON.stringify(form)
 const dirty = computed(() => baseline.value !== snapshot())
 
-onMounted(refresh)
+onMounted(() => {
+  refresh()
+  loadClients()
+})
 
 async function refresh() {
   loading.value = true
   error.value = ''
   try { docs.value = await listDocuments() } catch (e) { error.value = e.message || 'Could not load documents.' } finally { loading.value = false }
+}
+
+async function loadClients() {
+  clientsLoading.value = true
+  clientsError.value = ''
+  try {
+    clients.value = await listClients()
+    if (!selectedClientId.value && clients.value.length) selectedClientId.value = clients.value[0].id
+  } catch (e) {
+    clientsError.value = e.message || 'Could not load clients.'
+  } finally {
+    clientsLoading.value = false
+  }
+}
+
+function openCreateChooser() {
+  creationScope.value = 'client'
+  newClientDocumentType.value = 'other'
+  if (!selectedClientId.value && clients.value.length) selectedClientId.value = clients.value[0].id
+  createChooserOpen.value = true
+}
+
+function closeCreateChooser() {
+  createChooserOpen.value = false
+}
+
+function continueCreate() {
+  if (creationScope.value === 'practice') {
+    closeCreateChooser()
+    startPracticeCreate()
+    return
+  }
+  if (!selectedClient.value) return
+  closeCreateChooser()
+  clientComposerOpen.value = true
+}
+
+function closeClientComposer() {
+  clientComposerOpen.value = false
+}
+
+async function clientDocumentSaved() {
+  await refresh()
+}
+
+function showSelectedClientDocuments() {
+  const clientId = selectedClient.value?.id
+  closeClientComposer()
+  if (clientId) router.push({ name: 'ClientWorkspace', params: { clientId } })
 }
 
 function applyTemplate(template) {
@@ -99,7 +221,7 @@ function applyTemplate(template) {
   form.body = templateBody(template)
 }
 
-function startCreate() {
+function startPracticeCreate() {
   current.value = null
   Object.assign(form, { scope: 'practice', documentType: 'agreement', title: '', recipient: '', purpose: '', body: '' })
   applyTemplate(getDocumentTemplate('agreement'))
