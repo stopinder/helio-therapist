@@ -29,6 +29,15 @@ test('practice contact details are explicitly optional', () => {
   }
 })
 
+test('practice profile save shows progress and persistent destination feedback', () => {
+  assert.match(settings, /isSavingProfile \? 'Saving…' : 'Save details'/)
+  assert.match(settings, /role="status"/)
+  assert.match(settings, /aria-live="polite"/)
+  assert.match(settings, /Saved to your practice profile\. These details will be used on Helios documents where practice details are included\./)
+  assert.match(settings, /@input="profileSuccess = ''"/)
+  assert.doesNotMatch(settings, /setTimeout\([^)]*profileSuccess/)
+})
+
 test('empty overview gives a clear first action without creating new product scope', () => {
   assert.match(overview, /clients\.value\.length === 0 && sessions\.value\.length === 0/)
   assert.match(overview, /Add your first client to begin using your practice workspace/)
