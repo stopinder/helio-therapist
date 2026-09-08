@@ -1,13 +1,15 @@
 <template>
   <div class="flex h-full flex-col bg-sidebar text-sidebar-fg">
-    <div class="flex h-16 shrink-0 items-center justify-between border-b border-sidebar-border px-5">
-      <router-link to="/overview" class="flex items-center gap-2.5 rounded-control focus-visible:outline-sidebar-muted" aria-label="Helios home">
-        <span class="icon-surface icon-surface-reflection rounded-pill border-none">
+    <div class="flex min-h-16 shrink-0 items-center justify-between border-b border-sidebar-border px-5 py-3">
+      <router-link to="/overview" class="flex min-w-0 items-center gap-2.5 rounded-control focus-visible:outline-sidebar-muted" aria-label="Helios home">
+        <span class="icon-surface icon-surface-reflection shrink-0 rounded-pill border-none">
           <Sun class="workspace-icon" aria-hidden="true" />
         </span>
-        <span class="leading-none">
-          <span class="block font-serif text-[1.35rem] font-semibold text-sidebar-fg">{{ accountIdentity.practiceName || 'Helios' }}</span>
-          <span class="mt-1 block text-[0.58rem] uppercase tracking-[0.16em] text-sidebar-muted">Practice</span>
+        <span
+          class="min-w-0 text-[0.95rem] font-semibold leading-tight text-sidebar-fg"
+          :title="accountIdentity.practiceName || accountIdentity.name || 'Helios'"
+        >
+          {{ accountIdentity.practiceName || accountIdentity.name || 'Helios' }}
         </span>
       </router-link>
 
@@ -18,53 +20,6 @@
         @click="$emit('close')"
       >
         <X class="workspace-icon-lg" />
-      </button>
-    </div>
-
-    <div class="relative shrink-0 border-b border-border-muted bg-sidebar px-3 py-2">
-      <div
-        v-if="accountMenuOpen"
-        class="absolute top-[3.35rem] left-3 right-3 z-50 rounded-panel border border-border-muted bg-surface-overlay p-1.5 shadow-overlay"
-        role="menu"
-      >
-        <router-link
-          to="/settings"
-          class="flex min-h-touch items-center gap-2.5 rounded-control px-3 type-ui text-ink-secondary hover:bg-surface-subtle hover:text-ink"
-          role="menuitem"
-          @click="closeAccountMenu"
-        >
-          <Settings class="workspace-icon-sm" aria-hidden="true" />
-          <span>Settings</span>
-        </router-link>
-
-        <button
-          type="button"
-          class="flex min-h-touch w-full items-center gap-2.5 rounded-control px-3 text-left type-ui text-ink-secondary hover:bg-surface-subtle hover:text-ink"
-          role="menuitem"
-          @click="signOut"
-        >
-          <LogOut class="workspace-icon-sm" aria-hidden="true" />
-          <span>Sign out</span>
-        </button>
-      </div>
-
-      <button
-        type="button"
-        class="flex min-h-touch w-full items-center gap-3 rounded-control px-2 text-left hover:bg-sidebar-hover transition-colors focus-visible:outline-sidebar-muted"
-        aria-haspopup="menu"
-        :aria-expanded="accountMenuOpen"
-        @click="accountMenuOpen=!accountMenuOpen"
-      >
-        <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-pill bg-accent type-metadata font-semibold text-white">
-          {{ accountIdentity.initials }}
-        </span>
-        <span class="min-w-0 flex-1 truncate">
-          <span class="block truncate type-ui font-semibold text-sidebar-fg">{{ accountIdentity.name }}</span>
-          <span v-if="accountIdentity.subtitle" class="mt-0.5 block truncate type-metadata text-sidebar-muted">
-            {{ accountIdentity.subtitle }}
-          </span>
-        </span>
-        <MoreHorizontal class="workspace-icon shrink-0 text-sidebar-muted" aria-hidden="true" />
       </button>
     </div>
 
@@ -82,7 +37,7 @@
               : 'text-sidebar-muted hover:bg-sidebar-hover hover:text-sidebar-fg hover:translate-x-0.5'"
             @click="handleNavigation"
           >
-            <div 
+            <div
               v-if="isNavActive(item.path)"
               class="absolute left-0 top-2.5 bottom-2.5 w-1 rounded-full bg-accent"
               aria-hidden="true"
@@ -95,11 +50,35 @@
         </div>
       </section>
     </nav>
+
+    <div class="shrink-0 border-t border-sidebar-border px-3 py-3 space-y-1">
+      <router-link
+        to="/settings"
+        class="flex min-h-touch items-center gap-2.5 rounded-control px-2.5 type-ui text-sidebar-muted transition-colors hover:bg-sidebar-hover hover:text-sidebar-fg"
+        :class="isNavActive('/settings') ? 'bg-sidebar-active text-sidebar-fg font-semibold' : ''"
+        @click="handleNavigation"
+      >
+        <span class="icon-surface !h-7 !w-7 border-none icon-surface-reflection">
+          <Settings class="workspace-icon-sm" aria-hidden="true" />
+        </span>
+        <span>Settings</span>
+      </router-link>
+
+      <button
+        type="button"
+        class="flex min-h-touch w-full items-center gap-2.5 rounded-control px-2.5 text-left type-ui text-sidebar-muted transition-colors hover:bg-sidebar-hover hover:text-sidebar-fg"
+        @click="signOut"
+      >
+        <span class="icon-surface !h-7 !w-7 border-none">
+          <LogOut class="workspace-icon-sm" aria-hidden="true" />
+        </span>
+        <span>Sign out</span>
+      </button>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue'
 import { useRoute } from 'vue-router'
 import {
   CalendarDays,
@@ -107,7 +86,6 @@ import {
   GraduationCap,
   LayoutDashboard,
   LogOut,
-  MoreHorizontal,
   Settings,
   Sun,
   Users,
@@ -124,7 +102,6 @@ const props = defineProps({
 
 const emit = defineEmits(['close', 'sign-out'])
 const route = useRoute()
-const accountMenuOpen = ref(false)
 
 const navGroups = [
   {
@@ -133,6 +110,7 @@ const navGroups = [
       { name: 'Today', path: '/overview', icon: LayoutDashboard, iconTone: 'icon-surface-accent' },
       { name: 'Clients', path: '/clients', icon: Users, iconTone: 'icon-surface-accent' },
       { name: 'Calendar', path: '/calendar', icon: CalendarDays, iconTone: 'icon-surface-reflection' },
+      { name: 'Documents', path: '/documents', icon: FileText, iconTone: 'icon-surface-reflection' },
       { name: 'Transcript Inbox', path: '/transcripts', icon: FileText, iconTone: 'icon-surface-reflection' }
     ]
   },
@@ -148,18 +126,11 @@ function isNavActive(path) {
   return route.path === path || route.path.startsWith(`${path}/`)
 }
 
-function closeAccountMenu() {
-  accountMenuOpen.value = false
-  if (props.mobile) emit('close')
-}
-
 function handleNavigation() {
-  accountMenuOpen.value = false
   if (props.mobile) emit('close')
 }
 
 function signOut() {
-  accountMenuOpen.value = false
   emit('sign-out')
 }
 </script>
