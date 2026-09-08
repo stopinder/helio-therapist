@@ -3,6 +3,7 @@ import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 
 const source = await readFile(new URL('../src/views/SessionWorkspace.vue', import.meta.url), 'utf8')
+const headerSource = await readFile(new URL('../src/components/workspace/SessionWorkspaceHeader.vue', import.meta.url), 'utf8')
 
 test('SessionWorkspace does not render WorkflowIndicator', () => {
   assert.strictEqual(source.includes('<WorkflowIndicator'), false, 'WorkflowIndicator should be removed')
@@ -65,4 +66,13 @@ test('Copy summary copies the edited document body', () => {
 
 test('copy is disabled for empty content', () => {
   assert.match(source, /:disabled="!summaryDocument\?\.content\?\.body"/)
+})
+
+test('Session Workspace no longer exposes Zoom rejoin guidance or wiring', () => {
+  assert.doesNotMatch(headerSource, /Zoom opens the video call/i)
+  assert.doesNotMatch(source, /@join-meeting=/)
+  assert.doesNotMatch(source, /joiningMeeting/)
+  assert.doesNotMatch(source, /meetingError/)
+  assert.doesNotMatch(source, /function joinMeeting/)
+  assert.doesNotMatch(source, /\/api\/zoom\/start-session/)
 })
