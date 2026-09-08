@@ -6,7 +6,7 @@
           <Sun class="workspace-icon" aria-hidden="true" />
         </span>
         <span
-          class="min-w-0 text-[0.95rem] font-semibold leading-tight text-sidebar-fg"
+            class="min-w-0 text-[14px] font-semibold leading-tight text-sidebar-fg"
           :title="accountIdentity.practiceName || accountIdentity.name || 'Helios'"
         >
           {{ accountIdentity.practiceName || accountIdentity.name || 'Helios' }}
