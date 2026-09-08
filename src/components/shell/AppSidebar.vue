@@ -1,11 +1,17 @@
 <template>
   <div class="flex h-full flex-col bg-sidebar text-sidebar-fg">
     <div class="flex h-16 shrink-0 items-center justify-between border-b border-sidebar-border px-5">
-      <router-link to="/overview" class="flex items-center gap-2.5 rounded-control focus-visible:outline-sidebar-muted" aria-label="Helios home">
-        <span class="icon-surface icon-surface-reflection rounded-pill border-none">
+      <router-link to="/overview" class="flex min-w-0 items-center gap-2.5 rounded-control focus-visible:outline-sidebar-muted" aria-label="Helios home">
+        <img
+          v-if="accountIdentity.practiceLogoUrl"
+          :src="accountIdentity.practiceLogoUrl"
+          alt=""
+          class="h-9 w-9 shrink-0 rounded-control object-contain"
+        />
+        <span v-else class="icon-surface icon-surface-reflection rounded-pill border-none">
           <Sun class="workspace-icon" aria-hidden="true" />
         </span>
-        <span class="leading-none">
+        <span class="min-w-0 leading-none">
           <span class="block font-serif text-[1.35rem] font-semibold text-sidebar-fg">Helios</span>
           <span class="mt-1 block truncate text-[0.58rem] uppercase tracking-[0.16em] text-sidebar-muted">
             {{ accountIdentity.practiceName || 'Practice' }}
