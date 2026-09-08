@@ -52,6 +52,17 @@ export async function updateClient({ clientId, ...updates }) {
   return { ...data, name: data.display_name, note: data.current_focus }
 }
 
+export async function updateClientFocus({ clientId, note }) {
+  if (!supabase) throw new Error('Supabase is not configured')
+  const user = await requireUser('update a client')
+  const { data, error } = await withSessionRecovery(() => supabase.from('clients').update({
+    current_focus: String(note || '').trim(),
+    updated_at: new Date().toISOString()
+  }).eq('id', clientId).eq('user_id', user.id).select(clientSelect).single())
+  if (error) throw new Error(error.message || 'Failed to update current focus')
+  return { ...data, name: data.display_name, note: data.current_focus }
+}
+
 export async function setClientArchived({ clientId, archived }) {
   if (!supabase) throw new Error('Supabase is not configured')
   const user = await requireUser(archived ? 'archive a client' : 'restore a client')
