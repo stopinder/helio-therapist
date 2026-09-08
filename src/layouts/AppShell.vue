@@ -79,7 +79,7 @@ import GlobalQuickCapture from '../components/reminders/GlobalQuickCapture.vue'
 const route = useRoute()
 const router = useRouter()
 const isMobileMenuOpen = ref(false)
-const accountIdentity = ref({ name: 'Signed in', subtitle: '', initials: '·' })
+const accountIdentity = ref({ name: 'Signed in', subtitle: '', initials: '·', practiceName: '' })
 const showQuickCapture = ref(false)
 const reminders = ref([])
 const now = ref(new Date())
@@ -212,14 +212,15 @@ async function loadAccountIdentity() {
   try {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
-    const { data: profile } = await supabase.from('profiles').select('full_name,role,professional_title').eq('id', user.id).maybeSingle()
+    const { data: profile } = await supabase.from('profiles').select('full_name,role,professional_title,practice_name').eq('id', user.id).maybeSingle()
     const metadataName = typeof user.user_metadata?.full_name === 'string' ? user.user_metadata.full_name.trim() : ''
     const email = user.email || ''
     const name = profile?.full_name?.trim() || metadataName || email || 'Signed in'
     accountIdentity.value = {
       name,
       subtitle: profile?.professional_title?.trim() || profile?.role?.trim() || (name !== email ? email : ''),
-      initials: initialsFor(name)
+      initials: initialsFor(name),
+      practiceName: profile?.practice_name?.trim() || ''
     }
   } catch {
     console.warn('[AppShell] Could not load account identity')
