@@ -2,11 +2,24 @@
   <div class="flex h-full flex-col bg-sidebar text-sidebar-fg">
     <div class="flex min-h-16 shrink-0 items-center justify-between border-b border-sidebar-border px-5 py-3">
       <router-link to="/overview" class="flex min-w-0 items-center gap-2.5 rounded-control focus-visible:outline-sidebar-muted" aria-label="Helios home">
-        <span class="icon-surface icon-surface-reflection shrink-0 rounded-pill border-none">
-          <Sun class="workspace-icon" aria-hidden="true" />
+        <span class="icon-surface icon-surface-reflection shrink-0 rounded-pill border-none overflow-hidden">
+          <img
+            v-if="accountIdentity.practiceLogoUrl"
+            :src="accountIdentity.practiceLogoUrl"
+            :alt="`${accountIdentity.practiceName || accountIdentity.name || 'Practice'} logo`"
+            class="h-full w-full object-cover"
+          />
+          <span
+            v-else-if="accountIdentity.practiceName || accountIdentity.name"
+            class="flex h-full w-full items-center justify-center text-[12px] font-semibold text-sidebar-fg"
+            aria-hidden="true"
+          >
+            {{ brandInitial }}
+          </span>
+          <Sun v-else class="workspace-icon" aria-hidden="true" />
         </span>
         <span
-            class="min-w-0 text-[14px] font-semibold leading-tight text-sidebar-fg"
+          class="min-w-0 text-[14px] font-semibold leading-tight text-sidebar-fg"
           :title="accountIdentity.practiceName || accountIdentity.name || 'Helios'"
         >
           {{ accountIdentity.practiceName || accountIdentity.name || 'Helios' }}
@@ -79,6 +92,7 @@
 </template>
 
 <script setup>
+import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 import {
   CalendarDays,
@@ -102,6 +116,10 @@ const props = defineProps({
 
 const emit = defineEmits(['close', 'sign-out'])
 const route = useRoute()
+const brandInitial = computed(() => {
+  const source = props.accountIdentity.practiceName || props.accountIdentity.name || ''
+  return source.trim().charAt(0).toUpperCase()
+})
 
 const navGroups = [
   {
