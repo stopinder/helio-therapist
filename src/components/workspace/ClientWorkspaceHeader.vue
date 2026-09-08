@@ -17,7 +17,7 @@
       </div>
 
       <div class="flex items-center gap-inline-sm flex-wrap">
-        <button @click="openSupervisionPicker" class="px-inline-md py-stack-xs bg-surface-elevated border border-border text-caption font-medium text-ink-secondary rounded-control hover:bg-surface-subtle transition-colors">Add to Supervision</button>
+        <button @click="openSupervisionPicker" class="px-inline-md py-stack-xs bg-surface-elevated border border-border text-body-sm font-medium text-ink-secondary rounded-control hover:bg-surface-subtle transition-colors">Add to Supervision</button>
         <button @click="$emit('create-document')" class="px-inline-md py-stack-xs bg-surface-elevated border border-border text-body-sm font-medium text-ink rounded-control hover:bg-surface-subtle transition-colors" data-testid="create-client-document">Create Document</button>
         <button v-if="!client.archived" type="button" :disabled="workspaceBusy || sessionBusy" @click="openClinicalWorkspace" class="px-inline-md py-stack-xs bg-action-link text-on-action text-body-sm font-semibold rounded-control hover:bg-action-link-hover transition-colors disabled:opacity-60" data-testid="open-clinical-workspace">{{ workspaceBusy ? 'Opening…' : 'Clinical Workspace' }}</button>
         <button v-if="!activeSession" type="button" :disabled="archiveSaving" @click="requestArchiveChange" class="px-inline-md py-stack-xs bg-surface-elevated border border-border text-body-sm font-medium text-ink-secondary rounded-control hover:bg-surface-subtle disabled:opacity-50" data-testid="client-archive-action">{{ archiveSaving ? 'Saving…' : (client.archived ? 'Restore client' : 'Archive client') }}</button>
