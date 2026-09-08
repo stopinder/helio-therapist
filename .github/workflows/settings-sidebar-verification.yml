@@ -1,0 +1,50 @@
+name: Settings sidebar verification
+
+on:
+  push:
+    branches:
+      - fix/settings-sidebar-verification-20260908
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      VITE_SUPABASE_URL: http://127.0.0.1:54321
+      VITE_SUPABASE_ANON_KEY: playwright-anon-key
+    steps:
+      - name: Check out exact candidate commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+
+      - name: Record checkout and relevant source blobs
+        run: |
+          git log -1 --format='%H %s'
+          git hash-object src/layouts/AppShell.vue test/sidebar-account-footer.test.js
+          git status --short
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Refresh lockfile for existing dependency overrides
+        run: npm install --package-lock-only --ignore-scripts --no-fund
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts --no-fund
+
+      - name: Run focused sidebar test
+        run: node --test test/sidebar-account-footer.test.js
+
+      - name: Run all unit tests
+        run: npm test
+
+      - name: Build production bundle
+        run: npm run build
