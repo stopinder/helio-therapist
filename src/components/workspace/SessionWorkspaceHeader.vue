@@ -9,27 +9,18 @@
         </div>
       </div>
       <div class="flex items-center gap-inline-sm">
-        <button
-          @click="emit('join-meeting')"
-          :disabled="isInPerson || joiningMeeting"
-          :aria-busy="joiningMeeting"
-          class="px-inline-sm py-stack-xs bg-sidebar text-sidebar-fg text-body-sm font-medium rounded-control hover:bg-sidebar-active disabled:opacity-50 transition-colors"
-        >
-          {{ joiningMeeting ? 'Opening Zoom…' : videoLabel }}
-        </button>
         <RouterLink
           :to="`/clients/${session.clientId}`"
-          class="px-inline-sm py-stack-xs bg-sidebar text-sidebar-fg text-body-sm font-medium rounded-control hover:bg-sidebar-active transition-colors"
+          class="px-inline-sm py-stack-xs bg-[#0b4654] text-white text-body-sm font-medium rounded-control hover:bg-[#0f5968] transition-colors"
         >
           Client Workspace
         </RouterLink>
       </div>
     </div>
     <p v-if="!isInPerson" class="mt-stack-sm text-caption text-ink-muted">Zoom opens the video call in a separate tab. Keep Clinical Workspace open in Helio for session capture, notes and review.</p>
-    <div v-if="meetingError" role="alert" class="mt-stack-sm rounded-control border border-state-danger/20 bg-state-danger/5 px-inline-md py-stack-xs text-body-sm text-state-danger">{{ meetingError }}</div>
   </header>
 </template>
 <script setup>
-import { computed } from 'vue'; import { RouterLink } from 'vue-router'; import StatusBadge from './StatusBadge.vue'; import { videoProviderService } from '../../lib/videoProvider.js';
-const props=defineProps({session:{type:Object,required:true},joiningMeeting:{type:Boolean,default:false},meetingError:{type:String,default:''}}); const emit=defineEmits(['join-meeting']); const isInPerson=computed(()=>props.session.type==='In-person'); const videoLabel=computed(()=>isInPerson.value?'In-person session':videoProviderService.getVideoActionLabel({videoProvider:'zoom',meetingUrl:'server-resolved',status:props.session.status}));
+import { computed } from 'vue'; import { RouterLink } from 'vue-router'; import StatusBadge from './StatusBadge.vue';
+const props=defineProps({session:{type:Object,required:true}}); const isInPerson=computed(()=>props.session.type==='In-person');
 </script>
