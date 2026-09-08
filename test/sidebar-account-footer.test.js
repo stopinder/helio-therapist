@@ -10,7 +10,9 @@ test('sidebar practice identity is dynamic and therapist-owned', () => {
   assert.match(shell, /from\('profiles'\)/)
   assert.match(shell, /select\('full_name,role,professional_title,practice_name'\)/)
   assert.match(shell, /\.eq\('id',\s*user\.id\)/)
-  assert.match(shell, /practiceName:\s*profile\?\.practice_name/)
+  // Both an inline value and a derived variable preserve the same profile value.
+  assert.match(shell, /(?:practiceName:|const practiceName\s*=)\s*profile\?\.practice_name\?\.trim\(\)\s*\|\|\s*''/)
+  assert.match(shell, /accountIdentity\.value\s*=\s*\{[^}]*\bpracticeName\b/)
   assert.match(sidebar, /accountIdentity\.practiceName\s*\|\|\s*'Practice'/)
 })
 
