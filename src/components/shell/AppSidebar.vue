@@ -6,7 +6,7 @@
           <Sun class="workspace-icon" aria-hidden="true" />
         </span>
         <span class="leading-none">
-          <span class="block font-serif text-[1.35rem] font-semibold text-sidebar-fg">Helios</span>
+          <span class="block font-serif text-[1.35rem] font-semibold text-sidebar-fg">{{ accountIdentity.practiceName || 'Helios' }}</span>
           <span class="mt-1 block text-[0.58rem] uppercase tracking-[0.16em] text-sidebar-muted">Practice</span>
         </span>
       </router-link>

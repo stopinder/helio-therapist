@@ -105,7 +105,7 @@
               </p>
 
               <button
-                  @click="refreshEvents"
+                  @click="loadData"
                   class="w-full py-1 text-caption font-medium bg-state-danger-surface text-state-danger border border-state-danger/20 rounded-control hover:bg-state-danger/10"
               >
                 Retry
@@ -1013,10 +1013,7 @@ onMounted(() => {
       updateDimensions
   )
 
-  window.addEventListener(
-      'keydown',
-      handleGlobalEsc
-  )
+  window.addEventListener('keydown', handleGlobalEsc)
 
   updateDimensions()
 })
@@ -1033,10 +1030,7 @@ onUnmounted(() => {
       updateDimensions
   )
 
-  window.removeEventListener(
-      'keydown',
-      handleGlobalEsc
-  )
+  window.removeEventListener('keydown', handleGlobalEsc)
 })
 
 const isMobile = computed(
@@ -1151,11 +1145,7 @@ const miniMonthName = computed(() => {
   ).format(miniViewDate.value)
 })
 
-const workingHours =
-    Array.from(
-        { length: 24 },
-        (_, i) => i
-    )
+const workingHours = Array.from({ length: 24 }, (_, i) => i)
 
 const miniCalendarCells = computed(() => {
   return getMiniCalendarCells(
@@ -1441,10 +1431,7 @@ function selectAppointment(
         clickEvent.currentTarget
             .getBoundingClientRect()
 
-    const popoverWidth =
-        window.innerWidth < 640
-            ? 280
-            : 288
+    const popoverWidth = window.innerWidth < 640 ? 280 : 288
 
     const popoverHeight = 220
     const padding = 12
@@ -1467,12 +1454,7 @@ function selectAppointment(
               popoverHeight
           ) / 2
     } else {
-      if (
-          left +
-          popoverWidth +
-          padding >
-          window.innerWidth
-      ) {
+      if (left + popoverWidth + padding > window.innerWidth) {
         left =
             rect.left -
             popoverWidth -
@@ -1489,12 +1471,7 @@ function selectAppointment(
           )
       )
 
-      if (
-          top +
-          popoverHeight +
-          padding >
-          window.innerHeight
-      ) {
+      if (top + popoverHeight + padding > window.innerHeight) {
         top =
             window.innerHeight -
             popoverHeight -

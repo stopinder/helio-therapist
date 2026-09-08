@@ -8,7 +8,7 @@ const sidebar = await readFile(new URL('../src/components/shell/AppSidebar.vue',
 test('sidebar account identity is dynamic and therapist-owned', () => {
   assert.match(shell, /supabase\.auth\.getUser\(\)/)
   assert.match(shell, /from\('profiles'\)/)
-  assert.match(shell, /select\('full_name,role,professional_title'\)/)
+  assert.match(shell, /select\('full_name,role,professional_title,practice_name'\)/)
   assert.match(shell, /\.eq\('id',\s*user\.id\)/)
   assert.match(shell, /user\.user_metadata\?\.full_name/)
   assert.match(shell, /user\.email/)

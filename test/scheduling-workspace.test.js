@@ -6,9 +6,10 @@ const read = (path) => fs.readFileSync(new URL(`../${path}`, import.meta.url), '
 
 test('therapist workspace exposes scheduling as a header action without sidebar duplication', () => {
   const shell = read('src/layouts/AppShell.vue')
+  const header = read('src/components/shell/AppHeader.vue')
   const router = read('src/router/index.js')
-  assert.match(shell, /Schedule appointment/)
-  assert.match(shell, /to="\/schedule"/)
+  assert.match(header, /Schedule appointment/)
+  assert.match(header, /to="\/schedule"/)
   assert.doesNotMatch(shell, /{name:'Schedule',path:'\/schedule'/)
   assert.match(router, /path:\s*['"]\/schedule['"]/)
   assert.match(router, /ScheduleAppointment/)
