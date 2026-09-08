@@ -133,6 +133,7 @@ const navGroups = [
       { name: 'Today', path: '/overview', icon: LayoutDashboard, iconTone: 'icon-surface-accent' },
       { name: 'Clients', path: '/clients', icon: Users, iconTone: 'icon-surface-accent' },
       { name: 'Calendar', path: '/calendar', icon: CalendarDays, iconTone: 'icon-surface-reflection' },
+      { name: 'Documents', path: '/documents', icon: FileText, iconTone: 'icon-surface-reflection' },
       { name: 'Transcript Inbox', path: '/transcripts', icon: FileText, iconTone: 'icon-surface-reflection' }
     ]
   },
