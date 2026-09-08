@@ -17,10 +17,9 @@
         </RouterLink>
       </div>
     </div>
-    <p v-if="!isInPerson" class="mt-stack-sm text-caption text-ink-muted">Zoom opens the video call in a separate tab. Keep Clinical Workspace open in Helio for session capture, notes and review.</p>
   </header>
 </template>
 <script setup>
-import { computed } from 'vue'; import { RouterLink } from 'vue-router'; import StatusBadge from './StatusBadge.vue';
-const props=defineProps({session:{type:Object,required:true}}); const isInPerson=computed(()=>props.session.type==='In-person');
+import { RouterLink } from 'vue-router'; import StatusBadge from './StatusBadge.vue';
+defineProps({session:{type:Object,required:true}});
 </script>
