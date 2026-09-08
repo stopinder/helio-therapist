@@ -23,6 +23,7 @@ test.describe('Session Workspace Working Material', () => {
     await page.route('**/auth/v1/user', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ id: userId, email, user_metadata: { full_name: 'Test Therapist' } }) }));
     await page.route('**/rest/v1/profiles*', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ id: userId, full_name: 'Test Therapist', role: 'therapist' }) }));
     await page.route('**/rest/v1/therapist_reminders*', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([]) }));
+    await page.route('**/rest/v1/documents*', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([]) }));
 
     await page.route('**/rest/v1/clients*', route => {
       const url = new URL(route.request().url());
