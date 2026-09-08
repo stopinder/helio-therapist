@@ -3,7 +3,7 @@
     <div v-if="loading" class="flex-1 flex items-center justify-center"><div class="text-ink-muted flex flex-col items-center gap-2"><span class="w-8 h-8 border-4 border-state-selected border-t-transparent rounded-full animate-spin"></span><p>Loading session…</p></div></div>
     <div v-else-if="error" class="flex-1 flex items-center justify-center p-inline-lg"><div class="max-w-md w-full bg-surface p-inline-lg py-stack-lg rounded-card shadow-sm border border-state-danger/20 text-center"><h2 class="text-h2 font-semibold text-state-danger mb-2">Error</h2><p class="text-ink-secondary mb-6">{{ error }}</p><button @click="loadSession" class="button-primary">Try Again</button></div></div>
     <template v-else-if="session">
-      <SessionWorkspaceHeader :session="workspaceSession" :joiningMeeting="joiningMeeting" :meetingError="meetingError" @join-meeting="joinMeeting" />
+      <SessionWorkspaceHeader :session="workspaceSession" />
       
       <div class="flex-1 overflow-auto p-inline-lg py-stack-lg">
         <div class="max-w-4xl mx-auto space-y-12">
@@ -167,7 +167,7 @@ import ReflectionTab from '../components/workspace/ReflectionTab.vue';
 import SessionSummaryDocument from '../components/workspace/SessionSummaryDocument.vue';
 
 const route = useRoute(); 
-const session = ref(null), client = ref(null), loading = ref(true), error = ref(''), transcript = ref(null), transcriptLoading = ref(false), transcriptError = ref(''), joiningMeeting = ref(false), meetingError = ref(''), therapistName = ref('');
+const session = ref(null), client = ref(null), loading = ref(true), error = ref(''), transcript = ref(null), transcriptLoading = ref(false), transcriptError = ref(''), therapistName = ref('');
 const summaryDocument = ref(null);
 const isEditingSummary = ref(false);
 const showTranscript = ref(false);
@@ -247,7 +247,6 @@ async function handleSummaryInput() {
     }
   }, 1000);
 }
-async function joinMeeting(){if(!session.value?.id||!session.value?.clientId||joiningMeeting.value)return;joiningMeeting.value=true;meetingError.value='';try{const response=await authenticatedFetch('/api/zoom/start-session',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({clientId:session.value.clientId,sessionRef:session.value.id})});const data=await response.json().catch(()=>({}));if(!response.ok)throw new Error(data.error||'Unable to open Zoom for this session.');if(!data.startUrl)throw new Error('Zoom did not return a meeting link.');window.open(data.startUrl,'_blank','noopener,noreferrer')}catch(err){meetingError.value=err?.message||'Unable to open Zoom for this session.'}finally{joiningMeeting.value=false}}
 async function loadTherapistProfile(){if(!supabase)return;try{const {data:{user}}=await supabase.auth.getUser();if(!user)return;const {data:profile}=await supabase.from('profiles').select('full_name').eq('id',user.id).maybeSingle();const metadataName=typeof user.user_metadata?.full_name==='string'?user.user_metadata.full_name.trim():'';therapistName.value=profile?.full_name?.trim()||metadataName||''}catch(e){console.warn('[Session] Could not load therapist identity',e)}} 
 
 async function loadSession(){
