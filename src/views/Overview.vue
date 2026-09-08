@@ -27,10 +27,18 @@
         <section class="space-y-3">
           <p class="type-eyebrow text-ink-muted">Continue working</p>
           <div class="space-y-2.5">
-            <SurfaceCard tone="base" compact>
+            <SurfaceCard tone="base" compact class="border-accent/20 bg-accent/5">
               <div class="flex items-center justify-between gap-4">
                 <div>
-                  <div class="type-ui font-semibold text-ink">Zoom notes</div>
+                  <div class="flex items-center gap-2 type-ui font-semibold text-ink">
+                    <svg aria-hidden="true" class="h-4 w-4 shrink-0 text-accent" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M20 7v5h-5" />
+                      <path d="M4 17v-5h5" />
+                      <path d="M6.1 9a7 7 0 0 1 11.5-2.6L20 9" />
+                      <path d="M17.9 15a7 7 0 0 1-11.5 2.6L4 15" />
+                    </svg>
+                    <span>Zoom notes</span>
+                  </div>
                   <div class="type-metadata text-ink-muted mt-1">
                     <div v-if="zoomImportResult?.success" class="flex flex-col gap-1">
                       <span>{{ zoomImportResult.count }} note{{ zoomImportResult.count === 1 ? '' : 's' }} imported.</span>
