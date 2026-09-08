@@ -79,7 +79,7 @@ import GlobalQuickCapture from '../components/reminders/GlobalQuickCapture.vue'
 const route = useRoute()
 const router = useRouter()
 const isMobileMenuOpen = ref(false)
-const accountIdentity = ref({ name: 'Signed in', subtitle: '', initials: '·', practiceName: '' })
+const accountIdentity = ref({ name: 'Signed in', subtitle: '', initials: '·', practiceName: '', practiceLogoUrl: '' })
 const showQuickCapture = ref(false)
 const reminders = ref([])
 const now = ref(new Date())
@@ -212,15 +212,21 @@ async function loadAccountIdentity() {
   try {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
-    const { data: profile } = await supabase.from('profiles').select('full_name,role,professional_title,practice_name').eq('id', user.id).maybeSingle()
+    const { data: profile } = await supabase.from('profiles').select('full_name,role,professional_title,practice_name,practice_logo_path').eq('id', user.id).maybeSingle()
     const metadataName = typeof user.user_metadata?.full_name === 'string' ? user.user_metadata.full_name.trim() : ''
     const email = user.email || ''
     const name = profile?.full_name?.trim() || metadataName || email || 'Signed in'
+    let practiceLogoUrl = ''
+    if (profile?.practice_logo_path) {
+      const { data } = await supabase.storage.from('practice-branding').createSignedUrl(profile.practice_logo_path, 3600)
+      practiceLogoUrl = data?.signedUrl || ''
+    }
     accountIdentity.value = {
       name,
       subtitle: profile?.professional_title?.trim() || profile?.role?.trim() || (name !== email ? email : ''),
       initials: initialsFor(name),
-      practiceName: profile?.practice_name?.trim() || ''
+      practiceName: profile?.practice_name?.trim() || '',
+      practiceLogoUrl
     }
   } catch {
     console.warn('[AppShell] Could not load account identity')
@@ -233,9 +239,11 @@ async function handleSignOut() {
 }
 
 const handleReminderChange = () => refreshReminders()
+const handleProfileChange = () => loadAccountIdentity()
 
 onMounted(() => {
   window.addEventListener('helios-reminders-changed', handleReminderChange)
+  window.addEventListener('helios-profile-changed', handleProfileChange)
   window.addEventListener('focus', refreshAppointments)
   document.addEventListener('visibilitychange', refreshAppointmentsWhenActive)
   loadAccountIdentity()
@@ -247,6 +255,7 @@ onMounted(() => {
 
 onUnmounted(() => {
   window.removeEventListener('helios-reminders-changed', handleReminderChange)
+  window.removeEventListener('helios-profile-changed', handleProfileChange)
   window.removeEventListener('focus', refreshAppointments)
   document.removeEventListener('visibilitychange', refreshAppointmentsWhenActive)
   window.clearInterval(clockTimer)
