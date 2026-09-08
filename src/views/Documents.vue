@@ -6,7 +6,13 @@
         <h1 class="type-h1 text-ink">Documents</h1>
         <p class="type-body text-ink-secondary mt-2">Create polished therapist-owned documents and keep reusable practice material in one place.</p>
       </div>
-      <button type="button" class="button-primary" @click="startCreate">Create Document</button>
+      <div class="flex flex-wrap items-center gap-2">
+        <label class="button-secondary cursor-pointer" :class="uploading ? 'opacity-60 pointer-events-none' : ''">
+          <input class="sr-only" type="file" accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" :disabled="uploading" @change="uploadDocument" />
+          {{ uploading ? 'Uploading…' : 'Upload Document' }}
+        </label>
+        <button type="button" class="button-primary" @click="startCreate">Create Document</button>
+      </div>
     </header>
 
     <PracticeIdentityEditor @updated="profile = $event" />
@@ -70,12 +76,12 @@
 
 <script setup>
 import { computed, onMounted, reactive, ref } from 'vue'
-import { createUnscopedDocumentDraft, downloadDocument, listDocuments, saveDocumentDraft } from '../lib/documents.js'
+import { createUnscopedDocumentDraft, downloadDocument, listDocuments, saveDocumentDraft, uploadPracticeDocument } from '../lib/documents.js'
 import { DOCUMENT_TEMPLATES, getDocumentTemplate, templateBody } from '../lib/documentTemplates.js'
 import PracticeIdentityEditor from '../components/documents/PracticeIdentityEditor.vue'
 import DocumentLibrary from '../components/documents/DocumentLibrary.vue'
 
-const docs = ref([]), loading = ref(true), error = ref(''), composerOpen = ref(false), current = ref(null), busy = ref(false), modalError = ref(''), saveMessage = ref('Not saved yet'), baseline = ref('')
+const docs = ref([]), loading = ref(true), error = ref(''), composerOpen = ref(false), current = ref(null), busy = ref(false), uploading = ref(false), modalError = ref(''), saveMessage = ref('Not saved yet'), baseline = ref('')
 const profile = ref({ fullName: '', practiceName: '', professionalTitle: '', email: '', phone: '', website: '', address: '', footer: '' })
 const templates = DOCUMENT_TEMPLATES
 const form = reactive({ scope: 'practice', documentType: 'agreement', title: '', recipient: '', purpose: '', body: '' })
@@ -89,6 +95,15 @@ async function refresh() {
   loading.value = true
   error.value = ''
   try { docs.value = await listDocuments() } catch (e) { error.value = e.message || 'Could not load documents.' } finally { loading.value = false }
+}
+
+async function uploadDocument(event) {
+  const file = event.target.files?.[0]
+  event.target.value = ''
+  if (!file || uploading.value) return
+  uploading.value = true
+  error.value = ''
+  try { await uploadPracticeDocument(file); await refresh() } catch (e) { error.value = e.message || 'Could not upload this practice document.' } finally { uploading.value = false }
 }
 
 function applyTemplate(template) {
