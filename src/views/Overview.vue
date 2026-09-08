@@ -44,7 +44,7 @@
                     <span v-else>Import notes from recent Zoom meetings.</span>
                   </div>
                 </div>
-                <AppButton :disabled="isCheckingZoom" :aria-busy="isCheckingZoom" @click="checkZoomNotes">
+                <AppButton variant="primary" :disabled="isCheckingZoom" :aria-busy="isCheckingZoom" @click="checkZoomNotes">
                   {{ isCheckingZoom ? 'Checking…' : 'Check for new notes' }}
                 </AppButton>
               </div>
