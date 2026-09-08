@@ -35,7 +35,6 @@
       <section class="bg-surface-elevated border border-border-muted rounded-panel p-inline-lg space-y-stack-md">
         <h3 class="text-h3 font-semibold text-ink pt-stack-md mb-stack-sm">Clinical Administration</h3>
         <div class="space-y-stack-xs"><label class="block text-caption font-semibold text-ink-secondary uppercase tracking-wider">General Notes</label><textarea v-model="form.notes" class="w-full border border-border rounded-control px-3 py-2 text-body focus:ring-2 focus:ring-state-selected focus:border-transparent outline-none min-h-[120px]" placeholder="Administrative or general clinical notes"></textarea></div>
-        <div class="space-y-stack-xs"><label class="block text-caption font-semibold text-ink-secondary uppercase tracking-wider">Current Focus (Dashboard)</label><textarea v-model="form.note" class="w-full border border-border rounded-control px-3 py-2 text-body focus:ring-2 focus:ring-state-selected focus:border-transparent outline-none min-h-[60px]" placeholder="Quick summary shown in directory and workspace"></textarea></div>
       </section>
     </div>
 
