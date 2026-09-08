@@ -15,7 +15,7 @@
           <section aria-labelledby="before-next-heading" class="space-y-stack-lg">
             <h2 id="before-next-heading" class="text-h2 font-semibold text-ink">Before next session</h2>
             
-            <ClinicalAttentionPanel :client="client" />
+            <ClinicalAttentionPanel :client="client" @updated="client = $event" />
 
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-stack-lg">
               <div class="lg:col-span-2 space-y-stack-lg">
