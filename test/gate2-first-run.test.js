@@ -17,8 +17,9 @@ test('settings edits the existing therapist-owned practice profile', () => {
   assert.match(settings, /Practice & professional details/)
   assert.match(settings, /full_name,professional_title,practice_name,document_email,document_phone,practice_website,practice_address/)
   assert.match(settings, /supabase\.auth\.getUser\(\)/)
-  assert.match(settings, /from\('profiles'\)\.upsert/)
-  assert.match(settings, /onConflict:'id'/)
+  assert.match(settings, /from\('profiles'\)\.update\(profile\.value\)\.eq\('id',user\.id\)/)
+  assert.doesNotMatch(settings, /from\('profiles'\)\.upsert/)
+  assert.doesNotMatch(settings, /onConflict:'id'/)
 })
 
 test('empty overview gives a clear first action without creating new product scope', () => {
