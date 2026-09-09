@@ -51,8 +51,8 @@ button { font: inherit; cursor: pointer; transition: background 120ms, border-co
 .secondary:hover:not(:disabled) { background: var(--cpd-selected); }
 button:disabled { background: var(--cpd-muted-surface); color: var(--cpd-muted); border-color: var(--cpd-border); cursor: not-allowed; }
 .actions { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px; margin-top: 24px; }
-.progress-row { display: flex; justify-content: space-between; gap: 16px; color: var(--cpd-muted); font-size: 13px; }
-progress { display: block; width: 100%; height: 5px; margin: 10px 0 28px; border: 0; accent-color: var(--cpd-teal); background: var(--cpd-muted-surface); }
+.progress-row { display: flex; justify-content: space-between; gap: 16px; color: var(--cpd-muted); font-size: 12px; line-height: 1.35; }
+progress { display: block; width: 100%; height: 5px; margin: 7px 0 4px; border: 0; accent-color: var(--cpd-teal); background: var(--cpd-muted-surface); }
 progress::-webkit-progress-bar { background: var(--cpd-muted-surface); }
 progress::-webkit-progress-value { background: var(--cpd-teal); }
 progress::-moz-progress-bar { background: var(--cpd-teal); }
@@ -87,6 +87,16 @@ legend { font-size: clamp(22px, 3vw, 27px); line-height: 1.45; margin-bottom: 16
 :focus-visible { outline: 3px solid var(--cpd-teal); outline-offset: 4px; }
 .skip-link { position: absolute; left: 20px; top: -100px; background: var(--cpd-canvas); color: var(--cpd-teal); padding: 12px; z-index: 10; }
 .skip-link:focus { top: 10px; }
-@media (max-width: 600px) { .page { padding: 20px 18px 44px; } .exercise-context { margin-bottom: 24px; } .option { padding: 15px; } .generation-panel { padding: 20px; } .review-row { gap: 12px; } .actions { align-items: stretch; } }
+
+/* The Professional Development child-page bar is 4rem high and already sticky.
+ * Keep the quiz progress immediately beneath it so the count and bar cannot be
+ * obscured by the host navigation. The auto-scroll preference remains available
+ * but deliberately reads as a secondary setting rather than another header row.
+ */
+.progress-header { top: var(--cpd-sticky-top, 4rem) !important; padding: 9px 0 7px !important; margin-bottom: 20px !important; background: color-mix(in srgb, var(--cpd-canvas) 96%, transparent) !important; }
+.scroll-preference { justify-content: flex-end !important; gap: 6px !important; margin-top: 5px; color: var(--cpd-muted) !important; font-size: 11px !important; line-height: 1.25; opacity: .78; }
+.scroll-preference input { width: 14px !important; height: 14px !important; }
+
+@media (max-width: 600px) { .page { padding: 20px 18px 44px; } .exercise-context { margin-bottom: 24px; } .option { padding: 15px; } .generation-panel { padding: 20px; } .review-row { gap: 12px; } .actions { align-items: stretch; } .progress-header { top: var(--cpd-sticky-top, 4rem) !important; } }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; scroll-behavior: auto !important; } }
 @media print { .no-print, .skip-link { display: none !important; } .cpd-reflection { background: white; color: black; } .page { max-width: none; padding: 0; } .report-section { break-inside: avoid; } .notice { border: 1px solid #777; background: white; } }
