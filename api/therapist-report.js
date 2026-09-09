@@ -45,10 +45,11 @@ export default async function handler(req, res) {
     const rawLength = Number(req.headers['content-length'] || 0);
     if (rawLength > MAX_BODY_BYTES) return res.status(413).json({ error: 'Request too large' });
 
+    // POST is sent only when the therapist chooses Generate AI reflection.
     const body = req.body || {};
-    const allowedKeys = new Set(['quizVersion', 'answers', 'consent']);
+    const allowedKeys = new Set(['quizVersion', 'answers']);
     if (Object.keys(body).some(key => !allowedKeys.has(key))) return invalidRequest(res);
-    if (body.quizVersion !== QUIZ_VERSION || body.consent !== true || !body.answers || typeof body.answers !== 'object' || Array.isArray(body.answers)) {
+    if (body.quizVersion !== QUIZ_VERSION || !body.answers || typeof body.answers !== 'object' || Array.isArray(body.answers)) {
       return invalidRequest(res);
     }
 
