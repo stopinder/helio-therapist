@@ -10,6 +10,7 @@
       <p class="text-body-sm text-ink-muted font-fraunces italic mt-1">
         Browse your reflective journal and revisit previous thinking.
       </p>
+      <router-link to="/supervision/practice-reflection" class="button-secondary inline-flex items-center mt-4">Reflect on your therapeutic stance</router-link>
     </header>
 
     <div class="bg-surface-elevated rounded-[2rem] border border-border-muted shadow-sm overflow-hidden min-h-[600px] flex flex-col transition-all duration-slow" :class="{ 'bg-surface-canvas shadow-none border-transparent': isTimelineFocused }">
