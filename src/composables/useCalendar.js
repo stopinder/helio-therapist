@@ -35,14 +35,13 @@ export function useCalendar() {
       sessions.value = sessionsData
       appointments.value = appointmentsData
       clients.value = clientsData
+      await loadGoogleEvents()
     } catch (e) {
       console.error('Failed to load Helios schedule:', e)
       error.value = 'Failed to load schedule. Please try again.'
     } finally {
       loading.value = false
     }
-
-    await loadGoogleEvents()
   }
 
   async function loadGoogleEvents(customRange = null) {
