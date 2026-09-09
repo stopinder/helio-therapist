@@ -1,0 +1,48 @@
+name: CPD stance library checks
+on:
+  push:
+    branches: ['feat/cpd-stance-library']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      VITE_SUPABASE_URL: https://cpd-test.supabase.co
+      VITE_SUPABASE_ANON_KEY: synthetic-public-test-key
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - name: Test deterministic snapshots, authentication and save retries
+        run: node --test test/cpd-stance-library.test.js
+      - name: Build the native application
+        run: npm run build
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Test native CPD route and private library with synthetic responses
+        env:
+          PLAYWRIGHT_BASE_URL: http://127.0.0.1:4173
+        run: |
+          npm run preview -- --host 127.0.0.1 --port 4173 > "$RUNNER_TEMP/native-cpd-preview.log" 2>&1 &
+          preview_pid=$!
+          trap 'kill "$preview_pid" 2>/dev/null || true' EXIT
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:4173/ > /dev/null; then break; fi
+            sleep 1
+          done
+          npx playwright test e2e/cpd-stance-library.spec.js --project=chromium --retries=0 --reporter=list
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: cpd-stance-library-results
+          path: test-results/
+          if-no-files-found: ignore
+          retention-days: 5

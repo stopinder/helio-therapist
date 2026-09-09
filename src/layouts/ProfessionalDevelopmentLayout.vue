@@ -20,8 +20,13 @@
       </router-view>
     </main>
 
+    <ExerciseReflectionModal
+      v-if="selectedReflection && isStanceReflection(selectedReflection)"
+      :reflection="selectedReflection"
+      @close="closeReflectionModal"
+    />
     <PrivateReflectionModal
-      v-if="selectedReflection"
+      v-else-if="selectedReflection"
       :reflection="selectedReflection"
       :loading="actionLoading === selectedReflection.id"
       :error="Boolean(actionError)"
@@ -38,6 +43,8 @@ import { ref, computed, onMounted, provide } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { getAllPrivateReflections, setReflectionSupervisionSelection } from '../lib/reflections.js';
 import PrivateReflectionModal from '../components/professional-development/PrivateReflectionModal.vue';
+import ExerciseReflectionModal from '../components/professional-development/ExerciseReflectionModal.vue';
+import { isStanceReflection } from '../lib/stanceReflections.js';
 
 const route = useRoute();
 const router = useRouter();
@@ -100,7 +107,7 @@ async function handleToggleSupervision(reflection) {
 }
 
 function handleOpenReflection(reflection) { actionError.value = ''; initialAIMode.value = false; selectedReflection.value = reflection; }
-function handleOpenAIReflection(reflection) { actionError.value = ''; initialAIMode.value = true; selectedReflection.value = reflection; }
+function handleOpenAIReflection(reflection) { actionError.value = ''; initialAIMode.value = !isStanceReflection(reflection); selectedReflection.value = reflection; }
 function closeReflectionModal() { selectedReflection.value = null; initialAIMode.value = false; actionError.value = ''; }
 function handleGoToSession(reflection) { if (reflection.client_id && reflection.session_ref) router.push(`/clients/${reflection.client_id}/sessions/${reflection.session_ref}`); }
 
