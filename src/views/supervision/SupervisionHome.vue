@@ -75,25 +75,24 @@
 
 <script setup>
 import { computed } from 'vue'
+import { reflectionQuotes } from '../../data/reflectionQuotes.js'
 
 const props = defineProps({
   reflections: { type: Array, default: () => [] },
   loading: Boolean
 })
 
-const dailyPauses = [
-  { quote: 'Curiosity creates a little more room between what we feel and what we do next.', attribution: 'Helios' },
-  { quote: 'A repeated response is not a verdict. It is something we can become interested in.', attribution: 'Helios' },
-  { quote: 'Sometimes development begins with noticing the moment we most want the session to be different.', attribution: 'Helios' },
-  { quote: 'The aim is not to become unaffected by the work, but to remain available within it.', attribution: 'Helios' },
-  { quote: 'Our responses to the work can become information when we have enough room to notice them.', attribution: 'Helios' },
-  { quote: 'Learning becomes part of practice when we begin to recognise it in the room.', attribution: 'Helios' },
-  { quote: 'What repeats can become familiar enough to notice before it takes over.', attribution: 'Helios' },
-  { quote: 'A little more awareness can create a little more choice.', attribution: 'Helios' }
-]
+const dailyPauses = reflectionQuotes
 
-const dayNumber = Math.floor(new Date().setHours(0, 0, 0, 0) / 86400000)
-const dailyPause = computed(() => dailyPauses[Math.abs(dayNumber) % dailyPauses.length])
+const dayNumber = Math.floor(
+    new Date().setHours(0, 0, 0, 0) / 86400000
+)
+
+const quotePeriod = Math.floor(dayNumber / 3)
+
+const dailyPause = computed(() =>
+    dailyPauses[Math.abs(quotePeriod) % dailyPauses.length]
+)
 
 function reflectiveMapFor(reflection) {
   const map = reflection?.workspace_content?.reflectiveMap
