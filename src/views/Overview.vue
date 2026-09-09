@@ -40,7 +40,11 @@
                     <span>Zoom notes</span>
                   </div>
                   <div class="type-metadata text-ink-muted mt-1">
-                    <div v-if="zoomImportResult?.success" class="flex flex-col gap-1">
+                    <div v-if="isCheckingZoom" class="mt-2 flex items-start gap-2" role="status" aria-live="polite">
+                      <span class="mt-0.5 h-4 w-4 shrink-0 rounded-full border-2 border-action-primary border-t-transparent animate-spin" aria-hidden="true"></span>
+                      <span class="italic">Checking Zoom for new notes… This can take up to a minute.</span>
+                    </div>
+                    <div v-else-if="zoomImportResult?.success" class="flex flex-col gap-1">
                       <span>{{ zoomImportResult.count }} note{{ zoomImportResult.count === 1 ? '' : 's' }} imported.</span>
                       <div v-if="zoomImportResult.count === 1" class="flex">
                         <router-link v-if="zoomImportResult.imports[0].matched" :to="{ name: 'SessionWorkspace', params: { clientId: zoomImportResult.imports[0].clientId, sessionId: zoomImportResult.imports[0].sessionId } }" class="text-action-link hover:underline">Open session →</router-link>
