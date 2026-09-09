@@ -7,6 +7,7 @@ import { therapistQuestions, CONTEXT_ANSWER } from '../../src/quiz/therapist/que
 import { buildResult, buildFallbackReport } from '../../src/quiz/therapist/buildResult.js'
 import { answerProgress } from '../../src/quiz/therapist/progress.js'
 import { createReflectionSnapshot, validateReflectionSnapshot, reflectionText, canonicalJSON } from '../../src/quiz/therapist/snapshot.js'
+import { buildContinuitySourcePacket, continuityEligibility } from '../../src/quiz/therapist/continuity.js'
 import { savePracticeReflection } from '../../src/lib/practiceReflectionLibrary.js'
 
 const USER = '11111111-1111-4111-8111-111111111111'
@@ -15,6 +16,8 @@ const ID = '33333333-3333-4333-8333-333333333333'
 const all = (choice = 'a') => Object.fromEntries(therapistQuestions.map(q => [q.id, choice]))
 const snapshot = (id = ID, answers = all()) => createReflectionSnapshot({ id, completedAt: '2026-09-09T18:00:00.000Z', answers,
   report: buildFallbackReport(buildResult(answers)), mode: 'fallback' })
+const storedReflection = (value = snapshot()) => ({ id: value.id, user_id: USER, client_id: null, session_ref: null,
+  workspace_content: { captureSource: 'practice_reflection', practiceReflection: value } })
 function fakeClient({ user = USER, authError = null, readError = false, rejectInsert = false, loseResponse = false } = {}) {
   const rows = new Map(), writes = [], reads = []
   let lost = false
@@ -63,6 +66,25 @@ test('snapshot roundtrips JSONB key order and preserves distinct source and narr
   assert.equal(value.continuity.status, 'not_analysed')
   assert.equal(value.narrative.model, null)
   assert.match(reflectionText(value), /not AI-generated/)
+})
+test('continuity packet keeps therapist selections separate from derived narrative', () => {
+  const value = snapshot(), record = storedReflection(value)
+  assert.deepEqual(continuityEligibility(record), { eligible: true, reasons: [] })
+  const packet = buildContinuitySourcePacket(record)
+  assert.deepEqual(packet.therapistSelections, value.responses)
+  assert.deepEqual(packet.deterministicInterpretation, value.interpretation)
+  assert.equal(packet.narrativeContext.role, 'derived_context_not_independent_evidence')
+  assert.equal(packet.comparisonRules.describeChangeAsDifferenceAcrossDatedResponsesNotProgress, true)
+  assert.ok(packet.prohibitions.some(item => /competence/i.test(item)))
+  assert.ok(packet.prohibitions.some(item => /diagnosis/i.test(item)))
+})
+test('continuity refuses non-selected, clinically linked or incomplete records', () => {
+  assert.equal(continuityEligibility({ workspace_content: {} }).eligible, false)
+  const linked = storedReflection(); linked.client_id = 'client-1'
+  assert.equal(continuityEligibility(linked).eligible, false)
+  const missing = storedReflection(); delete missing.workspace_content.practiceReflection.scoringVersion
+  assert.equal(continuityEligibility(missing).eligible, false)
+  assert.throws(() => buildContinuitySourcePacket(missing))
 })
 test('library saves the report and versioned source privately using existing columns only', async () => {
   const client = fakeClient(), value = snapshot(), result = await save(client, value)
