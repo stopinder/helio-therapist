@@ -6,7 +6,14 @@
       <button type="button" class="button-secondary" @click="checkAccount">Try again</button>
       <router-link class="ml-4 text-action-link underline" to="/sign-in">Sign in</router-link>
     </div>
-    <TherapistQuizView v-else-if="ownerId" :key="ownerId" :save-to-library="saveToLibrary" report-endpoint="" @open-library="openLibrary" />
+    <TherapistQuizView
+      v-else-if="ownerId"
+      :key="ownerId"
+      :save-to-library="saveToLibrary"
+      report-endpoint="/api/therapist-report"
+      :report-authorization="reportAuthorization"
+      @open-library="openLibrary"
+    />
   </div>
 </template>
 
@@ -20,22 +27,28 @@ import TherapistQuizView from '../TherapistQuizView.vue'
 const router = useRouter()
 const reloadLibrary = inject('loadData', null)
 const ownerId = ref('')
+const reportAuthorization = ref('')
 const loading = ref(true)
 const authError = ref(false)
 async function checkAccount() {
   loading.value = true
   authError.value = false
   try {
-    const { data, error } = await supabase.auth.getUser()
-    if (error || !data?.user?.id) throw new Error('Authentication unavailable')
-    ownerId.value = data.user.id
-  } catch { authError.value = true }
-  finally { loading.value = false }
+    const [{ data: userData, error: userError }, { data: sessionData, error: sessionError }] = await Promise.all([
+      supabase.auth.getUser(),
+      supabase.auth.getSession()
+    ])
+    if (userError || !userData?.user?.id || sessionError || !sessionData?.session?.access_token) throw new Error('Authentication unavailable')
+    ownerId.value = userData.user.id
+    reportAuthorization.value = `Bearer ${sessionData.session.access_token}`
+  } catch {
+    ownerId.value = ''
+    reportAuthorization.value = ''
+    authError.value = true
+  } finally { loading.value = false }
 }
 async function saveToLibrary(snapshot) {
-  // A refreshed identity must match the account in which this exercise began.
   const saved = await savePracticeReflection({ snapshot, supabaseClient: supabase, expectedUserId: ownerId.value })
-  // The insert has already been confirmed. Refresh failure must not report a false save failure.
   try { if (reloadLibrary) await reloadLibrary() } catch { /* Library can be reloaded on navigation. */ }
   return saved
 }
