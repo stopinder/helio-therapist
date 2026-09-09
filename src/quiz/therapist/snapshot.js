@@ -21,14 +21,17 @@ export function validReportShape(report) {
       section.paragraphs.every(p => typeof p === 'string' && p.trim().length > 0 && p.length <= 3500))
 }
 
+const cleanMeta = value => typeof value === 'string' && value.trim() ? value.trim().slice(0, 120) : null
+
 /** Capture once per report, not once per save retry. No identity or client data. */
-export function createReflectionSnapshot({ id, completedAt, answers, report, mode }) {
+export function createReflectionSnapshot({ id, completedAt, answers, report, mode, promptVersion = null, model = null }) {
   if (!UUID_PATTERN.test(id || '')) throw new Error('A valid reflection identifier is required.')
   if (typeof completedAt !== 'string' || !Number.isFinite(Date.parse(completedAt)) || new Date(completedAt).toISOString() !== completedAt) throw new Error('A valid completion date is required.')
   validateAnswers(answers)
   if (!['fallback', 'ai'].includes(mode) || !validReportShape(report)) throw new Error('The reflection is not ready to save.')
-  // Copy only displayed text, not arbitrary extra provider fields or instructions.
   const cleanReport = { sections: report.sections.map(s => ({ id: s.id, title: s.title, paragraphs: [...s.paragraphs] })) }
+  const cleanPromptVersion = mode === 'ai' ? cleanMeta(promptVersion) : null
+  const cleanModel = mode === 'ai' ? cleanMeta(model) : null
   return {
     schemaVersion: SNAPSHOT_VERSION,
     id,
@@ -39,13 +42,13 @@ export function createReflectionSnapshot({ id, completedAt, answers, report, mod
     interpretationVersion: REPORT_VERSION,
     responses: { ...answers },
     interpretation: buildResult(answers),
-    narrative: { mode, report: cleanReport, promptVersion: null, model: null },
+    narrative: { mode, report: cleanReport, promptVersion: cleanPromptVersion, model: cleanModel },
     provenance: {
       source: 'self_selected_hypothetical_scenarios',
       interpretation: 'deterministic_unvalidated_editorial_rules',
       narrative: mode === 'ai' ? 'ai_written_not_therapist_authored' : 'authored_question_based_wording',
       timestampSource: 'browser_report_completion',
-      providerMetadata: 'not_recorded_by_current_report_endpoint'
+      providerMetadata: mode === 'ai' ? 'prompt_version_and_model_recorded_without_provider_payload' : 'not_applicable'
     },
     continuity: { status: 'not_analysed', requiresExplicitSelection: true, comparableOnlyWithCompatibleVersions: true },
     therapistAmendments: []
@@ -56,7 +59,8 @@ export function createReflectionSnapshot({ id, completedAt, answers, report, mod
 export function validateReflectionSnapshot(snapshot) {
   if (!isPlainObject(snapshot)) throw new Error('No reflection to save.')
   const rebuilt = createReflectionSnapshot({ id: snapshot.id, completedAt: snapshot.completedAt,
-    answers: snapshot.responses, report: snapshot.narrative?.report, mode: snapshot.narrative?.mode })
+    answers: snapshot.responses, report: snapshot.narrative?.report, mode: snapshot.narrative?.mode,
+    promptVersion: snapshot.narrative?.promptVersion, model: snapshot.narrative?.model })
   if (canonicalJSON(snapshot) !== canonicalJSON(rebuilt)) throw new Error('This reflection has changed or uses an unsupported version. Please generate it again.')
   return rebuilt
 }
@@ -71,6 +75,8 @@ export function reflectionText(snapshot) {
     `Question version: ${snapshot.questionVersion}`,
     `Scoring version: ${snapshot.scoringVersion}`,
     `Interpretation version: ${snapshot.interpretationVersion}`,
-    'A dated reflective snapshot, not a permanent profile or measured competence. Saving does not trigger AI analysis.'
+    ...(snapshot.narrative.promptVersion ? [`AI prompt version: ${snapshot.narrative.promptVersion}`] : []),
+    ...(snapshot.narrative.model ? [`AI model: ${snapshot.narrative.model}`] : []),
+    'A dated reflective snapshot, not a permanent profile or measured competence. Saving does not trigger continuity analysis.'
   ].join('\n\n')
 }
