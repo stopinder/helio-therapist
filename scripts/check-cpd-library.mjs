@@ -15,6 +15,14 @@ const session = { access_token: token, refresh_token: 'synthetic-refresh', token
 const browser = await chromium.launch()
 await mkdir('artifacts/cpd-library', { recursive: true })
 let currentPage
+async function openSavedEntry(page) {
+  // Existing timeline rows deliberately hide their body until expanded. Verify the
+  // real expand-and-read interaction instead of changing that established behaviour.
+  const row = page.getByTestId('pd-timeline-row').first()
+  await row.locator('[tabindex="0"]').click()
+  await row.getByText(/CPD · Practice reflection — Your therapeutic stance/).waitFor()
+  await row.getByRole('button', { name: 'Open Details', exact: true }).waitFor()
+}
 try {
   for (const mobile of [false, true]) {
     const context = await browser.newContext({ viewport: mobile ? { width: 390, height: 844 } : { width: 1440, height: 1000 }, acceptDownloads: true, reducedMotion: mobile ? 'reduce' : 'no-preference' })
@@ -117,9 +125,9 @@ try {
     await page.getByRole('button', { name: 'View my reflection library', exact: true }).click()
     await page.waitForURL('**/supervision/reflections')
     await page.getByPlaceholder('Search reflections...').fill('Your therapeutic stance')
-    await page.getByText(/CPD · Practice reflection — Your therapeutic stance/).first().waitFor()
+    await openSavedEntry(page)
     await page.reload()
-    await page.getByText(/CPD · Practice reflection — Your therapeutic stance/).first().waitFor()
+    await openSavedEntry(page)
     assert.deepEqual(aiCalls, [], 'Saving and reloading must not trigger an AI/continuity call')
     assert.deepEqual(errors, [])
     await page.screenshot({ path: `artifacts/cpd-library/${mobile ? 'mobile' : 'desktop'}-library.png`, fullPage: false })
