@@ -69,9 +69,8 @@
           <div v-if="canUseAI" class="ai-option">
             <h3>Optional AI-written narrative</h3>
             <p>An integrative reflection, with a light IFS-informed lens where useful.</p>
-            <label class="consent"><input v-model="aiConsent" type="checkbox" :disabled="busy" /><span>Use my selected responses to write a reflection with OpenAI.</span></label>
             <p class="muted">Only the structured quiz result is sent to OpenAI—not account details or client records. The report is saved only when you choose.</p>
-            <button type="button" class="secondary" :disabled="busy || !aiConsent || !progress.complete" @click="requestAIReport">{{ busy ? 'Writing your reflection…' : 'Generate AI reflection' }}</button>
+            <button type="button" class="secondary" :disabled="busy || !progress.complete" @click="requestAIReport">{{ busy ? 'Writing your reflection…' : 'Generate AI reflection' }}</button>
           </div>
           <p v-if="busy" role="status">Your choices are preserved while the report is being written.</p>
         </section>
@@ -132,7 +131,7 @@ const stage = ref('intro'), editing = ref(false)
 const answers = reactive({}), progress = computed(() => answerProgress(answers))
 const autoScroll = ref(true), questionErrorId = ref(''), stickyHeader = ref(null), headerHeight = ref(115), root = ref(null)
 const focusTarget = ref(null), reviewTarget = ref(null), questionRefs = []
-const aiConsent = ref(false), busy = ref(false), canUseAI = ref(false), availabilityChecked = ref(false)
+const busy = ref(false), canUseAI = ref(false), availabilityChecked = ref(false)
 const errorMessage = ref(''), notice = ref(''), mode = ref('fallback'), result = ref(null), report = ref(null)
 const snapshot = ref(null), saving = ref(false), savedId = ref(''), saveError = ref('')
 let scrollTimer, resizeObserver, requestController, statusController, active = true
@@ -221,7 +220,7 @@ function showQuestionBasedReport() {
   } catch { errorMessage.value = 'The reflection could not be prepared. Your choices are still here.' }
 }
 async function requestAIReport() {
-  if (busy.value || !aiConsent.value || !canUseAI.value || !progress.value.complete) return
+  if (busy.value || !canUseAI.value || !progress.value.complete) return
   busy.value = true; errorMessage.value = ''; notice.value = ''
   const selected = { ...answers }, expected = buildResult(selected)
   requestController = new AbortController()
@@ -231,7 +230,7 @@ async function requestAIReport() {
       method: 'POST',
       headers: reportHeaders(true),
       signal: requestController.signal,
-      body: JSON.stringify({ quizVersion: QUIZ_VERSION, answers: selected, consent: true })
+      body: JSON.stringify({ quizVersion: QUIZ_VERSION, answers: selected })
     })
     const data = await response.json()
     if (!response.ok) throw new Error(data?.error || (response.status === 429 ? 'Please wait a minute before another AI request.' : 'AI writing is unavailable. Your choices are preserved; you can read the question-based reflection.'))
