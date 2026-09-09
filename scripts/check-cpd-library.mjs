@@ -89,8 +89,8 @@ try {
           assert.equal(request.method(), 'POST')
           assert.equal(ai, true)
           const body = request.postDataJSON()
-          assert.deepEqual(Object.keys(body).sort(), ['answers', 'consent', 'quizVersion'])
-          assert.equal(body.consent, true)
+          assert.deepEqual(Object.keys(body).sort(), ['answers', 'quizVersion'])
+          assert.equal(Object.hasOwn(body, 'consent'), false, 'No synthetic consent flag is sent')
           aiCalls.push(url.pathname)
           if (failNextGeneration) { failNextGeneration = false; return json({ error: 'Simulated writing failure. Your choices are preserved.' }, 503) }
           const result = buildResult(body.answers), report = buildFallbackReport(result)
@@ -136,6 +136,8 @@ try {
     assert.equal(await page.getByRole('button', { name: 'Review my choices', exact: true }).count(), 1)
     await page.getByTestId('continue-button').click()
     assert.equal(await page.getByTestId('reflection-footnote').count(), 0, 'No repeated notice on review')
+    assert.equal(await page.locator('.cpd-reflection').getByRole('checkbox').count(), 0, 'No separate permission step on review')
+    assert.deepEqual(aiCalls, [], 'Finishing the questions does not request generation')
     await page.getByRole('button', { name: 'Read reflection', exact: true }).click()
     await page.getByRole('heading', { name: 'A reflection on your therapeutic stance', exact: true }).waitFor()
     await checkFootnote(page)
@@ -143,10 +145,12 @@ try {
     if (ai) {
       await page.getByRole('button', { name: 'Review my choices', exact: true }).click()
       const generate = page.getByRole('button', { name: 'Generate AI reflection', exact: true })
-      assert.equal(await generate.isDisabled(), true)
-      await page.getByRole('checkbox', { name: 'Use my selected responses to write a reflection with OpenAI.', exact: true }).check()
+      assert.equal(await generate.isEnabled(), true, 'Generate is ready without ticking a permission box')
+      assert.equal(await page.locator('.ai-option').getByRole('checkbox').count(), 0)
+      assert.deepEqual(aiCalls, [], 'Returning to review does not request generation')
       await generate.click()
       await page.getByText('Simulated writing failure. Your choices are preserved.', { exact: true }).waitFor()
+      assert.equal(aiCalls.length, 1, 'One click sends one generation request')
       assert.equal(await page.locator('.review-row').count(), 15)
       await page.getByRole('button', { name: 'Read reflection', exact: true }).click()
       await checkFootnote(page)
@@ -197,7 +201,7 @@ try {
     assert.deepEqual(aiCalls, ai ? ['/api/therapist-report', '/api/therapist-report'] : [], 'Only explicit generation requests are permitted')
     assert.deepEqual(errors, [])
     await page.screenshot({ path: `artifacts/cpd-library/${label}-library.png`, fullPage: false })
-    console.log(`${label}: quiet note, sticky auto-scroll, explicit consent, text export, failed-save retry, provenance and library reload passed with simulated services`)
+    console.log(`${label}: quiet note, sticky auto-scroll, direct generation, text export, failed-save retry, provenance and library reload passed with simulated services`)
     await context.close()
   }
 } catch (error) {
