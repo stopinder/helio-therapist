@@ -26,6 +26,11 @@ test('sidebar keeps navigation between practice identity and bottom settings', (
   assert.doesNotMatch(sidebar, /MoreHorizontal/)
 })
 
+test('sidebar exposes transcript inbox as persistent workspace navigation', () => {
+  assert.match(sidebar, /name:\s*'Transcript Inbox'/)
+  assert.match(sidebar, /path:\s*'\/transcripts'/)
+})
+
 test('desktop and mobile sidebars receive the same practice identity', () => {
   const sidebarInvocations = shell.match(/<AppSidebar/g) || []
   assert.ok(sidebarInvocations.length >= 2, 'Should have at least 2 AppSidebar instances (desktop/mobile)')
