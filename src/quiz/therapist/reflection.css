@@ -3,6 +3,8 @@
  * No logo, branded masthead, marketing footer or external font request.
  */
 .cpd-reflection {
+  /* Progress positioning and question scroll clearance use the same host inset. */
+  --cpd-sticky-top: 4rem;
   --cpd-canvas: var(--surface-canvas, #F4F0E7);
   --cpd-muted-surface: var(--surface-muted, #ECE7DD);
   --cpd-text: var(--text-primary, #20241F);
