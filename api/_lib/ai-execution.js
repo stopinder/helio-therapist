@@ -4,6 +4,7 @@ import { getSupabaseClient } from './supabase.js';
 export const AI_FEATURES = Object.freeze({
   REFLECTION_ANALYSIS: 'reflection.analysis',
   REFLECTION_REPHRASE: 'reflection.rephrase',
+  THERAPEUTIC_STANCE_REPORT: 'reflection.therapeutic_stance_report',
   SUPERVISION_SUMMARY: 'reflection.supervision_summary',
   TRANSCRIPT_CLINICAL_SUMMARY: 'transcript.clinical_summary',
   TRANSCRIPT_DRAFT_CLINICAL_NOTE: 'transcript.draft_clinical_note',
@@ -14,6 +15,7 @@ export const AI_FEATURES = Object.freeze({
 
 const DEFAULT_TEXT_MODEL = 'gpt-4o-mini';
 const CLIENT_SESSION_SUMMARY_MODEL = 'gpt-5.6-terra';
+const THERAPEUTIC_STANCE_REPORT_MODEL = 'gpt-5.6-terra';
 export const AI_PRICING_VERSION = 'openai-2026-07-30';
 export const MODEL_PRICING_USD_PER_MILLION = Object.freeze({
   'gpt-4o-mini': { input: 0.15, cachedInput: 0.075, output: 0.60 },
@@ -22,6 +24,7 @@ export const MODEL_PRICING_USD_PER_MILLION = Object.freeze({
 
 export function getTextModel(feature) {
   if (feature === AI_FEATURES.REFLECTION_ANALYSIS || feature === AI_FEATURES.REFLECTION_REPHRASE) return process.env.OPENAI_REFLECTION_MODEL || DEFAULT_TEXT_MODEL;
+  if (feature === AI_FEATURES.THERAPEUTIC_STANCE_REPORT) return process.env.OPENAI_THERAPEUTIC_STANCE_MODEL || THERAPEUTIC_STANCE_REPORT_MODEL;
   if (feature === AI_FEATURES.TRANSCRIPT_CLINICAL_SUMMARY) return process.env.OPENAI_CLINICAL_SUMMARY_MODEL || DEFAULT_TEXT_MODEL;
   if (feature === AI_FEATURES.TRANSCRIPT_DRAFT_CLINICAL_NOTE) return process.env.OPENAI_DRAFT_CLINICAL_NOTE_MODEL || DEFAULT_TEXT_MODEL;
   if (feature === AI_FEATURES.CARE_SUGGESTIONS || feature === AI_FEATURES.TRANSCRIPT_CBT_CARE_SUGGESTIONS) return process.env.OPENAI_CARE_MODEL || DEFAULT_TEXT_MODEL;
@@ -38,14 +41,13 @@ export function buildTokenLimitParams(model, maxTokens) {
   if (model === 'gpt-5.6-terra') {
     return { max_completion_tokens: maxTokens };
   }
-  // Default to max_tokens for gpt-4o-mini and others unless known to require the new param
   return { max_tokens: maxTokens };
 }
 
 export function buildTemperatureParams(model, temperature) {
   if (temperature === undefined) return {};
   if (model === 'gpt-5.6-terra') {
-    return {}; // gpt-5.6-terra does not support temperature
+    return {};
   }
   return { temperature };
 }
