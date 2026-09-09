@@ -97,7 +97,7 @@ test('unknown schema or provenance labels are rejected rather than migrated sile
   assert.throws(() => validateReflectionSnapshot(legacy), /Unsupported reflection provenance/)
 })
 
-test('Vue keeps a single readable note, no warning panels, and explicit AI consent', async () => {
+test('Vue keeps the quiet note and direct generation without a permission checkbox', async () => {
   const source = await readFile(new URL('../../src/views/TherapistQuizView.vue', import.meta.url), 'utf8')
   const parsed = parse(source)
   assert.deepEqual(parsed.errors, [])
@@ -105,7 +105,20 @@ test('Vue keeps a single readable note, no warning panels, and explicit AI conse
   assert.equal(source.match(/\{\{ DISCLAIMER \}\}/g)?.length, 1)
   assert.doesNotMatch(source, /notice boundary|BOUNDARY_NOTE|acknowledged/)
   assert.match(source, /reflection-footnote small \{ font-size: 13px/)
-  assert.match(source, /v-model="aiConsent"/)
-  assert.match(source, /busy \|\| !aiConsent \|\| !progress.complete/)
+  assert.doesNotMatch(source, /aiConsent|class="consent"|consent:\s*true/)
+  assert.match(source, /:disabled="busy \|\| !progress.complete" @click="requestAIReport"/)
+  assert.match(source, /if \(busy.value \|\| !canUseAI.value \|\| !progress.value.complete\) return/)
+  assert.equal(source.match(/\brequestAIReport\b/g)?.length, 2, 'Only the button handler and function definition may reference generation')
+  assert.match(source, /JSON.stringify\(\{ quizVersion: QUIZ_VERSION, answers: selected \}\)/)
   assert.match(source, /promptVersion: data.promptVersion, model: data.model/)
+})
+
+test('report endpoint removes the permission field but retains authentication and deterministic scoring', async () => {
+  const source = await readFile(new URL('../../api/therapist-report.js', import.meta.url), 'utf8')
+  assert.match(source, /const allowedKeys = new Set\(\['quizVersion', 'answers'\]\)/)
+  assert.doesNotMatch(source, /\bconsent\b/)
+  assert.match(source, /const \{ user \} = await requireAuthenticatedUser\(req\)/)
+  assert.match(source, /const result = buildResult\(body.answers\)/)
+  assert.match(source, /validateTherapeuticStanceAIResponse\(completion/)
+  assert.ok(source.indexOf('const { user } = await requireAuthenticatedUser(req)') < source.indexOf('const { completion, model } = await runTextAI('))
 })
