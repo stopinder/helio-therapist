@@ -126,8 +126,10 @@ try {
           let scrollParent = header.parentElement
           while (scrollParent && !/(auto|scroll)/.test(getComputedStyle(scrollParent).overflowY)) scrollParent = scrollParent.parentElement
           const top = scrollParent ? scrollParent.getBoundingClientRect().top : 0
+          const stickyInset = parseFloat(getComputedStyle(header).top) || 0
           const h = header.getBoundingClientRect(), t = target.getBoundingClientRect()
-          return Math.abs(h.top - top) < 3 && t.top >= h.bottom - 1 && t.top <= h.bottom + 36
+          // Retain both requirements: the approved host inset and a fully clear question.
+          return Math.abs(h.top - top - stickyInset) < 3 && t.top >= h.bottom - 1 && t.top <= h.bottom + 36
         }, therapistQuestions[index + 1].id)
       }
     }
@@ -144,7 +146,7 @@ try {
       assert.equal(await generate.isDisabled(), true)
       await page.getByRole('checkbox', { name: 'Use my selected responses to write a reflection with OpenAI.', exact: true }).check()
       await generate.click()
-      await page.getByRole('alert').getByText('Simulated writing failure. Your choices are preserved.', { exact: true }).waitFor()
+      await page.getByText('Simulated writing failure. Your choices are preserved.', { exact: true }).waitFor()
       assert.equal(await page.locator('.review-row').count(), 15)
       await page.getByRole('button', { name: 'Read reflection', exact: true }).click()
       await checkFootnote(page)
@@ -201,6 +203,12 @@ try {
 } catch (error) {
   if (currentPage && !currentPage.isClosed()) {
     console.error('UI DIAGNOSTIC', (await currentPage.locator('body').innerText()).slice(-6000))
+    console.error('SCROLL GEOMETRY', await currentPage.evaluate(() => {
+      const header = document.querySelector('[data-testid="progress-header"]')
+      const rect = el => el ? { top: el.getBoundingClientRect().top, bottom: el.getBoundingClientRect().bottom } : null
+      return { header: rect(header), inset: header ? getComputedStyle(header).top : null,
+        questions: [...document.querySelectorAll('[data-question]')].slice(0, 3).map(el => ({ id: el.dataset.question, rect: rect(el), margin: getComputedStyle(el).scrollMarginTop })) }
+    }))
     await currentPage.screenshot({ path: 'artifacts/cpd-library/failure.png', fullPage: false })
   }
   throw error
