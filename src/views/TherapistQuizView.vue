@@ -10,12 +10,10 @@
       <section v-if="stage === 'intro'" class="intro">
         <h1 ref="focusTarget" tabindex="-1">Your therapeutic stance</h1>
         <p class="lead">A reflection on how you work, at this point in your practice.</p>
-        <p>Fifteen situations invite you to notice your usual starting points, possible strengths and questions to take into supervision. This is a dated CPD reflection, not a permanent therapist profile.</p>
-        <div class="notice"><p>{{ DISCLAIMER }}</p><p>{{ BOUNDARY_NOTE }}</p></div>
-        <p>Choose your usual first response, not everything you might eventually do. All options assume appropriate consent, safety, scope of practice and attention to the particular client. There is no professionally superior answer.</p>
-        <p class="muted">For qualified and trainee therapists. The questions and interpretation rules remain a draft for review. Choices stay in page memory until you deliberately save or request AI writing. Refreshing clears unsaved work. Do not enter client information.</p>
-        <label class="consent"><input v-model="acknowledged" type="checkbox" /><span>I am taking this as a reflection on my practice or training, not as an assessment of competence.</span></label>
-        <button type="button" class="primary" :disabled="!acknowledged" @click="start">Begin reflection <span aria-hidden="true">→</span></button>
+        <p>Fifteen situations invite you to notice familiar approaches, useful tensions and questions for supervision.</p>
+        <p>Choose your usual first response, rather than everything you might eventually do.</p>
+        <p class="muted">Your choices stay in this page until you save or request AI writing. Refreshing clears unsaved work.</p>
+        <button type="button" class="primary" @click="start">Begin reflection <span aria-hidden="true">→</span></button>
       </section>
 
       <header v-if="stage === 'quiz'" ref="stickyHeader" class="progress-header no-print" data-testid="progress-header">
@@ -54,7 +52,7 @@
 
       <section v-else-if="stage === 'review'">
         <h1 ref="focusTarget" tabindex="-1">Review your choices</h1>
-        <p>Revisit any situation before reading your reflection. Contrasting choices are retained rather than forced into a single type.</p>
+        <p>Revisit any situation before reading your reflection.</p>
         <p class="completion-message" role="status">{{ progress.complete ? 'All 15 situations have a response. Your reflection is ready to read.' : 'Some situations still need a response.' }}</p>
         <div class="review-list">
           <div v-for="(question, index) in therapistQuestions" :key="question.id" class="review-row">
@@ -62,19 +60,17 @@
             <button type="button" class="text-button" :aria-label="`Change answer to ${question.title}`" :disabled="busy" @click="editQuestion(index)">Change</button>
           </div>
         </div>
-        <div class="notice"><p>{{ DISCLAIMER }}</p></div>
         <section class="generation-panel" aria-labelledby="read-reflection-title">
           <h2 id="read-reflection-title">Read your reflection</h2>
-          <p>The question-based reflection uses authored wording and is created in your browser. It remains available without AI.</p>
+          <p>A question-based reflection is available immediately, without AI.</p>
           <button type="button" class="primary" :disabled="busy || !progress.complete" @click="showQuestionBasedReport">Read reflection</button>
-          <p v-if="!availabilityChecked" class="muted availability" role="status">Checking optional AI writing. You do not need to wait to read your reflection.</p>
-          <p v-else-if="!canUseAI" class="muted availability">AI writing is not enabled here. The button above opens your question-based reflection.</p>
+          <p v-if="!availabilityChecked" class="muted availability" role="status">Checking optional AI writing…</p>
+          <p v-else-if="!canUseAI" class="muted availability">AI writing is not available here. You can still read your question-based reflection.</p>
           <div v-if="canUseAI" class="ai-option">
             <h3>Optional AI-written narrative</h3>
-            <p>AI develops the same structured result into a longer narrative. It does not score you or compare earlier reflections.</p>
-            <label class="consent"><input v-model="aiConsent" type="checkbox" :disabled="busy" /><span>I agree to send my quiz choice IDs to the report service so a structured result can be sent to OpenAI to write this reflection.</span></label>
-            <p class="muted">No email, account details or free-text clinical material is included. This request does not save the report. Hosting and AI-provider processing policies still apply.</p>
-            <button type="button" class="secondary" :disabled="busy || !aiConsent || !progress.complete" @click="requestAIReport">{{ busy ? 'Writing your reflection…' : 'Generate AI reflection' }}</button>
+            <p>An integrative reflection, with a light IFS-informed lens where useful.</p>
+            <p class="muted">Only the structured quiz result is sent to OpenAI—not account details or client records. The report is saved only when you choose.</p>
+            <button type="button" class="secondary" :disabled="busy || !progress.complete" @click="requestAIReport">{{ busy ? 'Writing your reflection…' : 'Generate AI reflection' }}</button>
           </div>
           <p v-if="busy" role="status">Your choices are preserved while the report is being written.</p>
         </section>
@@ -82,18 +78,16 @@
 
       <article v-else-if="stage === 'report' && report && result" class="report">
         <h1 ref="focusTarget" tabindex="-1">A reflection on your therapeutic stance</h1>
-        <p class="report-label">{{ mode === 'ai' ? 'AI-written narrative from structured responses' : 'Question-based reflection · authored wording, not AI-generated' }}</p>
+        <p class="report-label">{{ mode === 'ai' ? 'AI-written integrative reflection' : 'Question-based reflection · authored wording, not AI-generated' }}</p>
         <p v-if="snapshot" class="muted">Completed {{ new Date(snapshot.completedAt).toLocaleString() }}</p>
         <p v-if="notice" class="notice" role="status">{{ notice }}</p>
-        <div class="notice boundary"><p>{{ DISCLAIMER }}</p><p>{{ BOUNDARY_NOTE }}</p></div>
-        <p class="muted">This reflects choices in hypothetical situations, not an observation of practice. Possible strengths, trade-offs and client experiences are invitations to check, not findings.</p>
         <section v-for="section in report.sections" :key="section.id" class="report-section" :aria-labelledby="`section-${section.id}`">
           <h2 :id="`section-${section.id}`">{{ section.title }}</h2>
           <p v-for="(paragraph, index) in section.paragraphs" :key="index">{{ paragraph }}</p>
         </section>
         <details class="evidence no-print">
           <summary>What this reflection is based on</summary>
-          <p>Fixed, provisional editorial rules—not validated clinical measurements.</p>
+          <p>The approaches you selected in the scenarios.</p>
           <div v-for="dimension in result.dimensions" :key="dimension.id"><h3>{{ dimension.label }}</h3><p>{{ dimension.summary }}</p></div>
           <h3>Your selected approaches</h3>
           <div v-for="item in result.evidence" :key="item.id"><h4>{{ item.scenario }}</h4><p>{{ item.selectedApproach }}</p></div>
@@ -101,8 +95,8 @@
         </details>
         <section class="generation-panel no-print" aria-labelledby="keep-reflection-title">
           <h2 id="keep-reflection-title">Keep this reflection</h2>
-          <p v-if="saveToLibrary">Save the report, selected responses and versioned interpretation to your private reflection library. It can be selected for future longitudinal reflection. Saving does not run AI analysis, add it to supervision or make it a client record.</p>
-          <p v-else class="muted">Library saving is available when this exercise is opened inside the main app. This separate preview is not connected to your account; you can still download the text.</p>
+          <p v-if="saveToLibrary">Save the reflection and its source responses to your private library for later review.</p>
+          <p v-else class="muted">This preview is not connected to your account library. You can keep a text copy.</p>
           <div class="actions">
             <button v-if="saveToLibrary" type="button" class="primary" :disabled="saving || !!savedId || !snapshot" @click="saveReflection">{{ savedId ? 'Saved to my reflection library' : saving ? 'Saving…' : 'Save to my reflection library' }}</button>
             <button type="button" class="secondary" :disabled="!snapshot" @click="downloadReport">Save reflection as text</button>
@@ -114,6 +108,7 @@
         <button type="button" class="text-button no-print" :disabled="saving" @click="reviewAgain">Review my choices</button>
       </article>
       <p v-if="errorMessage" class="error-message" role="alert">{{ errorMessage }}</p>
+      <p v-if="stage === 'intro' || stage === 'report'" class="reflection-footnote" data-testid="reflection-footnote"><small>{{ DISCLAIMER }}</small></p>
     </component>
   </div>
 </template>
@@ -121,22 +116,30 @@
 <script setup>
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import { therapistQuestions, QUIZ_VERSION, CONTEXT_ANSWER, CONTEXT_LABEL } from '../quiz/therapist/questions.js'
-import { DISCLAIMER, BOUNDARY_NOTE } from '../quiz/therapist/content.js'
+import { DISCLAIMER } from '../quiz/therapist/content.js'
 import { buildResult, buildFallbackReport } from '../quiz/therapist/buildResult.js'
 import { answerProgress, isAnswered } from '../quiz/therapist/progress.js'
 import { createReflectionSnapshot, reflectionText, validReportShape, canonicalJSON } from '../quiz/therapist/snapshot.js'
 
-const props = defineProps({ saveToLibrary: { type: Function, default: null }, reportEndpoint: { type: String, default: '/api/therapist-report' } })
+const props = defineProps({
+  saveToLibrary: { type: Function, default: null },
+  reportEndpoint: { type: String, default: '/api/therapist-report' },
+  reportAuthorization: { type: String, default: '' }
+})
 defineEmits(['open-library'])
-const stage = ref('intro'), acknowledged = ref(false), editing = ref(false)
+const stage = ref('intro'), editing = ref(false)
 const answers = reactive({}), progress = computed(() => answerProgress(answers))
 const autoScroll = ref(true), questionErrorId = ref(''), stickyHeader = ref(null), headerHeight = ref(115), root = ref(null)
 const focusTarget = ref(null), reviewTarget = ref(null), questionRefs = []
-const aiConsent = ref(false), busy = ref(false), canUseAI = ref(false), availabilityChecked = ref(false)
+const busy = ref(false), canUseAI = ref(false), availabilityChecked = ref(false)
 const errorMessage = ref(''), notice = ref(''), mode = ref('fallback'), result = ref(null), report = ref(null)
 const snapshot = ref(null), saving = ref(false), savedId = ref(''), saveError = ref('')
 let scrollTimer, resizeObserver, requestController, statusController, active = true
 const optionsFor = (q, index) => [...q.options.slice(index % 4), ...q.options.slice(0, index % 4)]
+const reportHeaders = (withJson = false) => ({
+  ...(withJson ? { 'Content-Type': 'application/json' } : {}),
+  ...(props.reportAuthorization ? { Authorization: props.reportAuthorization } : {})
+})
 function cancelScroll() { clearTimeout(scrollTimer) }
 watch(stickyHeader, element => {
   resizeObserver?.disconnect()
@@ -156,7 +159,7 @@ async function scrollToTarget(element, smooth = true) {
 }
 async function focusHeading() { await nextTick(); return scrollToTarget(focusTarget.value, false) }
 async function scrollToQuestion(index) { await nextTick(); return scrollToTarget(questionRefs[index]) }
-function start() { if (acknowledged.value) { stage.value = 'quiz'; editing.value = false; scrollToQuestion(0) } }
+function start() { stage.value = 'quiz'; editing.value = false; scrollToQuestion(0) }
 function showIntro() { cancelScroll(); stage.value = 'intro'; focusHeading() }
 function recordAnswer(id, value) {
   const q = therapistQuestions.find(q => q.id === id)
@@ -194,10 +197,14 @@ function goToReview() {
 }
 function editQuestion(index) { if (!busy.value && !saving.value) { stage.value = 'quiz'; editing.value = true; scrollToQuestion(index) } }
 function selectedText(q) { return answers[q.id] === CONTEXT_ANSWER ? CONTEXT_LABEL : q.options.find(o => o.id === answers[q.id])?.text || 'No answer yet.' }
-function captureReport(nextReport, nextResult, nextMode) {
-  const unchanged = snapshot.value && snapshot.value.narrative.mode === nextMode && canonicalJSON(snapshot.value.responses) === canonicalJSON(answers) && canonicalJSON(snapshot.value.narrative.report) === canonicalJSON(nextReport)
+function captureReport(nextReport, nextResult, nextMode, metadata = {}) {
+  const promptVersion = nextMode === 'ai' ? metadata.promptVersion || null : null
+  const model = nextMode === 'ai' ? metadata.model || null : null
+  const unchanged = snapshot.value && snapshot.value.narrative.mode === nextMode &&
+    snapshot.value.narrative.promptVersion === promptVersion && snapshot.value.narrative.model === model &&
+    canonicalJSON(snapshot.value.responses) === canonicalJSON(answers) && canonicalJSON(snapshot.value.narrative.report) === canonicalJSON(nextReport)
   if (!unchanged) {
-    snapshot.value = createReflectionSnapshot({ id: crypto.randomUUID(), completedAt: new Date().toISOString(), answers: { ...answers }, report: nextReport, mode: nextMode })
+    snapshot.value = createReflectionSnapshot({ id: crypto.randomUUID(), completedAt: new Date().toISOString(), answers: { ...answers }, report: nextReport, mode: nextMode, promptVersion, model })
     savedId.value = ''
   }
   report.value = nextReport; result.value = nextResult; mode.value = nextMode
@@ -213,22 +220,26 @@ function showQuestionBasedReport() {
   } catch { errorMessage.value = 'The reflection could not be prepared. Your choices are still here.' }
 }
 async function requestAIReport() {
-  if (busy.value || !aiConsent.value || !canUseAI.value || !progress.value.complete) return
+  if (busy.value || !canUseAI.value || !progress.value.complete) return
   busy.value = true; errorMessage.value = ''; notice.value = ''
   const selected = { ...answers }, expected = buildResult(selected)
   requestController = new AbortController()
   const timer = setTimeout(() => requestController?.abort(), 50000)
   try {
-    const response = await fetch(props.reportEndpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: requestController.signal,
-      body: JSON.stringify({ quizVersion: QUIZ_VERSION, answers: selected, consent: true }) })
+    const response = await fetch(props.reportEndpoint, {
+      method: 'POST',
+      headers: reportHeaders(true),
+      signal: requestController.signal,
+      body: JSON.stringify({ quizVersion: QUIZ_VERSION, answers: selected })
+    })
     const data = await response.json()
-    if (!response.ok) throw new Error(response.status === 429 ? 'Please wait a minute before another AI request.' : 'AI writing is unavailable. Your choices are preserved; you can read the question-based reflection.')
-    if (!validReportShape(data.report) || !['ai', 'fallback'].includes(data.mode) || canonicalJSON(data.result) !== canonicalJSON(expected)) throw new Error('The returned report could not be verified. Your choices are preserved.')
+    if (!response.ok) throw new Error(data?.error || (response.status === 429 ? 'Please wait a minute before another AI request.' : 'AI writing is unavailable. Your choices are preserved; you can read the question-based reflection.'))
+    if (!validReportShape(data.report) || data.mode !== 'ai' || canonicalJSON(data.result) !== canonicalJSON(expected)) throw new Error('The returned report could not be verified. Your choices are preserved.')
     if (!active) return
-    if (data.mode === 'fallback') notice.value = 'An AI narrative was not available. This is an authored question-based reflection, not AI-generated.'
-    captureReport(data.report, expected, data.mode)
-  } catch (error) { if (active) errorMessage.value = error.name === 'AbortError' ? 'AI writing timed out. Your choices are preserved; you can read the question-based reflection.' : error.message }
-  finally { clearTimeout(timer); requestController = null; if (active) busy.value = false }
+    captureReport(data.report, expected, 'ai', { promptVersion: data.promptVersion, model: data.model })
+  } catch (error) {
+    if (active) errorMessage.value = error.name === 'AbortError' ? 'AI writing timed out. Your choices are preserved; you can read the question-based reflection.' : error.message
+  } finally { clearTimeout(timer); requestController = null; if (active) busy.value = false }
 }
 function reviewAgain() { cancelScroll(); stage.value = 'review'; errorMessage.value = ''; notice.value = ''; focusHeading() }
 async function saveReflection() {
@@ -249,11 +260,11 @@ function downloadReport() {
 }
 onMounted(async () => {
   if (!props.saveToLibrary) document.title = 'CPD · Practice reflection'
-  if (!props.reportEndpoint) { availabilityChecked.value = true; return }
+  if (!props.reportEndpoint || !props.reportAuthorization) { availabilityChecked.value = true; return }
   statusController = new AbortController()
   const timer = setTimeout(() => statusController?.abort(), 4000)
   try {
-    const response = await fetch(props.reportEndpoint, { signal: statusController.signal, cache: 'no-store' })
+    const response = await fetch(props.reportEndpoint, { headers: reportHeaders(), signal: statusController.signal, cache: 'no-store' })
     const data = await response.json()
     if (active) canUseAI.value = response.ok && data.quizVersion === QUIZ_VERSION && data.aiAvailable === true
   } catch { if (active) canUseAI.value = false }
@@ -271,4 +282,6 @@ onBeforeUnmount(() => { active = false; cancelScroll(); resizeObserver?.disconne
 .question-block, .review-target { scroll-margin-top: calc(var(--cpd-progress-height, 130px) + var(--cpd-sticky-top, 0px) + 18px); }
 .question-block { padding: 12px 0 36px; margin-bottom: 36px; border-bottom: 1px solid var(--cpd-border); }
 .review-target { padding: 24px 0 12px; }
+.reflection-footnote { margin: 32px 0 0; color: var(--cpd-muted); font-weight: 400; line-height: 1.5; }
+.reflection-footnote small { font-size: 13px; }
 </style>
