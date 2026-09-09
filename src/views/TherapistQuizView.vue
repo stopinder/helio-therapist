@@ -43,7 +43,7 @@
           <p :id="`feedback-${question.id}`" class="answer-feedback" :class="{ 'has-error': questionErrorId === question.id }" aria-live="polite">{{ questionErrorId === question.id ? 'Choose a response, or use the final option to continue.' : isAnswered(question, answers[question.id]) ? 'Response recorded.' : '' }}</p>
           <div class="actions">
             <button type="button" class="secondary" @click="index ? scrollToQuestion(index - 1) : showIntro()">{{ index ? 'Previous situation' : 'Introduction' }}</button>
-            <button type="button" class="primary" :data-testid="`continue-${question.id}`" @click="continueFrom(index)">{{ editing ? 'Return to review' : index === 14 ? 'Review my choices' : 'Continue' }} <span aria-hidden="true">→</span></button>
+            <button v-if="editing || index < therapistQuestions.length - 1" type="button" class="primary" :data-testid="`continue-${question.id}`" @click="continueFrom(index)">{{ editing ? 'Return to review' : 'Continue' }} <span aria-hidden="true">→</span></button>
           </div>
         </section>
         <div ref="reviewTarget" class="review-target" tabindex="-1">
@@ -167,8 +167,6 @@ function recordAnswer(id, value) {
   snapshot.value = null; report.value = null; result.value = null; savedId.value = ''; saveError.value = ''
 }
 function answerClicked(index, event) {
-  // A label tap has detail=1; its forwarded INPUT click has detail=0.
-  // Listen on the label and ignore forwarded/keyboard clicks BEFORE cancelling.
   if (!autoScroll.value || event.detail === 0 || editing.value) return
   cancelScroll()
   scrollTimer = setTimeout(() => {
