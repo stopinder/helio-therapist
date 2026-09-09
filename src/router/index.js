@@ -51,6 +51,7 @@ const routes = [
     children: [
       { path: '', name: 'SupervisionHome', component: SupervisionHome },
       { path: 'reflections', name: 'SupervisionReflections', component: SupervisionReflections, meta: { title: 'Reflections — Helios' } },
+      { path: 'practice-reflection', name: 'PracticeReflection', component: () => import('../views/supervision/PracticeReflection.vue'), meta: { title: 'Practice reflection — Helios' } },
       { path: 'workspace', name: 'SupervisionWorkspace', component: SupervisionWorkspace, meta: { title: 'Supervision workspace — Helios' } },
       { path: 'growth', name: 'SupervisionGrowth', component: SupervisionGrowth, meta: { title: 'Growth — Helios' } },
       { path: 'insights', name: 'SupervisionInsights', component: SupervisionInsights, meta: { title: 'Insights — Helios' } }
