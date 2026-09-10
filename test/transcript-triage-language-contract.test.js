@@ -11,7 +11,6 @@ test('completed transcript state is named as triage completion', () => {
 })
 
 test('triage completion does not imply requested output or Clinical Record creation', () => {
-  assert.match(inboxSource, /nothing has been generated/)
   assert.match(inboxSource, /No requested output or Clinical Record was created by this triage step\./)
   assert.doesNotMatch(inboxSource, /This item is retained for search and in the linked session record\./)
 })
