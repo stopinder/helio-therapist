@@ -41,6 +41,10 @@ jobs:
         run: |
           set -euo pipefail
           test "$(git rev-parse HEAD)" = '00c8adcd2210ba468d826e37370d1f7f994bf7a6'
+          test -z "$(git status --porcelain)"
+          echo "Run: $GITHUB_RUN_ID; workflow commit: $GITHUB_SHA; checkout: $(git rev-parse HEAD)"
+          node --version
+          echo "Reflection baseline blob: $(git rev-parse HEAD:test/reflection-edit-delete.test.js)"
           node --test --test-concurrency=1 --test-timeout=10000 --test-reporter=tap test/reflection-edit-delete.test.js
 
       # Candidate edits exist only in this disposable runner, not in a source commit.
@@ -138,6 +142,8 @@ jobs:
           TEST
           git diff --check
           git diff -- package.json
+          git hash-object package.json > "$RUNNER_TEMP/discovery-package.sha"
+          git hash-object test/test-discovery.test.js > "$RUNNER_TEMP/discovery-candidate.sha"
 
       - name: Verify discovery and failure propagation using isolated npm fixtures
         id: focused
@@ -188,22 +194,55 @@ jobs:
         timeout-minutes: 5
         run: |
           set -euo pipefail
+          verify_sources() {
+            local source expected actual
+            git diff --quiet HEAD -- . ':!package.json' || {
+              echo '::error::Tracked source differs from the baseline; stopping.'
+              return 1
+            }
+            for source in "$file" src/views/Calendar.vue package.json; do
+              case "$source" in
+                package.json) expected="$(cat "$RUNNER_TEMP/discovery-package.sha")" ;;
+                test/test-discovery.test.js) expected="$(cat "$RUNNER_TEMP/discovery-candidate.sha")" ;;
+                *) expected="$(git rev-parse "HEAD:$source")" ;;
+              esac
+              actual="$(git hash-object "$source")"
+              printf 'Fingerprint %s expected=%s actual=%s\n' "$source" "$expected" "$actual"
+              test "$expected" = "$actual" || return 1
+            done
+          }
           count=0
           while IFS= read -r file; do
-            echo "Checking $file"
+            echo "Checking $file; files already completed: $count"
+            echo 'Before execution:'
+            verify_sources
             if timeout --signal=TERM --kill-after=5s 30s node --test --test-concurrency=1 --test-timeout=20000 --test-reporter=tap "$file" > "$RUNNER_TEMP/discovery-first-failure.tap" 2>&1; then
-              count=$((count + 1))
+              status=0
             else
               status=$?
+            fi
+            if [ "$status" -ne 0 ]; then
               echo "::error file=$file::First baseline failure; exit $status. No later file will be started."
-              cat "$RUNNER_TEMP/discovery-first-failure.tap"
               {
                 printf '\n## First baseline failure\nFile: `%s`\nExit: %s\nFiles completed before failure: %s\n\n```text\n' "$file" "$status" "$count"
                 cat "$RUNNER_TEMP/discovery-first-failure.tap"
                 printf '\n```\n'
               } >> "$GITHUB_STEP_SUMMARY"
+              echo 'Failure excerpts only; complete unmodified TAP is preserved in the Actions step summary:'
+              awk '/^[[:space:]]*not ok / {show=1; lines=0} show && lines++ < 12 {print} /^# (tests|pass|fail|cancelled|skipped) / {print}' "$RUNNER_TEMP/discovery-first-failure.tap"
+              echo "Exact numbered source of $file:"
+              nl -ba "$file"
+              if [ "$file" = 'test/calendar-component.test.js' ]; then
+                echo 'Calendar implementation excerpts for the previously reported assertions:'
+                grep -n -A 5 -B 2 -E 'window\.(add|remove)EventListener\(|function handleGlobalEsc|const workingHours|const popoverWidth' src/views/Calendar.vue
+              fi
+              echo 'After failed execution:'
+              verify_sources
               exit "$status"
             fi
+            echo 'After successful execution:'
+            verify_sources
+            count=$((count + 1))
           done < "$RUNNER_TEMP/discovery-files.txt"
           echo "All $count discovered files completed successfully in the bounded diagnostic."
 
@@ -239,5 +278,6 @@ jobs:
             echo 'Only package.json quoting and a synthetic discovery test were staged in the disposable checkout.'
             printf 'Focused discovery: %s\nInventory: %s\nInstall: %s\nFirst-failure baseline: %s\nnpm test: %s\nBuild: %s\n' "$FOCUSED" "$INVENTORY" "$INSTALL" "$BASELINE" "$SUITE" "$BUILD"
             echo 'Windows verifies discovery fixtures. Linux additionally attempts bounded baseline, npm test and build, stopping on failure.'
+            echo 'Source fingerprints are checked before and after each baseline file; full failure TAP is retained above.'
             echo 'No browser, live provider credentials, database changes, deployment or automatic source commit.'
           } >> "$GITHUB_STEP_SUMMARY"
