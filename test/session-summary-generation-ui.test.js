@@ -15,8 +15,9 @@ test('SessionWorkspace shows Regenerate action when summary exists', () => {
 })
 
 test('SessionWorkspace handles generation state', () => {
-  assert.match(source, /Preparing summary…/i)
-  assert.match(source, /isGenerating/i)
+  assert.match(source, /v-if="isGenerating"/)
+  assert.match(source, /isGenerating\.value = true/)
+  assert.match(source, /isGenerating\.value = false/)
 })
 
 test('Session summary section includes source provenance', () => {
