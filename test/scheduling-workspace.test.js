@@ -4,22 +4,24 @@ import fs from 'node:fs'
 
 const read = (path) => fs.readFileSync(new URL(`../${path}`, import.meta.url), 'utf8')
 
-test('therapist workspace exposes scheduling as a header action without sidebar duplication', () => {
+test('therapist workspace exposes scheduling as a global header action without sidebar duplication', () => {
+  const appHeader = read('src/components/shell/AppHeader.vue')
   const shell = read('src/layouts/AppShell.vue')
   const router = read('src/router/index.js')
-  assert.match(shell, /Schedule appointment/)
-  assert.match(shell, /to="\/schedule"/)
+  assert.match(appHeader, /to="\/schedule"/)
+  assert.match(appHeader, /aria-label="Schedule appointment"/)
+  assert.match(shell, /:route-path="route\.path"/)
   assert.doesNotMatch(shell, /{name:'Schedule',path:'\/schedule'/)
   assert.match(router, /path:\s*['"]\/schedule['"]/)
   assert.match(router, /ScheduleAppointment/)
 })
 
-test('unscheduled client workspace links directly into scheduling with client context', () => {
+test('client workspace relies on the global scheduling action instead of duplicating it', () => {
   const header = read('src/components/workspace/ClientWorkspaceHeader.vue')
-  assert.match(header, /v-if="!client\.archived && !nextAppointment"/)
-  assert.match(header, /Schedule appointment/)
-  assert.match(header, /data-testid="schedule-client-appointment"/)
-  assert.match(header, /name: 'ScheduleAppointment', query: \{ clientId: props\.client\.id \}/)
+  assert.doesNotMatch(header, /data-testid="schedule-client-appointment"/)
+  assert.doesNotMatch(header, /function scheduleAppointment\(/)
+  assert.doesNotMatch(header, /name: 'ScheduleAppointment', query: \{ clientId: props\.client\.id \}/)
+  assert.match(header, /Clinical Workspace/)
 })
 
 test('scheduling accepts a valid client query and still requires a client before booking', () => {
