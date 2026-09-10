@@ -141,6 +141,22 @@
                 <ReflectionTab :clientId="session.clientId" :sessionId="session.id" />
               </div>
             </section>
+
+            <!-- Approved Clinical Record -->
+            <section v-if="session.status === 'completed'" class="rounded-panel border border-border bg-surface overflow-hidden">
+              <button
+                type="button"
+                @click="showClinicalRecord = !showClinicalRecord"
+                class="w-full px-6 py-4 flex items-center justify-between hover:bg-surface-subtle transition-colors"
+                :aria-expanded="showClinicalRecord"
+              >
+                <span class="text-body font-semibold text-ink">Clinical record and amendments</span>
+                <span class="text-ink-muted transition-transform duration-200" :class="{ 'rotate-180': showClinicalRecord }">▼</span>
+              </button>
+              <div v-if="showClinicalRecord" class="border-t border-border p-6 bg-surface-subtle">
+                <CompletedClinicalRecord :session="session" :therapistName="therapistName" />
+              </div>
+            </section>
           </div>
 
           <div class="pt-8 border-t border-border flex justify-center">
@@ -165,6 +181,7 @@ import { authenticatedFetch } from '../lib/api.js';
 import SessionWorkspaceHeader from '../components/workspace/SessionWorkspaceHeader.vue'; 
 import ReflectionTab from '../components/workspace/ReflectionTab.vue'; 
 import SessionSummaryDocument from '../components/workspace/SessionSummaryDocument.vue';
+import CompletedClinicalRecord from '../components/workspace/CompletedClinicalRecord.vue';
 
 const route = useRoute(); 
 const session = ref(null), client = ref(null), loading = ref(true), error = ref(''), transcript = ref(null), transcriptLoading = ref(false), transcriptError = ref(''), therapistName = ref('');
@@ -172,6 +189,7 @@ const summaryDocument = ref(null);
 const isEditingSummary = ref(false);
 const showTranscript = ref(false);
 const showReflection = ref(false);
+const showClinicalRecord = ref(false);
 const copySuccess = ref(false);
 const copyError = ref('');
 const isGenerating = ref(false);
