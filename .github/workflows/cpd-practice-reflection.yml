@@ -1,0 +1,48 @@
+name: CPD practice reflection
+on:
+  push:
+    branches: [feat/cpd-practice-reflection-library, feat/cpd-ai-integrative-report]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  cpd:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      VITE_SUPABASE_URL: https://cpd-test.supabase.co
+      VITE_SUPABASE_ANON_KEY: synthetic-anon-key-not-a-secret
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - name: Test prompt, presentation, snapshots and existing RLS with synthetic data
+        run: node --test test/therapeutic-stance-ai.test.js test/unit/practice-reflection.test.js test/unit/practice-reflection-presentation.test.js
+      - name: Build native main-app integration
+        run: npm run build
+      - name: Install existing browser-test runtime
+        run: npx playwright install --with-deps chromium
+      - name: Test CPD presentation, consent and library saving with simulated services
+        run: |
+          node node_modules/vite/bin/vite.js preview --host 127.0.0.1 --port 4174 > "$RUNNER_TEMP/cpd-host.log" 2>&1 &
+          preview_pid=$!
+          trap 'kill "$preview_pid" 2>/dev/null || true' EXIT
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:4174/ > /dev/null; then break; fi
+            sleep 1
+          done
+          curl --fail --silent http://127.0.0.1:4174/ > /dev/null
+          node scripts/check-cpd-library.mjs
+      - name: Keep synthetic browser evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cpd-private-library-checks
+          path: artifacts/cpd-library/
+          if-no-files-found: ignore
+          retention-days: 5
