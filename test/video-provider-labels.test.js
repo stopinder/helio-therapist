@@ -16,8 +16,10 @@ test('videoProviderService keeps the same compact fallback for other providers',
   assert.strictEqual(videoProviderService.getVideoActionLabel(null), 'Join')
 })
 
-test('session workspace explains the difference between Zoom and Helio workspace', async () => {
+test('simplified session workspace header avoids video-provider guidance', async () => {
   const content = await readFile(new URL('../src/components/workspace/SessionWorkspaceHeader.vue', import.meta.url), 'utf8')
-  assert.match(content, /Zoom opens the video call in a separate tab/)
-  assert.match(content, /Keep Clinical Workspace open in Helio for session capture, notes and review/)
+  assert.match(content, /Client Workspace/)
+  assert.match(content, /Session type:/)
+  assert.doesNotMatch(content, /Zoom opens the video call in a separate tab/)
+  assert.doesNotMatch(content, /Keep Clinical Workspace open in Helio for session capture, notes and review/)
 })
