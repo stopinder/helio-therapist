@@ -25,6 +25,9 @@ function createMockSupabase() {
 
   return {
     from: (table) => {
+      if (table === 'zoom_transcripts') {
+        return chain([{ id: 'transcript-1' }]);
+      }
       if (table === 'zoom_session_links' || table === 'sessions') {
         return chain([{ zoom_meeting_id: '12345' }]);
       }
