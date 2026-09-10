@@ -167,3 +167,36 @@ export async function setReflectionSupervisionSelection({ supabaseClient, reflec
   if (error) { console.error('[Reflections] Selection update error:', error); throw new Error('Could not update supervision selection'); }
   return data;
 }
+
+export async function updatePrivateReflectionBody({ supabaseClient, reflectionId, body }) {
+  const client = await getClient(supabaseClient);
+  const text = String(body || '').trim();
+  if (!text) throw new Error('Write a reflection before saving, or delete it instead');
+  if (text.length > 20000) throw new Error('Reflection is too long');
+  const { data: { user } } = await client.auth.getUser();
+  if (!user) throw new Error('Not authenticated');
+  const { data, error } = await client
+    .from('private_reflections')
+    .update({ body: text, updated_at: new Date().toISOString() })
+    .eq('id', reflectionId)
+    .eq('user_id', user.id)
+    .select()
+    .single();
+  if (error || !data) throw new Error('Could not update reflection');
+  return data;
+}
+
+export async function deletePrivateReflection({ supabaseClient, reflectionId }) {
+  const client = await getClient(supabaseClient);
+  const { data: { user } } = await client.auth.getUser();
+  if (!user) throw new Error('Not authenticated');
+  const { data, error } = await client
+    .from('private_reflections')
+    .delete()
+    .eq('id', reflectionId)
+    .eq('user_id', user.id)
+    .select('id')
+    .single();
+  if (error || !data) throw new Error('Could not delete reflection');
+  return data;
+}
