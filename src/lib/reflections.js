@@ -175,6 +175,18 @@ export async function updatePrivateReflectionBody({ supabaseClient, reflectionId
   if (text.length > 20000) throw new Error('Reflection is too long');
   const { data: { user } } = await client.auth.getUser();
   if (!user) throw new Error('Not authenticated');
+
+  const { data: existing, error: fetchError } = await client
+    .from('private_reflections')
+    .select('id, client_id, session_ref, workspace_content')
+    .eq('id', reflectionId)
+    .eq('user_id', user.id)
+    .single();
+  if (fetchError || !existing) throw new Error('Could not load reflection');
+  if (existing.client_id || existing.session_ref || existing.workspace_content?.captureSource === 'practice_reflection') {
+    throw new Error('This reflection must be edited in its original reflective workspace');
+  }
+
   const { data, error } = await client
     .from('private_reflections')
     .update({ body: text, updated_at: new Date().toISOString() })
