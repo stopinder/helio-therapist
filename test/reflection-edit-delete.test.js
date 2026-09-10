@@ -12,23 +12,43 @@ function authenticatedClient(queryFactory) {
   }
 }
 
-test('updatePrivateReflectionBody updates only the authenticated therapist reflection', async () => {
+function scopedSingle(result, eqCalls) {
+  return {
+    eq(column, value) {
+      eqCalls.push([column, value])
+      return {
+        eq(column2, value2) {
+          eqCalls.push([column2, value2])
+          return { single: async () => result }
+        }
+      }
+    }
+  }
+}
+
+test('updatePrivateReflectionBody updates only an authenticated therapist free-text reflection', async () => {
   let updateValues
-  const eqCalls = []
+  const readEqCalls = []
+  const updateEqCalls = []
   const client = authenticatedClient(() => ({
+    select(fields) {
+      assert.equal(fields, 'id, client_id, session_ref, workspace_content')
+      return scopedSingle({
+        data: { id: 'reflection-1', client_id: null, session_ref: null, workspace_content: { captureSource: 'quick_capture' } },
+        error: null
+      }, readEqCalls)
+    },
     update(values) {
       updateValues = values
       return {
         eq(column, value) {
-          eqCalls.push([column, value])
+          updateEqCalls.push([column, value])
           return {
             eq(column2, value2) {
-              eqCalls.push([column2, value2])
+              updateEqCalls.push([column2, value2])
               return {
                 select() {
-                  return {
-                    single: async () => ({ data: { id: 'reflection-1', body: values.body }, error: null })
-                  }
+                  return { single: async () => ({ data: { id: 'reflection-1', body: values.body }, error: null }) }
                 }
               }
             }
@@ -47,7 +67,25 @@ test('updatePrivateReflectionBody updates only the authenticated therapist refle
   assert.equal(result.body, 'Revised reflection')
   assert.equal(updateValues.body, 'Revised reflection')
   assert.match(updateValues.updated_at, /^\d{4}-\d{2}-\d{2}T/)
-  assert.deepEqual(eqCalls, [['id', 'reflection-1'], ['user_id', 'therapist-1']])
+  assert.deepEqual(readEqCalls, [['id', 'reflection-1'], ['user_id', 'therapist-1']])
+  assert.deepEqual(updateEqCalls, [['id', 'reflection-1'], ['user_id', 'therapist-1']])
+})
+
+test('updatePrivateReflectionBody rejects structured and therapeutic stance reflections', async () => {
+  for (const existing of [
+    { id: 'reflection-1', client_id: 'client-1', session_ref: 'session-1', workspace_content: {} },
+    { id: 'reflection-1', client_id: null, session_ref: null, workspace_content: { captureSource: 'practice_reflection' } }
+  ]) {
+    const client = authenticatedClient(() => ({
+      select() {
+        return scopedSingle({ data: existing, error: null }, [])
+      }
+    }))
+    await assert.rejects(
+      updatePrivateReflectionBody({ supabaseClient: client, reflectionId: 'reflection-1', body: 'Changed text' }),
+      /original reflective workspace/
+    )
+  }
 })
 
 test('updatePrivateReflectionBody rejects empty content rather than silently retaining it', async () => {
@@ -68,10 +106,9 @@ test('deletePrivateReflection deletes only the authenticated therapist reflectio
             eq(column2, value2) {
               eqCalls.push([column2, value2])
               return {
-                select() {
-                  return {
-                    single: async () => ({ data: { id: 'reflection-1' }, error: null })
-                  }
+                select(fields) {
+                  assert.equal(fields, 'id')
+                  return { single: async () => ({ data: { id: 'reflection-1' }, error: null }) }
                 }
               }
             }
