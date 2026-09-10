@@ -1,0 +1,79 @@
+name: Reflection service diagnostic
+
+on:
+  push:
+    branches:
+      - test/reflection-service-diagnostic
+    paths:
+      - .github/workflows/reflection-service-diagnostic.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: reflection-service-diagnostic
+  cancel-in-progress: true
+
+jobs:
+  reflection-service:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out the unchanged release baseline
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: 00c8adcd2210ba468d826e37370d1f7f994bf7a6
+          persist-credentials: false
+
+      - name: Use the Node version observed in the baseline CI run
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '22.23.2'
+
+      - name: Record diagnostic scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = '00c8adcd2210ba468d826e37370d1f7f994bf7a6'
+          node --version
+          {
+            echo '## Reflection service baseline diagnostic'
+            echo 'Source commit: 00c8adcd2210ba468d826e37370d1f7f994bf7a6'
+            echo 'Test file: test/reflection-edit-delete.test.js (5 existing tests)'
+            echo 'Scope: Node-only service tests with injected synthetic Supabase clients.'
+            echo 'No npm install, browser, live provider credentials, application changes or deployment step.'
+            echo 'This is not full-suite, browser, database-RLS or release acceptance.'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      # All five existing tests inject a mock client. No external package is needed.
+      # A timeout or failing test is a failure; there are no retries or continue-on-error.
+      - name: Run the existing reflection service test with a 45-second cutoff
+        id: reflection_test
+        timeout-minutes: 1
+        shell: bash
+        run: |
+          set -euo pipefail
+          timeout --signal=TERM --kill-after=5s 45s \
+            node --test --test-concurrency=1 --test-timeout=10000 --test-reporter=tap \
+            test/reflection-edit-delete.test.js \
+            2>&1 | tee "$RUNNER_TEMP/reflection-service-diagnostic.tap"
+          grep -qx '# tests 5' "$RUNNER_TEMP/reflection-service-diagnostic.tap"
+          grep -qx '# pass 5' "$RUNNER_TEMP/reflection-service-diagnostic.tap"
+          grep -qx '# fail 0' "$RUNNER_TEMP/reflection-service-diagnostic.tap"
+          grep -qx '# cancelled 0' "$RUNNER_TEMP/reflection-service-diagnostic.tap"
+          grep -qx '# skipped 0' "$RUNNER_TEMP/reflection-service-diagnostic.tap"
+
+      - name: Preserve the actual diagnostic result
+        if: always()
+        shell: bash
+        env:
+          TEST_OUTCOME: ${{ steps.reflection_test.outcome }}
+        run: |
+          {
+            printf '\nTest step outcome: %s\n' "$TEST_OUTCOME"
+            if [ -f "$RUNNER_TEMP/reflection-service-diagnostic.tap" ]; then
+              printf '\n```text\n'
+              cat "$RUNNER_TEMP/reflection-service-diagnostic.tap"
+              printf '\n```\n'
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
