@@ -1,0 +1,243 @@
+name: Release test discovery diagnostic
+
+on:
+  push:
+    branches: [test/release-test-discovery]
+    paths: [.github/workflows/test-discovery-diagnostic.yml]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-test-discovery-diagnostic
+  cancel-in-progress: true
+
+jobs:
+  discovery:
+    strategy:
+      fail-fast: true
+      max-parallel: 1
+      matrix:
+        os: [windows-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Check out the unchanged release baseline
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: 00c8adcd2210ba468d826e37370d1f7f994bf7a6
+          persist-credentials: false
+
+      - name: Use the verified Node version
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '22.23.2'
+
+      - name: Recheck the existing reflection service baseline
+        timeout-minutes: 1
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = '00c8adcd2210ba468d826e37370d1f7f994bf7a6'
+          node --test --test-concurrency=1 --test-timeout=10000 --test-reporter=tap test/reflection-edit-delete.test.js
+
+      # Candidate edits exist only in this disposable runner, not in a source commit.
+      # Run the smallest relevant test first. If it fails, stop and report the exact failure before making another edit.
+      - name: Stage the discovery-only candidate in the disposable checkout
+        run: |
+          set -euo pipefail
+          node --input-type=module <<'NODE'
+          import assert from 'node:assert/strict';
+          import { readFileSync, writeFileSync } from 'node:fs';
+          const text = readFileSync('package.json', 'utf8');
+          const original = 'node --test test/**/*.test.js';
+          const proposed = 'node --test "test/**/*.test.js"';
+          assert.equal(JSON.parse(text).scripts.test, original, 'Baseline changed: inspect before editing');
+          assert.equal(text.split(JSON.stringify(original)).length, 2);
+          writeFileSync('package.json', text.replace(JSON.stringify(original), JSON.stringify(proposed)));
+          NODE
+          test ! -e test/test-discovery.test.js
+          cat > test/test-discovery.test.js <<'TEST'
+          import test from 'node:test'
+          import assert from 'node:assert/strict'
+          import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+          import { tmpdir } from 'node:os'
+          import { dirname, join } from 'node:path'
+          import { spawnSync } from 'node:child_process'
+
+          const testCommand = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8')).scripts.test
+
+          function runFixture(t, failingName = null) {
+            const directory = mkdtempSync(join(tmpdir(), 'helios discovery '))
+            t.after(() => rmSync(directory, { recursive: true, force: true }))
+            writeFileSync(join(directory, 'package.json'), JSON.stringify({
+              name: 'helios-discovery-fixture', private: true, type: 'module',
+              scripts: { test: testCommand }
+            }))
+            for (const [name, path] of [
+              ['root', 'test/root.test.js'],
+              ['nested', 'test/unit/nested.test.js'],
+              ['deep', 'test/unit/deeper/deep.test.js']
+            ]) {
+              const file = join(directory, path)
+              mkdirSync(dirname(file), { recursive: true })
+              writeFileSync(file, [
+                "import test from 'node:test'",
+                "import assert from 'node:assert/strict'",
+                `test('${name} discovery sentinel', () => {`,
+                `  assert.equal(${name !== failingName}, true, 'intentional ${name} fixture failure')`,
+                '})'
+              ].join('\n'))
+            }
+            for (const path of ['test/helper.js', 'test/unit/helper.js', 'e2e/browser.spec.js']) {
+              const file = join(directory, path)
+              mkdirSync(dirname(file), { recursive: true })
+              writeFileSync(file, "throw new Error('outside discovery scope')\n")
+            }
+            const env = { ...process.env }
+            for (const key of Object.keys(env)) {
+              if (['node_test_context', 'node_options', 'npm_config_script_shell'].includes(key.toLowerCase())) delete env[key]
+            }
+            env.FORCE_COLOR = '0'
+            // Run npm only in a new temporary fixture, never recursively in the repository.
+            const result = spawnSync('npm test', {
+              cwd: directory, shell: true, env, encoding: 'utf8',
+              timeout: 15000, maxBuffer: 512 * 1024, windowsHide: true
+            })
+            const output = `${result.stdout || ''}\n${result.stderr || ''}`.replace(/\r\n/g, '\n')
+            assert.ifError(result.error)
+            assert.equal(result.signal, null, output)
+            return { status: result.status, output }
+          }
+
+          function assertComplete(output, failed) {
+            assert.match(output, /^# tests 3$/m)
+            assert.match(output, new RegExp(`^# pass ${3 - failed}$`, 'm'))
+            assert.match(output, new RegExp(`^# fail ${failed}$`, 'm'))
+            assert.match(output, /^# cancelled 0$/m)
+            assert.match(output, /^# skipped 0$/m)
+            for (const name of ['root', 'nested', 'deep']) assert.match(output, new RegExp(`${name} discovery sentinel`))
+            assert.doesNotMatch(output, /outside discovery scope/)
+          }
+
+          test('npm test discovers root and nested tests without running helpers or browser specs', { timeout: 25000 }, t => {
+            const result = runFixture(t)
+            assert.equal(result.status, 0, result.output)
+            assertComplete(result.output, 0)
+          })
+          for (const name of ['root', 'nested']) {
+            test(`npm test returns failure for a failing ${name} test`, { timeout: 25000 }, t => {
+              const result = runFixture(t, name)
+              assert.equal(result.status, 1, result.output)
+              assertComplete(result.output, 1)
+              assert.match(result.output, new RegExp(`intentional ${name} fixture failure`))
+            })
+          }
+          TEST
+          git diff --check
+          git diff -- package.json
+
+      - name: Verify discovery and failure propagation using isolated npm fixtures
+        id: focused
+        timeout-minutes: 2
+        run: |
+          set -euo pipefail
+          node --test --test-concurrency=1 --test-timeout=30000 --test-reporter=tap test/test-discovery.test.js 2>&1 | tr -d '\r' | tee "$RUNNER_TEMP/discovery-focused.tap"
+          grep -qx '# tests 3' "$RUNNER_TEMP/discovery-focused.tap"
+          grep -qx '# pass 3' "$RUNNER_TEMP/discovery-focused.tap"
+          grep -qx '# fail 0' "$RUNNER_TEMP/discovery-focused.tap"
+
+      - name: Verify the actual repository test inventory
+        id: inventory
+        run: |
+          set -euo pipefail
+          node --input-type=module <<'NODE'
+          import assert from 'node:assert/strict';
+          import { appendFileSync, globSync, readdirSync, writeFileSync } from 'node:fs';
+          import { join } from 'node:path';
+          const normalize = path => path.replaceAll('\\', '/');
+          const expected = readdirSync('test', { recursive: true })
+            .filter(path => path.endsWith('.test.js'))
+            .map(path => `test/${normalize(path)}`).sort();
+          const discovered = globSync('test/**/*.test.js').map(normalize).sort();
+          assert.deepEqual(discovered, expected, 'Glob must cover the entire intended test inventory');
+          for (const path of ['test/reflection-edit-delete.test.js', 'test/reflection-edit-delete-ui.test.js', 'test/negative-authorization.test.js', 'test/unit/practice-reflection.test.js']) assert.ok(discovered.includes(path), path);
+          assert.ok(expected.length > 0, 'An empty suite is not a pass');
+          const root = expected.filter(path => path.split('/').length === 2).length;
+          const summary = `Node ${process.version} on ${process.platform}: ${expected.length} test files (${root} root, ${expected.length - root} nested), including the proposed discovery test.`;
+          console.log(summary);
+          console.log(expected.join('\n'));
+          writeFileSync(join(process.env.RUNNER_TEMP, 'discovery-files.txt'), expected.join('\n') + '\n');
+          appendFileSync(process.env.GITHUB_STEP_SUMMARY, `## Discovery inventory\n${summary}\n\nThis is discovery evidence, not proof every product test passed.\n`);
+          NODE
+
+      - name: Install only the committed dependency set
+        if: runner.os == 'Linux'
+        id: install
+        timeout-minutes: 2
+        run: |
+          set -euo pipefail
+          timeout --signal=TERM --kill-after=5s 90s npm ci --ignore-scripts --no-audit --no-fund
+          git diff --exit-code -- package-lock.json
+
+      - name: Check each file and stop at the first baseline failure
+        if: runner.os == 'Linux'
+        id: baseline
+        timeout-minutes: 5
+        run: |
+          set -euo pipefail
+          count=0
+          while IFS= read -r file; do
+            echo "Checking $file"
+            if timeout --signal=TERM --kill-after=5s 30s node --test --test-concurrency=1 --test-timeout=20000 --test-reporter=tap "$file" > "$RUNNER_TEMP/discovery-first-failure.tap" 2>&1; then
+              count=$((count + 1))
+            else
+              status=$?
+              echo "::error file=$file::First baseline failure; exit $status. No later file will be started."
+              cat "$RUNNER_TEMP/discovery-first-failure.tap"
+              {
+                printf '\n## First baseline failure\nFile: `%s`\nExit: %s\nFiles completed before failure: %s\n\n```text\n' "$file" "$status" "$count"
+                cat "$RUNNER_TEMP/discovery-first-failure.tap"
+                printf '\n```\n'
+              } >> "$GITHUB_STEP_SUMMARY"
+              exit "$status"
+            fi
+          done < "$RUNNER_TEMP/discovery-files.txt"
+          echo "All $count discovered files completed successfully in the bounded diagnostic."
+
+      - name: Run the corrected npm test command
+        if: runner.os == 'Linux'
+        id: suite
+        timeout-minutes: 3
+        run: |
+          set -euo pipefail
+          timeout --signal=TERM --kill-after=5s 150s npm test 2>&1 | tee "$RUNNER_TEMP/discovery-full-suite.tap"
+
+      - name: Build only after successful unit verification
+        if: runner.os == 'Linux'
+        id: build
+        timeout-minutes: 2
+        run: |
+          set -euo pipefail
+          timeout --signal=TERM --kill-after=5s 90s npm run build
+
+      - name: Record actual scope and outcomes
+        if: always()
+        env:
+          FOCUSED: ${{ steps.focused.outcome }}
+          INVENTORY: ${{ steps.inventory.outcome }}
+          INSTALL: ${{ steps.install.outcome }}
+          BASELINE: ${{ steps.baseline.outcome }}
+          SUITE: ${{ steps.suite.outcome }}
+          BUILD: ${{ steps.build.outcome }}
+        run: |
+          {
+            echo '## Scope and outcomes'
+            echo 'Baseline: 00c8adcd2210ba468d826e37370d1f7f994bf7a6'
+            echo 'Only package.json quoting and a synthetic discovery test were staged in the disposable checkout.'
+            printf 'Focused discovery: %s\nInventory: %s\nInstall: %s\nFirst-failure baseline: %s\nnpm test: %s\nBuild: %s\n' "$FOCUSED" "$INVENTORY" "$INSTALL" "$BASELINE" "$SUITE" "$BUILD"
+            echo 'Windows verifies discovery fixtures. Linux additionally attempts bounded baseline, npm test and build, stopping on failure.'
+            echo 'No browser, live provider credentials, database changes, deployment or automatic source commit.'
+          } >> "$GITHUB_STEP_SUMMARY"
