@@ -1,0 +1,286 @@
+name: Calendar assertion formatting verification
+
+on:
+  push:
+    branches: [fix/calendar-test-formatting]
+    paths: [.github/workflows/calendar-test-formatting.yml]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: calendar-test-formatting
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Check out the exact release baseline
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: 00c8adcd2210ba468d826e37370d1f7f994bf7a6
+          persist-credentials: false
+
+      - name: Use the previously verified Node version
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '22.23.2'
+
+      # The three existing failures were reported and classified before this repair was approved.
+      # Run the smallest relevant test first. If it fails, stop and report the exact failure before making another edit.
+      - name: Confirm only the previously classified Calendar failures
+        id: baseline
+        timeout-minutes: 1
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = '00c8adcd2210ba468d826e37370d1f7f994bf7a6'
+          test -z "$(git status --porcelain)"
+          echo "Run: $GITHUB_RUN_ID; workflow commit: $GITHUB_SHA; source: $(git rev-parse HEAD)"
+          echo "Calendar test: $(git hash-object test/calendar-component.test.js)"
+          echo "Calendar component: $(git hash-object src/views/Calendar.vue)"
+          if timeout --signal=TERM --kill-after=5s 30s node --test --test-concurrency=1 --test-timeout=10000 --test-reporter=tap test/calendar-component.test.js > "$RUNNER_TEMP/calendar-before.tap" 2>&1; then
+            echo '::error::The recorded failing baseline no longer reproduces; inspect before editing.'
+            exit 1
+          else
+            result=$?
+            test "$result" -eq 1
+          fi
+          node --input-type=module <<'NODE'
+          import assert from 'node:assert/strict';
+          import { readFileSync, appendFileSync } from 'node:fs';
+          import { join } from 'node:path';
+          const output = readFileSync(join(process.env.RUNNER_TEMP, 'calendar-before.tap'), 'utf8');
+          const failures = [...output.matchAll(/^\s*not ok \d+ - (.+)$/gm)].map(match => match[1]);
+          console.log('Observed baseline failures:', failures);
+          appendFileSync(process.env.GITHUB_STEP_SUMMARY, `## Known failing baseline (not a pass)\n\n\`\`\`text\n${output}\n\`\`\`\n`);
+          assert.deepEqual(failures, [
+            'Escape closes the action surface',
+            'Correct working-hours range (24 hours)',
+            'Popover containment and flipping logic',
+            'Calendar component template and logic requirements'
+          ], 'An unexpected baseline failure must be reviewed before applying the approved repair');
+          assert.match(output, /^# tests 18$/m);
+          assert.match(output, /^# pass 14$/m);
+          assert.match(output, /^# fail 4$/m);
+          assert.match(output, /^# cancelled 0$/m);
+          assert.match(output, /^# skipped 0$/m);
+          NODE
+          git diff --exit-code
+
+      - name: Apply only the approved five whitespace-tolerant assertions in the runner
+        run: |
+          set -euo pipefail
+          cat > "$RUNNER_TEMP/calendar-formatting.patch" <<'PATCH'
+          diff --git a/test/calendar-component.test.js b/test/calendar-component.test.js
+          --- a/test/calendar-component.test.js
+          +++ b/test/calendar-component.test.js
+          @@ -18,7 +18,7 @@
+             await t.test('Escape closes the action surface', () => {
+               // Check for global Escape listener
+          -    assert.match(calendarSource, /window\.addEventListener\('keydown', handleGlobalEsc\)/)
+          +    assert.match(calendarSource, /window\.addEventListener\(\s*'keydown'\s*,\s*handleGlobalEsc\s*\)/)
+               assert.match(calendarSource, /if \(e\.key === 'Escape'\) \{/)
+               assert.match(calendarSource, /selectedEventId\.value = null/)
+             })
+           
+          @@ -49,7 +49,7 @@
+             })
+           
+             await t.test('Correct working-hours range (24 hours)', () => {
+          -    assert.match(calendarSource, /const workingHours = Array\.from\(\{ length: 24 \}/)
+          +    assert.match(calendarSource, /const\s+workingHours\s*=\s*Array\.from\(\s*\{\s*length\s*:\s*24\s*\}/)
+             })
+           
+             await t.test('Scrolling height logic', () => {
+          @@ -101,9 +101,9 @@
+             })
+           
+             await t.test('Popover containment and flipping logic', () => {
+          -    assert.match(calendarSource, /const popoverWidth = window\.innerWidth < 640 \? 280 : 288/)
+          +    assert.match(calendarSource, /const\s+popoverWidth\s*=\s*window\.innerWidth\s*<\s*640\s*\?\s*280\s*:\s*288\b/)
+               assert.match(calendarSource, /const popoverHeight = 220/)
+          -    assert.match(calendarSource, /if \(left \+ popoverWidth \+ padding > window\.innerWidth\)/)
+          -    assert.match(calendarSource, /if \(top \+ popoverHeight \+ padding > window\.innerHeight\)/)
+          +    assert.match(calendarSource, /if\s*\(\s*left\s*\+\s*popoverWidth\s*\+\s*padding\s*>\s*window\.innerWidth\s*\)/)
+          +    assert.match(calendarSource, /if\s*\(\s*top\s*\+\s*popoverHeight\s*\+\s*padding\s*>\s*window\.innerHeight\s*\)/)
+             })
+           })
+          PATCH
+          git apply --check "$RUNNER_TEMP/calendar-formatting.patch"
+          git apply "$RUNNER_TEMP/calendar-formatting.patch"
+          git diff --check
+          git diff -- test/calendar-component.test.js
+          git diff --exit-code -- src
+          git hash-object test/calendar-component.test.js > "$RUNNER_TEMP/calendar-candidate.sha"
+
+      - name: Run the corrected Calendar file first
+        id: focused
+        timeout-minutes: 1
+        run: |
+          set -euo pipefail
+          timeout --signal=TERM --kill-after=5s 30s node --test --test-concurrency=1 --test-timeout=10000 --test-reporter=tap test/calendar-component.test.js 2>&1 | tee "$RUNNER_TEMP/calendar-after.tap"
+          grep -qx '# tests 18' "$RUNNER_TEMP/calendar-after.tap"
+          grep -qx '# pass 18' "$RUNNER_TEMP/calendar-after.tap"
+          grep -qx '# fail 0' "$RUNNER_TEMP/calendar-after.tap"
+          git diff --exit-code -- src
+
+      - name: Verify real requirement changes are still rejected using synthetic copies
+        id: negative
+        timeout-minutes: 2
+        run: |
+          set -euo pipefail
+          node --input-type=module <<'NODE'
+          import assert from 'node:assert/strict';
+          import { mkdtempSync, mkdirSync, readFileSync, writeFileSync, rmSync } from 'node:fs';
+          import { tmpdir } from 'node:os';
+          import { join } from 'node:path';
+          import { spawnSync } from 'node:child_process';
+          const source = readFileSync('src/views/Calendar.vue', 'utf8');
+          const testSource = readFileSync('test/calendar-component.test.js', 'utf8');
+          const directory = mkdtempSync(join(tmpdir(), 'helios-calendar-contract-'));
+          const cases = [
+            ['wrong event', /window\.addEventListener\(\s*'keydown'\s*,\s*handleGlobalEsc\s*\)/, text => text.replace('keydown', 'keyup'), 'Escape closes the action surface'],
+            ['wrong hours', /const\s+workingHours\s*=\s*Array\.from\(\s*\{\s*length\s*:\s*24\s*\}/, text => text.replace('24', '23'), 'Correct working-hours range (24 hours)'],
+            ['wrong width', /const\s+popoverWidth\s*=\s*window\.innerWidth\s*<\s*640\s*\?\s*280\s*:\s*288\b/, text => text.replace('280', '281'), 'Popover containment and flipping logic'],
+            ['wrong horizontal comparison', /if\s*\(\s*left\s*\+\s*popoverWidth\s*\+\s*padding\s*>\s*window\.innerWidth\s*\)/, text => text.replace('>', '<'), 'Popover containment and flipping logic'],
+            ['wrong vertical comparison', /if\s*\(\s*top\s*\+\s*popoverHeight\s*\+\s*padding\s*>\s*window\.innerHeight\s*\)/, text => text.replace('>', '<'), 'Popover containment and flipping logic']
+          ];
+          try {
+            mkdirSync(join(directory, 'test'));
+            mkdirSync(join(directory, 'src/views'), { recursive: true });
+            writeFileSync(join(directory, 'package.json'), JSON.stringify({ private: true, type: 'module' }));
+            writeFileSync(join(directory, 'test/calendar-component.test.js'), testSource);
+            for (const [name, pattern, mutate, expectedFailure] of cases) {
+              const match = source.match(pattern);
+              assert.ok(match, `Mutation target exists: ${name}`);
+              const mutated = source.replace(pattern, mutate);
+              assert.notEqual(mutated, source, `Mutation changed its synthetic copy: ${name}`);
+              writeFileSync(join(directory, 'src/views/Calendar.vue'), mutated);
+              const result = spawnSync(process.execPath, ['--test', '--test-concurrency=1', '--test-timeout=10000', '--test-reporter=tap', 'test/calendar-component.test.js'], {
+                cwd: directory, encoding: 'utf8', timeout: 15000, maxBuffer: 2 * 1024 * 1024
+              });
+              assert.ifError(result.error);
+              const output = `${result.stdout || ''}\n${result.stderr || ''}`;
+              assert.equal(result.signal, null, `${name}: process must finish`);
+              assert.equal(result.status, 1, `${name}: the changed requirement must fail`);
+              const failures = [...output.matchAll(/^\s*not ok \d+ - (.+)$/gm)].map(match => match[1]);
+              assert.deepEqual(failures, [expectedFailure, 'Calendar component template and logic requirements'], name);
+              assert.match(output, /^# tests 18$/m);
+              assert.match(output, /^# pass 16$/m);
+              assert.match(output, /^# fail 2$/m);
+              console.log(`PASS: corrected test rejects ${name} in an isolated copy`);
+            }
+          } finally {
+            rmSync(directory, { recursive: true, force: true });
+          }
+          console.log('5/5 negative fixtures correctly rejected; these are expected synthetic failures, not product failures.');
+          NODE
+          git diff --exit-code -- src
+
+      - name: Install the committed dependencies without regenerating the lockfile
+        id: install
+        timeout-minutes: 2
+        run: |
+          set -euo pipefail
+          timeout --signal=TERM --kill-after=5s 90s npm ci --ignore-scripts --no-audit --no-fund
+          git diff --exit-code -- package-lock.json
+
+      - name: Reuse the verified complete-discovery command only in this runner
+        run: |
+          set -euo pipefail
+          node --input-type=module <<'NODE'
+          import assert from 'node:assert/strict';
+          import { readFileSync, writeFileSync, readdirSync } from 'node:fs';
+          import { join } from 'node:path';
+          const original = 'node --test test/**/*.test.js';
+          const corrected = 'node --test "test/**/*.test.js"';
+          const text = readFileSync('package.json', 'utf8');
+          assert.equal(JSON.parse(text).scripts.test, original);
+          assert.equal(text.split(JSON.stringify(original)).length, 2);
+          writeFileSync('package.json', text.replace(JSON.stringify(original), JSON.stringify(corrected)));
+          const files = readdirSync('test', { recursive: true }).filter(path => path.endsWith('.test.js')).map(path => `test/${path}`).sort();
+          assert.ok(files.includes('test/calendar-component.test.js'));
+          assert.ok(files.includes('test/reflection-edit-delete.test.js'));
+          assert.ok(files.includes('test/unit/practice-reflection.test.js'));
+          console.log(`${files.length} existing test files; no additional discovery fixture file is created in this run.`);
+          writeFileSync(join(process.env.RUNNER_TEMP, 'calendar-test-files.txt'), files.join('\n') + '\n');
+          NODE
+          git hash-object package.json > "$RUNNER_TEMP/calendar-package.sha"
+
+      - name: Check every file in order and stop at the next failure
+        id: next_failure
+        timeout-minutes: 5
+        run: |
+          set -euo pipefail
+          verify_sources() {
+            git diff --quiet HEAD -- . ':!package.json' ':!test/calendar-component.test.js'
+            test "$(git hash-object test/calendar-component.test.js)" = "$(cat "$RUNNER_TEMP/calendar-candidate.sha")"
+            test "$(git hash-object package.json)" = "$(cat "$RUNNER_TEMP/calendar-package.sha")"
+          }
+          count=0
+          while IFS= read -r file; do
+            verify_sources
+            echo "Checking $file; completed files: $count; blob: $(git hash-object "$file")"
+            if timeout --signal=TERM --kill-after=5s 30s node --test --test-concurrency=1 --test-timeout=20000 --test-reporter=tap "$file" > "$RUNNER_TEMP/calendar-next-failure.tap" 2>&1; then
+              verify_sources
+              count=$((count + 1))
+            else
+              result=$?
+              echo "::error file=$file::Next baseline failure, exit $result. No later test file will run."
+              {
+                printf '\n## Next baseline failure\nFile: `%s`\nExit: %s\nCompleted files: %s\n\n```text\n' "$file" "$result" "$count"
+                cat "$RUNNER_TEMP/calendar-next-failure.tap"
+                printf '\n```\n'
+              } >> "$GITHUB_STEP_SUMMARY"
+              node --input-type=module <<'NODE'
+          import { readFileSync } from 'node:fs';
+          import { join } from 'node:path';
+          const log = readFileSync(join(process.env.RUNNER_TEMP, 'calendar-next-failure.tap'), 'utf8');
+          const first = log.search(/^\s*not ok /m);
+          console.log(first >= 0 ? log.slice(first, first + 4000) : log.slice(0, 4000));
+          console.log(log.split('\n').filter(line => /^# (tests|pass|fail|cancelled|skipped)|^\s*(location:|code:|expected:|actual:|operator:)|\.test\.js:\d+:\d+/.test(line)).join('\n'));
+          NODE
+              echo "Numbered source of the first failing file: $file"
+              nl -ba "$file"
+              verify_sources
+              exit "$result"
+            fi
+          done < "$RUNNER_TEMP/calendar-test-files.txt"
+          echo "All $count files completed. Proceeding to the actual npm command."
+
+      - name: Run complete npm test only after the file-by-file baseline succeeds
+        id: suite
+        timeout-minutes: 3
+        run: |
+          set -euo pipefail
+          timeout --signal=TERM --kill-after=5s 150s npm test
+
+      - name: Build only after complete unit verification
+        id: build
+        timeout-minutes: 2
+        run: |
+          set -euo pipefail
+          timeout --signal=TERM --kill-after=5s 90s npm run build
+
+      - name: Record scope and actual outcomes
+        if: always()
+        env:
+          FOCUSED: ${{ steps.focused.outcome }}
+          NEGATIVE: ${{ steps.negative.outcome }}
+          INVENTORY_RUN: ${{ steps.next_failure.outcome }}
+          SUITE: ${{ steps.suite.outcome }}
+          BUILD: ${{ steps.build.outcome }}
+        run: |
+          {
+            echo '## Calendar test-only candidate'
+            echo 'Baseline: 00c8adcd2210ba468d826e37370d1f7f994bf7a6'
+            echo 'The candidate changes five whitespace-sensitive regexes in test/calendar-component.test.js, not the Calendar component.'
+            echo 'The previously verified quoted npm test command is reused only inside this disposable checkout for honest complete discovery.'
+            printf 'Focused Calendar: %s\nNegative fixtures: %s\nComplete inventory diagnostic: %s\nnpm test: %s\nBuild: %s\n' "$FOCUSED" "$NEGATIVE" "$INVENTORY_RUN" "$SUITE" "$BUILD"
+            echo 'Linux execution only. No browser, live provider credentials, database changes, production promotion or automatic source commit.'
+          } >> "$GITHUB_STEP_SUMMARY"
