@@ -1,0 +1,286 @@
+name: Documents archived-state test verification
+
+on:
+  push:
+    branches: [fix/documents-archive-test]
+    paths: [.github/workflows/documents-archive-test.yml]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: documents-archive-test
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: 00c8adcd2210ba468d826e37370d1f7f994bf7a6
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '22.23.2'
+
+      # Run the smallest relevant test first. If it fails, stop and report the exact failure before making another edit.
+      # The specific baseline failure below has already been reported, classified and approved for repair.
+      - name: Confirm the previously classified Documents baseline
+        id: baseline
+        timeout-minutes: 1
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = '00c8adcd2210ba468d826e37370d1f7f994bf7a6'
+          test -z "$(git status --porcelain)"
+          test "$(git hash-object test/client-documents-refinement.test.js)" = 'b5dde9cce5188ec98e1825cea457f812d25e8ab1'
+          echo "Run: $GITHUB_RUN_ID; workflow: $GITHUB_SHA; source: $(git rev-parse HEAD)"
+          node --input-type=module <<'NODE'
+          import assert from 'node:assert/strict';
+          import { spawnSync } from 'node:child_process';
+          import { writeFileSync, appendFileSync } from 'node:fs';
+          import { join } from 'node:path';
+          const result = spawnSync(process.execPath, ['--test', '--test-concurrency=1', '--test-timeout=10000', '--test-reporter=tap', 'test/client-documents-refinement.test.js'], {
+            encoding: 'utf8', timeout: 15000, maxBuffer: 2 * 1024 * 1024
+          });
+          const output = `${result.stdout || ''}\n${result.stderr || ''}`;
+          writeFileSync(join(process.env.RUNNER_TEMP, 'documents-before.tap'), output);
+          appendFileSync(process.env.GITHUB_STEP_SUMMARY, `## Previously reported failing baseline (not a pass)\n\n\`\`\`text\n${output}\n\`\`\`\n`);
+          console.log(output.split('\n').filter(line => /not ok |location:|code:|operator:|\.test\.js:\d+:\d+|^# (tests|pass|fail|cancelled|skipped)/.test(line)).join('\n'));
+          assert.ifError(result.error);
+          assert.equal(result.signal, null, 'A timeout is not the known assertion failure');
+          assert.equal(result.status, 1, 'Stop if the baseline no longer reproduces');
+          assert.deepEqual([...output.matchAll(/^\s*not ok \d+ - (.+)$/gm)].map(match => match[1]), [
+            'ClientWorkspace provides the correct archived state to Documents panel'
+          ], 'Stop for review if any different failure appears');
+          assert.ok(output.includes("activeTab === 'Documents'"), 'Expected obsolete tab assertion');
+          assert.match(output, /client-documents-refinement\.test\.js:34:10/);
+          for (const line of ['# tests 2', '# pass 1', '# fail 1', '# cancelled 0', '# skipped 0']) assert.ok(output.split('\n').includes(line), line);
+          NODE
+          git diff --exit-code
+
+      - name: Stage the single approved assertion correction in the disposable checkout
+        run: |
+          set -euo pipefail
+          cat > "$RUNNER_TEMP/documents-archive.patch" <<'PATCH'
+          diff --git a/test/client-documents-refinement.test.js b/test/client-documents-refinement.test.js
+          --- a/test/client-documents-refinement.test.js
+          +++ b/test/client-documents-refinement.test.js
+          @@ -31,7 +31,7 @@
+           
+           test('ClientWorkspace provides the correct archived state to Documents panel', async () => {
+             const workspace = await read('../src/views/ClientWorkspace.vue');
+          -  assert.match(workspace, /<ClientDocumentsPanel v-else-if="activeTab === 'Documents'"[^>]*:archived="client\.archived"/);
+          +  assert.match(workspace, /<ClientDocumentsPanel\b[^>]*:archived="client\.archived"/);
+             assert.match(workspace, /function newDocument\(documentType='other'\)\{if\(client\.value\?\.archived\)return/);
+             assert.match(workspace, /function editDocument\(document\)\{if\(client\.value\?\.archived\)return/);
+           });
+          PATCH
+          git apply --check "$RUNNER_TEMP/documents-archive.patch"
+          git apply "$RUNNER_TEMP/documents-archive.patch"
+          git diff --check
+          git diff -- test/client-documents-refinement.test.js
+          git diff --exit-code -- src
+
+      - name: Run the corrected Documents test first
+        id: focused
+        timeout-minutes: 1
+        run: |
+          set -euo pipefail
+          timeout --signal=TERM --kill-after=5s 30s node --test --test-concurrency=1 --test-timeout=10000 --test-reporter=tap test/client-documents-refinement.test.js 2>&1 | tee "$RUNNER_TEMP/documents-after.tap"
+          grep -qx '# tests 2' "$RUNNER_TEMP/documents-after.tap"
+          grep -qx '# pass 2' "$RUNNER_TEMP/documents-after.tap"
+          grep -qx '# fail 0' "$RUNNER_TEMP/documents-after.tap"
+
+      - name: Verify missing archived protections still fail in isolated copies
+        id: negative
+        timeout-minutes: 2
+        run: |
+          set -euo pipefail
+          node --input-type=module <<'NODE'
+          import assert from 'node:assert/strict';
+          import { mkdtempSync, mkdirSync, readFileSync, writeFileSync, rmSync } from 'node:fs';
+          import { tmpdir } from 'node:os';
+          import { join, dirname } from 'node:path';
+          import { spawnSync } from 'node:child_process';
+          const workspace = readFileSync('src/views/ClientWorkspace.vue', 'utf8');
+          const directory = mkdtempSync(join(tmpdir(), 'helios-documents-archive-'));
+          const cases = [
+            ['missing archived binding', ':archived="client.archived"', ''],
+            ['false archived binding', ':archived="client.archived"', ':archived="false"'],
+            ['binding on the wrong component', '<ClientDocumentsPanel ', '<UnrelatedDocumentsPanel '],
+            ['missing creation guard', "function newDocument(documentType='other'){if(client.value?.archived)return;", "function newDocument(documentType='other'){"],
+            ['missing edit guard', 'function editDocument(document){if(client.value?.archived)return;', 'function editDocument(document){']
+          ];
+          try {
+            writeFileSync(join(directory, 'package.json'), JSON.stringify({ private: true, type: 'module' }));
+            for (const file of ['test/client-documents-refinement.test.js', 'src/components/workspace/ClientDocumentsPanel.vue', 'src/views/ClientWorkspace.vue']) {
+              mkdirSync(dirname(join(directory, file)), { recursive: true });
+              writeFileSync(join(directory, file), readFileSync(file));
+            }
+            for (const [name, original, replacement] of cases) {
+              assert.equal(workspace.split(original).length, 2, `Unique mutation target: ${name}`);
+              writeFileSync(join(directory, 'src/views/ClientWorkspace.vue'), workspace.replace(original, replacement));
+              const result = spawnSync(process.execPath, ['--test', '--test-concurrency=1', '--test-timeout=10000', '--test-reporter=tap', 'test/client-documents-refinement.test.js'], {
+                cwd: directory, encoding: 'utf8', timeout: 15000, maxBuffer: 2 * 1024 * 1024
+              });
+              const output = `${result.stdout || ''}\n${result.stderr || ''}`;
+              assert.ifError(result.error);
+              assert.equal(result.signal, null, name);
+              assert.equal(result.status, 1, `${name} must be rejected`);
+              assert.deepEqual([...output.matchAll(/^\s*not ok \d+ - (.+)$/gm)].map(match => match[1]), [
+                'ClientWorkspace provides the correct archived state to Documents panel'
+              ], name);
+              for (const line of ['# tests 2', '# pass 1', '# fail 1', '# cancelled 0', '# skipped 0']) assert.ok(output.split('\n').includes(line), `${name}: ${line}`);
+              console.log(`PASS: ${name} rejected in a temporary copy`);
+            }
+          } finally {
+            rmSync(directory, { recursive: true, force: true });
+          }
+          console.log('5/5 deliberate negative fixtures rejected. Application source is untouched.');
+          NODE
+          git diff --exit-code -- src
+
+      - name: Reapply the already verified Calendar candidate for combined baseline verification
+        timeout-minutes: 1
+        run: |
+          set -euo pipefail
+          cat > "$RUNNER_TEMP/calendar-formatting.patch" <<'PATCH'
+          diff --git a/test/calendar-component.test.js b/test/calendar-component.test.js
+          --- a/test/calendar-component.test.js
+          +++ b/test/calendar-component.test.js
+          @@ -18,7 +18,7 @@
+             await t.test('Escape closes the action surface', () => {
+               // Check for global Escape listener
+          -    assert.match(calendarSource, /window\.addEventListener\('keydown', handleGlobalEsc\)/)
+          +    assert.match(calendarSource, /window\.addEventListener\(\s*'keydown'\s*,\s*handleGlobalEsc\s*\)/)
+               assert.match(calendarSource, /if \(e\.key === 'Escape'\) \{/)
+               assert.match(calendarSource, /selectedEventId\.value = null/)
+             })
+           
+          @@ -49,7 +49,7 @@
+             })
+           
+             await t.test('Correct working-hours range (24 hours)', () => {
+          -    assert.match(calendarSource, /const workingHours = Array\.from\(\{ length: 24 \}/)
+          +    assert.match(calendarSource, /const\s+workingHours\s*=\s*Array\.from\(\s*\{\s*length\s*:\s*24\s*\}/)
+             })
+           
+             await t.test('Scrolling height logic', () => {
+          @@ -101,9 +101,9 @@
+             })
+           
+             await t.test('Popover containment and flipping logic', () => {
+          -    assert.match(calendarSource, /const popoverWidth = window\.innerWidth < 640 \? 280 : 288/)
+          +    assert.match(calendarSource, /const\s+popoverWidth\s*=\s*window\.innerWidth\s*<\s*640\s*\?\s*280\s*:\s*288\b/)
+               assert.match(calendarSource, /const popoverHeight = 220/)
+          -    assert.match(calendarSource, /if \(left \+ popoverWidth \+ padding > window\.innerWidth\)/)
+          -    assert.match(calendarSource, /if \(top \+ popoverHeight \+ padding > window\.innerHeight\)/)
+          +    assert.match(calendarSource, /if\s*\(\s*left\s*\+\s*popoverWidth\s*\+\s*padding\s*>\s*window\.innerWidth\s*\)/)
+          +    assert.match(calendarSource, /if\s*\(\s*top\s*\+\s*popoverHeight\s*\+\s*padding\s*>\s*window\.innerHeight\s*\)/)
+             })
+           })
+          PATCH
+          git apply --check "$RUNNER_TEMP/calendar-formatting.patch"
+          git apply "$RUNNER_TEMP/calendar-formatting.patch"
+          test "$(git hash-object test/calendar-component.test.js)" = '0d7980ff6fcf11693647c85eb59aceeb7aeda418'
+          timeout --signal=TERM --kill-after=5s 30s node --test --test-concurrency=1 --test-timeout=10000 --test-reporter=tap test/calendar-component.test.js
+
+      - name: Install only the committed dependency set
+        timeout-minutes: 2
+        run: |
+          set -euo pipefail
+          timeout --signal=TERM --kill-after=5s 90s npm ci --ignore-scripts --no-audit --no-fund
+          git diff --exit-code -- package-lock.json
+
+      - name: Reuse verified test discovery only in this disposable runner
+        run: |
+          set -euo pipefail
+          node --input-type=module <<'NODE'
+          import assert from 'node:assert/strict';
+          import { readFileSync, writeFileSync, readdirSync } from 'node:fs';
+          import { join } from 'node:path';
+          const text = readFileSync('package.json', 'utf8');
+          const original = 'node --test test/**/*.test.js';
+          assert.equal(JSON.parse(text).scripts.test, original);
+          assert.equal(text.split(JSON.stringify(original)).length, 2);
+          writeFileSync('package.json', text.replace(JSON.stringify(original), JSON.stringify('node --test "test/**/*.test.js"')));
+          const files = readdirSync('test', { recursive: true }).filter(file => file.endsWith('.test.js')).map(file => `test/${file}`).sort();
+          assert.equal(files.length, 138, 'Stop if the baseline test inventory changed');
+          writeFileSync(join(process.env.RUNNER_TEMP, 'documents-test-files.txt'), files.join('\n') + '\n');
+          console.log(`${files.length} existing test files; no extra fixture files in the repository.`);
+          NODE
+          git diff --check
+          sha256sum package.json test/calendar-component.test.js test/client-documents-refinement.test.js > "$RUNNER_TEMP/documents-candidate.sha256"
+
+      - name: Verify each file and stop at the next failure
+        id: inventory_run
+        timeout-minutes: 5
+        run: |
+          set -euo pipefail
+          verify_sources() {
+            git diff --quiet HEAD -- . ':!package.json' ':!test/calendar-component.test.js' ':!test/client-documents-refinement.test.js'
+            sha256sum --status --check "$RUNNER_TEMP/documents-candidate.sha256"
+          }
+          count=0
+          while IFS= read -r file; do
+            verify_sources
+            echo "Checking $file; completed files: $count; blob: $(git hash-object "$file")"
+            if timeout --signal=TERM --kill-after=5s 30s node --test --test-concurrency=1 --test-timeout=20000 --test-reporter=tap "$file" > "$RUNNER_TEMP/documents-next-failure.tap" 2>&1; then
+              verify_sources
+              count=$((count + 1))
+            else
+              result=$?
+              echo "::error file=$file::Next baseline failure, exit $result. No later file will run."
+              {
+                printf '\n## Next failure\nFile: `%s`\nExit: %s\nCompleted files: %s\n\n```text\n' "$file" "$result" "$count"
+                cat "$RUNNER_TEMP/documents-next-failure.tap"
+                printf '\n```\n'
+              } >> "$GITHUB_STEP_SUMMARY"
+              node --input-type=module <<'NODE'
+          import { readFileSync } from 'node:fs';
+          import { join } from 'node:path';
+          const log = readFileSync(join(process.env.RUNNER_TEMP, 'documents-next-failure.tap'), 'utf8');
+          const first = log.search(/^\s*not ok /m);
+          console.log(first >= 0 ? log.slice(first, first + 4000) : log.slice(0, 4000));
+          console.log(log.split('\n').filter(line => /^# (tests|pass|fail|cancelled|skipped)|^\s*(location:|code:|expected:|actual:|operator:)|\.test\.js:\d+:\d+/.test(line)).join('\n'));
+          NODE
+              echo "Exact numbered source of $file:"
+              nl -ba "$file"
+              verify_sources
+              exit "$result"
+            fi
+          done < "$RUNNER_TEMP/documents-test-files.txt"
+          echo "All $count files completed successfully."
+
+      - name: Run complete npm test after the file-by-file check
+        id: suite
+        timeout-minutes: 3
+        run: timeout --signal=TERM --kill-after=5s 150s npm test
+
+      - name: Build only after complete unit verification
+        id: build
+        timeout-minutes: 2
+        run: timeout --signal=TERM --kill-after=5s 90s npm run build
+
+      - name: Record actual scope and results
+        if: always()
+        env:
+          FOCUSED: ${{ steps.focused.outcome }}
+          NEGATIVE: ${{ steps.negative.outcome }}
+          INVENTORY: ${{ steps.inventory_run.outcome }}
+          SUITE: ${{ steps.suite.outcome }}
+          BUILD: ${{ steps.build.outcome }}
+        run: |
+          {
+            echo '## Documents test-only candidate'
+            echo 'One new assertion correction: require the archived-state binding without the obsolete Documents-tab condition.'
+            echo 'Existing creation/edit guards and all application source are unchanged.'
+            echo 'Previously verified Calendar and discovery candidates were reused only in the disposable runner.'
+            printf 'Focused Documents: %s\nNegative fixtures: %s\nFile-by-file baseline: %s\nnpm test: %s\nBuild: %s\n' "$FOCUSED" "$NEGATIVE" "$INVENTORY" "$SUITE" "$BUILD"
+            echo 'Linux only. No browser, provider credentials, hosted database changes, production promotion or automatic source commit.'
+          } >> "$GITHUB_STEP_SUMMARY"
