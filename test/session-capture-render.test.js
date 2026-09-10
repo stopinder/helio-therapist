@@ -2,19 +2,19 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 
-test('Session Capture stage rendering wiring', async () => {
+test('simplified Session Workspace exposes transcript review without restoring legacy stage tabs', async () => {
   const workspace = await readFile(new URL('../src/views/SessionWorkspace.vue', import.meta.url), 'utf8')
-  
-  // Verify canonical stage name is used for initialization
-  assert.match(workspace, /activeTab=ref\('Session Capture'\)/)
-  
-  // Verify canonical stage name is used for conditional rendering
-  assert.match(workspace, /v-if="activeTab === 'Session Capture'"/)
-  assert.match(workspace, /<TranscriptTab\s+v-if="activeTab === 'Session Capture'"/)
-  
-  // Verify the adjacent professional-development destination uses the canonical CPD label
-  assert.match(workspace, /v-else-if="activeTab === 'CPD'"/)
-  assert.match(workspace, /<SupervisionSummaryTab v-else-if="activeTab === 'CPD'"/)
+
+  assert.match(workspace, /View transcript/)
+  assert.match(workspace, /showTranscript = ref\(false\)/)
+  assert.match(workspace, /:aria-expanded="showTranscript"/)
+  assert.match(workspace, /Linked transcript is not available yet\./)
+  assert.match(workspace, /\{\{ transcript\.text \}\}/)
+
+  assert.doesNotMatch(workspace, /activeTab=ref\('Session Capture'\)/)
+  assert.doesNotMatch(workspace, /<WorkflowIndicator/)
+  assert.doesNotMatch(workspace, /<TranscriptTab/)
+  assert.doesNotMatch(workspace, /<SupervisionSummaryTab/)
 })
 
 test('WorkflowIndicator uses Session Capture', async () => {
