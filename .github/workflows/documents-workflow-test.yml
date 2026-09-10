@@ -1,0 +1,284 @@
+name: Documents workflow assertion verification
+
+on:
+  push:
+    branches: [fix/documents-workflow-test]
+    paths: [.github/workflows/documents-workflow-test.yml]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: documents-workflow-test
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: 00c8adcd2210ba468d826e37370d1f7f994bf7a6
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '22.23.2'
+
+      # Run the smallest relevant test first. If it fails, stop and report the exact failure before making another edit.
+      # This specific baseline failure was already reported, classified and approved for repair.
+      - name: Confirm the exact previously reported failure before editing
+        id: baseline
+        timeout-minutes: 1
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = '00c8adcd2210ba468d826e37370d1f7f994bf7a6'
+          test -z "$(git status --porcelain)"
+          test "$(git hash-object test/client-documents-workflow.test.js)" = 'de45aaa6ca77ed307b27fadd7f8c2ea7919f27d0'
+          echo "Run: $GITHUB_RUN_ID; workflow: $GITHUB_SHA; tested source: $(git rev-parse HEAD)"
+          node --input-type=module <<'NODE'
+          import assert from 'node:assert/strict';
+          import { spawnSync } from 'node:child_process';
+          import { appendFileSync } from 'node:fs';
+          const result = spawnSync(process.execPath, ['--test', '--test-concurrency=1', '--test-timeout=10000', '--test-reporter=tap', 'test/client-documents-workflow.test.js'], {
+            encoding: 'utf8', timeout: 15000, maxBuffer: 4 * 1024 * 1024
+          });
+          const output = `${result.stdout || ''}\n${result.stderr || ''}`;
+          appendFileSync(process.env.GITHUB_STEP_SUMMARY, `## Known failing baseline, not a pass\n\n\`\`\`text\n${output}\n\`\`\`\n`);
+          console.log(output.split('\n').filter(line => /^not ok |^# (tests|pass|fail|cancelled|skipped)|^\s+(location:|code:|operator:)|client-documents-workflow\.test\.js:\d+:\d+/.test(line)).join('\n'));
+          assert.ifError(result.error);
+          assert.equal(result.signal, null, 'A timeout is not the known assertion failure');
+          assert.equal(result.status, 1, 'Stop if the baseline does not reproduce');
+          assert.deepEqual([...output.matchAll(/^\s*not ok \d+ - (.+)$/gm)].map(match => match[1]), [
+            'Client Workspace owns the professional clinical composer and exposes safe document actions'
+          ], 'Stop if any different failure appears');
+          assert.ok(output.includes("The input did not match the regular expression /activeTab === 'Documents'/"));
+          assert.match(output, /client-documents-workflow\.test\.js:12:1485/);
+          for (const line of ['# tests 6', '# pass 5', '# fail 1', '# cancelled 0', '# skipped 0']) assert.ok(output.split('\n').includes(line), line);
+          NODE
+          git diff --exit-code
+
+      - name: Stage only the approved Documents panel and action assertions
+        run: |
+          set -euo pipefail
+          node --input-type=module <<'NODE'
+          import assert from 'node:assert/strict';
+          import { readFileSync, writeFileSync } from 'node:fs';
+          const file = 'test/client-documents-workflow.test.js';
+          const source = readFileSync(file, 'utf8');
+          const original = "assert.match(workspace,/activeTab === 'Documents'/);";
+          const replacement = String.raw`
+            // The panel is in Supporting material; verify its bindings rather than the former tab.
+            const documentsPanel = workspace.match(/<ClientDocumentsPanel\b[^>]*>/)?.[0] || '';
+            assert.match(documentsPanel, /\s:documents="documents"/);
+            assert.match(documentsPanel, /\s@create="newDocument"/);
+            assert.match(documentsPanel, /\s@edit="editDocument"/);
+            assert.match(documentsPanel, /\s@download="downloadDocument"/);
+          `;
+          assert.equal(source.split(original).length, 2, 'The approved assertion must occur exactly once');
+          const candidate = source.replace(original, replacement);
+          assert.equal(candidate.replace(replacement, original), source, 'All other assertions must remain unchanged');
+          writeFileSync(file, candidate);
+          NODE
+          git diff --check
+          git diff -- test/client-documents-workflow.test.js
+          git diff --exit-code -- src api supabase
+
+      - name: Run the corrected Documents workflow file first
+        id: focused
+        timeout-minutes: 1
+        run: |
+          set -euo pipefail
+          timeout --signal=TERM --kill-after=5s 30s node --test --test-concurrency=1 --test-timeout=10000 --test-reporter=tap test/client-documents-workflow.test.js 2>&1 | tee "$RUNNER_TEMP/documents-workflow-focused.tap"
+          grep -qx '# tests 6' "$RUNNER_TEMP/documents-workflow-focused.tap"
+          grep -qx '# pass 6' "$RUNNER_TEMP/documents-workflow-focused.tap"
+          grep -qx '# fail 0' "$RUNNER_TEMP/documents-workflow-focused.tap"
+
+      - name: Check formatting tolerance and rejection of broken actions in temporary copies
+        id: fixtures
+        timeout-minutes: 2
+        run: |
+          set -euo pipefail
+          node --input-type=module <<'NODE'
+          import assert from 'node:assert/strict';
+          import { mkdtempSync, mkdirSync, readFileSync, writeFileSync, rmSync } from 'node:fs';
+          import { tmpdir } from 'node:os';
+          import { join, dirname } from 'node:path';
+          import { spawnSync } from 'node:child_process';
+          const workspace = readFileSync('src/views/ClientWorkspace.vue', 'utf8');
+          const panels = workspace.match(/<ClientDocumentsPanel\b[^>]*>/g);
+          assert.equal(panels?.length, 1, 'Inspect before testing multiple panel instances');
+          const originalPanel = panels[0];
+          const directory = mkdtempSync(join(tmpdir(), 'helios-document-actions-'));
+          const cases = [
+            ['multiline reordered bindings', '<ClientDocumentsPanel\n @download="downloadDocument"\n @edit="editDocument"\n :archived="client.archived"\n :documents="documents"\n @create="newDocument"\n :loading="documentsLoading"\n :error="documentsError" />', 0],
+            ['missing panel', '', 1],
+            ['wrong documents binding', originalPanel.replace(':documents="documents"', ':documents="otherDocuments"'), 1],
+            ['wrong create action', originalPanel.replace('@create="newDocument"', '@create="wrongAction"'), 1],
+            ['wrong edit action', originalPanel.replace('@edit="editDocument"', '@edit="wrongAction"'), 1],
+            ['download action on another element only', originalPanel.replace('@download="downloadDocument"', '') + '\n<OtherPanel @download="downloadDocument" />', 1]
+          ];
+          try {
+            writeFileSync(join(directory, 'package.json'), JSON.stringify({ private: true, type: 'module' }));
+            const files = [
+              'test/client-documents-workflow.test.js',
+              'supabase/migrations/20260809154138_harden_client_documents.sql',
+              'src/lib/clientDocuments.js',
+              'src/components/workspace/ClientDocumentComposer.vue',
+              'src/components/workspace/ClientWorkspaceHeader.vue',
+              'src/components/workspace/ClientDocumentsPanel.vue',
+              'src/views/ClientWorkspace.vue',
+              'api/documents.js',
+              'api/_lib/documentPdf.js'
+            ];
+            for (const file of files) {
+              mkdirSync(dirname(join(directory, file)), { recursive: true });
+              writeFileSync(join(directory, file), readFileSync(file));
+            }
+            for (const [name, panel, failures] of cases) {
+              assert.notEqual(panel, originalPanel, `Fixture must change its synthetic copy: ${name}`);
+              writeFileSync(join(directory, 'src/views/ClientWorkspace.vue'), workspace.replace(originalPanel, panel));
+              const result = spawnSync(process.execPath, ['--test', '--test-concurrency=1', '--test-timeout=10000', '--test-reporter=tap', 'test/client-documents-workflow.test.js'], {
+                cwd: directory, encoding: 'utf8', timeout: 15000, maxBuffer: 4 * 1024 * 1024
+              });
+              assert.ifError(result.error);
+              assert.equal(result.signal, null, name);
+              const output = `${result.stdout || ''}\n${result.stderr || ''}`;
+              assert.equal(result.status, failures, `${name}: unexpected test result`);
+              assert.deepEqual([...output.matchAll(/^\s*not ok \d+ - (.+)$/gm)].map(match => match[1]), failures ? [
+                'Client Workspace owns the professional clinical composer and exposes safe document actions'
+              ] : [], name);
+              for (const line of ['# tests 6', `# pass ${6 - failures}`, `# fail ${failures}`, '# cancelled 0', '# skipped 0']) assert.ok(output.split('\n').includes(line), `${name}: ${line}`);
+              console.log(`PASS: ${name}; expected exit ${failures} received ${result.status}`);
+            }
+          } finally {
+            rmSync(directory, { recursive: true, force: true });
+          }
+          console.log('One valid formatting fixture passed; five deliberately broken fixtures were rejected.');
+          NODE
+          git diff --exit-code -- src api supabase
+
+      - name: Reuse the exact previously verified Calendar and archive patches
+        timeout-minutes: 1
+        run: |
+          set -euo pipefail
+          git fetch --no-tags --depth=1 origin b5cbe81eef143002e84e8bca5f9356704f9b55fb
+          git show b5cbe81eef143002e84e8bca5f9356704f9b55fb:.github/workflows/documents-archive-test.yml > "$RUNNER_TEMP/previous-documents.yml"
+          test "$(git hash-object "$RUNNER_TEMP/previous-documents.yml")" = '8aae7e24e157a3b36f8ac722899c79c78cb2cf84'
+          node --input-type=module <<'NODE'
+          import assert from 'node:assert/strict';
+          import { readFileSync, writeFileSync } from 'node:fs';
+          import { join } from 'node:path';
+          const previous = readFileSync(join(process.env.RUNNER_TEMP, 'previous-documents.yml'), 'utf8');
+          // Extract patch data only. Do not execute the earlier workflow's shell commands.
+          const patches = [...previous.matchAll(/          cat > "\$RUNNER_TEMP\/(documents-archive|calendar-formatting)\.patch" <<'PATCH'\n([\s\S]*?)          PATCH\n/g)];
+          assert.deepEqual(patches.map(match => match[1]), ['documents-archive', 'calendar-formatting']);
+          for (const [, name, block] of patches) {
+            const patch = block.split('\n').map(line => line ? line.slice(10) : line).join('\n');
+            writeFileSync(join(process.env.RUNNER_TEMP, `${name}.patch`), patch);
+          }
+          NODE
+          git apply --check "$RUNNER_TEMP/documents-archive.patch" "$RUNNER_TEMP/calendar-formatting.patch"
+          git apply "$RUNNER_TEMP/documents-archive.patch" "$RUNNER_TEMP/calendar-formatting.patch"
+          test "$(git hash-object test/client-documents-refinement.test.js)" = '661d7b27c24fdfe28dc34b68bfaeb0bc4162270f'
+          test "$(git hash-object test/calendar-component.test.js)" = '0d7980ff6fcf11693647c85eb59aceeb7aeda418'
+          timeout --signal=TERM --kill-after=5s 30s node --test --test-concurrency=1 --test-timeout=10000 test/client-documents-refinement.test.js
+          timeout --signal=TERM --kill-after=5s 30s node --test --test-concurrency=1 --test-timeout=10000 test/calendar-component.test.js
+
+      - name: Install the committed dependency set
+        timeout-minutes: 2
+        run: |
+          set -euo pipefail
+          timeout --signal=TERM --kill-after=5s 90s npm ci --ignore-scripts --no-audit --no-fund
+          git diff --exit-code -- package-lock.json
+
+      - name: Reuse the verified complete-discovery command in the disposable runner
+        run: |
+          set -euo pipefail
+          node --input-type=module <<'NODE'
+          import assert from 'node:assert/strict';
+          import { readFileSync, writeFileSync, readdirSync } from 'node:fs';
+          import { join } from 'node:path';
+          const text = readFileSync('package.json', 'utf8');
+          const original = 'node --test test/**/*.test.js';
+          assert.equal(JSON.parse(text).scripts.test, original);
+          assert.equal(text.split(JSON.stringify(original)).length, 2);
+          writeFileSync('package.json', text.replace(JSON.stringify(original), JSON.stringify('node --test "test/**/*.test.js"')));
+          const files = readdirSync('test', { recursive: true }).filter(file => file.endsWith('.test.js')).map(file => `test/${file}`).sort();
+          assert.equal(files.length, 138, 'Stop if the release baseline inventory changed');
+          writeFileSync(join(process.env.RUNNER_TEMP, 'workflow-test-files.txt'), files.join('\n') + '\n');
+          console.log(`${files.length} existing test files; no synthetic fixture is left in the repository.`);
+          NODE
+          git diff --check
+          sha256sum package.json test/calendar-component.test.js test/client-documents-refinement.test.js test/client-documents-workflow.test.js > "$RUNNER_TEMP/workflow-candidates.sha256"
+
+      - name: Verify file by file and stop at the next failure
+        id: inventory
+        timeout-minutes: 5
+        run: |
+          set -euo pipefail
+          verify_sources() {
+            git diff --quiet HEAD -- . ':!package.json' ':!test/calendar-component.test.js' ':!test/client-documents-refinement.test.js' ':!test/client-documents-workflow.test.js'
+            sha256sum --status --check "$RUNNER_TEMP/workflow-candidates.sha256"
+          }
+          count=0
+          while IFS= read -r file; do
+            verify_sources
+            echo "Checking $file; completed files: $count; blob: $(git hash-object "$file")"
+            if timeout --signal=TERM --kill-after=5s 30s node --test --test-concurrency=1 --test-timeout=20000 --test-reporter=tap "$file" > "$RUNNER_TEMP/workflow-next-failure.tap" 2>&1; then
+              verify_sources
+              count=$((count + 1))
+            else
+              result=$?
+              echo "::error file=$file::First remaining failure, exit $result. No later file will start."
+              {
+                printf '\n## First remaining failure\nFile: `%s`\nExit: %s\nCompleted files: %s\n\n```text\n' "$file" "$result" "$count"
+                cat "$RUNNER_TEMP/workflow-next-failure.tap"
+                printf '\n```\n'
+              } >> "$GITHUB_STEP_SUMMARY"
+              node --input-type=module <<'NODE'
+          import { readFileSync } from 'node:fs';
+          import { join } from 'node:path';
+          const log = readFileSync(join(process.env.RUNNER_TEMP, 'workflow-next-failure.tap'), 'utf8');
+          const first = log.search(/^\s*not ok /m);
+          console.log(first >= 0 ? log.slice(first, first + 3000) : log.slice(0, 3000));
+          console.log(log.split('\n').filter(line => /^# (tests|pass|fail|cancelled|skipped)|^\s*(location:|code:|expected:|actual:|operator:)|\.test\.js:\d+:\d+/.test(line)).join('\n'));
+          NODE
+              echo "Exact numbered source of $file:"
+              nl -ba "$file"
+              verify_sources
+              exit "$result"
+            fi
+          done < "$RUNNER_TEMP/workflow-test-files.txt"
+          echo "All $count files completed successfully."
+
+      - name: Run complete npm test after file-by-file verification
+        id: suite
+        timeout-minutes: 3
+        run: timeout --signal=TERM --kill-after=5s 150s npm test
+
+      - name: Build only after successful complete unit verification
+        id: build
+        timeout-minutes: 2
+        run: timeout --signal=TERM --kill-after=5s 90s npm run build
+
+      - name: Record actual results and scope
+        if: always()
+        env:
+          FOCUSED: ${{ steps.focused.outcome }}
+          FIXTURES: ${{ steps.fixtures.outcome }}
+          INVENTORY: ${{ steps.inventory.outcome }}
+          SUITE: ${{ steps.suite.outcome }}
+          BUILD: ${{ steps.build.outcome }}
+        run: |
+          {
+            echo '## Documents workflow test-only candidate'
+            echo 'New change: replace the obsolete Documents-tab assertion with scoped panel/data/create/edit/download checks.'
+            echo 'All clinical-source, ownership and finalisation assertions are retained.'
+            echo 'Previously verified Calendar/archive/discovery candidates are reused only in this disposable checkout.'
+            printf 'Focused workflow: %s\nSynthetic fixtures: %s\nFile-by-file baseline: %s\nnpm test: %s\nBuild: %s\n' "$FOCUSED" "$FIXTURES" "$INVENTORY" "$SUITE" "$BUILD"
+            echo 'Linux only. No browser, live provider credentials, database changes, production promotion or automatic source commit.'
+          } >> "$GITHUB_STEP_SUMMARY"
