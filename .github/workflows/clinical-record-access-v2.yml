@@ -5,6 +5,7 @@ on:
     branches: [fix/clinical-record-access-v2]
     paths:
       - src/views/SessionWorkspace.vue
+      - test/clinical-spine.test.js
       - .github/workflows/clinical-record-access-v2.yml
 
 permissions:
@@ -28,23 +29,23 @@ jobs:
           node-version: '22.23.2'
 
       # Run the smallest relevant test first. If it fails, stop and report the exact failure before making another edit.
-      - name: Run Clinical Record metadata test first
+      - name: Run Clinical Spine contract first
+        timeout-minutes: 1
+        run: |
+          set -euo pipefail
+          node --test --test-concurrency=1 --test-timeout=10000 --test-reporter=tap test/clinical-spine.test.js
+
+      - name: Run Clinical Record metadata test second
         timeout-minutes: 1
         run: |
           set -euo pipefail
           node --test --test-concurrency=1 --test-timeout=10000 --test-reporter=tap test/clinical-record-metadata-hardening.test.js
 
-      - name: Run Session Workspace simplification contract second
+      - name: Run Session Workspace simplification contract third
         timeout-minutes: 1
         run: |
           set -euo pipefail
           node --test --test-concurrency=1 --test-timeout=10000 --test-reporter=tap test/session-workspace-simplified.test.js
-
-      - name: Run Clinical Spine contract third
-        timeout-minutes: 1
-        run: |
-          set -euo pipefail
-          node --test --test-concurrency=1 --test-timeout=10000 --test-reporter=tap test/clinical-spine.test.js
 
       - name: Install committed dependencies
         timeout-minutes: 2
