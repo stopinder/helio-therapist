@@ -1,0 +1,83 @@
+name: Calendar baseline source diagnostic
+
+on:
+  push:
+    branches: [test/release-test-discovery]
+    paths: [.github/workflows/calendar-source-diagnostic.yml]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: calendar-baseline-source-diagnostic
+  cancel-in-progress: true
+
+jobs:
+  source-and-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out the exact unmodified baseline
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: 00c8adcd2210ba468d826e37370d1f7f994bf7a6
+          persist-credentials: false
+
+      - name: Use the same Node version as the disputed run
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '22.23.2'
+
+      - name: Capture Git fingerprints and exact test source
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = '00c8adcd2210ba468d826e37370d1f7f994bf7a6'
+          test -z "$(git status --porcelain)"
+          {
+            echo "Run: $GITHUB_RUN_ID; diagnostic commit: $GITHUB_SHA"
+            git rev-parse HEAD
+            node --version
+            for file in test/calendar-regression.test.js src/lib/calendarHelpers.js src/views/Calendar.vue; do
+              echo "FILE: $file"
+              echo "Committed blob: $(git rev-parse "HEAD:$file")"
+              echo "Working blob:   $(git hash-object "$file")"
+              test "$(git rev-parse "HEAD:$file")" = "$(git hash-object "$file")"
+            done
+            echo 'Exact test source:'
+            nl -ba test/calendar-regression.test.js
+          } 2>&1 | tee "$RUNNER_TEMP/calendar-source.txt"
+
+      # Diagnosis only: no npm install, candidate edits, retries, browser or live credentials.
+      - name: Run only the disputed Calendar file with a hard deadline
+        id: calendar
+        timeout-minutes: 1
+        shell: bash
+        run: |
+          set -euo pipefail
+          timeout --signal=TERM --kill-after=5s 45s \
+            node --test --test-concurrency=1 --test-timeout=10000 --test-reporter=tap \
+            test/calendar-regression.test.js \
+            2>&1 | tee "$RUNNER_TEMP/calendar-source-test.tap"
+
+      - name: Preserve evidence without treating an earlier failure as a pass
+        if: always()
+        shell: bash
+        env:
+          TEST_OUTCOME: ${{ steps.calendar.outcome }}
+        run: |
+          set -euo pipefail
+          {
+            echo '## Isolated Calendar source investigation'
+            echo "Test outcome: $TEST_OUTCOME"
+            echo 'This does not resolve or override the earlier discovery-run failure.'
+            for file in "$RUNNER_TEMP/calendar-source.txt" "$RUNNER_TEMP/calendar-source-test.tap"; do
+              if [ -f "$file" ]; then
+                printf '\n```text\n'
+                cat "$file"
+                printf '\n```\n'
+              fi
+            done
+          } >> "$GITHUB_STEP_SUMMARY"
+          git diff --exit-code
+          test -z "$(git status --porcelain)"
