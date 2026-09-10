@@ -1,0 +1,56 @@
+name: Session working notes test verification
+
+on:
+  push:
+    branches: [fix/session-working-notes-test]
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22.23.2'
+      - name: Run smallest relevant test first
+        run: node --test --test-concurrency=1 --test-timeout=10000 --test-reporter=tap test/session-working-notes.test.js
+      - name: Install committed dependencies
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Stage previously accepted R2 corrections only in this runner
+        run: |
+          node --input-type=module <<'NODE'
+          import assert from 'node:assert/strict';
+          import { readFileSync, writeFileSync } from 'node:fs';
+          const replaceOnce=(file,a,b)=>{const s=readFileSync(file,'utf8');assert.equal(s.split(a).length,2,file);writeFileSync(file,s.replace(a,b))}
+          replaceOnce('test/calendar-component.test.js',"assert.match(calendarSource, /window\\.addEventListener\\('keydown', handleGlobalEsc\\)/)","assert.match(calendarSource, /window\\.addEventListener\\(\\s*'keydown'\\s*,\\s*handleGlobalEsc\\s*\\)/)");
+          replaceOnce('test/calendar-component.test.js',"assert.match(calendarSource, /const workingHours = Array\\.from\\(\\{ length: 24 \\}/)","assert.match(calendarSource, /const\\s+workingHours\\s*=\\s*Array\\.from\\(\\s*\\{\\s*length\\s*:\\s*24\\s*\\}/)");
+          replaceOnce('test/calendar-component.test.js',"assert.match(calendarSource, /const popoverWidth = window\\.innerWidth < 640 \\? 280 : 288/)","assert.match(calendarSource, /const\\s+popoverWidth\\s*=\\s*window\\.innerWidth\\s*<\\s*640\\s*\\?\\s*280\\s*:\\s*288\\b/)");
+          replaceOnce('test/calendar-component.test.js',"assert.match(calendarSource, /if \\(left \\+ popoverWidth \\+ padding > window\\.innerWidth\\)/)","assert.match(calendarSource, /if\\s*\\(\\s*left\\s*\\+\\s*popoverWidth\\s*\\+\\s*padding\\s*>\\s*window\\.innerWidth\\s*\\)/)");
+          replaceOnce('test/calendar-component.test.js',"assert.match(calendarSource, /if \\(top \\+ popoverHeight \\+ padding > window\\.innerHeight\\)/)","assert.match(calendarSource, /if\\s*\\(\\s*top\\s*\\+\\s*popoverHeight\\s*\\+\\s*padding\\s*>\\s*window\\.innerHeight\\s*\\)/)");
+          replaceOnce('test/client-documents-refinement.test.js',"assert.match(workspace, /<ClientDocumentsPanel v-else-if=\"activeTab === 'Documents'\"[^>]*:archived=\"client\\.archived\"/);","assert.match(workspace, /<ClientDocumentsPanel\\b[^>]*:archived=\"client\\.archived\"/);");
+          replaceOnce('test/client-documents-workflow.test.js',"assert.match(workspace,/activeTab === 'Documents'/);",`const documentsPanel = workspace.match(/<ClientDocumentsPanel\\b[^>]*>/)?.[0] || '';\n  assert.match(documentsPanel, /\\s:documents=\"documents\"/);\n  assert.match(documentsPanel, /\\s@create=\"newDocument\"/);\n  assert.match(documentsPanel, /\\s@edit=\"editDocument\"/);\n  assert.match(documentsPanel, /\\s@download=\"downloadDocument\"/);`);
+          const p=readFileSync('package.json','utf8'); const a='node --test test/**/*.test.js'; assert.equal(JSON.parse(p).scripts.test,a); writeFileSync('package.json',p.replace(JSON.stringify(a),JSON.stringify('node --test "test/**/*.test.js"')));
+          NODE
+          git diff --check
+          git diff --exit-code -- src api supabase
+      - name: Resume deterministic sweep and stop at first failure
+        run: |
+          node --input-type=module <<'NODE'
+          import assert from 'node:assert/strict'; import { readdirSync, writeFileSync } from 'node:fs';
+          const files=readdirSync('test',{recursive:true}).filter(f=>f.endsWith('.test.js')).map(f=>`test/${f}`).sort(); assert.equal(files.length,138); writeFileSync(process.env.RUNNER_TEMP+'/files.txt',files.join('\n')+'\n');
+          NODE
+          count=0
+          while IFS= read -r file; do
+            echo "Checking $file; completed files: $count"
+            if timeout --signal=TERM --kill-after=5s 30s node --test --test-concurrency=1 --test-timeout=20000 --test-reporter=tap "$file" > "$RUNNER_TEMP/failure.tap" 2>&1; then count=$((count+1)); else
+              rc=$?; echo "::error file=$file::First remaining failure; completed files: $count"; cat "$RUNNER_TEMP/failure.tap"; echo "--- numbered source ---"; nl -ba "$file"; exit "$rc";
+            fi
+          done < "$RUNNER_TEMP/files.txt"
+      - name: Run npm test after deterministic sweep
+        run: npm test
+      - name: Build after unit suite
+        run: npm run build
