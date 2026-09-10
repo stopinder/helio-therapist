@@ -21,7 +21,7 @@
         ></textarea>
         <div class="flex items-center justify-between gap-4">
           <p class="text-caption text-ink-muted">{{ body.length.toLocaleString() }} / 20,000</p>
-          <p v-if="localError" class="text-caption font-medium text-state-danger" role="alert">{{ localError }}</p>
+          <p v-if="localError || error" class="text-caption font-medium text-state-danger" role="alert">{{ localError || error }}</p>
         </div>
         <div class="flex justify-end gap-3 border-t border-border-muted pt-4">
           <button type="button" class="button-secondary" :disabled="saving" @click="$emit('close')">Cancel</button>
@@ -53,7 +53,7 @@ function save() {
     localError.value = 'Write a reflection before saving, or delete it instead.'
     return
   }
-  localError.value = props.error || ''
+  localError.value = ''
   emit('save', text)
 }
 </script>
