@@ -31,6 +31,9 @@
                       <div class="border-t border-border-muted my-1"></div>
                       <button @click.stop="$emit('open-ai-reflection', reflection)" class="w-full text-left px-4 py-2.5 text-body-sm text-ink hover:bg-surface-subtle transition-colors flex items-center gap-3"><Sparkles class="workspace-icon text-focus" aria-hidden="true" />Reflect with AI</button>
                       <button @click.stop="$emit('open-reflection', reflection)" class="w-full text-left px-4 py-2.5 text-body-sm text-ink hover:bg-surface-subtle transition-colors flex items-center gap-3"><FileText class="workspace-icon" aria-hidden="true" />View Full Detail</button>
+                      <div class="border-t border-border-muted my-1"></div>
+                      <button @click.stop="$emit('edit-reflection', reflection)" class="w-full text-left px-4 py-2.5 text-body-sm text-ink hover:bg-surface-subtle transition-colors flex items-center gap-3"><Pencil class="workspace-icon" aria-hidden="true" />{{ editLabel(reflection) }}</button>
+                      <button @click.stop="$emit('delete-reflection', reflection)" class="w-full text-left px-4 py-2.5 text-body-sm text-state-danger hover:bg-surface-subtle transition-colors flex items-center gap-3"><Trash2 class="workspace-icon" aria-hidden="true" />Delete reflection</button>
                     </div>
                   </div>
                   <ChevronDown class="workspace-icon-lg text-ink-subtle transition-transform duration-standard" :class="{ 'rotate-180': expandedId === reflection.id }" aria-hidden="true" />
@@ -62,12 +65,13 @@
 
 <script setup>
 import { ref, computed } from 'vue';
-import { CalendarDays, ChevronDown, ChevronUp, CircleMinus, CirclePlus, FileText, MoreVertical, NotebookPen, Sparkles, UserRound } from '@lucide/vue';
+import { CalendarDays, ChevronDown, ChevronUp, CircleMinus, CirclePlus, FileText, MoreVertical, NotebookPen, Pencil, Sparkles, Trash2, UserRound } from '@lucide/vue';
 
 const props = defineProps({ reflections:{type:Array,required:true}, menuOpenFor:{type:[String,Number,null],default:null}, hasMore:{type:Boolean,default:false}, loadingMore:{type:Boolean,default:false} });
-const emit = defineEmits(['open-reflection','open-ai-reflection','go-to-session','toggle-menu','close-menu','toggle-supervision','load-more','clear-filters','focus-change']);
+const emit = defineEmits(['open-reflection','open-ai-reflection','go-to-session','toggle-menu','close-menu','toggle-supervision','edit-reflection','delete-reflection','load-more','clear-filters','focus-change']);
 const expandedId = ref(null);
 function toggleExpand(id){expandedId.value=expandedId.value===id?null:id;emit('focus-change',!!expandedId.value)}
+function editLabel(reflection){if(reflection.workspace_content?.captureSource==='practice_reflection')return'Reflect again';if(reflection.client_id&&reflection.session_ref)return'Edit in session';return'Edit reflection'}
 const groupedReflections=computed(()=>{const groups={};props.reflections.forEach(reflection=>{const date=new Date(reflection.created_at);const monthYear=date.toLocaleDateString('en-GB',{month:'long',year:'numeric'});if(!groups[monthYear])groups[monthYear]=[];groups[monthYear].push(reflection)});return Object.entries(groups).map(([monthYear,items])=>({monthYear,items:items.sort((a,b)=>new Date(b.created_at)-new Date(a.created_at))})).sort((a,b)=>new Date(b.items[0].created_at)-new Date(a.items[0].created_at))});
 function formatDate(dateString){if(!dateString)return'';return new Date(dateString).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'})}
 const vClickOutside={mounted(el,binding){el._clickOutside=event=>{if(!(el===event.target||el.contains(event.target)))binding.value(event)};document.addEventListener('click',el._clickOutside)},unmounted(el){document.removeEventListener('click',el._clickOutside)}};
