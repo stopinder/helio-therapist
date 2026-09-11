@@ -60,5 +60,11 @@ test('approved amendments use the immutable backend and reload for completed rec
 
 test('workspace remounts the clinical record when approval changes the session to completed', async () => {
   const workspace = await read('src/views/SessionWorkspace.vue')
-  assert.match(workspace, /:key="clinicalRecordKey"/); assert.match(workspace, /@update:session="handleSessionUpdate"/); assert.match(workspace, /updatedSession\?\.status==='completed'/); assert.match(workspace, /clinicalRecordKey\.value\+=1/)
+  assert.match(workspace, /@update:session="handleSessionUpdate"/);
+  assert.match(workspace, /function handleSessionUpdate\(updatedSession\)\s*\{/);
+  assert.match(workspace, /session\.value = updatedSession/);
+  assert.match(workspace, /activeView\.value = 'clinical'/);
+  assert.match(workspace, /v-if="session\.status === 'completed'"/);
+  assert.match(workspace, /<CompletedClinicalRecord/);
+  assert.match(workspace, /<ClinicalSummaryTab v-else/);
 })

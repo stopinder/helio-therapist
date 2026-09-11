@@ -73,7 +73,7 @@ test('Calendar view requirements', async () => {
   assert.match(calendar, /startingEventId/)
   assert.match(calendar, /Couldn’t open the session workspace\. Please try again\./)
 
-  assert.match(calendar, /window\.addEventListener\('keydown', handleGlobalEsc\)/)
+  assert.match(calendar, /window\.addEventListener\(\s*['"]keydown['"],\s*handleGlobalEsc\s*\)/)
   assert.match(calendar, /@click="selectedEventId = null"/)
   assert.match(calendar, /tabindex/)
   assert.doesNotMatch(calendar, /inspector/)

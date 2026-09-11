@@ -35,7 +35,7 @@ test('CPD Tab Simplification: real supervision handoff', async () => {
   assert.match(content, /Open Professional Development/)
   assert.match(content, /:to="{ name: 'SupervisionHome' }"/)
 
-  // 7. SessionWorkspace integration
-  assert.match(workspace, /<SupervisionSummaryTab/)
-  assert.match(workspace, /@open-reflection="activeTab = 'Reflection'"/)
+  // 7. Reflection integration
+  assert.match(workspace, /<ReflectionTab/)
+  assert.doesNotMatch(workspace, /<SupervisionSummaryTab/)
 })

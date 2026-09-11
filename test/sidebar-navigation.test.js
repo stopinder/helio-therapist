@@ -13,16 +13,16 @@ test('sidebar and header group primary therapist destinations', async () => {
   assert.match(sidebar, /\{\s*name:\s*'Today',\s*path:\s*'\/overview'/);
   assert.match(sidebar, /\{\s*name:\s*'Clients',\s*path:\s*'\/clients'/);
   assert.match(sidebar, /\{\s*name:\s*'Calendar',\s*path:\s*'\/calendar'/);
+  assert.match(sidebar, /\{\s*name:\s*'Documents',\s*path:\s*'\/documents'/);
+  assert.match(sidebar, /\{\s*name:\s*'Transcript Inbox',\s*path:\s*'\/transcripts'/);
   assert.match(sidebar, /\{\s*name:\s*'Reflect',\s*path:\s*'\/supervision'/);
 
   // Scheduling is a header action
   assert.match(header, /to="\/schedule"/);
   assert.match(header, /Schedule appointment/);
   
-  // Verify that Records / Documents / Transcripts are NOT in the permanent sidebar
+  // Verify that Records is NOT in the permanent sidebar
   assert.doesNotMatch(sidebar, /Records/);
-  assert.doesNotMatch(sidebar, /Documents/);
-  assert.doesNotMatch(sidebar, /Transcripts/);
 });
 
 test('sidebar uses restrained Lucide components instead of emoji navigation', async () => {

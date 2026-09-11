@@ -42,7 +42,7 @@ test('working notes dictation reuses authenticated transient transcription witho
   assert.match(component, /navigator\.mediaDevices\.getUserMedia\(\{ audio: true \}\)/)
   assert.match(component, /new MediaRecorder\(stream\)/)
   assert.match(component, /authenticatedFetch\('\/api\/ai\/transcribe'/)
-  assert.match(component, /Dictation adds text here for you to review before saving\./)
+  assert.match(component, /Use the microphone to add text here for review before saving\./)
   assert.match(component, /notes\[key\] = \[notes\[key\]\.trim\(\), text\]/)
   assert.match(component, /saveSessionWorkingNotes/)
   assert.match(endpoint, /requireAuthenticatedUser\(req\)/)

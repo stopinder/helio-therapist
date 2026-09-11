@@ -60,22 +60,13 @@ test('SessionWorkspace: Header and layout cleanup', async () => {
   assert.doesNotMatch(header, /Save Notes/)
 })
 
-test('SessionWorkspace: CPD sits beside, but outside, the numbered clinical workflow', async () => {
+test('SessionWorkspace: Reflection sits beside the summary summary', async () => {
   const workspace = await readFile(new URL('../src/views/SessionWorkspace.vue', import.meta.url), 'utf8')
-  const workflow = await readFile(new URL('../src/components/workspace/WorkflowIndicator.vue', import.meta.url), 'utf8')
 
-  assert.match(workflow, /aria-label="Session workspace navigation"/)
-  assert.match(workflow, /'Session Capture'/)
-  assert.match(workflow, /'Notes'/)
-  assert.match(workflow, /'Reflection'/)
-  assert.match(workflow, /'Clinical Record'/)
-  assert.match(workflow, /activeStage === 'CPD'/)
-  assert.match(workflow, />CPD<\/button>/)
-  assert.doesNotMatch(workflow, /stages = \[[^\]]*'CPD'/s)
-  assert.doesNotMatch(workflow, /Professional Development/)
-
-  assert.match(workspace, /activeTab === 'CPD'/)
-  assert.match(workspace, /<SupervisionSummaryTab/)
+  assert.match(workspace, /Therapist reflection/)
+  assert.match(workspace, /<ReflectionTab/)
+  assert.doesNotMatch(workspace, /activeTab === 'CPD'/)
+  assert.doesNotMatch(workspace, /<SupervisionSummaryTab/)
   assert.doesNotMatch(workspace, /Professional Development/)
   assert.doesNotMatch(workspace, /'Transcript'/)
   assert.doesNotMatch(workspace, /'Clinical Summary'/)

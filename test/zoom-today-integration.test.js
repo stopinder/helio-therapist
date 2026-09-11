@@ -39,10 +39,10 @@ test('Overview Today workflow integration for Zoom notes', async () => {
   assert.doesNotMatch(onMountedContent, /reconcile-my-notes|checkZoomNotes/)
 })
 
-test('Sidebar does not restore Transcripts as primary navigation', async () => {
+test('Sidebar includes Transcript Inbox in primary navigation', async () => {
   const sidebar = await readFile(new URL('../src/components/shell/AppSidebar.vue', import.meta.url), 'utf8')
   
-  // Transcripts should NOT be in the sidebar items
-  assert.doesNotMatch(sidebar, /name: 'Transcripts'/)
-  assert.doesNotMatch(sidebar, /path: '\/transcripts'/)
+  // Transcripts should be in the sidebar items as 'Transcript Inbox'
+  assert.match(sidebar, /name: 'Transcript Inbox'/)
+  assert.match(sidebar, /path: '\/transcripts'/)
 })

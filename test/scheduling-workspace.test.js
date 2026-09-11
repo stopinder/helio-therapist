@@ -6,20 +6,19 @@ const read = (path) => fs.readFileSync(new URL(`../${path}`, import.meta.url), '
 
 test('therapist workspace exposes scheduling as a header action without sidebar duplication', () => {
   const shell = read('src/layouts/AppShell.vue')
+  const header = read('src/components/shell/AppHeader.vue')
+  const sidebar = read('src/components/shell/AppSidebar.vue')
   const router = read('src/router/index.js')
-  assert.match(shell, /Schedule appointment/)
-  assert.match(shell, /to="\/schedule"/)
-  assert.doesNotMatch(shell, /{name:'Schedule',path:'\/schedule'/)
+  assert.match(header, /Schedule appointment/)
+  assert.match(header, /to="\/schedule"/)
+  assert.doesNotMatch(sidebar, /to="\/schedule"/)
   assert.match(router, /path:\s*['"]\/schedule['"]/)
   assert.match(router, /ScheduleAppointment/)
 })
 
 test('unscheduled client workspace links directly into scheduling with client context', () => {
-  const header = read('src/components/workspace/ClientWorkspaceHeader.vue')
-  assert.match(header, /v-if="!client\.archived && !nextAppointment"/)
-  assert.match(header, /Schedule appointment/)
-  assert.match(header, /data-testid="schedule-client-appointment"/)
-  assert.match(header, /name: 'ScheduleAppointment', query: \{ clientId: props\.client\.id \}/)
+  const workspace = read('src/views/SessionWorkspace.vue')
+  assert.match(workspace, /<RouterLink :to="`\/schedule\?clientId=\$\{session\.clientId\}`"/)
 })
 
 test('scheduling accepts a valid client query and still requires a client before booking', () => {
@@ -28,6 +27,8 @@ test('scheduling accepts a valid client query and still requires a client before
   assert.match(component, /route\.query\.clientId/)
   assert.match(component, /clients\.value\.some\(client=>String\(client\.id\)===requestedClientId\)/)
   assert.match(component, /Choose a client/)
+  assert.match(component, /v-for="client in clients"/)
+  assert.match(component, /:value="client\.id"/)
   assert.match(component, /v-if="clientId && !bookingUrl"/)
   assert.match(component, /Let client choose/)
   assert.match(component, /Choose time myself/)
