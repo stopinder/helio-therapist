@@ -102,8 +102,8 @@
                   </section>
                   <section class="space-y-3">
                     <article class="rounded-control border border-border-muted bg-surface p-3">
-                      <p class="text-[10px] font-semibold uppercase tracking-[0.12em] text-ink-muted">Zoom notes</p>
-                      <p class="mt-2 text-xs font-medium">1 note needs matching</p>
+                      <p class="text-[10px] font-semibold uppercase tracking-[0.12em] text-ink-muted">Session source</p>
+                      <p class="mt-2 text-xs font-medium">1 transcript needs matching</p>
                       <p class="mt-1 text-[10px] leading-4 text-ink-muted">Source material ready to assign to client context.</p>
                     </article>
                     <article class="rounded-control border border-accent/20 bg-accent/5 p-3">
@@ -132,7 +132,7 @@
         </div>
         <div class="border-b border-border-muted py-6 sm:border-b-0 sm:border-r lg:pl-6 lg:pr-6 text-ink">
           <p class="type-eyebrow text-accent">Contextual capture</p>
-          <p class="mt-2 text-sm text-ink-secondary">Zoom notes and transcripts return to the relevant client context.</p>
+          <p class="mt-2 text-sm text-ink-secondary">Transcript text and supported imports return to the relevant client context.</p>
         </div>
         <div class="py-6 sm:pl-6 text-ink">
           <p class="type-eyebrow text-accent">Therapist judgement</p>
@@ -293,22 +293,22 @@
     <section id="capture" class="mx-auto w-full max-w-[1200px] px-5 py-16 sm:px-8 lg:py-20 text-ink">
       <div class="grid gap-10 lg:grid-cols-[.85fr_1.15fr] lg:items-center">
         <div>
-          <p class="type-eyebrow text-accent">Source material</p>
-          <h2 class="mt-3 text-3xl font-semibold tracking-[-0.03em] sm:text-4xl">Your session happens where therapy happens.</h2>
-          <p class="mt-4 type-body-long text-ink-secondary">Bring source material back into the relevant client and session context through Zoom, file import or pasted text.</p>
+          <p class="type-eyebrow text-accent">Flexible session capture</p>
+          <h2 class="mt-3 text-3xl font-semibold tracking-[-0.03em] sm:text-4xl">Bring session material in from wherever you work.</h2>
+          <p class="mt-4 type-body-long text-ink-secondary">Paste transcript text, import supported transcript files, or connect Zoom for a more direct workflow. Helios does not require one video platform.</p>
         </div>
         <div class="grid gap-3">
           <div class="grid grid-cols-[110px_minmax(0,1fr)] items-center rounded-control border border-border-muted bg-surface-raised p-4">
-            <p class="text-sm font-semibold text-ink">Zoom</p>
-            <p class="text-sm text-ink-secondary">Supported Zoom and My Notes transcripts return to the relevant client context.</p>
+            <p class="text-sm font-semibold text-ink">Paste text</p>
+            <p class="text-sm text-ink-secondary">If another platform gives you transcript text, paste it into the relevant session.</p>
           </div>
           <div class="grid grid-cols-[110px_minmax(0,1fr)] items-center rounded-control border border-border-muted bg-surface-raised p-4 text-ink">
-            <p class="text-sm font-semibold">Flexible Import</p>
-            <p class="text-sm text-ink-secondary">Import .vtt/.txt files or paste transcript text from other settings.</p>
+            <p class="text-sm font-semibold">Transcript files</p>
+            <p class="text-sm text-ink-secondary">Import supported .vtt or .txt transcript files when you already have them.</p>
           </div>
           <div class="grid grid-cols-[110px_minmax(0,1fr)] items-center rounded-control border border-accent/20 bg-accent/5 p-4 text-ink">
-            <p class="text-sm font-semibold text-accent">Contextual</p>
-            <p class="text-sm text-ink-secondary">Captured material stays with the client rather than becoming another admin destination.</p>
+            <p class="text-sm font-semibold text-accent">Connected Zoom</p>
+            <p class="text-sm text-ink-secondary">Connect Zoom when you want a more direct transcript workflow into Helios.</p>
           </div>
         </div>
       </div>
@@ -319,7 +319,7 @@
         <div class="max-w-3xl">
           <p class="type-eyebrow text-accent">Connected practice</p>
           <h2 class="mt-3 text-3xl font-semibold tracking-[-0.03em] sm:text-4xl">Helios sits around the tools you already use.</h2>
-          <p class="mt-4 type-body-long text-ink-secondary">Scheduling and video systems support your professional context instead of creating more technology layers to manage.</p>
+          <p class="mt-4 type-body-long text-ink-secondary">Direct integrations make common workflows easier, but they are not the only way to bring session material into Helios.</p>
         </div>
         <div class="mt-9 grid gap-px overflow-hidden rounded-panel border border-border bg-border md:grid-cols-3">
           <article class="bg-surface-raised p-6">
@@ -329,8 +329,8 @@
           </article>
           <article class="bg-surface-raised p-6">
             <p class="type-eyebrow text-ink-muted">Zoom</p>
-            <h3 class="mt-2 type-subsection">Contextual capture</h3>
-            <p class="mt-3 type-body text-ink-secondary">Connect video consultations and bring supported Zoom transcript workflows back into the client workspace.</p>
+            <h3 class="mt-2 type-subsection">Direct transcript workflow</h3>
+            <p class="mt-3 type-body text-ink-secondary">Connect supported Zoom transcript workflows directly while keeping paste and file import available for other platforms.</p>
           </article>
           <article class="bg-surface-raised p-6">
             <p class="type-eyebrow text-ink-muted">Calendly</p>
