@@ -16,7 +16,7 @@ function createMockSupabase() {
       update: () => self,
       upsert: () => self,
       maybeSingle: () => Promise.resolve({ data: data[0] || null, error: null }),
-      single: () => Promise.resolve({ data: data[0] || null, error: null }),
+      single: () => Promise.resolve({ data: { id: 'transcript-1' }, error: null }),
       then: (resolve) => resolve({ data, error: null }),
       catch: (reject) => reject(new Error('Mock error'))
     };
