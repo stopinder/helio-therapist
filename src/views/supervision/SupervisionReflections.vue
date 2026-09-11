@@ -61,6 +61,8 @@
             :has-more="false"
             @open-reflection="r => $emit('open-reflection', r)"
             @go-to-session="r => $emit('go-to-session', r)"
+            @edit-reflection="r => $emit('edit-reflection', r)"
+            @delete-reflection="r => $emit('delete-reflection', r)"
             @toggle-menu="toggleMenu"
             @close-menu="menuOpenFor = null"
             @toggle-supervision="r => $emit('toggle-supervision', r)"
@@ -84,7 +86,7 @@ const props = defineProps({
   themes: { type: Array, default: () => [] }
 });
 
-defineEmits(['open-reflection', 'go-to-session', 'toggle-supervision']);
+defineEmits(['open-reflection', 'go-to-session', 'toggle-supervision', 'edit-reflection', 'delete-reflection']);
 
 const searchQuery = ref('');
 const selectedTheme = ref('All');
