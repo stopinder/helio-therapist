@@ -42,23 +42,24 @@
       <span class="mx-1 hidden h-6 w-px bg-border-muted md:block" aria-hidden="true"></span>
 
       <button
-        type="button"
-        class="inline-flex h-9 items-center gap-1.5 whitespace-nowrap rounded-control border px-3 type-ui transition-colors"
-        :class="outstandingReminderCount
-          ? 'border-accent/40 bg-brand-amber-soft/60 text-ink'
-          : 'border-border-muted bg-surface text-ink-secondary hover:bg-surface-subtle'"
-        :aria-expanded="quickCaptureOpen"
-        aria-haspopup="dialog"
-        @click="$emit('toggle-quick-capture')"
+          type="button"
+          class="inline-flex h-9 items-center gap-1.5 whitespace-nowrap rounded-control border border-action-primary bg-action-primary px-3 type-ui font-semibold text-on-action transition-colors hover:bg-action-primary-hover"
+          :aria-expanded="quickCaptureOpen"
+          aria-haspopup="dialog"
+          @click="$emit('toggle-quick-capture')"
       >
-        <Plus class="workspace-icon-sm text-focus" aria-hidden="true" />
-        <span class="hidden sm:inline">Quick capture</span>
+        <Plus class="workspace-icon-sm" aria-hidden="true" />
+
+        <span class="hidden sm:inline">
+    Quick capture
+  </span>
+
         <span
-          v-if="outstandingReminderCount"
-          class="inline-flex h-5 min-w-5 items-center justify-center rounded-pill bg-accent/15 px-1.5 type-metadata font-semibold"
+            v-if="outstandingReminderCount"
+            class="inline-flex h-5 min-w-5 items-center justify-center rounded-pill bg-white/20 px-1.5 type-metadata font-semibold"
         >
-          {{ outstandingReminderCount }}
-        </span>
+    {{ outstandingReminderCount }}
+  </span>
       </button>
 
       <router-link
