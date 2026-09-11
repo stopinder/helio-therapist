@@ -401,10 +401,10 @@
       <div class="mx-auto flex w-full max-w-[1200px] flex-col gap-5 px-5 py-10 sm:px-8 lg:flex-row lg:items-center lg:justify-between">
         <div>
           <p class="type-eyebrow text-accent">Simple pricing</p>
-          <p class="mt-2 text-xl font-semibold">Independent therapists · £49/month</p>
-          <p class="mt-1 text-sm text-ink-secondary">One therapist workspace. No complicated feature tiers at launch.</p>
+          <p class="mt-2 text-xl font-semibold">Try Helios free for 30 days</p>
+          <p class="mt-1 text-sm text-ink-secondary">£49/month after your trial · Cancel anytime</p>
         </div>
-        <router-link to="/get-started" class="w-fit rounded-control border border-border px-5 py-3 text-sm font-semibold text-ink-secondary hover:bg-surface-muted hover:text-ink">Get started</router-link>
+        <router-link to="/get-started" class="w-fit rounded-control border border-border px-5 py-3 text-sm font-semibold text-ink-secondary hover:bg-surface-muted hover:text-ink">Start your free trial</router-link>
       </div>
     </section>
 
