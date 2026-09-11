@@ -57,6 +57,7 @@
                   <SessionSummaryDocument v-if="!isEditingSummary" :body="summaryDocument.content.body" :clientName="client?.name" :date="workspaceSession.date" />
                   <div v-else class="bg-surface rounded-panel border border-border p-6 shadow-sm animate-expandIn">
                     <textarea v-model="summaryDocument.content.body" class="w-full min-h-[30rem] p-6 border border-border rounded-control bg-surface-subtle type-body-long focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-all resize-y" placeholder="No session summary yet." @input="handleSummaryInput"></textarea>
+                    <p v-if="summarySaveError" class="mt-3 text-body-sm text-state-danger" role="alert">{{ summarySaveError }}</p>
                     <div v-if="summaryDocument.sourceManifest?.length" class="mt-4 flex items-center justify-end">
                       <span class="type-metadata text-ink-muted">Generated from Zoom summary + transcript</span>
                     </div>
@@ -132,6 +133,7 @@ const copySuccess = ref(false);
 const copyError = ref('');
 const isGenerating = ref(false);
 const generationError = ref('');
+const summarySaveError = ref('');
 let saveTimer = null;
 
 function handleSessionUpdate(updatedSession) {
@@ -182,12 +184,15 @@ async function copySummary() {
 
 async function handleSummaryInput() {
   clearTimeout(saveTimer);
+  summarySaveError.value = '';
   saveTimer = setTimeout(async () => {
     if (!summaryDocument.value) return;
     try {
       const updated = await saveClientDocumentDraft(summaryDocument.value, { content: summaryDocument.value.content });
       summaryDocument.value.version = updated.version;
+      summarySaveError.value = '';
     } catch (err) {
+      summarySaveError.value = 'Your changes could not be saved. Please try editing again.';
       console.error('Failed to auto-save summary:', err);
     }
   }, 1000);
