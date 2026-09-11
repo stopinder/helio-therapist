@@ -33,7 +33,7 @@ test('Transcripts view supports direct transcript opening via query param', asyn
 
 test('AppSidebar contains Transcript Inbox link', async () => {
   const sidebar = await readFile(new URL('../src/components/shell/AppSidebar.vue', import.meta.url), 'utf8')
-  assert.match(sidebar, /\{ name: 'Transcript Inbox', path: '\/transcripts', icon: FileText, iconTone: 'icon-surface-reflection' \}/)
+  assert.match(sidebar, /\{ name: 'Transcript Inbox', path: '\/transcripts', icon: Inbox, iconTone: 'icon-surface-reflection' \}/)
 })
 
 test('Transcript Inbox supports Add New Client', async () => {
