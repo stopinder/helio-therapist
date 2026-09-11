@@ -33,6 +33,7 @@
           </div>
           <div class="pb-2 lg:pb-1">
             <p class="max-w-[520px] text-base leading-7 text-ink-secondary">A calm workspace for sessions, continuity and clinical understanding — without the administrative weight of a traditional EHR.</p>
+            <p class="mt-3 max-w-[520px] text-sm leading-6 text-ink-secondary">Spend less time rebuilding context between sessions. Helios keeps notes, summaries, transcripts and the developing clinical picture together around each client.</p>
             <div class="mt-5 flex flex-wrap gap-3">
               <router-link to="/get-started" class="rounded-control bg-action-primary px-5 py-3 text-sm font-semibold text-on-action hover:bg-action-primary-hover">Get started</router-link>
               <a href="#platform" class="rounded-control border border-border px-5 py-3 text-sm font-semibold text-ink-secondary hover:bg-surface-muted hover:text-ink">See how Helios works</a>
@@ -358,7 +359,7 @@
           </div>
           <div class="bg-surface-raised p-5 text-ink">
             <p class="font-semibold text-sm">Themes</p>
-            <p class="mt-1 text-xs text-ink-muted">Notice what returns in your practice.</p>
+            <p class="mt-1 text-xs text-ink-muted">See themes you have recorded recur across your reflections.</p>
           </div>
           <div class="bg-surface-raised p-5 text-ink">
             <p class="font-semibold text-sm">Privacy</p>
@@ -369,19 +370,41 @@
     </section>
 
     <section id="trust" class="scroll-mt-6 border-y border-border-muted bg-surface-raised text-ink">
-      <div class="mx-auto grid w-full max-w-[1200px] gap-8 px-5 py-14 sm:px-8 lg:grid-cols-3">
-        <div>
+      <div class="mx-auto w-full max-w-[1200px] px-5 py-14 sm:px-8">
+        <div class="max-w-3xl">
           <p class="type-eyebrow text-accent">Trust &amp; control</p>
-          <h2 class="mt-3 text-3xl font-semibold tracking-[-0.03em]">Clinical judgement stays with you.</h2>
+          <h2 class="mt-3 text-3xl font-semibold tracking-[-0.03em]">Your clinical work stays under your control.</h2>
+          <p class="mt-3 text-sm leading-6 text-ink-secondary">Helios is designed so useful assistance does not quietly become a clinical decision.</p>
         </div>
-        <article class="text-ink">
-          <p class="font-semibold text-sm">Summaries are editable</p>
-          <p class="mt-2 text-xs text-ink-secondary leading-relaxed">Client-facing summaries stay editable until you decide they are ready.</p>
-        </article>
-        <article class="text-ink">
-          <p class="font-semibold text-sm">Reflections are private</p>
-          <p class="mt-2 text-xs text-ink-secondary leading-relaxed">Your professional reflection stays separate from client-facing material and formal records.</p>
-        </article>
+        <div class="mt-8 grid gap-px overflow-hidden rounded-panel border border-border bg-border sm:grid-cols-2 lg:grid-cols-4">
+          <article class="bg-surface-raised p-5">
+            <p class="font-semibold text-sm">Therapist-owned access</p>
+            <p class="mt-2 text-xs text-ink-secondary leading-relaxed">Your workspace is protected around the authenticated therapist account and its owned records.</p>
+          </article>
+          <article class="bg-surface-raised p-5">
+            <p class="font-semibold text-sm">Summaries stay editable</p>
+            <p class="mt-2 text-xs text-ink-secondary leading-relaxed">Client-facing summaries stay editable until you decide they are ready.</p>
+          </article>
+          <article class="bg-surface-raised p-5">
+            <p class="font-semibold text-sm">Clinical Records are protected</p>
+            <p class="mt-2 text-xs text-ink-secondary leading-relaxed">Once approved, Clinical Records are protected from ordinary editing; later corrections use the amendment history.</p>
+          </article>
+          <article class="bg-surface-raised p-5">
+            <p class="font-semibold text-sm">Reflections stay separate</p>
+            <p class="mt-2 text-xs text-ink-secondary leading-relaxed">Private professional reflection remains separate from client-facing material and the formal Clinical Record.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="border-b border-border-muted bg-surface-elevated text-ink">
+      <div class="mx-auto flex w-full max-w-[1200px] flex-col gap-5 px-5 py-10 sm:px-8 lg:flex-row lg:items-center lg:justify-between">
+        <div>
+          <p class="type-eyebrow text-accent">Simple pricing</p>
+          <p class="mt-2 text-xl font-semibold">Independent therapists · £49/month</p>
+          <p class="mt-1 text-sm text-ink-secondary">One therapist workspace. No complicated feature tiers at launch.</p>
+        </div>
+        <router-link to="/get-started" class="w-fit rounded-control border border-border px-5 py-3 text-sm font-semibold text-ink-secondary hover:bg-surface-muted hover:text-ink">Get started</router-link>
       </div>
     </section>
 
