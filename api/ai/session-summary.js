@@ -151,7 +151,14 @@ Return JSON only with exactly two fields:
     const body = renderClientSessionSummary(structured.sections, lens);
     
     const sources = [
-      { id: transcript.id, kind: 'zoom_transcript', source: transcript.source, hasTranscript: !!transcript.original_transcript, hasZoomSummary: !!transcript.zoom_generated_summary }
+      { 
+        id: transcript.id, 
+        sessionId: session.id,
+        kind: 'zoom_transcript', 
+        source: transcript.source, 
+        hasTranscript: !!transcript.original_transcript, 
+        hasZoomSummary: !!transcript.zoom_generated_summary 
+      }
     ];
 
     return res.status(200).json({ 
