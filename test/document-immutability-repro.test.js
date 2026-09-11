@@ -55,6 +55,18 @@ test('document immutability reproduction', async () => {
       grant usage on schema public, auth to authenticated;
       grant select, update, delete on public.documents to authenticated;
       grant select on public.clients to authenticated;
+      alter table public.documents enable row level security;
+      alter table public.clients enable row level security;
+    `);
+
+    // Create a view to check trigger behavior without RLS interference
+    // This simulates an attempt to bypass RLS via a view, which still hits the trigger
+    await database.exec(`
+      create view public.documents_rls_bypass as select * from public.documents;
+      grant select, delete on public.documents_rls_bypass to authenticated;
+    `);
+
+    await database.exec(`
       set role authenticated;
       select set_config('request.jwt.claim.sub', '${userOne}', false);
     `);
@@ -98,23 +110,15 @@ test('document immutability reproduction', async () => {
       insert into public.documents (id, user_id, client_id, client_ref, client_name, title, status)
       values ('${draftId}', '${userOne}', '${clientOne}', 'CLIENT-1', 'Test Client', 'Draft Report', 'draft');
     `);
-    await database.exec(`set role authenticated; select set_config('request.jwt.claim.sub', '${userOne}', false);`);
-    await database.exec(`update public.documents set title = 'Updated Draft' where id = '${draftId}'`);
     
-    const updatedDraft = await database.query(`select title from public.documents where id = '${draftId}'`);
-    assert.strictEqual(updatedDraft.rows[0].title, 'Updated Draft', 'Draft should remain editable');
-
-    // Verify deletion protection remains intact
-    // First confirm authenticated user can delete a draft
-    await database.exec(`delete from public.documents where id = '${draftId}'`);
-    const deletedDraft = await database.query(`select count(*) from public.documents where id = '${draftId}'`);
-    assert.strictEqual(parseInt(deletedDraft.rows[0].count), 0, 'Draft should be deletable');
-
     // Now try to delete finalized document - trigger should block it
-    await database.exec(`reset role`);
+    await database.exec(`set role authenticated; select set_config('request.jwt.claim.sub', '${userOne}', false);`);
+    
     try {
-      await database.exec(`delete from public.documents where id = '${docId}'`);
-      assert.fail('Should have thrown an error for finalized document deletion');
+      // Use the view to bypass RLS and hit the trigger directly
+      // This ensures that even if a policy was somehow bypassed, the trigger remains the ultimate safeguard.
+      await database.exec(`delete from public.documents_rls_bypass where id = '${docId}'`);
+      assert.fail('Should have thrown an error for finalized document deletion via view');
     } catch (e) {
       if (e.code === 'ERR_ASSERTION') throw e;
       assert.strictEqual(e.code, '42501', 'Should throw 42501 on finalized document deletion');
@@ -123,6 +127,16 @@ test('document immutability reproduction', async () => {
 
     const stillExists = await database.query(`select count(*) from public.documents where id = '${docId}'`);
     assert.strictEqual(parseInt(stillExists.rows[0].count), 1, 'Finalized document should still exist');
+
+    // Test draft update still works for owner
+    await database.exec(`update public.documents set title = 'Updated Draft' where id = '${draftId}'`);
+    const updatedDraft = await database.query(`select title from public.documents where id = '${draftId}'`);
+    assert.strictEqual(updatedDraft.rows[0].title, 'Updated Draft', 'Draft should remain editable');
+
+    // Verify deletion protection remains intact for draft (owner can delete)
+    await database.exec(`delete from public.documents where id = '${draftId}'`);
+    const deletedDraft = await database.query(`select count(*) from public.documents where id = '${draftId}'`);
+    assert.strictEqual(parseInt(deletedDraft.rows[0].count), 0, 'Draft should be deletable by owner');
 
   } finally {
     await database.close();
