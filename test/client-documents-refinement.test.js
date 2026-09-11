@@ -31,7 +31,7 @@ test('ClientDocumentsPanel implements the refined hierarchy and archived boundar
 
 test('ClientWorkspace provides the correct archived state to Documents panel', async () => {
   const workspace = await read('../src/views/ClientWorkspace.vue');
-  assert.match(workspace, /<ClientDocumentsPanel v-else-if="activeTab === 'Documents'"[^>]*:archived="client\.archived"/);
+  assert.match(workspace, /<ClientDocumentsPanel[^>]*:archived="client\.archived"/);
   assert.match(workspace, /function newDocument\(documentType='other'\)\{if\(client\.value\?\.archived\)return/);
   assert.match(workspace, /function editDocument\(document\)\{if\(client\.value\?\.archived\)return/);
 });

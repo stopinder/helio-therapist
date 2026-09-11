@@ -17,7 +17,10 @@ test('Calendar component template and logic requirements', async (t) => {
 
   await t.test('Escape closes the action surface', () => {
     // Check for global Escape listener
-    assert.match(calendarSource, /window\.addEventListener\('keydown', handleGlobalEsc\)/)
+    assert.match(
+      calendarSource,
+      /window\.addEventListener\(\s*['"]keydown['"]\s*,\s*handleGlobalEsc\s*\)/
+    )
     assert.match(calendarSource, /if \(e\.key === 'Escape'\) \{/)
     assert.match(calendarSource, /selectedEventId\.value = null/)
   })
@@ -49,7 +52,10 @@ test('Calendar component template and logic requirements', async (t) => {
   })
 
   await t.test('Correct working-hours range (24 hours)', () => {
-    assert.match(calendarSource, /const workingHours = Array\.from\(\{ length: 24 \}/)
+    assert.match(
+      calendarSource,
+      /const\s+workingHours\s*=\s*Array\.from\(\s*\{\s*length:\s*24\s*\}/
+    )
   })
 
   await t.test('Scrolling height logic', () => {
@@ -101,9 +107,12 @@ test('Calendar component template and logic requirements', async (t) => {
   })
 
   await t.test('Popover containment and flipping logic', () => {
-    assert.match(calendarSource, /const popoverWidth = window\.innerWidth < 640 \? 280 : 288/)
+    assert.match(
+      calendarSource,
+      /const\s+popoverWidth\s*=\s*window\.innerWidth\s*<\s*640\s*\?\s*280\s*:\s*288/
+    )
     assert.match(calendarSource, /const popoverHeight = 220/)
-    assert.match(calendarSource, /if \(left \+ popoverWidth \+ padding > window\.innerWidth\)/)
-    assert.match(calendarSource, /if \(top \+ popoverHeight \+ padding > window\.innerHeight\)/)
+    assert.match(calendarSource, /if\s*\(\s*left\s*\+\s*popoverWidth\s*\+\s*padding\s*>\s*window\.innerWidth\s*\)/)
+    assert.match(calendarSource, /if\s*\(\s*top\s*\+\s*popoverHeight\s*\+\s*padding\s*>\s*window\.innerHeight\s*\)/)
   })
 })
