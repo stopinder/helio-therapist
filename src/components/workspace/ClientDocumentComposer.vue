@@ -6,7 +6,22 @@
           <div><p class="type-overline text-ink-muted">{{ isSessionSummary ? 'Client-facing summary' : 'Client document' }}</p><h2 class="text-h3 font-semibold">{{ finalised ? (isSessionSummary ? 'Session Summary Finalised' : 'Document Finalised') : (document ? (isSessionSummary ? 'Edit session summary' : 'Edit client document') : (isSessionSummary ? 'Create session summary' : 'Create client document')) }}</h2></div>
           <div v-if="!finalised" class="flex flex-wrap items-center gap-2"><span class="text-caption" :class="dirty ? 'text-state-warning' : 'text-ink-muted'">{{ dirty ? 'Unsaved changes' : saveMessage }}</span><button v-if="!isSessionSummary" class="button-secondary" type="button" @click="sourcePanelOpen = true">Add from clinical notes</button><button class="button-secondary" :disabled="saving || !form.title.trim()" @click="saveDraft">{{ saving && action === 'save' ? 'Saving…' : 'Save Draft' }}</button><button class="button-primary" :disabled="saving || !form.title.trim() || !form.body.trim()" @click="finaliseDocument">{{ saving && action === 'finalise' ? 'Finalising…' : 'Finalise PDF' }}</button><button class="button-secondary" :disabled="saving" @click="requestClose">Close</button></div>
         </header>
-        <div v-if="finalised" class="flex-1 overflow-auto p-8"><div class="max-w-2xl mx-auto rounded-panel border border-state-success/20 bg-state-success-surface p-6"><p class="text-h3 font-semibold text-state-success">✓ PDF finalised and saved</p><p class="text-body-sm text-ink-secondary mt-2"><strong>{{ currentDocument.title }}</strong> is stored privately with this client and this version is read-only.</p><p class="text-caption text-ink-muted mt-3">Finalised {{ formatDateTime(currentDocument.finalizedAt) }}</p><div class="mt-5 flex gap-2"><button class="button-primary" @click="downloadFinalised">Download PDF</button><button class="button-secondary" @click="$emit('show-documents')">View Client Documents</button><button class="button-secondary" @click="requestClose">Close</button></div></div></div>
+        <div v-if="finalised" class="flex-1 overflow-auto p-8">
+          <div class="max-w-2xl mx-auto rounded-panel border border-state-success/20 bg-state-success-surface p-6">
+            <p class="text-h3 font-semibold text-state-success">✓ PDF finalised and saved</p>
+            <p class="text-body-sm text-ink-secondary mt-2"><strong>{{ currentDocument.title }}</strong> is stored privately with this client and this version is read-only.</p>
+            <p class="text-caption text-ink-muted mt-3">Finalised {{ formatDateTime(currentDocument.finalizedAt) }}</p>
+            <div class="mt-5 flex flex-wrap items-center gap-3">
+              <div class="flex gap-2">
+                <button class="button-primary" @click="downloadFinalised">Download PDF</button>
+                <a v-if="isSessionSummary && clientEmail" :href="mailtoLink" class="button-secondary inline-flex items-center">Prepare email</a>
+                <button class="button-secondary" @click="$emit('show-documents')">View Client Documents</button>
+                <button class="button-secondary" @click="requestClose">Close</button>
+              </div>
+              <p v-if="isSessionSummary && clientEmail" class="text-caption text-ink-muted w-full mt-1">Opens your email app with a draft. Attach the downloaded PDF before sending.</p>
+            </div>
+          </div>
+        </div>
         <div v-else-if="loading" class="flex-1 grid place-items-center text-ink-muted">Loading document workspace…</div>
         <div v-else class="flex-1 min-h-0 overflow-auto"><div class="max-w-5xl mx-auto px-4 sm:px-8 py-5 space-y-5">
           <section v-if="isSessionSummary" class="rounded-panel border border-action-link/20 bg-surface-elevated p-4 sm:p-5" aria-labelledby="clinical-intelligence-heading">
@@ -31,7 +46,7 @@ import { computed, onMounted, reactive, ref } from 'vue'
 import { createClientDocumentDraft, downloadClientDocument, finaliseClientDocument, generateClientSessionSummary, listClientSummaryEvidence, listDocumentSourceSessions, saveClientDocumentDraft } from '../../lib/clientDocuments.js'
 import { loadDocumentProfile, profileDisplay } from '../../lib/documentProfile.js'
 const SESSION_SUMMARY_TEMPLATE = `Where things are now\n\nWhat we have been working on\n\nPatterns across our recent work\n\nWhat has shifted — and what has been different\n\nStrengths and resources\n\nMaking sense of what we have noticed\n\nIdeas to carry forward\n\nClosing reflection`
-const props = defineProps({ client: { type: Object, required: true }, document: { type: Object, default: null }, initialDocumentType: { type: String, default: 'other' } })
+const props = defineProps({ client: { type: Object, required: true }, clientEmail: { type: String, default: '' }, document: { type: Object, default: null }, initialDocumentType: { type: String, default: 'other' } })
 const emit = defineEmits(['close', 'saved', 'show-documents'])
 const SOURCE_PAGE_SIZE = 8
 const initialType = props.document?.documentType || props.initialDocumentType || 'other'
@@ -40,6 +55,12 @@ const loading = ref(true), saving = ref(false), action = ref(''), error = ref(''
 const generatingSummary = ref(false), summaryLens = ref('general'), summaryWindow = ref('last_three'), therapistGuidance = ref(''), summaryGenerationMessage = ref(''), summaryGenerationError = ref(false), summarySources = ref(props.document?.content?.clinicalIntelligence?.sources || []), summaryClaims = ref(props.document?.content?.clinicalIntelligence?.claims || []), summaryGeneration = ref(props.document?.content?.clinicalIntelligence?.generation || null), previousSummaryVersions = ref(props.document?.content?.clinicalIntelligence?.history || []), lastGeneratedBody = ref(props.document?.content?.clinicalIntelligence?.lastGeneratedBody || ''), availableSummarySessions = ref([]), anchorSessionId = ref(null)
 const form = reactive({ title: props.document?.title || (initialType === 'session_summary' ? 'Session summary' : ''), documentType: initialType, recipient: props.document?.recipient || '', purpose: props.document?.purpose || (initialType === 'session_summary' ? 'A client-facing summary of the session' : ''), periodStart: props.document?.periodStart || '', periodEnd: props.document?.periodEnd || '', body: props.document?.content?.body || (initialType === 'session_summary' ? SESSION_SUMMARY_TEMPLATE : '') })
 const identity = computed(() => profileDisplay(profile.value)), finalised = computed(() => currentDocument.value?.status === 'completed')
+const mailtoLink = computed(() => {
+  if (!props.clientEmail) return ''
+  const subject = encodeURIComponent('Session Summary')
+  const body = encodeURIComponent('Hi,\n\nPlease find your session summary attached.\n\nKind regards,')
+  return `mailto:${props.clientEmail}?subject=${subject}&body=${body}`
+})
 const selectedSources = computed(() => isSessionSummary.value ? [] : sources.value.filter(s => selectedSourceIds.value.includes(s.id)))
 const addableSelectedSources = computed(() => selectedSources.value.filter(s => !addedSourceIds.value.includes(s.id)))
 const filteredSources = computed(() => { const q = sourceQuery.value.trim().toLowerCase(); return q ? sources.value.filter(s => `${formatDate(s.occurredAt)} ${s.notes || ''}`.toLowerCase().includes(q)) : sources.value })

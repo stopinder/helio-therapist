@@ -77,7 +77,7 @@
           </section>
         </div>
       </div>
-      <ClientDocumentComposer v-if="documentComposerOpen" :client="client" :document="editingDocument" :initial-document-type="newDocumentType" @close="closeDocumentComposer" @saved="documentSaved" @show-documents="showDocuments" />
+      <ClientDocumentComposer v-if="documentComposerOpen" :client="client" :client-email="client?.email || ''" :document="editingDocument" :initial-document-type="newDocumentType" @close="closeDocumentComposer" @saved="documentSaved" @show-documents="showDocuments" />
     </template>
   </div>
 </template>
