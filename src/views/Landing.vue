@@ -33,6 +33,7 @@
           </div>
           <div class="pb-2 lg:pb-1">
             <p class="max-w-[520px] text-base leading-7 text-ink-secondary">A calm workspace for sessions, continuity and clinical understanding — without the administrative weight of a traditional EHR.</p>
+            <p class="mt-3 max-w-[520px] text-sm leading-6 text-ink-secondary">Spend less time rebuilding context between sessions. Helios keeps notes, summaries, transcripts and the developing clinical picture together around each client.</p>
             <div class="mt-5 flex flex-wrap gap-3">
               <router-link to="/get-started" class="rounded-control bg-action-primary px-5 py-3 text-sm font-semibold text-on-action hover:bg-action-primary-hover">Get started</router-link>
               <a href="#platform" class="rounded-control border border-border px-5 py-3 text-sm font-semibold text-ink-secondary hover:bg-surface-muted hover:text-ink">See how Helios works</a>
@@ -101,8 +102,8 @@
                   </section>
                   <section class="space-y-3">
                     <article class="rounded-control border border-border-muted bg-surface p-3">
-                      <p class="text-[10px] font-semibold uppercase tracking-[0.12em] text-ink-muted">Zoom notes</p>
-                      <p class="mt-2 text-xs font-medium">1 note needs matching</p>
+                      <p class="text-[10px] font-semibold uppercase tracking-[0.12em] text-ink-muted">Session source</p>
+                      <p class="mt-2 text-xs font-medium">1 transcript needs matching</p>
                       <p class="mt-1 text-[10px] leading-4 text-ink-muted">Source material ready to assign to client context.</p>
                     </article>
                     <article class="rounded-control border border-accent/20 bg-accent/5 p-3">
@@ -131,7 +132,7 @@
         </div>
         <div class="border-b border-border-muted py-6 sm:border-b-0 sm:border-r lg:pl-6 lg:pr-6 text-ink">
           <p class="type-eyebrow text-accent">Contextual capture</p>
-          <p class="mt-2 text-sm text-ink-secondary">Zoom notes and transcripts return to the relevant client context.</p>
+          <p class="mt-2 text-sm text-ink-secondary">Transcript text and supported imports return to the relevant client context.</p>
         </div>
         <div class="py-6 sm:pl-6 text-ink">
           <p class="type-eyebrow text-accent">Therapist judgement</p>
@@ -292,22 +293,22 @@
     <section id="capture" class="mx-auto w-full max-w-[1200px] px-5 py-16 sm:px-8 lg:py-20 text-ink">
       <div class="grid gap-10 lg:grid-cols-[.85fr_1.15fr] lg:items-center">
         <div>
-          <p class="type-eyebrow text-accent">Source material</p>
-          <h2 class="mt-3 text-3xl font-semibold tracking-[-0.03em] sm:text-4xl">Your session happens where therapy happens.</h2>
-          <p class="mt-4 type-body-long text-ink-secondary">Bring source material back into the relevant client and session context through Zoom, file import or pasted text.</p>
+          <p class="type-eyebrow text-accent">Flexible session capture</p>
+          <h2 class="mt-3 text-3xl font-semibold tracking-[-0.03em] sm:text-4xl">Bring session material in from wherever you work.</h2>
+          <p class="mt-4 type-body-long text-ink-secondary">Paste transcript text, import supported transcript files, or connect Zoom for a more direct workflow. Helios does not require one video platform.</p>
         </div>
         <div class="grid gap-3">
           <div class="grid grid-cols-[110px_minmax(0,1fr)] items-center rounded-control border border-border-muted bg-surface-raised p-4">
-            <p class="text-sm font-semibold text-ink">Zoom</p>
-            <p class="text-sm text-ink-secondary">Supported Zoom and My Notes transcripts return to the relevant client context.</p>
+            <p class="text-sm font-semibold text-ink">Paste text</p>
+            <p class="text-sm text-ink-secondary">If another platform gives you transcript text, paste it into the relevant session.</p>
           </div>
           <div class="grid grid-cols-[110px_minmax(0,1fr)] items-center rounded-control border border-border-muted bg-surface-raised p-4 text-ink">
-            <p class="text-sm font-semibold">Flexible Import</p>
-            <p class="text-sm text-ink-secondary">Import .vtt/.txt files or paste transcript text from other settings.</p>
+            <p class="text-sm font-semibold">Transcript files</p>
+            <p class="text-sm text-ink-secondary">Import supported .vtt or .txt transcript files when you already have them.</p>
           </div>
           <div class="grid grid-cols-[110px_minmax(0,1fr)] items-center rounded-control border border-accent/20 bg-accent/5 p-4 text-ink">
-            <p class="text-sm font-semibold text-accent">Contextual</p>
-            <p class="text-sm text-ink-secondary">Captured material stays with the client rather than becoming another admin destination.</p>
+            <p class="text-sm font-semibold text-accent">Connected Zoom</p>
+            <p class="text-sm text-ink-secondary">Connect Zoom when you want a more direct transcript workflow into Helios.</p>
           </div>
         </div>
       </div>
@@ -318,7 +319,7 @@
         <div class="max-w-3xl">
           <p class="type-eyebrow text-accent">Connected practice</p>
           <h2 class="mt-3 text-3xl font-semibold tracking-[-0.03em] sm:text-4xl">Helios sits around the tools you already use.</h2>
-          <p class="mt-4 type-body-long text-ink-secondary">Scheduling and video systems support your professional context instead of creating more technology layers to manage.</p>
+          <p class="mt-4 type-body-long text-ink-secondary">Direct integrations make common workflows easier, but they are not the only way to bring session material into Helios.</p>
         </div>
         <div class="mt-9 grid gap-px overflow-hidden rounded-panel border border-border bg-border md:grid-cols-3">
           <article class="bg-surface-raised p-6">
@@ -328,8 +329,8 @@
           </article>
           <article class="bg-surface-raised p-6">
             <p class="type-eyebrow text-ink-muted">Zoom</p>
-            <h3 class="mt-2 type-subsection">Contextual capture</h3>
-            <p class="mt-3 type-body text-ink-secondary">Connect video consultations and bring supported Zoom transcript workflows back into the client workspace.</p>
+            <h3 class="mt-2 type-subsection">Direct transcript workflow</h3>
+            <p class="mt-3 type-body text-ink-secondary">Connect supported Zoom transcript workflows directly while keeping paste and file import available for other platforms.</p>
           </article>
           <article class="bg-surface-raised p-6">
             <p class="type-eyebrow text-ink-muted">Calendly</p>
@@ -358,7 +359,7 @@
           </div>
           <div class="bg-surface-raised p-5 text-ink">
             <p class="font-semibold text-sm">Themes</p>
-            <p class="mt-1 text-xs text-ink-muted">Notice what returns in your practice.</p>
+            <p class="mt-1 text-xs text-ink-muted">See themes you have recorded recur across your reflections.</p>
           </div>
           <div class="bg-surface-raised p-5 text-ink">
             <p class="font-semibold text-sm">Privacy</p>
@@ -369,19 +370,41 @@
     </section>
 
     <section id="trust" class="scroll-mt-6 border-y border-border-muted bg-surface-raised text-ink">
-      <div class="mx-auto grid w-full max-w-[1200px] gap-8 px-5 py-14 sm:px-8 lg:grid-cols-3">
-        <div>
+      <div class="mx-auto w-full max-w-[1200px] px-5 py-14 sm:px-8">
+        <div class="max-w-3xl">
           <p class="type-eyebrow text-accent">Trust &amp; control</p>
-          <h2 class="mt-3 text-3xl font-semibold tracking-[-0.03em]">Clinical judgement stays with you.</h2>
+          <h2 class="mt-3 text-3xl font-semibold tracking-[-0.03em]">Your clinical work stays under your control.</h2>
+          <p class="mt-3 text-sm leading-6 text-ink-secondary">Helios is designed so useful assistance does not quietly become a clinical decision.</p>
         </div>
-        <article class="text-ink">
-          <p class="font-semibold text-sm">Summaries are editable</p>
-          <p class="mt-2 text-xs text-ink-secondary leading-relaxed">Client-facing summaries stay editable until you decide they are ready.</p>
-        </article>
-        <article class="text-ink">
-          <p class="font-semibold text-sm">Reflections are private</p>
-          <p class="mt-2 text-xs text-ink-secondary leading-relaxed">Your professional reflection stays separate from client-facing material and formal records.</p>
-        </article>
+        <div class="mt-8 grid gap-px overflow-hidden rounded-panel border border-border bg-border sm:grid-cols-2 lg:grid-cols-4">
+          <article class="bg-surface-raised p-5">
+            <p class="font-semibold text-sm">Therapist-owned access</p>
+            <p class="mt-2 text-xs text-ink-secondary leading-relaxed">Your workspace is protected around the authenticated therapist account and its owned records.</p>
+          </article>
+          <article class="bg-surface-raised p-5">
+            <p class="font-semibold text-sm">Summaries stay editable</p>
+            <p class="mt-2 text-xs text-ink-secondary leading-relaxed">Client-facing summaries stay editable until you decide they are ready.</p>
+          </article>
+          <article class="bg-surface-raised p-5">
+            <p class="font-semibold text-sm">Clinical Records are protected</p>
+            <p class="mt-2 text-xs text-ink-secondary leading-relaxed">Once approved, Clinical Records are protected from ordinary editing; later corrections use the amendment history.</p>
+          </article>
+          <article class="bg-surface-raised p-5">
+            <p class="font-semibold text-sm">Reflections stay separate</p>
+            <p class="mt-2 text-xs text-ink-secondary leading-relaxed">Private professional reflection remains separate from client-facing material and the formal Clinical Record.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="border-b border-border-muted bg-surface-elevated text-ink">
+      <div class="mx-auto flex w-full max-w-[1200px] flex-col gap-5 px-5 py-10 sm:px-8 lg:flex-row lg:items-center lg:justify-between">
+        <div>
+          <p class="type-eyebrow text-accent">Simple pricing</p>
+          <p class="mt-2 text-xl font-semibold">Try Helios free for 30 days</p>
+          <p class="mt-1 text-sm text-ink-secondary">£49/month after your trial · Cancel anytime</p>
+        </div>
+        <router-link to="/get-started" class="w-fit rounded-control border border-border px-5 py-3 text-sm font-semibold text-ink-secondary hover:bg-surface-muted hover:text-ink">Start your free trial</router-link>
       </div>
     </section>
 
