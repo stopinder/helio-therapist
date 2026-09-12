@@ -31,15 +31,19 @@
 
           <template v-else>
             <section class="space-y-6">
-              <div class="flex items-center justify-between">
-                <h2 class="font-serif text-h2 text-ink">Session summary</h2>
-                <div class="flex items-center gap-3">
+              <div class="flex items-start justify-between gap-4">
+                <div>
+                  <h2 class="font-serif text-h2 text-ink">Session summary</h2>
+                  <p v-if="summaryDocument?.id" class="mt-1 text-caption text-ink-muted">{{ summaryDocument.status === 'completed' ? 'Finalised in this client’s Documents.' : 'Saved in this client’s Documents.' }}</p>
+                </div>
+                <div class="flex flex-wrap items-center justify-end gap-3">
                   <span v-if="copySuccess" class="text-body-sm text-state-success" role="status">Copied!</span>
-                  <template v-if="summaryDocument?.content?.body && !isGenerating">
+                  <template v-if="summaryDocument?.content?.body && !isGenerating && summaryDocument.status !== 'completed'">
                     <button v-if="!isEditingSummary" @click="isEditingSummary = true" class="text-body-sm font-medium text-action-link hover:underline">Edit</button>
                     <button v-else @click="isEditingSummary = false" class="text-body-sm font-medium text-action-link hover:underline">Done reading</button>
                   </template>
-                  <button v-if="summaryDocument?.content?.body" @click="generateSummary" :disabled="isGenerating" class="text-body-sm font-medium text-ink-muted hover:text-ink disabled:opacity-50">Regenerate</button>
+                  <button v-if="summaryDocument?.content?.body && summaryDocument.status !== 'completed'" @click="generateSummary" :disabled="isGenerating" class="text-body-sm font-medium text-ink-muted hover:text-ink disabled:opacity-50">Regenerate</button>
+                  <RouterLink v-if="summaryDocument?.id" :to="{ name: 'ClientWorkspace', params: { clientId: session.clientId }, query: { document: summaryDocument.id } }" class="button-secondary !min-h-0 py-1.5 px-3 text-body-sm shadow-sm">Open in Client Documents</RouterLink>
                   <button @click="copySummary" :disabled="!summaryDocument?.content?.body" class="button-secondary !min-h-0 py-1.5 px-3 text-body-sm shadow-sm">Copy summary</button>
                 </div>
               </div>
@@ -142,7 +146,7 @@ function handleSessionUpdate(updatedSession) {
 }
 
 async function generateSummary() {
-  if (!session.value || isGenerating.value) return;
+  if (!session.value || isGenerating.value || summaryDocument.value?.status === 'completed') return;
   isGenerating.value = true;
   generationError.value = '';
   try {
@@ -183,10 +187,11 @@ async function copySummary() {
 }
 
 async function handleSummaryInput() {
+  if (summaryDocument.value?.status === 'completed') return;
   clearTimeout(saveTimer);
   summarySaveError.value = '';
   saveTimer = setTimeout(async () => {
-    if (!summaryDocument.value) return;
+    if (!summaryDocument.value || summaryDocument.value.status === 'completed') return;
     try {
       const updated = await saveClientDocumentDraft(summaryDocument.value, { content: summaryDocument.value.content });
       summaryDocument.value.version = updated.version;
