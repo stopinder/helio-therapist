@@ -7,6 +7,24 @@
 html { font-family:var(--font-ui); background:var(--surface-canvas); color:var(--text-primary); text-rendering:optimizeLegibility; -webkit-font-smoothing:antialiased; }
 body { background:var(--surface-canvas); }
 
+/* Keep every existing scroll region fully usable while removing permanent
+   browser scrollbar chrome from Helios' quiet workspace UI. Wheel, trackpad,
+   touch and keyboard scrolling continue to work normally. */
+html,
+body,
+* {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+html::-webkit-scrollbar,
+body::-webkit-scrollbar,
+*::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+    display: none;
+}
+
 :root {
  --font-ui:'Inter',system-ui,sans-serif; --font-editorial:'Newsreader',Georgia,serif;
  --type-greeting-size:2rem; --type-greeting-size-lg:2.35rem; --type-greeting-line:1.12; --type-greeting-tracking:-.025em;
