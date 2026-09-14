@@ -7,12 +7,13 @@
           <div v-if="!finalised" class="flex flex-wrap items-center gap-2"><span class="text-caption" :class="dirty ? 'text-state-warning' : 'text-ink-muted'">{{ dirty ? 'Unsaved changes' : saveMessage }}</span><button v-if="!isSessionSummary" class="button-secondary" type="button" @click="sourcePanelOpen = true">Add from clinical notes</button><button class="button-secondary" :disabled="saving || !form.title.trim()" @click="saveDraft">{{ saving && action === 'save' ? 'Saving…' : 'Save Draft' }}</button><button class="button-primary" :disabled="saving || !form.title.trim() || !form.body.trim()" @click="finaliseDocument">{{ saving && action === 'finalise' ? 'Finalising…' : 'Finalise PDF' }}</button><button class="button-secondary" :disabled="saving" @click="requestClose">Close</button></div>
         </header>
         <div v-if="finalised" class="flex-1 overflow-auto p-8"><div class="max-w-2xl mx-auto rounded-panel border border-state-success/20 bg-state-success-surface p-6"><p class="text-h3 font-semibold text-state-success">✓ PDF finalised and saved</p><p class="text-body-sm text-ink-secondary mt-2"><strong>{{ currentDocument.title }}</strong> is stored privately with this client and this version is read-only.</p><p class="text-caption text-ink-muted mt-3">Finalised {{ formatDateTime(currentDocument.finalizedAt) }}</p><div class="mt-5 flex gap-2"><button class="button-primary" @click="downloadFinalised">Download PDF</button><button class="button-secondary" @click="$emit('show-documents')">View Client Documents</button><button class="button-secondary" @click="requestClose">Close</button></div></div></div>
-        <div v-if="loading" class="flex-1 grid place-items-center text-ink-muted">
+        <div v-else-if="loading" class="flex-1 grid place-items-center text-ink-muted">
           <div v-if="error" class="max-w-md text-center">
             <p class="text-state-danger font-semibold">Could not load workspace</p>
             <p class="mt-2 text-body-sm">{{ error }}</p>
-            <button class="button-secondary mt-4" @click="onMounted">Retry</button>
+            <button class="button-secondary mt-4" @click="loadWorkspace">Retry</button>
           </div>
+          <div v-else-if="loadingEvidence && availableSummarySessions.length === 0">Loading reviewed sessions…</div>
           <div v-else>Loading document workspace…</div>
         </div>
         <div v-else class="flex-1 min-h-0 overflow-auto"><div class="max-w-5xl mx-auto px-4 sm:px-8 py-5 space-y-5">
@@ -68,7 +69,44 @@ const evidenceWindow=computed(()=>{const index=availableSummarySessions.value.fi
 function changes() { const clinicalIntelligence=isSessionSummary.value?{generation:summaryGeneration.value,claims:summaryClaims.value,sources:summarySources.value,history:previousSummaryVersions.value.slice(-5),lastGeneratedBody:lastGeneratedBody.value}:undefined; return { title: form.title, documentType: form.documentType, recipient: form.recipient, purpose: form.purpose, periodStart: form.periodStart || null, periodEnd: form.periodEnd || null, content: { body: form.body,...(clinicalIntelligence?{clinicalIntelligence}:{}) }, sourceManifest: isSessionSummary.value ? [...summarySources.value,{kind:'ai_generation',...(summaryGeneration.value||{})}] : selectedSources.value.map(s => ({ kind: 'session', id: s.id, version: s.version, occurredAt: s.occurredAt })) } }
 function snapshot() { return JSON.stringify(changes()) }
 const dirty = computed(() => !finalised.value && baseline.value !== snapshot())
-onMounted(async () => { try { const p = await loadDocumentProfile(); profile.value = p; if (!isSessionSummary.value) { sources.value = await listDocumentSourceSessions(props.client.id); const ids = new Set((props.document?.sourceManifest || []).filter(i => i.kind === 'session').map(i => i.id)); selectedSourceIds.value = sources.value.filter(s => ids.has(s.id)).map(s => s.id); addedSourceIds.value = [...selectedSourceIds.value] } else { sourcePanelOpen.value=false; selectedSourceIds.value=[]; addedSourceIds.value=[]; loadingEvidence.value = true; evidenceError.value = ''; try { availableSummarySessions.value=await listClientSummaryEvidence(props.client.id); anchorSessionId.value=summaryGeneration.value?.anchorSessionId||availableSummarySessions.value[0]?.sessionId||null } catch (e) { evidenceError.value = 'Failed to load reviewed sessions for anchor selection.' } finally { loadingEvidence.value = false } } baseline.value = snapshot() } catch (e) { error.value = e.message || 'Could not load document workspace.' } finally { loading.value = false } })
+onMounted(() => { loadWorkspace() })
+async function loadWorkspace() {
+  loading.value = true
+  error.value = ''
+  try {
+    const p = await loadDocumentProfile()
+    profile.value = p
+    if (!isSessionSummary.value) {
+      sources.value = await listDocumentSourceSessions(props.client.id)
+      const ids = new Set((props.document?.sourceManifest || []).filter(i => i.kind === 'session').map(i => i.id))
+      selectedSourceIds.value = sources.value.filter(s => ids.has(s.id)).map(s => s.id)
+      addedSourceIds.value = [...selectedSourceIds.value]
+    } else {
+      sourcePanelOpen.value = false
+      selectedSourceIds.value = []
+      addedSourceIds.value = []
+      loadingEvidence.value = true
+      evidenceError.value = ''
+      try {
+        availableSummarySessions.value = await listClientSummaryEvidence(props.client.id)
+        anchorSessionId.value = summaryGeneration.value?.anchorSessionId || availableSummarySessions.value[0]?.sessionId || null
+      } catch (e) {
+        if (e.code === 'NO_REVIEWED_SESSION_CAPTURE') {
+          availableSummarySessions.value = []
+        } else {
+          evidenceError.value = e.message || 'Failed to load reviewed sessions for anchor selection.'
+        }
+      } finally {
+        loadingEvidence.value = false
+      }
+    }
+    baseline.value = snapshot()
+  } catch (e) {
+    error.value = e.message || 'Could not load document workspace.'
+  } finally {
+    loading.value = false
+  }
+}
 async function generateSummary() { if (generatingSummary.value) return; const currentBody=form.body.trim(); if(currentBody&&currentBody!==SESSION_SUMMARY_TEMPLATE.trim()&&currentBody!==lastGeneratedBody.value&&!window.confirm('Generate again and replace your edited draft? Your current text will remain available under Restore previous version.'))return; generatingSummary.value = true; summaryGenerationError.value = false; summaryGenerationMessage.value = 'Reviewing session continuity…'; try { const result = await generateClientSessionSummary({ clientId: props.client.id, lens: summaryLens.value, window: summaryWindow.value, therapistGuidance: therapistGuidance.value,anchorSessionId:anchorSessionId.value }); if(currentBody)previousSummaryVersions.value=[...previousSummaryVersions.value,{body:form.body,savedAt:new Date().toISOString(),generation:summaryGeneration.value,sources:summarySources.value,claims:summaryClaims.value,lastGeneratedBody:lastGeneratedBody.value}].slice(-5); form.body = result.draft.body; lastGeneratedBody.value=result.draft.body; summarySources.value=result.sources||[]; summaryClaims.value=result.claims||[]; summaryGeneration.value={id:result.generationId,generatedAt:result.generatedAt,promptVersion:result.promptVersion,model:result.model,lens:result.lens,window:result.window,anchorSessionId:anchorSessionId.value,usage:result.usage}; summaryGenerationMessage.value = result.sessionCount > 1 ? `Draft prepared from ${result.sessionCount} reviewed sessions. Review and edit before finalising.` : 'Draft prepared from the reviewed session. Review and edit before finalising.' } catch (e) { summaryGenerationError.value = true; summaryGenerationMessage.value = e.message || 'Could not generate the client summary.' } finally { generatingSummary.value = false } }
 function restorePreviousSummary(){const previous=previousSummaryVersions.value.at(-1);if(!previous)return;const current={body:form.body,savedAt:new Date().toISOString(),generation:summaryGeneration.value,sources:summarySources.value,claims:summaryClaims.value,lastGeneratedBody:lastGeneratedBody.value};form.body=previous.body;summaryGeneration.value=previous.generation||null;summarySources.value=previous.sources||[];summaryClaims.value=previous.claims||[];lastGeneratedBody.value=previous.lastGeneratedBody||previous.body;previousSummaryVersions.value=[...previousSummaryVersions.value.slice(0,-1),current].slice(-5);summaryGenerationMessage.value='Previous version restored. Review it before saving.'}
 function sourceLabel(source){if(source.kind==='session_capture')return `Reviewed Session Capture · ${formatDate(source.occurredAt)}`;if(source.kind==='accepted_care')return `Accepted Care · ${String(source.careKind||'context').replaceAll('_',' ')}`;return 'Therapist-authored guidance'}
