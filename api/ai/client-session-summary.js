@@ -17,11 +17,11 @@ export default async function handler(req, res) {
     if (!ownedClient) return res.status(404).json({ success:false, error:{ code:'CLIENT_NOT_FOUND', message:'Client not found or access denied.' } });
 
     const captureLimit = window === 'current' ? 1 : 3;
-    const { data: captures, error: captureError } = await supabase.from('session_capture_drafts').select('id,session_id,content,reviewed_at,sessions!inner(id,occurred_at,user_id,client_id)').eq('client_id', clientId).eq('user_id', user.id).eq('status', 'reviewed').not('reviewed_at', 'is', null).order('reviewed_at', { ascending:false }).limit(100);
+    const { data: captures, error: captureError } = await supabase.from('session_capture_drafts').select('session_id,content,reviewed_at,sessions!inner(id,occurred_at,user_id,client_id)').eq('client_id', clientId).eq('user_id', user.id).eq('status', 'reviewed').not('reviewed_at', 'is', null).order('reviewed_at', { ascending:false }).limit(100);
     if (captureError) throw captureError;
     const selectedRows=selectClinicalIntelligenceSources(captures||[],{anchorSessionId,limit:captureLimit});
     if(anchorSessionId&&!selectedRows.some(row=>row.session_id===anchorSessionId))return res.status(409).json({success:false,error:{code:'ANCHOR_SESSION_NOT_REVIEWED',message:'Choose a reviewed Session Capture for this client.'}});
-    const selectedCaptures = selectedRows.map(row => ({ id:row.id, sessionId:row.session_id, occurredAt:row.sessions?.occurred_at, reviewedAt:row.reviewed_at, content:row.content || {} }));
+    const selectedCaptures = selectedRows.map(row => ({ sessionId:row.session_id, occurredAt:row.sessions?.occurred_at, reviewedAt:row.reviewed_at, content:row.content || {} }));
     if (!selectedCaptures.length) return res.status(409).json({ success:false, error:{ code:'NO_REVIEWED_SESSION_CAPTURE', message:'Review a Session Capture before generating a client summary.' } });
     if(preview){const availableSessions=selectClinicalIntelligenceSources(captures||[],{limit:100}).map(row=>({sessionId:row.session_id,occurredAt:row.sessions?.occurred_at,reviewedAt:row.reviewed_at}));return res.status(200).json({success:true,data:{availableSessions}});}
 
