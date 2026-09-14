@@ -14,15 +14,19 @@
     "test:e2e": "playwright test",
     "test:e2e:headed": "playwright test --headed",
     "test:e2e:ui": "playwright test --ui",
-    "test:e2e:report": "playwright show-report"
-    ,"evaluate:clinical-intelligence": "node scripts/evaluate-clinical-intelligence.mjs"
+    "test:e2e:report": "playwright show-report",
+    "evaluate:clinical-intelligence": "node scripts/evaluate-clinical-intelligence.mjs",
+    "test:components": "vitest run",
+    "test:components:watch": "vitest"
   },
   "dependencies": {
     "@fontsource/noto-sans": "^5.3.0",
     "@heroicons/vue": "^2.2.0",
     "@lucide/vue": "^1.31.0",
-    "@vercel/functions": "3.9.5",
     "@supabase/supabase-js": "^2.89.0",
+    "@vercel/analytics": "^2.0.1",
+    "@vercel/functions": "3.9.5",
+    "@vercel/speed-insights": "^2.0.0",
     "cookie": "^2.0.1",
     "openai": "^6.15.0",
     "pdfkit": "^0.19.1",
@@ -35,10 +39,13 @@
     "@electric-sql/pglite": "^0.5.4",
     "@playwright/test": "^1.62.0",
     "@vitejs/plugin-vue": "^6.0.8",
+    "@vue/test-utils": "^2.5.0",
     "autoprefixer": "^10.4.21",
+    "happy-dom": "^20.14.5",
     "postcss": "^8.5.23",
     "tailwindcss": "^3.4.3",
-    "vite": "^8.1.5"
+    "vite": "^8.1.5",
+    "vitest": "^5.0.0"
   },
   "overrides": {
     "brace-expansion": "5.0.9",

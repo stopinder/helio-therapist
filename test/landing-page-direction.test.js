@@ -64,9 +64,9 @@ describe('Landing Page Direction', () => {
   });
 
   test('Trust and Control section matches new direction', () => {
-    assert.match(landingSource, /Clinical judgement stays with you/);
+    assert.match(landingSource, /Your clinical work stays under your control/);
     assert.match(landingSource, /Client-facing summaries stay editable until you decide they are ready/);
-    assert.match(landingSource, /Your professional reflection stays separate from client-facing material/);
+    assert.match(landingSource, /Private professional reflection remains separate from client-facing material and the formal Clinical Record/);
   });
 
   test('Legal and account routes remain present', () => {

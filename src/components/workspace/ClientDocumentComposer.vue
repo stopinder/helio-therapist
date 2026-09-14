@@ -22,11 +22,32 @@
             </div>
           </div>
         </div>
-        <div v-else-if="loading" class="flex-1 grid place-items-center text-ink-muted">Loading document workspace…</div>
+        <div v-else-if="loading" class="flex-1 grid place-items-center text-ink-muted">
+          <div v-if="error" class="max-w-md text-center">
+            <p class="text-state-danger font-semibold">Could not load workspace</p>
+            <p class="mt-2 text-body-sm">{{ error }}</p>
+            <button class="button-secondary mt-4" @click="loadWorkspace">Retry</button>
+          </div>
+          <div v-else-if="loadingEvidence && availableSummarySessions.length === 0">Loading reviewed sessions…</div>
+          <div v-else>Loading document workspace…</div>
+        </div>
         <div v-else class="flex-1 min-h-0 overflow-auto"><div class="max-w-5xl mx-auto px-4 sm:px-8 py-5 space-y-5">
           <section v-if="isSessionSummary" class="rounded-panel border border-action-link/20 bg-surface-elevated p-4 sm:p-5" aria-labelledby="clinical-intelligence-heading">
             <div class="flex flex-col lg:flex-row lg:items-end justify-between gap-4"><div><p class="type-overline text-action-link">Helios Clinical Intelligence</p><h3 id="clinical-intelligence-heading" class="text-h3 font-semibold text-ink mt-1">Prepare a useful client summary</h3><p class="text-body-sm text-ink-secondary mt-1 max-w-2xl">Generate an editable draft from reviewed Session Captures and current therapist-accepted Care context. Internal clinical notes, risk material and private reflections are not included automatically.</p></div><button type="button" class="button-primary shrink-0" :disabled="generatingSummary" @click="generateSummary">{{ generatingSummary ? 'Generating…' : 'Generate client summary' }}</button></div>
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-4"><label><span class="text-caption font-semibold">Perspective</span><select v-model="summaryLens" class="mt-1 w-full p-2.5 border border-border rounded-control bg-surface"><option value="general">General</option><option value="gentle_cbt">Gentle CBT</option><option value="integrative">Integrative</option></select></label><label><span class="text-caption font-semibold">Continuity</span><select v-model="summaryWindow" class="mt-1 w-full p-2.5 border border-border rounded-control bg-surface"><option value="last_three">Last 3 reviewed sessions</option><option value="current">This session only</option></select></label><label><span class="text-caption font-semibold">Summary anchored to</span><select v-model="anchorSessionId" class="mt-1 w-full p-2.5 border border-border rounded-control bg-surface" :disabled="!availableSummarySessions.length"><option v-for="session in availableSummarySessions" :key="session.sessionId" :value="session.sessionId">{{ formatDate(session.occurredAt) }}</option></select></label></div>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-4">
+              <label><span class="text-caption font-semibold">Perspective</span><select v-model="summaryLens" class="mt-1 w-full p-2.5 border border-border rounded-control bg-surface"><option value="general">General</option><option value="gentle_cbt">Gentle CBT</option><option value="integrative">Integrative</option></select></label>
+              <label><span class="text-caption font-semibold">Continuity</span><select v-model="summaryWindow" class="mt-1 w-full p-2.5 border border-border rounded-control bg-surface"><option value="last_three">Last 3 reviewed sessions</option><option value="current">This session only</option></select></label>
+              <label>
+                <span class="text-caption font-semibold">Summary anchored to</span>
+                <select v-model="anchorSessionId" class="mt-1 w-full p-2.5 border border-border rounded-control bg-surface" :disabled="!availableSummarySessions.length || loadingEvidence">
+                  <option v-if="loadingEvidence" value="">Loading reviewed sessions…</option>
+                  <option v-else-if="evidenceError" value="">Error loading sessions</option>
+                  <option v-else-if="!availableSummarySessions.length" value="">No reviewed sessions found</option>
+                  <option v-for="session in availableSummarySessions" :key="session.sessionId" :value="session.sessionId">{{ formatDate(session.occurredAt) }}</option>
+                </select>
+              </label>
+            </div>
+            <p v-if="evidenceError" class="text-caption text-state-danger mt-2">{{ evidenceError }}</p>
             <p v-if="evidenceWindow.length" class="text-caption text-ink-muted mt-2"><strong class="text-ink-secondary">Evidence window:</strong> {{ evidenceWindow.map(session=>formatDate(session.occurredAt)).join(' · ') }}</p>
             <label class="block mt-3"><span class="text-caption font-semibold">Therapist additions</span><textarea v-model="therapistGuidance" rows="3" maxlength="6000" class="mt-1 w-full p-2.5 border border-border rounded-control bg-surface text-body-sm" placeholder="Optional: add an observation, correction, emphasis or context for Helios. This stays identified as therapist-authored guidance." /></label>
             <p class="text-caption text-ink-muted mt-2">Helios treats this as therapist-authored guidance, not as something the client said.</p>
@@ -52,7 +73,7 @@ const SOURCE_PAGE_SIZE = 8
 const initialType = props.document?.documentType || props.initialDocumentType || 'other'
 const isSessionSummary = computed(() => form.documentType === 'session_summary')
 const loading = ref(true), saving = ref(false), action = ref(''), error = ref(''), saveMessage = ref(props.document ? 'Saved' : 'Not saved yet'), sources = ref([]), selectedSourceIds = ref([]), addedSourceIds = ref([]), expandedSourceId = ref(null), sourceQuery = ref(''), visibleSourceCount = ref(SOURCE_PAGE_SIZE), currentDocument = ref(props.document), baseline = ref(''), profile = ref({}), sourcePanelOpen = ref(false)
-const generatingSummary = ref(false), summaryLens = ref('general'), summaryWindow = ref('last_three'), therapistGuidance = ref(''), summaryGenerationMessage = ref(''), summaryGenerationError = ref(false), summarySources = ref(props.document?.content?.clinicalIntelligence?.sources || []), summaryClaims = ref(props.document?.content?.clinicalIntelligence?.claims || []), summaryGeneration = ref(props.document?.content?.clinicalIntelligence?.generation || null), previousSummaryVersions = ref(props.document?.content?.clinicalIntelligence?.history || []), lastGeneratedBody = ref(props.document?.content?.clinicalIntelligence?.lastGeneratedBody || ''), availableSummarySessions = ref([]), anchorSessionId = ref(null)
+const generatingSummary = ref(false), loadingEvidence = ref(false), evidenceError = ref(''), summaryLens = ref('general'), summaryWindow = ref('last_three'), therapistGuidance = ref(''), summaryGenerationMessage = ref(''), summaryGenerationError = ref(false), summarySources = ref(props.document?.content?.clinicalIntelligence?.sources || []), summaryClaims = ref(props.document?.content?.clinicalIntelligence?.claims || []), summaryGeneration = ref(props.document?.content?.clinicalIntelligence?.generation || null), previousSummaryVersions = ref(props.document?.content?.clinicalIntelligence?.history || []), lastGeneratedBody = ref(props.document?.content?.clinicalIntelligence?.lastGeneratedBody || ''), availableSummarySessions = ref([]), anchorSessionId = ref(null)
 const form = reactive({ title: props.document?.title || (initialType === 'session_summary' ? 'Session summary' : ''), documentType: initialType, recipient: props.document?.recipient || '', purpose: props.document?.purpose || (initialType === 'session_summary' ? 'A client-facing summary of the session' : ''), periodStart: props.document?.periodStart || '', periodEnd: props.document?.periodEnd || '', body: props.document?.content?.body || (initialType === 'session_summary' ? SESSION_SUMMARY_TEMPLATE : '') })
 const identity = computed(() => profileDisplay(profile.value)), finalised = computed(() => currentDocument.value?.status === 'completed')
 const mailtoLink = computed(() => {
@@ -69,7 +90,44 @@ const evidenceWindow=computed(()=>{const index=availableSummarySessions.value.fi
 function changes() { const clinicalIntelligence=isSessionSummary.value?{generation:summaryGeneration.value,claims:summaryClaims.value,sources:summarySources.value,history:previousSummaryVersions.value.slice(-5),lastGeneratedBody:lastGeneratedBody.value}:undefined; return { title: form.title, documentType: form.documentType, recipient: form.recipient, purpose: form.purpose, periodStart: form.periodStart || null, periodEnd: form.periodEnd || null, content: { body: form.body,...(clinicalIntelligence?{clinicalIntelligence}:{}) }, sourceManifest: isSessionSummary.value ? [...summarySources.value,{kind:'ai_generation',...(summaryGeneration.value||{})}] : selectedSources.value.map(s => ({ kind: 'session', id: s.id, version: s.version, occurredAt: s.occurredAt })) } }
 function snapshot() { return JSON.stringify(changes()) }
 const dirty = computed(() => !finalised.value && baseline.value !== snapshot())
-onMounted(async () => { try { const p = await loadDocumentProfile(); profile.value = p; if (!isSessionSummary.value) { sources.value = await listDocumentSourceSessions(props.client.id); const ids = new Set((props.document?.sourceManifest || []).filter(i => i.kind === 'session').map(i => i.id)); selectedSourceIds.value = sources.value.filter(s => ids.has(s.id)).map(s => s.id); addedSourceIds.value = [...selectedSourceIds.value] } else { sourcePanelOpen.value=false; selectedSourceIds.value=[]; addedSourceIds.value=[];availableSummarySessions.value=await listClientSummaryEvidence(props.client.id);anchorSessionId.value=summaryGeneration.value?.anchorSessionId||availableSummarySessions.value[0]?.sessionId||null } baseline.value = snapshot() } catch (e) { error.value = e.message || 'Could not load document workspace.' } finally { loading.value = false } })
+onMounted(() => { loadWorkspace() })
+async function loadWorkspace() {
+  loading.value = true
+  error.value = ''
+  try {
+    const p = await loadDocumentProfile()
+    profile.value = p
+    if (!isSessionSummary.value) {
+      sources.value = await listDocumentSourceSessions(props.client.id)
+      const ids = new Set((props.document?.sourceManifest || []).filter(i => i.kind === 'session').map(i => i.id))
+      selectedSourceIds.value = sources.value.filter(s => ids.has(s.id)).map(s => s.id)
+      addedSourceIds.value = [...selectedSourceIds.value]
+    } else {
+      sourcePanelOpen.value = false
+      selectedSourceIds.value = []
+      addedSourceIds.value = []
+      loadingEvidence.value = true
+      evidenceError.value = ''
+      try {
+        availableSummarySessions.value = await listClientSummaryEvidence(props.client.id)
+        anchorSessionId.value = summaryGeneration.value?.anchorSessionId || availableSummarySessions.value[0]?.sessionId || null
+      } catch (e) {
+        if (e.code === 'NO_REVIEWED_SESSION_CAPTURE') {
+          availableSummarySessions.value = []
+        } else {
+          evidenceError.value = e.message || 'Failed to load reviewed sessions for anchor selection.'
+        }
+      } finally {
+        loadingEvidence.value = false
+      }
+    }
+    baseline.value = snapshot()
+  } catch (e) {
+    error.value = e.message || 'Could not load document workspace.'
+  } finally {
+    loading.value = false
+  }
+}
 async function generateSummary() { if (generatingSummary.value) return; const currentBody=form.body.trim(); if(currentBody&&currentBody!==SESSION_SUMMARY_TEMPLATE.trim()&&currentBody!==lastGeneratedBody.value&&!window.confirm('Generate again and replace your edited draft? Your current text will remain available under Restore previous version.'))return; generatingSummary.value = true; summaryGenerationError.value = false; summaryGenerationMessage.value = 'Reviewing session continuity…'; try { const result = await generateClientSessionSummary({ clientId: props.client.id, lens: summaryLens.value, window: summaryWindow.value, therapistGuidance: therapistGuidance.value,anchorSessionId:anchorSessionId.value }); if(currentBody)previousSummaryVersions.value=[...previousSummaryVersions.value,{body:form.body,savedAt:new Date().toISOString(),generation:summaryGeneration.value,sources:summarySources.value,claims:summaryClaims.value,lastGeneratedBody:lastGeneratedBody.value}].slice(-5); form.body = result.draft.body; lastGeneratedBody.value=result.draft.body; summarySources.value=result.sources||[]; summaryClaims.value=result.claims||[]; summaryGeneration.value={id:result.generationId,generatedAt:result.generatedAt,promptVersion:result.promptVersion,model:result.model,lens:result.lens,window:result.window,anchorSessionId:anchorSessionId.value,usage:result.usage}; summaryGenerationMessage.value = result.sessionCount > 1 ? `Draft prepared from ${result.sessionCount} reviewed sessions. Review and edit before finalising.` : 'Draft prepared from the reviewed session. Review and edit before finalising.' } catch (e) { summaryGenerationError.value = true; summaryGenerationMessage.value = e.message || 'Could not generate the client summary.' } finally { generatingSummary.value = false } }
 function restorePreviousSummary(){const previous=previousSummaryVersions.value.at(-1);if(!previous)return;const current={body:form.body,savedAt:new Date().toISOString(),generation:summaryGeneration.value,sources:summarySources.value,claims:summaryClaims.value,lastGeneratedBody:lastGeneratedBody.value};form.body=previous.body;summaryGeneration.value=previous.generation||null;summarySources.value=previous.sources||[];summaryClaims.value=previous.claims||[];lastGeneratedBody.value=previous.lastGeneratedBody||previous.body;previousSummaryVersions.value=[...previousSummaryVersions.value.slice(0,-1),current].slice(-5);summaryGenerationMessage.value='Previous version restored. Review it before saving.'}
 function sourceLabel(source){if(source.kind==='session_capture')return `Reviewed Session Capture · ${formatDate(source.occurredAt)}`;if(source.kind==='accepted_care')return `Accepted Care · ${String(source.careKind||'context').replaceAll('_',' ')}`;return 'Therapist-authored guidance'}
