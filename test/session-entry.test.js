@@ -11,7 +11,7 @@ test('Client Workspace session entry behavior', async () => {
   assert.match(header, /data-testid="open-clinical-workspace"/)
   assert.match(header, /import { createOrResumeSession/)
   assert.match(header, /async function openClinicalWorkspace\(\)/)
-  assert.match(header, /props\.activeSession \|\| \(await createOrResumeSession\(props\.client\.id\)\)\.session/)
+  assert.match(header, /props\.activeSession \|\| props\.unresolvedSession \|\| \(await createOrResumeSession\(props\.client\.id\)\)\.session/)
   assert.match(header, /name: 'SessionWorkspace', params: { clientId: props\.client\.id, sessionId: session\.id }/)
 
   // Negative assertions for removed ceremony/timer

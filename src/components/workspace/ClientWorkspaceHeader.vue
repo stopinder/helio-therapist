@@ -46,6 +46,7 @@ const props = defineProps({
   nextAppointment: { type: Object, default: null },
   therapistLabel: { type: String, default: 'Current therapist' },
   activeSession: { type: Object, default: null },
+  unresolvedSession: { type: Object, default: null },
   sessionBusy: { type: Boolean, default: false },
   sessionError: { type: String, default: '' }
 })
@@ -69,7 +70,7 @@ async function openClinicalWorkspace() {
   workspaceBusy.value = true
   workspaceError.value = ''
   try {
-    const session = props.activeSession || (await createOrResumeSession(props.client.id)).session
+    const session = props.activeSession || props.unresolvedSession || (await createOrResumeSession(props.client.id)).session
     await router.push({ name: 'SessionWorkspace', params: { clientId: props.client.id, sessionId: session.id } })
   } catch (error) {
     workspaceError.value = error?.code === 'CLIENT_ARCHIVED'

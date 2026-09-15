@@ -3,7 +3,7 @@
     <div v-if="loading" class="flex-1 flex items-center justify-center"><div class="text-ink-muted flex flex-col items-center gap-2"><span class="w-8 h-8 border-4 border-state-selected border-t-transparent rounded-full animate-spin"></span><p>Loading client workspace…</p></div></div>
     <div v-else-if="error" class="flex-1 flex items-center justify-center p-inline-lg"><div class="max-w-md w-full bg-surface p-inline-lg py-stack-lg rounded-card shadow-sm border border-state-danger/20 text-center"><h2 class="text-h2 font-semibold text-state-danger mb-2">Workspace Error</h2><p class="text-ink-secondary mb-6">{{ error }}</p><button @click="loadClient" class="px-inline-md py-stack-sm bg-accent text-white rounded-control">Try Again</button></div></div>
     <template v-else-if="client">
-      <ClientWorkspaceHeader :client="client" :next-appointment="nextAppointment" :therapist-label="therapistLabel" :active-session="activeSession" @create-document="newDocument" @client-updated="client = $event" />
+      <ClientWorkspaceHeader :client="client" :next-appointment="nextAppointment" :therapist-label="therapistLabel" :active-session="activeSession" :unresolved-session="unresolvedSession" @create-document="newDocument" @client-updated="client = $event" />
       
       <div class="flex-1 overflow-auto p-inline-lg py-stack-lg">
         <div class="max-w-6xl mx-auto space-y-stack-xl">
@@ -111,6 +111,10 @@ const careRefreshKey=ref(0),selectedLensId=ref(DEFAULT_LENS_ID);
 const recentSessions=computed(()=>sessions.value.slice(0,4));
 const nextAppointment=computed(()=>nextClientAppointment(appointments.value));
 const activeSession=computed(()=>sessions.value.find(s=>s.status==='in_progress')||null);
+const unresolvedSession=computed(()=>{
+  const unresolvedStates = ['awaiting_transcript', 'transcript_received', 'needs_review', 'review_choices_saved', 'drafts_awaiting_review'];
+  return sessions.value.find(s => s.status === 'completed' && unresolvedStates.includes(s.workflowStatus)) || null;
+});
 const focusDocumentId=computed(()=>typeof route.query.document==='string'?route.query.document:'');
 
 async function loadClient(){loading.value=true;error.value='';try{client.value=await getClient({clientId:route.params.clientId});const results=await Promise.allSettled([loadTimeline(),refreshDocuments(),loadSessions(),loadAppointments(),loadTherapist()]);for(const result of results)if(result.status==='rejected')console.error('Client workspace context failed to load:',{code:result.reason?.code||'CONTEXT_LOAD_FAILED'});await openRequestedDocument()}catch(e){error.value='The client workspace could not be loaded.'}finally{loading.value=false}}
