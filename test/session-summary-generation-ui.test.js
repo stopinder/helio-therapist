@@ -9,9 +9,16 @@ test('SessionWorkspace shows Generate summary button when appropriate', () => {
   assert.match(source, /v-if="transcript"/i)
 })
 
-test('SessionWorkspace shows Regenerate action when summary exists', () => {
-  assert.match(source, /Regenerate/i)
-  assert.match(source, /v-if="summaryDocument\?\.content\?\.body"/i)
+test('SessionWorkspace shows Regenerate only for a non-finalised summary', () => {
+  const regenerateButton = source.match(/<button\b[^>]*>\s*Regenerate\s*<\/button>/)?.[0]
+
+  assert.ok(regenerateButton, 'Expected a Regenerate button')
+  assert.match(
+    regenerateButton,
+    /v-if="summaryDocument\?\.content\?\.body && summaryDocument\.status !== 'completed'"/
+  )
+  assert.match(regenerateButton, /@click="generateSummary"/)
+  assert.match(regenerateButton, /:disabled="isGenerating"/)
 })
 
 test('SessionWorkspace handles generation state', () => {
