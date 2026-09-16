@@ -63,7 +63,7 @@ jobs:
           npx playwright test
           e2e/session-working-material.spec.js
           e2e/clinical-record-flow.spec.js
-          e2e/transcript-cbt-care.spec.js
+          e2e/care-reflection-workflow.spec.js
           e2e/auth-lifecycle.spec.js
           e2e/transcript-a11y-responsive.spec.js
           --project=chromium
