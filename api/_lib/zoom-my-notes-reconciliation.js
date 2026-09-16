@@ -250,16 +250,20 @@ export async function reconcileZoomMyNotes({ supabase, integration, therapistUse
   const noteIds = notes.map((note) => note.noteId);
   const { data: existingRows, error: existingError } = await supabase
     .from('zoom_transcripts')
-    .select('zoom_note_id')
+    .select('zoom_note_id, deleted_at')
     .eq('therapist_user_id', therapistUserId)
     .in('zoom_note_id', noteIds);
 
   if (existingError) throw existingError;
-  const existingIds = new Set((existingRows || []).map((row) => String(row.zoom_note_id || '')).filter(Boolean));
+  const existingRecords = new Map((existingRows || []).map((row) => [String(row.zoom_note_id || ''), row]));
+  const existingIds = new Set(existingRecords.keys());
 
   let imported = 0;
   const newImports = [];
   for (const note of notes) {
+    const existingRecord = existingRecords.get(note.noteId);
+    if (existingRecord?.deleted_at) continue;
+
     const content = await zoomJson(
       getToken,
       `https://api.zoom.us/v2/my_notes/notes/${encodeURIComponent(note.noteId)}/content?include=transcript`
