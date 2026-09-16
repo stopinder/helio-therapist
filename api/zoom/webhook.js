@@ -107,6 +107,14 @@ async function processMyNotesEvent(supabase, intakeEventId, noteEvent) {
   if (!sessionLink) sessionLink = await findUniqueAwaitingSession(supabase, integration.user_id, noteEvent.createdTime);
   const now = new Date().toISOString();
   const sourceTitle = noteEvent.noteName || noteContent.note_name || null;
+
+  const { data: existing, error: findError } = await supabase.from('zoom_transcripts').select('deleted_at').eq('therapist_user_id', integration.user_id).eq('zoom_note_id', noteEvent.noteId).maybeSingle();
+  if (findError) throw findError;
+  if (existing?.deleted_at) {
+    await updateEvent(supabase, intakeEventId, { processing_status: 'stored', processing_error: 'Transcript suppressed due to prior deletion' });
+    return;
+  }
+
   const { error: transcriptError } = await supabase.from('zoom_transcripts').upsert({ therapist_user_id: integration.user_id, zoom_note_id: noteEvent.noteId, zoom_meeting_id: noteEvent.meetingId, zoom_meeting_uuid: null, zoom_recording_file_id: null, original_format: 'JSON', original_transcript: originalTranscript, structured_transcript: structuredTranscript, source: 'zoom_my_notes', source_title: sourceTitle, client_id: sessionLink?.client_id || null, session_ref: sessionLink?.session_ref || null, status: sessionLink ? 'ready' : 'unassigned', updated_at: now }, { onConflict: 'therapist_user_id,zoom_note_id' });
   if (transcriptError) throw transcriptError;
   if (sessionLink) {
@@ -140,6 +148,14 @@ async function processAcceptedWebhook({ supabase, intakeEventId, body, eventType
   if (!downloadResult.response.ok) throw new Error(`Zoom transcript download failed with ${downloadResult.response.status}`);
   const originalTranscript = await downloadResult.response.text();
   if (!originalTranscript.trim()) throw new Error('Zoom returned an empty transcript');
+
+  const { data: existing, error: findError } = await supabase.from('zoom_transcripts').select('deleted_at').eq('therapist_user_id', integration.user_id).eq('zoom_recording_file_id', String(file.id)).maybeSingle();
+  if (findError) throw findError;
+  if (existing?.deleted_at) {
+    await updateEvent(supabase, intakeEventId, { processing_status: 'stored', processing_error: 'Transcript suppressed due to prior deletion' });
+    return;
+  }
+
   const { error: transcriptError } = await supabase.from('zoom_transcripts').upsert({ therapist_user_id: integration.user_id, zoom_meeting_id: meetingId, zoom_meeting_uuid: recording.uuid ? String(recording.uuid) : null, zoom_recording_file_id: String(file.id), original_format: String(file.file_extension || 'VTT').toUpperCase(), original_transcript: originalTranscript, source: 'zoom_cloud', client_id: sessionLink?.client_id || null, session_ref: sessionLink?.session_ref || null, status: sessionLink ? 'ready' : 'unassigned', updated_at: new Date().toISOString() }, { onConflict: 'therapist_user_id,zoom_recording_file_id' });
   if (transcriptError) throw transcriptError;
   if (sessionLink) await supabase.from('zoom_session_links').update({ status: 'transcript_received', updated_at: new Date().toISOString() }).eq('therapist_user_id', integration.user_id).eq('zoom_meeting_id', meetingId);

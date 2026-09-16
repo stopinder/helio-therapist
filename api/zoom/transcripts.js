@@ -64,7 +64,7 @@ export default async function handler(req, res) {
         return res.status(400).json({ error: 'Session and client ids are required together.' });
       }
 
-      let query = supabase.from('zoom_transcripts').select(transcriptFields).eq('therapist_user_id', user.id);
+      let query = supabase.from('zoom_transcripts').select(transcriptFields).eq('therapist_user_id', user.id).is('deleted_at', null);
       if (hasSessionFilter) query = query.eq('session_ref', sessionRef).eq('client_id', clientId);
       const { data, error } = await query.order('received_at', { ascending: false });
       if (error) throw error;
@@ -94,7 +94,15 @@ export default async function handler(req, res) {
         return res.status(403).json({ error: 'This transcript has already been assigned or reviewed and cannot be deleted.' });
       }
 
-      const { error: deleteError } = await supabase.from('zoom_transcripts').delete().eq('id', id).eq('therapist_user_id', user.id);
+      const { error: deleteError } = await supabase.from('zoom_transcripts').update({
+        deleted_at: new Date().toISOString(),
+        original_transcript: '',
+        structured_transcript: null,
+        zoom_generated_summary: null,
+        source_title: null,
+        requested_lens: null,
+        updated_at: new Date().toISOString()
+      }).eq('id', id).eq('therapist_user_id', user.id);
       if (deleteError) throw deleteError;
 
       return res.status(204).end();
