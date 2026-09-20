@@ -27,122 +27,104 @@
     </header>
 
     <section class="overflow-hidden border-b border-border-muted">
-      <div class="mx-auto w-full max-w-[1440px] px-5 pb-0 pt-14 sm:px-8 lg:pt-20 xl:px-12">
-        <div class="grid gap-10 lg:grid-cols-[minmax(0,.9fr)_minmax(380px,.55fr)] lg:items-end">
-          <div class="max-w-[820px]">
+      <div class="mx-auto w-full max-w-[1440px] px-5 py-14 sm:px-8 lg:py-20 xl:px-12">
+        <div class="grid gap-12 lg:grid-cols-[minmax(0,.72fr)_minmax(520px,1.28fr)] lg:items-center">
+          <div class="max-w-[560px]">
             <p class="type-eyebrow text-accent">Continuity &amp; reflection for therapists</p>
-            <h1 class="mt-4 max-w-[900px] font-serif text-[3rem] font-semibold leading-[.98] tracking-[-0.045em] sm:text-[4rem] lg:text-[4.7rem]">
+            <h1 class="mt-5 font-serif text-[3.15rem] font-semibold leading-[.98] tracking-[-0.045em] sm:text-[4.25rem] lg:text-[4.8rem]">
               Less to hold in your head. More space for the work that matters.
             </h1>
-          </div>
-
-          <div class="pb-2">
-            <p class="max-w-[560px] text-lg leading-8 text-ink-secondary">
-              Helios is a continuity and reflection system for therapists. It keeps the thread of the work together across clients, sessions, notes, transcripts and your own reflections.
+            <p class="mt-7 max-w-[500px] text-base leading-7 text-ink-secondary">
+              Helios is a continuity and reflection system for therapists. It connects sessions, reflections and the developing work over time.
             </p>
-            <p class="mt-4 max-w-[560px] text-sm leading-6 text-ink-secondary">
-              AI takes on more of the remembering, organising and first-draft work, reducing cognitive load so you can give more attention to the person in front of you — and arrive at supervision better prepared.
+            <p class="mt-5 max-w-[500px] text-sm leading-6 text-ink-secondary">
+              AI carries more of the remembering, organising and synthesis — so you can prepare faster, notice what’s changing, and bring better material into supervision.
             </p>
-            <div class="mt-6 flex flex-wrap gap-3">
-              <a href="#product-tour" class="rounded-control bg-action-primary px-5 py-3 text-sm font-semibold text-on-action hover:bg-action-primary-hover">See Helios in action</a>
-              <router-link to="/get-started" class="rounded-control border border-border px-5 py-3 text-sm font-semibold text-ink-secondary hover:bg-surface-muted hover:text-ink">Create workspace</router-link>
+            <div class="mt-7 flex flex-wrap items-center gap-3">
+              <a href="#product-tour" class="rounded-control bg-[#061E29] px-5 py-3 text-sm font-semibold text-[#F4F0E7] hover:bg-[#1D546D]">See Helios in action →</a>
+              <router-link to="/get-started" class="rounded-control px-4 py-3 text-sm font-semibold text-accent hover:bg-surface-muted">Create your workspace</router-link>
             </div>
-            <p class="mt-4 text-xs text-ink-muted">30-day free trial · £49/month afterwards · Cancel anytime</p>
+            <p class="mt-5 text-[11px] leading-5 text-ink-muted">Private therapist workspace · Database-level access controls · Built for individual practice</p>
           </div>
-        </div>
 
-        <div id="product-tour" class="mt-10 scroll-mt-24 lg:mt-14" aria-label="Representative Helios therapist workspace">
-          <div class="overflow-hidden rounded-t-panel border border-b-0 border-border bg-surface-raised shadow-[0_18px_60px_rgba(32,36,31,.08)]">
-            <div class="flex items-center justify-between border-b border-border-muted bg-surface-muted px-4 py-3 text-[11px] text-ink-muted">
-              <div class="flex items-center gap-2">
-                <span class="h-2 w-2 rounded-full bg-state-success"></span>
-                <span class="font-semibold text-ink-secondary">Helios · Today</span>
+          <div id="product-tour" class="scroll-mt-24" aria-label="Representative Helios therapist workspace">
+            <div class="overflow-hidden rounded-panel border border-border bg-surface-raised shadow-[0_18px_55px_rgba(32,36,31,.14)]">
+              <div class="flex items-center justify-between border-b border-white/10 bg-[#061E29] px-4 py-2.5 text-[10px] text-[#9BB5C0]">
+                <div class="flex items-center gap-1.5">
+                  <span class="h-1.5 w-1.5 rounded-full bg-[#9BB5C0]"></span>
+                  <span class="h-1.5 w-1.5 rounded-full bg-[#9BB5C0]"></span>
+                  <span class="h-1.5 w-1.5 rounded-full bg-[#9BB5C0]"></span>
+                </div>
+                <span class="font-semibold text-[#F4F0E7]">Helios · Continuity</span>
+                <span>● Private</span>
               </div>
-              <span>Monday · 21 September</span>
-            </div>
 
-            <div class="grid min-h-[520px] md:grid-cols-[176px_minmax(0,1fr)]">
-              <aside class="hidden border-r border-white/10 bg-[#061E29] p-4 text-[#F4F0E7] md:block">
-                <div class="mb-5 flex items-center gap-3 border-b border-sidebar-border pb-4">
-                  <span class="flex h-9 w-9 items-center justify-center rounded-control bg-white/10 text-lg">☼</span>
-                  <div>
-                    <p class="text-xs font-semibold">My practice</p>
-                    <p class="text-[10px] text-sidebar-muted">Therapist workspace</p>
+              <div class="grid min-h-[390px] md:grid-cols-[150px_minmax(0,1fr)]">
+                <aside class="hidden bg-[#061E29] p-3.5 text-[#F4F0E7] md:block">
+                  <div class="mb-4 flex items-center gap-2 px-2">
+                    <span class="flex h-7 w-7 items-center justify-center rounded-control bg-white/10 text-xs font-semibold">H</span>
+                    <span class="text-xs font-semibold">helios</span>
                   </div>
-                </div>
-                <nav class="space-y-1 text-xs" aria-label="Representative workspace navigation">
-                  <div class="rounded-control bg-[#1D546D] px-3 py-2.5 font-semibold text-white shadow-sm">Today</div>
-                  <div class="px-3 py-2.5 text-[#9BB5C0]">Clients</div>
-                  <div class="px-3 py-2.5 text-[#9BB5C0]">Calendar</div>
-                  <div class="px-3 py-2.5 text-[#9BB5C0]">Documents</div>
-                  <div class="px-3 py-2.5 text-[#9BB5C0]">Transcripts</div>
-                  <div class="mt-5 border-t border-white/10 px-3 pt-4 pb-2.5 text-[#9BB5C0]">Supervision &amp; CPD</div>
-                </nav>
-              </aside>
+                  <nav class="space-y-1 text-[11px]" aria-label="Representative workspace navigation">
+                    <div class="px-2.5 py-2 text-[#9BB5C0]">Today</div>
+                    <div class="rounded-control border-l-2 border-[#C9774A] bg-[#1D546D] px-2.5 py-2 font-semibold text-white">Clients</div>
+                    <div class="px-2.5 py-2 text-[#9BB5C0]">Calendar</div>
+                    <div class="px-2.5 py-2 text-[#9BB5C0]">Sessions</div>
+                    <div class="px-2.5 py-2 text-[#9BB5C0]">Transcripts</div>
+                    <div class="px-2.5 py-2 text-[#9BB5C0]">Documents</div>
+                    <div class="px-2.5 py-2 text-[#9BB5C0]">Reflect</div>
+                  </nav>
+                  <div class="mt-5 rounded-control bg-white/5 p-2.5">
+                    <p class="text-[9px] font-semibold uppercase tracking-[.12em] text-[#9BB5C0]">Up next</p>
+                    <p class="mt-1.5 text-[10px] font-semibold">Sarah M. · 10:00</p>
+                  </div>
+                </aside>
 
-              <div class="min-w-0 bg-surface-canvas">
-                <div class="border-b border-border-muted bg-surface-raised px-5 py-5 sm:px-7">
-                  <p class="type-eyebrow text-ink-muted">Today</p>
-                  <h2 class="mt-1 font-serif text-2xl font-semibold tracking-[-0.025em]">Good morning, Robert.</h2>
-                  <p class="mt-1 text-sm text-ink-secondary">Three appointments today. One session is waiting for review.</p>
-                </div>
-
-                <div class="grid gap-5 p-5 sm:p-7 lg:grid-cols-[minmax(0,1.45fr)_minmax(260px,.72fr)]">
-                  <section>
-                    <div class="flex items-center justify-between">
-                      <p class="type-eyebrow text-ink-muted">Today’s schedule</p>
-                      <span class="text-xs font-medium text-action-link">View calendar →</span>
+                <div class="bg-[#FBF8F2] p-4 sm:p-5">
+                  <div class="flex flex-wrap items-start justify-between gap-3 border-b border-border-muted pb-3">
+                    <div>
+                      <p class="text-[9px] font-semibold uppercase tracking-[.12em] text-accent">Upcoming client</p>
+                      <p class="mt-1 font-serif text-xl font-semibold">Sarah M. · 10:00</p>
+                      <p class="mt-1 text-[10px] text-ink-secondary">Current thread: Boundaries without withdrawal</p>
                     </div>
+                    <span class="rounded-control bg-[#E8F0F2] px-2 py-1 text-[9px] font-semibold text-accent">Next session</span>
+                  </div>
 
-                    <div class="mt-3 space-y-3">
-                      <article class="rounded-panel border border-accent/20 bg-surface-raised p-4">
-                        <div class="flex flex-wrap items-start justify-between gap-3">
-                          <div class="flex min-w-0 gap-4">
-                            <div class="w-14 shrink-0 border-r border-border-muted pr-3">
-                              <p class="text-sm font-semibold">10:00</p>
-                              <p class="mt-1 text-[10px] text-ink-muted">60 min</p>
-                            </div>
-                            <div>
-                              <p class="text-sm font-semibold">Sarah M.</p>
-                              <p class="mt-1 text-xs text-ink-secondary">Individual therapy · Online</p>
-                              <p class="mt-2 text-[11px] leading-5 text-ink-muted">Recent thread: setting boundaries without withdrawing.</p>
-                            </div>
-                          </div>
-                          <span class="rounded-control bg-action-primary px-3 py-2 text-[11px] font-semibold text-white">Open client</span>
-                        </div>
-                      </article>
+                  <div class="mt-3 grid gap-3 sm:grid-cols-2">
+                    <article class="rounded-control border border-border-muted bg-white/40 p-3">
+                      <p class="text-[9px] font-semibold uppercase tracking-[.1em] text-ink-muted">Latest session</p>
+                      <p class="mt-1 text-xs font-semibold">Session 13</p>
+                      <p class="mt-1 text-[10px] text-ink-secondary">Transcript attached</p>
+                    </article>
+                    <article class="rounded-control border border-accent/20 bg-[#E8F0F2] p-3">
+                      <p class="text-[9px] font-semibold uppercase tracking-[.1em] text-accent">Session summary</p>
+                      <p class="mt-1 text-xs font-semibold">Ready to review</p>
+                      <p class="mt-1 text-[10px] text-ink-secondary">New material connected</p>
+                    </article>
+                  </div>
 
-                      <article class="rounded-panel border border-border-muted bg-surface-raised p-4">
-                        <div class="flex items-center gap-4">
-                          <div class="w-14 shrink-0 border-r border-border-muted pr-3">
-                            <p class="text-sm font-semibold">13:30</p>
-                            <p class="mt-1 text-[10px] text-ink-muted">60 min</p>
-                          </div>
-                          <div>
-                            <p class="text-sm font-semibold">David R.</p>
-                            <p class="mt-1 text-xs text-ink-secondary">Individual therapy · In person</p>
-                          </div>
-                        </div>
-                      </article>
+                  <article class="mt-3 rounded-control border border-[#C9774A]/40 bg-[#061E29] p-4 text-[#F4F0E7]">
+                    <div class="flex flex-wrap items-center justify-between gap-2">
+                      <p class="text-[9px] font-semibold uppercase tracking-[.11em] text-[#C9774A]">Continuity engine</p>
+                      <span class="text-[9px] text-[#9BB5C0]">For therapist consideration</span>
                     </div>
-                  </section>
+                    <div class="mt-2 flex flex-wrap items-center gap-1.5 text-[9px] text-[#9BB5C0]">
+                      <span>Session 12</span><span>→</span><span>Session 13</span><span>→</span><span>Reflection</span><span>→</span><span>Current pattern</span>
+                    </div>
+                    <p class="mt-3 font-serif text-lg font-semibold leading-tight">Possible recurring pattern: a pull to rescue when clients become distant.</p>
+                    <p class="mt-2 text-[10px] text-[#9BB5C0]">For therapist consideration — not a conclusion.</p>
+                  </article>
 
-                  <aside class="space-y-3">
-                    <article class="rounded-panel border border-accent/20 bg-accent/5 p-4">
-                      <p class="type-eyebrow text-accent">Continue working</p>
-                      <p class="mt-2 text-sm font-semibold">Session summary ready to review</p>
-                      <p class="mt-1 text-xs leading-5 text-ink-secondary">Client A · yesterday at 16:00</p>
-                      <p class="mt-3 text-[11px] font-semibold text-action-link">Open session →</p>
+                  <div class="mt-3 grid gap-3 sm:grid-cols-2">
+                    <article class="rounded-control border border-border-muted bg-white/40 p-3">
+                      <p class="text-[9px] font-semibold uppercase tracking-[.1em] text-ink-muted">Documents / record</p>
+                      <p class="mt-1 text-[10px] font-medium text-ink">Session Summary · Clinical Record</p>
                     </article>
-
-                    <article class="rounded-panel border border-border-muted bg-surface-raised p-4">
-                      <p class="type-eyebrow text-ink-muted">Connected</p>
-                      <div class="mt-3 space-y-2 text-xs text-ink-secondary">
-                        <div class="flex items-center justify-between"><span>Google Calendar</span><span class="text-state-success">Connected</span></div>
-                        <div class="flex items-center justify-between"><span>Zoom</span><span class="text-state-success">Connected</span></div>
-                      </div>
+                    <article class="rounded-control border border-border-muted bg-[#F4F0E7] p-3">
+                      <p class="text-[9px] font-semibold uppercase tracking-[.1em] text-ink-muted">Reflect</p>
+                      <p class="mt-1 text-[10px] font-medium text-ink">Why did I feel an urge to reassure here?</p>
                     </article>
-                  </aside>
+                  </div>
                 </div>
               </div>
             </div>
