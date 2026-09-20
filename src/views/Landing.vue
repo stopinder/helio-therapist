@@ -407,38 +407,90 @@
 
     <section id="practice" class="scroll-mt-24 border-b border-border-muted">
       <div class="mx-auto w-full max-w-[1200px] px-5 py-20 sm:px-8 lg:py-28">
-        <div class="grid gap-12 lg:grid-cols-[.72fr_1.28fr] lg:items-start">
-          <div>
+        <div class="max-w-3xl">
             <p class="type-eyebrow text-accent">The wider practice</p>
-            <h2 class="mt-3 font-serif text-4xl font-semibold tracking-[-0.035em] sm:text-5xl">More than an AI notes tool.</h2>
+            <h2 class="mt-3 font-serif text-4xl font-semibold tracking-[-0.035em] sm:text-5xl">The practical side of practice, connected to the clinical work.</h2>
             <p class="mt-5 text-base leading-7 text-ink-secondary">
-              Helios is designed as a working home for an individual therapist practice, so the practical parts of the day sit around the clinical work rather than beside it.
+              Appointments, practice documents and the tools you already use sit alongside the clinical workspace — so the operational work and the therapeutic work stay connected without becoming the same thing.
             </p>
-          </div>
-
-          <div class="grid gap-px overflow-hidden rounded-panel border border-border bg-border sm:grid-cols-2">
-            <article class="bg-surface-raised p-6">
-              <p class="type-eyebrow text-ink-muted">Calendar</p>
-              <h3 class="mt-2 text-base font-semibold">See the working day in context</h3>
-              <p class="mt-2 text-sm leading-6 text-ink-secondary">Appointments stay close to the relevant client and session workspace.</p>
-            </article>
-            <article class="bg-surface-raised p-6">
-              <p class="type-eyebrow text-ink-muted">Documents</p>
-              <h3 class="mt-2 text-base font-semibold">Keep client material together</h3>
-              <p class="mt-2 text-sm leading-6 text-ink-secondary">Session summaries and supporting documents live with the client rather than across separate systems.</p>
-            </article>
-            <article class="bg-surface-raised p-6">
-              <p class="type-eyebrow text-ink-muted">Transcripts</p>
-              <h3 class="mt-2 text-base font-semibold">Bring session source material in</h3>
-              <p class="mt-2 text-sm leading-6 text-ink-secondary">Paste transcript text, import supported files, or use supported Zoom workflows.</p>
-            </article>
-            <article class="bg-surface-raised p-6">
-              <p class="type-eyebrow text-ink-muted">Connected tools</p>
-              <h3 class="mt-2 text-base font-semibold">Work around your existing setup</h3>
-              <p class="mt-2 text-sm leading-6 text-ink-secondary">Google Calendar and Zoom can connect directly, with other workflows remaining available where supported.</p>
-            </article>
-          </div>
         </div>
+
+        <figure class="mt-10 overflow-hidden rounded-panel border border-border bg-surface-raised" aria-label="Illustrative calendar appointment and practice document workspace">
+          <div class="grid lg:grid-cols-[1.35fr_1fr]">
+            <div class="min-w-0">
+              <div class="flex flex-wrap items-center justify-between gap-3 bg-sidebar px-5 py-4 text-sidebar-fg sm:px-7">
+                <h3 class="font-serif text-2xl font-semibold">Calendar</h3>
+                <p class="text-xs text-sidebar-muted">Tuesday · 15 September 2026</p>
+              </div>
+              <div class="px-5 py-5 sm:px-7">
+                <div class="flex flex-wrap items-center justify-between gap-2 border-b border-border-muted pb-4 text-xs">
+                  <p class="font-semibold text-ink"><span class="mr-2 inline-block h-1.5 w-1.5 rounded-full bg-state-success" aria-hidden="true"></span>Google Calendar · Connected</p>
+                  <p class="text-ink-muted">Last synced 09:42</p>
+                </div>
+                <p class="mt-5 type-eyebrow text-ink-muted">Today</p>
+                <div class="mt-3 grid grid-cols-[3rem_minmax(0,1fr)] gap-3 sm:gap-5">
+                  <p class="pt-4 text-xs tabular-nums text-ink-muted">10:00</p>
+                  <div class="overflow-hidden rounded-control border border-accent/30 bg-surface">
+                    <div class="border-l-4 border-accent bg-state-selected px-4 py-4">
+                      <p class="text-xs font-semibold text-accent">Linked client appointment</p>
+                      <p class="mt-2 font-serif text-2xl font-semibold">Sarah M.</p>
+                      <p class="mt-1 text-sm text-ink-secondary">10:00–10:50 · Online session</p>
+                    </div>
+                    <div class="px-4 py-4">
+                      <p class="text-sm font-semibold text-accent">Open meeting link ↗</p>
+                      <p class="mt-1 text-xs text-ink-muted">Zoom · opens in a separate tab</p>
+                      <div class="mt-5 flex flex-wrap gap-2 text-xs font-semibold">
+                        <span class="rounded-control border border-border bg-surface-raised px-3 py-2 text-ink">Open Client</span>
+                        <span class="rounded-control bg-accent px-3 py-2 text-on-action">Clinical Workspace →</span>
+                      </div>
+                    </div>
+                  </div>
+                  <p class="pt-3 text-xs tabular-nums text-ink-muted">12:00</p>
+                  <div class="border-y border-border-muted py-3">
+                    <p class="text-sm font-semibold">Practice administration</p>
+                    <p class="mt-1 text-xs text-ink-muted">Google Calendar · 12:00–12:30</p>
+                  </div>
+                </div>
+                <p class="mt-5 text-sm leading-6 text-ink-secondary">From the day’s appointments straight into the relevant client’s work.</p>
+              </div>
+            </div>
+
+            <div class="min-w-0 border-t border-border bg-surface-canvas px-5 py-6 sm:px-7 lg:border-l lg:border-t-0">
+              <div class="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <p class="type-eyebrow text-ink-muted">Practice library</p>
+                  <h3 class="mt-1 font-serif text-2xl font-semibold">Documents</h3>
+                </div>
+                <span class="rounded-control border border-border bg-surface-raised px-3 py-2 text-xs font-semibold text-accent">Create Document</span>
+              </div>
+              <div class="mt-5 flex flex-wrap gap-x-4 gap-y-2 border-y border-border py-3 text-xs text-ink-secondary" aria-label="Reusable practice document templates">
+                <span class="font-semibold text-accent">Therapy agreement</span>
+                <span>Consent form</span>
+                <span>Information sheet</span>
+              </div>
+              <article class="mt-5 border border-border bg-surface-raised px-5 py-6 shadow-sm sm:px-7" aria-label="Illustrative therapy agreement with practice letterhead">
+                <header class="border-b border-border pb-4">
+                  <p class="font-serif text-lg font-semibold">Willow Practice</p>
+                  <p class="mt-1 text-[11px] text-ink-muted">Counselling &amp; psychotherapy</p>
+                </header>
+                <p class="mt-6 text-[10px] font-semibold uppercase tracking-[.14em] text-ink-muted">Therapy agreement</p>
+                <h4 class="mt-2 font-serif text-2xl font-semibold">Our work together</h4>
+                <p class="mt-3 text-xs leading-6 text-ink-secondary">This agreement sets out the practical and professional basis for our work together.</p>
+                <div class="mt-5 space-y-2 border-t border-border-muted pt-4 text-xs text-ink-secondary">
+                  <p>Appointments and cancellations</p>
+                  <p>Confidentiality</p>
+                  <p>Contact between sessions</p>
+                </div>
+              </article>
+              <div class="mt-4 flex flex-wrap items-center justify-between gap-3 text-xs">
+                <span class="text-ink-muted">Save Draft</span>
+                <span class="font-semibold text-accent">Export / Print PDF ↗</span>
+              </div>
+              <p class="mt-5 text-sm leading-6 text-ink-secondary">Reusable practice material, with your own words and practice identity.</p>
+            </div>
+          </div>
+          <figcaption class="border-t border-border-muted px-5 py-4 text-xs leading-5 text-ink-muted sm:px-7">Illustrative practice workspace. Client actions appear for linked appointments; other calendar events remain part of the day’s schedule.</figcaption>
+        </figure>
       </div>
     </section>
 
