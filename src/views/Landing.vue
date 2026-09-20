@@ -599,18 +599,17 @@
     </section>
 
     <section class="border-b border-border-muted bg-surface-raised">
-      <div class="mx-auto grid w-full max-w-[1200px] gap-10 px-5 py-20 sm:px-8 lg:grid-cols-[1.15fr_.85fr] lg:items-center lg:py-24">
-        <div>
+      <div class="mx-auto w-full max-w-[1200px] px-5 py-10 sm:px-8 lg:py-12">
+        <div class="max-w-3xl">
           <p class="type-eyebrow text-accent">Built from clinical practice</p>
-          <h2 class="mt-3 font-serif text-4xl font-semibold tracking-[-0.035em]">For the realities of therapeutic work.</h2>
-          <p class="mt-5 max-w-2xl text-base leading-7 text-ink-secondary">
-            Helios is developed through Chrysalis Therapy Services by Robert Ormston, a practising psychotherapist. The product is shaped by continuity, reflection, documentation and professional responsibility as they actually show up in day-to-day practice.
+          <h2 class="mt-2 font-serif text-2xl font-semibold tracking-[-0.035em] sm:text-3xl">A practitioner’s perspective.</h2>
+          <p class="mt-3 text-base leading-7 text-ink-secondary">
+            Helios has been shaped through clinical practice — including the need to keep editable working material, formal Clinical Records and private reflection clearly distinct.
           </p>
-        </div>
-        <div class="rounded-panel border border-border bg-surface p-6">
-          <p class="text-lg font-semibold">Robert Ormston</p>
-          <p class="mt-2 text-sm text-ink-secondary">Chrysalis Therapy Services</p>
-          <p class="mt-1 text-sm text-ink-secondary">Member of the British Association for Counselling and Psychotherapy (BACP)</p>
+          <p class="mt-5 border-l-2 border-accent/30 pl-3 text-sm leading-6 text-ink-secondary">
+            <span class="font-semibold text-ink">Developed by Robert Ormston</span> · Practising psychotherapist · Chrysalis Therapy Services
+            <span class="block text-xs leading-5 text-ink-muted">Member of the British Association for Counselling and Psychotherapy (BACP)</span>
+          </p>
         </div>
       </div>
     </section>
