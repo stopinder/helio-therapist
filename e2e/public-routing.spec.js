@@ -16,14 +16,14 @@ test.describe('Gate 3 public routing', () => {
     await expect(page.getByText('Possible recurring pattern: a pull to rescue when clients become distant.', { exact:true })).toBeVisible();
 
     await expect(page.getByRole('link', { name:'See Helios in action' })).toHaveAttribute('href', '#product-tour');
-    await expect(page.getByRole('heading', { name:'Start your day knowing where you left off.' })).toBeVisible();
+    await expect(page.getByRole('heading', { name:'The whole thread of the work, in one place.' })).toBeVisible();
     await expect(page.getByRole('heading', { name:'The session doesn’t disappear when the call ends.' })).toBeVisible();
-    await expect(page.getByRole('heading', { name:'Helios helps you carry the thread forward.' })).toBeVisible();
-    await expect(page.getByRole('heading', { name:'More than an AI notes tool.' })).toBeVisible();
-    await expect(page.getByRole('heading', { name:'Think across the work, not only one session at a time.' })).toBeVisible();
-    await expect(page.getByText('Arrive at supervision already prepared.', { exact:true })).toBeVisible();
+    await expect(page.getByRole('heading', { name:'See how the work is developing over time.' })).toBeVisible();
+    await expect(page.getByRole('heading', { name:'The practical side of practice, connected to the clinical work.' })).toBeVisible();
+    await expect(page.getByRole('heading', { name:'A private place to think across the work.' })).toBeVisible();
+    await expect(page.getByRole('heading', { name:'Supervision preparation', exact:true })).toBeVisible();
     await expect(page.getByRole('heading', { name:'AI assists. You remain the clinician.' })).toBeVisible();
-    await expect(page.getByRole('heading', { name:'For the realities of therapeutic work.' })).toBeVisible();
+    await expect(page.getByRole('heading', { name:'A practitioner’s perspective.' })).toBeVisible();
 
     await expect(page.getByRole('link', { name:'Sign in' }).first()).toHaveAttribute('href', '/sign-in');
     await expect(page.getByRole('link', { name:'Create workspace' }).first()).toHaveAttribute('href', '/get-started');
@@ -75,8 +75,8 @@ test.describe('Gate 3 public routing', () => {
 
   test('public information names the confirmed support contact and current processing providers', async ({ page }) => {
     await page.goto('/support', { waitUntil:'domcontentloaded' }); await expect(page.getByRole('link', { name:'hello@helio.works' }).first()).toHaveAttribute('href', 'mailto:hello@helio.works');
-    await page.goto('/privacy', { waitUntil:'domcontentloaded' }); await expect(page.getByText('Supabase', { exact:false })).toBeVisible(); await expect(page.getByText('Vercel', { exact:false })).toBeVisible(); await expect(page.getByText('Resend', { exact:false })).toBeVisible(); await expect(page.getByText('Google', { exact:false })).toBeVisible(); await expect(page.getByText('Zoom', { exact:false })).toBeVisible();
-    await page.goto('/ai-data', { waitUntil:'domcontentloaded' }); await expect(page.getByText('OpenAI', { exact:false })).toBeVisible(); await expect(page.getByText('not used to train its models by default', { exact:false })).toBeVisible();
+    await page.goto('/privacy', { waitUntil:'domcontentloaded' }); await expect(page.getByText('Supabase', { exact:false })).toBeVisible(); await expect(page.getByText('Vercel', { exact:false })).toBeVisible(); await expect(page.getByText('Resend', { exact:false })).toBeVisible(); await expect(page.getByRole('heading', { name:'Google Calendar data', level:2, exact:true })).toBeVisible(); await expect(page.getByText('Zoom', { exact:false })).toBeVisible();
+    await page.goto('/ai-data', { waitUntil:'domcontentloaded' }); await expect(page.locator('section').filter({ has: page.getByRole('heading', { name:'Current provider', level:2, exact:true }) }).getByText('Helios currently uses OpenAI through server-side Helios functions', { exact:false })).toBeVisible(); await expect(page.getByText('not used to train its models by default', { exact:false })).toBeVisible();
     await page.goto('/cookies', { waitUntil:'domcontentloaded' }); await expect(page.getByText('does not include advertising or analytics tracking', { exact:false })).toBeVisible();
   });
 
