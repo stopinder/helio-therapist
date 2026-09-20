@@ -24,16 +24,32 @@ test.describe('Gate 3 public routing', () => {
     await expect(page.getByText('Arrive at supervision already prepared.', { exact:true })).toBeVisible();
     await expect(page.getByRole('heading', { name:'AI assists. You remain the clinician.' })).toBeVisible();
     await expect(page.getByRole('heading', { name:'For the realities of therapeutic work.' })).toBeVisible();
-    await expect(page.getByRole('heading', { name:'Try the complete Helios workspace.' })).toBeVisible();
-
-    await expect(page.getByText('30 days free', { exact:true })).toBeVisible();
-    await expect(page.getByText('£49/month afterwards · Cancel anytime', { exact:true })).toBeVisible();
 
     await expect(page.getByRole('link', { name:'Sign in' }).first()).toHaveAttribute('href', '/sign-in');
     await expect(page.getByRole('link', { name:'Create workspace' }).first()).toHaveAttribute('href', '/get-started');
     await expect(page.getByRole('link', { name:'Privacy' }).first()).toHaveAttribute('href', '/privacy');
     await expect(page.getByRole('link', { name:'AI & data' }).first()).toHaveAttribute('href', '/ai-data');
     await expect(page.getByRole('link', { name:'Support' }).first()).toHaveAttribute('href', '/support');
+  });
+
+  test('launch pricing presents one workspace and routes to account creation', async ({ page }) => {
+    await page.goto('/', { waitUntil:'domcontentloaded' });
+    const pricing = page.locator('#pricing');
+    await expect(pricing.getByRole('heading', { name:'One workspace. One simple price.' })).toBeVisible();
+    await expect(pricing.getByText('The full Helios therapist workspace, included.', { exact:true })).toBeVisible();
+    await expect(pricing.getByText('Launch pricing', { exact:true })).toBeVisible();
+    await expect(pricing.getByText('£29', { exact:true })).toBeVisible();
+    await expect(pricing.getByText('/ month', { exact:true })).toBeVisible();
+    await expect(pricing.getByText('30 days free to try Helios.', { exact:true })).toBeVisible();
+    await expect(pricing.getByRole('heading', { name:'Founder offer — £24/month' })).toBeVisible();
+    await expect(pricing).toContainText('Available to early adopters. Keep the founder rate while you remain continuously subscribed.');
+    await expect(pricing).not.toContainText('£49');
+    const cta = pricing.getByRole('link', { name:'Create your workspace' });
+    await expect(cta).toHaveAttribute('href', '/get-started');
+    await cta.click();
+    await expect(page).toHaveURL(/\/get-started\/?$/);
+    await expect(page.getByTestId('login-page')).toBeVisible();
+    await expect(page.getByText('Create your therapist workspace.')).toBeVisible();
   });
 
   test('landing page remains readable at mobile width', async ({ page }) => {
