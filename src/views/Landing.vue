@@ -261,40 +261,65 @@
 
     <section id="sessions" class="scroll-mt-24 border-b border-border-muted">
       <div class="mx-auto grid w-full max-w-[1200px] gap-12 px-5 py-20 sm:px-8 lg:grid-cols-[1.15fr_.85fr] lg:items-center lg:py-28">
-        <div class="order-2 lg:order-1">
-          <div class="overflow-hidden rounded-panel border border-border bg-surface-raised shadow-sm">
-            <div class="flex items-center gap-2 border-b border-border-muted bg-surface px-4 py-3">
-              <span class="rounded-control bg-state-selected px-3 py-2 text-xs font-semibold text-action-link">Session Summary</span>
-              <span class="rounded-control px-3 py-2 text-xs font-semibold text-ink-secondary">Clinical Record</span>
+        <div class="order-2 min-w-0 lg:order-1">
+          <figure class="overflow-hidden rounded-panel border border-border bg-surface-raised shadow-sm" aria-label="Illustrative Session Summary and separate Clinical Record workflow">
+            <div class="flex flex-wrap items-center justify-between gap-2 bg-sidebar px-5 py-3 text-xs text-sidebar-fg">
+              <span class="font-semibold">Sarah M. · Session 14</span>
+              <span class="text-sidebar-muted">14 September</span>
             </div>
-            <div class="p-5 sm:p-6">
-              <div class="flex flex-wrap items-start justify-between gap-4">
-                <div>
-                  <p class="font-serif text-xl font-semibold">Session summary</p>
-                  <p class="mt-1 text-xs text-ink-muted">Editable working material · Saved in Client Documents</p>
-                </div>
-                <div class="flex gap-2">
-                  <span class="rounded-control border border-border px-3 py-1.5 text-[11px] font-medium">Edit</span>
-                  <span class="rounded-control border border-border px-3 py-1.5 text-[11px] font-medium">Copy summary</span>
-                </div>
-              </div>
+            <div class="flex flex-wrap gap-2 border-b border-border-muted bg-surface px-4 py-3 text-xs font-semibold">
+              <span class="rounded-control bg-state-selected px-3 py-2 text-action-link">Session Summary</span>
+              <span class="px-3 py-2 text-ink-secondary">Clinical Record</span>
+            </div>
 
-              <article class="mt-5 rounded-control border border-border-muted bg-surface p-5">
-                <p class="text-sm font-semibold">Session 14 · 14 September</p>
-                <p class="mt-3 text-sm leading-7 text-ink-secondary">
-                  The session explored the difference between setting a boundary and withdrawing from connection. Sarah described one recent interaction where she remained in the conversation, named what felt difficult and noticed less urgency to leave.
-                </p>
-                <p class="mt-4 text-sm leading-7 text-ink-secondary">
-                  Possible follow-up: what helped her stay present, and whether that felt different from previous attempts to protect herself.
-                </p>
-              </article>
-
-              <div class="mt-5 rounded-control border border-state-success/20 bg-state-success-surface p-4">
-                <p class="text-sm font-semibold">Clinical Record</p>
-                <p class="mt-1 text-xs leading-5 text-ink-secondary">A separate formal record can be reviewed and approved. Once approved, it is protected from ordinary editing and later corrections use amendments.</p>
+            <div class="border-b border-border-muted px-5 py-4 sm:px-6">
+              <p class="text-xs text-ink-muted">Working summary · Editable until finalised</p>
+              <div class="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-xs font-medium text-accent">
+                <span>Edit</span><span>Regenerate</span><span>Copy summary</span>
               </div>
             </div>
-          </div>
+            <article class="px-5 py-6 sm:px-8">
+              <header class="border-b border-border-muted pb-4">
+                <h3 class="font-serif text-2xl font-semibold">Session Summary</h3>
+                <p class="mt-2 text-xs text-ink-muted">Sarah M. · 14 September</p>
+              </header>
+              <div class="mt-5 space-y-4 font-serif text-lg leading-7 text-ink-secondary">
+                <p>The session explored the difference between setting a boundary and withdrawing from connection. Sarah described one recent interaction where she remained in the conversation, named what felt difficult and noticed less urgency to leave.</p>
+                <p>Possible follow-up: what helped her stay present, and whether that felt different from previous attempts to protect herself.</p>
+              </div>
+            </article>
+            <div class="flex flex-wrap gap-x-5 gap-y-2 border-t border-border-muted px-5 py-3 text-xs font-medium text-accent sm:px-6">
+              <span>View transcript</span><span>Open in Client Documents →</span>
+            </div>
+
+            <div class="border-t-2 border-accent bg-surface px-5 py-5 sm:px-6">
+              <div class="flex flex-wrap items-center justify-between gap-2">
+                <h3 class="font-serif text-xl font-semibold">Clinical Record</h3>
+                <span class="text-xs text-ink-muted">Separate view / workflow</span>
+              </div>
+              <p class="mt-2 text-xs leading-5 text-ink-secondary">Prepared and approved separately from the Session Summary.</p>
+              <ol class="mt-4 flex flex-wrap items-center gap-2 text-[11px] font-medium text-accent" aria-label="Clinical Record approval workflow">
+                <li>Save Draft</li><li aria-hidden="true">→</li>
+                <li>Mark Ready for Review</li><li aria-hidden="true">→</li>
+                <li>Approve Clinical Record</li>
+              </ol>
+              <div class="mt-4 border-l-2 border-state-success bg-state-success-surface px-3 py-2">
+                <p class="text-xs font-semibold text-state-success">Approved and locked · Read-only</p>
+              </div>
+              <dl class="mt-3 flex flex-wrap gap-x-5 gap-y-2 text-[11px] text-ink-muted">
+                <div><dt class="inline font-semibold">Version: </dt><dd class="inline">1</dd></div>
+                <div><dt class="inline font-semibold">Approved by: </dt><dd class="inline">Therapist</dd></div>
+                <div><dt class="inline font-semibold">Timestamp: </dt><dd class="inline">14 Sep · 11:15</dd></div>
+              </dl>
+              <div class="mt-4 border-y border-border-muted py-3">
+                <p class="text-[11px] font-semibold uppercase tracking-wide text-ink-muted">Plan for next session</p>
+                <p class="mt-2 font-serif text-base leading-6">Review the client’s experience of expressing a boundary while staying in connection.</p>
+              </div>
+              <p class="mt-3 text-xs font-medium text-accent">Create Record Amendment →</p>
+              <p class="mt-2 text-[11px] leading-5 text-ink-muted">Corrections are appended as amendments. The approved record remains unchanged.</p>
+            </div>
+            <figcaption class="border-t border-border-muted px-5 py-3 text-[11px] leading-5 text-ink-muted sm:px-6">Illustrative views of two distinct documents. Finalised summaries no longer offer Edit or Regenerate.</figcaption>
+          </figure>
         </div>
 
         <div class="order-1 lg:order-2">
