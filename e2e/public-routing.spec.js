@@ -4,32 +4,44 @@ test.describe('Gate 3 public routing', () => {
   test('landing page is public, substantive and links to account and information routes', async ({ page }) => {
     await page.goto('/', { waitUntil:'domcontentloaded' });
     await expect(page).toHaveTitle('Helios — Therapist workspace');
-    await expect(page.getByRole('heading', { name:'See your clients. Helios remembers what matters.' })).toBeVisible();
-    await expect(page.getByText('Psychotherapy practice', { exact:true })).toBeVisible();
-    await expect(page.getByText('A calm workspace for sessions, continuity and clinical understanding', { exact:false })).toBeVisible();
+
+    await expect(page.getByRole('heading', { name:'Your therapy practice, with the clinical context kept together.' })).toBeVisible();
+    await expect(page.getByText('Therapist workspace', { exact:true }).first()).toBeVisible();
+    await expect(page.getByText('Helios brings your clients, appointments, sessions, notes, transcripts and developing clinical picture into one calm therapist workspace.', { exact:true })).toBeVisible();
+
     await expect(page.getByLabel('Representative Helios therapist workspace')).toBeVisible();
-    await expect(page.getByText('Next client', { exact:true })).toBeVisible();
-    await expect(page.getByText('Continuity cue available', { exact:true })).toBeVisible();
-    await expect(page.getByText('Zoom notes', { exact:true })).toBeVisible();
-    await expect(page.getByText('1 note needs matching', { exact:true })).toBeVisible();
-    await expect(page.getByRole('link', { name:'See how Helios works' })).toHaveAttribute('href', '#platform');
-    await expect(page.getByText('Calendar', { exact:true }).first()).toBeVisible();
-    await expect(page.getByText('Reflect', { exact:true }).first()).toBeVisible();
-    await expect(page.getByRole('heading', { name:'Clinical continuity for the real therapist day.' })).toBeVisible();
-    await expect(page.getByText('Clinical judgement stays with you', { exact:false })).toBeVisible();
+    await expect(page.getByText('Good morning, Robert.', { exact:true })).toBeVisible();
+    await expect(page.getByText('Today’s schedule', { exact:true })).toBeVisible();
+    await expect(page.getByText('Session summary ready to review', { exact:true })).toBeVisible();
+
+    await expect(page.getByRole('link', { name:'See Helios in action' })).toHaveAttribute('href', '#product-tour');
+    await expect(page.getByRole('heading', { name:'Start your day knowing where you left off.' })).toBeVisible();
+    await expect(page.getByRole('heading', { name:'The session doesn’t disappear when the call ends.' })).toBeVisible();
+    await expect(page.getByRole('heading', { name:'Helios helps you carry the thread forward.' })).toBeVisible();
+    await expect(page.getByRole('heading', { name:'More than an AI notes tool.' })).toBeVisible();
+    await expect(page.getByRole('heading', { name:'Your work as a therapist has a history too.' })).toBeVisible();
+    await expect(page.getByRole('heading', { name:'AI assists. You remain the clinician.' })).toBeVisible();
+    await expect(page.getByRole('heading', { name:'For the realities of therapeutic work.' })).toBeVisible();
+    await expect(page.getByRole('heading', { name:'Try the complete Helios workspace.' })).toBeVisible();
+
+    await expect(page.getByText('30 days free', { exact:true })).toBeVisible();
+    await expect(page.getByText('£49/month afterwards · Cancel anytime', { exact:true })).toBeVisible();
+
     await expect(page.getByRole('link', { name:'Sign in' }).first()).toHaveAttribute('href', '/sign-in');
-    await expect(page.getByRole('link', { name:'Get started' }).first()).toHaveAttribute('href', '/get-started');
-    await expect(page.getByRole('link', { name:'Privacy' })).toHaveAttribute('href', '/privacy');
-    await expect(page.getByRole('link', { name:'AI & data' })).toHaveAttribute('href', '/ai-data');
-    await expect(page.getByRole('link', { name:'Support' })).toHaveAttribute('href', '/support');
+    await expect(page.getByRole('link', { name:'Create workspace' }).first()).toHaveAttribute('href', '/get-started');
+    await expect(page.getByRole('link', { name:'Privacy' }).first()).toHaveAttribute('href', '/privacy');
+    await expect(page.getByRole('link', { name:'AI & data' }).first()).toHaveAttribute('href', '/ai-data');
+    await expect(page.getByRole('link', { name:'Support' }).first()).toHaveAttribute('href', '/support');
   });
 
   test('landing page remains readable at mobile width', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto('/', { waitUntil:'domcontentloaded' });
-    await expect(page.getByRole('heading', { name:'See your clients. Helios remembers what matters.' })).toBeVisible();
+
+    await expect(page.getByRole('heading', { name:'Your therapy practice, with the clinical context kept together.' })).toBeVisible();
     await expect(page.getByLabel('Representative Helios therapist workspace')).toBeVisible();
-    await expect(page.getByRole('link', { name:'Get started' }).last()).toBeVisible();
+    await expect(page.getByRole('link', { name:'See Helios in action' })).toBeVisible();
+    await expect(page.getByRole('link', { name:'Create your workspace' }).last()).toBeVisible();
   });
 
   test('legal and information routes are available without authentication', async ({ page }) => {
