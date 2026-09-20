@@ -577,42 +577,23 @@
       </div>
     </section>
 
-    <section id="trust" class="scroll-mt-24 border-b border-border-muted bg-surface-sidebar text-on-surface-sidebar">
-      <div class="mx-auto w-full max-w-[1200px] px-5 py-20 sm:px-8 lg:py-24">
-        <div class="grid gap-10 lg:grid-cols-[.8fr_1.2fr] lg:items-start">
-          <div>
-            <p class="type-eyebrow text-sidebar-muted">Clinical control</p>
-            <h2 class="mt-3 font-serif text-4xl font-semibold tracking-[-0.035em] sm:text-5xl">AI assists. You remain the clinician.</h2>
-            <p class="mt-5 max-w-xl text-base leading-7 text-sidebar-muted">
-              Helios is built to support review, continuity and documentation without quietly converting assistance into a clinical decision.
-            </p>
-          </div>
+    <section id="trust" class="scroll-mt-24 border-b border-border-muted bg-surface text-ink">
+      <div class="mx-auto w-full max-w-[1200px] px-5 py-12 sm:px-8 lg:py-14">
+        <p class="type-eyebrow text-accent">Clinical control</p>
+        <h2 class="mt-3 font-serif text-3xl font-semibold tracking-[-0.035em] sm:text-4xl">AI assists. You remain the clinician.</h2>
+        <p class="mt-3 text-base leading-7 text-ink-secondary">You review and approve what becomes a Clinical Record.</p>
 
-          <div class="grid gap-3 sm:grid-cols-2">
-            <article class="rounded-panel border border-white/10 bg-white/5 p-5">
-              <p class="text-sm font-semibold">You review clinical material</p>
-              <p class="mt-2 text-xs leading-5 text-sidebar-muted">Generated working material is there for you to assess, edit and decide how to use.</p>
-            </article>
-            <article class="rounded-panel border border-white/10 bg-white/5 p-5">
-              <p class="text-sm font-semibold">Session Summaries stay editable</p>
-              <p class="mt-2 text-xs leading-5 text-sidebar-muted">Working summaries remain separate from a formal approved Clinical Record.</p>
-            </article>
-            <article class="rounded-panel border border-white/10 bg-white/5 p-5">
-              <p class="text-sm font-semibold">Approved Clinical Records are protected</p>
-              <p class="mt-2 text-xs leading-5 text-sidebar-muted">Once approved, later corrections use amendments rather than silently rewriting the original record.</p>
-            </article>
-            <article class="rounded-panel border border-white/10 bg-white/5 p-5">
-              <p class="text-sm font-semibold">Reflection remains separate</p>
-              <p class="mt-2 text-xs leading-5 text-sidebar-muted">Private professional reflection is kept apart from client-facing and formal record material.</p>
-            </article>
-          </div>
-        </div>
+        <ul class="mt-6 grid gap-4 border-y border-border py-5 text-sm leading-6 text-ink-secondary md:grid-cols-3 md:gap-6" aria-label="Clinical control commitments">
+          <li class="border-l-2 border-accent/30 pl-3">Session Summaries are editable until finalised.</li>
+          <li class="border-l-2 border-accent/30 pl-3">Approved Clinical Records are read-only; corrections are added through amendments.</li>
+          <li class="border-l-2 border-accent/30 pl-3">Private reflection is not automatically included in Clinical Records.</li>
+        </ul>
 
-        <nav class="mt-10 flex flex-wrap gap-5 text-sm font-medium text-sidebar-muted" aria-label="Trust information">
-          <router-link to="/privacy" class="hover:text-white">Privacy</router-link>
-          <router-link to="/ai-data" class="hover:text-white">AI &amp; data</router-link>
-          <router-link to="/terms" class="hover:text-white">Terms</router-link>
-          <router-link to="/support" class="hover:text-white">Support</router-link>
+        <nav class="mt-5 flex flex-wrap gap-x-5 gap-y-2 text-sm font-medium text-accent" aria-label="Trust information">
+          <router-link to="/privacy" class="hover:text-ink hover:underline">Privacy</router-link>
+          <router-link to="/ai-data" class="hover:text-ink hover:underline">AI &amp; data</router-link>
+          <router-link to="/terms" class="hover:text-ink hover:underline">Terms</router-link>
+          <router-link to="/support" class="hover:text-ink hover:underline">Support</router-link>
         </nav>
       </div>
     </section>

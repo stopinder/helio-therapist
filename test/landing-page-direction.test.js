@@ -50,7 +50,9 @@ describe('Landing Page Direction', () => {
 
   test('Therapist reflection is present and CPD is not a primary navigation label', () => {
     assert.match(landingSource, /A private place to think across the work\./);
-    assert.match(landingSource, /private professional reflection/i);
+    const reflection = landingSource.match(/<section id="reflect"[\s\S]*?(?=<section id="trust")/)?.[0];
+    assert.ok(reflection, 'Reflection section must be present');
+    assert.match(reflection, /Private reflection — not part of the Clinical Record\./);
     // CPD should not be a primary nav label
     const headerNavMatch = landingSource.match(/aria-label="Landing page sections"[\s\S]*?<\/nav>/);
     if (headerNavMatch) {
@@ -69,9 +71,17 @@ describe('Landing Page Direction', () => {
   });
 
   test('Trust and Control section matches new direction', () => {
-    assert.match(landingSource, /AI assists\. You remain the clinician\./);
-    assert.match(landingSource, /Session Summaries stay editable/);
-    assert.match(landingSource, /Private professional reflection is kept apart from client-facing and formal record material\./);
+    const trust = landingSource.match(/<section id="trust"[\s\S]*?<\/section>/)?.[0];
+    assert.ok(trust, 'Clinical control section must be present');
+    assert.match(trust, /AI assists\. You remain the clinician\./);
+    assert.match(trust, /You review and approve what becomes a Clinical Record\./);
+    assert.match(trust, /Session Summaries are editable until finalised\./);
+    assert.match(trust, /Approved Clinical Records are read-only; corrections are added through amendments\./);
+    assert.match(trust, /Private reflection is not automatically included in Clinical Records\./);
+    assert.doesNotMatch(trust, /stay editable|are protected|quietly converting/);
+    for (const route of ['privacy', 'ai-data', 'terms', 'support']) {
+      assert.ok(trust.includes(`to="/${route}"`), `Trust information must retain ${route}`);
+    }
   });
 
   test('Legal and account routes remain present', () => {
