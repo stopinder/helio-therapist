@@ -8,54 +8,49 @@ describe('Landing Page Direction', () => {
   const landingSource = fs.readFileSync(landingPath, 'utf8');
 
   test('Practice flow section matches tightened copy', () => {
-    assert.match(landingSource, /Continuity across the therapist’s day\./);
-    assert.match(landingSource, /Helios keeps the client relationship in view before, after and across sessions\./);
+    assert.match(landingSource, /Helios helps you carry the thread forward\./);
+    assert.match(landingSource, /Helios keeps recent themes, shifts, exceptions and unfinished questions close enough to be useful without deciding what they mean for you\./);
   });
 
   test('Hero section matches therapist-first direction', () => {
-    assert.match(landingSource, /See your clients\. Helios remembers what matters\./);
-    assert.match(landingSource, /A calm workspace for sessions, continuity and clinical understanding/);
+    assert.match(landingSource, /Less to hold in your head\. More space for the work that matters\./);
+    assert.match(landingSource, /Helios is a continuity and reflection system for therapists\./);
   });
 
   test('Representative navigation reflects current product structure', () => {
-    // Current navigation should be Today, Clients, Calendar, Reflect
+    // These destinations remain part of the approved representative navigation.
     assert.match(landingSource, /Today/);
     assert.match(landingSource, /Clients/);
     assert.match(landingSource, /Calendar/);
     assert.match(landingSource, /Reflect/);
 
-    // Old navigation should NOT be present in representative sidebar
-    // We search within the representative sidebar area specifically if possible, 
-    // but a global check for these as navigation items is a good start.
-    // The instruction says "representative primary navigation does NOT contain permanent Transcripts or Documents destinations"
-    
-    // To be more specific, we check for them NOT being in the sidebar nav list
+    // The approved sidebar also includes Sessions, Transcripts and Documents.
     const navMatch = landingSource.match(/aria-label="Representative workspace navigation"[\s\S]*?<\/nav>/);
     if (navMatch) {
       const navContent = navMatch[0];
-      assert.strictEqual(navContent.includes('Transcripts'), false, 'Should not contain Transcripts in representative navigation');
-      assert.strictEqual(navContent.includes('Documents'), false, 'Should not contain Documents in representative navigation');
-      assert.strictEqual(navContent.includes('Sessions'), false, 'Should not contain Sessions in representative navigation');
+      assert.strictEqual(navContent.includes('Transcripts'), true, 'Should contain Transcripts in representative navigation');
+      assert.strictEqual(navContent.includes('Documents'), true, 'Should contain Documents in representative navigation');
+      assert.strictEqual(navContent.includes('Sessions'), true, 'Should contain Sessions in representative navigation');
     }
   });
 
   test('Client-centred sections are present', () => {
-    assert.match(landingSource, /The client stays at the centre/);
-    assert.match(landingSource, /Overview/);
+    assert.match(landingSource, /The whole thread of the work, in one place\./);
+    assert.match(landingSource, /Current care focus/);
     assert.match(landingSource, /Sessions/);
-    assert.match(landingSource, /Insights/);
-    assert.match(landingSource, /Files/);
+    assert.match(landingSource, /Follow-ups/);
+    assert.match(landingSource, /Recent sessions/);
   });
 
   test('Session Summary is emphasized', () => {
-    assert.match(landingSource, /From a session to something genuinely useful/);
-    assert.match(landingSource, /client-facing Session Summary/);
-    assert.match(landingSource, /A clear summary of what you explored together, ready for your therapist to review and edit/);
+    assert.match(landingSource, /The session doesn’t disappear when the call ends\./);
+    assert.match(landingSource, /create an editable Session Summary/);
+    assert.match(landingSource, /shape it in your own voice, and keep formal Clinical Records distinct from working notes\./);
   });
 
-  test('Therapist reflection (Reflect) is present instead of CPD', () => {
-    assert.match(landingSource, /Your own work deserves continuity too/);
-    assert.match(landingSource, /private therapist reflection/i);
+  test('Therapist reflection is present and CPD is not a primary navigation label', () => {
+    assert.match(landingSource, /Think across the work, not only one session at a time\./);
+    assert.match(landingSource, /private professional reflection/i);
     // CPD should not be a primary nav label
     const headerNavMatch = landingSource.match(/aria-label="Landing page sections"[\s\S]*?<\/nav>/);
     if (headerNavMatch) {
@@ -64,9 +59,9 @@ describe('Landing Page Direction', () => {
   });
 
   test('Trust and Control section matches new direction', () => {
-    assert.match(landingSource, /Your clinical work stays under your control/);
-    assert.match(landingSource, /Client-facing summaries stay editable until you decide they are ready/);
-    assert.match(landingSource, /Private professional reflection remains separate from client-facing material and the formal Clinical Record/);
+    assert.match(landingSource, /AI assists\. You remain the clinician\./);
+    assert.match(landingSource, /Session Summaries stay editable/);
+    assert.match(landingSource, /Private professional reflection is kept apart from client-facing and formal record material\./);
   });
 
   test('Legal and account routes remain present', () => {
