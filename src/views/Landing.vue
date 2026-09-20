@@ -28,7 +28,7 @@
 
     <section class="overflow-hidden border-b border-border-muted">
       <div class="mx-auto w-full max-w-[1200px] px-5 py-16 sm:px-8 md:py-10 lg:px-10">
-        <div class="grid gap-10 md:grid-cols-[320px_minmax(0,1fr)] md:items-start md:gap-6 lg:grid-cols-[380px_minmax(0,680px)] lg:gap-14">
+        <div class="grid gap-10 md:grid-cols-[320px_minmax(0,1fr)] md:items-start md:gap-6 lg:grid-cols-[minmax(380px,1fr)_minmax(0,480px)] lg:gap-14">
           <div class="min-w-0 pt-1">
             <p class="type-eyebrow text-accent">Continuity &amp; reflection for therapists</p>
 
