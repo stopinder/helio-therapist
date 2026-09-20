@@ -32,7 +32,7 @@
           <div class="min-w-0 pt-1">
             <p class="type-eyebrow text-accent">Continuity &amp; reflection for therapists</p>
 
-            <h1 class="mt-5 max-w-[340px] font-serif text-[3rem] font-semibold leading-[.98] tracking-[-0.04em] sm:text-[3.5rem] lg:max-w-[380px] lg:text-[4rem]">
+            <h1 class="mt-5 max-w-[340px] font-serif text-[2.65rem] font-medium leading-[1.06] tracking-[-0.025em] text-[#3F463F] sm:text-[3rem] lg:max-w-[380px] lg:text-[3.4rem]">
               Less to hold in your head. More space for the work that matters.
             </h1>
 
