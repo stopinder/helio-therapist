@@ -28,19 +28,19 @@
 
     <section class="overflow-hidden border-b border-border-muted">
       <div class="mx-auto w-full max-w-[1200px] px-5 py-16 sm:px-8 md:py-10 lg:px-10">
-        <div class="grid gap-10 md:grid-cols-[320px_minmax(0,1fr)] md:items-start md:gap-6 lg:grid-cols-[minmax(380px,1fr)_minmax(0,480px)] lg:gap-14">
+        <div class="grid gap-10 md:grid-cols-[320px_minmax(0,1fr)] md:items-start md:gap-6 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] lg:items-center lg:gap-14">
           <div class="min-w-0 pt-1">
             <p class="type-eyebrow text-accent">Continuity &amp; reflection for therapists</p>
 
-            <h1 class="mt-5 max-w-[340px] font-serif text-[2.65rem] font-medium leading-[1.06] tracking-[-0.025em] text-[#3F463F] sm:text-[3rem] lg:max-w-[380px] lg:text-[3.4rem]">
+            <h1 class="mt-5 max-w-[340px] font-serif text-[2.65rem] font-medium leading-[1.06] tracking-[-0.025em] text-[#3F463F] sm:text-[3rem] lg:max-w-[520px] lg:text-[3.4rem]">
               Less to hold in your head. More space for the work that matters.
             </h1>
 
-            <p class="mt-7 max-w-[330px] text-[15px] leading-6 text-ink-secondary lg:max-w-[380px]">
+            <p class="mt-7 max-w-[330px] text-[15px] leading-6 text-ink-secondary lg:max-w-[480px]">
               Helios is a continuity and reflection system for therapists. It connects sessions, reflections and the developing work over time.
             </p>
 
-            <p class="mt-5 max-w-[330px] text-sm leading-6 text-ink-secondary lg:max-w-[380px]">
+            <p class="mt-5 max-w-[330px] text-sm leading-6 text-ink-secondary lg:max-w-[480px]">
               AI carries more of the remembering, organising and synthesis — so you can prepare faster, notice what’s changing, and bring better material into supervision.
             </p>
 
@@ -55,7 +55,7 @@
             </p>
           </div>
 
-          <div id="product-tour" class="min-w-0 scroll-mt-24" aria-label="Representative Helios therapist workspace">
+          <div id="product-tour" class="min-w-0 scroll-mt-24 lg:w-full lg:max-w-[480px] lg:justify-self-end" aria-label="Representative Helios therapist workspace">
             <a href="#product-tour" class="mb-2 inline-block text-sm font-semibold text-accent underline-offset-4 hover:underline">
               See Helios in action →
             </a>
