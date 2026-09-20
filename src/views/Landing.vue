@@ -27,17 +27,17 @@
     </header>
 
     <section class="overflow-hidden border-b border-border-muted">
-      <div class="mx-auto flex min-h-[calc(100vh-73px)] w-full max-w-[1440px] items-center px-5 py-10 sm:px-8 md:py-12 xl:px-12">
-        <div class="grid w-full gap-8 md:grid-cols-[minmax(0,.72fr)_minmax(460px,1.28fr)] md:items-center lg:gap-10">
-          <div class="max-w-[520px]">
+      <div class="mx-auto w-full max-w-[1440px] px-5 py-14 sm:px-8 lg:py-16 xl:px-12">
+        <div class="grid w-full gap-10 md:grid-cols-[minmax(0,.62fr)_minmax(520px,1.38fr)] md:items-start lg:gap-12">
+          <div class="max-w-[430px] pt-2">
             <p class="type-eyebrow text-accent">Continuity &amp; reflection for therapists</p>
-            <h1 class="mt-4 font-serif text-[2.85rem] font-semibold leading-[.96] tracking-[-0.045em] sm:text-[3.7rem] lg:text-[4.2rem]">
+            <h1 class="mt-4 font-serif text-[2.7rem] font-semibold leading-[.98] tracking-[-0.04em] sm:text-[3.35rem] lg:text-[3.85rem]">
               Less to hold in your head. More space for the work that matters.
             </h1>
-            <p class="mt-5 max-w-[480px] text-[15px] leading-6 text-ink-secondary">
+            <p class="mt-6 max-w-[420px] text-[15px] leading-6 text-ink-secondary">
               Helios is a continuity and reflection system for therapists. It connects sessions, reflections and the developing work over time.
             </p>
-            <p class="mt-4 max-w-[480px] text-sm leading-6 text-ink-secondary">
+            <p class="mt-4 max-w-[420px] text-sm leading-6 text-ink-secondary">
               AI carries more of the remembering, organising and synthesis — so you can prepare faster, notice what’s changing, and bring better material into supervision.
             </p>
             <div class="mt-5 flex flex-wrap items-center gap-3">
@@ -47,7 +47,7 @@
             <p class="mt-4 text-[10px] leading-4 text-ink-muted">Private therapist workspace · Database-level access controls · Built for individual practice</p>
           </div>
 
-          <div id="product-tour" class="scroll-mt-24 md:self-center" aria-label="Representative Helios therapist workspace">
+          <div id="product-tour" class="scroll-mt-24 md:-mt-1" aria-label="Representative Helios therapist workspace">
             <div class="overflow-hidden rounded-panel border border-border bg-surface-raised shadow-[0_18px_55px_rgba(32,36,31,.14)]">
               <div class="flex items-center justify-between border-b border-white/10 bg-[#061E29] px-4 py-2.5 text-[10px] text-[#9BB5C0]">
                 <div class="flex items-center gap-1.5">
@@ -59,7 +59,7 @@
                 <span>● Private</span>
               </div>
 
-              <div class="grid min-h-[360px] sm:grid-cols-[138px_minmax(0,1fr)] md:grid-cols-[142px_minmax(0,1fr)]">
+              <div class="grid min-h-[390px] sm:grid-cols-[145px_minmax(0,1fr)] md:grid-cols-[150px_minmax(0,1fr)]">
                 <aside class="hidden bg-[#061E29] p-3 text-[#F4F0E7] sm:block">
                   <div class="mb-4 flex items-center gap-2 px-2">
                     <span class="flex h-7 w-7 items-center justify-center rounded-control bg-white/10 text-xs font-semibold">H</span>
