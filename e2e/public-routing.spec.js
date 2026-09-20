@@ -69,15 +69,39 @@ test.describe('Gate 3 public routing', () => {
       await expect(page).toHaveURL(new RegExp(`${path}/?$`));
       await expect(page).toHaveTitle(title);
       await expect(page.getByRole('heading', { name: heading, level: 1 })).toBeVisible();
-      await expect(page.locator('main')).toContainText('Testing / beta');
+      await expect(page.getByRole('link', { name:'Helios home' })).toHaveAttribute('href', '/');
+      await expect(page.getByRole('navigation', { name:'Account access' }).getByRole('link', { name:'Sign in' })).toHaveAttribute('href', '/sign-in');
     }
   });
 
   test('public information names the confirmed support contact and current processing providers', async ({ page }) => {
     await page.goto('/support', { waitUntil:'domcontentloaded' }); await expect(page.getByRole('link', { name:'hello@helio.works' }).first()).toHaveAttribute('href', 'mailto:hello@helio.works');
-    await page.goto('/privacy', { waitUntil:'domcontentloaded' }); await expect(page.getByText('Supabase', { exact:false })).toBeVisible(); await expect(page.getByText('Vercel', { exact:false })).toBeVisible(); await expect(page.getByText('Resend', { exact:false })).toBeVisible(); await expect(page.getByRole('heading', { name:'Google Calendar data', level:2, exact:true })).toBeVisible(); await expect(page.getByText('Zoom', { exact:false })).toBeVisible();
+    const section = name => page.locator('section').filter({ has: page.getByRole('heading', { name, level:2, exact:true }) });
+    const operator = 'Helios is operated by Robert Ormston, trading as Chrysalis Therapy Services.';
+    await expect(section('Privacy and data questions')).toContainText(operator);
+    await expect(section('Privacy and data questions').getByRole('link', { name:'Privacy Notice' })).toHaveAttribute('href', '/privacy');
+    await expect(page.locator('main')).not.toContainText('The final Privacy Notice');
+    await page.goto('/privacy', { waitUntil:'domcontentloaded' });
+    await expect(section('Service operator')).toContainText(operator);
+    for (const provider of ['Supabase', 'Vercel', 'Resend']) await expect(section('Core service providers')).toContainText(provider);
+    await expect(page.getByRole('heading', { name:'Google Calendar data', level:2, exact:true })).toBeVisible();
+    await expect(section('Optional connected services')).toContainText('Google and Zoom');
+    await expect(section('Optional product updates')).toContainText('When marketing is selected and Loops is configured');
+    await expect(section('Optional product updates')).toContainText('including an unsubscribed preference when marketing is not selected');
+    await expect(section('Traffic and performance telemetry')).toContainText('Vercel Analytics for traffic measurement and Speed Insights for performance measurement');
+    await expect(section('Traffic and performance telemetry')).toContainText('removes all query strings and URL fragments');
     await page.goto('/ai-data', { waitUntil:'domcontentloaded' }); await expect(page.locator('section').filter({ has: page.getByRole('heading', { name:'Current provider', level:2, exact:true }) }).getByText('Helios currently uses OpenAI through server-side Helios functions', { exact:false })).toBeVisible(); await expect(page.getByText('not used to train its models by default', { exact:false })).toBeVisible();
-    await page.goto('/cookies', { waitUntil:'domcontentloaded' }); await expect(page.getByText('does not include advertising or analytics tracking', { exact:false })).toBeVisible();
+    await expect(section('Current provider')).toContainText('requests may include full transcripts, relevant client and session context, therapist-provided notes or guidance');
+    await expect(section('AI usage metadata')).toContainText('usage metadata linked to the therapist account');
+    await expect(section('Current data handling')).toContainText('does not promise zero retention');
+    await page.goto('/cookies', { waitUntil:'domcontentloaded' });
+    await expect(section('Traffic and performance telemetry')).toContainText('Vercel Analytics for traffic measurement and Speed Insights for performance measurement');
+    await expect(section('Traffic and performance telemetry')).toContainText('removes all query strings and URL fragments');
+    await expect(section('Traffic and performance telemetry')).toContainText('replaces client IDs, session IDs and booking tokens');
+    await expect(section('Traffic and performance telemetry')).toContainText('Events for unrecognised paths and custom analytics events are excluded');
+    await expect(section('Cookies and consent controls')).toContainText('no cookie-consent banner or telemetry consent control');
+    await expect(section('Cookies and consent controls')).toContainText('does not claim an exemption from consent requirements');
+    await expect(page.locator('main')).not.toContainText('does not include advertising or analytics tracking');
   });
 
   test('current terms scope Helios to individual therapist accounts', async ({ page }) => {
@@ -85,6 +109,11 @@ test.describe('Gate 3 public routing', () => {
     await expect(page.locator('main')).toContainText('individual therapists operating their own professional practice');
     await expect(page.locator('main')).toContainText('multi-user clinic accounts are not currently supported');
     await expect(page.getByRole('heading', { name:'Testing and beta service' })).toBeVisible();
+    const commercial = page.locator('section').filter({ has: page.getByRole('heading', { name:'Launch pricing and billing', exact:true }) });
+    await expect(commercial).toContainText('Billing is not yet implemented');
+    await expect(commercial).toContainText('Account creation does not currently collect payment or start a paid subscription');
+    await expect(commercial).toContainText('trial period and founder-rate eligibility are not currently enforced');
+    await expect(commercial).toContainText('will take effect when billing is enabled');
 
     await page.goto('/privacy', { waitUntil:'domcontentloaded' });
     await expect(page.locator('main')).toContainText('individual therapists using a single account');
