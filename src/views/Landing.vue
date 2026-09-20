@@ -635,17 +635,17 @@
     </section>
 
     <section class="bg-surface-elevated">
-      <div class="mx-auto flex w-full max-w-[1200px] flex-col gap-6 px-5 py-16 sm:px-8 lg:flex-row lg:items-center lg:justify-between">
+      <div class="mx-auto flex w-full max-w-[1200px] flex-col gap-5 px-5 py-10 sm:px-8 lg:flex-row lg:items-center lg:justify-between">
         <div class="max-w-3xl">
           <p class="type-eyebrow text-accent">Helios</p>
-          <h2 class="mt-2 font-serif text-3xl font-semibold tracking-[-0.03em] sm:text-4xl">Spend more attention on the client, and less on reconstructing the work.</h2>
+          <h2 class="mt-2 font-serif text-3xl font-semibold tracking-[-0.03em] sm:text-4xl">More attention for the client.</h2>
         </div>
         <router-link to="/get-started" class="w-fit rounded-control bg-action-primary px-6 py-3 text-sm font-semibold text-on-action hover:bg-action-primary-hover">Create your workspace</router-link>
       </div>
     </section>
 
     <footer class="border-t border-border-muted bg-surface-raised">
-      <div class="mx-auto flex w-full max-w-[1200px] flex-col gap-8 px-5 py-10 sm:px-8 lg:flex-row lg:items-end lg:justify-between">
+      <div class="mx-auto flex w-full max-w-[1200px] flex-col gap-6 px-5 py-8 sm:px-8 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <div class="flex items-center gap-3">
             <svg class="h-8 w-8 text-accent" viewBox="0 0 48 48" fill="none" aria-hidden="true">
@@ -655,7 +655,6 @@
             </svg>
             <span class="text-lg font-semibold">Helios</span>
           </div>
-          <p class="mt-3 text-sm text-ink-secondary">A therapist workspace built around continuity, reflection and clinical responsibility.</p>
         </div>
 
         <div class="lg:text-right">
@@ -663,9 +662,10 @@
             <router-link to="/privacy" class="hover:text-ink">Privacy</router-link>
             <router-link to="/terms" class="hover:text-ink">Terms</router-link>
             <router-link to="/ai-data" class="hover:text-ink">AI &amp; data</router-link>
+            <router-link to="/cookies" class="hover:text-ink">Cookies</router-link>
             <router-link to="/support" class="hover:text-ink">Support</router-link>
           </nav>
-          <p class="mt-4 text-xs text-ink-muted">© {{ new Date().getFullYear() }} Helios. Built by therapists, for therapists.</p>
+          <p class="mt-4 text-xs text-ink-muted">© {{ new Date().getFullYear() }} Helios.</p>
         </div>
       </div>
     </footer>

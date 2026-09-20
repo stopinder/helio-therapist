@@ -91,5 +91,7 @@ describe('Landing Page Direction', () => {
     assert.match(landingSource, /to="\/terms"/);
     assert.match(landingSource, /to="\/ai-data"/);
     assert.match(landingSource, /to="\/support"/);
+    const footer = landingSource.match(/<footer[\s\S]*?<\/footer>/)?.[0];
+    assert.ok(footer?.includes('to="/cookies"'), 'Landing footer must link to cookie information');
   });
 });
