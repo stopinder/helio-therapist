@@ -59,95 +59,11 @@
             <a href="#product-tour" class="mb-2 inline-block text-sm font-semibold text-accent underline-offset-4 hover:underline">
               See Helios in action →
             </a>
-            <div class="mx-auto w-full max-w-[680px] overflow-hidden rounded-[18px] border border-border bg-[#FBF8F2] shadow-[0_18px_55px_rgba(32,36,31,.14)]">
-              <div class="flex h-11 items-center justify-between border-b border-white/10 bg-[#061E29] px-4 text-[10px] text-[#9BB5C0]">
-                <div class="flex items-center gap-1.5">
-                  <span class="h-1.5 w-1.5 rounded-full bg-[#9BB5C0]"></span>
-                  <span class="h-1.5 w-1.5 rounded-full bg-[#9BB5C0]"></span>
-                  <span class="h-1.5 w-1.5 rounded-full bg-[#9BB5C0]"></span>
-                </div>
-                <span class="font-semibold text-[#F4F0E7]">Helios · Continuity</span>
-                <span>● Private</span>
-              </div>
-
-              <div class="grid min-h-[400px] sm:grid-cols-[152px_minmax(0,1fr)] md:grid-cols-[104px_minmax(0,1fr)] lg:grid-cols-[152px_minmax(0,1fr)]">
-                <aside class="hidden bg-[#061E29] p-4 text-[#F4F0E7] sm:block md:p-2 lg:p-4">
-                  <div class="mb-5 flex items-center gap-2 px-1">
-                    <span class="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-xs font-semibold">H</span>
-                    <span class="text-xs font-semibold">helios</span>
-                  </div>
-
-                  <nav class="space-y-1 text-[11px]" aria-label="Representative workspace navigation">
-                    <div class="px-2.5 py-2 text-[#9BB5C0]">Today</div>
-                    <div class="rounded-control border-l-2 border-[#C9774A] bg-[#1D546D] px-2.5 py-2 font-semibold text-white">Clients</div>
-                    <div class="px-2.5 py-2 text-[#9BB5C0]">Calendar</div>
-                    <div class="px-2.5 py-2 text-[#9BB5C0]">Sessions</div>
-                    <div class="px-2.5 py-2 text-[#9BB5C0]">Transcripts</div>
-                    <div class="px-2.5 py-2 text-[#9BB5C0]">Documents</div>
-                    <div class="px-2.5 py-2 text-[#9BB5C0]">Reflect</div>
-                  </nav>
-
-                  <div class="mt-5 rounded-control bg-white/5 p-2.5">
-                    <p class="text-[9px] font-semibold uppercase tracking-[.12em] text-[#9BB5C0]">Up next</p>
-                    <p class="mt-1.5 text-[10px] font-semibold">Sarah M. · 10:00</p>
-                  </div>
-                </aside>
-
-                <div class="min-w-0 bg-[#FBF8F2] p-5 md:p-3 lg:p-5">
-                  <div class="flex flex-wrap items-start justify-between gap-3 border-b border-border-muted pb-4">
-                    <div>
-                      <p class="text-[9px] font-semibold uppercase tracking-[.12em] text-accent">Upcoming client</p>
-                      <p class="mt-1 font-serif text-[22px] font-semibold leading-tight">Sarah M. · 10:00</p>
-                      <p class="mt-2 text-[10px] text-ink-secondary">Current thread: Boundaries without withdrawal</p>
-                    </div>
-                    <span class="rounded-control bg-[#E8F0F2] px-2.5 py-1.5 text-[9px] font-semibold text-accent">Next session</span>
-                  </div>
-
-                  <div class="mt-4 grid gap-3 sm:grid-cols-2">
-                    <article class="rounded-control border border-border-muted bg-white/40 p-3.5">
-                      <p class="text-[9px] font-semibold uppercase tracking-[.1em] text-ink-muted">Latest session</p>
-                      <p class="mt-1.5 text-xs font-semibold">Session 13</p>
-                      <p class="mt-1 text-[10px] text-ink-secondary">Transcript attached</p>
-                    </article>
-
-                    <article class="rounded-control border border-accent/20 bg-[#E8F0F2] p-3.5">
-                      <p class="text-[9px] font-semibold uppercase tracking-[.1em] text-accent">Session summary</p>
-                      <p class="mt-1.5 text-xs font-semibold">Ready to review</p>
-                      <p class="mt-1 text-[10px] text-ink-secondary">New material connected</p>
-                    </article>
-                  </div>
-
-                  <article class="mt-4 rounded-control border border-[#C9774A]/40 bg-[#061E29] p-4 text-[#F4F0E7]">
-                    <div class="flex flex-wrap items-center justify-between gap-2">
-                      <p class="text-[9px] font-semibold uppercase tracking-[.11em] text-[#C9774A]">Continuity engine</p>
-                      <span class="text-[9px] text-[#9BB5C0]">For therapist consideration</span>
-                    </div>
-
-                    <div class="mt-2 flex flex-wrap items-center gap-1.5 text-[9px] text-[#9BB5C0]">
-                      <span>Session 12</span><span>→</span><span>Session 13</span><span>→</span><span>Reflection</span><span>→</span><span>Current pattern</span>
-                    </div>
-
-                    <p class="mt-3 font-serif text-[18px] font-semibold leading-[1.15]">
-                      Possible recurring pattern: a pull to rescue when clients become distant.
-                    </p>
-
-                    <p class="mt-2 text-[10px] text-[#9BB5C0]">For therapist consideration — not a conclusion.</p>
-                  </article>
-
-                  <div class="mt-4 grid gap-3 sm:grid-cols-2">
-                    <article class="rounded-control border border-border-muted bg-white/40 p-3">
-                      <p class="text-[9px] font-semibold uppercase tracking-[.1em] text-ink-muted">Documents / record</p>
-                      <p class="mt-1 text-[10px] font-medium text-ink">Session Summary · Clinical Record</p>
-                    </article>
-
-                    <article class="rounded-control border border-border-muted bg-[#F4F0E7] p-3">
-                      <p class="text-[9px] font-semibold uppercase tracking-[.1em] text-ink-muted">Reflect</p>
-                      <p class="mt-1 text-[10px] font-medium text-ink">Why did I feel an urge to reassure here?</p>
-                    </article>
-                  </div>
-                </div>
-              </div>
-            </div>
+            <img
+              :src="heroDashboard"
+              alt="Helios therapist workspace dashboard"
+              class="mx-auto block h-auto w-full max-w-[680px] rounded-[18px] border border-border shadow-[0_18px_55px_rgba(32,36,31,.14)]"
+            />
           </div>
         </div>
       </div>
@@ -671,3 +587,7 @@
     </footer>
   </main>
 </template>
+
+<script setup>
+import heroDashboard from '../assets/helios-dashboard-hero.png'
+</script>

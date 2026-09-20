@@ -10,10 +10,7 @@ test.describe('Gate 3 public routing', () => {
     await expect(page.getByText('Helios is a continuity and reflection system for therapists.', { exact:false })).toBeVisible();
 
     await expect(page.getByLabel('Representative Helios therapist workspace')).toBeVisible();
-    await expect(page.getByText('Sarah M. · 10:00', { exact:true }).first()).toBeVisible();
-    await expect(page.getByText('Transcript attached', { exact:true })).toBeVisible();
-    await expect(page.getByText('Ready to review', { exact:true })).toBeVisible();
-    await expect(page.getByText('Possible recurring pattern: a pull to rescue when clients become distant.', { exact:true })).toBeVisible();
+    await expect(page.getByRole('img', { name:'Helios therapist workspace dashboard', exact:true })).toBeVisible();
 
     await expect(page.getByRole('link', { name:'See Helios in action' })).toHaveAttribute('href', '#product-tour');
     await expect(page.getByRole('heading', { name:'The whole thread of the work, in one place.' })).toBeVisible();
