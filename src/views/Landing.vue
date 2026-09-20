@@ -27,29 +27,40 @@
     </header>
 
     <section class="overflow-hidden border-b border-border-muted">
-      <div class="mx-auto w-full max-w-[1440px] px-5 py-14 sm:px-8 lg:py-16 xl:px-12">
-        <div class="grid w-full gap-10 md:grid-cols-[minmax(0,.62fr)_minmax(520px,1.38fr)] md:items-start lg:gap-12">
-          <div class="max-w-[430px] pt-2">
+      <div class="mx-auto w-full max-w-[1200px] px-5 py-16 sm:px-8 lg:px-10 lg:py-20">
+        <div class="grid gap-10 lg:grid-cols-[340px_minmax(0,720px)] lg:items-start lg:justify-between">
+          <div class="pt-1">
             <p class="type-eyebrow text-accent">Continuity &amp; reflection for therapists</p>
-            <h1 class="mt-4 font-serif text-[2.7rem] font-semibold leading-[.98] tracking-[-0.04em] sm:text-[3.35rem] lg:text-[3.85rem]">
+
+            <h1 class="mt-5 max-w-[340px] font-serif text-[3rem] font-semibold leading-[.98] tracking-[-0.04em] sm:text-[3.5rem] lg:text-[4rem]">
               Less to hold in your head. More space for the work that matters.
             </h1>
-            <p class="mt-6 max-w-[420px] text-[15px] leading-6 text-ink-secondary">
+
+            <p class="mt-7 max-w-[330px] text-[15px] leading-6 text-ink-secondary">
               Helios is a continuity and reflection system for therapists. It connects sessions, reflections and the developing work over time.
             </p>
-            <p class="mt-4 max-w-[420px] text-sm leading-6 text-ink-secondary">
+
+            <p class="mt-5 max-w-[330px] text-sm leading-6 text-ink-secondary">
               AI carries more of the remembering, organising and synthesis — so you can prepare faster, notice what’s changing, and bring better material into supervision.
             </p>
-            <div class="mt-5 flex flex-wrap items-center gap-3">
-              <a href="#product-tour" class="rounded-control bg-[#061E29] px-5 py-3 text-sm font-semibold text-[#F4F0E7] hover:bg-[#1D546D]">See Helios in action →</a>
-              <router-link to="/get-started" class="rounded-control px-4 py-3 text-sm font-semibold text-accent hover:bg-surface-muted">Create your workspace</router-link>
+
+            <div class="mt-7 flex flex-wrap items-center gap-3">
+              <a href="#product-tour" class="rounded-control bg-[#061E29] px-5 py-3 text-sm font-semibold text-[#F4F0E7] hover:bg-[#1D546D]">
+                See Helios in action →
+              </a>
+              <router-link to="/get-started" class="rounded-control px-3 py-3 text-sm font-semibold text-accent hover:bg-surface-muted">
+                Create your workspace
+              </router-link>
             </div>
-            <p class="mt-4 text-[10px] leading-4 text-ink-muted">Private therapist workspace · Database-level access controls · Built for individual practice</p>
+
+            <p class="mt-5 max-w-[340px] text-[10px] leading-4 text-ink-muted">
+              Private therapist workspace · Database-level access controls · Built for individual practice
+            </p>
           </div>
 
-          <div id="product-tour" class="scroll-mt-24 md:-mt-1" aria-label="Representative Helios therapist workspace">
-            <div class="overflow-hidden rounded-panel border border-border bg-surface-raised shadow-[0_18px_55px_rgba(32,36,31,.14)]">
-              <div class="flex items-center justify-between border-b border-white/10 bg-[#061E29] px-4 py-2.5 text-[10px] text-[#9BB5C0]">
+          <div id="product-tour" class="scroll-mt-24 lg:pt-10" aria-label="Representative Helios therapist workspace">
+            <div class="mx-auto w-full max-w-[720px] overflow-hidden rounded-[18px] border border-border bg-[#FBF8F2] shadow-[0_18px_55px_rgba(32,36,31,.14)]">
+              <div class="flex h-11 items-center justify-between border-b border-white/10 bg-[#061E29] px-4 text-[10px] text-[#9BB5C0]">
                 <div class="flex items-center gap-1.5">
                   <span class="h-1.5 w-1.5 rounded-full bg-[#9BB5C0]"></span>
                   <span class="h-1.5 w-1.5 rounded-full bg-[#9BB5C0]"></span>
@@ -59,12 +70,13 @@
                 <span>● Private</span>
               </div>
 
-              <div class="grid min-h-[390px] sm:grid-cols-[145px_minmax(0,1fr)] md:grid-cols-[150px_minmax(0,1fr)]">
-                <aside class="hidden bg-[#061E29] p-3 text-[#F4F0E7] sm:block">
-                  <div class="mb-4 flex items-center gap-2 px-2">
-                    <span class="flex h-7 w-7 items-center justify-center rounded-control bg-white/10 text-xs font-semibold">H</span>
+              <div class="grid min-h-[400px] sm:grid-cols-[152px_minmax(0,1fr)]">
+                <aside class="hidden bg-[#061E29] p-4 text-[#F4F0E7] sm:block">
+                  <div class="mb-5 flex items-center gap-2 px-1">
+                    <span class="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-xs font-semibold">H</span>
                     <span class="text-xs font-semibold">helios</span>
                   </div>
+
                   <nav class="space-y-1 text-[11px]" aria-label="Representative workspace navigation">
                     <div class="px-2.5 py-2 text-[#9BB5C0]">Today</div>
                     <div class="rounded-control border-l-2 border-[#C9774A] bg-[#1D546D] px-2.5 py-2 font-semibold text-white">Clients</div>
@@ -74,52 +86,60 @@
                     <div class="px-2.5 py-2 text-[#9BB5C0]">Documents</div>
                     <div class="px-2.5 py-2 text-[#9BB5C0]">Reflect</div>
                   </nav>
+
                   <div class="mt-5 rounded-control bg-white/5 p-2.5">
                     <p class="text-[9px] font-semibold uppercase tracking-[.12em] text-[#9BB5C0]">Up next</p>
                     <p class="mt-1.5 text-[10px] font-semibold">Sarah M. · 10:00</p>
                   </div>
                 </aside>
 
-                <div class="bg-[#FBF8F2] p-4 sm:p-5">
-                  <div class="flex flex-wrap items-start justify-between gap-3 border-b border-border-muted pb-3">
+                <div class="bg-[#FBF8F2] p-5">
+                  <div class="flex flex-wrap items-start justify-between gap-3 border-b border-border-muted pb-4">
                     <div>
                       <p class="text-[9px] font-semibold uppercase tracking-[.12em] text-accent">Upcoming client</p>
-                      <p class="mt-1 font-serif text-xl font-semibold">Sarah M. · 10:00</p>
-                      <p class="mt-1 text-[10px] text-ink-secondary">Current thread: Boundaries without withdrawal</p>
+                      <p class="mt-1 font-serif text-[22px] font-semibold leading-tight">Sarah M. · 10:00</p>
+                      <p class="mt-2 text-[10px] text-ink-secondary">Current thread: Boundaries without withdrawal</p>
                     </div>
-                    <span class="rounded-control bg-[#E8F0F2] px-2 py-1 text-[9px] font-semibold text-accent">Next session</span>
+                    <span class="rounded-control bg-[#E8F0F2] px-2.5 py-1.5 text-[9px] font-semibold text-accent">Next session</span>
                   </div>
 
-                  <div class="mt-3 grid gap-3 sm:grid-cols-2">
-                    <article class="rounded-control border border-border-muted bg-white/40 p-3">
+                  <div class="mt-4 grid gap-3 sm:grid-cols-2">
+                    <article class="rounded-control border border-border-muted bg-white/40 p-3.5">
                       <p class="text-[9px] font-semibold uppercase tracking-[.1em] text-ink-muted">Latest session</p>
-                      <p class="mt-1 text-xs font-semibold">Session 13</p>
+                      <p class="mt-1.5 text-xs font-semibold">Session 13</p>
                       <p class="mt-1 text-[10px] text-ink-secondary">Transcript attached</p>
                     </article>
-                    <article class="rounded-control border border-accent/20 bg-[#E8F0F2] p-3">
+
+                    <article class="rounded-control border border-accent/20 bg-[#E8F0F2] p-3.5">
                       <p class="text-[9px] font-semibold uppercase tracking-[.1em] text-accent">Session summary</p>
-                      <p class="mt-1 text-xs font-semibold">Ready to review</p>
+                      <p class="mt-1.5 text-xs font-semibold">Ready to review</p>
                       <p class="mt-1 text-[10px] text-ink-secondary">New material connected</p>
                     </article>
                   </div>
 
-                  <article class="mt-3 rounded-control border border-[#C9774A]/40 bg-[#061E29] p-4 text-[#F4F0E7]">
+                  <article class="mt-4 rounded-control border border-[#C9774A]/40 bg-[#061E29] p-4 text-[#F4F0E7]">
                     <div class="flex flex-wrap items-center justify-between gap-2">
                       <p class="text-[9px] font-semibold uppercase tracking-[.11em] text-[#C9774A]">Continuity engine</p>
                       <span class="text-[9px] text-[#9BB5C0]">For therapist consideration</span>
                     </div>
+
                     <div class="mt-2 flex flex-wrap items-center gap-1.5 text-[9px] text-[#9BB5C0]">
                       <span>Session 12</span><span>→</span><span>Session 13</span><span>→</span><span>Reflection</span><span>→</span><span>Current pattern</span>
                     </div>
-                    <p class="mt-3 font-serif text-lg font-semibold leading-tight">Possible recurring pattern: a pull to rescue when clients become distant.</p>
+
+                    <p class="mt-3 font-serif text-[18px] font-semibold leading-[1.15]">
+                      Possible recurring pattern: a pull to rescue when clients become distant.
+                    </p>
+
                     <p class="mt-2 text-[10px] text-[#9BB5C0]">For therapist consideration — not a conclusion.</p>
                   </article>
 
-                  <div class="mt-3 grid gap-3 sm:grid-cols-2">
+                  <div class="mt-4 grid gap-3 sm:grid-cols-2">
                     <article class="rounded-control border border-border-muted bg-white/40 p-3">
                       <p class="text-[9px] font-semibold uppercase tracking-[.1em] text-ink-muted">Documents / record</p>
                       <p class="mt-1 text-[10px] font-medium text-ink">Session Summary · Clinical Record</p>
                     </article>
+
                     <article class="rounded-control border border-border-muted bg-[#F4F0E7] p-3">
                       <p class="text-[9px] font-semibold uppercase tracking-[.1em] text-ink-muted">Reflect</p>
                       <p class="mt-1 text-[10px] font-medium text-ink">Why did I feel an urge to reassure here?</p>
