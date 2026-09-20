@@ -49,13 +49,23 @@ describe('Landing Page Direction', () => {
   });
 
   test('Therapist reflection is present and CPD is not a primary navigation label', () => {
-    assert.match(landingSource, /Think across the work, not only one session at a time\./);
+    assert.match(landingSource, /A private place to think across the work\./);
     assert.match(landingSource, /private professional reflection/i);
     // CPD should not be a primary nav label
     const headerNavMatch = landingSource.match(/aria-label="Landing page sections"[\s\S]*?<\/nav>/);
     if (headerNavMatch) {
         assert.strictEqual(headerNavMatch[0].includes('CPD'), false, 'Header nav should use Reflect or similar instead of CPD');
     }
+  });
+
+  test('Reflection section keeps authorship, privacy and supervision selection explicit', () => {
+    const reflection = landingSource.match(/<section id="reflect"[\s\S]*?(?=<section id="trust")/)?.[0];
+    assert.ok(reflection, 'Reflection section must be present');
+    assert.match(reflection, /Therapist-authored mapping/);
+    assert.match(reflection, /Private reflection — not part of the Clinical Record\./);
+    assert.match(reflection, /Bring selected reflections into supervision preparation\./);
+    assert.match(reflection, /Client names excluded by default; case aliases used\./);
+    assert.doesNotMatch(reflection, /continuity engine|pattern detected|Helios identified|possible transference|recurring relational pattern|Supervision &amp; CPD/i);
   });
 
   test('Trust and Control section matches new direction', () => {

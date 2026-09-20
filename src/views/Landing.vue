@@ -496,51 +496,84 @@
 
     <section id="reflect" class="border-b border-border-muted bg-[#E8F0F2]">
       <div class="mx-auto w-full max-w-[1200px] px-5 py-20 sm:px-8 lg:py-28">
-        <div class="grid gap-12 lg:grid-cols-[.8fr_1.2fr] lg:items-start">
-          <div>
-            <p class="type-eyebrow text-accent">Reflection &amp; supervision</p>
-            <h2 class="mt-3 font-serif text-4xl font-semibold tracking-[-0.035em] sm:text-5xl">Think across the work, not only one session at a time.</h2>
-            <p class="mt-5 text-base leading-7 text-ink-secondary">
-              Reflection is a core part of Helios. The continuity engine can bring together themes, sequences, shifts and recurring relational patterns across sessions and your own reflections, giving you more to think with and less to reconstruct from memory.
-            </p>
-            <p class="mt-4 text-sm leading-6 text-ink-secondary">
-              That can reduce cognitive load between sessions and help make the work more sustainable over time.
-            </p>
-          </div>
-
-          <div class="overflow-hidden rounded-panel border border-accent/20 bg-surface-raised shadow-sm">
-            <div class="flex items-center justify-between border-b border-border-muted bg-[#061E29] px-5 py-3 text-[#F4F0E7]">
-              <span class="text-[11px] font-semibold uppercase tracking-[.12em]">Supervision &amp; CPD</span>
-              <span class="text-[10px] text-[#9BB5C0]">Prepared before the meeting</span>
-            </div>
-            <div class="p-5 sm:p-6">
-              <article class="rounded-control border border-accent/20 bg-accent/5 p-5">
-                <p class="type-eyebrow text-accent">Supervision preparation</p>
-                <p class="mt-2 text-base font-semibold">Arrive at supervision already prepared.</p>
-                <p class="mt-2 text-sm leading-6 text-ink-secondary">
-                  Bring forward recurring themes, unresolved questions, possible transference dynamics and patterns across the work so less of the session is spent reconstructing the story and more can be spent on the meat of supervision.
-                </p>
-              </article>
-
-              <div class="mt-4 grid gap-4 sm:grid-cols-2">
-                <article class="rounded-control border border-border-muted bg-surface p-4">
-                  <p class="type-eyebrow text-ink-muted">Across reflections</p>
-                  <p class="mt-2 text-sm font-semibold">A recurring pull to rescue</p>
-                  <p class="mt-2 text-xs leading-5 text-ink-secondary">A pattern appears across several reflections and can be explored rather than rediscovered.</p>
-                </article>
-                <article class="rounded-control border border-border-muted bg-surface p-4">
-                  <p class="type-eyebrow text-ink-muted">For supervision</p>
-                  <p class="mt-2 text-sm font-semibold">What changes when the client becomes distant?</p>
-                  <p class="mt-2 text-xs leading-5 text-ink-secondary">Helios surfaces the sequence for you and your supervisor to consider together.</p>
-                </article>
-              </div>
-
-              <p class="mt-4 text-xs leading-5 text-ink-muted">
-                Helios can surface possibilities and patterns; interpretation remains with you and your supervisor.
-              </p>
-            </div>
-          </div>
+        <div class="max-w-3xl">
+          <p class="type-eyebrow text-accent">Reflection</p>
+          <h2 class="mt-3 font-serif text-4xl font-semibold tracking-[-0.035em] sm:text-5xl">A private place to think across the work.</h2>
+          <p class="mt-5 text-base leading-7 text-ink-secondary">Capture what stayed with you, revisit your own observations over time, and bring selected material into supervision when it is useful — without folding private reflection into the formal clinical record.</p>
         </div>
+
+        <figure class="mt-10 overflow-hidden rounded-panel border border-accent/20 bg-surface-raised shadow-sm" aria-label="Illustrative private reflection workspace with therapist-authored mapping and optional supervision preparation">
+          <div class="flex flex-wrap items-center justify-between gap-3 bg-sidebar px-5 py-4 text-sidebar-fg sm:px-7">
+            <h3 class="font-serif text-2xl font-semibold">Therapist Reflection</h3>
+            <p class="text-xs text-sidebar-muted">Private reflection — not part of the Clinical Record.</p>
+          </div>
+          <div class="grid lg:grid-cols-[1.45fr_1fr]">
+            <article class="min-w-0 px-5 py-6 sm:px-7 sm:py-7" aria-label="Example therapist-authored reflection">
+              <div class="flex flex-wrap items-center justify-between gap-2 text-xs text-ink-muted">
+                <p class="font-semibold text-accent">In your own words</p>
+                <p>15 September · Private reflection</p>
+              </div>
+              <h4 class="mt-6 text-sm font-semibold">What did you notice in yourself?</h4>
+              <div class="mt-3 border-l-2 border-accent/40 pl-4 sm:pl-5">
+                <p class="font-serif text-xl leading-8 text-ink">I noticed an urge to fill the silence and offer reassurance. When I paused, I could stay with the uncertainty for a little longer.</p>
+                <p class="mt-4 font-serif text-lg leading-7 text-ink-secondary">I want to return to what made waiting feel difficult for me, without deciding too quickly what it meant.</p>
+              </div>
+              <div class="mt-6 rounded-control border border-border bg-surface px-4 py-4">
+                <h4 class="text-sm font-semibold">What remains uncertain?</h4>
+                <p class="mt-2 text-sm leading-6 text-ink-secondary">Was I responding to what was needed in that moment, or to my own discomfort with not knowing?</p>
+              </div>
+              <div class="mt-6 flex justify-end">
+                <span class="rounded-control bg-accent px-4 py-2.5 text-xs font-semibold text-on-action">Save private reflection</span>
+              </div>
+            </article>
+
+            <aside class="min-w-0 border-t border-border bg-[#EFF3F1] px-5 py-6 sm:px-7 sm:py-7 lg:border-l lg:border-t-0" aria-label="Reflection history and Practice Map">
+              <h4 class="font-serif text-xl font-semibold">Review Reflections</h4>
+              <div class="mt-3 flex flex-wrap gap-2 text-xs text-ink-muted" aria-label="Illustrative reflection search and theme filter">
+                <span class="min-w-0 flex-1 rounded-control border border-border bg-surface-raised px-3 py-2">Search reflections…</span>
+                <span class="rounded-control border border-border bg-surface-raised px-3 py-2">All themes ▾</span>
+              </div>
+              <div class="mt-4 divide-y divide-border border-y border-border">
+                <div class="py-3">
+                  <p class="text-[11px] text-ink-muted">15 September</p>
+                  <p class="mt-1 text-sm font-semibold">Staying with uncertainty</p>
+                </div>
+                <div class="py-3">
+                  <p class="text-[11px] text-ink-muted">8 September</p>
+                  <p class="mt-1 text-sm text-ink-secondary">Making room for silence</p>
+                </div>
+              </div>
+              <div class="mt-6">
+                <h4 class="font-serif text-xl font-semibold">Practice Map</h4>
+                <p class="mt-1 text-xs text-accent">Therapist-authored mapping</p>
+                <div class="mt-3 border-l-2 border-accent/40 pl-3">
+                  <p class="text-sm font-semibold">Wanting to reassure</p>
+                  <p class="mt-1 text-xs leading-5 text-ink-secondary">An inner position you named in 3 mapped reflections.</p>
+                </div>
+                <p class="mt-4 text-[11px] font-semibold uppercase tracking-wide text-ink-muted">Recorded themes</p>
+                <p class="mt-1 text-sm text-ink-secondary">Uncertainty · Boundaries</p>
+                <p class="mt-3 text-xs leading-5 text-ink-muted">Helios groups the positions and themes you record. Their meaning remains yours to consider.</p>
+              </div>
+            </aside>
+          </div>
+
+          <div class="border-t border-border bg-surface px-5 py-6 sm:px-7">
+            <div class="grid gap-5 lg:grid-cols-[.9fr_1.1fr] lg:gap-8">
+              <div>
+                <p class="type-eyebrow text-ink-muted">When useful · A next step</p>
+                <h4 class="mt-2 font-serif text-xl font-semibold">Supervision preparation</h4>
+                <p class="mt-2 text-sm leading-6 text-ink-secondary">Bring selected reflections into supervision preparation. Choose what to include and add the questions you want to explore.</p>
+              </div>
+              <div class="border-l-2 border-accent/30 pl-4 sm:pl-5">
+                <p class="text-xs font-semibold text-accent">Selected reflection · Case A</p>
+                <p class="mt-2 text-sm text-ink">Preparation note: What helps me stay curious when I feel an urge to reassure?</p>
+                <p class="mt-3 text-xs leading-5 text-ink-muted">Privacy review · Client names excluded by default; case aliases used.</p>
+                <div class="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-xs font-semibold text-accent"><span>Choose report contents</span><span>Preview</span><span>Copy</span><span>Download PDF</span></div>
+              </div>
+            </div>
+          </div>
+          <figcaption class="border-t border-border-muted px-5 py-4 text-xs leading-5 text-ink-muted sm:px-7">Illustrative workspace with therapist-authored material. You remain responsible for interpretation and clinical meaning; private reflection stays separate from Clinical Records.</figcaption>
+        </figure>
       </div>
     </section>
 
