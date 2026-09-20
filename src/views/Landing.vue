@@ -32,16 +32,12 @@
           <div class="min-w-0 pt-1">
             <p class="type-eyebrow text-accent">Continuity &amp; reflection for therapists</p>
 
-            <h1 class="mt-5 max-w-[340px] font-serif text-[2.65rem] font-medium leading-[1.06] tracking-[-0.025em] text-[#3F463F] sm:text-[3rem] lg:max-w-[520px] lg:text-[3.4rem]">
+            <h1 class="mt-5 max-w-[340px] font-serif text-[2.85rem] font-medium leading-[1.04] tracking-[-0.025em] text-[#3F463F] sm:text-[3.25rem] lg:max-w-[580px] lg:text-[3.75rem]">
               Less to hold in your head. More space for the work that matters.
             </h1>
 
-            <p class="mt-7 max-w-[330px] text-[15px] leading-6 text-ink-secondary lg:max-w-[480px]">
+            <p class="mt-7 max-w-[330px] text-[15px] leading-[1.65] text-ink-secondary lg:max-w-[480px]">
               Helios is a continuity and reflection system for therapists. It connects sessions, reflections and the developing work over time.
-            </p>
-
-            <p class="mt-5 max-w-[330px] text-sm leading-6 text-ink-secondary lg:max-w-[480px]">
-              AI carries more of the remembering, organising and synthesis — so you can prepare faster, notice what’s changing, and bring better material into supervision.
             </p>
 
             <div class="mt-7 flex flex-wrap items-center gap-3">
@@ -64,6 +60,36 @@
               alt="Helios therapist workspace dashboard"
               class="mx-auto block h-auto w-full max-w-[680px] rounded-[18px] border border-border shadow-[0_18px_55px_rgba(32,36,31,.14)]"
             />
+
+            <div class="mt-5 lg:mt-6">
+              <h3 class="text-[13px] font-medium text-ink-secondary/90">Helios helps you</h3>
+              <ul class="mt-3 grid gap-x-8 gap-y-2 text-[13px] leading-5 text-ink-secondary sm:grid-cols-2">
+                <li class="flex items-start gap-2">
+                  <svg class="mt-1 h-3 w-3 shrink-0 text-accent/80" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                  </svg>
+                  <span>Remember key details between sessions</span>
+                </li>
+                <li class="flex items-start gap-2">
+                  <svg class="mt-1 h-3 w-3 shrink-0 text-accent/80" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                  </svg>
+                  <span>Organise transcripts, notes and follow-ups</span>
+                </li>
+                <li class="flex items-start gap-2">
+                  <svg class="mt-1 h-3 w-3 shrink-0 text-accent/80" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                  </svg>
+                  <span>See how the work develops over time</span>
+                </li>
+                <li class="flex items-start gap-2">
+                  <svg class="mt-1 h-3 w-3 shrink-0 text-accent/80" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                  </svg>
+                  <span>Prepare more easily for supervision</span>
+                </li>
+              </ul>
+            </div>
           </div>
         </div>
       </div>
