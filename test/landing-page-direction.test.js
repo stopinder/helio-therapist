@@ -8,8 +8,8 @@ describe('Landing Page Direction', () => {
   const landingSource = fs.readFileSync(landingPath, 'utf8');
 
   test('Practice flow section matches tightened copy', () => {
-    assert.match(landingSource, /Helios helps you carry the thread forward\./);
-    assert.match(landingSource, /Helios keeps recent themes, shifts, exceptions and unfinished questions close enough to be useful without deciding what they mean for you\./);
+    assert.match(landingSource, /See how the work is developing over time\./);
+    assert.match(landingSource, /Helios brings reviewed session material into a longitudinal view, with links back to the source — helping you revisit changes, open questions and the thread of the work without deciding what they mean for you\./);
   });
 
   test('Hero section matches therapist-first direction', () => {
@@ -36,7 +36,7 @@ describe('Landing Page Direction', () => {
 
   test('Client-centred sections are present', () => {
     assert.match(landingSource, /The whole thread of the work, in one place\./);
-    assert.match(landingSource, /Current care focus/);
+    assert.match(landingSource, /Current focus/);
     assert.match(landingSource, /Sessions/);
     assert.match(landingSource, /Follow-ups/);
     assert.match(landingSource, /Recent sessions/);

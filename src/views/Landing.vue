@@ -339,37 +339,69 @@
       <div class="mx-auto w-full max-w-[1200px] px-5 py-20 sm:px-8 lg:py-28">
         <div class="max-w-3xl">
           <p class="type-eyebrow text-accent">Across sessions</p>
-          <h2 class="mt-3 font-serif text-4xl font-semibold tracking-[-0.035em] sm:text-5xl">Helios helps you carry the thread forward.</h2>
+          <h2 class="mt-3 font-serif text-4xl font-semibold tracking-[-0.035em] sm:text-5xl">See how the work is developing over time.</h2>
           <p class="mt-5 text-base leading-7 text-ink-secondary">
-            The work changes over time. Helios keeps recent themes, shifts, exceptions and unfinished questions close enough to be useful without deciding what they mean for you.
+            Helios brings reviewed session material into a longitudinal view, with links back to the source — helping you revisit changes, open questions and the thread of the work without deciding what they mean for you.
           </p>
         </div>
 
-        <div class="mt-10 grid gap-4 lg:grid-cols-[1fr_auto_1fr_auto_1fr_auto_1.15fr] lg:items-stretch">
-          <article class="rounded-panel border border-border bg-surface-raised p-5">
-            <p class="type-eyebrow text-ink-muted">Session 12</p>
-            <p class="mt-3 text-sm font-semibold">Boundary attempts lead to withdrawal</p>
-            <p class="mt-2 text-xs leading-5 text-ink-secondary">Client describes leaving conversations when disagreement feels unsafe.</p>
-          </article>
-          <div class="hidden items-center text-ink-muted lg:flex">→</div>
-          <article class="rounded-panel border border-border bg-surface-raised p-5">
-            <p class="type-eyebrow text-ink-muted">Session 13</p>
-            <p class="mt-3 text-sm font-semibold">An exception appears</p>
-            <p class="mt-2 text-xs leading-5 text-ink-secondary">She names discomfort and stays in the conversation for longer.</p>
-          </article>
-          <div class="hidden items-center text-ink-muted lg:flex">→</div>
-          <article class="rounded-panel border border-border bg-surface-raised p-5">
-            <p class="type-eyebrow text-ink-muted">Session 14</p>
-            <p class="mt-3 text-sm font-semibold">A different response feels possible</p>
-            <p class="mt-2 text-xs leading-5 text-ink-secondary">The session explores what made staying present feel safer.</p>
-          </article>
-          <div class="hidden items-center text-ink-muted lg:flex">→</div>
-          <article class="rounded-panel border border-accent/20 bg-accent/5 p-5">
-            <p class="type-eyebrow text-accent">Current care focus</p>
-            <p class="mt-3 text-sm font-semibold">Boundaries without withdrawal</p>
-            <p class="mt-2 text-xs leading-5 text-ink-secondary">A thread to return to, not a conclusion generated for you.</p>
-          </article>
-        </div>
+        <figure class="mt-10 overflow-hidden rounded-panel border border-border bg-surface-raised" aria-label="Illustrative longitudinal review of Sarah M.’s sessions">
+          <div class="flex flex-wrap items-center justify-between gap-3 border-b border-accent/20 bg-state-selected px-5 py-5 sm:px-7">
+            <div>
+              <p class="type-eyebrow text-accent">Longitudinal review</p>
+              <h3 class="mt-1 font-serif text-2xl font-semibold">Sarah M. · Across three sessions</h3>
+            </div>
+            <p class="text-xs text-ink-secondary">Reviewed source material</p>
+          </div>
+          <div class="grid lg:grid-cols-[minmax(0,1fr)_300px]">
+            <div class="px-5 py-6 sm:px-7">
+              <p class="mb-5 text-xs text-ink-muted">Dated observations · Return to the session for context</p>
+              <ol class="ml-1 border-l-2 border-accent/30">
+                <li class="relative pl-6 pb-7">
+                  <span class="absolute -left-[6px] top-1 h-2.5 w-2.5 rounded-full bg-accent" aria-hidden="true"></span>
+                  <div class="flex flex-wrap items-baseline justify-between gap-2">
+                    <p class="text-xs font-semibold text-accent">31 Aug · Session 12</p>
+                    <span class="text-[11px] text-ink-muted">Reviewed Session Capture</span>
+                  </div>
+                  <p class="mt-2 font-serif text-xl leading-7">Client described withdrawing after disagreement.</p>
+                  <p class="mt-3 text-xs font-medium text-accent">Source: Session 12 · Open session ↗</p>
+                </li>
+                <li class="relative pl-6 pb-7">
+                  <span class="absolute -left-[6px] top-1 h-2.5 w-2.5 rounded-full bg-accent" aria-hidden="true"></span>
+                  <div class="flex flex-wrap items-baseline justify-between gap-2">
+                    <p class="text-xs font-semibold text-accent">7 Sep · Session 13</p>
+                    <span class="text-[11px] text-ink-muted">Reviewed Session Capture</span>
+                  </div>
+                  <p class="mt-2 font-serif text-xl leading-7">Client reported staying in the conversation.</p>
+                  <p class="mt-3 text-xs font-medium text-accent">Source: Session 13 · Open session ↗</p>
+                </li>
+                <li class="relative pl-6">
+                  <span class="absolute -left-[6px] top-1 h-2.5 w-2.5 rounded-full bg-accent" aria-hidden="true"></span>
+                  <div class="flex flex-wrap items-baseline justify-between gap-2">
+                    <p class="text-xs font-semibold text-accent">14 Sep · Session 14</p>
+                    <span class="text-[11px] text-ink-muted">Reviewed Session Capture</span>
+                  </div>
+                  <p class="mt-2 font-serif text-xl leading-7">Follow-up: revisit what made that possible.</p>
+                  <p class="mt-3 text-xs font-medium text-accent">Source: Session 14 · Open session ↗</p>
+                </li>
+              </ol>
+            </div>
+            <aside class="border-t border-border-muted bg-surface px-5 py-6 sm:px-7 lg:border-l lg:border-t-0">
+              <p class="type-eyebrow text-accent">Therapist-authored</p>
+              <h3 class="mt-2 font-serif text-xl font-semibold">Current focus</h3>
+              <p class="mt-3 text-sm leading-6 text-ink-secondary">Explore how Sarah experiences expressing a boundary while staying in connection.</p>
+              <div class="mt-6 border-t border-border pt-5">
+                <h4 class="text-sm font-semibold">Open follow-up</h4>
+                <div class="mt-3 flex items-start gap-3">
+                  <span class="mt-1 h-3.5 w-3.5 shrink-0 rounded-sm border border-border-strong" aria-hidden="true"></span>
+                  <p class="text-sm leading-6 text-ink-secondary">Return to the conversation with her sister.</p>
+                </div>
+              </div>
+              <p class="mt-6 text-xs leading-5 text-ink-muted">A focus recorded by the therapist, not a conclusion inferred from these entries.</p>
+            </aside>
+          </div>
+          <figcaption class="border-t border-border-muted px-5 py-4 text-xs leading-5 text-ink-muted sm:px-7">Illustrative review with source-session references. Observations remain material for therapist consideration; their meaning is not determined here.</figcaption>
+        </figure>
       </div>
     </section>
 
