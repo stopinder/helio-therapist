@@ -30,18 +30,18 @@
       <div class="mx-auto w-full max-w-[1440px] px-5 pb-0 pt-14 sm:px-8 lg:pt-20 xl:px-12">
         <div class="grid gap-10 lg:grid-cols-[minmax(0,.9fr)_minmax(380px,.55fr)] lg:items-end">
           <div class="max-w-[820px]">
-            <p class="type-eyebrow text-accent">Therapist workspace</p>
-            <h1 class="mt-4 max-w-[860px] font-serif text-[3rem] font-semibold leading-[.98] tracking-[-0.045em] sm:text-[4rem] lg:text-[4.7rem]">
-              Your therapy practice, with the clinical context kept together.
+            <p class="type-eyebrow text-accent">Continuity &amp; reflection for therapists</p>
+            <h1 class="mt-4 max-w-[900px] font-serif text-[3rem] font-semibold leading-[.98] tracking-[-0.045em] sm:text-[4rem] lg:text-[4.7rem]">
+              Less to hold in your head. More space for the work that matters.
             </h1>
           </div>
 
           <div class="pb-2">
-            <p class="max-w-[540px] text-lg leading-8 text-ink-secondary">
-              Helios brings your clients, appointments, sessions, notes, transcripts and developing clinical picture into one calm therapist workspace.
+            <p class="max-w-[560px] text-lg leading-8 text-ink-secondary">
+              Helios is a continuity and reflection system for therapists. It keeps the thread of the work together across clients, sessions, notes, transcripts and your own reflections.
             </p>
-            <p class="mt-4 max-w-[540px] text-sm leading-6 text-ink-secondary">
-              See what matters before a session, turn session material into editable working notes, and carry the thread forward without rebuilding context from scratch.
+            <p class="mt-4 max-w-[560px] text-sm leading-6 text-ink-secondary">
+              AI takes on more of the remembering, organising and first-draft work, reducing cognitive load so you can give more attention to the person in front of you — and arrive at supervision better prepared.
             </p>
             <div class="mt-6 flex flex-wrap gap-3">
               <a href="#product-tour" class="rounded-control bg-action-primary px-5 py-3 text-sm font-semibold text-on-action hover:bg-action-primary-hover">See Helios in action</a>
@@ -62,7 +62,7 @@
             </div>
 
             <div class="grid min-h-[520px] md:grid-cols-[176px_minmax(0,1fr)]">
-              <aside class="hidden border-r border-sidebar-border bg-surface-sidebar p-4 text-on-surface-sidebar md:block">
+              <aside class="hidden border-r border-white/10 bg-[#061E29] p-4 text-[#F4F0E7] md:block">
                 <div class="mb-5 flex items-center gap-3 border-b border-sidebar-border pb-4">
                   <span class="flex h-9 w-9 items-center justify-center rounded-control bg-white/10 text-lg">☼</span>
                   <div>
@@ -71,12 +71,12 @@
                   </div>
                 </div>
                 <nav class="space-y-1 text-xs" aria-label="Representative workspace navigation">
-                  <div class="rounded-control bg-white/10 px-3 py-2.5 font-semibold">Today</div>
-                  <div class="px-3 py-2.5 text-sidebar-muted">Clients</div>
-                  <div class="px-3 py-2.5 text-sidebar-muted">Calendar</div>
-                  <div class="px-3 py-2.5 text-sidebar-muted">Documents</div>
-                  <div class="px-3 py-2.5 text-sidebar-muted">Transcripts</div>
-                  <div class="mt-5 border-t border-sidebar-border pt-4 px-3 py-2.5 text-sidebar-muted">Supervision &amp; CPD</div>
+                  <div class="rounded-control bg-[#1D546D] px-3 py-2.5 font-semibold text-white shadow-sm">Today</div>
+                  <div class="px-3 py-2.5 text-[#9BB5C0]">Clients</div>
+                  <div class="px-3 py-2.5 text-[#9BB5C0]">Calendar</div>
+                  <div class="px-3 py-2.5 text-[#9BB5C0]">Documents</div>
+                  <div class="px-3 py-2.5 text-[#9BB5C0]">Transcripts</div>
+                  <div class="mt-5 border-t border-white/10 px-3 pt-4 pb-2.5 text-[#9BB5C0]">Supervision &amp; CPD</div>
                 </nav>
               </aside>
 
@@ -336,29 +336,51 @@
       </div>
     </section>
 
-    <section id="reflect" class="border-b border-border-muted bg-surface-elevated">
-      <div class="mx-auto grid w-full max-w-[1200px] gap-12 px-5 py-20 sm:px-8 lg:grid-cols-2 lg:items-center lg:py-28">
-        <div>
-          <p class="type-eyebrow text-accent">Reflection &amp; supervision</p>
-          <h2 class="mt-3 font-serif text-4xl font-semibold tracking-[-0.035em] sm:text-5xl">Your work as a therapist has a history too.</h2>
-          <p class="mt-5 text-base leading-7 text-ink-secondary">
-            Keep private professional reflection and supervision preparation in their own space, separate from client records, while noticing themes in your own practice over time.
-          </p>
-        </div>
+    <section id="reflect" class="border-b border-border-muted bg-[#E8F0F2]">
+      <div class="mx-auto w-full max-w-[1200px] px-5 py-20 sm:px-8 lg:py-28">
+        <div class="grid gap-12 lg:grid-cols-[.8fr_1.2fr] lg:items-start">
+          <div>
+            <p class="type-eyebrow text-accent">Reflection &amp; supervision</p>
+            <h2 class="mt-3 font-serif text-4xl font-semibold tracking-[-0.035em] sm:text-5xl">Think across the work, not only one session at a time.</h2>
+            <p class="mt-5 text-base leading-7 text-ink-secondary">
+              Reflection is a core part of Helios. The continuity engine can bring together themes, sequences, shifts and recurring relational patterns across sessions and your own reflections, giving you more to think with and less to reconstruct from memory.
+            </p>
+            <p class="mt-4 text-sm leading-6 text-ink-secondary">
+              That can reduce cognitive load between sessions and help make the work more sustainable over time.
+            </p>
+          </div>
 
-        <div class="overflow-hidden rounded-panel border border-border bg-surface-raised">
-          <div class="border-b border-border-muted bg-surface-muted px-5 py-3 text-[11px] font-semibold uppercase tracking-[.12em] text-ink-muted">Supervision &amp; CPD</div>
-          <div class="grid gap-4 p-5 sm:grid-cols-2 sm:p-6">
-            <article class="rounded-control border border-border-muted bg-surface p-4">
-              <p class="type-eyebrow text-ink-muted">Private reflection</p>
-              <p class="mt-2 text-sm font-semibold">A pattern I’m noticing in my own work</p>
-              <p class="mt-2 text-xs leading-5 text-ink-secondary">Keep professional reflection separate from the formal client record.</p>
-            </article>
-            <article class="rounded-control border border-accent/20 bg-accent/5 p-4">
-              <p class="type-eyebrow text-accent">Supervision preparation</p>
-              <p class="mt-2 text-sm font-semibold">Themes to bring to supervision</p>
-              <p class="mt-2 text-xs leading-5 text-ink-secondary">Prepare questions and recurring themes without turning private reflection into client documentation.</p>
-            </article>
+          <div class="overflow-hidden rounded-panel border border-accent/20 bg-surface-raised shadow-sm">
+            <div class="flex items-center justify-between border-b border-border-muted bg-[#061E29] px-5 py-3 text-[#F4F0E7]">
+              <span class="text-[11px] font-semibold uppercase tracking-[.12em]">Supervision &amp; CPD</span>
+              <span class="text-[10px] text-[#9BB5C0]">Prepared before the meeting</span>
+            </div>
+            <div class="p-5 sm:p-6">
+              <article class="rounded-control border border-accent/20 bg-accent/5 p-5">
+                <p class="type-eyebrow text-accent">Supervision preparation</p>
+                <p class="mt-2 text-base font-semibold">Arrive at supervision already prepared.</p>
+                <p class="mt-2 text-sm leading-6 text-ink-secondary">
+                  Bring forward recurring themes, unresolved questions, possible transference dynamics and patterns across the work so less of the session is spent reconstructing the story and more can be spent on the meat of supervision.
+                </p>
+              </article>
+
+              <div class="mt-4 grid gap-4 sm:grid-cols-2">
+                <article class="rounded-control border border-border-muted bg-surface p-4">
+                  <p class="type-eyebrow text-ink-muted">Across reflections</p>
+                  <p class="mt-2 text-sm font-semibold">A recurring pull to rescue</p>
+                  <p class="mt-2 text-xs leading-5 text-ink-secondary">A pattern appears across several reflections and can be explored rather than rediscovered.</p>
+                </article>
+                <article class="rounded-control border border-border-muted bg-surface p-4">
+                  <p class="type-eyebrow text-ink-muted">For supervision</p>
+                  <p class="mt-2 text-sm font-semibold">What changes when the client becomes distant?</p>
+                  <p class="mt-2 text-xs leading-5 text-ink-secondary">Helios surfaces the sequence for you and your supervisor to consider together.</p>
+                </article>
+              </div>
+
+              <p class="mt-4 text-xs leading-5 text-ink-muted">
+                Helios can surface possibilities and patterns; interpretation remains with you and your supervisor.
+              </p>
+            </div>
           </div>
         </div>
       </div>
