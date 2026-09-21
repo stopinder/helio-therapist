@@ -36,10 +36,7 @@ describe('Landing Page Direction', () => {
 
   test('Client-centred sections are present', () => {
     assert.match(landingSource, /The whole thread of the work, in one place\./);
-    assert.match(landingSource, /Current focus/);
-    assert.match(landingSource, /Sessions/);
-    assert.match(landingSource, /Follow-ups/);
-    assert.match(landingSource, /Recent sessions/);
+    assert.match(landingSource, /Helios brings sessions, transcripts, documents, follow-ups/);
   });
 
   test('Session Summary is emphasized', () => {

@@ -106,97 +106,12 @@
         </div>
 
         <figure class="mt-10">
-          <div class="overflow-hidden rounded-panel border border-border bg-surface-canvas shadow-sm md:grid md:grid-cols-[144px_minmax(0,1fr)] lg:grid-cols-[176px_minmax(0,1fr)]" aria-label="Representative client workspace for Sarah M.">
-            <aside class="bg-sidebar p-4 text-sidebar-fg sm:p-5">
-              <p class="font-serif text-2xl font-semibold">Helios</p>
-              <div class="mt-4 flex flex-wrap gap-2 text-xs md:mt-8 md:block md:space-y-2" aria-label="Illustrative application navigation">
-                <p class="px-3 py-2 text-sidebar-muted">Today</p>
-                <p class="rounded-control bg-accent px-3 py-2 font-semibold">Clients</p>
-                <p class="px-3 py-2 text-sidebar-muted">Calendar</p>
-                <p class="px-3 py-2 text-sidebar-muted">Reflect</p>
-              </div>
-              <div class="mt-8 hidden border-t border-sidebar-border pt-5 md:block">
-                <p class="text-[10px] font-semibold uppercase tracking-[.12em] text-sidebar-muted">Current client</p>
-                <p class="mt-3 text-sm font-semibold">Sarah M.</p>
-                <p class="mt-1 text-xs text-sidebar-muted">Client workspace</p>
-              </div>
-            </aside>
-
-            <div class="min-w-0">
-              <div class="flex flex-wrap items-center justify-between gap-4 border-b border-border bg-surface-raised p-5 sm:px-6">
-                <div class="flex items-center gap-3">
-                  <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-avatar text-sm font-semibold">SM</div>
-                  <div>
-                    <p class="font-serif text-2xl font-semibold">Sarah M.</p>
-                    <p class="mt-1 text-xs text-ink-secondary">Next appointment · Tue 10:00</p>
-                  </div>
-                </div>
-                <span class="rounded-control bg-accent px-3 py-2 text-xs font-semibold text-on-action">Clinical Workspace</span>
-              </div>
-
-              <div class="p-4 sm:p-6">
-                <h3 class="font-serif text-2xl font-semibold">Before next session</h3>
-                <div class="mt-4 border-l-4 border-accent bg-state-selected p-4">
-                  <div class="flex flex-wrap items-center justify-between gap-2">
-                    <p class="text-sm font-semibold text-accent">Current focus</p>
-                    <span class="text-[11px] text-ink-secondary">Therapist note · For consideration</span>
-                  </div>
-                  <p class="mt-2 text-sm leading-6">Return to what helped Sarah stay present when she expressed disagreement.</p>
-                </div>
-
-                <div class="mt-5 grid gap-5 lg:grid-cols-2">
-                  <div class="border-t border-border pt-4">
-                    <p class="text-sm font-semibold">Aims and objectives</p>
-                    <p class="mt-2 text-sm leading-6 text-ink-secondary">Develop ways to express a boundary while staying in connection.</p>
-                  </div>
-                  <div class="border-t border-border pt-4">
-                    <p class="text-sm font-semibold">Follow-ups</p>
-                    <div class="mt-2 flex items-start gap-3">
-                      <span class="mt-1 h-3.5 w-3.5 shrink-0 rounded-sm border border-border-strong" aria-hidden="true"></span>
-                      <p class="text-sm leading-6 text-ink-secondary">Return to the conversation with her sister.</p>
-                    </div>
-                  </div>
-                </div>
-
-                <div class="mt-6 border-y border-border bg-surface-raised">
-                  <h3 class="px-4 pt-4 font-serif text-xl font-semibold">Recent sessions</h3>
-                  <div class="mt-3 flex flex-wrap items-center justify-between gap-3 border-t border-border-muted px-4 py-3">
-                    <div>
-                      <p class="text-sm font-semibold">14 Sep · Session 14</p>
-                      <p class="mt-1 text-xs text-ink-secondary">Session Summary · Editable working material</p>
-                    </div>
-                    <div class="flex flex-wrap gap-4 text-xs font-semibold text-accent"><span>Open summary →</span><span>Transcript</span></div>
-                  </div>
-                  <div class="flex flex-wrap items-center justify-between gap-3 border-t border-border-muted px-4 py-3">
-                    <div>
-                      <p class="text-sm font-semibold">7 Sep · Session 13</p>
-                      <p class="mt-1 text-xs text-ink-secondary">Session Summary · Saved in Client Documents</p>
-                    </div>
-                    <div class="flex flex-wrap gap-4 text-xs font-semibold text-accent"><span>Open summary →</span><span>Transcript</span></div>
-                  </div>
-                  <div class="border-t border-border-muted px-4 py-3 text-xs leading-5 text-ink-secondary">
-                    <span class="font-semibold text-accent">Session workspace → Clinical Record</span>
-                    <p class="mt-1">Separate from the editable summary. Approved records are read-only; corrections use amendments.</p>
-                  </div>
-                </div>
-
-                <div class="mt-6">
-                  <h3 class="type-eyebrow text-ink-muted">Supporting material</h3>
-                  <div class="mt-3 grid gap-4 sm:grid-cols-2">
-                    <div class="border-t border-border pt-3">
-                      <p class="text-sm font-semibold">Documents</p>
-                      <p class="mt-1 text-xs leading-5 text-ink-secondary">Session summaries, letters and reports</p>
-                    </div>
-                    <div class="border-t border-border pt-3">
-                      <p class="text-sm font-semibold">Transcripts</p>
-                      <p class="mt-1 text-xs leading-5 text-ink-secondary">Original source material linked to this client</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-          <figcaption class="mt-3 text-xs leading-5 text-ink-muted">Illustrative client workspace. Clinical material remains for the therapist to review and interpret.</figcaption>
+          <img
+            :src="clientWorkspace"
+            alt="Helios client workspace showing current focus, aims and objectives, supervision actions, and clinical workspace access"
+            class="mx-auto block h-auto w-full max-w-[1000px] rounded-[18px] border border-border shadow-[0_18px_55px_rgba(32,36,31,.14)]"
+          />
+          <figcaption class="mt-4 text-xs leading-5 text-ink-muted">Real Helios workspace showing clinical focus, follow-ups and recent sessions.</figcaption>
         </figure>
       </div>
     </section>
@@ -616,4 +531,5 @@
 
 <script setup>
 import heroDashboard from '../assets/helios-dashboard-hero.png'
+import clientWorkspace from '../assets/client-workspace-section.png'
 </script>
