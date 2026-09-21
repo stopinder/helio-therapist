@@ -452,6 +452,63 @@
       </div>
     </section>
 
+    <section id="integrations" class="scroll-mt-24 border-t border-[#1D546D]/30 bg-surface-elevated">
+      <div class="mx-auto w-full max-w-[1200px] px-5 py-12 sm:px-8 sm:py-16 lg:py-20">
+        <div class="max-w-3xl">
+          <p class="type-eyebrow text-accent">Integrations</p>
+          <h2 class="mt-3 font-serif text-4xl font-semibold tracking-[-0.035em] sm:text-5xl">Connected to the tools you already use.</h2>
+          <p class="mt-5 text-[18px] leading-7 text-ink-secondary">
+            Helios works alongside your existing schedule and meeting tools, ensuring the clinical thread remains connected to your practice operations.
+          </p>
+        </div>
+
+        <div class="mt-12 grid gap-10 lg:grid-cols-[1fr_300px] lg:items-start lg:gap-16">
+          <div class="min-w-0">
+            <h3 class="text-[15px] font-bold uppercase tracking-wider text-ink-secondary">Available now</h3>
+            <div class="mt-6 flex flex-wrap gap-6">
+              <div class="flex items-center gap-4 rounded-panel border border-border bg-surface-raised px-6 py-5 shadow-sm">
+                <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#2D8CFF]/10 text-[#2D8CFF]">
+                  <svg class="h-6 w-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.5 12.5c0 .28-.22.5-.5.5h-8c-.28 0-.5-.22-.5-.5v-5c0-.28.22-.5.5-.5h8c.28 0 .5.22.5.5v5zM19 9.5v5c0 .83-.67 1.5-1.5 1.5h-11C5.67 16 5 15.33 5 14.5v-5C5 8.67 5.67 8 6.5 8h11c.83 0 1.5.67 1.5 1.5z"/></svg>
+                </div>
+                <div>
+                  <p class="text-[18px] font-semibold text-ink">Zoom</p>
+                  <p class="text-[15px] text-ink-secondary">Meeting links and transcripts</p>
+                </div>
+              </div>
+
+              <div class="flex items-center gap-4 rounded-panel border border-border bg-surface-raised px-6 py-5 shadow-sm">
+                <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#4285F4]/10 text-[#4285F4]">
+                  <svg class="h-6 w-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/></svg>
+                </div>
+                <div>
+                  <p class="text-[18px] font-semibold text-ink">Google Calendar</p>
+                  <p class="text-[15px] text-ink-secondary">Appointment synchronization</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="rounded-panel border border-border bg-surface px-6 py-6">
+            <h3 class="text-[13px] font-bold uppercase tracking-wider text-ink-muted">Coming next</h3>
+            <ul class="mt-4 space-y-3 text-[15px] text-ink-muted">
+              <li class="flex items-center gap-2">
+                <span class="h-1.5 w-1.5 rounded-full bg-border-strong" aria-hidden="true"></span>
+                Microsoft Teams
+              </li>
+              <li class="flex items-center gap-2">
+                <span class="h-1.5 w-1.5 rounded-full bg-border-strong" aria-hidden="true"></span>
+                Outlook Calendar
+              </li>
+              <li class="flex items-center gap-2">
+                <span class="h-1.5 w-1.5 rounded-full bg-border-strong" aria-hidden="true"></span>
+                Practice management sync
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <section id="reflect" class="border-t border-[#1D546D]/30 bg-[#E8F0F2]">
       <div class="mx-auto w-full max-w-[1200px] px-5 py-12 sm:px-8 sm:py-16 lg:py-20">
         <div class="max-w-3xl">
@@ -592,38 +649,32 @@
       </div>
     </section>
 
-    <section class="border-t border-[#1D546D]/30 bg-surface-elevated">
-      <div class="mx-auto flex w-full max-w-[1200px] flex-col gap-5 px-5 py-12 sm:px-8 sm:py-16 lg:flex-row lg:items-center lg:justify-between lg:py-20">
-        <div class="max-w-3xl">
-          <p class="type-eyebrow text-accent">Helios</p>
-          <h2 class="mt-2 font-serif text-3xl font-semibold tracking-[-0.03em] sm:text-4xl">More attention for the client.</h2>
-        </div>
-        <router-link to="/get-started" class="w-fit rounded-control bg-action-primary px-6 py-3 text-base font-semibold text-on-action hover:bg-action-primary-hover">Create your workspace</router-link>
-      </div>
-    </section>
-
-    <footer class="border-t border-[#1D546D]/30 bg-surface-raised">
-      <div class="mx-auto flex w-full max-w-[1200px] flex-col gap-6 px-5 py-8 sm:px-8 lg:flex-row lg:items-end lg:justify-between">
-        <div>
+    <footer class="bg-[#061E29] text-[#F4F0E7]">
+      <div class="mx-auto w-full max-w-[1200px] px-5 py-12 sm:px-8">
+        <div class="flex flex-col gap-8 lg:flex-row lg:items-center lg:justify-between">
           <div class="flex items-center gap-3">
-            <svg class="h-8 w-8 text-accent" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+            <svg class="h-9 w-9 text-accent" viewBox="0 0 48 48" fill="none" aria-hidden="true">
               <path d="M9 31h30" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
               <path d="M15 31a9 9 0 0 1 18 0" stroke="currentColor" stroke-width="2"/>
               <path d="M24 8v7M9.5 14.5l5 5M38.5 14.5l-5 5M5 26h7M36 26h7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
             </svg>
-            <span class="text-[20px] font-semibold">Helios</span>
+            <span class="text-[22px] font-semibold tracking-[-0.02em]">Helios</span>
           </div>
+
+          <nav class="flex flex-wrap gap-x-6 gap-y-3 text-base font-medium lg:justify-end" aria-label="Legal and support">
+            <router-link to="/privacy" class="hover:text-accent">Privacy</router-link>
+            <router-link to="/terms" class="hover:text-accent">Terms</router-link>
+            <router-link to="/ai-data" class="hover:text-accent">AI &amp; data</router-link>
+            <router-link to="/cookies" class="hover:text-accent">Cookies</router-link>
+            <router-link to="/support" class="hover:text-accent">Support</router-link>
+          </nav>
         </div>
 
-        <div class="lg:text-right">
-          <nav class="flex flex-wrap gap-5 text-base text-ink-secondary lg:justify-end" aria-label="Legal and support">
-            <router-link to="/privacy" class="hover:text-ink">Privacy</router-link>
-            <router-link to="/terms" class="hover:text-ink">Terms</router-link>
-            <router-link to="/ai-data" class="hover:text-ink">AI &amp; data</router-link>
-            <router-link to="/cookies" class="hover:text-ink">Cookies</router-link>
-            <router-link to="/support" class="hover:text-ink">Support</router-link>
-          </nav>
-          <p class="mt-4 text-[14px] text-ink-muted">© {{ new Date().getFullYear() }} Helios.</p>
+        <div class="mt-8 border-t border-[#F4F0E7]/18 pt-8">
+          <div class="flex flex-col gap-4 text-[15px] sm:flex-row sm:items-center sm:justify-between">
+            <p class="text-[#F4F0E7]/70">A continuity and reflection workspace for therapists.</p>
+            <p class="text-[#F4F0E7]/70">© 2026 Helios.</p>
+          </div>
         </div>
       </div>
     </footer>
