@@ -96,8 +96,8 @@
     </section>
 
     <section id="clients" class="scroll-mt-24 border-b border-border-muted bg-surface-elevated">
-      <div class="mx-auto w-full max-w-[1200px] px-5 py-20 sm:px-8 lg:pb-28 lg:pt-20">
-        <div class="grid gap-12 lg:grid-cols-2 lg:items-start lg:gap-16">
+      <div class="mx-auto w-full max-w-[1200px] px-5 py-20 sm:px-8 min-[900px]:pb-28 min-[900px]:pt-20 lg:pb-28 lg:pt-20">
+        <div class="grid gap-12 min-[900px]:grid-cols-2 min-[900px]:items-start min-[900px]:gap-16 lg:grid-cols-2 lg:items-start lg:gap-16">
           <div class="min-w-0">
             <p class="type-eyebrow text-accent">The Clinical Workspace</p>
             <h2 class="mt-3 font-serif text-4xl font-semibold tracking-[-0.035em] sm:text-5xl">The whole thread of the work, in one place.</h2>
@@ -140,7 +140,7 @@
             </div>
           </div>
 
-          <figure class="lg:mt-0">
+          <figure class="min-[900px]:mt-0 lg:mt-0">
             <img
               :src="clientWorkspace"
               alt="Helios client workspace showing current focus, aims and objectives, supervision actions, and clinical workspace access"
