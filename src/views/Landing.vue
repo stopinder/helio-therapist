@@ -146,7 +146,47 @@
               alt="Helios client workspace showing current focus, aims and objectives, supervision actions, and clinical workspace access"
               class="mx-auto block h-auto w-full rounded-[18px] border border-border shadow-[0_18px_55px_rgba(32,36,31,.14)]"
             />
-            <figcaption class="mt-4 text-xs leading-5 text-ink-muted">Real Helios workspace showing clinical focus, follow-ups and recent sessions.</figcaption>
+            <div class="mt-6">
+              <h3 class="text-[13px] font-medium text-ink-secondary/90">From the Client Workspace</h3>
+              <div class="mt-4 grid gap-x-8 gap-y-5 sm:grid-cols-2">
+                <div>
+                  <div class="flex items-start gap-2">
+                    <svg class="mt-1 h-3 w-3 shrink-0 text-accent/80" viewBox="0 0 20 20" fill="currentColor">
+                      <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                    </svg>
+                    <h4 class="text-[13px] font-bold text-ink">Prepare for the next session</h4>
+                  </div>
+                  <p class="ml-5 mt-1 text-[12px] leading-relaxed text-ink-secondary/80">Keep current focus, care aims, follow-ups and recent session context together.</p>
+                </div>
+                <div>
+                  <div class="flex items-start gap-2">
+                    <svg class="mt-1 h-3 w-3 shrink-0 text-accent/80" viewBox="0 0 20 20" fill="currentColor">
+                      <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                    </svg>
+                    <h4 class="text-[13px] font-bold text-ink">Move into supervision</h4>
+                  </div>
+                  <p class="ml-5 mt-1 text-[12px] leading-relaxed text-ink-secondary/80">Select relevant private reflections for that client and add them to supervision preparation while keeping reflection therapist-private.</p>
+                </div>
+                <div>
+                  <div class="flex items-start gap-2">
+                    <svg class="mt-1 h-3 w-3 shrink-0 text-accent/80" viewBox="0 0 20 20" fill="currentColor">
+                      <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                    </svg>
+                    <h4 class="text-[13px] font-bold text-ink">Stay connected to the source material</h4>
+                  </div>
+                  <p class="ml-5 mt-1 text-[12px] leading-relaxed text-ink-secondary/80">Sessions, transcripts and documents remain within the same client context.</p>
+                </div>
+                <div>
+                  <div class="flex items-start gap-2">
+                    <svg class="mt-1 h-3 w-3 shrink-0 text-accent/80" viewBox="0 0 20 20" fill="currentColor">
+                      <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                    </svg>
+                    <h4 class="text-[13px] font-bold text-ink">Continue the work without rebuilding it</h4>
+                  </div>
+                  <p class="ml-5 mt-1 text-[12px] leading-relaxed text-ink-secondary/80">Move between clinical work, documentation and supervision with the client thread still in view.</p>
+                </div>
+              </div>
+            </div>
           </figure>
         </div>
       </div>
