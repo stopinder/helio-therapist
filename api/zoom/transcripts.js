@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
 import { requireAuthenticatedUser } from '../_lib/supabase.js';
 
-const transcriptFields = 'id, zoom_meeting_id, zoom_meeting_uuid, zoom_note_id, source_title, structured_transcript, original_format, original_transcript, source, status, client_id, session_ref, received_at, updated_at, requested_lens, source_retention, review_choices_saved_at, completed_at';
+const transcriptFields = 'id, zoom_meeting_id, zoom_meeting_uuid, zoom_note_id, source_title, structured_transcript, original_format, original_transcript, source, status, client_id, session_ref, received_at, updated_at, requested_lens, source_retention, review_choices_saved_at, completed_at, attention_cleared_at';
 const MAX_MANUAL_TRANSCRIPT_BYTES = 2 * 1024 * 1024;
 const MANUAL_SOURCE = 'zoom_manual';
 
@@ -24,7 +24,8 @@ function serialiseTranscript(row) {
     requestedLens: row.requested_lens,
     sourceRetention: row.source_retention,
     reviewChoicesSavedAt: row.review_choices_saved_at,
-    completedAt: row.completed_at
+    completedAt: row.completed_at,
+    attentionClearedAt: row.attention_cleared_at
   };
 }
 
@@ -135,9 +136,27 @@ export default async function handler(req, res) {
     }
 
     if (req.method === 'PATCH') {
-      const { id, expectedUpdatedAt, clientId, sessionRef, requestedLens, sourceRetention, reviewChoicesSaved, markComplete } = req.body || {};
+      const { id, ids, action, expectedUpdatedAt, clientId, sessionRef, requestedLens, sourceRetention, reviewChoicesSaved, markComplete } = req.body || {};
       const allowedLenses = new Set(['clinical_summary', 'draft_note', 'cbt']);
       const allowedRetention = new Set(['keep_until_review', 'delete_after_approved_output']);
+
+      if (action === 'clear-attention') {
+        if (!Array.isArray(ids) || !ids.length) return res.status(400).json({ error: 'List of transcript ids is required to clear attention.' });
+        
+        const { data, error } = await supabase.from('zoom_transcripts')
+          .update({ 
+            attention_cleared_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          })
+          .in('id', ids)
+          .eq('therapist_user_id', user.id)
+          .is('completed_at', null)
+          .is('deleted_at', null)
+          .select(transcriptFields);
+          
+        if (error) throw error;
+        return res.status(200).json({ transcripts: (data || []).map(serialiseTranscript) });
+      }
 
       if (!id || typeof id !== 'string') return res.status(400).json({ error: 'A transcript id is required.' });
       if (clientId !== undefined && clientId !== null && typeof clientId !== 'string') return res.status(400).json({ error: 'Client id must be a client id or null.' });
@@ -215,6 +234,11 @@ export default async function handler(req, res) {
         update.completed_at = new Date().toISOString();
       }
       if (markComplete === false) update.completed_at = null;
+
+      const { restoreAttention } = req.body || {};
+      if (restoreAttention === true) {
+        update.attention_cleared_at = null;
+      }
 
       const { data, error } = await supabase.from('zoom_transcripts').update(update).eq('id', id).eq('therapist_user_id', user.id).eq('updated_at', expectedUpdatedAt).select(transcriptFields).maybeSingle();
       if (error) throw error;

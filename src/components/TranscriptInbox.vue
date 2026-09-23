@@ -11,9 +11,10 @@
         <div class="filters" role="group" aria-label="Transcript views">
           <button v-for="filter in filters" :key="filter.id" type="button" class="min-h-touch type-ui" :class="{ active: filterMode === filter.id }" :aria-pressed="filterMode === filter.id" @click="setFilter(filter.id)">{{ filter.label }}<template v-if="filter.id === 'attention'"> · {{ actionableCount }}</template></button>
         </div>
+        <button v-if="filterMode === 'attention' && matchingTranscripts.length" class="secondary clear-all" :disabled="saving || !!searchQuery" :title="searchQuery ? 'Clear your search to clear all attention items.' : ''" @click="clearAllAttention">{{ saving ? 'Clearing…' : 'Clear all' }}</button>
       </div>
 
-      <p v-if="errorMessage" class="notice error" role="alert">{{ errorMessage }}</p>
+      <p v-if="errorMessage" class="notice error" role="alert">{{ errorMessage }}</p><p v-else-if="successMessage" class="notice success" role="status">{{ successMessage }}<button v-if="lastClearedBatch.length" class="undo-link" @click="undoClearAttention">Undo</button></p>
       <div v-if="loading" class="empty-card compact">Loading transcripts…</div>
       <div v-else-if="!errorMessage && !transcripts.length" class="empty-card compact"><h2>Inbox up to date</h2><p>New Zoom transcripts will appear here when they need review.</p></div>
       <div v-else-if="visibleTranscripts.length" class="inbox-list">
@@ -33,7 +34,11 @@
         </button>
         <div v-if="hasMoreHistory" class="load-more-row"><button class="load-more" type="button" @click="historyLimit += historyPageSize">Load more</button></div>
       </div>
-      <div v-else class="empty-card compact"><h2>{{ filterMode === 'attention' && !searchQuery ? 'Inbox up to date' : 'No matching transcripts' }}</h2><p>{{ filterMode === 'attention' && !searchQuery ? 'New Zoom transcripts will appear here when they need review.' : 'Try another search term or view.' }}</p></div>
+      <div v-else class="empty-card compact">
+        <h2>{{ filterMode === 'attention' && !searchQuery ? 'Inbox up to date' : 'No matching transcripts' }}</h2>
+        <p v-if="filterMode === 'history' && !searchQuery">Transcripts cleared from the inbox or with completed inbox setup. Clearing does not mark work as complete.</p>
+        <p v-else>{{ filterMode === 'attention' && !searchQuery ? 'New Zoom transcripts will appear here when they need review.' : 'Try another search term or view.' }}</p>
+      </div>
     </template>
 
     <template v-else>
@@ -54,7 +59,22 @@
       <section v-if="selected.clientId && selected.sessionRef && !editingSession" class="ready-card"><div><p class="eyebrow">Ready to continue</p><h2>Ready to continue</h2><p>This transcript is linked to {{ clientName(selected.clientId) }} and the session.</p></div><div class="assignment-actions"><button class="primary" :disabled="saving" @click="openLinkedSession">Open session</button></div></section>
       <section class="raw-transcript"><header><div><h2>Original transcript</h2><p>This is the original transcript imported from Zoom. Helio has not analysed or changed it.</p></div><div class="source-actions"><button class="secondary" :aria-expanded="showRaw" @click="showRaw = !showRaw">{{ showRaw ? 'Hide original transcript' : 'View original transcript' }}</button><button class="secondary download" @click="downloadRaw(selected)">Download .txt</button><button v-if="isEligibleForDeletion" class="secondary text-state-danger" :disabled="saving" @click="deleteTranscript">{{ saving ? 'Deleting…' : 'Delete transcript' }}</button></div></header><pre v-if="showRaw">{{ selected.text }}</pre></section>
       <section v-if="selected.reviewChoicesSavedAt || editingChoices" class="review-choices"><div><p class="eyebrow">Review choices</p><h2>Review choices</h2><p>Choose what, if anything, should be requested later and how the original source should be retained. This does not start analysis.</p></div><label for="clinical-output">Requested output</label><select id="clinical-output" v-model="selectedLens"><option value="">No output requested</option><option value="clinical_summary">Clinical summary</option><option value="draft_note">Draft clinical note</option><option value="cbt">CBT reflection</option></select><fieldset><legend>Source retention</legend><label><input v-model="sourceRetention" type="radio" value="keep_until_review" /> Keep the original source until I review it</label><label><input v-model="sourceRetention" type="radio" value="delete_after_approved_output" /> Mark for deletion after I approve an output</label></fieldset><div class="assignment-actions"><button v-if="selected.reviewChoicesSavedAt" class="secondary" :disabled="saving" @click="editingChoices = false">Cancel</button><button class="primary save-choices" :disabled="saving" @click="saveReviewChoices">{{ saving ? 'Saving…' : selected.reviewChoicesSavedAt ? 'Update review choices' : 'Save review choices' }}</button></div></section>
-      <section v-if="selected.completedAt" class="ready-card complete-card"><div><p class="eyebrow">Triage complete</p><h2>Transcript triage complete</h2><p>Client, session and review choices have been recorded. No requested output or Clinical Record was created by this triage step.</p></div><button class="secondary" @click="openLinkedSession">View session</button></section>
+      <section v-if="selected.completedAt || selected.attentionClearedAt" class="ready-card complete-card">
+        <div v-if="selected.completedAt">
+          <p class="eyebrow">Triage complete</p>
+          <h2>Transcript triage complete</h2>
+          <p>Client, session and review choices have been recorded. No requested output or Clinical Record was created by this triage step.</p>
+        </div>
+        <div v-else>
+          <p class="eyebrow">Cleared from inbox</p>
+          <h2>Transcript cleared from inbox</h2>
+          <p>This transcript was cleared from the Needs attention queue. It has not been assigned or marked as complete.</p>
+        </div>
+        <div class="assignment-actions">
+          <button v-if="selected.attentionClearedAt" class="primary" :disabled="saving" @click="restoreToAttention">Return to Needs attention</button>
+          <button v-if="selected.clientId && selected.sessionRef" class="secondary" @click="openLinkedSession">View session</button>
+        </div>
+      </section>
       <AddClientModal v-if="showAddClient" :submitting="addingClient" :error="addClientError" @close="showAddClient = false" @submit="handleAddClient" />
     </template>
   </section>
@@ -74,6 +94,7 @@ const transcripts = ref([]), selected = ref(null), selectedClientId = ref(''), s
 const editingClient = ref(false), editingSession = ref(false), editingChoices = ref(false), searchQuery = ref(''), filterMode = ref('attention'), showRaw = ref(false), expandedRows = ref(new Set())
 const loading = ref(true), saving = ref(false), errorMessage = ref(''), successMessage = ref(''), sessionRecords = ref([])
 const showAddClient = ref(false), addingClient = ref(false), addClientError = ref('')
+const lastClearedBatch = ref([])
 const historyPageSize = 20
 const historyLimit = ref(historyPageSize)
 const isEligibleForDeletion = computed(() => {
@@ -85,14 +106,22 @@ const isEligibleForDeletion = computed(() => {
     !selected.value.completedAt;
 });
 const filters = [{ id: 'attention', label: 'Needs attention' }, { id: 'history', label: 'History' }]
-const actionableCount = computed(() => transcripts.value.filter(item => workflowState(item).id !== 'complete').length)
+const actionableCount = computed(() => transcripts.value.filter(item => !item.completedAt && !item.attentionClearedAt).length)
 const sessionsForClient = computed(() => sessionRecords.value.filter(session => String(session.clientId) === String(selected.value?.clientId)).sort((a,b)=>new Date(b.startedAt||b.createdAt||0)-new Date(a.startedAt||a.createdAt||0)))
 const selectedSessionDetails = computed(() => {
   if (!selectedSessionRef.value) return '';
   const session = sessionsForClient.value.find(s => String(s.id) === String(selectedSessionRef.value));
   return session ? sessionOptionLabel(session) : '';
 })
-const matchingTranscripts = computed(() => { const query = searchQuery.value.trim().toLowerCase(); return transcripts.value.filter(item => { const state = workflowState(item); if (filterMode.value === 'attention' && state.id === 'complete') return false; if (filterMode.value === 'history' && state.id !== 'complete') return false; if (!query) return true; return labelFor(item).toLowerCase().includes(query) || rowTitle(item).toLowerCase().includes(query) || clientName(item.clientId).toLowerCase().includes(query) || state.label.toLowerCase().includes(query) || formatDate(item.receivedAt).toLowerCase().includes(query) }).sort((a,b)=>new Date(b.receivedAt||0)-new Date(a.receivedAt||0)) })
+const matchingTranscripts = computed(() => {
+  const query = searchQuery.value.trim().toLowerCase();
+  return transcripts.value.filter(item => {
+    if (filterMode.value === 'attention' && (item.completedAt || item.attentionClearedAt)) return false;
+    if (filterMode.value === 'history' && !item.completedAt && !item.attentionClearedAt) return false;
+    if (!query) return true;
+    return labelFor(item).toLowerCase().includes(query) || rowTitle(item).toLowerCase().includes(query) || clientName(item.clientId).toLowerCase().includes(query) || workflowState(item).label.toLowerCase().includes(query) || formatDate(item.receivedAt).toLowerCase().includes(query)
+  }).sort((a,b)=>new Date(b.receivedAt||0)-new Date(a.receivedAt||0))
+})
 const visibleTranscripts = computed(() => filterMode.value === 'history' ? matchingTranscripts.value.slice(0, historyLimit.value) : matchingTranscripts.value)
 const hasMoreHistory = computed(() => filterMode.value === 'history' && visibleTranscripts.value.length < matchingTranscripts.value.length)
 function setFilter(id){ filterMode.value=id; historyLimit.value=historyPageSize }
@@ -109,7 +138,72 @@ function sessionOptionLabel(session){
   return `${prefix}${stateLabel} · ${formatDate(session.startedAt || session.createdAt)}`;
 }
 async function loadSessionRecords(){ try{sessionRecords.value=await listSessions()}catch(error){errorMessage.value=error?.message||'Unable to load sessions.';sessionRecords.value=[]} }
-function replaceTranscript(transcript){const index=transcripts.value.findIndex(item=>item.id===transcript.id);if(index>=0)transcripts.value[index]=transcript;selected.value=transcript}
+async function clearAllAttention() {
+  if (searchQuery.value || !matchingTranscripts.value.length) return;
+  saving.value = true;
+  errorMessage.value = '';
+  successMessage.value = '';
+  lastClearedBatch.value = [];
+  const idsToClear = matchingTranscripts.value.map(t => t.id);
+  
+  try {
+    const response = await authenticatedFetch('/api/zoom/transcripts', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'clear-attention', ids: idsToClear })
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.error || 'Unable to clear transcripts.');
+    
+    const cleared = data.transcripts || [];
+    cleared.forEach(replaceTranscriptInList);
+    lastClearedBatch.value = cleared;
+    successMessage.value = `${cleared.length} item${cleared.length === 1 ? '' : 's'} cleared from Needs attention.`;
+  } catch (error) {
+    errorMessage.value = error.message || 'Unable to clear transcripts.';
+  } finally {
+    saving.value = false;
+  }
+}
+async function undoClearAttention() {
+  if (!lastClearedBatch.value.length) return;
+  saving.value = true;
+  errorMessage.value = '';
+  const batch = [...lastClearedBatch.value];
+  lastClearedBatch.value = [];
+  
+  try {
+    const results = await Promise.all(batch.map(t => 
+      authenticatedFetch('/api/zoom/transcripts', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: t.id, restoreAttention: true, expectedUpdatedAt: t.updatedAt })
+      }).then(r => r.json())
+    ));
+    
+    results.forEach(res => {
+      if (res.transcript) replaceTranscriptInList(res.transcript);
+    });
+    successMessage.value = 'Clearing undone.';
+  } catch (error) {
+    errorMessage.value = 'Unable to undo some items. Please try manually.';
+  } finally {
+    saving.value = false;
+  }
+}
+async function restoreToAttention() {
+  if (!selected.value) return;
+  const transcript = await patchTranscript({ restoreAttention: true }, 'Unable to restore this transcript.');
+  if (transcript) {
+    successMessage.value = 'Restored to Needs attention.';
+  }
+}
+function replaceTranscriptInList(transcript) {
+  const index = transcripts.value.findIndex(item => item.id === transcript.id);
+  if (index >= 0) transcripts.value[index] = transcript;
+  if (selected.value?.id === transcript.id) selected.value = transcript;
+}
+function replaceTranscript(transcript){replaceTranscriptInList(transcript)}
 function toggleExpand(id, event) {
   event.stopPropagation();
   if (expandedRows.value.has(id)) expandedRows.value.delete(id);
