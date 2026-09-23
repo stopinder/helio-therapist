@@ -136,7 +136,7 @@ export default async function handler(req, res) {
     }
 
     if (req.method === 'PATCH') {
-      const { id, ids, action, expectedUpdatedAt, clientId, sessionRef, requestedLens, sourceRetention, reviewChoicesSaved, markComplete } = req.body || {};
+      const { id, ids, action, restoreAttention, expectedUpdatedAt, clientId, sessionRef, requestedLens, sourceRetention, reviewChoicesSaved, markComplete } = req.body || {};
       const allowedLenses = new Set(['clinical_summary', 'draft_note', 'cbt']);
       const allowedRetention = new Set(['keep_until_review', 'delete_after_approved_output']);
 
@@ -151,6 +151,7 @@ export default async function handler(req, res) {
           .in('id', ids)
           .eq('therapist_user_id', user.id)
           .is('completed_at', null)
+          .is('attention_cleared_at', null)
           .is('deleted_at', null)
           .select(transcriptFields);
           
@@ -166,11 +167,15 @@ export default async function handler(req, res) {
       if (reviewChoicesSaved !== undefined && typeof reviewChoicesSaved !== 'boolean') return res.status(400).json({ error: 'Review choice state must be true or false.' });
       if (markComplete !== undefined && typeof markComplete !== 'boolean') return res.status(400).json({ error: 'Completion state must be true or false.' });
 
-      const { data: existing, error: existingError } = await supabase.from('zoom_transcripts').select('id, client_id, session_ref, review_choices_saved_at, updated_at').eq('id', id).eq('therapist_user_id', user.id).maybeSingle();
+      const { data: existing, error: existingError } = await supabase.from('zoom_transcripts').select('id, client_id, session_ref, review_choices_saved_at, updated_at, completed_at, deleted_at').eq('id', id).eq('therapist_user_id', user.id).maybeSingle();
       if (existingError) throw existingError;
       if (!existing) return res.status(404).json({ error: 'Transcript not found.' });
       if (!expectedUpdatedAt || typeof expectedUpdatedAt !== 'string') return res.status(400).json({ error: 'Reload this transcript before saving changes.' });
       if (existing.updated_at !== expectedUpdatedAt) return res.status(409).json({ error: 'This transcript changed in another tab or window. Reload it before saving so newer work is not overwritten.' });
+
+      if (restoreAttention === true && (existing.completed_at !== null || existing.deleted_at !== null)) {
+        return res.status(409).json({ error: 'Completed or deleted transcripts cannot be returned to Needs attention.' });
+      }
 
       if (clientId) {
         const { data: client, error: clientError } = await supabase.from('clients').select('id').eq('id', clientId).eq('user_id', user.id).maybeSingle();
@@ -235,12 +240,15 @@ export default async function handler(req, res) {
       }
       if (markComplete === false) update.completed_at = null;
 
-      const { restoreAttention } = req.body || {};
       if (restoreAttention === true) {
         update.attention_cleared_at = null;
       }
 
-      const { data, error } = await supabase.from('zoom_transcripts').update(update).eq('id', id).eq('therapist_user_id', user.id).eq('updated_at', expectedUpdatedAt).select(transcriptFields).maybeSingle();
+      let updateQuery = supabase.from('zoom_transcripts').update(update).eq('id', id).eq('therapist_user_id', user.id).eq('updated_at', expectedUpdatedAt);
+      if (restoreAttention === true) {
+        updateQuery = updateQuery.is('completed_at', null).is('deleted_at', null);
+      }
+      const { data, error } = await updateQuery.select(transcriptFields).maybeSingle();
       if (error) throw error;
       if (!data) return res.status(409).json({ error: 'This transcript changed while you were saving. Reload it before trying again.' });
       return res.status(200).json({ transcript: serialiseTranscript(data) });

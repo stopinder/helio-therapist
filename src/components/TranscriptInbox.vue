@@ -14,7 +14,9 @@
         <button v-if="filterMode === 'attention' && matchingTranscripts.length" class="secondary clear-all" :disabled="saving || !!searchQuery" :title="searchQuery ? 'Clear your search to clear all attention items.' : ''" @click="clearAllAttention">{{ saving ? 'Clearing…' : 'Clear all' }}</button>
       </div>
 
-      <p v-if="errorMessage" class="notice error" role="alert">{{ errorMessage }}</p><p v-else-if="successMessage" class="notice success" role="status">{{ successMessage }}<button v-if="lastClearedBatch.length" class="undo-link" @click="undoClearAttention">Undo</button></p>
+      <p v-if="errorMessage" class="notice error" role="alert">{{ errorMessage }}</p><p v-else-if="successMessage" class="notice success" role="status">{{ successMessage }}</p>
+      <button v-if="lastClearedBatch.length" class="undo-link" :disabled="saving" @click="undoClearAttention">Undo</button>
+      <p v-if="filterMode === 'history'">Transcripts cleared from the inbox or with completed inbox setup. Clearing does not mark work as complete.</p>
       <div v-if="loading" class="empty-card compact">Loading transcripts…</div>
       <div v-else-if="!errorMessage && !transcripts.length" class="empty-card compact"><h2>Inbox up to date</h2><p>New Zoom transcripts will appear here when they need review.</p></div>
       <div v-else-if="visibleTranscripts.length" class="inbox-list">
@@ -30,14 +32,14 @@
             <small>{{ formatDate(transcript.receivedAt) }}<template v-if="transcript.meetingId"> · Meeting {{ transcript.meetingId }}</template></small>
           </span>
           <StatusIndicator v-if="filterMode === 'attention'" :tone="workflowTone(transcript)">{{ workflowState(transcript).label }}</StatusIndicator>
+          <StatusIndicator v-else :tone="transcript.completedAt ? 'success' : 'neutral'">{{ transcript.completedAt ? 'Inbox setup complete' : 'Cleared from inbox' }}</StatusIndicator>
           <span v-if="expandedRows.has(transcript.id)" class="open">{{ filterMode === 'history' ? 'View' : primaryAction(transcript) }} <span aria-hidden="true">›</span></span>
         </button>
         <div v-if="hasMoreHistory" class="load-more-row"><button class="load-more" type="button" @click="historyLimit += historyPageSize">Load more</button></div>
       </div>
       <div v-else class="empty-card compact">
         <h2>{{ filterMode === 'attention' && !searchQuery ? 'Inbox up to date' : 'No matching transcripts' }}</h2>
-        <p v-if="filterMode === 'history' && !searchQuery">Transcripts cleared from the inbox or with completed inbox setup. Clearing does not mark work as complete.</p>
-        <p v-else>{{ filterMode === 'attention' && !searchQuery ? 'New Zoom transcripts will appear here when they need review.' : 'Try another search term or view.' }}</p>
+        <p>{{ filterMode === 'attention' && !searchQuery ? 'New Zoom transcripts will appear here when they need review.' : 'Try another search term or view.' }}</p>
       </div>
     </template>
 
@@ -68,10 +70,10 @@
         <div v-else>
           <p class="eyebrow">Cleared from inbox</p>
           <h2>Transcript cleared from inbox</h2>
-          <p>This transcript was cleared from the Needs attention queue. It has not been assigned or marked as complete.</p>
+          <p>This transcript was cleared from the Needs attention queue. Clearing does not mark its inbox setup as complete.</p>
         </div>
         <div class="assignment-actions">
-          <button v-if="selected.attentionClearedAt" class="primary" :disabled="saving" @click="restoreToAttention">Return to Needs attention</button>
+          <button v-if="selected.attentionClearedAt && !selected.completedAt" class="primary" :disabled="saving" @click="restoreToAttention">Return to Needs attention</button>
           <button v-if="selected.clientId && selected.sessionRef" class="secondary" @click="openLinkedSession">View session</button>
         </div>
       </section>
@@ -139,7 +141,7 @@ function sessionOptionLabel(session){
 }
 async function loadSessionRecords(){ try{sessionRecords.value=await listSessions()}catch(error){errorMessage.value=error?.message||'Unable to load sessions.';sessionRecords.value=[]} }
 async function clearAllAttention() {
-  if (searchQuery.value || !matchingTranscripts.value.length) return;
+  if (saving.value || searchQuery.value || !matchingTranscripts.value.length) return;
   saving.value = true;
   errorMessage.value = '';
   successMessage.value = '';
@@ -165,34 +167,46 @@ async function clearAllAttention() {
     saving.value = false;
   }
 }
+function isRestoredTranscript(transcript, id) {
+  return transcript && typeof transcript === 'object' && !Array.isArray(transcript) &&
+    transcript.id === id && transcript.attentionClearedAt === null && transcript.completedAt === null &&
+    typeof transcript.updatedAt === 'string' && Number.isFinite(Date.parse(transcript.updatedAt)) &&
+    typeof transcript.text === 'string' && typeof transcript.status === 'string' &&
+    ['clientId', 'sessionRef', 'reviewChoicesSavedAt'].every(key =>
+      transcript[key] === null || typeof transcript[key] === 'string');
+}
 async function undoClearAttention() {
-  if (!lastClearedBatch.value.length) return;
+  if (saving.value || !lastClearedBatch.value.length) return;
   saving.value = true;
   errorMessage.value = '';
+  successMessage.value = '';
   const batch = [...lastClearedBatch.value];
-  lastClearedBatch.value = [];
-  
+
   try {
-    const results = await Promise.all(batch.map(t => 
-      authenticatedFetch('/api/zoom/transcripts', {
+    const results = await Promise.allSettled(batch.map(async t => {
+      const response = await authenticatedFetch('/api/zoom/transcripts', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id: t.id, restoreAttention: true, expectedUpdatedAt: t.updatedAt })
-      }).then(r => r.json())
-    ));
-    
-    results.forEach(res => {
-      if (res.transcript) replaceTranscriptInList(res.transcript);
-    });
-    successMessage.value = 'Clearing undone.';
-  } catch (error) {
-    errorMessage.value = 'Unable to undo some items. Please try manually.';
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data?.error || 'Unable to restore transcript.');
+      if (!isRestoredTranscript(data?.transcript, t.id)) throw new Error('Invalid restoration response.');
+      replaceTranscriptInList(data.transcript);
+    }));
+    // Retain the original versions for retries, including stale-write conflicts.
+    lastClearedBatch.value = batch.filter((_, index) => results[index].status === 'rejected');
+    if (lastClearedBatch.value.length) {
+      errorMessage.value = 'Unable to undo some items. Retry Undo for the remaining items.';
+    } else {
+      successMessage.value = 'Clearing undone.';
+    }
   } finally {
     saving.value = false;
   }
 }
 async function restoreToAttention() {
-  if (!selected.value) return;
+  if (saving.value || !selected.value?.attentionClearedAt || selected.value.completedAt) return;
   const transcript = await patchTranscript({ restoreAttention: true }, 'Unable to restore this transcript.');
   if (transcript) {
     successMessage.value = 'Restored to Needs attention.';
@@ -223,7 +237,7 @@ function openTranscript(transcript){
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 async function load(){loading.value=true;errorMessage.value='';try{const response=await authenticatedFetch('/api/zoom/transcripts');const data=await response.json().catch(()=>({}));if(!response.ok)throw new Error(data.error||'Unable to load transcripts.');transcripts.value=data.transcripts||[]}catch(error){errorMessage.value=error.message||'Unable to load transcripts.'}finally{loading.value=false}}
-async function patchTranscript(body,fallbackMessage){saving.value=true;errorMessage.value='';successMessage.value='';try{const response=await authenticatedFetch('/api/zoom/transcripts',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:selected.value.id,expectedUpdatedAt:selected.value.updatedAt,...body})});const data=await response.json().catch(()=>({}));if(!response.ok)throw new Error(data.error||fallbackMessage);replaceTranscript(data.transcript);return data.transcript}catch(error){errorMessage.value=error.message||fallbackMessage;return null}finally{saving.value=false}}
+async function patchTranscript(body,fallbackMessage){saving.value=true;errorMessage.value='';successMessage.value='';try{const response=await authenticatedFetch('/api/zoom/transcripts',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:selected.value.id,expectedUpdatedAt:selected.value.updatedAt,...body})});const data=await response.json().catch(()=>({}));if(!response.ok)throw new Error(data.error||fallbackMessage);if(body.restoreAttention && !isRestoredTranscript(data?.transcript,selected.value.id))throw new Error(fallbackMessage);replaceTranscript(data.transcript);return data.transcript}catch(error){errorMessage.value=error.message||fallbackMessage;return null}finally{saving.value=false}}
 async function saveAssignment(){const transcript=await patchTranscript({clientId:selectedClientId.value},'Unable to save the client assignment.');if(transcript){selectedSessionRef.value='';editingClient.value=false;successMessage.value=`Assigned to ${clientName(transcript.clientId)}. Link the session next.`}}
 async function saveSessionLink(){const transcript=await patchTranscript({sessionRef:selectedSessionRef.value},'Unable to link this session.');if(transcript){editingSession.value=false;successMessage.value='Session linked. You can now open the session to continue.'}}
 async function createSessionFromTranscript(){if(!selected.value?.clientId)return;saving.value=true;errorMessage.value='';try{const newSession=await createTranscriptSession(selected.value.clientId,selected.value.receivedAt);sessionRecords.value=[newSession,...sessionRecords.value.filter(session=>session.id!==newSession.id)];selectedSessionRef.value=String(newSession.id);await saveSessionLink()}catch(error){errorMessage.value=error?.message||'Unable to create a session from this transcript.'}finally{saving.value=false}}
