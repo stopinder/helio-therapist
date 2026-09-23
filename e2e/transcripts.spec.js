@@ -24,15 +24,22 @@ test.describe('Transcripts Workspace', () => {
   ].join('.');
 
   async function performLogin(page) {
-    if (await page.getByLabel('Email address').isVisible()) {
-      await page.getByLabel('Email address').fill(MOCK_EMAIL);
-      await page.getByLabel('Password').fill(MOCK_PASSWORD);
-      await page.locator('form').getByRole('button', { name: 'Sign in' }).click();
-    }
+    await page.getByLabel('Email address').fill(MOCK_EMAIL);
+    await page.getByLabel('Password').fill(MOCK_PASSWORD);
+    await page.locator('form').getByRole('button', { name: 'Sign in' }).click();
+  }
+
+  async function navigateToTranscripts(page) {
+    await page.goto('/sign-in');
+    await expect(page.getByLabel('Email address')).toBeVisible();
+    await performLogin(page);
+    await expect(page).toHaveURL(/\/overview$/);
+    await page.getByRole('link', { name: 'Transcript Inbox', exact: true }).click();
+    await expect(page).toHaveURL(/\/transcripts$/);
   }
 
   async function ensureWorkspaceLoaded(page) {
-    await performLogin(page);
+    await navigateToTranscripts(page);
     await expect(page.getByTestId('workspace-shell')).toBeVisible({ timeout: 15000 });
   }
 
@@ -115,8 +122,7 @@ test.describe('Transcripts Workspace', () => {
       });
     });
 
-    await page.goto('/transcripts');
-    await performLogin(page);
+    await navigateToTranscripts(page);
 
     // User-facing error-state contract
     await expect(page.getByText('Inbox unavailable')).toBeVisible();
@@ -158,11 +164,17 @@ test.describe('Transcripts Workspace', () => {
       });
     });
 
-    await page.goto('/transcripts');
     await ensureWorkspaceLoaded(page);
     
     // Verify workspace elements from TranscriptInbox.vue
-    await expect(page.getByText('Transcript Inbox')).toBeVisible();
+    await expect(
+      page.getByRole('heading', {
+        name: 'Transcript Inbox',
+        level: 1,
+        exact: true,
+      })
+    ).toBeVisible();
+
     await expect(page.getByText('Zoom imports')).toBeVisible();
     // Use the current UI accessible name pattern
     await expect(page.getByRole('button', { name: /Meeting 123456789/ })).toBeVisible();
@@ -182,9 +194,8 @@ test.describe('Transcripts Workspace', () => {
       });
     });
 
-    await page.goto('/transcripts');
     await ensureWorkspaceLoaded(page);
-    await expect(page.getByRole('heading', { name: 'Inbox up to date' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Inbox up to date', exact: true })).toBeVisible();
     await expect(page.getByText('New Zoom transcripts will appear here')).toBeVisible();
   });
 
@@ -210,14 +221,16 @@ test.describe('Transcripts Workspace', () => {
       });
     });
 
-    await page.goto('/transcripts');
-    await performLogin(page);
-    
-    // Transcripts.vue shows "Loading transcripts..." while load() is pending
-    await expect(page.getByText('Loading transcripts...')).toBeVisible();
-    
-    fulfillClients();
-    await expect(page.getByRole('heading', { name: 'Inbox up to date' })).toBeVisible();
+    try {
+      await navigateToTranscripts(page);
+      
+      // Transcripts.vue shows "Loading transcripts..." while load() is pending
+      await expect(page.getByText('Loading transcripts...', { exact: true })).toBeVisible();
+    } finally {
+      fulfillClients();
+    }
+
+    await expect(page.getByRole('heading', { name: 'Inbox up to date', exact: true })).toBeVisible();
   });
 
   test('should be able to open a transcript', async ({ page }) => {
@@ -250,7 +263,6 @@ test.describe('Transcripts Workspace', () => {
       });
     });
 
-    await page.goto('/transcripts');
     await ensureWorkspaceLoaded(page);
     
     // Click on the transcript to open it
