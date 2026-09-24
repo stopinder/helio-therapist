@@ -51,12 +51,28 @@
       </form>
     </section>
 
+    <section class="mb-12" data-testid="settings-subscription">
+      <h2 class="text-caption sm:text-body-sm font-semibold uppercase tracking-wider text-ink-muted mb-4 px-1">Subscription</h2>
+      <div class="bg-surface-elevated border border-border-muted rounded-panel p-4 sm:p-5">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <div class="text-body font-medium text-ink">Helios Therapist</div>
+            <div class="mt-1 text-body-sm text-ink-subtle">{{ subscriptionSummary }}</div>
+            <div v-if="subscriptionDetail" class="mt-1 text-caption text-ink-subtle">{{ subscriptionDetail }}</div>
+          </div>
+          <button v-if="subscription" type="button" :disabled="isBillingBusy" @click="manageSubscription" class="min-h-touch px-4 py-2 rounded-control border border-border-muted text-body-sm font-medium text-action-link disabled:opacity-50">Manage subscription</button>
+          <button v-else type="button" :disabled="isBillingBusy || isLoadingSubscription" @click="startSubscription" class="min-h-touch px-4 py-2 rounded-control bg-action-link text-on-action text-body-sm font-medium disabled:opacity-50">{{ isBillingBusy ? 'Opening checkout...' : 'Start 30-day free trial' }}</button>
+        </div>
+        <p v-if="billingError" role="alert" class="mt-3 text-body-sm text-state-danger">{{ billingError }}</p>
+      </div>
+    </section>
+
     <section class="mb-12"><h2 class="text-caption sm:text-body-sm font-semibold uppercase tracking-wider text-ink-muted mb-4 px-1">Account</h2><div class="bg-surface-elevated border border-border-muted rounded-panel p-4 flex items-center justify-between gap-4"><div><div class="text-body font-medium text-ink">Therapist account</div><div class="text-body-sm text-ink-subtle">Secure Supabase session</div></div><button @click="signOut" class="px-4 py-2 text-body-sm font-medium text-state-danger">Sign out</button></div></section>
   </div>
 </template>
 
 <script setup>
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { CalendarDays, Image as ImageIcon, Video } from '@lucide/vue'
 import { authenticatedFetch } from '../lib/api.js'
 import { supabase } from '../lib/supabase.js'
@@ -67,6 +83,10 @@ const profile=ref(emptyProfile()),isLoadingProfile=ref(true),isSavingProfile=ref
 const logoPreviewUrl=ref(''),logoError=ref(''),isUpdatingLogo=ref(false)
 const googleStatus=ref('Not connected'),googleEmail=ref(''),lastSyncedGoogle=ref('Not synced yet'),isConnectingGoogle=ref(false),isLoadingStatus=ref(true)
 const zoomStatus=ref('Not connected'),isConnectingZoom=ref(false),isLoadingZoomStatus=ref(true)
+const subscription=ref(null),isLoadingSubscription=ref(true),isBillingBusy=ref(false),billingError=ref('')
+const formatBillingDate=(value)=>value?new Date(value).toLocaleDateString(undefined,{day:'numeric',month:'short',year:'numeric'}):''
+const subscriptionSummary=computed(()=>{if(isLoadingSubscription.value)return'Checking subscription...';if(!subscription.value)return'30 days free, then £29/month. Cancel anytime.';if(subscription.value.status==='trialing')return'Free trial';if(subscription.value.status==='active')return'£29/month';return subscription.value.status.replaceAll('_',' ')})
+const subscriptionDetail=computed(()=>{if(!subscription.value)return'';if(subscription.value.status==='trialing'&&subscription.value.trial_ends_at)return`Trial ends ${formatBillingDate(subscription.value.trial_ends_at)}`;if(subscription.value.cancel_at_period_end&&subscription.value.current_period_ends_at)return`Cancels ${formatBillingDate(subscription.value.current_period_ends_at)}`;if(subscription.value.current_period_ends_at)return`Next billing date ${formatBillingDate(subscription.value.current_period_ends_at)}`;return''})
 
 function notifyProfileChanged(){window.dispatchEvent(new CustomEvent('helios-profile-changed'))}
 function formatSyncTime(value){if(!value)return'Not synced yet';const date=new Date(value),elapsed=Date.now()-date.getTime();if(elapsed>=0&&elapsed<60000)return'Synced just now';if(elapsed>=0&&elapsed<3600000)return`Last synced ${Math.floor(elapsed/60000)}m ago`;return`Last synced ${date.toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'})}`}
@@ -82,6 +102,10 @@ async function connectGoogle(){isConnectingGoogle.value=true;const response=awai
 async function disconnectGoogle(){if(!confirm('Disconnect Google Calendar?'))return;const response=await authenticatedFetch('/api/google/disconnect',{method:'POST'});if(response.ok){googleStatus.value='Not connected';googleEmail.value='';lastSyncedGoogle.value='Not synced yet'}}
 async function connectZoom(){isConnectingZoom.value=true;const response=await authenticatedFetch('/api/zoom/authorize',{method:'POST'});const data=await response.json();if(response.ok&&data.url)window.location.href=data.url;else isConnectingZoom.value=false}
 async function disconnectZoom(){if(!confirm('Disconnect Zoom? Helios will no longer retrieve future Zoom transcripts.'))return;const response=await authenticatedFetch('/api/zoom/disconnect',{method:'POST'});if(response.ok)zoomStatus.value='Not connected'}
+async function fetchSubscription(){isLoadingSubscription.value=true;billingError.value='';try{const response=await authenticatedFetch('/api/billing/status');const data=await response.json();if(!response.ok)throw new Error(data.error||'Unable to load subscription');subscription.value=data.subscription}catch(error){billingError.value=error.message||'Unable to load subscription.'}finally{isLoadingSubscription.value=false}}
+async function openBillingUrl(path){isBillingBusy.value=true;billingError.value='';try{const response=await authenticatedFetch(path,{method:'POST'});const data=await response.json();if(!response.ok||!data.url)throw new Error(data.error||'Unable to open billing');window.location.href=data.url}catch(error){billingError.value=error.message||'Unable to open billing.';isBillingBusy.value=false}}
+const startSubscription=()=>openBillingUrl('/api/billing/checkout')
+const manageSubscription=()=>openBillingUrl('/api/billing/portal')
 const signOut=async()=>{await supabase.auth.signOut()}
-onMounted(async()=>{await Promise.all([loadProfile(),fetchGoogleStatus(),fetchZoomStatus()])})
+onMounted(async()=>{await Promise.all([loadProfile(),fetchGoogleStatus(),fetchZoomStatus(),fetchSubscription()])})
 </script>
