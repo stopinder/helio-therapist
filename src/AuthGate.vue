@@ -27,6 +27,8 @@
     <p class="text-body text-ink-muted">Opening Helios…</p>
   </main>
 
+  <router-view v-else-if="session && route.meta.subscriptionSetup" />
+
   <AppShell v-else-if="session" data-testid="workspace-shell"><router-view /></AppShell>
 
   <main v-else data-testid="login-page" class="min-h-screen bg-surface-muted flex items-center justify-center px-4 py-8 sm:p-6">

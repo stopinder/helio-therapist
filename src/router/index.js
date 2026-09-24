@@ -7,6 +7,7 @@ import Privacy from '../views/Privacy.vue'
 import AiData from '../views/AiData.vue'
 import Cookies from '../views/Cookies.vue'
 import Support from '../views/Support.vue'
+import SubscriptionSetup from '../views/SubscriptionSetup.vue'
 import Overview from '../views/Overview.vue'
 import Calendar from '../views/Calendar.vue'
 import Clients from '../views/Clients.vue'
@@ -34,6 +35,7 @@ const routes = [
   { path: '/ai-data', name: 'AiData', component: AiData, meta: { public: true, title: 'AI & data processing — Helios' } },
   { path: '/cookies', name: 'Cookies', component: Cookies, meta: { public: true, title: 'Cookie information — Helios' } },
   { path: '/support', name: 'Support', component: Support, meta: { public: true, title: 'Support & contact — Helios' } },
+  { path: '/subscription/setup', name: 'SubscriptionSetup', component: SubscriptionSetup, meta: { subscriptionSetup: true, title: 'Start your trial — Helios' } },
   { path: '/overview', name: 'Overview', component: Overview, meta: { title: 'Overview — Helios' } },
   { path: '/calendar', name: 'Calendar', component: Calendar, meta: { title: 'Calendar — Helios' } },
   { path: '/schedule', name: 'ScheduleAppointment', component: ScheduleAppointment, meta: { title: 'Schedule — Helios' } },
@@ -71,10 +73,25 @@ const router = createRouter({
 })
 
 router.beforeEach(async (to) => {
-  if (to.meta.public || to.meta.authEntry || !supabase) return true
+  if (to.meta.public || !supabase) return true
   const { data } = await supabase.auth.getSession()
-  if (data.session) return true
-  return { path: '/sign-in', query: { redirect: to.fullPath } }
+  if (!data.session) {
+    if (to.meta.authEntry) return true
+    return { path: '/sign-in', query: { redirect: to.fullPath } }
+  }
+  if (to.meta.authEntry) return { path: '/overview' }
+
+  try {
+    const response = await fetch('/api/billing/status', { headers: { Authorization: `Bearer ${data.session.access_token}` } })
+    const result = await response.json()
+    const status = result.subscription?.status
+    const hasAccess = response.ok && ['trialing', 'active'].includes(status)
+    if (!hasAccess && !to.meta.subscriptionSetup) return { path: '/subscription/setup' }
+    if (hasAccess && to.meta.subscriptionSetup) return { path: '/overview' }
+  } catch {
+    if (!to.meta.subscriptionSetup) return { path: '/subscription/setup' }
+  }
+  return true
 })
 
 router.afterEach((to) => {
