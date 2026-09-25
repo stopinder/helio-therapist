@@ -1,5 +1,6 @@
 import { getSupabaseClient } from '../_lib/supabase.js';
 import { getStripeClient } from '../_lib/stripe.js';
+import { sendPaidInvoiceEmail } from '../_lib/paid-invoice-email.js';
 
 export const config = { api: { bodyParser: false } };
 
@@ -36,6 +37,9 @@ export default async function handler(req, res) {
     const event = stripe.webhooks.constructEvent(await rawBody(req), req.headers['stripe-signature'], secret);
     if (['customer.subscription.created','customer.subscription.updated','customer.subscription.deleted'].includes(event.type)) {
       await syncSubscription(getSupabaseClient(), event.data.object);
+    }
+    if (event.type === 'invoice.paid') {
+      await sendPaidInvoiceEmail(event.data.object, stripe);
     }
     return res.status(200).json({ received: true });
   } catch (error) {
