@@ -1,4 +1,5 @@
 const LOOPS_TRANSACTIONAL_URL = 'https://app.loops.so/api/v1/transactional';
+const HELIOS_PAYMENT_TRANSACTIONAL_ID = 'cmpgtrq0l00fu016wn5dq5d0h';
 
 function invoicePriceIds(invoice) {
   return (invoice.lines?.data || []).map(line =>
@@ -16,7 +17,7 @@ export async function sendPaidInvoiceEmail(invoice, stripe, options = {}) {
       !invoicePriceIds(invoice).includes(expectedPriceId)) return false;
 
   const apiKey = (env.LOOPS_API_KEY || '').trim();
-  const transactionalId = (env.LOOPS_PAYMENT_TRANSACTIONAL_ID || '').trim();
+  const transactionalId = (env.LOOPS_PAYMENT_TRANSACTIONAL_ID || HELIOS_PAYMENT_TRANSACTIONAL_ID).trim();
   if (!apiKey || !transactionalId) throw new Error('Payment email configuration missing');
 
   let email = invoice.customer_email;

@@ -35,6 +35,18 @@ test('ignores free trials and invoices for other prices', async () => {
   assert.equal(await sendPaidInvoiceEmail({ ...invoice, lines: { data: [{ price: { id: 'price_other' } }] } }, {}, { env, fetchImpl }), false);
 });
 
+test('uses the Helios payment template when no template override is configured', async () => {
+  let payload;
+  await sendPaidInvoiceEmail(invoice, {}, {
+    env: { STRIPE_PRICE_ID: env.STRIPE_PRICE_ID, LOOPS_API_KEY: env.LOOPS_API_KEY },
+    fetchImpl: async (_, options) => {
+      payload = JSON.parse(options.body);
+      return { ok: true, status: 200 };
+    }
+  });
+  assert.equal(payload.transactionalId, 'cmpgtrq0l00fu016wn5dq5d0h');
+});
+
 test('retries failed sends and accepts an idempotent replay', async () => {
   await assert.rejects(sendPaidInvoiceEmail(invoice, {}, {
     env, fetchImpl: async () => ({ ok: false, status: 503 })
