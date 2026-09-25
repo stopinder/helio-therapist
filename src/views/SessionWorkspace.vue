@@ -77,6 +77,24 @@
               </div>
             </section>
 
+            <div
+              v-if="transcript?.requestedLens === 'cbt'"
+              class="rounded-panel border border-border bg-surface-subtle p-4"
+            >
+              <p class="text-caption font-medium uppercase tracking-wider text-action-link">Transcript triage request</p>
+              <h3 class="mt-1 text-body font-semibold text-ink">CBT reflection requested</h3>
+              <p class="mt-2 text-body-sm text-ink-muted">This request was saved during transcript review. Nothing is generated or saved to Care until you choose to prepare suggestions and then review them.</p>
+              <button
+                type="button"
+                class="button-primary mt-4"
+                :disabled="preparingCbtCare"
+                @click="prepareCbtCareSuggestions"
+              >
+                {{ preparingCbtCare ? 'Preparing…' : 'Prepare CBT Care suggestions' }}
+              </button>
+              <p v-if="cbtCareError" class="mt-2 text-body-sm text-state-danger" role="alert">{{ cbtCareError }}</p>
+            </div>
+
             <div class="space-y-4">
               <section class="rounded-panel border border-border bg-surface overflow-hidden">
                 <button @click="showTranscript = !showTranscript" class="w-full px-6 py-4 flex items-center justify-between hover:bg-surface-subtle transition-colors" :aria-expanded="showTranscript">
@@ -114,7 +132,7 @@
 
 <script setup>
 import { ref, onMounted, computed } from 'vue';
-import { useRoute, RouterLink } from 'vue-router';
+import { useRoute, useRouter, RouterLink } from 'vue-router';
 import { supabase } from '../lib/supabase.js';
 import { getSession } from '../lib/sessions.js';
 import { getClient } from '../lib/clients.js';
@@ -127,6 +145,7 @@ import ClinicalSummaryTab from '../components/workspace/ClinicalSummaryTab.vue';
 import CompletedClinicalRecord from '../components/workspace/CompletedClinicalRecord.vue';
 
 const route = useRoute();
+const router = useRouter();
 const session = ref(null), client = ref(null), loading = ref(true), error = ref(''), transcript = ref(null), transcriptLoading = ref(false), transcriptError = ref(''), therapistName = ref('');
 const summaryDocument = ref(null);
 const activeView = ref('summary');
@@ -138,6 +157,8 @@ const copyError = ref('');
 const isGenerating = ref(false);
 const generationError = ref('');
 const summarySaveError = ref('');
+const preparingCbtCare = ref(false);
+const cbtCareError = ref('');
 let saveTimer = null;
 
 function handleSessionUpdate(updatedSession) {
@@ -170,6 +191,42 @@ async function generateSummary() {
     console.error('Generation failed:', err);
   } finally {
     isGenerating.value = false;
+  }
+}
+
+async function prepareCbtCareSuggestions() {
+  if (!transcript.value?.id || !session.value?.clientId || preparingCbtCare.value) return;
+  preparingCbtCare.value = true;
+  cbtCareError.value = '';
+  try {
+    const response = await authenticatedFetch('/api/ai/transcript-cbt-care-suggestions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ transcriptId: transcript.value.id })
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw new Error(data?.error?.message || data?.error || 'CBT Care suggestions could not be prepared.');
+    }
+    const payload = data?.data;
+    if (!payload?.suggestions?.length) throw new Error('No CBT Care suggestions were returned.');
+    sessionStorage.setItem(
+      `helios-care-suggestions:${session.value.clientId}`,
+      JSON.stringify({
+        suggestions: payload.suggestions,
+        sessionId: payload.sessionId || session.value.id,
+        lensId: 'gentle_cbt'
+      })
+    );
+    await router.push({
+      name: 'ClientWorkspace',
+      params: { clientId: session.value.clientId },
+      query: { tab: 'Care', source: 'session-cbt' }
+    });
+  } catch (err) {
+    cbtCareError.value = err?.message || 'CBT Care suggestions could not be prepared.';
+  } finally {
+    preparingCbtCare.value = false;
   }
 }
 
