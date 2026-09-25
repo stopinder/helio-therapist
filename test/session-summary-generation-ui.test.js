@@ -30,6 +30,7 @@ test('SessionWorkspace offers Regenerate only for non-finalised summary content'
 
 test('SessionWorkspace handles generation state', () => {
   assert.match(source, /Preparing session summary…/i)
+  assert.match(source, /This may take a few minutes\. Please keep this page open\./i)
   assert.match(source, /isGenerating/i)
 })
 
