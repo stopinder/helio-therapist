@@ -61,7 +61,7 @@ test.describe('Transcript Workflow - A11y & Responsive', () => {
             await page.goto('/transcripts', { waitUntil: 'domcontentloaded' });
             await ensureWorkspaceLoaded(page);
             await expectNoHorizontalOverflow(page);
-            await expect(page.getByRole('heading', { name: 'Transcript Inbox' })).toBeVisible();
+            await expect(page.getByRole('heading', { level: 1, name: 'Transcript Inbox' })).toBeVisible();
             const searchInput = page.getByPlaceholder('Search transcripts');
             await expect(searchInput).toBeVisible();
             const transcriptRow = page.getByRole('button', { name: /Meeting 123456789/ });
