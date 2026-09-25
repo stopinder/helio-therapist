@@ -49,9 +49,10 @@
               </div>
 
               <div class="relative min-h-[12rem]">
-                <div v-if="isGenerating" class="py-24 text-center text-ink-muted bg-surface rounded-panel border border-dashed border-border flex flex-col items-center gap-3 shadow-sm">
+                <div v-if="isGenerating" role="status" class="py-24 text-center text-ink-muted bg-surface rounded-panel border border-dashed border-border flex flex-col items-center gap-3 shadow-sm">
                   <span class="w-8 h-8 border-4 border-state-selected border-t-transparent rounded-full animate-spin"></span>
                   <p class="type-body-medium">Preparing session summary…</p>
+                  <p class="text-body-sm">This may take a few minutes. Please keep this page open.</p>
                 </div>
                 <div v-else-if="generationError" class="py-12 px-6 text-center bg-state-danger-surface rounded-panel border border-state-danger/20 shadow-sm">
                   <p class="text-state-danger text-body-sm mb-4">{{ generationError }}</p>
