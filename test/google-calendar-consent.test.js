@@ -20,6 +20,8 @@ test('Google authorization requests the least-privilege Calendar scopes',async()
   assert.match(authorize,/https:\/\/www\.googleapis\.com\/auth\/calendar\.calendarlist\.readonly/);
   assert.match(authorize,/https:\/\/www\.googleapis\.com\/auth\/calendar\.events/);
   assert.doesNotMatch(authorize,/https:\/\/www\.googleapis\.com\/auth\/calendar\.readonly/);
+  assert.match(authorize,/include_granted_scopes:\s*'false'/);
+  assert.doesNotMatch(authorize,/include_granted_scopes:\s*'true'/);
 });
 
 test('OAuth callback does not report success when Calendar permission is absent',async()=>{

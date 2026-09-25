@@ -16,7 +16,7 @@ export default async function handler(req, res) {
     const params = new URLSearchParams({
       response_type: 'code', client_id: clientId, redirect_uri: redirectUri,
       scope: ['https://www.googleapis.com/auth/calendar.calendarlist.readonly', 'https://www.googleapis.com/auth/calendar.events', 'https://www.googleapis.com/auth/userinfo.email'].join(' '),
-      state, access_type: 'offline', prompt: 'consent', include_granted_scopes: 'true'
+      state, access_type: 'offline', prompt: 'consent', include_granted_scopes: 'false'
     });
     res.setHeader('Cache-Control', 'no-store');
     return res.status(200).json({ url: `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}` });
