@@ -57,3 +57,21 @@ test('Google status reads encrypted credentials while retaining legacy detection
   assert.match(status,/email: integration\.provider_email/);
   assert.doesNotMatch(status,/\.select\('email,/);
 });
+
+
+test('Google disconnect revokes the remote OAuth grant before deleting local credentials',async()=>{
+  const disconnect=await read('../api/google/disconnect.js');
+  assert.match(disconnect,/https:\/\/oauth2\.googleapis\.com\/revoke/);
+  assert.match(disconnect,/encrypted_refresh_token,encrypted_access_token,refresh_token,access_token/);
+  assert.match(disconnect,/await revokeGoogleGrant\(integration\)/);
+  assert.match(disconnect,/\.delete\(\)/);
+});
+
+test('Google disconnect does not silently delete credentials when remote revocation fails',async()=>{
+  const disconnect=await read('../api/google/disconnect.js');
+  const revokeIndex=disconnect.indexOf('await revokeGoogleGrant(integration)');
+  const deleteIndex=disconnect.indexOf(".delete()");
+  assert.ok(revokeIndex >= 0);
+  assert.ok(deleteIndex > revokeIndex);
+  assert.match(disconnect,/Unable to revoke Google access\. Please try again\./);
+});
