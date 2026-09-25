@@ -29,9 +29,9 @@ test.describe('Authentication Lifecycle', () => {
   test('desktop sign-out', async ({ page }) => {
     await login(page);
     await page.route('**/auth/v1/logout*', route => route.fulfill({ status:204 }));
-    const sidebar = page.locator('aside.hidden.md\\:flex');
-    await sidebar.getByRole('button',{name:/Account menu for/i}).click();
-    await sidebar.getByRole('button',{name:/Sign out/i}).click();
+    await page.locator('aside.hidden.md\\:flex').getByRole('link',{name:'Settings'}).click();
+    await expect(page).toHaveURL(/\/settings$/);
+    await page.getByRole('button',{name:'Sign out'}).click();
     await expect(page.getByTestId('login-page')).toBeVisible();
   });
 
@@ -41,8 +41,9 @@ test.describe('Authentication Lifecycle', () => {
     await page.route('**/auth/v1/logout*', route => route.fulfill({ status:204 }));
     await page.getByRole('button',{name:'Open menu'}).click();
     const drawer = page.locator('aside.fixed.inset-y-0');
-    await drawer.getByRole('button',{name:/Account menu for/i}).click();
-    await drawer.getByRole('button',{name:/Sign out/i}).click();
+    await drawer.getByRole('link',{name:'Settings'}).click();
+    await expect(page).toHaveURL(/\/settings$/);
+    await page.getByRole('button',{name:'Sign out'}).click();
     await expect(page.getByTestId('login-page')).toBeVisible();
   });
 
