@@ -29,14 +29,16 @@
 
   <main v-else-if="session && (billingLoading || !billingAllowed)" class="min-h-screen bg-surface-muted flex items-center justify-center px-4 py-8">
     <section class="w-full max-w-md rounded-panel bg-surface-elevated border border-border-muted p-6 sm:p-8">
-      <h1 class="text-h1 font-semibold text-ink">Start your Helios trial</h1>
+      <h1 class="text-h1 font-semibold text-ink">{{ billingError ? 'Unable to verify subscription' : 'Start your Helios trial' }}</h1>
       <p v-if="billingLoading" class="mt-4 text-body text-ink-muted" role="status">Checking your subscription…</p>
       <template v-else>
-        <p class="mt-3 text-body text-ink-muted">30 days free, then £29/month. Stripe collects your payment method when you start the trial. Cancel anytime.</p>
-        <p v-if="route.query.billing === 'success'" class="mt-4 text-body text-ink-muted" role="status">Your checkout is complete. Your subscription may take a moment to appear. Check again to enter Helios.</p>
-        <p v-if="route.query.billing === 'cancelled'" class="mt-4 text-body text-ink-muted">Checkout was cancelled. You can start your trial when you’re ready.</p>
         <p v-if="billingError" class="mt-4 text-body text-state-danger" role="alert">{{ billingError }}</p>
-        <button v-if="route.query.billing !== 'success'" type="button" :disabled="billingBusy || !!billingError" class="mt-6 min-h-12 w-full rounded-panel bg-action-link px-4 font-medium text-on-action disabled:opacity-50" @click="openBilling">{{ billingBusy ? 'Opening billing…' : billingSubscription ? 'Manage subscription' : 'Start 30-day free trial' }}</button>
+        <template v-else>
+          <p class="mt-3 text-body text-ink-muted">30 days free, then £29/month. Stripe collects your payment method when you start the trial. Cancel anytime.</p>
+          <p v-if="route.query.billing === 'success'" class="mt-4 text-body text-ink-muted" role="status">Your checkout is complete. Your subscription may take a moment to appear. Check again to enter Helios.</p>
+          <p v-if="route.query.billing === 'cancelled'" class="mt-4 text-body text-ink-muted">Checkout was cancelled. You can start your trial when you’re ready.</p>
+          <button v-if="route.query.billing !== 'success'" type="button" :disabled="billingBusy" class="mt-6 min-h-12 w-full rounded-panel bg-action-link px-4 font-medium text-on-action disabled:opacity-50" @click="openBilling">{{ billingBusy ? 'Opening billing…' : billingSubscription ? 'Manage subscription' : 'Start 30-day free trial' }}</button>
+        </template>
         <button type="button" :disabled="billingBusy" class="mt-3 min-h-11 w-full text-body font-medium text-action-link disabled:opacity-50" @click="checkBilling">Check subscription again</button>
         <button type="button" class="mt-2 min-h-11 w-full text-body text-ink-muted" @click="supabase.auth.signOut()">Sign out</button>
       </template>
@@ -127,6 +129,7 @@ const billingSubscription = ref(null)
 const billingBusy = ref(false)
 const billingError = ref('')
 let authSubscription
+let billingRequest = 0
 const handleExpiryRef = ref(null)
 
 const isRecoveryLink = () => {
@@ -157,28 +160,35 @@ watch([session, authLoading], async () => {
 const checkBilling = async () => {
   const token = session.value?.access_token
   if (!token) return
-  billingLoading.value = true
+  const request = ++billingRequest
+  billingLoading.value = !billingAllowed.value
   billingError.value = ''
   try {
     const response = await fetch('/api/billing/status', { headers: { Authorization: `Bearer ${token}` } })
     const data = await response.json()
-    if (token !== session.value?.access_token) return
+    if (request !== billingRequest) return
     if (!response.ok) throw new Error(data.error || 'Unable to check subscription')
     billingSubscription.value = data.subscription
     billingAllowed.value = data.hasWorkspaceAccess === true
   } catch (error) {
-    if (token !== session.value?.access_token) return
-    billingAllowed.value = false
-    billingError.value = error.message || 'Unable to check subscription'
+    if (request !== billingRequest) return
+    billingError.value = 'Unable to verify your subscription. Please check again.'
   } finally {
-    if (token === session.value?.access_token) billingLoading.value = false
+    if (request === billingRequest) billingLoading.value = false
   }
 }
 
-watch(session, (nextSession) => {
+watch(session, (nextSession, previousSession) => {
+  if (nextSession?.user?.id && nextSession.user.id === previousSession?.user?.id) {
+    if (nextSession.access_token !== previousSession.access_token) checkBilling()
+    return
+  }
+  ++billingRequest
   billingAllowed.value = false
+  billingError.value = ''
+  billingSubscription.value = null
   if (nextSession) checkBilling()
-  else { billingLoading.value = true; billingSubscription.value = null }
+  else billingLoading.value = true
 })
 
 const openBilling = async () => {
