@@ -27,11 +27,13 @@
     <p class="text-body text-ink-muted">Opening Helios…</p>
   </main>
 
-  <main v-else-if="session && (billingLoading || !billingAllowed)" class="min-h-screen bg-surface-muted flex items-center justify-center px-4 py-8">
+  <main v-else-if="session && billingLoading && !signInTransition" class="min-h-screen bg-surface-muted flex items-center justify-center p-4">
+    <p class="text-body text-ink-muted">Opening Helios…</p>
+  </main>
+
+  <main v-else-if="session && !billingLoading && !billingAllowed" class="min-h-screen bg-surface-muted flex items-center justify-center px-4 py-8">
     <section class="w-full max-w-md rounded-panel bg-surface-elevated border border-border-muted p-6 sm:p-8">
       <h1 class="text-h1 font-semibold text-ink">{{ billingError ? 'Unable to verify subscription' : 'Start your Helios trial' }}</h1>
-      <p v-if="billingLoading" class="mt-4 text-body text-ink-muted" role="status">Checking your subscription…</p>
-      <template v-else>
         <p v-if="billingError" class="mt-4 text-body text-state-danger" role="alert">{{ billingError }}</p>
         <template v-else>
           <p class="mt-3 text-body text-ink-muted">30 days free, then £29/month. Stripe collects your payment method when you start the trial. Cancel anytime.</p>
@@ -41,11 +43,10 @@
         </template>
         <button type="button" :disabled="billingBusy" class="mt-3 min-h-11 w-full text-body font-medium text-action-link disabled:opacity-50" @click="checkBilling">Check subscription again</button>
         <button type="button" class="mt-2 min-h-11 w-full text-body text-ink-muted" @click="supabase.auth.signOut()">Sign out</button>
-      </template>
     </section>
   </main>
 
-  <AppShell v-else-if="session" data-testid="workspace-shell"><router-view /></AppShell>
+  <AppShell v-else-if="session && !billingLoading" data-testid="workspace-shell"><router-view /></AppShell>
 
   <main v-else data-testid="login-page" class="min-h-screen bg-surface-muted flex items-center justify-center px-4 py-8 sm:p-6">
     <section class="w-full max-w-md rounded-panel bg-surface-elevated border border-border-muted p-6 sm:p-8">
@@ -90,7 +91,7 @@
           <router-link to="/privacy" class="font-medium text-action-link underline underline-offset-2">Privacy Notice</router-link>.
         </p>
 
-        <button type="submit" :disabled="submitting" class="min-h-12 w-full rounded-panel bg-action-link px-4 font-medium text-on-action hover:bg-action-link-hover disabled:opacity-50">{{ submitting ? 'Please wait…' : mode === 'signup' ? 'Create account' : 'Sign in' }}</button>
+        <button type="submit" :disabled="submitting || signInTransition" class="min-h-12 w-full rounded-panel bg-action-link px-4 font-medium text-on-action hover:bg-action-link-hover disabled:opacity-50">{{ signInTransition ? 'Opening Helios…' : submitting ? 'Please wait…' : mode === 'signup' ? 'Create account' : 'Sign in' }}</button>
       </form>
 
       <button v-if="mode === 'signin'" type="button" :disabled="submitting || !email" class="mt-4 min-h-11 w-full text-body font-medium text-action-link disabled:text-ink-subtle" @click="resetPassword">Forgot your password?</button>
@@ -121,6 +122,7 @@ const password = ref('')
 const marketingEmailConsent = ref(false)
 const showPassword = ref(false)
 const submitting = ref(false)
+const signInTransition = ref(false)
 const message = ref('')
 const errorMessage = ref('')
 const billingLoading = ref(true)
@@ -174,7 +176,10 @@ const checkBilling = async () => {
     if (request !== billingRequest) return
     billingError.value = 'Unable to verify your subscription. Please check again.'
   } finally {
-    if (request === billingRequest) billingLoading.value = false
+    if (request === billingRequest) {
+      billingLoading.value = false
+      signInTransition.value = false
+    }
   }
 }
 
@@ -188,7 +193,10 @@ watch(session, (nextSession, previousSession) => {
   billingError.value = ''
   billingSubscription.value = null
   if (nextSession) checkBilling()
-  else billingLoading.value = true
+  else {
+    billingLoading.value = true
+    signInTransition.value = false
+  }
 })
 
 const openBilling = async () => {
@@ -264,6 +272,7 @@ onUnmounted(() => {
 
 const submit = async () => {
   submitting.value = true
+  if (mode.value === 'signin') signInTransition.value = true
   clearFeedback()
   try {
     if (mode.value === 'signup') {
@@ -290,6 +299,7 @@ const submit = async () => {
     }
   } catch (error) {
     errorMessage.value = error.message
+    signInTransition.value = false
   } finally {
     submitting.value = false
   }
