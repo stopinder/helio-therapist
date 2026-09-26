@@ -143,4 +143,3 @@ test('No clinical data is sent to Loops', () => {
     assert.doesNotMatch(loopsSection, new RegExp(clinicalTerm, 'i'))
   }
 })
-
