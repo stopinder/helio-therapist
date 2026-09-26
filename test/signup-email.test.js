@@ -2,6 +2,7 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 import { heliosWelcomeEmail } from '../api/_lib/emails/heliosWelcomeEmail.js'
+import { deliverWelcome } from '../api/signup/welcome.js'
 
 const authGate = await readFile(new URL('../src/AuthGate.vue', import.meta.url), 'utf8')
 const endpoint = await readFile(new URL('../api/signup/welcome.js', import.meta.url), 'utf8')
@@ -41,6 +42,35 @@ test('welcome endpoint derives identity from an authenticated session', () => {
 test('welcome endpoint uses the dedicated branded template', () => {
   assert.match(endpoint, /heliosWelcomeEmail/)
   assert.match(endpoint, /const \{ subject, html, text \} = heliosWelcomeEmail\(\{ firstName \}\)/)
+})
+
+test('send-only Resend key still sends welcome email when contact sync is forbidden', async () => {
+  const previousKey = process.env.RESEND_API_KEY
+  const previousFetch = globalThis.fetch
+  const previousWarn = console.warn
+  const requests = []
+  process.env.RESEND_API_KEY = 'send-only-test-key'
+  console.warn = () => {}
+  globalThis.fetch = async (url, options) => {
+    requests.push({ url, options })
+    if (url.endsWith('/contacts')) {
+      return { ok: false, status: 401, text: async () => '{"name":"restricted_api_key"}' }
+    }
+    return { ok: true, status: 200, json: async () => ({ id: 'email-test' }) }
+  }
+
+  try {
+    await deliverWelcome({ email: 'test@example.com', fullName: 'Test User', userId: 'user-1', subscribed: true })
+    assert.equal(requests.length, 2)
+    assert.match(requests[0].url, /\/contacts$/)
+    assert.match(requests[1].url, /\/emails$/)
+    assert.equal(JSON.parse(requests[1].options.body).to[0], 'test@example.com')
+  } finally {
+    if (previousKey === undefined) delete process.env.RESEND_API_KEY
+    else process.env.RESEND_API_KEY = previousKey
+    globalThis.fetch = previousFetch
+    console.warn = previousWarn
+  }
 })
 
 test('welcome template contains branded HTML, CTA and plain-text fallback', () => {
