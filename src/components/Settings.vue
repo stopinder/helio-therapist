@@ -60,10 +60,12 @@
             <div class="mt-1 text-body-sm text-ink-subtle">{{ subscriptionSummary }}</div>
             <div v-if="subscriptionDetail" class="mt-1 text-caption text-ink-subtle">{{ subscriptionDetail }}</div>
           </div>
-          <button v-if="subscription" type="button" :disabled="isBillingBusy" @click="manageSubscription" class="min-h-touch px-4 py-2 rounded-control border border-border-muted text-body-sm font-medium text-action-link disabled:opacity-50">Manage subscription</button>
-          <button v-else type="button" :disabled="isBillingBusy || isLoadingSubscription" @click="startSubscription" class="min-h-touch px-4 py-2 rounded-control bg-action-link text-on-action text-body-sm font-medium disabled:opacity-50">{{ isBillingBusy ? 'Opening checkout...' : 'Start 30-day free trial' }}</button>
+          <button v-if="subscription?.status === 'trialing' && !subscription.cancel_at_period_end" type="button" :disabled="isBillingBusy" @click="cancelTrial" class="min-h-touch px-4 py-2 rounded-control border border-border-muted text-body-sm font-medium text-state-danger disabled:opacity-50">{{ isBillingBusy ? 'Cancelling trial...' : 'Cancel trial' }}</button>
+          <button v-else-if="subscription && subscription.status !== 'trialing'" type="button" :disabled="isBillingBusy" @click="manageSubscription" class="min-h-touch px-4 py-2 rounded-control border border-border-muted text-body-sm font-medium text-action-link disabled:opacity-50">Manage subscription</button>
+          <button v-else-if="!subscription" type="button" :disabled="isBillingBusy || isLoadingSubscription" @click="startSubscription" class="min-h-touch px-4 py-2 rounded-control bg-action-link text-on-action text-body-sm font-medium disabled:opacity-50">{{ isBillingBusy ? 'Opening checkout...' : 'Start 30-day free trial' }}</button>
         </div>
         <p v-if="billingError" role="alert" class="mt-3 text-body-sm text-state-danger">{{ billingError }}</p>
+        <p v-if="billingSuccess" role="status" class="mt-3 text-body-sm text-state-success">{{ billingSuccess }}</p>
       </div>
     </section>
 
@@ -83,10 +85,10 @@ const profile=ref(emptyProfile()),isLoadingProfile=ref(true),isSavingProfile=ref
 const logoPreviewUrl=ref(''),logoError=ref(''),isUpdatingLogo=ref(false)
 const googleStatus=ref('Not connected'),googleEmail=ref(''),lastSyncedGoogle=ref('Not synced yet'),isConnectingGoogle=ref(false),isLoadingStatus=ref(true)
 const zoomStatus=ref('Not connected'),isConnectingZoom=ref(false),isLoadingZoomStatus=ref(true)
-const subscription=ref(null),isLoadingSubscription=ref(true),isBillingBusy=ref(false),billingError=ref('')
+const subscription=ref(null),isLoadingSubscription=ref(true),isBillingBusy=ref(false),billingError=ref(''),billingSuccess=ref('')
 const formatBillingDate=(value)=>value?new Date(value).toLocaleDateString(undefined,{day:'numeric',month:'short',year:'numeric'}):''
 const subscriptionSummary=computed(()=>{if(isLoadingSubscription.value)return'Checking subscription...';if(!subscription.value)return'30 days free, then £29/month. Cancel anytime.';if(subscription.value.status==='trialing')return'Free trial';if(subscription.value.status==='active')return'£29/month';return subscription.value.status.replaceAll('_',' ')})
-const subscriptionDetail=computed(()=>{if(!subscription.value)return'';if(subscription.value.status==='trialing'&&subscription.value.trial_ends_at)return`Trial ends ${formatBillingDate(subscription.value.trial_ends_at)}`;if(subscription.value.cancel_at_period_end&&subscription.value.current_period_ends_at)return`Cancels ${formatBillingDate(subscription.value.current_period_ends_at)}`;if(subscription.value.current_period_ends_at)return`Next billing date ${formatBillingDate(subscription.value.current_period_ends_at)}`;return''})
+const subscriptionDetail=computed(()=>{if(!subscription.value)return'';if(subscription.value.cancel_at_period_end)return`Cancels ${formatBillingDate(subscription.value.trial_ends_at||subscription.value.current_period_ends_at)}`;if(subscription.value.status==='trialing'&&subscription.value.trial_ends_at)return`Trial ends ${formatBillingDate(subscription.value.trial_ends_at)}`;if(subscription.value.current_period_ends_at)return`Next billing date ${formatBillingDate(subscription.value.current_period_ends_at)}`;return''})
 
 function notifyProfileChanged(){window.dispatchEvent(new CustomEvent('helios-profile-changed'))}
 function formatSyncTime(value){if(!value)return'Not synced yet';const date=new Date(value),elapsed=Date.now()-date.getTime();if(elapsed>=0&&elapsed<60000)return'Synced just now';if(elapsed>=0&&elapsed<3600000)return`Last synced ${Math.floor(elapsed/60000)}m ago`;return`Last synced ${date.toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'})}`}
@@ -106,6 +108,18 @@ async function fetchSubscription(){isLoadingSubscription.value=true;billingError
 async function openBillingUrl(path){isBillingBusy.value=true;billingError.value='';try{const response=await authenticatedFetch(path,{method:'POST'});const data=await response.json();if(!response.ok||!data.url)throw new Error(data.error||'Unable to open billing');window.location.href=data.url}catch(error){billingError.value=error.message||'Unable to open billing.';isBillingBusy.value=false}}
 const startSubscription=()=>openBillingUrl('/api/billing/checkout')
 const manageSubscription=()=>openBillingUrl('/api/billing/portal')
+async function cancelTrial(){
+  if(!confirm(`Cancel your trial? You can keep using Helios until ${formatBillingDate(subscription.value.trial_ends_at)}, and you won't be charged when it ends.`))return
+  isBillingBusy.value=true;billingError.value='';billingSuccess.value=''
+  try{
+    const response=await authenticatedFetch('/api/billing/cancel-trial',{method:'POST'})
+    const data=await response.json()
+    if(!response.ok||!data.cancel_at_period_end)throw new Error(data.error||'Unable to cancel trial')
+    subscription.value={...subscription.value,cancel_at_period_end:true,trial_ends_at:data.trial_ends_at}
+    billingSuccess.value='Your trial will end without a charge.'
+  }catch(error){billingError.value=error.message||'Unable to cancel trial.'}
+  finally{isBillingBusy.value=false}
+}
 const signOut=async()=>{await supabase.auth.signOut()}
 onMounted(async()=>{await Promise.all([loadProfile(),fetchGoogleStatus(),fetchZoomStatus(),fetchSubscription()])})
 </script>
