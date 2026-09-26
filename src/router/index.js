@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { supabase } from '../lib/supabase.js'
+import { checkBilling } from '../lib/billing.js'
 import Landing from '../views/Landing.vue'
 import AuthEntry from '../views/AuthEntry.vue'
 import Terms from '../views/Terms.vue'
@@ -82,14 +83,14 @@ router.beforeEach(async (to) => {
   if (to.meta.authEntry) return { path: '/overview' }
 
   try {
-    const response = await fetch('/api/billing/status', { headers: { Authorization: `Bearer ${data.session.access_token}` } })
-    const result = await response.json()
-    const status = result.subscription?.status
-    const hasAccess = response.ok && ['trialing', 'active'].includes(status)
+    const hasAccess = await checkBilling(data.session)
     if (!hasAccess && !to.meta.subscriptionSetup) return { path: '/subscription/setup' }
     if (hasAccess && to.meta.subscriptionSetup) return { path: '/overview' }
-  } catch {
-    if (!to.meta.subscriptionSetup) return { path: '/subscription/setup' }
+  } catch (error) {
+    // Handle billing errors explicitly without presenting them as a new trial.
+    // If the check fails (e.g. network error), we allow navigation but might want to log it.
+    // We don't redirect to trial if we can't confirm they DON'T have access.
+    console.warn('[Billing] Allowing navigation despite check error:', error)
   }
   return true
 })

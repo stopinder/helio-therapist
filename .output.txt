@@ -1,0 +1,1067 @@
+
+> helios-therapist@1.0.0 test
+> node --test "test/**/*.test.js" test/subscription-access-gate.test.js
+✔ artifact source hash is deterministic and content-sensitive (2.7702ms)
+✔ model policy version is explicit and stable (0.3159ms)
+✔ AI execution: known model cost is estimated from input and output tokens (2.0605ms)
+✔ AI execution: cached input tokens use the cached input rate (0.3347ms)
+✔ AI execution: unknown model pricing is explicit rather than guessed (0.2572ms)
+✔ AI execution: usage records contain accounting metadata but no prompt or clinical content (0.8201ms)
+✔ AI execution: reflection model override remains backwards compatible (0.5115ms)
+✔ AI execution: transcript clinical summary has an independent model override (0.3979ms)
+✔ AI execution: missing provider configuration is a 503-class error (1.4964ms)
+✔ AI execution: buildTokenLimitParams maps maxTokens correctly by model (1.2814ms)
+✔ AI execution: buildTemperatureParams omits temperature for gpt-5.6-terra (0.8092ms)
+✔ reflection prompt version changes when bounded client context is introduced (1.742ms)
+✔ reflection input includes only the assembled bounded client context (0.7109ms)
+✔ unlinked reflections do not receive client context (1.2467ms)
+✔ reflection endpoint loads context only through the owned client context loader (25.4056ms)
+✔ reflection editor exposes an explicit save then AI handoff (3.5596ms)
+✔ professional development resolves only the saved reflection id before opening AI (0.3016ms)
+✔ AI reflection API remains reflection-id only and RLS-backed (0.2534ms)
+✔ dictation remains transient server-side and returns text only (3.8334ms)
+✔ AI Reflection Library: buildReflectionInput (1.9916ms)
+✔ AI Reflection Library: buildReflectionInput with minimal data (0.3989ms)
+✔ AI Reflection Library: validateAIReflectionResponse handles valid input (1.8685ms)
+✔ AI Reflection Library: validateAIReflectionResponse fails on missing fields (0.3547ms)
+✔ AI Reflection Library: validateAIReflectionResponse handles malformed arrays (0.5573ms)
+✔ AI Reflection Library: validateAIReflectionResponse trims and limits strings (0.3859ms)
+✔ AI Reflection Library: System Prompt contents (0.3871ms)
+✔ AI Rephrase Library: validateAIRephraseResponse handles valid input (2.5931ms)
+✔ AI Rephrase Library: validateAIRephraseResponse fails on missing rephrased_text (0.3267ms)
+✔ AI Rephrase Library: validateAIRephraseResponse trims and limits strings (0.2595ms)
+✔ AI Rephrase Library: System Prompt contents (0.2349ms)
+[Supabase Diagnostics] { urlExists: true, urlValid: true, anonKeyExists: true }
+▶ authenticatedFetch Logic
+  ✔ successful first request (2.285ms)
+  ✔ successful recovery on 401 (1.5753ms)
+  ✔ failed recovery on 401 triggers local sign-out and event (1.4002ms)
+  ✔ no infinite loop on repeated 401 (1.208ms)
+  ✔ Google 403 does not trigger Helios sign-out (1.4118ms)
+✔ authenticatedFetch Logic (11.9003ms)
+✔ app shell distinguishes full-height workspaces from ordinary scrolling pages (1.7961ms)
+✔ app shell propagates min-height zero through the flex content chain (0.8509ms)
+✔ transcripts owns its internal scrolling only because it is a full-height workspace (1.8522ms)
+✔ sidebar remains scrollable on short screens but hides its scrollbar rail (0.5293ms)
+✔ permanent sidebar is used from tablet and desktop widths while phones use the menu drawer (0.68ms)
+✔ global header shows compact appointment context (1.7209ms)
+✔ global appointment clock loads Helios and Google timed events (0.4269ms)
+✔ sample appointments do not create a false global appointment (0.5085ms)
+✔ a real Helios appointment remains eligible even without integration ids (0.3455ms)
+✔ Join remains visible but is enabled only for a joinable Helios appointment (0.3483ms)
+✔ global clock highlights an appointment only within the final 15 minutes (0.3013ms)
+✔ clock and appointment data refresh while the shell is mounted (0.2367ms)
+✔ global controls use the same compact height (0.3287ms)
+✔ confirm_session_billable_time uses only current user segments (regression) (9982.1152ms)
+[Billing] Check failed Error: Network error
+    at global.fetch (file:///C:/Users/Rob/WebstormProjects/helio-therapist/test/billing-cache.test.js:88:13)
+    at checkBilling (file:///C:/Users/Rob/WebstormProjects/helio-therapist/src/lib/billing.js:31:28)
+    at TestContext.<anonymous> (file:///C:/Users/Rob/WebstormProjects/helio-therapist/test/billing-cache.test.js:92:13)
+    at Test.runInAsyncScope (node:async_hooks:214:14)
+    at Test.run (node:internal/test_runner/test:1047:25)
+    at Test.start (node:internal/test_runner/test:944:17)
+    at TestContext.test (node:internal/test_runner/test:373:20)
+    at TestContext.<anonymous> (file:///C:/Users/Rob/WebstormProjects/helio-therapist/test/billing-cache.test.js:85:11)
+    at async Test.run (node:internal/test_runner/test:1054:7)
+    at async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+▶ Billing Cache Logic
+  ✔ getCachedAccess returns null initially (1.3868ms)
+  ✔ setCachedAccess stores value for user (0.5354ms)
+  ✔ getCachedAccess returns null for different user (0.2276ms)
+  ✔ clearBillingCache resets everything (0.2749ms)
+  ✔ checkBilling uses cache on second call (0.7129ms)
+  ✔ checkBilling re-fetches for different user (0.6303ms)
+  ✔ checkBilling handles errors gracefully (2.123ms)
+✔ Billing Cache Logic (9.353ms)
+[Billing] Check failed Error: Network error
+    at global.fetch (file:///C:/Users/Rob/WebstormProjects/helio-therapist/test/billing-flow.test.js:56:40)
+    at checkBilling (file:///C:/Users/Rob/WebstormProjects/helio-therapist/src/lib/billing.js:31:28)
+    at TestContext.<anonymous> (file:///C:/Users/Rob/WebstormProjects/helio-therapist/test/billing-flow.test.js:58:13)
+    at Test.runInAsyncScope (node:async_hooks:214:14)
+    at Test.run (node:internal/test_runner/test:1047:25)
+    at Test.start (node:internal/test_runner/test:944:17)
+    at TestContext.test (node:internal/test_runner/test:373:20)
+    at TestContext.<anonymous> (file:///C:/Users/Rob/WebstormProjects/helio-therapist/test/billing-flow.test.js:54:11)
+    at async Test.run (node:internal/test_runner/test:1054:7)
+    at async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+▶ Billing logic for session refresh and user switch
+  ✔ Initial check for User A (2.2834ms)
+  ✔ Session refresh for User A (same ID, different token) uses cache (0.3661ms)
+  ✔ Switch to User B clears old access and fetches new (0.4226ms)
+  ✔ Sign out clears everything (0.4792ms)
+  ✔ Handling billing errors explicitly (4.2564ms)
+✔ Billing logic for session refresh and user switch (11.3439ms)
+▶ Calendar component template and logic requirements
+  ✔ Open Client hidden for malformed client IDs (1.4594ms)
+  ✔ Start Session eligibility (0.2958ms)
+  ✔ Escape closes the action surface (0.5724ms)
+  ✔ Mini-calendar interaction (0.2612ms)
+  ✔ Loading, error/Retry and empty states (0.4778ms)
+  ✔ Data-source disclosure matches connection state (10.4979ms)
+  ✔ Weekday keys are unique in mini-calendar (0.2864ms)
+  ✔ Correct working-hours range (24 hours) (0.7054ms)
+  ✔ Scrolling height logic (0.9613ms)
+  ✔ Honest Google states in Sidebar (0.9908ms)
+  ✔ Test IDs are present (0.254ms)
+  ✔ Tablet layout and agenda width exclusivity (20.9689ms)
+  ✔ Scrollable grid audit (0.2288ms)
+  ✔ Alignment rangeStart is 0 (0.3639ms)
+  ✔ Time axis header spacer present in both Day and Week views (0.5168ms)
+  ✔ Sticky elements updated (0.2435ms)
+  ✔ Popover containment and flipping logic (0.882ms)
+✔ Calendar component template and logic requirements (67.6243ms)
+✔ calendar events open a Helio-controlled detail popover (35.9964ms)
+▶ Calendar filtering logic audit
+  ✔ Filters out auto-created workspace sessions based on explicit completed state (1.6003ms)
+✔ Calendar filtering logic audit (16.6208ms)
+✔ useCalendar loadGoogleEvents aborts concurrent requests (118.4104ms)
+✔ useCalendar range normalization avoids millisecond issues (1.6536ms)
+✔ URL detection logic (1.755ms)
+✔ Safe hostname extraction (0.3679ms)
+✔ Rejection of unsafe protocols (0.4112ms)
+▶ Calendar logic and date alignment
+  ✔ View range calculation: Day (3.5091ms)
+  ✔ View range calculation: Week (Monday start) (0.4185ms)
+  ✔ View range calculation: Month (6-row grid) (0.5145ms)
+  ✔ Mini-calendar weekday alignment for August 2026 (1.3074ms)
+  ✔ Leap year: February 2024 has 29 days (0.2678ms)
+  ✔ Start of week calculation (Monday) (0.3288ms)
+  ✔ Month navigation safety (Jan 31 -> Feb) (0.3318ms)
+✔ Calendar logic and date alignment (14.5183ms)
+▶ Appointment eligibility logic
+  ✔ Event positioning and height (0.8746ms)
+  ✔ Overlapping appointments logic (1.0873ms)
+✔ Appointment eligibility logic (6.8081ms)
+▶ Calendar Regression: Week and Day Ranges
+  ✔ Full Week view range is 7 days (3.0523ms)
+  ✔ Day view range is 1 day (0.953ms)
+✔ Calendar Regression: Week and Day Ranges (6.4767ms)
+▶ Calendar Regression: All-day Event Parsing
+  ✔ All-day event stays on the correct date regardless of local timezone (2.2343ms)
+✔ Calendar Regression: All-day Event Parsing (2.8118ms)
+▶ Calendar Regression: Merge Strategy
+  ✔ Merge strategy preserves events outside current fetch range (0.603ms)
+✔ Calendar Regression: Merge Strategy (1.0902ms)
+✔ keeps calendar recovery in the workspace rather than routing routine work to Settings (17.7102ms)
+✔ Care Hierarchy: Current Care is primary and Reflection is collapsed (10.8052ms)
+✔ Care Hierarchy: Reflection panel appears immediately below the header (7.4681ms)
+✔ Structured Care Terminology: Uses "Aims and objectives" (12.4642ms)
+✔ client AI context is explicitly versioned and source constrained (3.6472ms)
+✔ approved session context rejects drafts, empty notes, and missing IDs (0.3952ms)
+✔ client AI context caps completed-session history (2.6494ms)
+✔ client archive is reversible and records an archive timestamp (2.9058ms)
+✔ workspace makes archive meaning explicit and never exposes deletion (1.014ms)
+✔ archived clients cannot receive new active work (0.3746ms)
+✔ Care RLS requires the referenced client to belong to the authenticated therapist (2.4056ms)
+✔ Care provenance session must belong to the same therapist and client (0.3488ms)
+✔ lib/clients.js includes createClient with authenticated user check (19.9886ms)
+✔ Clients.vue integrates AddClientModal correctly (3.3944ms)
+✔ AddClientModal gives first-time users labelled, accessible fields (2.3747ms)
+✔ App.vue reuses createClient helper (3.6112ms)
+✔ searches names and identifiers without requiring email to be displayed (2.5539ms)
+✔ only a single exact result is eligible for Enter-to-open (3.1431ms)
+✔ recent sorting prioritises recently opened clients and then uses name order (1.8019ms)
+✔ identifiers appear only when needed to distinguish duplicate names (0.4827ms)
+✔ client directory exposes active archived and all views without database UUID noise (18.1674ms)
+✔ sample clients can be archived and restored without deletion (1.8949ms)
+✔ client rows remain directly and keyboard navigable (1.4787ms)
+✔ directory loads real upcoming appointments and listClients keeps active-only default (2.8886ms)
+✔ ClientDocumentsPanel implements the refined hierarchy and archived boundaries (15.6631ms)
+✔ ClientWorkspace provides the correct archived state to Documents panel (2.4524ms)
+✔ client document schema is additive, client-scoped and draft-capable (21.0659ms)
+✔ document service only offers completed clinical sessions as sources (2.5525ms)
+✔ document source preview uses readable Clinical Record formatting and contains horizontal overflow (5.6808ms)
+✔ Client Workspace owns the professional clinical composer and exposes safe document actions (6.488ms)
+✔ clinical source selector stays compact and prevents duplicate note insertion (3.7085ms)
+✔ clinical finalisation uses therapist-authenticated PDF generation and private download (6.9928ms)
+✔ Follow-ups service uses correct Supabase table and RLS constraints (20.7289ms)
+✔ Follow-ups UI components follow requirements (27.4364ms)
+✔ Follow-ups migration follows schema requirements (5.9207ms)
+[Supabase Diagnostics] { urlExists: false, urlValid: false, anonKeyExists: false }
+Supabase configuration missing or invalid. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY environment variables.
+✔ groups outcome measure results by resource and orders newest first (2.9974ms)
+✔ ignores non-measure assignments and incomplete measure results (0.5448ms)
+✔ client request model keeps one send action and independently managed items (27.8193ms)
+[Supabase Diagnostics] { urlExists: false, urlValid: false, anonKeyExists: false }
+Supabase configuration missing or invalid. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY environment variables.
+✔ groups assignments into Active and Completed (2.2829ms)
+✔ orders completed items by reviewed_at then completed_at (0.5175ms)
+✔ handles relationship shapes safely (arrays or objects) (0.3933ms)
+✔ outcome measures in resources show title and kind but not scores (0.5168ms)
+✔ client session summary reuses Client Documents without importing raw internal clinical material (26.9537ms)
+✔ Helios Clinical Intelligence offers only General, Gentle CBT, and Integrative lenses (1.7481ms)
+✔ client summary generation uses up to three reviewed Session Captures and accepted Care context (2.1743ms)
+✔ Clinical Intelligence uses a stronger feature-specific model default without changing other AI defaults (2.2755ms)
+✔ Clinical Intelligence prompt separates recurrence from causality and protects client-facing boundaries (3.1796ms)
+✔ Clinical Intelligence builds a source-aware evidence map before client prose (2.3053ms)
+✔ Clinical Intelligence quality contract requires staged comparison and evidence thresholds (3.9971ms)
+✔ Clinical Intelligence prompt gives each client-facing section a distinct job (7.1904ms)
+✔ Clinical Intelligence evaluation benchmark covers core therapist quality dimensions (1.3481ms)
+✔ evaluation scorer rewards grounded longitudinal output and penalises unsupported claims (6.7441ms)
+✔ single-session evaluation penalises invented longitudinal claims (0.7371ms)
+✔ Gentle CBT longitudinal synthesis includes supported sequence mapping without forcing CBT onto other lenses (7.3608ms)
+✔ therapist-authored additions are passed separately and never presented as client statements (12.1843ms)
+✔ AI returns structured clinical intelligence and Helios renders the client document deterministically (39.7258ms)
+✔ composer generates an editable draft and keeps therapist finalisation explicit (9.7932ms)
+[Session Summary] AI response validation failed: invalid_source_id
+[Session Summary] AI response validation failed: claim_not_present_in_section
+✔ manual Clinical Intelligence benchmark uses only synthetic fixtures and never persists AI usage (10.9892ms)
+✔ source selection follows clinical chronology and never reaches beyond the anchor session (26.5575ms)
+✔ evidence map excludes private or safety-sensitive Care kinds before model input (0.6323ms)
+✔ structured response requires every material claim to cite a valid source (1.7597ms)
+✔ composer preserves generated provenance and offers restoration before replacing edited text (23.3866ms)
+✔ therapist can inspect and choose the clinical anchor before generation (38.9526ms)
+✔ Client Workspace supervision entry reuses private reflection mutation (24.6408ms)
+✔ Supervision report supports direct PDF download without changing stored reflections (3.5871ms)
+✔ Supervision global content options control preview and exported report content (4.3874ms)
+✔ Client Workspace overview uses live sources and honest empty states (30.7969ms)
+✔ ClientWorkspace does not render institutional tabs (1.8484ms)
+✔ ClientWorkspace presents therapist-first sections (0.9149ms)
+✔ ClientWorkspace uses human-readable session actions and states (1.0289ms)
+✔ ClientWorkspace preserves access to underlying data (0.4875ms)
+✔ client workspace exposes a real transcripts section (1.8651ms)
+✔ client transcript panel only renders transcripts assigned to the current client (0.3437ms)
+✔ client transcript without a session exposes the existing session-link workflow (0.6843ms)
+✔ client transcript inbox navigation preserves a return to the client transcripts tab (0.4747ms)
+✔ client transcript view preserves authenticated therapist ownership boundary (0.3769ms)
+✔ client transcript panel does not mutate transcript assignments or source text (1.0046ms)
+✔ Client Workspace Header Actions Simplified (20.9159ms)
+✔ Clients page uses live Supabase clients and standard UI patterns (47.173ms)
+[Supabase Diagnostics] { urlExists: false, urlValid: false, anonKeyExists: false }
+Supabase configuration missing or invalid. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY environment variables.
+✔ clinical safety: normal therapist draft content is allowed (3.4271ms)
+✔ clinical safety: demonstration content cannot be persisted as a session draft (1.0002ms)
+✔ clinical safety: demonstration content cannot be hidden in legacy notes (0.3662ms)
+✔ frontend: prepareDraft should not generate [DEMO] content (19.9705ms)
+✔ clinical exchange labels preserve the distinct assignment lifecycle (3.2662ms)
+✔ clinical timeline presents clinical findings, not workflow activity (2.0308ms)
+✔ PHQ-9 only calculates complete valid answers and preserves item answers (4.8488ms)
+✔ Clinical Lens: Shared neutral configuration registry (1.9869ms)
+✔ Clinical Lens: Server-side resolution (3.1753ms)
+✔ Clinical Lens: UI uses lens configuration (33.7285ms)
+✔ Clinical Lens: AI suggestions endpoint resolves lensId through the shared prompt builder (4.7078ms)
+✔ Clinical Lens: database constraint permits all configured Care kinds (5.1931ms)
+✔ Clinical Lens: Explicitly CBT-specific tools remain untouched (4.7047ms)
+✔ formats a structured Clinical Record as readable labelled prose (2.5689ms)
+✔ preserves legacy plain text and malformed JSON without data loss (0.5006ms)
+✔ ClinicalRecordMetadata.vue hardening (2.3764ms)
+✔ SessionWorkspace.vue profile loading (1.1234ms)
+✔ ClinicalSummaryTab.vue and CompletedClinicalRecord.vue integration (5.5968ms)
+✔ working notes are durable, therapist-owned and bound to the matching session/client (16.5832ms)
+✔ clinical draft and completion use optimistic concurrency and one transactional completion boundary (6.9112ms)
+✔ clinical record draft dictation stays editable and uses the authenticated transient transcription path (17.2794ms)
+✔ completed clinical record is rendered read-only and corrections are amendments (5.9995ms)
+✔ approved amendments use the immutable backend and reload for completed records (3.5873ms)
+✔ workspace remounts the clinical record when approval changes the session to completed (3.7968ms)
+✔ Clinical Summary Approval: draft session displays as draft (2.2966ms)
+✔ Clinical Summary Approval: completed session displays as approved_record (0.4666ms)
+✔ Clinical Summary Approval: parses notes correctly for approved record (0.4618ms)
+✔ Clinical Summary Approval: handles legacy plain text after approval (1.391ms)
+✔ Clinical Summary: parses valid JSON notes (2.0461ms)
+✔ Clinical Summary: handles plain text as legacy notes (1.4438ms)
+✔ Clinical Summary: handles invalid JSON as legacy notes (0.4641ms)
+✔ Clinical Summary: formats data as JSON string (0.3913ms)
+✔ completed clinical sessions are protected from deletion at database level (11.8624ms)
+✔ delete protection targets completed records rather than blocking all session deletion (4.1186ms)
+✔ CPD Tab Simplification: real supervision handoff (31.0281ms)
+✔ AddClientModal includes Current focus field and emits note (17.7041ms)
+✔ lib/clients.js maps current_focus to note correctly (5.7697ms)
+✔ ClinicalAttentionPanel renders Current focus from client.note (9.06ms)
+✔ working documents expose deletion while finalised documents remain protected (22.6211ms)
+✔ Overview current focus can be entered explicitly by the therapist (2.4244ms)
+✔ document finalisation keeps therapist checks before using the protected server client (15.9462ms)
+✔ browser document writes still use the authenticated user client (13.0947ms)
+✔ document immutability reproduction (9484.1334ms)
+✔ document library keeps practice documents primary and client records searchable (16.3255ms)
+✔ documents view preserves existing document actions through grouped library (5.9438ms)
+✔ practice identity is compact until explicitly edited (2.1857ms)
+✔ practice identity is therapist-owned and document studio consumes it (51.3446ms)
+✔ general document export is the visible canvas rather than preview-finalise API (4.5704ms)
+✔ professional document templates cover practice and prospect workflows (1.8709ms)
+✔ template body creates editable structured copy without client identifiers (0.8228ms)
+✔ clinical session state is server-backed with a one-time retained legacy import (17.2249ms)
+✔ session save and completion use concurrency and transactional RPC boundaries (4.3092ms)
+✔ Zoom session operations validate the durable session belongs to the therapist and client (2.3942ms)
+✔ documents client foreign key receives a direct covering index (1.9526ms)
+✔ final remediation stays additive and does not broaden document access (0.6714ms)
+✔ signup confirmation is truthful without confirming account existence (3.0698ms)
+✔ settings edits the existing therapist-owned practice profile (0.3879ms)
+✔ empty overview gives a clear first action without creating new product scope (0.4661ms)
+✔ existing client profile fields are editable and persisted (0.4538ms)
+✔ new client email is stored only as email, not as the client reference (0.308ms)
+✔ Google scope helper accepts least-privilege Calendar grants and rejects identity-only consent (3.159ms)
+✔ Google authorization requests the least-privilege Calendar scopes (31.2912ms)
+✔ OAuth callback does not report success when Calendar permission is absent (2.4919ms)
+✔ Google OAuth callback stores encrypted credentials and clears plaintext columns (3.3662ms)
+✔ Google status exposes read, write and scheduling readiness (4.6456ms)
+✔ Google status reads encrypted credentials while retaining legacy detection (2.5381ms)
+✔ refreshes an expired legacy Google token, encrypts credentials and retries silently (66.9005ms)
+✔ uses encrypted Google credentials without plaintext copies (3.6671ms)
+✔ only asks for reconnect when Google rejects the refresh token (2.8759ms)
+✔ validates range boundaries to prevent 400 errors (1.0623ms)
+✔ Development view uses evidence-led learning language (18.7616ms)
+✔ health endpoint exposes only a minimal dependency status contract (2.2623ms)
+✔ health endpoint is bounded and logs dependency failures server-side (0.3468ms)
+✔ scheduled production health workflow checks the canonical production domain (0.3927ms)
+✔ Transcript Isolation: Therapist B cannot see Therapist A transcripts (62.5329ms)
+✔ Transcript Isolation: Therapist B cannot update Therapist A transcript (5.3578ms)
+✔ Google Status Isolation: Therapist B cannot see Therapist A connection (7.4304ms)
+✔ Google Events Isolation: Therapist B cannot see Therapist A events (3.7133ms)
+✔ Supervision Summary Isolation: Therapist B cannot access Therapist A reflections (7.7471ms)
+✔ AI Artifacts Library: findReusableSupervisionArtifact should ideally be scoped (0.3256ms)
+▶ Landing Page Direction
+  ✔ Practice flow section matches tightened copy (2.0125ms)
+  ✔ Hero section matches therapist-first direction (0.5987ms)
+  ✔ Representative navigation reflects current product structure (0.8088ms)
+  ✔ Client-centred sections are present (0.5612ms)
+  ✔ Session Summary is emphasized (0.4332ms)
+  ✔ Therapist reflection is present and CPD is not a primary navigation label (1.0362ms)
+  ✔ Reflection section keeps authorship, privacy and supervision selection explicit (1.0662ms)
+  ✔ Trust and Control section matches new direction (1.1413ms)
+  ✔ Legal and account routes remain present (0.8079ms)
+✔ Landing Page Direction (14.4848ms)
+✔ manual transcript import is authenticated, bounded and idempotent (2.1156ms)
+✔ manual file import uses the existing transcript inbox workflow without raw file storage (0.5059ms)
+✔ therapist can paste a Zoom transcript directly into the same protected import path (20.528ms)
+✔ manual import returns safe therapist-facing validation messages (0.6922ms)
+✔ the full migration chain preserves clinical invariants (9306.6179ms)
+✔ ReflectionWorkspace.vue implements single modal with internal stages (24.7749ms)
+✔ ReflectionWorkspace prevents background scroll when modal is open (6.8256ms)
+✔ therapist cannot read another therapist clinical rows through RLS (9351.5032ms)
+✔ therapist cannot create rows owned by another therapist or attach work to another therapist client (2972.8961ms)
+✔ therapist cannot mutate or delete another therapist rows (1586.4583ms)
+✔ ownership-checking clinical RPC rejects another therapist session (1679.8735ms)
+✔ Today has one focused before-session preparation state (23.8256ms)
+✔ OAuth callbacks always return users to the Helios application (42.9119ms)
+✔ deployment guidance uses the Helios production domain (4.2297ms)
+✔ Overview view requirements (48.4908ms)
+✔ Calendar view requirements (4.5471ms)
+✔ Practice Map is grounded in therapist-authored mapping and measured observations (65.7203ms)
+✔ Professional Development keeps hub-and-spoke navigation architecture (3.0899ms)
+✔ Professional Development routes retain clear page headings (4.5757ms)
+✔ CPD home puts the three primary practice destinations first (1.2653ms)
+✔ CPD home surfaces discovery without assigning reflective homework (0.9073ms)
+✔ public pricing exposes only the £29 monthly offer with a 30 day trial (4.3975ms)
+✔ terms describe live Stripe subscription billing (1.239ms)
+Testing setReflectionSupervisionSelection...
+✓ Success: Update is scoped correctly and returns updated row
+✓ Success: Authentication requirement enforced
+✓ Success: Database errors return a safe error
+[Reflections] Selection update error: { message: 'DB Error' }
+✔ test\reflection-actions.test.js (271.9422ms)
+Testing Reflection Detail View logic...
+✓ Success: Can open detail view
+✓ Success: Filter state preserved when opening detail
+✓ Success: Supervision toggle updates both list and detail view
+✓ Success: Can close detail view and filter state remains
+✔ test\reflection-detail-view.test.js (180.3625ms)
+✔ reflection timeline exposes type-aware edit and delete actions (21.8812ms)
+✔ review page passes reflection management actions to the layout (4.2511ms)
+✔ layout keeps structured reflections canonical and deletes retained reflections explicitly (14.9863ms)
+✔ free-text editor requires an explicit save and keeps delete separate (6.5182ms)
+✔ updatePrivateReflectionBody updates only an authenticated therapist free-text reflection (7.5286ms)
+✔ updatePrivateReflectionBody rejects structured and therapeutic stance reflections (3.0919ms)
+✔ updatePrivateReflectionBody rejects empty content rather than silently retaining it (0.5181ms)
+✔ deletePrivateReflection deletes only the authenticated therapist reflection (1.4509ms)
+✔ reflection edit and delete require authentication (0.6222ms)
+Testing Theme and Search Filtering logic...
+✓ Success: Theme counts are correct
+✓ Success: Theme filtering works
+✓ Success: Search filtering works (body, client, session)
+✓ Success: Combined search + theme filter works
+✓ Success: Empty filtered state confirmed
+✔ test\reflection-filtering.test.js (354.5196ms)
+✔ the reflection workspace preserves its private therapist-only boundary (14.0168ms)
+✔ Sprint One keeps reflection and summary ownership explicit in RLS (3.2023ms)
+✔ frontend ReflectionWorkspace.vue does NOT contain relationship controls (21.799ms)
+✔ ReflectionWorkspace.vue has 20,000 character validation (3.0696ms)
+✔ ReflectionWorkspace.vue detail modal is simplified (3.8498ms)
+✔ frontend validation matches database constraints (45.4848ms)
+✔ reflection saving has length validation and error handling (2.7693ms)
+✔ summary generation handles non-JSON responses safely (3.5833ms)
+✔ transcription also uses safe JSON parsing (2.8172ms)
+✔ reflective mapping starts with an empty therapist-authored map (3.5789ms)
+✔ reflective mapping normalizes values without accepting arbitrary keys (0.4885ms)
+✔ workspace reflection preserves a structured reflective map (1.7408ms)
+✔ structured mapping stays out of the generated reflection body (0.8827ms)
+✔ free-text reflection language is not treated as structured mapping (0.4329ms)
+✔ therapist wording remains intact rather than assigning a predefined position (0.3326ms)
+✔ Regression: api/ai/client-session-summary.js does not select session_capture_drafts.id (28.9827ms)
+✔ Client Session Summary Logic: Preview Mode (28.0829ms)
+✔ Client Session Summary Logic: NO_REVIEWED_SESSION_CAPTURE (409) (0.6715ms)
+✔ Client Session Summary Logic: Source ID contract (1.0699ms)
+✔ resource picker separates resource selection from request configuration (70.4325ms)
+▶ Vercel routing configuration
+  ✔ SPA catch-all rewrite is present (1.4595ms)
+  ✔ Schema is present (0.3319ms)
+✔ Vercel routing configuration (55.3678ms)
+✔ therapist workspace exposes scheduling as a header action without sidebar duplication (4.2951ms)
+✔ unscheduled client workspace links directly into scheduling with client context (1.1554ms)
+✔ scheduling accepts a valid client query and still requires a client before booking (1.0571ms)
+✔ booking link endpoint validates therapist ownership and stores only opaque correlation data (0.6548ms)
+✔ appointments migration enforces therapist ownership with RLS (0.7004ms)
+✔ Clinical Record offers reviewed Session Capture without automatic approval (1.7025ms)
+[Supabase Diagnostics] { urlExists: false, urlValid: false, anonKeyExists: false }
+Supabase configuration missing or invalid. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY environment variables.
+✔ Session Capture persists separately with ownership and review boundaries (2.2631ms)
+✔ Session Capture normalization does not accept invented fields (0.5706ms)
+✔ Session Capture / Transcript rendering wiring (65.0998ms)
+✔ ReflectionTab is present (2.5548ms)
+✔ WorkflowIndicator uses Session Capture (1.7712ms)
+✔ TranscriptTab remains available as a component (4.4219ms)
+✔ raw transcript is collapsed by default and remains available for review (1.9393ms)
+✔ Session Capture simplification requirements (49.0511ms)
+Verification successful: Direct bypass blocked, RPCs remain functional.
+✔ session completion bypass reproduction (8279.2689ms)
+✔ Session Correction: Preserves review choices when only session changes for same client (71.6095ms)
+✔ Session Correction: Invalidates review choices when client changes (6.4792ms)
+✔ Clinical Summary: Rejects unsaved review choices (0.3685ms)
+✔ Client Workspace session entry behavior (58.7098ms)
+✔ Session create or resume rejects archived clients before touching sessions (7.6322ms)
+✔ Session create or resume remains retry-safe under concurrent creation (2.0311ms)
+✔ Transcript Inbox session labels distinguish between session states and show explicit date/time (1.6173ms)
+✔ Transcript Inbox displays a confirmation line for the selected session (0.9687ms)
+✔ Session Summary exposes an accessible autosave failure message and clears it after a successful save (1.6656ms)
+✔ session summary links to its exact client document and finalised summaries are read-only (27.1993ms)
+✔ client workspace opens the document requested by the session summary handoff (2.6498ms)
+✔ saving a session summary document preserves its existing session linkage (3.0462ms)
+✔ SessionWorkspace shows Generate summary button when appropriate (1.9822ms)
+✔ SessionWorkspace offers Regenerate only for non-finalised summary content (1.9932ms)
+✔ SessionWorkspace handles generation state (0.5024ms)
+✔ Session summary section includes source provenance (0.3171ms)
+✔ SessionWorkspace calls generateSessionSummary helper (0.59ms)
+Linkage reproduction test passed!
+✔ session summary linkage reproduction (6483.0939ms)
+✔ ClientWorkspace passes client email to ClientDocumentComposer (32.2203ms)
+✔ ClientDocumentComposer supports Prepare email handoff for finalised session summaries (42.3543ms)
+▶ session summary prompt tuning rules
+  ✔ includes tentative inference guidance (2.1399ms)
+  ✔ includes repetition avoidance guidance (1.9949ms)
+  ✔ includes section uniqueness guidance (0.4996ms)
+  ✔ preserves core grounding and evidenceStrength rules (0.4044ms)
+✔ session summary prompt tuning rules (10.3916ms)
+▶ Session Summary API Timeout Verification (Static Analysis)
+  ✔ passes explicit timeout of 60000 to runTextAI (2.4267ms)
+  ✔ maps timeout/provider errors to 504 status (0.5856ms)
+✔ Session Summary API Timeout Verification (Static Analysis) (10.4496ms)
+▶ validateClientSessionSummaryResponse diagnostics and constraints
+  ✔ rejects recurring evidence strength for single source (3.7651ms)
+  ✔ rejects claim text not in section (0.6041ms)
+  ✔ rejects missing claim for non-empty section (1.7324ms)
+  ✔ rejects invalid source ID (0.6183ms)
+  ✔ accepts valid single-session response (1.1987ms)
+✔ validateClientSessionSummaryResponse diagnostics and constraints (12.5002ms)
+[Supabase Diagnostics] { urlExists: false, urlValid: false, anonKeyExists: false }
+Supabase configuration missing or invalid. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY environment variables.
+✔ working notes normalize only supported string fields (3.8798ms)
+✔ working notes use versioned RPC persistence and surface stale-save conflicts (45.4279ms)
+✔ working notes dictation reuses authenticated transient transcription without changing persistence (3.9546ms)
+✔ workspace reflection remains structured while body stays readable (1.0495ms)
+✔ SessionWorkspace simplification: No live timing (35.1988ms)
+✔ SessionWorkspace uses the authenticated linked transcript source without mock fallback (5.5471ms)
+✔ SessionWorkspace: Header and layout cleanup (4.7689ms)
+✔ SessionWorkspace: Reflection sits beside the summary summary (1.9663ms)
+✔ SessionWorkspace simplification: End Session boundary (4.1147ms)
+✔ SessionWorkspace does not render WorkflowIndicator (2.0353ms)
+✔ SessionWorkspace uses therapist-first language (0.898ms)
+✔ Session summary is the primary visible section (0.4424ms)
+✔ Transcript and Reflection are present but secondary/collapsible (0.4435ms)
+✔ TranscriptTab is NOT mounted by SessionWorkspace (0.2804ms)
+✔ transcript text is rendered directly only when expanded (0.3763ms)
+✔ Session summary persistence uses clientDocuments/document draft helpers (0.5589ms)
+✔ SessionWorkspace does NOT call saveSessionDraft for the summary (0.2207ms)
+✔ summary body comes from document content, not session.notes (0.6463ms)
+✔ Copy summary copies the edited document body (0.8013ms)
+✔ copy is disabled for empty content (0.4369ms)
+✔ Session Workspace still exposes Zoom rejoin guidance (0.2931ms)
+✔ Settings prioritises connections before practice details (27.6739ms)
+✔ Settings provides private practice logo upload replace and removal (6.8116ms)
+✔ practice branding migration keeps logos private and owner scoped (2.8682ms)
+✔ practice logo path can be updated without broadening profile update grants (3.7553ms)
+✔ Settings product boundaries: shows only supported Google and Zoom integrations (1.6718ms)
+✔ Settings product boundaries: does not expose a non-persistent default video-provider setting (0.5152ms)
+✔ Settings product boundaries: does not ship dormant Calendly server endpoints (0.88ms)
+✔ Settings subscription: shows the single Helios offer and billing actions (0.6671ms)
+✔ sidebar practice identity is dynamic and therapist-owned (9.4026ms)
+✔ sidebar keeps navigation between practice identity and bottom settings (0.4702ms)
+✔ sidebar exposes transcript inbox as persistent workspace navigation (0.517ms)
+✔ desktop and mobile sidebars receive the same practice identity (0.4101ms)
+✔ sidebar and header group primary therapist destinations (55.6271ms)
+✔ sidebar uses restrained Lucide components instead of emoji navigation (5.2545ms)
+✔ signup marketing consent is explicit and optional (2.4684ms)
+✔ signup guidance survives the redirect to sign in (0.4984ms)
+✔ sign in failure gives useful generic guidance without revealing account existence (0.303ms)
+✔ welcome endpoint derives identity from an authenticated session (0.4362ms)
+✔ welcome endpoint uses the dedicated branded template (0.235ms)
+✔ welcome template contains branded HTML, CTA and plain-text fallback (0.7648ms)
+✔ frontend sends only the authenticated access token to the welcome endpoint (0.3711ms)
+✔ welcome notification is triggered by the auth state listener, not submit handlers (0.3147ms)
+✔ Resend receives only account identity and marketing subscription state (0.7438ms)
+✔ marketing consent is stored on the existing therapist profile (0.7203ms)
+✔ client response storage remains private and server-mediated (0.4682ms)
+✔ Loops sync uses a single /events/send request for opted-in signups (0.4344ms)
+✔ No clinical data is sent to Loops (0.5961ms)
+✔ semantic spacing tokens are defined once and exposed to Tailwind (42.3417ms)
+✔ priority workspace surfaces use semantic spacing (5.302ms)
+✔ semantic surface, border, and elevation tokens are defined once and exposed to Tailwind (3.868ms)
+✔ semantic interaction and motion tokens are defined once and exposed to Tailwind (3.123ms)
+✔ primary drawers use the shared keyboard focus trap (3.304ms)
+✔ shared visual decisions have semantic tokens and canonical templates avoid arbitrary colour utilities (72.7238ms)
+Therapist A start_session_work result: {
+  id: '4d3b301e-b6c1-4963-b2fd-78df1c8a8669',
+  session_id: 'cccccccc-cccc-4ccc-8ccc-cccccccccccc',
+  user_id: '11111111-1111-4111-8111-111111111111',
+  started_at: 2026-09-26T06:40:59.674Z,
+  ended_at: null,
+  created_at: 2026-09-26T06:40:59.674Z
+}
+✔ start_session_work leak regression test (6885.9281ms)
+✔ Stripe checkout uses configured price and 30 day trial (3.1556ms)
+✔ Stripe webhook verifies signatures before syncing subscriptions (0.7484ms)
+✔ subscription table is server-write and therapist-read only (0.6385ms)
+✖ authenticated users need a trialing or active subscription for the workspace (6.0242ms)
+✔ subscription setup is outside the workspace shell and starts Stripe checkout (0.5974ms)
+✔ checkout returns to subscription setup until webhook entitlement is visible (0.4837ms)
+✔ therapist-facing helper RPCs are not executable anonymously (67.4997ms)
+✔ trigger-only helpers cannot be invoked directly by browser roles (2.3359ms)
+✔ generic updated-at trigger has a fixed search path (2.2053ms)
+✔ hardening does not revoke the intentional authenticated clinical workflow RPCs (4.1041ms)
+✔ RLS optimization preserves the existing ownership policy set (3.2046ms)
+✔ optimized policies use init-plan friendly authenticated identity checks (1.7933ms)
+✔ migration adds only the focused active foreign-key indexes (0.7093ms)
+✔ SupervisionSummaryTab: New wording and Supervision Pack action (88.7734ms)
+✔ Supervision Pack View and Export Flow (79.2064ms)
+✔ Supervision Pack: Client Alias Generation and Selection (14.8418ms)
+✔ Supervision Pack: Month Grouping (51.1762ms)
+✔ Report Export: Option Handling and Clipboard Output (62.5095ms)
+✔ a reflection may be saved empty or short, while summary generation needs enough source material (112.7853ms)
+✔ the summary request is authenticated and delimits source writing (9.9013ms)
+✔ only a bounded, supported draft is accepted (0.9437ms)
+✔ regeneration versions summaries and never overwrites the original reflection (7.9649ms)
+✔ both telemetry types redact dynamic routes and every query/hash (5.8941ms)
+✔ public and static workspace pages retain useful aggregate paths (0.7534ms)
+✔ unknown paths, malformed URLs, credentials and custom events fail closed (0.7539ms)
+✔ application initializes both SDKs with the tested filter and logging disabled (37.1798ms)
+✔ test discovery regression (1477.1902ms)
+✔ therapeutic stance prompt is integrative, tentative and source-bound (2.3367ms)
+✔ AI response validator accepts only the exact report section contract (2.415ms)
+✔ ClientWorkspace.vue integrates live timeline (70.7026ms)
+✔ TimelineItem.vue handles navigation and event-driven presentation (3.2367ms)
+✔ lib/clients.js includes getTimelineEvents helper (5.7048ms)
+✔ multi-record resource and completion workflows call database transactions (244.0807ms)
+✔ privileged transactional functions are not executable by browser roles (52.5785ms)
+✔ tenant policies validate the owner of referenced clinical records (30.2791ms)
+✔ API handles batch clear attention with ownership restriction (1.7921ms)
+✔ API handles individual restoration to attention with ownership restriction (0.4735ms)
+[Vue warn]: Property undefined was accessed during render but is not defined on instance.
+  at <App>
+[Vue warn]: Property undefined was accessed during render but is not defined on instance.
+  at <App>
+[Vue warn]: Property undefined was accessed during render but is not defined on instance.
+  at <App>
+[Vue warn]: Property undefined was accessed during render but is not defined on instance.
+  at <App>
+[Vue warn]: Property undefined was accessed during render but is not defined on instance.
+  at <App>
+[Vue warn]: Property undefined was accessed during render but is not defined on instance.
+  at <App>
+[Vue warn]: Property undefined was accessed during render but is not defined on instance.
+  at <App>
+[Vue warn]: Property undefined was accessed during render but is not defined on instance.
+  at <App>
+[Vue warn]: Property undefined was accessed during render but is not defined on instance.
+  at <App>
+[Vue warn]: Property undefined was accessed during render but is not defined on instance.
+  at <App>
+[Vue warn]: Property undefined was accessed during render but is not defined on instance.
+  at <App>
+[Vue warn]: Property undefined was accessed during render but is not defined on instance.
+  at <App>
+[Vue warn]: Property undefined was accessed during render but is not defined on instance.
+  at <App>
+[Vue warn]: Property undefined was accessed during render but is not defined on instance.
+  at <App>
+[Vue warn]: Property undefined was accessed during render but is not defined on instance.
+  at <App>
+[Vue warn]: Property undefined was accessed during render but is not defined on instance.
+  at <App>
+[Vue warn]: Property undefined was accessed during render but is not defined on instance.
+  at <App>
+[Vue warn]: Property undefined was accessed during render but is not defined on instance.
+  at <App>
+[Vue warn]: Property undefined was accessed during render but is not defined on instance.
+  at <App>
+[Vue warn]: Property undefined was accessed during render but is not defined on instance.
+  at <App>
+[Vue warn]: Property undefined was accessed during render but is not defined on instance.
+  at <App>
+[Vue warn]: Property undefined was accessed during render but is not defined on instance.
+  at <App>
+[Vue warn]: Property undefined was accessed during render but is not defined on instance.
+  at <App>
+[Vue warn]: Property undefined was accessed during render but is not defined on instance.
+  at <App>
+[Vue warn]: Property undefined was accessed during render but is not defined on instance.
+  at <App>
+[Vue warn]: Property undefined was accessed during render but is not defined on instance.
+  at <App>
+[Vue warn]: Property undefined was accessed during render but is not defined on instance.
+  at <App>
+[Vue warn]: Property undefined was accessed during render but is not defined on instance.
+  at <App>
+[Vue warn]: Property undefined was accessed during render but is not defined on instance.
+  at <App>
+[Vue warn]: Property undefined was accessed during render but is not defined on instance.
+  at <App>
+[Vue warn]: Property undefined was accessed during render but is not defined on instance.
+  at <App>
+[Vue warn]: Property undefined was accessed during render but is not defined on instance.
+  at <App>
+[Vue warn]: Property undefined was accessed during render but is not defined on instance.
+  at <App>
+[Vue warn]: Property undefined was accessed during render but is not defined on instance.
+  at <App>
+[Vue warn]: Property undefined was accessed during render but is not defined on instance.
+  at <App>
+[Vue warn]: Property undefined was accessed during render but is not defined on instance.
+  at <App>
+[Vue warn]: Property undefined was accessed during render but is not defined on instance.
+  at <App>
+[Vue warn]: Property undefined was accessed during render but is not defined on instance.
+  at <App>
+[Vue warn]: Property undefined was accessed during render but is not defined on instance.
+  at <App>
+[Vue warn]: Property undefined was accessed during render but is not defined on instance.
+  at <App>
+[Vue warn]: Property undefined was accessed during render but is not defined on instance.
+  at <App>
+[Vue warn]: Property undefined was accessed during render but is not defined on instance.
+  at <App>
+[Vue warn]: Property undefined was accessed during render but is not defined on instance.
+  at <App>
+[Vue warn]: Property undefined was accessed during render but is not defined on instance.
+  at <App>
+[Vue warn]: Property undefined was accessed during render but is not defined on instance.
+  at <App>
+[Vue warn]: Property undefined was accessed during render but is not defined on instance.
+  at <App>
+[Vue warn]: Property undefined was accessed during render but is not defined on instance.
+  at <App>
+[Vue warn]: Property undefined was accessed during render but is not defined on instance.
+  at <App>
+[Vue warn]: Property undefined was accessed during render but is not defined on instance.
+  at <App>
+[Vue warn]: Property undefined was accessed during render but is not defined on instance.
+  at <App>
+[Vue warn]: Property undefined was accessed during render but is not defined on instance.
+  at <App>
+[Vue warn]: Property undefined was accessed during render but is not defined on instance.
+  at <App>
+[Vue warn]: Property undefined was accessed during render but is not defined on instance.
+  at <App>
+[Vue warn]: Property undefined was accessed during render but is not defined on instance.
+  at <App>
+[Vue warn]: Property undefined was accessed during render but is not defined on instance.
+  at <App>
+[Vue warn]: Property undefined was accessed during render but is not defined on instance.
+  at <App>
+[Vue warn]: Property undefined was accessed during render but is not defined on instance.
+  at <App>
+[Vue warn]: Property undefined was accessed during render but is not defined on instance.
+  at <App>
+[Vue warn]: Property undefined was accessed during render but is not defined on instance.
+  at <App>
+[Vue warn]: Property undefined was accessed during render but is not defined on instance.
+  at <App>
+[Vue warn]: Property undefined was accessed during render but is not defined on instance.
+  at <App>
+[Vue warn]: Property undefined was accessed during render but is not defined on instance.
+  at <App>
+[Vue warn]: Property undefined was accessed during render but is not defined on instance.
+  at <App>
+[Vue warn]: Property undefined was accessed during render but is not defined on instance.
+  at <App>
+[Vue warn]: Property undefined was accessed during render but is not defined on instance.
+  at <App>
+[Vue warn]: Property undefined was accessed during render but is not defined on instance.
+  at <App>
+[Vue warn]: Property undefined was accessed during render but is not defined on instance.
+  at <App>
+[Vue warn]: Property undefined was accessed during render but is not defined on instance.
+  at <App>
+[Vue warn]: Property undefined was accessed during render but is not defined on instance.
+  at <App>
+[Vue warn]: Property undefined was accessed during render but is not defined on instance.
+  at <App>
+[Vue warn]: Property undefined was accessed during render but is not defined on instance.
+  at <App>
+[Vue warn]: Property undefined was accessed during render but is not defined on instance.
+  at <App>
+[Vue warn]: Property undefined was accessed during render but is not defined on instance.
+  at <App>
+[Vue warn]: Property undefined was accessed during render but is not defined on instance.
+  at <App>
+[Vue warn]: Property undefined was accessed during render but is not defined on instance.
+  at <App>
+[Vue warn]: Property undefined was accessed during render but is not defined on instance.
+  at <App>
+[Vue warn]: Property undefined was accessed during render but is not defined on instance.
+  at <App>
+[Vue warn]: Property undefined was accessed during render but is not defined on instance.
+  at <App>
+[Vue warn]: Property undefined was accessed during render but is not defined on instance.
+  at <App>
+[Vue warn]: Property undefined was accessed during render but is not defined on instance.
+  at <App>
+[Vue warn]: Property undefined was accessed during render but is not defined on instance.
+  at <App>
+[Vue warn]: Property undefined was accessed during render but is not defined on instance.
+  at <App>
+[Vue warn]: Property undefined was accessed during render but is not defined on instance.
+  at <App>
+[Vue warn]: Property undefined was accessed during render but is not defined on instance.
+  at <App>
+[Vue warn]: Property undefined was accessed during render but is not defined on instance.
+  at <App>
+[Vue warn]: Property undefined was accessed during render but is not defined on instance.
+  at <App>
+[Vue warn]: Property undefined was accessed during render but is not defined on instance.
+  at <App>
+[Vue warn]: Property undefined was accessed during render but is not defined on instance.
+  at <App>
+[Vue warn]: Property undefined was accessed during render but is not defined on instance.
+  at <App>
+[Vue warn]: Property undefined was accessed during render but is not defined on instance.
+  at <App>
+[Vue warn]: Property undefined was accessed during render but is not defined on instance.
+  at <App>
+[Vue warn]: Property undefined was accessed during render but is not defined on instance.
+  at <App>
+[Vue warn]: Property undefined was accessed during render but is not defined on instance.
+  at <App>
+[Vue warn]: Property undefined was accessed during render but is not defined on instance.
+  at <App>
+[Vue warn]: Property undefined was accessed during render but is not defined on instance.
+  at <App>
+[Vue warn]: Property undefined was accessed during render but is not defined on instance.
+  at <App>
+[Vue warn]: Property undefined was accessed during render but is not defined on instance.
+  at <App>
+[Vue warn]: Property undefined was accessed during render but is not defined on instance.
+  at <App>
+[Vue warn]: Property undefined was accessed during render but is not defined on instance.
+  at <App>
+[Vue warn]: Property undefined was accessed during render but is not defined on instance.
+  at <App>
+[Vue warn]: Property undefined was accessed during render but is not defined on instance.
+  at <App>
+[Vue warn]: Property undefined was accessed during render but is not defined on instance.
+  at <App>
+[Vue warn]: Property undefined was accessed during render but is not defined on instance.
+  at <App>
+[Vue warn]: Property undefined was accessed during render but is not defined on instance.
+  at <App>
+[Vue warn]: Property undefined was accessed during render but is not defined on instance.
+  at <App>
+[Vue warn]: Property undefined was accessed during render but is not defined on instance.
+  at <App>
+[Vue warn]: Property undefined was accessed during render but is not defined on instance.
+  at <App>
+✔ Undo applies successes, retains failed original versions, and retries only failures (14.4456ms)
+✔ Undo retains retry state after HTTP 409 (5.9544ms)
+✔ Undo retains retry state after HTTP 500 with apparent transcript (1.2297ms)
+✔ Undo retains retry state after network error (0.9022ms)
+✔ Undo retains retry state after invalid JSON (1.102ms)
+✔ Undo retains retry state after null body (1.3859ms)
+✔ Undo retains retry state after missing transcript (0.9902ms)
+✔ Undo retains retry state after empty transcript (0.817ms)
+✔ Undo retains retry state after wrong id (1.6869ms)
+✔ Undo retains retry state after completed transcript (2.7236ms)
+✔ Undo retains retry state after still cleared (1.5094ms)
+✔ Undo retains retry state after missing version (0.8908ms)
+✔ Undo retains retry state after invalid version (2.1938ms)
+✔ Undo retains retry state after missing content (0.9335ms)
+✔ Undo blocks overlapping Undo, Clear all, and individual restoration until every request settles (1.3244ms)
+✔ a rejected network request does not discard another successful restoration (17.4997ms)
+✔ individual restoration rejects malformed response data (1.1599ms)
+✔ History explanation appears above populated and empty lists; completion label takes precedence (42.036ms)
+✔ Undo control remains visible after error and disabled during saving (4.2797ms)
+✔ repeated batch clearing preserves existing timestamps and all protected records and fields (5.5507ms)
+✔ restoration rejects stale versions before update and concurrent changes during update (0.6695ms)
+✔ completed and cleared transcript has no restore button and sends no restoration request (6.3759ms)
+✔ uncleared transcript sends no restoration request (0.4977ms)
+✔ individual restoration rejects a successful response containing completedAt (1.166ms)
+✔ server rejects restoration of completed_at records without changing any fields (0.6965ms)
+✔ restoration update rejects concurrent completed_at even with an unchanged version (0.5926ms)
+✔ server rejects restoration of deleted_at records without changing any fields (0.9191ms)
+✔ restoration update rejects concurrent deleted_at even with an unchanged version (0.7175ms)
+✔ eligible server restoration succeeds without modifying completion or transcript content (0.5692ms)
+✔ TranscriptInbox has Clear all button and logic (4.5959ms)
+✔ TranscriptInbox has Undo logic (0.4235ms)
+✔ TranscriptInbox has restoration logic for individual items (0.4565ms)
+✔ TranscriptInbox filtering includes cleared items in history (0.3377ms)
+✔ clinical summary draft validation accepts exactly the editable Clinical Summary fields (4.0861ms)
+✔ session capture input rejects only unusably short transcripts and chunks long transcripts (4.4739ms)
+✔ regeneration uses therapist guidance as fresh context and honours removed sections (1.0986ms)
+✔ speaker identities are applied to a prompt copy without changing the source (1.8087ms)
+✔ endpoint requires therapist ownership, confirmed identities, and a current owned session (0.7097ms)
+✔ generation is therapist-triggered, chunked, editable, and remains outside Clinical Record (0.474ms)
+✔ regenerate with my input does not preserve the current draft as AI input (0.3267ms)
+✔ DELETE /api/zoom/transcripts: therapist can delete their completely unassigned transcript (99.0255ms)
+✔ GET /api/zoom/transcripts: excludes tombstoned records (7.6018ms)
+✔ mock-level tombstone protection prevents deleted transcript payload from being restored (8.3623ms)
+✔ DELETE /api/zoom/transcripts: transcript belonging to another therapist cannot be deleted (22.8793ms)
+✔ DELETE /api/zoom/transcripts: assigned transcript cannot be deleted (23.4563ms)
+✔ DELETE /api/zoom/transcripts: session-linked transcript cannot be deleted (3.752ms)
+✔ DELETE /api/zoom/transcripts: reviewed transcript cannot be deleted (3.0547ms)
+✔ DELETE /api/zoom/transcripts: completed transcript cannot be deleted (3.3571ms)
+✔ Transcript Matching: Assign valid client and session (82.453ms)
+✔ Transcript Matching: Reject cross-client session assignment (12.344ms)
+✔ Transcript Matching: Reject cross-therapist client assignment (9.4206ms)
+✔ Transcript Matching: Unmatched transcript remains unassigned (37.6443ms)
+✔ Transcript Matching: Auto-matches if session link exists (19.43ms)
+✔ Transcript Matching: Unknown host is not assigned to the only connected therapist (3.1229ms)
+✔ Transcript Inbox does not render conversation excerpts in the list (2.501ms)
+✔ Transcript Inbox still provides access to the full transcript (0.5995ms)
+✔ stored transcript session is revalidated before review choices are saved (2.4684ms)
+✔ stored transcript session is revalidated before completion (0.777ms)
+✔ changing client cannot fall back to the previous stored session reference (0.9148ms)
+✔ transcript PATCH requires the version last loaded by the therapist (3.5872ms)
+✔ transcript update is conditional on the expected updated timestamp (0.3143ms)
+✔ Transcript Inbox sends the selected transcript version with every PATCH (0.3075ms)
+✔ completed transcript state is named as triage completion (2.1251ms)
+✔ triage completion does not imply requested output or Clinical Record creation (1.6279ms)
+✔ requires speaker confirmation before therapist-triggered session capture (2.9025ms)
+✔ keeps the request separate from Clinical Record approval (0.4978ms)
+✔ Transcript visibility toggle requirements (20.2946ms)
+✔ v2 prompt separates section purposes and uses collegial, non-repetitive language (2.8315ms)
+✔ IFS remains optional and invitational without assigning parts or protective motives (0.5702ms)
+✔ new text exports carry one closing note, with no opening disclaimer block (10.6599ms)
+✔ AI metadata roundtrips independently of responses and is included in the export (3.4311ms)
+✔ missing provider metadata is not described as recorded (0.861ms)
+✔ previous production and preview v1 snapshots retain their exact representation (7.5518ms)
+✔ unknown schema or provenance labels are rejected rather than migrated silently (2.0337ms)
+✔ Vue keeps the quiet note and direct generation without a permission checkbox (210.54ms)
+✔ report endpoint removes the permission field but retains authentication and deterministic scoring (45.9784ms)
+✔ completion tracks all 15 selections including context and does not invent a type (24.6805ms)
+✔ snapshot roundtrips JSONB key order and preserves distinct source and narrative (7.9943ms)
+✔ continuity packet keeps therapist selections separate from derived narrative (1.686ms)
+✔ continuity refuses non-selected, clinically linked or incomplete records (2.0594ms)
+✔ library saves the report and versioned source privately using existing columns only (6.5154ms)
+✔ retries confirm the same snapshot without overwriting or duplicating it (17.7197ms)
+✔ recovers a committed insert when the response was lost (10.382ms)
+✔ a new completion is a new row; an earlier reflection is not overwritten (7.3343ms)
+✔ failed or switched authentication cannot save into another therapist account (7.615ms)
+✔ read and insert failures never return false save success (5.8243ms)
+✔ conflicting same-ID contents are not overwritten (6.58ms)
+✔ rejects extra identity fields, unsupported versions and tampered authored wording (8.3583ms)
+✔ existing RLS isolates stored exercise evidence between therapists (local PostgreSQL) (3461.946ms)
+✔ videoProviderService keeps join actions compact (5.7852ms)
+✔ videoProviderService keeps the same compact fallback for other providers (0.4053ms)
+✔ session workspace explains the difference between Zoom and Helio workspace (16.5387ms)
+Current summary: {
+  tracking_state: 'paused',
+  recorded_seconds: 600,
+  recorded_minutes: 10,
+  current_segment_started_at: null,
+  billable_minutes: null,
+  billable_confirmed_at: null,
+  billable_adjustment_reason: null
+}
+✔ get_session_work_summary leak regression test (4088.4817ms)
+✔ reconcileZoomMyNotes uses Canvas Search when scope is present (11.8194ms)
+✔ reconcileZoomMyNotes falls back to meeting-id search when Canvas scope is missing (2.3366ms)
+✔ downloads a transcript with an OAuth bearer token (64.1184ms)
+✔ follows a signed non-Zoom redirect without leaking the bearer token (3.4653ms)
+✔ uses a pre-expiry refreshed token before downloading (0.9645ms)
+✔ retries exactly once with a refreshed token after a 401 (1.2112ms)
+✔ leaves a persistent 401 for the caller to record as a failure (1.345ms)
+✔ refreshZoomAccessToken failure includes sanitized diagnostic info (6.0472ms)
+✔ getZoomAccessTokenContext correctly identifies fresh tokens (3.4422ms)
+✔ zoomJson avoids double-refresh on fresh token 401 (5.5675ms)
+✔ normaliseZoomNoteList preserves note_name as title (3.4116ms)
+✔ meeting-scoped note responses inherit the meeting id used for lookup (0.8792ms)
+✔ reconciliation is authenticated, therapist-scoped, meeting-scoped and deduplicates by Zoom note id (2.4539ms)
+✔ reconciliation returns navigation metadata for new imports (1.3267ms)
+✔ transcripts workspace offers a manual Zoom Notes reconciliation action (0.8758ms)
+✔ Transcripts view has a back button (18.1476ms)
+✔ Transcripts view supports direct transcript opening via query param (3.4218ms)
+✔ AppSidebar contains Transcript Inbox link (3.1428ms)
+✔ Transcript Inbox supports Add New Client (1.9153ms)
+✔ Transcript Inbox workflow does not require Review Choices (1.9993ms)
+✔ verified Zoom session link accepts matching therapist, client, and session (7.9386ms)
+✔ verified Zoom session link rejects a session owned by another therapist (0.542ms)
+✔ verified Zoom session link rejects a session belonging to another client (0.3856ms)
+✔ verified Zoom session link rejects a stale session reference (0.587ms)
+✔ closestAppointmentMeeting chooses the scheduled Zoom meeting nearest the session (2.0546ms)
+✔ closestAppointmentMeeting ignores meetings outside the bounded matching window (0.3677ms)
+✔ closestAppointmentMeeting ignores appointments without Zoom meeting identifiers (0.2893ms)
+[Zoom Meeting Launch] Meeting lookup unavailable {
+  meetingId: 'stale-id',
+  status: 400,
+  retried: false,
+  zoomCode: 3001,
+  zoomMessage: 'Meeting does not exist'
+}
+[Zoom Meeting Launch] Meeting lookup unavailable {
+  meetingId: 'missing-id',
+  status: 404,
+  retried: false,
+  zoomCode: 3000,
+  zoomMessage: 'Meeting not found'
+}
+[Zoom Meeting Launch] Meeting lookup unavailable {
+  meetingId: 'scope-error-id',
+  status: 400,
+  retried: false,
+  zoomCode: 4711,
+  zoomMessage: 'Invalid access token, does not contain scopes'
+}
+✔ buildZoomAuthorizationUrl requests only the Zoom scopes used by Helios (4.6001ms)
+▶ resolveZoomHostMeeting parses Zoom error codes
+  ✔ captures zoomCode 3001 as stale (4.3493ms)
+  ✔ captures 404 as stale (2.3116ms)
+  ✔ captures scope error 4711 as 409 (1.6362ms)
+✔ resolveZoomHostMeeting parses Zoom error codes (15.12ms)
+✔ Recovery logic condition in start-session.js (0.5527ms)
+✔ Overview Today workflow integration for Zoom notes (67.1969ms)
+✔ Sidebar includes Transcript Inbox in primary navigation (2.8152ms)
+✔ isZoomTokenExpiring logic (4.0021ms)
+✔ accepts a current Zoom webhook with a matching signature (4.5183ms)
+✔ rejects missing, mismatched and stale Zoom webhook signatures (0.8473ms)
+✔ verifies the exact raw Zoom payload without reserialising JSON (0.7567ms)
+✔ uses a stable delivery key and stores only bounded recording metadata (1.4206ms)
+✔ requires explicit Zoom account ownership and has no single-therapist fallback (1.4107ms)
+✔ acknowledges durable webhook intake before expensive Zoom processing (0.9103ms)
+✔ sanitises My Notes webhook payload without storing note content (1.747ms)
+✔ canonicalises My Notes transcript with speaker labels and fallback labels (0.7368ms)
+✔ extracts Scheduler booking lifecycle data from the opaque correlation token (1.0272ms)
+✔ maps Scheduler cancellation and reschedule lifecycle states (2.6263ms)
+ℹ tests 612
+ℹ suites 3
+ℹ pass 611
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 17523.8474
+✖ failing tests:
+test at test\subscription-access-gate.test.js:10:1
+✖ authenticated users need a trialing or active subscription for the workspace (6.0242ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /\['trialing', 'active'\]\.includes\(status\)/. Input:
+
+  "import { createRouter, createWebHistory } from 'vue-router'\r\n" +
+    "import { supabase } from '../lib/supabase.js'\r\n" +
+    "import { checkBilling } from '../lib/billing.js'\r\n" +
+    "import Landing from '../views/Landing.vue'\r\n" +
+    "import AuthEntry from '../views/AuthEntry.vue'\r\n" +
+    "import Terms from '../views/Terms.vue'\r\n" +
+    "import Privacy from '../views/Privacy.vue'\r\n" +
+    "import AiData from '../views/AiData.vue'\r\n" +
+    "import Cookies from '../views/Cookies.vue'\r\n" +
+    "import Support from '../views/Support.vue'\r\n" +
+    "import SubscriptionSetup from '../views/SubscriptionSetup.vue'\r\n" +
+    "import Overview from '../views/Overview.vue'\r\n" +
+    "import Calendar from '../views/Calendar.vue'\r\n" +
+    "import Clients from '../views/Clients.vue'\r\n" +
+    "import ClientWorkspace from '../views/ClientWorkspace.vue'\r\n" +
+    "import SessionWorkspace from '../views/SessionWorkspace.vue'\r\n" +
+    "import Transcripts from '../views/Transcripts.vue'\r\n" +
+    "import Documents from '../views/Documents.vue'\r\n" +
+    "import Settings from '../views/Settings.vue'\r\n" +
+    "import PublicBooking from '../views/PublicBooking.vue'\r\n" +
+    "import ClientCompletion from '../components/ClientCompletion.vue'\r\n" +
+    "import ScheduleAppointment from '../components/ScheduleAppointment.vue'\r\n" +
+    "import ProfessionalDevelopmentLayout from '../layouts/ProfessionalDevelopmentLayout.vue'\r\n" +
+    "import SupervisionHome from '../views/supervision/SupervisionHome.vue'\r\n" +
+    "import SupervisionReflections from '../views/supervision/SupervisionReflections.vue'\r\n" +
+    "import SupervisionWorkspace from '../views/supervision/SupervisionWorkspace.vue'\r\n" +
+    "import SupervisionGrowth from '../views/supervision/SupervisionGrowth.vue'\r\n" +
+    "import SupervisionInsights from '../views/supervision/SupervisionInsights.vue'\r\n" +
+    '\r\n' +
+    'const routes = [\r\n' +
+    "  { path: '/', name: 'Landing', component: Landing, meta: { public: true, title: 'Helios — Therapist workspace' } },\r\n" +
+    "  { path: '/sign-in', name: 'SignIn', component: AuthEntry, meta: { authEntry: 'signin', title: 'Sign in — Helios' } },\r\n" +
+    "  { path: '/get-started', name: 'GetStarted', component: AuthEntry, meta: { authEntry: 'signup', title: 'Get started — Helios' } },\r\n" +
+    "  { path: '/terms', name: 'Terms', component: Terms, meta: { public: true, title: 'Terms of Service — Helios' } },\r\n" +
+    "  { path: '/privacy', name: 'Privacy', component: Privacy, meta: { public: true, title: 'Privacy Notice — Helios' } },\r\n" +
+    "  { path: '/ai-data', name: 'AiData', component: AiData, meta: { public: true, title: 'AI & data processing — Helios' } },\r\n" +
+    "  { path: '/cookies', name: 'Cookies', component: Cookies, meta: { public: true, title: 'Cookie information — Helios' } },\r\n" +
+    "  { path: '/support', name: 'Support', component: Support, meta: { public: true, title: 'Support & contact — Helios' } },\r\n" +
+    "  { path: '/subscription/setup', name: 'SubscriptionSetup', component: SubscriptionSetup, meta: { subscriptionSetup: true, title: 'Start your trial — Helios' } },\r\n" +
+    "  { path: '/overview', name: 'Overview', component: Overview, meta: { title: 'Overview — Helios' } },\r\n" +
+    "  { path: '/calendar', name: 'Calendar', component: Calendar, meta: { title: 'Calendar — Helios' } },\r\n" +
+    "  { path: '/schedule', name: 'ScheduleAppointment', component: ScheduleAppointment, meta: { title: 'Schedule — Helios' } },\r\n" +
+    "  { path: '/book/:token', name: 'PublicBooking', component: PublicBooking, meta: { public: true, title: 'Book an appointment — Helios' } },\r\n" +
+    "  { path: '/complete', name: 'ClientCompletion', component: ClientCompletion, meta: { public: true, title: 'Complete questionnaire — Helios' } },\r\n" +
+    "  { path: '/clients', name: 'Clients', component: Clients, meta: { title: 'Clients — Helios' } },\r\n" +
+    "  { path: '/clients/:clientId', name: 'ClientWorkspace', component: ClientWorkspace, meta: { title: 'Client workspace — Helios' } },\r\n" +
+    "  { path: '/clients/:clientId/sessions/:sessionId', name: 'SessionWorkspace', component: SessionWorkspace, meta: { title: 'Session workspace — Helios' } },\r\n" +
+    "  { path: '/transcripts', name: 'Transcripts', component: Transcripts, meta: { title: 'Transcripts — Helios' } },\r\n" +
+    "  { path: '/documents', name: 'Documents', component: Documents, meta: { title: 'Documents — Helios' } },\r\n" +
+    '  {\r\n' +
+    "    path: '/supervision',\r\n" +
+    '    component: ProfessionalDevelopmentLayout,\r\n' +
+    "    meta: { title: 'Supervision & CPD — Helios' },\r\n" +
+    '    children: [\r\n' +
+    "      { path: '', name: 'SupervisionHome', component: SupervisionHome },\r\n" +
+    "      { path: 'reflections', name: 'SupervisionReflections', component: SupervisionReflections, meta: { title: 'Reflections — Helios' } },\r\n" +
+    "      { path: 'practice-reflection', name: 'PracticeReflection', component: () => import('../views/supervision/PracticeReflection.vue'), meta: { title: 'Practice reflection — Helios' } },\r\n" +
+    "      { path: 'workspace', name: 'SupervisionWorkspace', component: SupervisionWorkspace, meta: { title: 'Supervision workspace — Helios' } },\r\n" +
+    "      { path: 'growth', name: 'SupervisionGrowth', component: SupervisionGrowth, meta: { title: 'Growth — Helios' } },\r\n" +
+    "      { path: 'insights', name: 'SupervisionInsights', component: SupervisionInsights, meta: { title: 'Insights — Helios' } }\r\n" +
+    '    ]\r\n' +
+    '  },\r\n' +
+    "  { path: '/settings', name: 'Settings', component: Settings, meta: { title: 'Settings — Helios' } }\r\n" +
+    ']\r\n' +
+    '\r\n' +
+    'const router = createRouter({\r\n' +
+    '  history: createWebHistory(),\r\n' +
+    '  routes,\r\n' +
+    '  scrollBehavior(to, from, savedPosition) {\r\n' +
+    '    if (savedPosition) return savedPosition\r\n' +
+    '    if (to.hash) return { el: to.hash }\r\n' +
+    '    return { top: 0 }\r\n' +
+    '  }\r\n' +
+    '})\r\n' +
+    '\r\n' +
+    'router.beforeEach(async (to) => {\r\n' +
+    '  if (to.meta.public || !supabase) return true\r\n' +
+    '  const { data } = await supabase.auth.getSession()\r\n' +
+    '  if (!data.session) {\r\n' +
+    '    if (to.meta.authEntry) return true\r\n' +
+    "    return { path: '/sign-in', query: { redirect: to.fullPath } }\r\n" +
+    '  }\r\n' +
+    "  if (to.meta.authEntry) return { path: '/overview' }\r\n" +
+    '\r\n' +
+    '  try {\r\n' +
+    '    const hasAccess = await checkBilling(data.session)\r\n' +
+    "    if (!hasAccess && !to.meta.subscriptionSetup) return { path: '/subscription/setup' }\r\n" +
+    "    if (hasAccess && to.meta.subscriptionSetup) return { path: '/overview' }\r\n" +
+    '  } catch (error) {\r\n' +
+    '    // Handle billing errors explicitly without presenting them as a new trial.\r\n' +
+    '    // If the check fails (e.g. network error), we allow navigation but might want to log it.\r\n' +
+    "    // We don't redirect to trial if we can't confirm they DON'T have access.\r\n" +
+    "    console.warn('[Billing] Allowing navigation despite check error:', error)\r\n" +
+    '  }\r\n' +
+    '  return true\r\n' +
+    '})\r\n' +
+    '\r\n' +
+    'router.afterEach((to) => {\r\n' +
+    "  document.title = to.meta.title || 'Helios'\r\n" +
+    '})\r\n' +
+    '\r\n' +
+    'export default router\r\n'
+
+      at TestContext.<anonymous> (file:///C:/Users/Rob/WebstormProjects/helio-therapist/test/subscription-access-gate.test.js:11:10)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1047:25)
+      at Test.start (node:internal/test_runner/test:944:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:296:17) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: "import { createRouter, createWebHistory } from 'vue-router'\r\nimport { supabase } from '../lib/supabase.js'\r\nimport { checkBilling } from '../lib/billing.js'\r\nimport Landing from '../views/Landing.vue'\r\nimport AuthEntry from '../views/AuthEntry.vue'\r\nimport Terms from '../views/Terms.vue'\r\nimport Privacy from '../views/Privacy.vue'\r\nimport AiData from '../views/AiData.vue'\r\nimport Cookies from '../views/Cookies.vue'\r\nimport Support from '../views/Support.vue'\r\nimport SubscriptionSetup from '../views/SubscriptionSetup.vue'\r\nimport Overview from '../views/Overview.vue'\r\nimport Calendar from '../views/Calendar.vue'\r\nimport Clients from '../views/Clients.vue'\r\nimport ClientWorkspace from '../views/ClientWorkspace.vue'\r\nimport SessionWorkspace from '../views/SessionWorkspace.vue'\r\nimport Transcripts from '../views/Transcripts.vue'\r\nimport Documents from '../views/Documents.vue'\r\nimport Settings from '../views/Settings.vue'\r\nimport PublicBooking from '../views/PublicBooking.vue'\r\nimport ClientCompletion from '../components/ClientCompletion.vue'\r\nimport ScheduleAppointment from '../components/ScheduleAppointment.vue'\r\nimport ProfessionalDevelopmentLayout from '../layouts/ProfessionalDevelopmentLayout.vue'\r\nimport SupervisionHome from '../views/supervision/SupervisionHome.vue'\r\nimport SupervisionReflections from '../views/supervision/SupervisionReflections.vue'\r\nimport SupervisionWorkspace from '../views/supervision/SupervisionWorkspace.vue'\r\nimport SupervisionGrowth from '../views/supervision/SupervisionGrowth.vue'\r\nimport SupervisionInsights from '../views/supervision/SupervisionInsights.vue'\r\n\r\nconst routes = [\r\n  { path: '/', name: 'Landing', component: Landing, meta: { public: true, title: 'Helios — Therapist workspace' } },\r\n  { path: '/sign-in', name: 'SignIn', component: AuthEntry, meta: { authEntry: 'signin', title: 'Sign in — Helios' } },\r\n  { path: '/get-started', name: 'GetStarted', component: AuthEntry, meta: { authEntry: 'signup', title: 'Get started — Helios' } },\r\n  { path: '/terms', name: 'Terms', component: Terms, meta: { public: true, title: 'Terms of Service — Helios' } },\r\n  { path: '/privacy', name: 'Privacy', component: Privacy, meta: { public: true, title: 'Privacy Notice — Helios' } },\r\n  { path: '/ai-data', name: 'AiData', component: AiData, meta: { public: true, title: 'AI & data processing — Helios' } },\r\n  { path: '/cookies', name: 'Cookies', component: Cookies, meta: { public: true, title: 'Cookie information — Helios' } },\r\n  { path: '/support', name: 'Support', component: Support, meta: { public: true, title: 'Support & contact — Helios' } },\r\n  { path: '/subscription/setup', name: 'SubscriptionSetup', component: SubscriptionSetup, meta: { subscriptionSetup: true, title: 'Start your trial — Helios' } },\r\n  { path: '/overview', name: 'Overview', component: Overview, meta: { title: 'Overview — Helios' } },\r\n  { path: '/calendar', name: 'Calendar', component: Calendar, meta: { title: 'Calendar — Helios' } },\r\n  { path: '/schedule', name: 'ScheduleAppointment', component: ScheduleAppointment, meta: { title: 'Schedule — Helios' } },\r\n  { path: '/book/:token', name: 'PublicBooking', component: PublicBooking, meta: { public: true, title: 'Book an appointment — Helios' } },\r\n  { path: '/complete', name: 'ClientCompletion', component: ClientCompletion, meta: { public: true, title: 'Complete questionnaire — Helios' } },\r\n  { path: '/clients', name: 'Clients', component: Clients, meta: { title: 'Clients — Helios' } },\r\n  { path: '/clients/:clientId', name: 'ClientWorkspace', component: ClientWorkspace, meta: { title: 'Client workspace — Helios' } },\r\n  { path: '/clients/:clientId/sessions/:sessionId', name: 'SessionWorkspace', component: SessionWorkspace, meta: { title: 'Session workspace — Helios' } },\r\n  { path: '/transcripts', name: 'Transcripts', component: Transcripts, meta: { title: 'Transcripts — Helios' } },\r\n  { path: '/documents', name: 'Documents', component: Documents, meta: { title: 'Documents — Helios' } },\r\n  {\r\n    path: '/supervision',\r\n    component: ProfessionalDevelopmentLayout,\r\n    meta: { title: 'Supervision & CPD — Helios' },\r\n    children: [\r\n      { path: '', name: 'SupervisionHome', component: SupervisionHome },\r\n      { path: 'reflections', name: 'SupervisionReflections', component: SupervisionReflections, meta: { title: 'Reflections — Helios' } },\r\n      { path: 'practice-reflection', name: 'PracticeReflection', component: () => import('../views/supervision/PracticeReflection.vue'), meta: { title: 'Practice reflection — Helios' } },\r\n      { path: 'workspace', name: 'SupervisionWorkspace', component: SupervisionWorkspace, meta: { title: 'Supervision workspace — Helios' } },\r\n      { path: 'growth', name: 'SupervisionGrowth', component: SupervisionGrowth, meta: { title: 'Growth — Helios' } },\r\n      { path: 'insights', name: 'SupervisionInsights', component: SupervisionInsights, meta: { title: 'Insights — Helios' } }\r\n    ]\r\n  },\r\n  { path: '/settings', name: 'Settings', component: Settings, meta: { title: 'Settings — Helios' } }\r\n]\r\n\r\nconst router = createRouter({\r\n  history: createWebHistory(),\r\n  routes,\r\n  scrollBehavior(to, from, savedPosition) {\r\n    if (savedPosition) return savedPosition\r\n    if (to.hash) return { el: to.hash }\r\n    return { top: 0 }\r\n  }\r\n})\r\n\r\nrouter.beforeEach(async (to) => {\r\n  if (to.meta.public || !supabase) return true\r\n  const { data } = await supabase.auth.getSession()\r\n  if (!data.session) {\r\n    if (to.meta.authEntry) return true\r\n    return { path: '/sign-in', query: { redirect: to.fullPath } }\r\n  }\r\n  if (to.meta.authEntry) return { path: '/overview' }\r\n\r\n  try {\r\n    const hasAccess = await checkBilling(data.session)\r\n    if (!hasAccess && !to.meta.subscriptionSetup) return { path: '/subscription/setup' }\r\n    if (hasAccess && to.meta.subscriptionSetup) return { path: '/overview' }\r\n  } catch (error) {\r\n    // Handle billing errors explicitly without presenting them as a new trial.\r\n    // If the check fails (e.g. network error), we allow navigation but might want to log it.\r\n    // We don't redirect to trial if we can't confirm they DON'T have access.\r\n    console.warn('[Billing] Allowing navigation despite check error:', error)\r\n  }\r\n  return true\r\n})\r\n\r\nrouter.afterEach((to) => {\r\n  document.title = to.meta.title || 'Helios'\r\n})\r\n\r\nexport default router\r\n",
+    expected: /\['trialing', 'active'\]\.includes\(status\)/,
+    operator: 'match',
+    diff: 'simple'
+  }

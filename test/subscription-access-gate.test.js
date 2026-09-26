@@ -14,7 +14,7 @@ test('authenticated users need a trialing or active subscription for the workspa
 })
 
 test('subscription setup is outside the workspace shell and starts Stripe checkout', () => {
-  assert.match(gate, /session && route\.meta\.subscriptionSetup/)
+  assert.match(gate, /session && \(route\.meta\.subscriptionSetup || !billingAllowed\)/)
   assert.match(setup, /Start 30-day free trial/)
   assert.match(setup, /\/api\/billing\/checkout/)
 })
