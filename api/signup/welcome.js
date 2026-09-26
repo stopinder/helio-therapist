@@ -104,6 +104,16 @@ async function sendWelcome({ email, fullName, userId }) {
   });
 }
 
+export async function deliverWelcome({ email, fullName, userId, subscribed }) {
+  try {
+    await syncContact({ email, fullName, subscribed });
+  } catch (error) {
+    // A send-only Resend key cannot manage contacts, but can still send the email.
+    console.warn('[Signup contact sync]', error.message, error.details || '');
+  }
+  await sendWelcome({ email, fullName, userId });
+}
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
@@ -129,8 +139,7 @@ export default async function handler(req, res) {
       });
     }
 
-    await syncContact({ email, fullName, subscribed });
-    await sendWelcome({ email, fullName, userId: user.id });
+    await deliverWelcome({ email, fullName, userId: user.id, subscribed });
 
     return res.status(200).json({ sent: true });
   } catch (error) {
