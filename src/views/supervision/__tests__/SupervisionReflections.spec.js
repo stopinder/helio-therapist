@@ -9,6 +9,7 @@ vi.mock('@lucide/vue', () => ({
   CalendarDays: { render: () => 'CalendarDays' },
   ChevronDown: { render: () => 'ChevronDown' },
   ChevronUp: { render: () => 'ChevronUp' },
+  CircleHelp: { render: () => 'CircleHelp' },
   CircleMinus: { render: () => 'CircleMinus' },
   CirclePlus: { render: () => 'CirclePlus' },
   FileText: { render: () => 'FileText' },
@@ -88,8 +89,8 @@ describe('SupervisionReflections.spec.js', () => {
     const searchInput = wrapper.find('input[placeholder="Search reflections..."]')
     await searchInput.setValue('alliance')
     
-    const clearButton = wrapper.find('button.text-action-link')
-    expect(clearButton.exists()).toBe(true)
+    const clearButton = wrapper.findAll('button').find(button => button.text() === 'Clear filters')
+    expect(clearButton).toBeDefined()
     
     await clearButton.trigger('click')
     

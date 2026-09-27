@@ -3,7 +3,7 @@
     <header class="border-b border-border-muted pb-7">
       <div class="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <p class="type-eyebrow text-action-link">Your practice</p>
+          <p class="type-eyebrow text-action-link">Your practice</p><HelpLink topic="private-reflection" label="How Reflect works" />
           <h1 class="mt-3 text-3xl font-semibold tracking-[-0.035em] text-ink md:text-4xl">Practice</h1>
         </div>
         <blockquote class="max-w-xl text-sm leading-6 text-ink-muted">“{{ dailyPause.quote }}” <span class="whitespace-nowrap">— {{ dailyPause.attribution }}</span></blockquote>
@@ -74,6 +74,7 @@
 </template>
 
 <script setup>
+import HelpLink from '../../components/help/HelpLink.vue'
 import { computed } from 'vue'
 import { reflectionQuotes } from '../../data/reflectionQuotes.js'
 

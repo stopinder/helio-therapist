@@ -12,7 +12,7 @@
           </div>
 
           <section aria-labelledby="before-next-heading" class="space-y-stack-lg">
-            <h2 id="before-next-heading" class="text-h2 font-semibold text-ink">Before next session</h2>
+            <div class="flex flex-wrap items-center justify-between gap-3"><h2 id="before-next-heading" class="text-h2 font-semibold text-ink">Before next session</h2><HelpLink topic="client-workspace" label="How the Client Workspace works" /></div>
             <ClinicalAttentionPanel :client="client" @updated="client = $event" />
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-stack-lg">
               <div class="lg:col-span-2 space-y-stack-lg">
@@ -82,6 +82,7 @@
   </div>
 </template>
 <script setup>
+import HelpLink from '../components/help/HelpLink.vue'
 import { computed, ref, onMounted, nextTick } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { getClient, getCurrentTherapistLabel, getTimelineEvents } from '../lib/clients.js';

@@ -4,6 +4,7 @@
     <div v-else-if="error" class="flex-1 flex items-center justify-center p-inline-lg"><div class="max-w-md w-full bg-surface p-inline-lg py-stack-lg rounded-card shadow-sm border border-state-danger/20 text-center"><h2 class="text-h2 font-semibold text-state-danger mb-2">Error</h2><p class="text-ink-secondary mb-6">{{ error }}</p><button @click="loadSession" class="button-primary">Try Again</button></div></div>
     <template v-else-if="session">
       <SessionWorkspaceHeader :session="workspaceSession" />
+      <div class="flex justify-end px-inline-lg"><HelpLink topic="session-material" label="How summaries and Clinical Records work" /></div>
 
       <div class="border-b border-border bg-surface px-inline-lg">
         <div class="max-w-4xl mx-auto flex gap-2 py-2" role="tablist" aria-label="Session workspace views">
@@ -132,6 +133,7 @@
 </template>
 
 <script setup>
+import HelpLink from '../components/help/HelpLink.vue'
 import { ref, onMounted, computed } from 'vue';
 import { useRoute, useRouter, RouterLink } from 'vue-router';
 import { supabase } from '../lib/supabase.js';

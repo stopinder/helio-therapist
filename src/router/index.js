@@ -57,6 +57,7 @@ const routes = [
       { path: 'insights', name: 'SupervisionInsights', component: SupervisionInsights, meta: { title: 'Insights — Helios' } }
     ]
   },
+  { path: '/help/:articleId?', name: 'HelpCentre', component: () => import('../views/HelpCentre.vue'), meta: { title: 'Help — Helios' } },
   { path: '/settings', name: 'Settings', component: Settings, meta: { title: 'Settings — Helios' } }
 ]
 

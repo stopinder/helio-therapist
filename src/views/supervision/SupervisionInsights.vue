@@ -1,7 +1,7 @@
 <template>
   <div class="mx-auto max-w-6xl space-y-10 p-4 pb-20 md:p-10">
     <header class="max-w-4xl space-y-4">
-      <p class="type-eyebrow text-action-link">Reflective mapping</p>
+      <div class="flex flex-wrap items-center justify-between gap-3"><p class="type-eyebrow text-action-link">Reflective mapping</p><HelpLink topic="practice-map" label="How Practice Map works" /></div>
       <h1 class="text-3xl font-semibold tracking-[-0.03em] text-ink md:text-4xl">Practice Map</h1>
       <p class="max-w-3xl text-base leading-7 text-ink-secondary">
         A changing picture of what you have noticed in yourself across the work — alongside recurring themes in your reflections.
@@ -133,6 +133,7 @@
 </template>
 
 <script setup>
+import HelpLink from '../../components/help/HelpLink.vue'
 import { computed } from 'vue'
 
 const props = defineProps({
