@@ -60,14 +60,6 @@
               </router-link>
             </div>
 
-            <div class="mt-5 max-w-[420px]">
-              <p class="text-[15px] font-semibold leading-5 text-ink">
-                Built from inside the therapy room.
-              </p>
-              <p class="mt-1 text-[12px] leading-4 text-ink-muted">
-                Created by psychotherapists, for therapists · Private by design
-              </p>
-            </div>
           </div>
 
           <div id="product-tour" class="min-w-0 scroll-mt-24 lg:w-full lg:max-w-[480px] lg:justify-self-end" aria-label="Representative Helios therapist workspace">
@@ -108,6 +100,15 @@
                   <span>Prepare more easily for supervision</span>
                 </li>
               </ul>
+
+              <div class="mt-6 border-t border-border-muted pt-5">
+                <p class="text-[15px] font-semibold leading-5 text-ink">
+                  Built from inside the therapy room.
+                </p>
+                <p class="mt-1 text-[12px] leading-4 text-ink-muted">
+                  Created by psychotherapists, for therapists · Private by design
+                </p>
+              </div>
             </div>
           </div>
         </div>
