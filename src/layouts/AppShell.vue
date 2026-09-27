@@ -60,11 +60,14 @@
       @saved="refreshReminders"
       @changed="refreshReminders"
     />
+    <HelpPanel />
   </div>
 </template>
 
 <script setup>
-import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
+import HelpPanel from '../components/help/HelpPanel.vue'
+import { useHelp } from '../composables/useHelp.js'
 import { useRoute, useRouter } from 'vue-router'
 import { supabase } from '../lib/supabase.js'
 import { authenticatedFetch } from '../lib/authenticatedFetch.js'
@@ -76,7 +79,9 @@ import AppHeader from '../components/shell/AppHeader.vue'
 import AppSidebar from '../components/shell/AppSidebar.vue'
 import GlobalQuickCapture from '../components/reminders/GlobalQuickCapture.vue'
 
+const { closeHelp } = useHelp()
 const route = useRoute()
+watch(() => route.fullPath, closeHelp)
 const router = useRouter()
 const isMobileMenuOpen = ref(false)
 const accountIdentity = ref({ name: 'Signed in', subtitle: '', initials: '·', practiceName: '', practiceLogoUrl: '' })
@@ -135,6 +140,7 @@ const pageTitles = {
   '/transcripts': 'Transcript inbox',
   '/documents': 'Practice documents',
   '/supervision': 'Reflect',
+  '/help': 'Help',
   '/settings': 'Settings'
 }
 const currentPageName = computed(() => pageTitles[route.path] || route.meta?.title?.replace(' — Helios', '') || 'Workspace')

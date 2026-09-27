@@ -3,7 +3,7 @@
     <section class="rounded-panel border border-border-muted bg-surface-elevated p-6">
       <div class="mb-8 max-w-2xl">
         <p class="type-eyebrow text-action-link">Private reflective practice</p>
-        <h3 class="mt-2 text-h3 font-semibold text-ink">Therapist Reflection</h3>
+        <div class="flex flex-wrap items-center justify-between gap-3"><h3 class="mt-2 text-h3 font-semibold text-ink">Therapist Reflection</h3><HelpLink topic="private-reflection" label="How Therapist Reflection works" /></div>
         <p class="mt-3 text-body-sm leading-6 text-ink-muted">This belongs to your reflective practice and supervision preparation. It is separate from the client's Clinical Record.</p>
       </div>
 
@@ -48,6 +48,7 @@
 </template>
 
 <script setup>
+import HelpLink from '../help/HelpLink.vue'
 import { onMounted, reactive, ref } from 'vue'
 import { emptyReflectiveMap, emptyWorkspaceReflection, getPrivateReflection, normalizeWorkspaceReflection, upsertPrivateReflection, workspaceReflectionBody } from '../../lib/reflections.js'
 

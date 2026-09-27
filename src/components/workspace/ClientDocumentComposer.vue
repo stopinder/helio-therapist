@@ -4,7 +4,7 @@
       <section class="relative w-full h-full bg-surface-subtle flex flex-col" role="dialog" aria-modal="true" data-testid="client-document-composer">
         <header class="px-5 py-3 border-b border-border bg-surface-elevated flex flex-wrap items-center justify-between gap-3 shrink-0">
           <div><p class="type-overline text-ink-muted">{{ isSessionSummary ? 'Client-facing summary' : 'Client document' }}</p><h2 class="text-h3 font-semibold">{{ finalised ? (isSessionSummary ? 'Session Summary Finalised' : 'Document Finalised') : (document ? (isSessionSummary ? 'Edit session summary' : 'Edit client document') : (isSessionSummary ? 'Create session summary' : 'Create client document')) }}</h2></div>
-          <div v-if="!finalised" class="flex flex-wrap items-center gap-2"><span class="text-caption" :class="dirty ? 'text-state-warning' : 'text-ink-muted'">{{ dirty ? 'Unsaved changes' : saveMessage }}</span><button v-if="!isSessionSummary" class="button-secondary" type="button" @click="sourcePanelOpen = true">Add from clinical notes</button><button class="button-secondary" :disabled="saving || !form.title.trim()" @click="saveDraft">{{ saving && action === 'save' ? 'Saving…' : 'Save Draft' }}</button><button class="button-primary" :disabled="saving || !form.title.trim() || !form.body.trim()" @click="finaliseDocument">{{ saving && action === 'finalise' ? 'Finalising…' : 'Finalise PDF' }}</button><button class="button-secondary" :disabled="saving" @click="requestClose">Close</button></div>
+          <div v-if="!finalised" class="flex flex-wrap items-center gap-2"><HelpLink v-if="isSessionSummary" topic="client-summary" label="How client summaries work" /><span class="text-caption" :class="dirty ? 'text-state-warning' : 'text-ink-muted'">{{ dirty ? 'Unsaved changes' : saveMessage }}</span><button v-if="!isSessionSummary" class="button-secondary" type="button" @click="sourcePanelOpen = true">Add from clinical notes</button><button class="button-secondary" :disabled="saving || !form.title.trim()" @click="saveDraft">{{ saving && action === 'save' ? 'Saving…' : 'Save Draft' }}</button><button class="button-primary" :disabled="saving || !form.title.trim() || !form.body.trim()" @click="finaliseDocument">{{ saving && action === 'finalise' ? 'Finalising…' : 'Finalise PDF' }}</button><button class="button-secondary" :disabled="saving" @click="requestClose">Close</button></div>
         </header>
         <div v-if="finalised" class="flex-1 overflow-auto p-8">
           <div class="max-w-2xl mx-auto rounded-panel border border-state-success/20 bg-state-success-surface p-6">
@@ -63,6 +63,7 @@
   </teleport>
 </template>
 <script setup>
+import HelpLink from '../help/HelpLink.vue'
 import { computed, onMounted, reactive, ref } from 'vue'
 import { createClientDocumentDraft, downloadClientDocument, finaliseClientDocument, generateClientSessionSummary, listClientSummaryEvidence, listDocumentSourceSessions, saveClientDocumentDraft } from '../../lib/clientDocuments.js'
 import { loadDocumentProfile, profileDisplay } from '../../lib/documentProfile.js'

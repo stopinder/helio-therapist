@@ -23,6 +23,31 @@ describe('new-account billing gate', () => {
     vi.stubGlobal('fetch', vi.fn())
   })
 
+
+  it('shows a neutral access check while billing status is unresolved', async () => {
+    let resolveStatus
+    fetch.mockReturnValue(new Promise(resolve => { resolveStatus = resolve }))
+    const wrapper = mount(AuthGate)
+    await flushPromises()
+    expect(wrapper.text()).toContain('Checking your access…')
+    expect(wrapper.text()).not.toContain('Start your Helios trial')
+    expect(wrapper.find('[data-testid="workspace-shell"]').exists()).toBe(false)
+    resolveStatus({ ok: true, json: async () => ({ subscription: { status: 'trialing' }, hasWorkspaceAccess: true }) })
+    await flushPromises()
+    expect(wrapper.find('[data-testid="workspace-shell"]').exists()).toBe(true)
+    wrapper.unmount()
+  })
+
+  it('does not show the trial offer when the access check fails', async () => {
+    fetch.mockResolvedValue({ ok: false, json: async () => ({ error: 'Temporary billing status error' }) })
+    const wrapper = mount(AuthGate)
+    await flushPromises()
+    expect(wrapper.text()).toContain('We couldn’t check your access')
+    expect(wrapper.text()).toContain('Temporary billing status error')
+    expect(wrapper.text()).not.toContain('Start your Helios trial')
+    wrapper.unmount()
+  })
+
   it('holds the workspace behind checkout when the account has no subscription', async () => {
     fetch.mockResolvedValue({ ok: true, json: async () => ({ subscription: null, hasWorkspaceAccess: false }) })
     const wrapper = mount(AuthGate)

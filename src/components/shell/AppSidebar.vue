@@ -58,6 +58,10 @@
     </nav>
 
     <div class="shrink-0 border-t border-sidebar-border p-3">
+      <router-link to="/help" class="flex min-h-touch items-center gap-2.5 rounded-control px-2.5 type-ui text-sidebar-muted hover:bg-sidebar-hover hover:text-sidebar-fg" :class="{ 'bg-sidebar-active text-sidebar-fg font-semibold': isNavActive('/help') }" @click="handleNavigation">
+        <span class="icon-surface !h-7 !w-7 border-none icon-surface-reflection"><CircleHelp class="workspace-icon-sm" aria-hidden="true" /></span>
+        <span>Help</span>
+      </router-link>
       <router-link
         to="/settings"
         class="flex min-h-touch items-center gap-2.5 rounded-control px-2.5 type-ui text-sidebar-muted transition-colors hover:bg-sidebar-hover hover:text-sidebar-fg"
@@ -75,6 +79,7 @@
 <script setup>
 import { useRoute } from 'vue-router'
 import {
+  CircleHelp,
   CalendarDays,
   FileText,
   GraduationCap,

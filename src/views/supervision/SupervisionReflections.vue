@@ -10,6 +10,7 @@
       <p class="text-body-sm text-ink-muted font-fraunces italic mt-1">
         Browse your reflective journal and revisit previous thinking.
       </p>
+      <HelpLink topic="reflection-ai" label="How the reflection library works" />
       <router-link to="/supervision/practice-reflection" class="button-secondary inline-flex items-center mt-4">Reflect on your therapeutic stance</router-link>
     </header>
 
@@ -76,6 +77,7 @@
 </template>
 
 <script setup>
+import HelpLink from '../../components/help/HelpLink.vue'
 import { ref, computed } from 'vue';
 import ProfessionalDevelopmentTimeline from '../../components/professional-development/ProfessionalDevelopmentTimeline.vue';
 
