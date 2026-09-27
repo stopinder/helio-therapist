@@ -26,7 +26,21 @@
       </div>
     </header>
 
-    <section class="overflow-hidden">
+    <section class="relative isolate flex min-h-[570px] items-end overflow-hidden bg-[#061E29] text-[#F4F0E7] sm:min-h-[620px] lg:min-h-[min(720px,82vh)]" aria-label="Welcome to Helios">
+      <img :src="openingImage" alt="Sunlit workspace looking out over a distant horizon" class="absolute inset-0 z-0 h-full w-full object-cover object-[84%_center] lg:object-center" fetchpriority="high" />
+      <div class="absolute inset-0 z-10 bg-gradient-to-r from-[#061E29]/75 via-[#061E29]/25 to-transparent"></div>
+      <div class="absolute inset-0 z-10 bg-gradient-to-t from-[#061E29]/50 via-transparent to-transparent"></div>
+      <div class="relative z-20 mx-auto w-full max-w-[1200px] px-5 pb-12 pt-28 sm:px-8 sm:pb-16 lg:px-10 lg:pb-20">
+        <p class="type-eyebrow text-[#E7B877]">Helios · Therapist workspace</p>
+        <p class="mt-5 max-w-[650px] font-serif text-[clamp(2.6rem,5vw,4.8rem)] leading-[1.06] tracking-[-0.035em]">A place for your whole practice.</p>
+        <p class="mt-5 max-w-[500px] text-[18px] leading-7 text-[#F4F0E7]/95">Sessions, clients, calendar, documents and reflection, together in one workspace.</p>
+        <a href="#helios-introduction" class="mt-8 inline-flex items-center gap-2 rounded-control border border-[#F4F0E7]/70 bg-[#061E29]/35 px-5 py-3 text-base font-semibold text-[#F4F0E7] transition-colors hover:bg-[#061E29]/70 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#F4F0E7]">
+          Explore the workspace <span aria-hidden="true">↓</span>
+        </a>
+      </div>
+    </section>
+
+    <section id="helios-introduction" class="scroll-mt-20 overflow-hidden">
       <div class="mx-auto w-full max-w-[1200px] px-5 py-12 sm:px-8 sm:py-16 lg:px-10 lg:py-20">
         <div class="grid gap-10 md:grid-cols-[320px_minmax(0,1fr)] md:items-start md:gap-6 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] lg:items-center lg:gap-14">
           <div class="min-w-0 pt-1">
@@ -678,6 +692,7 @@
 </template>
 
 <script setup>
+import openingImage from '../assets/helios-opening.webp'
 import heroDashboard from '../assets/helios-dashboard-hero.png'
 import clientWorkspace from '../assets/client-workspace-section.png'
 </script>
