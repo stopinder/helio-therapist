@@ -19,7 +19,9 @@ test('existing accounts retain access while a new account needs an active trial 
 
 test('the authenticated shell waits for server billing status and offers checkout', () => {
   assert.match(billingStatus, /hasWorkspaceAccess: hasWorkspaceAccess\(user, data\)/)
-  assert.match(authGate, /session && \(billingLoading \|\| !billingAllowed\)/)
+  assert.match(authGate, /session && billingLoading && !signInTransition/)
+  assert.match(authGate, /session && !billingLoading && !billingAllowed/)
+  assert.match(authGate, /session && !billingLoading" data-testid="workspace-shell"/)
   assert.match(authGate, /\/api\/billing\/status/)
   assert.match(authGate, /\/api\/billing\/checkout/)
   assert.match(authGate, /Check subscription again/)
