@@ -112,7 +112,8 @@
 import { onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import AppShell from './layouts/AppShell.vue'
-import { supabase } from './lib/supabase.js'\nimport { trackTrialStarted } from './lib/googleAds.js'
+import { supabase } from './lib/supabase.js'
+import { trackTrialStarted } from './lib/googleAds.js'
 
 const route = useRoute()
 const router = useRouter()
@@ -175,6 +176,9 @@ const checkBilling = async () => {
     if (!response.ok) throw new Error(data.error || 'Unable to check subscription')
     billingSubscription.value = data.subscription
     billingAllowed.value = data.hasWorkspaceAccess === true
+    if (billingAllowed.value && route.query.billing === 'success') {
+      trackTrialStarted(session.value?.user?.id)
+    }
   } catch (error) {
     if (token !== session.value?.access_token) return
     billingAllowed.value = false
