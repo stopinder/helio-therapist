@@ -1,6 +1,7 @@
 import { getSupabaseClient } from '../_lib/supabase.js';
 import { getStripeClient } from '../_lib/stripe.js';
 import { sendPaidInvoiceEmail } from '../_lib/paid-invoice-email.js';
+import { sendTrialStartedToLoops } from '../_lib/loops-trial.js';
 
 export const config = { api: { bodyParser: false } };
 
@@ -34,9 +35,13 @@ export default async function handler(req, res) {
   if (!secret) return res.status(500).json({ error: 'Webhook configuration missing' });
   try {
     const stripe = getStripeClient();
+    const supabase = getSupabaseClient();
     const event = stripe.webhooks.constructEvent(await rawBody(req), req.headers['stripe-signature'], secret);
     if (['customer.subscription.created','customer.subscription.updated','customer.subscription.deleted'].includes(event.type)) {
-      await syncSubscription(getSupabaseClient(), event.data.object);
+      await syncSubscription(supabase, event.data.object);
+      if (event.type === 'customer.subscription.created') {
+        await sendTrialStartedToLoops({ supabase, subscription: event.data.object, stripeEventId: event.id });
+      }
     }
     if (event.type === 'invoice.paid') {
       await sendPaidInvoiceEmail(event.data.object, stripe);
