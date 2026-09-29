@@ -112,7 +112,7 @@
 import { onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import AppShell from './layouts/AppShell.vue'
-import { supabase } from './lib/supabase.js'
+import { supabase } from './lib/supabase.js'\nimport { trackTrialStarted } from './lib/googleAds.js'
 
 const route = useRoute()
 const router = useRouter()
