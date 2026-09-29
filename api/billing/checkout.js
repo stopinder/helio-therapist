@@ -24,7 +24,7 @@ export default async function handler(req, res) {
     const session = await stripe.checkout.sessions.create({
       mode: 'subscription',
       line_items: [{ price: getStripePriceId(), quantity: 1 }],
-      success_url: `${origin}/settings?billing=success`,
+      success_url: `${origin}/settings?billing=success&checkout_session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}/settings?billing=cancelled`,
       client_reference_id: user.id,
       customer: existing?.stripe_customer_id || undefined,
