@@ -98,7 +98,7 @@ describe('ClientDocumentComposer', () => {
     })
     await flushPromises()
 
-    const textarea = wrapper.find('textarea[aria-label="Client session summary content"]')
+    const textarea = wrapper.find('textarea[aria-label="Where things are now"]')
     await textarea.setValue('Original Text')
     
     const generateBtn = wrapper.findAll('button').find(b => b.text().includes('Generate client summary'))
@@ -106,5 +106,34 @@ describe('ClientDocumentComposer', () => {
     await flushPromises()
 
     expect(textarea.element.value).toBe('Original Text')
+  })
+
+  it('renders long client summaries without clipping and formats section headings', async () => {
+    const longBody = [
+      'Where things are now',
+      'Opening paragraph '.repeat(80),
+      'What we have been working on',
+      'Working paragraph '.repeat(80),
+      'Closing reflection',
+      'Final paragraph '.repeat(80)
+    ].join('\n\n')
+    const summaryDocument = {
+      ...mockDocument,
+      documentType: 'session_summary',
+      content: { body: longBody }
+    }
+    const wrapper = mount(ClientDocumentComposer, {
+      props: { client: mockClient, document: summaryDocument },
+      global: { stubs: { teleport: true } }
+    })
+    await flushPromises()
+
+    expect(wrapper.findAll('.clinical-section-heading').map(node => node.text())).toEqual([
+      'Where things are now',
+      'What we have been working on',
+      'Closing reflection'
+    ])
+    expect(wrapper.find('textarea[aria-label="Closing reflection"]').element.value).toContain('Final paragraph')
+    expect(wrapper.find('.clinical-footer').exists()).toBe(true)
   })
 })
