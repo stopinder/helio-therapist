@@ -29,6 +29,7 @@ export default async function handler(req, res) {
 
     const session = await stripe.checkout.sessions.create({
       mode: 'subscription',
+      adaptive_pricing: { enabled: false },
       line_items: [{ price: getStripePriceId(), quantity: 1 }],
       success_url: `${origin}/settings?billing=success`,
       cancel_url: `${origin}/settings?billing=cancelled`,
