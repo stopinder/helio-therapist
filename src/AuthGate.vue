@@ -151,18 +151,23 @@ const clearFeedback = () => {
   errorMessage.value = ''
 }
 
+const authRedirectTarget = () => {
+  const redirect = typeof route.query.redirect === 'string' ? route.query.redirect : ''
+  return redirect.startsWith('/') && !redirect.startsWith('//') ? redirect : '/overview'
+}
+
 const syncAuthEntry = async () => {
   if (!route.meta.authEntry) return
   mode.value = route.meta.authEntry
   password.value = ''
   showPassword.value = false
   if (!errorMessage.value.includes('expired')) clearFeedback()
-  if (!authLoading.value && session.value) await router.replace('/overview')
+  if (!authLoading.value && session.value) await router.replace(authRedirectTarget())
 }
 
 watch(() => route.fullPath, syncAuthEntry)
 watch([session, authLoading], async () => {
-  if (!authLoading.value && session.value && route.meta.authEntry) await router.replace('/overview')
+  if (!authLoading.value && session.value && route.meta.authEntry) await router.replace(authRedirectTarget())
 })
 
 const checkBilling = async () => {
