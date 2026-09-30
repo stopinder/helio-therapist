@@ -42,11 +42,12 @@
 
   <main v-else-if="session && !billingAllowed" class="min-h-screen bg-surface-muted flex items-center justify-center px-4 py-8">
     <section class="w-full max-w-md rounded-panel bg-surface-elevated border border-border-muted p-6 sm:p-8">
-      <h1 class="text-h1 font-semibold text-ink">Start your Helios trial</h1>
-      <p class="mt-3 text-body text-ink-muted">7 days free, then £29/month. Stripe collects your payment method when you start the trial. Cancel anytime.</p>
+      <h1 class="text-h1 font-semibold text-ink">Choose your Helios plan</h1>
+      <p class="mt-3 text-body text-ink-muted">Start with 7 days free, then £29/month — or pay £290 for a year upfront and get the equivalent of two months free.</p>
       <p v-if="route.query.billing === 'success'" class="mt-4 text-body text-ink-muted" role="status">Your checkout is complete. Your subscription may take a moment to appear. Check again to enter Helios.</p>
       <p v-if="route.query.billing === 'cancelled'" class="mt-4 text-body text-ink-muted">Checkout was cancelled. You can start your trial when you’re ready.</p>
       <button v-if="route.query.billing !== 'success'" type="button" :disabled="billingBusy" class="mt-6 min-h-12 w-full rounded-panel bg-action-link px-4 font-medium text-on-action disabled:opacity-50" @click="openBilling">{{ billingBusy ? 'Opening billing…' : billingSubscription ? 'Manage subscription' : 'Start 7-day free trial' }}</button>
+      <button v-if="!billingSubscription && route.query.billing !== 'success'" type="button" :disabled="billingBusy" class="mt-3 min-h-12 w-full rounded-panel border border-border px-4 font-medium text-action-link disabled:opacity-50" @click="openAnnualBilling">Pay annually — £290/year</button>
       <button type="button" :disabled="billingBusy" class="mt-3 min-h-11 w-full text-body font-medium text-action-link disabled:opacity-50" @click="checkBilling">Check subscription again</button>
       <button type="button" class="mt-2 min-h-11 w-full text-body text-ink-muted" @click="supabase.auth.signOut()">Sign out</button>
     </section>
@@ -204,6 +205,20 @@ const openBilling = async () => {
     window.location.assign(data.url)
   } catch (error) {
     billingError.value = error.message || 'Unable to open Stripe checkout'
+    billingBusy.value = false
+  }
+}
+
+const openAnnualBilling = async () => {
+  if (billingBusy.value || billingError.value) return
+  billingBusy.value = true
+  try {
+    const response = await fetch('/api/billing/annual', { method: 'POST', headers: { Authorization: `Bearer ${session.value.access_token}` } })
+    const data = await response.json()
+    if (!response.ok || !data.url) throw new Error(data.error || 'Unable to open annual billing')
+    window.location.assign(data.url)
+  } catch (error) {
+    billingError.value = error.message || 'Unable to open annual billing'
     billingBusy.value = false
   }
 }
