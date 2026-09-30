@@ -1,5 +1,5 @@
 import { requireAuthenticatedUser } from '../_lib/supabase.js';
-import { hasWorkspaceAccess } from '../_lib/billing-access.js';
+import { hasLegacyAccess, hasWorkspaceAccess } from '../_lib/billing-access.js';
 
 export default async function handler(req, res) {
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
@@ -9,7 +9,11 @@ export default async function handler(req, res) {
       .select('status,trial_ends_at,current_period_ends_at,cancel_at_period_end,stripe_price_id')
       .eq('therapist_id', user.id).maybeSingle();
     if (error) throw error;
-    return res.status(200).json({ subscription: data || null, hasWorkspaceAccess: hasWorkspaceAccess(user, data) });
+    return res.status(200).json({
+      subscription: data || null,
+      hasWorkspaceAccess: hasWorkspaceAccess(user, data),
+      legacyAccess: hasLegacyAccess(user)
+    });
   } catch (error) {
     console.error('[Billing Status]', error.message);
     return res.status(error.status || 500).json({ error: error.status === 401 ? error.message : 'Unable to load subscription' });
