@@ -50,7 +50,7 @@ export async function sendTrialStartedToLoops({
       },
       eventProperties: {
         trialEndsAt: isoFromUnix(subscription.trial_end),
-        founderOfferUrl: `${appUrl}/settings?offer=founder`
+        founderOfferUrl: `${appUrl}/founder-offer`
       }
     })
   });
