@@ -2,14 +2,14 @@
   <main class="min-h-screen bg-surface px-4 py-12">
     <section class="mx-auto max-w-xl rounded-panel border border-border-muted bg-surface-elevated p-6 sm:p-8">
       <p class="text-overline uppercase tracking-wider text-ink-muted">Founder offer</p>
-      <h1 class="mt-2 text-h2 font-semibold text-ink">Lock in £24.99/month</h1>
+      <h1 class="mt-2 text-h2 font-semibold text-ink">Become a founding subscriber</h1>
       <p class="mt-3 text-body text-ink-secondary">
-        Keep your 30-day free trial. After the trial, pay £24.99/month for your first 12 paid months.
-        After that, Helios returns to the standard £29/month.
+        Subscribe today for £24/month for your first 12 paid months. Your free trial ends when you subscribe,
+        and your first £24 payment is taken today. After 12 paid months, Helios returns to the standard £29/month.
       </p>
 
       <div class="mt-6 rounded-panel bg-surface-subtle p-4 text-body-sm text-ink-secondary">
-        Nothing is charged today. Your existing trial end date stays exactly as it is.
+        You will be charged £24 today. This becomes month 1 of your 12-month founder rate.
       </div>
 
       <button
@@ -18,7 +18,7 @@
         class="mt-6 min-h-touch w-full rounded-control bg-action-link px-4 py-2 font-medium text-on-action disabled:opacity-50"
         @click="acceptOffer"
       >
-        {{ accepted ? 'Founder rate locked in' : busy ? 'Applying offer…' : 'Lock in £24.99/month' }}
+        {{ accepted ? 'Founder rate locked in' : busy ? 'Applying offer…' : 'Subscribe today — £24' }}
       </button>
 
       <p v-if="message" role="status" class="mt-4 text-body-sm text-state-success">{{ message }}</p>
@@ -51,7 +51,7 @@ async function acceptOffer() {
     if (!response.ok || !data.accepted) throw new Error(data.error || 'Unable to apply the founder offer')
 
     accepted.value = true
-    message.value = 'Your founder rate is locked in: £24.99/month for your first 12 paid months after the free trial, then £29/month.'
+    message.value = 'You’re now a founding subscriber. £24 has been charged today, with £24/month for your first 12 paid months, then £29/month.'
   } catch (error) {
     errorMessage.value = error.message || 'Unable to apply the founder offer.'
   } finally {
