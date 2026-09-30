@@ -1,7 +1,7 @@
 import { requireAuthenticatedUser } from '../_lib/supabase.js';
 import { getStripeClient } from '../_lib/stripe.js';
 
-const COUPON_ID = 'helios_founder_2499_12m';
+const COUPON_ID = 'helios_founder_2400_12m';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
@@ -32,11 +32,18 @@ export default async function handler(req, res) {
 
     await stripe.subscriptions.update(subscription.id, {
       discounts: [{ coupon: COUPON_ID }],
+      trial_end: 'now',
       proration_behavior: 'none',
-      metadata: { ...subscription.metadata, founder_offer: 'accepted' }
+      payment_behavior: 'error_if_incomplete',
+      metadata: {
+        ...subscription.metadata,
+        founder_offer: 'accepted',
+        founder_offer_monthly_gbp: '24.00',
+        founder_offer_paid_months: '12'
+      }
     });
 
-    return res.status(200).json({ accepted: true });
+    return res.status(200).json({ accepted: true, chargedNow: true, monthlyPrice: 24, paidMonths: 12 });
   } catch (error) {
     console.error('[Founder Offer]', error.message);
     return res.status(error.status || 500).json({ error: error.status === 401 ? error.message : 'Unable to apply founder offer' });
