@@ -15,6 +15,7 @@ import SessionWorkspace from '../views/SessionWorkspace.vue'
 import Transcripts from '../views/Transcripts.vue'
 import Documents from '../views/Documents.vue'
 import Settings from '../views/Settings.vue'
+import FounderOffer from '../views/FounderOffer.vue'
 import PublicBooking from '../views/PublicBooking.vue'
 import ClientCompletion from '../components/ClientCompletion.vue'
 import ScheduleAppointment from '../components/ScheduleAppointment.vue'
@@ -58,7 +59,8 @@ const routes = [
     ]
   },
   { path: '/help/:articleId?', name: 'HelpCentre', component: () => import('../views/HelpCentre.vue'), meta: { title: 'Help — Helios' } },
-  { path: '/settings', name: 'Settings', component: Settings, meta: { title: 'Settings — Helios' } }
+  { path: '/settings', name: 'Settings', component: Settings, meta: { title: 'Settings — Helios' } },
+  { path: '/founder-offer', name: 'FounderOffer', component: FounderOffer, meta: { title: 'Founder offer — Helios' } }
 ]
 
 const router = createRouter({

@@ -62,7 +62,7 @@
           </div>
           <button v-if="subscription?.status === 'trialing' && !subscription.cancel_at_period_end" type="button" :disabled="isBillingBusy" @click="cancelTrial" class="min-h-touch px-4 py-2 rounded-control border border-border-muted text-body-sm font-medium text-state-danger disabled:opacity-50">{{ isBillingBusy ? 'Cancelling trial...' : 'Cancel trial' }}</button>
           <button v-else-if="subscription && subscription.status !== 'trialing'" type="button" :disabled="isBillingBusy" @click="manageSubscription" class="min-h-touch px-4 py-2 rounded-control border border-border-muted text-body-sm font-medium text-action-link disabled:opacity-50">Manage subscription</button>
-          <button v-else-if="!subscription" type="button" :disabled="isBillingBusy || isLoadingSubscription" @click="startSubscription" class="min-h-touch px-4 py-2 rounded-control bg-action-link text-on-action text-body-sm font-medium disabled:opacity-50">{{ isBillingBusy ? 'Opening checkout...' : 'Start 30-day free trial' }}</button>
+          <button v-else-if="!subscription" type="button" :disabled="isBillingBusy || isLoadingSubscription" @click="startSubscription" class="min-h-touch px-4 py-2 rounded-control bg-action-link text-on-action text-body-sm font-medium disabled:opacity-50">{{ isBillingBusy ? 'Opening checkout...' : 'Start 7-day free trial' }}</button>
         </div>
         <p v-if="billingError" role="alert" class="mt-3 text-body-sm text-state-danger">{{ billingError }}</p>
         <p v-if="billingSuccess" role="status" class="mt-3 text-body-sm text-state-success">{{ billingSuccess }}</p>
@@ -87,7 +87,7 @@ const googleStatus=ref('Not connected'),googleEmail=ref(''),lastSyncedGoogle=ref
 const zoomStatus=ref('Not connected'),isConnectingZoom=ref(false),isLoadingZoomStatus=ref(true)
 const subscription=ref(null),isLoadingSubscription=ref(true),isBillingBusy=ref(false),billingError=ref(''),billingSuccess=ref('')
 const formatBillingDate=(value)=>value?new Date(value).toLocaleDateString(undefined,{day:'numeric',month:'short',year:'numeric'}):''
-const subscriptionSummary=computed(()=>{if(isLoadingSubscription.value)return'Checking subscription...';if(!subscription.value)return'30 days free, then £29/month. Cancel anytime.';if(subscription.value.status==='trialing')return'Free trial';if(subscription.value.status==='active')return'£29/month';return subscription.value.status.replaceAll('_',' ')})
+const subscriptionSummary=computed(()=>{if(isLoadingSubscription.value)return'Checking subscription...';if(!subscription.value)return'7 days free, then £29/month. Cancel anytime.';if(subscription.value.status==='trialing')return'Free trial';if(subscription.value.status==='active')return'£29/month';return subscription.value.status.replaceAll('_',' ')})
 const subscriptionDetail=computed(()=>{if(!subscription.value)return'';if(subscription.value.cancel_at_period_end)return`Cancels ${formatBillingDate(subscription.value.trial_ends_at||subscription.value.current_period_ends_at)}`;if(subscription.value.status==='trialing'&&subscription.value.trial_ends_at)return`Trial ends ${formatBillingDate(subscription.value.trial_ends_at)}`;if(subscription.value.current_period_ends_at)return`Next billing date ${formatBillingDate(subscription.value.current_period_ends_at)}`;return''})
 
 function notifyProfileChanged(){window.dispatchEvent(new CustomEvent('helios-profile-changed'))}

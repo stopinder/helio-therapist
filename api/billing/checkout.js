@@ -29,7 +29,7 @@ export default async function handler(req, res) {
       client_reference_id: user.id,
       customer: existing?.stripe_customer_id || undefined,
       customer_email: existing?.stripe_customer_id ? undefined : user.email,
-      subscription_data: { trial_period_days: 30, metadata: { therapist_id: user.id } },
+      subscription_data: { trial_period_days: 7, metadata: { therapist_id: user.id } },
       metadata: { therapist_id: user.id }
     });
     return res.status(200).json({ url: session.url });

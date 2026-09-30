@@ -659,7 +659,7 @@
         <div class="rounded-panel border border-border bg-surface-raised p-6 sm:p-8">
           <p class="type-eyebrow text-ink-muted">Launch pricing</p>
           <p class="mt-3 flex items-baseline gap-2"><span class="font-serif text-6xl font-semibold tracking-[-0.04em]">£29</span><span class="text-[18px] text-ink-secondary">/ month</span></p>
-          <p class="mt-3 text-[18px] text-ink-secondary">30 days free, then £29/month. Cancel anytime.</p>
+          <p class="mt-3 text-[18px] text-ink-secondary">7 days free, then £29/month. Cancel anytime.</p>
           <router-link to="/get-started" class="mt-6 inline-flex rounded-control bg-action-primary px-6 py-3 text-base font-semibold text-on-action hover:bg-action-primary-hover">Create your workspace</router-link>
         </div>
       </div>
