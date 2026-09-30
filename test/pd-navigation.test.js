@@ -26,6 +26,14 @@ test('Professional Development routes retain clear page headings', () => {
   }
 })
 
+test('CPD home restores the therapist stance reflection entry', () => {
+  const content = readFileSync(join(process.cwd(), 'src/views/supervision/SupervisionHome.vue'), 'utf8')
+  assert.strictEqual(content.includes('What kind of therapist are you?'), true, 'Home should surface the therapist reflection')
+  assert.strictEqual(content.includes('to="/supervision/practice-reflection"'), true, 'Therapist reflection should use the existing protected route')
+  assert.strictEqual(content.includes('15 practice situations'), false, 'Count and label should remain separate for responsive layout')
+  assert.strictEqual(content.includes('practice situations'), true, 'Home should describe the guided reflection')
+})
+
 test('CPD home puts the three primary practice destinations first', () => {
   const content = readFileSync(join(process.cwd(), 'src/views/supervision/SupervisionHome.vue'), 'utf8')
   const navIndex = content.indexOf('aria-label="Practice destinations"')
