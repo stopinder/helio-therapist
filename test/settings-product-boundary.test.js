@@ -26,10 +26,15 @@ test('Settings product boundaries: does not ship dormant Calendly server endpoin
 })
 
 
-test('Settings subscription: shows the single Helios offer and billing actions', () => {
-  assert.match(settings, /7 days free, then £29\/month\. Cancel anytime\./)
+test('Settings subscription: exposes monthly trial and annual billing actions', () => {
+  assert.match(settings, /7 days free, then £29\/month/)
+  assert.match(settings, /£290\/year/)
+  assert.match(settings, /two months free/)
   assert.match(settings, /Start 7-day free trial/)
+  assert.match(settings, /Pay annually — £290\/year/)
+  assert.match(settings, /Switch to annual — £290\/year/)
   assert.match(settings, /\/api\/billing\/checkout/)
+  assert.match(settings, /\/api\/billing\/annual/)
   assert.match(settings, /\/api\/billing\/portal/)
   assert.doesNotMatch(settings, /£24/)
 })

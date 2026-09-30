@@ -60,9 +60,17 @@
             <div class="mt-1 text-body-sm text-ink-subtle">{{ subscriptionSummary }}</div>
             <div v-if="subscriptionDetail" class="mt-1 text-caption text-ink-subtle">{{ subscriptionDetail }}</div>
           </div>
-          <button v-if="subscription?.status === 'trialing' && !subscription.cancel_at_period_end" type="button" :disabled="isBillingBusy" @click="cancelTrial" class="min-h-touch px-4 py-2 rounded-control border border-border-muted text-body-sm font-medium text-state-danger disabled:opacity-50">{{ isBillingBusy ? 'Cancelling trial...' : 'Cancel trial' }}</button>
-          <button v-else-if="subscription && subscription.status !== 'trialing'" type="button" :disabled="isBillingBusy" @click="manageSubscription" class="min-h-touch px-4 py-2 rounded-control border border-border-muted text-body-sm font-medium text-action-link disabled:opacity-50">Manage subscription</button>
-          <button v-else-if="!subscription" type="button" :disabled="isBillingBusy || isLoadingSubscription" @click="startSubscription" class="min-h-touch px-4 py-2 rounded-control bg-action-link text-on-action text-body-sm font-medium disabled:opacity-50">{{ isBillingBusy ? 'Opening checkout...' : 'Start 7-day free trial' }}</button>
+          <div class="flex flex-wrap gap-2 sm:justify-end">
+            <button v-if="subscription?.status === 'trialing' && !subscription.cancel_at_period_end" type="button" :disabled="isBillingBusy" @click="cancelTrial" class="min-h-touch px-4 py-2 rounded-control border border-border-muted text-body-sm font-medium text-state-danger disabled:opacity-50">{{ isBillingBusy ? 'Cancelling trial...' : 'Cancel trial' }}</button>
+            <template v-else-if="subscription && subscription.status !== 'trialing'">
+              <button v-if="canSwitchToAnnual" type="button" :disabled="isBillingBusy" @click="switchToAnnual" class="min-h-touch px-4 py-2 rounded-control bg-action-link text-on-action text-body-sm font-medium disabled:opacity-50">{{ isBillingBusy ? 'Switching…' : 'Switch to annual — £290/year' }}</button>
+              <button type="button" :disabled="isBillingBusy" @click="manageSubscription" class="min-h-touch px-4 py-2 rounded-control border border-border-muted text-body-sm font-medium text-action-link disabled:opacity-50">Manage subscription</button>
+            </template>
+            <template v-else-if="!subscription">
+              <button type="button" :disabled="isBillingBusy || isLoadingSubscription" @click="startSubscription" class="min-h-touch px-4 py-2 rounded-control bg-action-link text-on-action text-body-sm font-medium disabled:opacity-50">{{ isBillingBusy ? 'Opening checkout...' : 'Start 7-day free trial' }}</button>
+              <button type="button" :disabled="isBillingBusy || isLoadingSubscription" @click="startAnnualSubscription" class="min-h-touch px-4 py-2 rounded-control border border-border-muted text-body-sm font-medium text-action-link disabled:opacity-50">Pay annually — £290/year</button>
+            </template>
+          </div>
         </div>
         <p v-if="billingError" role="alert" class="mt-3 text-body-sm text-state-danger">{{ billingError }}</p>
         <p v-if="billingSuccess" role="status" class="mt-3 text-body-sm text-state-success">{{ billingSuccess }}</p>
@@ -86,8 +94,11 @@ const logoPreviewUrl=ref(''),logoError=ref(''),isUpdatingLogo=ref(false)
 const googleStatus=ref('Not connected'),googleEmail=ref(''),lastSyncedGoogle=ref('Not synced yet'),isConnectingGoogle=ref(false),isLoadingStatus=ref(true)
 const zoomStatus=ref('Not connected'),isConnectingZoom=ref(false),isLoadingZoomStatus=ref(true)
 const subscription=ref(null),isLoadingSubscription=ref(true),isBillingBusy=ref(false),billingError=ref(''),billingSuccess=ref('')
+const ANNUAL_PRICE_ID='price_1ULJ1uBCxePdT6Vno9ULJ9v0'
+const isAnnualSubscription=computed(()=>subscription.value?.stripe_price_id===ANNUAL_PRICE_ID)
+const canSwitchToAnnual=computed(()=>subscription.value?.status==='active'&&!subscription.value?.cancel_at_period_end&&!isAnnualSubscription.value)
 const formatBillingDate=(value)=>value?new Date(value).toLocaleDateString(undefined,{day:'numeric',month:'short',year:'numeric'}):''
-const subscriptionSummary=computed(()=>{if(isLoadingSubscription.value)return'Checking subscription...';if(!subscription.value)return'7 days free, then £29/month. Cancel anytime.';if(subscription.value.status==='trialing')return'Free trial';if(subscription.value.status==='active')return'£29/month';return subscription.value.status.replaceAll('_',' ')})
+const subscriptionSummary=computed(()=>{if(isLoadingSubscription.value)return'Checking subscription...';if(!subscription.value)return'7 days free, then £29/month — or £290/year (two months free).';if(subscription.value.status==='trialing')return'Free trial';if(subscription.value.status==='active')return isAnnualSubscription.value?'£290/year':'£29/month';return subscription.value.status.replaceAll('_',' ')})
 const subscriptionDetail=computed(()=>{if(!subscription.value)return'';if(subscription.value.cancel_at_period_end)return`Cancels ${formatBillingDate(subscription.value.trial_ends_at||subscription.value.current_period_ends_at)}`;if(subscription.value.status==='trialing'&&subscription.value.trial_ends_at)return`Trial ends ${formatBillingDate(subscription.value.trial_ends_at)}`;if(subscription.value.current_period_ends_at)return`Next billing date ${formatBillingDate(subscription.value.current_period_ends_at)}`;return''})
 
 function notifyProfileChanged(){window.dispatchEvent(new CustomEvent('helios-profile-changed'))}
@@ -107,7 +118,12 @@ async function disconnectZoom(){if(!confirm('Disconnect Zoom? Helios will no lon
 async function fetchSubscription(){isLoadingSubscription.value=true;billingError.value='';try{const response=await authenticatedFetch('/api/billing/status');const data=await response.json();if(!response.ok)throw new Error(data.error||'Unable to load subscription');subscription.value=data.subscription}catch(error){billingError.value=error.message||'Unable to load subscription.'}finally{isLoadingSubscription.value=false}}
 async function openBillingUrl(path){isBillingBusy.value=true;billingError.value='';try{const response=await authenticatedFetch(path,{method:'POST'});const data=await response.json();if(!response.ok||!data.url)throw new Error(data.error||'Unable to open billing');window.location.href=data.url}catch(error){billingError.value=error.message||'Unable to open billing.';isBillingBusy.value=false}}
 const startSubscription=()=>openBillingUrl('/api/billing/checkout')
+const startAnnualSubscription=()=>openBillingUrl('/api/billing/annual')
 const manageSubscription=()=>openBillingUrl('/api/billing/portal')
+async function switchToAnnual(){
+  if(!confirm('Switch to £290/year now? Stripe will credit any unused time from your current monthly period and charge the annual amount due today.'))return
+  await openBillingUrl('/api/billing/annual')
+}
 async function cancelTrial(){
   if(!confirm(`Cancel your trial? You can keep using Helios until ${formatBillingDate(subscription.value.trial_ends_at)}, and you won't be charged when it ends.`))return
   isBillingBusy.value=true;billingError.value='';billingSuccess.value=''
