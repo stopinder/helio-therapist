@@ -43,10 +43,10 @@
   <main v-else-if="session && !billingAllowed" class="min-h-screen bg-surface-muted flex items-center justify-center px-4 py-8">
     <section class="w-full max-w-md rounded-panel bg-surface-elevated border border-border-muted p-6 sm:p-8">
       <h1 class="text-h1 font-semibold text-ink">Start your Helios trial</h1>
-      <p class="mt-3 text-body text-ink-muted">30 days free, then £29/month. Stripe collects your payment method when you start the trial. Cancel anytime.</p>
+      <p class="mt-3 text-body text-ink-muted">7 days free, then £29/month. Stripe collects your payment method when you start the trial. Cancel anytime.</p>
       <p v-if="route.query.billing === 'success'" class="mt-4 text-body text-ink-muted" role="status">Your checkout is complete. Your subscription may take a moment to appear. Check again to enter Helios.</p>
       <p v-if="route.query.billing === 'cancelled'" class="mt-4 text-body text-ink-muted">Checkout was cancelled. You can start your trial when you’re ready.</p>
-      <button v-if="route.query.billing !== 'success'" type="button" :disabled="billingBusy" class="mt-6 min-h-12 w-full rounded-panel bg-action-link px-4 font-medium text-on-action disabled:opacity-50" @click="openBilling">{{ billingBusy ? 'Opening billing…' : billingSubscription ? 'Manage subscription' : 'Start 30-day free trial' }}</button>
+      <button v-if="route.query.billing !== 'success'" type="button" :disabled="billingBusy" class="mt-6 min-h-12 w-full rounded-panel bg-action-link px-4 font-medium text-on-action disabled:opacity-50" @click="openBilling">{{ billingBusy ? 'Opening billing…' : billingSubscription ? 'Manage subscription' : 'Start 7-day free trial' }}</button>
       <button type="button" :disabled="billingBusy" class="mt-3 min-h-11 w-full text-body font-medium text-action-link disabled:opacity-50" @click="checkBilling">Check subscription again</button>
       <button type="button" class="mt-2 min-h-11 w-full text-body text-ink-muted" @click="supabase.auth.signOut()">Sign out</button>
     </section>
