@@ -30,7 +30,6 @@ export default async function handler(req, res) {
     if (!stored?.stripe_subscription_id || !['active','trialing','past_due','unpaid','paused'].includes(stored.status)) {
       const session = await stripe.checkout.sessions.create({
         mode: 'subscription',
-        adaptive_pricing: { enabled: false },
         line_items: [{ price: ANNUAL_PRICE_ID, quantity: 1 }],
         success_url: `${origin}/settings?billing=annual-success`,
         cancel_url: `${origin}/settings?billing=cancelled`,
