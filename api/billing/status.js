@@ -6,7 +6,7 @@ export default async function handler(req, res) {
   try {
     const { supabase, user } = await requireAuthenticatedUser(req);
     const { data, error } = await supabase.from('therapist_subscriptions')
-      .select('status,trial_ends_at,current_period_ends_at,cancel_at_period_end')
+      .select('status,trial_ends_at,current_period_ends_at,cancel_at_period_end,stripe_price_id')
       .eq('therapist_id', user.id).maybeSingle();
     if (error) throw error;
     return res.status(200).json({ subscription: data || null, hasWorkspaceAccess: hasWorkspaceAccess(user, data) });
