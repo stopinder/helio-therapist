@@ -25,10 +25,6 @@ export async function sendTrialStartedToLoops({
   }
 
   const user = data.user;
-  if (user.user_metadata?.marketing_email_consent !== true) {
-    return { sent: false, reason: 'no_marketing_consent' };
-  }
-
   const fullName = String(user.user_metadata?.full_name || '').trim();
   const firstName = fullName.split(/\s+/)[0] || '';
   const appUrl = (env.APP_URL || DEFAULT_APP_URL).trim().replace(/\/$/, '');
