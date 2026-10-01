@@ -5,43 +5,23 @@ test.describe('Gate 3 public routing', () => {
     await page.goto('/', { waitUntil:'domcontentloaded' });
     await expect(page).toHaveTitle('Helios — Therapist workspace');
 
-    await expect(page.getByRole('heading', { name:'Less to hold in your head. More space for the work that matters.' })).toBeVisible();
-    await expect(page.getByText('Continuity & reflection for therapists', { exact:true }).first()).toBeVisible();
-    await expect(page.getByText('Helios is a continuity and reflection system for therapists.', { exact:false })).toBeVisible();
-
-    await expect(page.getByLabel('Representative Helios therapist workspace')).toBeVisible();
-    await expect(page.getByRole('img', { name:'Helios therapist workspace dashboard', exact:true })).toBeVisible();
-
-    await expect(page.getByRole('link', { name:'See Helios in action' })).toHaveAttribute('href', '#product-tour');
+    await expect(page.getByRole('heading', { name:'A place for your whole practice.' })).toBeVisible();
     await expect(page.getByRole('heading', { name:'The whole thread of the work, in one place.' })).toBeVisible();
-    await expect(page.getByRole('heading', { name:'The session doesn’t disappear when the call ends.' })).toBeVisible();
-    await expect(page.getByRole('heading', { name:'See how the work is developing over time.' })).toBeVisible();
-    await expect(page.getByRole('heading', { name:'The practical side of practice, connected to the clinical work.' })).toBeVisible();
-    await expect(page.getByRole('heading', { name:'A private place to think across the work.' })).toBeVisible();
-    await expect(page.getByRole('heading', { name:'Supervision preparation', exact:true })).toBeVisible();
-    await expect(page.getByRole('heading', { name:'AI assists. You remain the clinician.' })).toBeVisible();
-    await expect(page.getByRole('heading', { name:'A practitioner’s perspective.' })).toBeVisible();
+    await expect(page.getByRole('heading', { name:'Create, organise and share with ease.' })).toBeVisible();
+    await expect(page.getByRole('heading', { name:'Everything you need, nothing you don’t.' })).toBeVisible();
+    await expect(page.getByRole('heading', { name:'Works with the tools you already use.' })).toBeVisible();
+    await expect(page.getByText('Outlook integration is coming soon.', { exact:false })).toBeVisible();
 
     await expect(page.getByRole('link', { name:'Sign in' }).first()).toHaveAttribute('href', '/sign-in');
-    await expect(page.getByRole('link', { name:'Create workspace' }).first()).toHaveAttribute('href', '/get-started');
+    await expect(page.getByRole('link', { name:'Create your workspace' }).first()).toHaveAttribute('href', '/get-started');
     await expect(page.getByRole('link', { name:'Privacy' }).first()).toHaveAttribute('href', '/privacy');
     await expect(page.getByRole('link', { name:'AI & data' }).first()).toHaveAttribute('href', '/ai-data');
     await expect(page.getByRole('link', { name:'Support' }).first()).toHaveAttribute('href', '/support');
   });
 
-  test('launch pricing presents one workspace and routes to account creation', async ({ page }) => {
+  test('landing page final CTA routes to account creation', async ({ page }) => {
     await page.goto('/', { waitUntil:'domcontentloaded' });
-    const pricing = page.locator('#pricing');
-    await expect(pricing.getByRole('heading', { name:'One workspace. One simple price.' })).toBeVisible();
-    await expect(pricing.getByText('The full Helios therapist workspace, included.', { exact:true })).toBeVisible();
-    await expect(pricing.getByText('Launch pricing', { exact:true })).toBeVisible();
-    await expect(pricing.getByText('£29', { exact:true })).toBeVisible();
-    await expect(pricing.getByText('/ month', { exact:true })).toBeVisible();
-    await expect(pricing.getByText('30 days free to try Helios.', { exact:true })).toBeVisible();
-    await expect(pricing.getByRole('heading', { name:'Founder offer — £24/month' })).toBeVisible();
-    await expect(pricing).toContainText('Available to early adopters. Keep the founder rate while you remain continuously subscribed.');
-    await expect(pricing).not.toContainText('£49');
-    const cta = pricing.getByRole('link', { name:'Create your workspace' });
+    const cta = page.locator('#get-started').getByRole('link', { name:'Create your workspace' });
     await expect(cta).toHaveAttribute('href', '/get-started');
     await cta.click();
     await expect(page).toHaveURL(/\/get-started\/?$/);
@@ -53,10 +33,11 @@ test.describe('Gate 3 public routing', () => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto('/', { waitUntil:'domcontentloaded' });
 
-    await expect(page.getByRole('heading', { name:'Less to hold in your head. More space for the work that matters.' })).toBeVisible();
-    await expect(page.getByLabel('Representative Helios therapist workspace')).toBeVisible();
-    await expect(page.getByRole('link', { name:'See Helios in action' })).toBeVisible();
-    await expect(page.getByRole('link', { name:'Create your workspace' }).last()).toBeVisible();
+    await expect(page.getByRole('heading', { name:'A place for your whole practice.' })).toBeVisible();
+    await expect(page.getByRole('heading', { name:'The whole thread of the work, in one place.' })).toBeVisible();
+    await expect(page.getByRole('heading', { name:'Create, organise and share with ease.' })).toBeVisible();
+    await expect(page.locator('#integrations')).toBeVisible();
+    await expect(page.locator('#get-started').getByRole('link', { name:'Create your workspace' })).toBeVisible();
   });
 
   test('legal and information routes are available without authentication', async ({ page }) => {
