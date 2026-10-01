@@ -34,14 +34,3 @@ export function buildResourceDelivery({ assignments = [], clientAccessTokens = [
       : ''
   }
 }
-
-export function openEmailDraft(mailto) {
-  if (!mailto || typeof document === 'undefined') return false
-  const link = document.createElement('a')
-  link.href = mailto
-  link.style.display = 'none'
-  document.body.appendChild(link)
-  link.click()
-  link.remove()
-  return true
-}
