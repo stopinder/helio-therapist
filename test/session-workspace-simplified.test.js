@@ -69,3 +69,9 @@ test('Session Workspace still exposes Zoom rejoin guidance', () => {
   assert.match(headerSource, /Zoom opens the video call/i)
   assert.match(headerSource, /@click="emit\('join-meeting'\)"/)
 })
+
+
+test('Session Workspace header has one explicit client return control', () => {
+  assert.doesNotMatch(headerSource, /title="Back to Client Workspace"/)
+  assert.match(headerSource, />\s*Client Workspace\s*<\/RouterLink>/)
+})
