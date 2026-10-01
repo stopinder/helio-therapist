@@ -3,7 +3,6 @@
     <header class="mb-stack-md flex items-center justify-between gap-inline-md pt-stack-md">
       <div>
         <h3 class="text-h3 font-semibold text-ink">{{ lens.sections.current_focus?.label || 'Aims and objectives' }}</h3>
-        <p class="mt-1 text-caption text-ink-muted">{{ lens.sections.current_focus?.emptyState || 'What the client is hoping to work towards.' }}</p>
       </div>
       <button type="button" class="text-body-sm font-medium text-action-link hover:underline" @click="$emit('open-care')">View {{ lens.terminology.care }}</button>
     </header>
