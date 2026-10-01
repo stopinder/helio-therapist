@@ -23,14 +23,6 @@
       </div>
 
       <div class="flex items-center gap-inline-sm">
-        <button
-            @click="emit('join-meeting')"
-            :disabled="isInPerson || joiningMeeting"
-            :aria-busy="joiningMeeting"
-            class="px-inline-sm py-stack-xs bg-[#0b4654] text-white text-body-sm font-medium rounded-control hover:bg-[#123f49] disabled:opacity-50 transition-colors"
-        >
-          {{ joiningMeeting ? 'Opening Zoom…' : videoLabel }}
-        </button>
 
         <RouterLink
             :to="`/clients/${session.clientId}`"
@@ -59,19 +51,13 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
 import { RouterLink } from 'vue-router'
 import StatusBadge from './StatusBadge.vue'
-import { videoProviderService } from '../../lib/videoProvider.js'
 
 const props = defineProps({
   session: {
     type: Object,
     required: true
-  },
-  joiningMeeting: {
-    type: Boolean,
-    default: false
   },
   meetingError: {
     type: String,
@@ -79,17 +65,4 @@ const props = defineProps({
   }
 })
 
-const emit = defineEmits(['join-meeting'])
-
-const isInPerson = computed(() => props.session.type === 'In-person')
-
-const videoLabel = computed(() =>
-    isInPerson.value
-        ? 'In-person session'
-        : videoProviderService.getVideoActionLabel({
-          videoProvider: 'zoom',
-          meetingUrl: 'server-resolved',
-          status: props.session.status
-        })
-)
 </script>
