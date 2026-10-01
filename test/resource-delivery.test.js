@@ -48,3 +48,14 @@ test('resource delivery ignores assignments without a returned one-time token', 
   assert.deepEqual(delivery.links, [])
   assert.equal(delivery.mailto, '')
 })
+
+
+test('client resource panels keep email handoff out of the current app navigation context', async () => {
+  const { readFile } = await import('node:fs/promises')
+  for (const file of ['ClientResourcesPanel.vue', 'ClientMeasuresPanel.vue']) {
+    const content = await readFile(new URL(`../src/components/workspace/${file}`, import.meta.url), 'utf8')
+    assert.match(content, /target="_blank"/)
+    assert.match(content, />Open email<\/a>/)
+    assert.doesNotMatch(content, /openEmailDraft/)
+  }
+})
