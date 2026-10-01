@@ -1,3 +1,7 @@
+<script setup>
+import clientWorkspace from '@/assets/client-workspace.jpg'
+</script>
+
 <template>
   <main class="min-h-screen bg-surface-canvas text-ink">
     <header class="sticky top-0 z-20 border-b border-border-muted bg-surface-canvas/95 backdrop-blur">
@@ -26,235 +30,80 @@
       </div>
     </header>
 
-    <section class="overflow-hidden border-b border-border-muted">
-      <div class="mx-auto w-full max-w-[1200px] px-5 py-16 sm:px-8 md:py-10 lg:px-10">
-        <div class="grid gap-10 md:grid-cols-[320px_minmax(0,1fr)] md:items-start md:gap-6 lg:grid-cols-[380px_minmax(0,680px)] lg:gap-14">
-          <div class="min-w-0 pt-1">
-            <p class="type-eyebrow text-accent">Continuity &amp; reflection for therapists</p>
+    <section class="overflow-hidden border-b border-border-muted bg-[#F7F3EC]">
+      <div class="mx-auto grid w-full max-w-[1280px] gap-12 px-5 py-16 sm:px-8 lg:grid-cols-[0.9fr_1.1fr] lg:items-center lg:px-10 lg:py-24">
+        <div class="min-w-0">
+          <p class="type-eyebrow text-accent">A calmer way to do the work</p>
+          <h1 class="mt-5 max-w-[620px] font-serif text-[3.25rem] font-semibold leading-[0.98] tracking-[-0.045em] sm:text-[4.35rem]">
+            Your complete therapist workspace.
+          </h1>
+          <p class="mt-7 max-w-[560px] text-lg leading-8 text-ink-secondary">
+            Helios brings your sessions, notes, clients, documents and CPD together in one secure, intuitive workspace — so you can focus on what matters most.
+          </p>
 
-            <h1 class="mt-5 max-w-[340px] font-serif text-[3rem] font-semibold leading-[.98] tracking-[-0.04em] sm:text-[3.5rem] lg:max-w-[380px] lg:text-[4rem]">
-              Less to hold in your head. More space for the work that matters.
-            </h1>
-
-            <p class="mt-7 max-w-[330px] text-[15px] leading-6 text-ink-secondary lg:max-w-[380px]">
-              Helios is a continuity and reflection system for therapists. It connects sessions, reflections and the developing work over time.
-            </p>
-
-            <p class="mt-5 max-w-[330px] text-sm leading-6 text-ink-secondary lg:max-w-[380px]">
-              AI carries more of the remembering, organising and synthesis — so you can prepare faster, notice what’s changing, and bring better material into supervision.
-            </p>
-
-            <div class="mt-7 flex flex-wrap items-center gap-3">
-              <router-link to="/get-started" class="rounded-control bg-[#061E29] px-4 py-2 text-sm font-semibold text-[#F4F0E7] hover:bg-[#1D546D]">
-                Create your workspace
-              </router-link>
-            </div>
-
-            <p class="mt-5 max-w-[340px] text-[10px] leading-4 text-ink-muted">
-              Private therapist workspace · Database-level access controls · Built for individual practice
-            </p>
-          </div>
-
-          <div id="product-tour" class="min-w-0 scroll-mt-24" aria-label="Representative Helios therapist workspace">
-            <a href="#product-tour" class="mb-2 inline-block text-sm font-semibold text-accent underline-offset-4 hover:underline">
+          <div class="mt-8 flex flex-wrap items-center gap-3">
+            <a href="#clients" class="rounded-full bg-[#0B2A3A] px-6 py-3 text-sm font-semibold text-[#F7F3EC] shadow-sm transition hover:bg-[#123B50]">
               See Helios in action →
             </a>
-            <div class="mx-auto w-full max-w-[680px] overflow-hidden rounded-[18px] border border-border bg-[#FBF8F2] shadow-[0_18px_55px_rgba(32,36,31,.14)]">
-              <div class="flex h-11 items-center justify-between border-b border-white/10 bg-[#061E29] px-4 text-[10px] text-[#9BB5C0]">
-                <div class="flex items-center gap-1.5">
-                  <span class="h-1.5 w-1.5 rounded-full bg-[#9BB5C0]"></span>
-                  <span class="h-1.5 w-1.5 rounded-full bg-[#9BB5C0]"></span>
-                  <span class="h-1.5 w-1.5 rounded-full bg-[#9BB5C0]"></span>
-                </div>
-                <span class="font-semibold text-[#F4F0E7]">Helios · Continuity</span>
-                <span>● Private</span>
-              </div>
+            <router-link to="/get-started" class="rounded-full border border-border px-6 py-3 text-sm font-semibold text-ink transition hover:bg-white/50">
+              Start free trial
+            </router-link>
+          </div>
 
-              <div class="grid min-h-[400px] sm:grid-cols-[152px_minmax(0,1fr)] md:grid-cols-[104px_minmax(0,1fr)] lg:grid-cols-[152px_minmax(0,1fr)]">
-                <aside class="hidden bg-[#061E29] p-4 text-[#F4F0E7] sm:block md:p-2 lg:p-4">
-                  <div class="mb-5 flex items-center gap-2 px-1">
-                    <span class="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-xs font-semibold">H</span>
-                    <span class="text-xs font-semibold">helios</span>
-                  </div>
+          <div class="mt-8 flex flex-wrap gap-x-7 gap-y-3 text-sm text-ink-secondary">
+            <span>✓ Save time</span>
+            <span>✓ Stay organised</span>
+            <span>✓ Focus on your clients</span>
+          </div>
+        </div>
 
-                  <nav class="space-y-1 text-[11px]" aria-label="Representative workspace navigation">
-                    <div class="px-2.5 py-2 text-[#9BB5C0]">Today</div>
-                    <div class="rounded-control border-l-2 border-[#C9774A] bg-[#1D546D] px-2.5 py-2 font-semibold text-white">Clients</div>
-                    <div class="px-2.5 py-2 text-[#9BB5C0]">Calendar</div>
-                    <div class="px-2.5 py-2 text-[#9BB5C0]">Sessions</div>
-                    <div class="px-2.5 py-2 text-[#9BB5C0]">Transcripts</div>
-                    <div class="px-2.5 py-2 text-[#9BB5C0]">Documents</div>
-                    <div class="px-2.5 py-2 text-[#9BB5C0]">Reflect</div>
-                  </nav>
-
-                  <div class="mt-5 rounded-control bg-white/5 p-2.5">
-                    <p class="text-[9px] font-semibold uppercase tracking-[.12em] text-[#9BB5C0]">Up next</p>
-                    <p class="mt-1.5 text-[10px] font-semibold">Sarah M. · 10:00</p>
-                  </div>
-                </aside>
-
-                <div class="min-w-0 bg-[#FBF8F2] p-5 md:p-3 lg:p-5">
-                  <div class="flex flex-wrap items-start justify-between gap-3 border-b border-border-muted pb-4">
-                    <div>
-                      <p class="text-[9px] font-semibold uppercase tracking-[.12em] text-accent">Upcoming client</p>
-                      <p class="mt-1 font-serif text-[22px] font-semibold leading-tight">Sarah M. · 10:00</p>
-                      <p class="mt-2 text-[10px] text-ink-secondary">Current thread: Boundaries without withdrawal</p>
-                    </div>
-                    <span class="rounded-control bg-[#E8F0F2] px-2.5 py-1.5 text-[9px] font-semibold text-accent">Next session</span>
-                  </div>
-
-                  <div class="mt-4 grid gap-3 sm:grid-cols-2">
-                    <article class="rounded-control border border-border-muted bg-white/40 p-3.5">
-                      <p class="text-[9px] font-semibold uppercase tracking-[.1em] text-ink-muted">Latest session</p>
-                      <p class="mt-1.5 text-xs font-semibold">Session 13</p>
-                      <p class="mt-1 text-[10px] text-ink-secondary">Transcript attached</p>
-                    </article>
-
-                    <article class="rounded-control border border-accent/20 bg-[#E8F0F2] p-3.5">
-                      <p class="text-[9px] font-semibold uppercase tracking-[.1em] text-accent">Session summary</p>
-                      <p class="mt-1.5 text-xs font-semibold">Ready to review</p>
-                      <p class="mt-1 text-[10px] text-ink-secondary">New material connected</p>
-                    </article>
-                  </div>
-
-                  <article class="mt-4 rounded-control border border-[#C9774A]/40 bg-[#061E29] p-4 text-[#F4F0E7]">
-                    <div class="flex flex-wrap items-center justify-between gap-2">
-                      <p class="text-[9px] font-semibold uppercase tracking-[.11em] text-[#C9774A]">Continuity engine</p>
-                      <span class="text-[9px] text-[#9BB5C0]">For therapist consideration</span>
-                    </div>
-
-                    <div class="mt-2 flex flex-wrap items-center gap-1.5 text-[9px] text-[#9BB5C0]">
-                      <span>Session 12</span><span>→</span><span>Session 13</span><span>→</span><span>Reflection</span><span>→</span><span>Current pattern</span>
-                    </div>
-
-                    <p class="mt-3 font-serif text-[18px] font-semibold leading-[1.15]">
-                      Possible recurring pattern: a pull to rescue when clients become distant.
-                    </p>
-
-                    <p class="mt-2 text-[10px] text-[#9BB5C0]">For therapist consideration — not a conclusion.</p>
-                  </article>
-
-                  <div class="mt-4 grid gap-3 sm:grid-cols-2">
-                    <article class="rounded-control border border-border-muted bg-white/40 p-3">
-                      <p class="text-[9px] font-semibold uppercase tracking-[.1em] text-ink-muted">Documents / record</p>
-                      <p class="mt-1 text-[10px] font-medium text-ink">Session Summary · Clinical Record</p>
-                    </article>
-
-                    <article class="rounded-control border border-border-muted bg-[#F4F0E7] p-3">
-                      <p class="text-[9px] font-semibold uppercase tracking-[.1em] text-ink-muted">Reflect</p>
-                      <p class="mt-1 text-[10px] font-medium text-ink">Why did I feel an urge to reassure here?</p>
-                    </article>
-                  </div>
-                </div>
-              </div>
-            </div>
+        <div class="relative min-h-[420px] overflow-hidden rounded-[30px] border border-white/60 bg-[radial-gradient(circle_at_72%_24%,rgba(255,255,255,.95),rgba(224,234,236,.84)_28%,rgba(210,222,224,.55)_45%,rgba(235,225,211,.18)_72%),linear-gradient(180deg,#dce8ea_0%,#f3e4d2_100%)] shadow-[0_28px_80px_rgba(30,44,53,.14)]">
+          <div class="absolute inset-x-0 bottom-0 h-[46%] bg-[linear-gradient(180deg,rgba(20,59,78,0)_0%,rgba(20,59,78,.07)_100%)]"></div>
+          <div class="absolute right-[8%] top-[18%] h-56 w-56 rounded-full bg-white/55 blur-3xl"></div>
+          <div class="absolute bottom-[10%] left-[10%] max-w-[420px] rounded-[24px] border border-white/70 bg-white/72 p-6 shadow-xl backdrop-blur">
+            <p class="type-eyebrow text-accent">Continuity &amp; reflection for therapists</p>
+            <p class="mt-3 font-serif text-3xl font-semibold leading-tight">Less to hold in your head.</p>
+            <p class="mt-3 text-sm leading-6 text-ink-secondary">Sessions, reflections and the developing work, connected over time.</p>
           </div>
         </div>
       </div>
     </section>
 
-    <section id="clients" class="scroll-mt-24 border-b border-border-muted bg-surface-elevated">
-      <div class="mx-auto w-full max-w-[1200px] px-5 py-20 sm:px-8 lg:pb-28 lg:pt-20">
-        <div class="max-w-3xl">
+    <section id="clients" class="scroll-mt-24 border-b border-border-muted bg-[#FBF8F2]">
+      <div class="mx-auto grid w-full max-w-[1280px] gap-10 px-5 py-20 sm:px-8 lg:grid-cols-[0.82fr_1.18fr] lg:items-center lg:px-10 lg:py-28">
+        <div class="max-w-[520px]">
           <p class="type-eyebrow text-accent">The Clinical Workspace</p>
-          <h2 class="mt-3 font-serif text-4xl font-semibold tracking-[-0.035em] sm:text-5xl">The whole thread of the work, in one place.</h2>
-          <p class="mt-5 max-w-2xl text-base leading-7 text-ink-secondary">
-            Helios brings sessions, transcripts, documents, follow-ups and the developing clinical picture into one workspace — so you can return to a client without rebuilding the story from memory.
+          <h2 class="mt-3 font-serif text-4xl font-semibold tracking-[-0.04em] sm:text-5xl">
+            The whole thread of the work, in one place.
+          </h2>
+          <p class="mt-5 text-base leading-7 text-ink-secondary">
+            See upcoming sessions, open client records, capture notes, and access the tools you need — all from a single, focused workspace.
           </p>
+
+          <div class="mt-7 space-y-4 text-sm text-ink-secondary">
+            <p class="flex gap-3"><span class="mt-0.5 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#DDECF7] text-accent">✓</span><span>Integrated calendar with client details</span></p>
+            <p class="flex gap-3"><span class="mt-0.5 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#DDECF7] text-accent">✓</span><span>Session capture and AI-assisted summaries</span></p>
+            <p class="flex gap-3"><span class="mt-0.5 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#DDECF7] text-accent">✓</span><span>Clinical records and longitudinal view</span></p>
+            <p class="flex gap-3"><span class="mt-0.5 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#DDECF7] text-accent">✓</span><span>Client documents and resources</span></p>
+            <p class="flex gap-3"><span class="mt-0.5 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#DDECF7] text-accent">✓</span><span>CPD, supervision and personal reflection</span></p>
+          </div>
+
+          <a href="#practice" class="mt-7 inline-block text-sm font-semibold text-accent hover:underline">
+            Explore all features →
+          </a>
         </div>
 
-        <figure class="mt-10">
-          <div class="overflow-hidden rounded-panel border border-border bg-surface-canvas shadow-sm md:grid md:grid-cols-[144px_minmax(0,1fr)] lg:grid-cols-[176px_minmax(0,1fr)]" aria-label="Representative client workspace for Sarah M.">
-            <aside class="bg-sidebar p-4 text-sidebar-fg sm:p-5">
-              <p class="font-serif text-2xl font-semibold">Helios</p>
-              <div class="mt-4 flex flex-wrap gap-2 text-xs md:mt-8 md:block md:space-y-2" aria-label="Illustrative application navigation">
-                <p class="px-3 py-2 text-sidebar-muted">Today</p>
-                <p class="rounded-control bg-accent px-3 py-2 font-semibold">Clients</p>
-                <p class="px-3 py-2 text-sidebar-muted">Calendar</p>
-                <p class="px-3 py-2 text-sidebar-muted">Reflect</p>
-              </div>
-              <div class="mt-8 hidden border-t border-sidebar-border pt-5 md:block">
-                <p class="text-[10px] font-semibold uppercase tracking-[.12em] text-sidebar-muted">Current client</p>
-                <p class="mt-3 text-sm font-semibold">Sarah M.</p>
-                <p class="mt-1 text-xs text-sidebar-muted">Client workspace</p>
-              </div>
-            </aside>
-
-            <div class="min-w-0">
-              <div class="flex flex-wrap items-center justify-between gap-4 border-b border-border bg-surface-raised p-5 sm:px-6">
-                <div class="flex items-center gap-3">
-                  <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-avatar text-sm font-semibold">SM</div>
-                  <div>
-                    <p class="font-serif text-2xl font-semibold">Sarah M.</p>
-                    <p class="mt-1 text-xs text-ink-secondary">Next appointment · Tue 10:00</p>
-                  </div>
-                </div>
-                <span class="rounded-control bg-accent px-3 py-2 text-xs font-semibold text-on-action">Clinical Workspace</span>
-              </div>
-
-              <div class="p-4 sm:p-6">
-                <h3 class="font-serif text-2xl font-semibold">Before next session</h3>
-                <div class="mt-4 border-l-4 border-accent bg-state-selected p-4">
-                  <div class="flex flex-wrap items-center justify-between gap-2">
-                    <p class="text-sm font-semibold text-accent">Current focus</p>
-                    <span class="text-[11px] text-ink-secondary">Therapist note · For consideration</span>
-                  </div>
-                  <p class="mt-2 text-sm leading-6">Return to what helped Sarah stay present when she expressed disagreement.</p>
-                </div>
-
-                <div class="mt-5 grid gap-5 lg:grid-cols-2">
-                  <div class="border-t border-border pt-4">
-                    <p class="text-sm font-semibold">Aims and objectives</p>
-                    <p class="mt-2 text-sm leading-6 text-ink-secondary">Develop ways to express a boundary while staying in connection.</p>
-                  </div>
-                  <div class="border-t border-border pt-4">
-                    <p class="text-sm font-semibold">Follow-ups</p>
-                    <div class="mt-2 flex items-start gap-3">
-                      <span class="mt-1 h-3.5 w-3.5 shrink-0 rounded-sm border border-border-strong" aria-hidden="true"></span>
-                      <p class="text-sm leading-6 text-ink-secondary">Return to the conversation with her sister.</p>
-                    </div>
-                  </div>
-                </div>
-
-                <div class="mt-6 border-y border-border bg-surface-raised">
-                  <h3 class="px-4 pt-4 font-serif text-xl font-semibold">Recent sessions</h3>
-                  <div class="mt-3 flex flex-wrap items-center justify-between gap-3 border-t border-border-muted px-4 py-3">
-                    <div>
-                      <p class="text-sm font-semibold">14 Sep · Session 14</p>
-                      <p class="mt-1 text-xs text-ink-secondary">Session Summary · Editable working material</p>
-                    </div>
-                    <div class="flex flex-wrap gap-4 text-xs font-semibold text-accent"><span>Open summary →</span><span>Transcript</span></div>
-                  </div>
-                  <div class="flex flex-wrap items-center justify-between gap-3 border-t border-border-muted px-4 py-3">
-                    <div>
-                      <p class="text-sm font-semibold">7 Sep · Session 13</p>
-                      <p class="mt-1 text-xs text-ink-secondary">Session Summary · Saved in Client Documents</p>
-                    </div>
-                    <div class="flex flex-wrap gap-4 text-xs font-semibold text-accent"><span>Open summary →</span><span>Transcript</span></div>
-                  </div>
-                  <div class="border-t border-border-muted px-4 py-3 text-xs leading-5 text-ink-secondary">
-                    <span class="font-semibold text-accent">Session workspace → Clinical Record</span>
-                    <p class="mt-1">Separate from the editable summary. Approved records are read-only; corrections use amendments.</p>
-                  </div>
-                </div>
-
-                <div class="mt-6">
-                  <h3 class="type-eyebrow text-ink-muted">Supporting material</h3>
-                  <div class="mt-3 grid gap-4 sm:grid-cols-2">
-                    <div class="border-t border-border pt-3">
-                      <p class="text-sm font-semibold">Documents</p>
-                      <p class="mt-1 text-xs leading-5 text-ink-secondary">Session summaries, letters and reports</p>
-                    </div>
-                    <div class="border-t border-border pt-3">
-                      <p class="text-sm font-semibold">Transcripts</p>
-                      <p class="mt-1 text-xs leading-5 text-ink-secondary">Original source material linked to this client</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
+        <figure class="min-w-0">
+          <div class="overflow-hidden rounded-[22px] border border-border bg-white shadow-[0_24px_70px_rgba(32,36,31,.12)]">
+            <img
+              :src="clientWorkspace"
+              alt="Helios client workspace showing Alex Morgan, current focus, aims and objectives, supervision actions and clinical workspace access"
+              class="block h-auto w-full"
+            />
           </div>
-          <figcaption class="mt-3 text-xs leading-5 text-ink-muted">Illustrative client workspace. Clinical material remains for the therapist to review and interpret.</figcaption>
+          <figcaption class="mt-3 text-xs leading-5 text-ink-muted">
+            Helios Client Workspace — real product interface.
+          </figcaption>
         </figure>
       </div>
     </section>
@@ -577,6 +426,37 @@
       </div>
     </section>
 
+    <section class="border-b border-border-muted bg-[#082637] text-[#F6F2EA]">
+      <div class="mx-auto w-full max-w-[1280px] px-5 py-16 text-center sm:px-8 lg:px-10 lg:py-20">
+        <p class="type-eyebrow text-[#A9C5D2]">Integrations</p>
+        <h2 class="mt-3 font-serif text-4xl font-semibold tracking-[-0.035em] sm:text-5xl">
+          Works with the tools you already use.
+        </h2>
+        <p class="mx-auto mt-4 max-w-3xl text-base leading-7 text-[#C5D4DB]">
+          Join Zoom meetings from Helios, sync your Google or Outlook calendar, and keep the practical side of your work connected.
+        </p>
+
+        <div class="mt-9 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div class="rounded-[18px] border border-white/10 bg-white/5 p-5">
+            <p class="text-lg font-semibold">Zoom</p>
+            <p class="mt-1 text-sm text-[#A9C5D2]">Join from Helios</p>
+          </div>
+          <div class="rounded-[18px] border border-white/10 bg-white/5 p-5">
+            <p class="text-lg font-semibold">Google Calendar</p>
+            <p class="mt-1 text-sm text-[#A9C5D2]">Sync your schedule</p>
+          </div>
+          <div class="rounded-[18px] border border-white/10 bg-white/5 p-5">
+            <p class="text-lg font-semibold">Outlook</p>
+            <p class="mt-1 text-sm text-[#A9C5D2]">Sync your schedule</p>
+          </div>
+          <div class="rounded-[18px] border border-white/10 bg-white/5 p-5">
+            <p class="text-lg font-semibold">More to come</p>
+            <p class="mt-1 text-sm text-[#A9C5D2]">Additional integrations</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <section id="trust" class="scroll-mt-24 border-b border-border-muted bg-surface text-ink">
       <div class="mx-auto w-full max-w-[1200px] px-5 py-12 sm:px-8 lg:py-14">
         <p class="type-eyebrow text-accent">Clinical control</p>
@@ -607,7 +487,7 @@
             Helios has been shaped through clinical practice — including the need to keep editable working material, formal Clinical Records and private reflection clearly distinct.
           </p>
           <p class="mt-5 border-l-2 border-accent/30 pl-3 text-sm leading-6 text-ink-secondary">
-            <span class="font-semibold text-ink">Developed by Robert Ormston</span> · Practising psychotherapist · Chrysalis Therapy Services
+            <span class="font-semibold text-ink">Developed by Robert Ormiston</span> · Practising psychotherapist · Chrysalis Therapy Services
             <span class="block text-xs leading-5 text-ink-muted">Member of the British Association for Counselling and Psychotherapy (BACP)</span>
           </p>
         </div>
