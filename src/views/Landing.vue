@@ -96,8 +96,8 @@
     </section>
 
     <section id="clients" class="scroll-mt-24 border-t border-[#1D546D]/30 bg-surface-elevated">
-      <div class="mx-auto w-full max-w-[1440px] px-5 py-12 sm:px-8 sm:py-16 lg:px-12 lg:py-20">
-        <div class="grid gap-8 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)] lg:items-start lg:gap-10">
+      <div class="mx-auto w-full max-w-[1320px] px-5 py-12 sm:px-8 sm:py-16 xl:px-8 lg:py-20">
+        <div class="grid gap-8 xl:grid-cols-[minmax(0,1.63fr)_minmax(0,1fr)] xl:items-start xl:gap-8">
           <figure class="min-w-0">
             <img
               :src="clientWorkspace"
@@ -108,12 +108,12 @@
 
           <div class="min-w-0">
             <p class="type-eyebrow text-accent">The Clinical Workspace</p>
-            <h2 class="mt-3 font-serif text-4xl font-semibold tracking-[-0.035em] sm:text-5xl">The whole thread of the work, in one place.</h2>
-            <p class="mt-5 text-[18px] leading-7 text-ink-secondary">
+            <h2 class="mt-3 font-serif text-4xl font-semibold tracking-[-0.035em] sm:text-5xl xl:text-4xl xl:leading-tight">The whole thread of the work, in one place.</h2>
+            <p class="mt-5 text-[18px] leading-7 text-ink-secondary xl:mt-4 xl:text-base xl:leading-6">
               Helios brings sessions, transcripts, documents, follow-ups and the developing clinical picture into one workspace — so you can return to a client without rebuilding the story from memory.
             </p>
 
-            <ul class="mt-6 space-y-3 text-[16px] leading-6 text-ink-secondary">
+            <ul class="mt-6 grid gap-x-5 gap-y-3 text-[16px] leading-6 text-ink-secondary sm:grid-cols-2 xl:text-sm xl:leading-5">
               <li><span class="font-semibold text-ink">Current focus</span> — See what matters now before the next session.</li>
               <li><span class="font-semibold text-ink">Care aims</span> — Keep the direction of the work visible without searching through notes.</li>
               <li><span class="font-semibold text-ink">Next steps</span> — Carry follow-ups and unfinished threads into the next conversation.</li>
