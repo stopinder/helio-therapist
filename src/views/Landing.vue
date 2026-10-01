@@ -1,704 +1,376 @@
 <template>
-  <main class="min-h-screen bg-surface-canvas text-ink">
-    <header class="sticky top-0 z-20 border-b border-border-muted bg-surface-canvas/95 backdrop-blur">
-      <div class="mx-auto flex w-full max-w-[1440px] items-center justify-between px-5 py-4 sm:px-8 xl:px-12">
-        <router-link to="/" class="flex items-center gap-3" aria-label="Helios home">
-          <svg class="h-9 w-9 text-accent" viewBox="0 0 48 48" fill="none" aria-hidden="true">
-            <path d="M9 31h30" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-            <path d="M15 31a9 9 0 0 1 18 0" stroke="currentColor" stroke-width="2"/>
-            <path d="M24 8v7M9.5 14.5l5 5M38.5 14.5l-5 5M5 26h7M36 26h7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-          </svg>
-          <span class="text-xl font-semibold tracking-[-0.02em]">Helios</span>
+  <main class="landing-shell">
+    <header class="landing-header">
+      <div class="header-inner">
+        <router-link to="/" class="brand" aria-label="Helios home">
+          <span class="brand-mark" aria-hidden="true"><span /></span>
+          <span>helios<span class="brand-dot">.</span></span>
         </router-link>
 
-        <nav class="hidden items-center gap-6 text-base font-medium text-ink-secondary lg:flex" aria-label="Landing page sections">
-          <a href="#clients" class="hover:text-ink">Clients</a>
-          <a href="#sessions" class="hover:text-ink">Sessions</a>
-          <a href="#continuity" class="hover:text-ink">Continuity</a>
-          <a href="#practice" class="hover:text-ink">Practice</a>
-          <a href="#trust" class="hover:text-ink">Trust</a>
+        <nav class="header-nav" aria-label="Landing page sections">
+          <a href="#workspace">The workspace</a>
+          <a href="#documents">Documents</a>
+          <a href="#features">Features</a>
+          <a href="#integrations">Integrations</a>
         </nav>
 
-        <nav class="flex items-center gap-2" aria-label="Account access">
-          <router-link to="/sign-in" class="rounded-control px-4 py-2 text-base font-semibold text-ink-secondary hover:bg-surface-muted hover:text-ink">Sign in</router-link>
-          <router-link to="/get-started" class="rounded-control border border-border px-4 py-2 text-base font-semibold text-ink hover:bg-surface-muted">Create workspace</router-link>
+        <nav class="account-nav" aria-label="Account access">
+          <router-link to="/sign-in" class="sign-in-link">Sign in</router-link>
+          <router-link to="/get-started" class="header-cta">Create your workspace <ArrowUpRight :size="16" /></router-link>
         </nav>
       </div>
     </header>
 
-    <section class="relative isolate flex min-h-[570px] items-start overflow-hidden bg-[#061E29] text-[#F4F0E7] sm:min-h-[620px] lg:min-h-[min(720px,82vh)]" aria-label="Welcome to Helios">
-      <img :src="openingImage" alt="Sunlit workspace looking out over a distant horizon" class="absolute inset-0 z-0 h-full w-full object-cover object-[84%_center] lg:object-center" fetchpriority="high" />
-      <div class="absolute inset-0 z-10 bg-gradient-to-r from-[#061E29]/75 via-[#061E29]/25 to-transparent"></div>
-      <div class="absolute inset-0 z-10 bg-gradient-to-t from-[#061E29]/50 via-transparent to-transparent"></div>
-      <div class="relative z-20 mx-auto w-full max-w-[1200px] px-5 pb-12 pt-12 sm:px-8 sm:pb-16 sm:pt-16 lg:px-10 lg:pt-20">
-        <p class="type-eyebrow text-[#E7B877]">Helios · Therapist workspace</p>
-        <p class="mt-5 max-w-[650px] font-serif text-[clamp(2.6rem,5vw,4.8rem)] leading-[1.06] tracking-[-0.035em]">A place for your whole practice.</p>
-        <p class="mt-5 max-w-[500px] text-[18px] leading-7 text-[#F4F0E7]/95">Sessions, clients, calendar, documents and reflection, together in one workspace.</p>
-        <a href="#helios-introduction" class="mt-8 inline-flex items-center gap-2 rounded-control border border-[#F4F0E7]/70 bg-[#061E29]/35 px-5 py-3 text-base font-semibold text-[#F4F0E7] transition-colors hover:bg-[#061E29]/70 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#F4F0E7]">
-          Explore the workspace <span aria-hidden="true">↓</span>
-        </a>
+    <section class="opening-splash" aria-label="Welcome to Helios">
+      <img :src="openingImage" alt="Sunlit workspace looking out over a distant horizon" class="opening-image" fetchpriority="high" />
+      <div class="opening-shade opening-shade-side" />
+      <div class="opening-shade opening-shade-bottom" />
+      <div class="opening-copy">
+        <p class="opening-eyebrow">Helios · Therapist workspace</p>
+        <h1>A place for your whole practice.</h1>
+        <p>Sessions, clients, calendar, documents and reflection, together in one workspace.</p>
+        <a href="#workspace" class="opening-button">Explore the workspace <span aria-hidden="true">↓</span></a>
       </div>
     </section>
 
-    <section id="helios-introduction" class="scroll-mt-20 overflow-hidden">
-      <div class="mx-auto w-full max-w-[1200px] px-5 py-12 sm:px-8 sm:py-16 lg:px-10 lg:py-20">
-        <div class="grid gap-10 md:grid-cols-[320px_minmax(0,1fr)] md:items-start md:gap-6 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] lg:items-center lg:gap-14">
-          <div class="min-w-0 pt-1">
-            <p class="type-eyebrow text-accent">Continuity &amp; reflection for therapists</p>
+    <section id="workspace" class="workspace-section">
+      <div class="section-container">
+        <div class="editorial-heading">
+          <p class="section-eyebrow">THE CLINICAL WORKSPACE</p>
+          <h2>The whole thread of the work, <em>in one place.</em></h2>
+          <p>Keep each client’s story connected — from the details of a session to the wider direction of the work.</p>
+        </div>
 
-            <h1 class="mt-5 max-w-[340px] font-serif text-[2.85rem] font-medium leading-[1.04] tracking-[-0.025em] text-[#3F463F] sm:text-[3.25rem] lg:max-w-[580px] lg:text-[3.75rem]">
-              Less to hold in your head. More space for the work that matters.
-            </h1>
-
-            <p class="mt-7 max-w-[330px] text-[17px] leading-[1.65] text-ink-secondary lg:max-w-[480px]">
-              Helios is a continuity and reflection system for therapists. It connects sessions, reflections and the developing work over time.
-            </p>
-
-            <div class="mt-7 flex flex-wrap items-center gap-3">
-              <router-link to="/get-started" class="rounded-control bg-[#061E29] px-4 py-2 text-base font-semibold text-[#F4F0E7] hover:bg-[#1D546D]">
-                Create your workspace
-              </router-link>
-            </div>
-
-          </div>
-
-          <div id="product-tour" class="min-w-0 scroll-mt-24 lg:w-full lg:max-w-[480px] lg:justify-self-end" aria-label="Representative Helios therapist workspace">
-            <a href="#product-tour" class="mb-2 inline-block text-base font-semibold text-accent underline-offset-4 hover:underline">
-              See Helios in action →
-            </a>
-            <img
-              :src="heroDashboard"
-              alt="Helios therapist workspace dashboard"
-              class="mx-auto block h-auto w-full max-w-[680px] rounded-[18px] border border-border shadow-[0_18px_55px_rgba(32,36,31,.14)]"
-            />
-
-            <div class="mt-5 lg:mt-6">
-              <h3 class="text-[15px] font-medium text-ink-secondary/90">Helios helps you</h3>
-              <ul class="mt-3 grid gap-x-8 gap-y-2 text-[15px] leading-5 text-ink-secondary sm:grid-cols-2">
-                <li class="flex items-start gap-2">
-                  <svg class="mt-1 h-3 w-3 shrink-0 text-accent/80" viewBox="0 0 20 20" fill="currentColor">
-                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
-                  </svg>
-                  <span>Remember key details between sessions</span>
-                </li>
-                <li class="flex items-start gap-2">
-                  <svg class="mt-1 h-3 w-3 shrink-0 text-accent/80" viewBox="0 0 20 20" fill="currentColor">
-                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
-                  </svg>
-                  <span>Organise transcripts, notes and follow-ups</span>
-                </li>
-                <li class="flex items-start gap-2">
-                  <svg class="mt-1 h-3 w-3 shrink-0 text-accent/80" viewBox="0 0 20 20" fill="currentColor">
-                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
-                  </svg>
-                  <span>See how the work develops over time</span>
-                </li>
-                <li class="flex items-start gap-2">
-                  <svg class="mt-1 h-3 w-3 shrink-0 text-accent/80" viewBox="0 0 20 20" fill="currentColor">
-                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
-                  </svg>
-                  <span>Prepare more easily for supervision</span>
-                </li>
-              </ul>
-
-              <div class="mt-6 border-t border-border-muted pt-5">
-                <p class="text-[15px] font-semibold leading-5 text-ink">
-                  Built from inside the therapy room.
-                </p>
-                <p class="mt-1 text-[12px] leading-4 text-ink-muted">
-                  Created by psychotherapists, for therapists · Private by design
-                </p>
-              </div>
-            </div>
-          </div>
+        <div class="clinical-showcase">
+          <img
+            :src="clientWorkspace"
+            class="clinical-screenshot"
+            alt="Helios Client Workspace showing Alex Morgan, current focus, aims and objectives, supervision actions and clinical workspace access"
+          />
+        </div>
+        <div class="showcase-footnote">
+          <span>ONE CONSIDERED PLACE FOR YOUR CLIENT WORK</span>
+          <span>01 — Client workspace</span>
         </div>
       </div>
     </section>
 
-    <section id="clients" class="scroll-mt-24 border-t border-[#1D546D]/30 bg-surface-elevated">
-      <div class="mx-auto w-full max-w-[1200px] px-5 py-12 sm:px-8 sm:py-16 lg:py-20">
-        <div class="grid gap-12 min-[900px]:grid-cols-2 min-[900px]:items-start min-[900px]:gap-16 lg:grid-cols-2 lg:items-start lg:gap-16">
-          <div class="min-w-0">
-            <p class="type-eyebrow text-accent">The Clinical Workspace</p>
-            <h2 class="mt-3 font-serif text-4xl font-semibold tracking-[-0.035em] sm:text-5xl">The whole thread of the work, in one place.</h2>
-            <p class="mt-5 text-[18px] leading-7 text-ink-secondary">
-              Helios brings sessions, transcripts, documents, follow-ups and the developing clinical picture into one workspace — so you can return to a client without rebuilding the story from memory.
-            </p>
-
-            <div class="mt-8">
-              <h3 class="text-base font-semibold text-ink">A working view of the client relationship</h3>
-              <p class="mt-2 text-[17px] leading-[1.65] text-ink-secondary">
-                The Client Workspace brings the important threads of the work together before the next session — current focus, care aims, follow-ups, supervision links, documents and recent session activity.
-              </p>
-
-              <ul class="mt-5 space-y-2 text-[16px] leading-6 text-ink-secondary">
-                <li class="flex items-start gap-2.5">
-                  <svg class="mt-1 h-3.5 w-3.5 shrink-0 text-accent/80" viewBox="0 0 20 20" fill="currentColor">
-                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
-                  </svg>
-                  <span>See what needs attention before the next session</span>
-                </li>
-                <li class="flex items-start gap-2.5">
-                  <svg class="mt-1 h-3.5 w-3.5 shrink-0 text-accent/80" viewBox="0 0 20 20" fill="currentColor">
-                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
-                  </svg>
-                  <span>Keep current focus and care aims visible</span>
-                </li>
-                <li class="flex items-start gap-2.5">
-                  <svg class="mt-1 h-3.5 w-3.5 shrink-0 text-accent/80" viewBox="0 0 20 20" fill="currentColor">
-                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
-                  </svg>
-                  <span>Move into supervision or documentation without losing context</span>
-                </li>
-                <li class="flex items-start gap-2.5">
-                  <svg class="mt-1 h-3.5 w-3.5 shrink-0 text-accent/80" viewBox="0 0 20 20" fill="currentColor">
-                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
-                  </svg>
-                  <span>Return to the client without reconstructing the work from memory</span>
-                </li>
-              </ul>
-            </div>
-          </div>
-
-          <figure class="min-[900px]:mt-0 lg:mt-0">
-            <img
-              :src="clientWorkspace"
-              alt="Helios client workspace showing current focus, aims and objectives, supervision actions, and clinical workspace access"
-              class="mx-auto block h-auto w-full rounded-[18px] border border-border shadow-[0_18px_55px_rgba(32,36,31,.14)]"
-            />
-            <div class="mt-6">
-              <h3 class="text-[15px] font-medium text-ink-secondary/90">From the Client Workspace</h3>
-              <div class="mt-4 grid gap-x-8 gap-y-5 sm:grid-cols-2">
-                <div>
-                  <div class="flex items-start gap-2">
-                    <svg class="mt-1 h-3 w-3 shrink-0 text-accent/80" viewBox="0 0 20 20" fill="currentColor">
-                      <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
-                    </svg>
-                    <h4 class="text-[15px] font-bold text-ink">Prepare for the next session</h4>
-                  </div>
-                  <p class="ml-5 mt-1 text-[14px] leading-relaxed text-ink-secondary/80">Keep current focus, care aims, follow-ups and recent session context together.</p>
-                </div>
-                <div>
-                  <div class="flex items-start gap-2">
-                    <svg class="mt-1 h-3 w-3 shrink-0 text-accent/80" viewBox="0 0 20 20" fill="currentColor">
-                      <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
-                    </svg>
-                    <h4 class="text-[15px] font-bold text-ink">Move into supervision</h4>
-                  </div>
-                  <p class="ml-5 mt-1 text-[14px] leading-relaxed text-ink-secondary/80">Select relevant private reflections for that client and add them to supervision preparation while keeping reflection therapist-private.</p>
-                </div>
-                <div>
-                  <div class="flex items-start gap-2">
-                    <svg class="mt-1 h-3 w-3 shrink-0 text-accent/80" viewBox="0 0 20 20" fill="currentColor">
-                      <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
-                    </svg>
-                    <h4 class="text-[15px] font-bold text-ink">Stay connected to the source material</h4>
-                  </div>
-                  <p class="ml-5 mt-1 text-[14px] leading-relaxed text-ink-secondary/80">Sessions, transcripts and documents remain within the same client context.</p>
-                </div>
-                <div>
-                  <div class="flex items-start gap-2">
-                    <svg class="mt-1 h-3 w-3 shrink-0 text-accent/80" viewBox="0 0 20 20" fill="currentColor">
-                      <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
-                    </svg>
-                    <h4 class="text-[15px] font-bold text-ink">Continue the work without rebuilding it</h4>
-                  </div>
-                  <p class="ml-5 mt-1 text-[14px] leading-relaxed text-ink-secondary/80">Move between clinical work, documentation and supervision with the client thread still in view.</p>
-                </div>
-              </div>
-            </div>
-          </figure>
-        </div>
-      </div>
-    </section>
-
-    <section id="sessions" class="scroll-mt-24 border-t border-[#1D546D]/30">
-      <div class="mx-auto grid w-full max-w-[1200px] gap-12 px-5 py-12 sm:px-8 sm:py-16 lg:grid-cols-[1.15fr_.85fr] lg:items-start lg:py-20">
-        <div class="order-2 min-w-0 lg:order-1">
-          <figure class="overflow-hidden rounded-panel border border-border bg-surface-raised shadow-sm" aria-label="Illustrative Session Summary and separate Clinical Record workflow">
-            <div class="flex flex-wrap items-center justify-between gap-2 bg-sidebar px-5 py-3 text-[14px] text-sidebar-fg">
-              <span class="font-semibold">Sarah M. · Session 14</span>
-              <span class="text-sidebar-muted">14 September</span>
-            </div>
-            <div class="flex flex-wrap gap-2 border-b border-border-muted bg-surface px-4 py-3 text-[14px] font-semibold">
-              <span class="rounded-control bg-state-selected px-3 py-2 text-action-link">Session Summary</span>
-              <span class="px-3 py-2 text-ink-secondary">Clinical Record</span>
-            </div>
-
-            <div class="border-b border-border-muted px-5 py-4 sm:px-6">
-              <p class="text-[14px] text-ink-muted">Working summary · Editable until finalised</p>
-              <div class="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-[14px] font-medium text-accent">
-                <span>Edit</span><span>Regenerate</span><span>Copy summary</span>
-              </div>
-            </div>
-            <article class="px-5 py-6 sm:px-8">
-              <header class="border-b border-border-muted pb-4">
-                <h3 class="font-serif text-2xl font-semibold">Session Summary</h3>
-                <p class="mt-2 text-[14px] text-ink-muted">Sarah M. · 14 September</p>
-              </header>
-              <div class="mt-5 space-y-4 font-serif text-lg leading-7 text-ink-secondary">
-                <p>The session explored the difference between setting a boundary and withdrawing from connection. Sarah described one recent interaction where she remained in the conversation, named what felt difficult and noticed less urgency to leave.</p>
-                <p>Possible follow-up: what helped her stay present, and whether that felt different from previous attempts to protect herself.</p>
-              </div>
-            </article>
-            <div class="flex flex-wrap gap-x-5 gap-y-2 border-t border-border-muted px-5 py-3 text-[14px] font-medium text-accent sm:px-6">
-              <span>View transcript</span><span>Open in Client Documents →</span>
-            </div>
-
-            <div class="border-t-2 border-accent bg-surface px-5 py-5 sm:px-6">
-              <div class="flex flex-wrap items-center justify-between gap-2">
-                <h3 class="font-serif text-xl font-semibold">Clinical Record</h3>
-                <span class="text-[14px] text-ink-muted">Separate view / workflow</span>
-              </div>
-              <p class="mt-2 text-[14px] leading-5 text-ink-secondary">Prepared and approved separately from the Session Summary.</p>
-              <ol class="mt-4 flex flex-wrap items-center gap-2 text-[13px] font-medium text-accent" aria-label="Clinical Record approval workflow">
-                <li>Save Draft</li><li aria-hidden="true">→</li>
-                <li>Mark Ready for Review</li><li aria-hidden="true">→</li>
-                <li>Approve Clinical Record</li>
-              </ol>
-              <div class="mt-4 border-l-2 border-state-success bg-state-success-surface px-3 py-2">
-                <p class="text-[14px] font-semibold text-state-success">Approved and locked · Read-only</p>
-              </div>
-              <dl class="mt-3 flex flex-wrap gap-x-5 gap-y-2 text-[13px] text-ink-muted">
-                <div><dt class="inline font-semibold">Version: </dt><dd class="inline">1</dd></div>
-                <div><dt class="inline font-semibold">Approved by: </dt><dd class="inline">Therapist</dd></div>
-                <div><dt class="inline font-semibold">Timestamp: </dt><dd class="inline">14 Sep · 11:15</dd></div>
-              </dl>
-              <div class="mt-4 border-y border-border-muted py-3">
-                <p class="text-[13px] font-semibold uppercase tracking-wide text-ink-muted">Plan for next session</p>
-                <p class="mt-2 font-serif text-[18px] leading-6">Review the client’s experience of expressing a boundary while staying in connection.</p>
-              </div>
-              <p class="mt-3 text-[14px] font-medium text-accent">Create Record Amendment →</p>
-              <p class="mt-2 text-[13px] leading-5 text-ink-muted">Corrections are appended as amendments. The approved record remains unchanged.</p>
-            </div>
-            <figcaption class="border-t border-border-muted px-5 py-3 text-[13px] leading-5 text-ink-muted sm:px-6">Illustrative views of two distinct documents. Finalised summaries no longer offer Edit or Regenerate.</figcaption>
-          </figure>
+    <section id="documents" class="documents-section">
+      <div class="section-container documents-layout">
+        <div class="documents-copy">
+          <p class="section-eyebrow">PRACTICE DOCUMENTS</p>
+          <h2>Create, organise and share <em>with ease.</em></h2>
+          <p>From the first agreement to the resources you return to most, keep the practical parts of practice beautifully in order.</p>
+          <div class="copy-detail"><span /><p>A home for your templates, client resources and everyday documents.</p></div>
         </div>
 
-        <div class="order-1 lg:order-2 lg:pt-8">
-          <p class="type-eyebrow text-accent">After the session</p>
-          <h2 class="mt-3 font-serif text-4xl font-semibold tracking-[-0.035em] sm:text-5xl lg:text-6xl">The session doesn’t disappear when the call ends.</h2>
-          <p class="mt-5 text-[18px] leading-7 text-ink-secondary">
-            Bring in transcript material, create an editable Session Summary, shape it in your own voice, and keep formal Clinical Records distinct from working notes.
-          </p>
-          <p class="mt-5 text-base leading-6 text-ink-secondary">
-            Helios supports the documentation process. You remain responsible for what is clinically meaningful and what belongs in the record.
-          </p>
-
-          <div class="mt-10 border-l border-accent/20 pl-6">
-            <h3 class="text-base font-semibold text-ink">From draft to record</h3>
-            
-            <div class="mt-6 space-y-6">
-              <div>
-                <h4 class="text-[15px] font-bold text-ink">Shape the Session Summary</h4>
-                <p class="mt-1 text-[15px] leading-relaxed text-ink-secondary/80">Generate a starting point, edit it in your own words, review the transcript and keep refining the draft.</p>
-              </div>
-
-              <div>
-                <h4 class="text-[15px] font-bold text-ink">Keep the formal record separate</h4>
-                <p class="mt-1 text-[15px] leading-relaxed text-ink-secondary/80">The Session Summary remains distinct from the Clinical Record. Nothing becomes an approved record automatically.</p>
-              </div>
-
-              <div>
-                <h4 class="text-[15px] font-bold text-ink">Approve when it is ready</h4>
-                <p class="mt-1 text-[15px] leading-relaxed text-ink-secondary/80">Once approved, the Clinical Record is read-only. Any later correction is added through an amendment rather than overwriting the original.</p>
-              </div>
-            </div>
-
-            <p class="mt-8 text-[14px] font-medium text-ink-muted italic">
-              Working material stays editable. Approved records stay protected.
-            </p>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <section id="continuity" class="scroll-mt-24 border-t border-[#1D546D]/30 bg-surface-elevated">
-      <div class="mx-auto w-full max-w-[1200px] px-5 py-12 sm:px-8 sm:py-16 lg:py-20">
-        <div class="max-w-3xl">
-          <p class="type-eyebrow text-accent">Across sessions</p>
-          <h2 class="mt-3 font-serif text-4xl font-semibold tracking-[-0.035em] sm:text-5xl">See how the work is developing over time.</h2>
-          <p class="mt-5 text-[18px] leading-7 text-ink-secondary">
-            Helios brings reviewed session material into a longitudinal view, with links back to the source — helping you revisit changes, open questions and the thread of the work without deciding what they mean for you.
-          </p>
-        </div>
-
-        <figure class="mt-10 overflow-hidden rounded-panel border border-border bg-surface-raised" aria-label="Illustrative longitudinal review of Sarah M.’s sessions">
-          <div class="flex flex-wrap items-center justify-between gap-3 border-b border-accent/20 bg-state-selected px-5 py-5 sm:px-7">
+        <div class="documents-showcase" aria-label="Illustrative Helios practice documents library">
+          <div class="documents-appbar">
             <div>
-              <p class="type-eyebrow text-accent">Longitudinal review</p>
-              <h3 class="mt-1 font-serif text-2xl font-semibold">Sarah M. · Across three sessions</h3>
+              <span class="mini-overline">PRACTICE LIBRARY</span>
+              <strong>Documents</strong>
             </div>
-            <p class="text-[14px] text-ink-secondary">Reviewed source material</p>
+            <button type="button" tabindex="-1"><Plus :size="16" /> New document</button>
           </div>
-          <div class="grid lg:grid-cols-[minmax(0,1fr)_300px]">
-            <div class="px-5 py-6 sm:px-7">
-              <p class="mb-5 text-[14px] text-ink-muted">Dated observations · Return to the session for context</p>
-              <ol class="ml-1 border-l-2 border-accent/30">
-                <li class="relative pl-6 pb-7">
-                  <span class="absolute -left-[6px] top-1 h-2.5 w-2.5 rounded-full bg-accent" aria-hidden="true"></span>
-                  <div class="flex flex-wrap items-baseline justify-between gap-2">
-                    <p class="text-[14px] font-semibold text-accent">31 Aug · Session 12</p>
-                    <span class="text-[13px] text-ink-muted">Reviewed Session Capture</span>
-                  </div>
-                  <p class="mt-2 font-serif text-xl leading-7">Client described withdrawing after disagreement.</p>
-                  <p class="mt-3 text-[14px] font-medium text-accent">Source: Session 12 · Open session ↗</p>
-                </li>
-                <li class="relative pl-6 pb-7">
-                  <span class="absolute -left-[6px] top-1 h-2.5 w-2.5 rounded-full bg-accent" aria-hidden="true"></span>
-                  <div class="flex flex-wrap items-baseline justify-between gap-2">
-                    <p class="text-[14px] font-semibold text-accent">7 Sep · Session 13</p>
-                    <span class="text-[13px] text-ink-muted">Reviewed Session Capture</span>
-                  </div>
-                  <p class="mt-2 font-serif text-xl leading-7">Client reported staying in the conversation.</p>
-                  <p class="mt-3 text-[14px] font-medium text-accent">Source: Session 13 · Open session ↗</p>
-                </li>
-                <li class="relative pl-6">
-                  <span class="absolute -left-[6px] top-1 h-2.5 w-2.5 rounded-full bg-accent" aria-hidden="true"></span>
-                  <div class="flex flex-wrap items-baseline justify-between gap-2">
-                    <p class="text-[14px] font-semibold text-accent">14 Sep · Session 14</p>
-                    <span class="text-[13px] text-ink-muted">Reviewed Session Capture</span>
-                  </div>
-                  <p class="mt-2 font-serif text-xl leading-7">Follow-up: revisit what made that possible.</p>
-                  <p class="mt-3 text-[14px] font-medium text-accent">Source: Session 14 · Open session ↗</p>
-                </li>
-              </ol>
+          <div class="documents-tabs" aria-hidden="true">
+            <span class="active">All</span><span>Templates</span><span>Shared</span><span>Favourites</span>
+          </div>
+          <div class="documents-search" aria-hidden="true"><Search :size="15" /> Search practice documents or client records…</div>
+          <div class="document-list" aria-hidden="true">
+            <div v-for="doc in documentRows" :key="doc.title" class="document-row">
+              <span class="document-icon"><FileText :size="17" /></span>
+              <div class="document-meta"><strong>{{ doc.title }}</strong><small>{{ doc.detail }}</small></div>
+              <span class="document-type">{{ doc.type }}</span>
+              <Star :size="15" class="document-star" />
+              <MoreHorizontal :size="17" class="document-more" />
             </div>
-            <aside class="border-t border-border-muted bg-surface px-5 py-6 sm:px-7 lg:border-l lg:border-t-0">
-              <p class="type-eyebrow text-accent">Therapist-authored</p>
-              <h3 class="mt-2 font-serif text-xl font-semibold">Current focus</h3>
-              <p class="mt-3 text-base leading-6 text-ink-secondary">Explore how Sarah experiences expressing a boundary while staying in connection.</p>
-              <div class="mt-6 border-t border-border pt-5">
-                <h4 class="text-base font-semibold">Open follow-up</h4>
-                <div class="mt-3 flex items-start gap-3">
-                  <span class="mt-1 h-3.5 w-3.5 shrink-0 rounded-sm border border-border-strong" aria-hidden="true"></span>
-                  <p class="text-base leading-6 text-ink-secondary">Return to the conversation with her sister.</p>
-                </div>
-              </div>
-              <p class="mt-6 text-[14px] leading-5 text-ink-muted">A focus recorded by the therapist, not a conclusion inferred from these entries.</p>
-            </aside>
-          </div>
-          <figcaption class="border-t border-border-muted px-5 py-4 text-[14px] leading-5 text-ink-muted sm:px-7">Illustrative review with source-session references. Observations remain material for therapist consideration; their meaning is not determined here.</figcaption>
-        </figure>
-      </div>
-    </section>
-
-    <section id="practice" class="scroll-mt-24 border-t border-[#1D546D]/30">
-      <div class="mx-auto w-full max-w-[1200px] px-5 py-12 sm:px-8 sm:py-16 lg:py-20">
-        <div class="max-w-3xl">
-            <p class="type-eyebrow text-accent">The wider practice</p>
-            <h2 class="mt-3 font-serif text-4xl font-semibold tracking-[-0.035em] sm:text-5xl">The practical side of practice, connected to the clinical work.</h2>
-            <p class="mt-5 text-[18px] leading-7 text-ink-secondary">
-              Appointments, practice documents and the tools you already use sit alongside the clinical workspace — so the operational work and the therapeutic work stay connected without becoming the same thing.
-            </p>
-          </div>
-
-          <figure class="mt-10 overflow-hidden rounded-panel border border-border bg-surface-raised" aria-label="Illustrative calendar appointment and practice document workspace">
-            <div class="grid lg:grid-cols-[1.35fr_1fr]">
-              <div class="min-w-0">
-                <div class="flex flex-wrap items-center justify-between gap-3 bg-sidebar px-5 py-4 text-sidebar-fg sm:px-7">
-                  <h3 class="font-serif text-2xl font-semibold">Calendar</h3>
-                  <p class="text-[14px] text-sidebar-muted">Tuesday · 15 September 2026</p>
-                </div>
-                <div class="px-5 py-5 sm:px-7">
-                  <div class="flex flex-wrap items-center justify-between gap-2 border-b border-border-muted pb-4 text-[14px]">
-                    <p class="font-semibold text-ink"><span class="mr-2 inline-block h-1.5 w-1.5 rounded-full bg-state-success" aria-hidden="true"></span>Google Calendar · Connected</p>
-                    <p class="text-ink-muted">Last synced 09:42</p>
-                  </div>
-                  <p class="mt-5 type-eyebrow text-ink-muted">Today</p>
-                  <div class="mt-3 grid grid-cols-[3rem_minmax(0,1fr)] gap-3 sm:gap-5">
-                    <p class="pt-4 text-[14px] tabular-nums text-ink-muted">10:00</p>
-                    <div class="overflow-hidden rounded-control border border-accent/30 bg-surface">
-                      <div class="border-l-4 border-accent bg-state-selected px-4 py-4">
-                        <p class="text-[14px] font-semibold text-accent">Linked client appointment</p>
-                        <p class="mt-2 font-serif text-2xl font-semibold">Sarah M.</p>
-                        <p class="mt-1 text-base text-ink-secondary">10:00–10:50 · Online session</p>
-                      </div>
-                      <div class="px-4 py-4">
-                        <p class="text-base font-semibold text-accent">Open meeting link ↗</p>
-                        <p class="mt-1 text-[14px] text-ink-muted">Zoom · opens in a separate tab</p>
-                        <div class="mt-5 flex flex-wrap gap-2 text-[14px] font-semibold">
-                          <span class="rounded-control border border-border bg-surface-raised px-3 py-2 text-ink">Open Client</span>
-                          <span class="rounded-control bg-accent px-3 py-2 text-on-action">Clinical Workspace →</span>
-                        </div>
-                      </div>
-                    </div>
-                    <p class="pt-3 text-[14px] tabular-nums text-ink-muted">12:00</p>
-                    <div class="border-y border-border-muted py-3">
-                      <p class="text-base font-semibold">Practice administration</p>
-                      <p class="mt-1 text-[14px] text-ink-muted">Google Calendar · 12:00–12:30</p>
-                    </div>
-                  </div>
-                  <p class="mt-5 text-base leading-6 text-ink-secondary">From the day’s appointments straight into the relevant client’s work.</p>
-                </div>
-              </div>
-
-              <div class="min-w-0 border-t border-border bg-surface-canvas px-5 py-6 sm:px-7 lg:border-l lg:border-t-0">
-                <div class="flex flex-wrap items-center justify-between gap-3">
-                  <div>
-                    <p class="type-eyebrow text-ink-muted">Practice library</p>
-                    <h3 class="mt-1 font-serif text-2xl font-semibold">Documents</h3>
-                  </div>
-                  <span class="rounded-control border border-border bg-surface-raised px-3 py-2 text-[14px] font-semibold text-accent">Create Document</span>
-                </div>
-                <div class="mt-5 flex flex-wrap gap-x-4 gap-y-2 border-y border-border py-3 text-[14px] text-ink-secondary" aria-label="Reusable practice document templates">
-                  <span class="font-semibold text-accent">Therapy agreement</span>
-                  <span>Consent form</span>
-                  <span>Information sheet</span>
-                </div>
-                <article class="mt-5 border border-border bg-surface-raised px-5 py-6 shadow-sm sm:px-7" aria-label="Illustrative therapy agreement with practice letterhead">
-                  <header class="border-b border-border pb-4">
-                    <p class="font-serif text-lg font-semibold">Willow Practice</p>
-                    <p class="mt-1 text-[13px] text-ink-muted">Counselling &amp; psychotherapy</p>
-                  </header>
-                  <p class="mt-6 text-[12px] font-semibold uppercase tracking-[.14em] text-ink-muted">Therapy agreement</p>
-                  <h4 class="mt-2 font-serif text-2xl font-semibold">Our work together</h4>
-                  <p class="mt-3 text-[14px] leading-6 text-ink-secondary">This agreement sets out the practical and professional basis for our work together.</p>
-                  <div class="mt-5 space-y-2 border-t border-border-muted pt-4 text-[14px] text-ink-secondary">
-                    <p>Appointments and cancellations</p>
-                    <p>Confidentiality</p>
-                    <p>Contact between sessions</p>
-                  </div>
-                </article>
-                <div class="mt-4 flex flex-wrap items-center justify-between gap-3 text-[14px]">
-                  <span class="text-ink-muted">Save Draft</span>
-                  <span class="font-semibold text-accent">Export / Print PDF ↗</span>
-                </div>
-                <p class="mt-5 text-base leading-6 text-ink-secondary">Reusable practice material, with your own words and practice identity.</p>
-              </div>
-            </div>
-            <figcaption class="border-t border-border-muted px-5 py-4 text-[14px] leading-5 text-ink-muted sm:px-7">Illustrative practice workspace. Client actions appear for linked appointments; other calendar events remain part of the day’s schedule.</figcaption>
-        </figure>
-      </div>
-    </section>
-
-    <section id="integrations" class="scroll-mt-24 border-t border-[#1D546D]/30 bg-surface-elevated">
-      <div class="mx-auto w-full max-w-[1200px] px-5 py-12 sm:px-8 sm:py-16 lg:py-20">
-        <div class="max-w-3xl">
-          <p class="type-eyebrow text-accent">Integrations</p>
-          <h2 class="mt-3 font-serif text-4xl font-semibold tracking-[-0.035em] sm:text-5xl">Connected to the tools you already use.</h2>
-          <p class="mt-5 text-[18px] leading-7 text-ink-secondary">
-            Helios works alongside your existing schedule and meeting tools, ensuring the clinical thread remains connected to your practice operations.
-          </p>
-        </div>
-
-        <div class="mt-12 grid gap-10 lg:grid-cols-[1fr_300px] lg:items-start lg:gap-16">
-          <div class="min-w-0">
-            <h3 class="text-[15px] font-bold uppercase tracking-wider text-ink-secondary">Available now</h3>
-            <div class="mt-6 flex flex-wrap gap-6">
-              <div class="flex items-center gap-4 rounded-panel border border-border bg-surface-raised px-6 py-5 shadow-sm">
-                <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#2D8CFF]/10 text-[#2D8CFF]">
-                  <svg class="h-6 w-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.5 12.5c0 .28-.22.5-.5.5h-8c-.28 0-.5-.22-.5-.5v-5c0-.28.22-.5.5-.5h8c.28 0 .5.22.5.5v5zM19 9.5v5c0 .83-.67 1.5-1.5 1.5h-11C5.67 16 5 15.33 5 14.5v-5C5 8.67 5.67 8 6.5 8h11c.83 0 1.5.67 1.5 1.5z"/></svg>
-                </div>
-                <div>
-                  <p class="text-[18px] font-semibold text-ink">Zoom</p>
-                  <p class="text-[15px] text-ink-secondary">Meeting links and transcripts</p>
-                </div>
-              </div>
-
-              <div class="flex items-center gap-4 rounded-panel border border-border bg-surface-raised px-6 py-5 shadow-sm">
-                <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#4285F4]/10 text-[#4285F4]">
-                  <svg class="h-6 w-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/></svg>
-                </div>
-                <div>
-                  <p class="text-[18px] font-semibold text-ink">Google Calendar</p>
-                  <p class="text-[15px] text-ink-secondary">Appointment synchronization</p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div class="rounded-panel border border-border bg-surface px-6 py-6">
-            <h3 class="text-[13px] font-bold uppercase tracking-wider text-ink-muted">Coming next</h3>
-            <ul class="mt-4 space-y-3 text-[15px] text-ink-muted">
-              <li class="flex items-center gap-2">
-                <span class="h-1.5 w-1.5 rounded-full bg-border-strong" aria-hidden="true"></span>
-                Microsoft Teams
-              </li>
-              <li class="flex items-center gap-2">
-                <span class="h-1.5 w-1.5 rounded-full bg-border-strong" aria-hidden="true"></span>
-                Outlook Calendar
-              </li>
-              <li class="flex items-center gap-2">
-                <span class="h-1.5 w-1.5 rounded-full bg-border-strong" aria-hidden="true"></span>
-                Practice management sync
-              </li>
-            </ul>
           </div>
         </div>
       </div>
     </section>
 
-    <section id="reflect" class="border-t border-[#1D546D]/30 bg-[#E8F0F2]">
-      <div class="mx-auto w-full max-w-[1200px] px-5 py-12 sm:px-8 sm:py-16 lg:py-20">
-        <div class="max-w-3xl">
-          <p class="type-eyebrow text-accent">Reflection</p>
-          <h2 class="mt-3 font-serif text-4xl font-semibold tracking-[-0.035em] sm:text-5xl">A private place to think across the work.</h2>
-          <p class="mt-5 text-[18px] leading-7 text-ink-secondary">Capture what stayed with you, revisit your own observations over time, and bring selected material into supervision when it is useful — without folding private reflection into the formal clinical record.</p>
+    <section id="features" class="features-section">
+      <div class="section-container">
+        <p class="section-eyebrow">BUILT FOR YOUR PRACTICE</p>
+        <div class="features-intro">
+          <h2>Everything you need, <em>nothing you don’t.</em></h2>
+          <p>The essentials, thoughtfully connected. So your tools support your practice, rather than shape it.</p>
         </div>
 
-        <figure class="mt-10 overflow-hidden rounded-panel border border-accent/20 bg-surface-raised shadow-sm" aria-label="Illustrative private reflection workspace with therapist-authored mapping and optional supervision preparation">
-          <div class="flex flex-wrap items-center justify-between gap-3 bg-sidebar px-5 py-4 text-sidebar-fg sm:px-7">
-            <h3 class="font-serif text-2xl font-semibold">Therapist Reflection</h3>
-            <p class="text-[14px] text-sidebar-muted">Private reflection — not part of the Clinical Record.</p>
-          </div>
-          <div class="grid lg:grid-cols-[1.45fr_1fr]">
-            <article class="min-w-0 px-5 py-6 sm:px-7 sm:py-7" aria-label="Example therapist-authored reflection">
-              <div class="flex flex-wrap items-center justify-between gap-2 text-[14px] text-ink-muted">
-                <p class="font-semibold text-accent">In your own words</p>
-                <p>15 September · Private reflection</p>
-              </div>
-              <h4 class="mt-6 text-base font-semibold">What did you notice in yourself?</h4>
-              <div class="mt-3 border-l-2 border-accent/40 pl-4 sm:pl-5">
-                <p class="font-serif text-[22px] leading-8 text-ink">I noticed an urge to fill the silence and offer reassurance. When I paused, I could stay with the uncertainty for a little longer.</p>
-                <p class="mt-4 font-serif text-[20px] leading-7 text-ink-secondary">I want to return to what made waiting feel difficult for me, without deciding too quickly what it meant.</p>
-              </div>
-              <div class="mt-6 rounded-control border border-border bg-surface px-4 py-4">
-                <h4 class="text-base font-semibold">What remains uncertain?</h4>
-                <p class="mt-2 text-base leading-6 text-ink-secondary">Was I responding to what was needed in that moment, or to my own discomfort with not knowing?</p>
-              </div>
-              <div class="mt-6 flex justify-end">
-                <span class="rounded-control bg-accent px-4 py-2.5 text-[14px] font-semibold text-on-action">Save private reflection</span>
-              </div>
-            </article>
-
-            <aside class="min-w-0 border-t border-border bg-[#EFF3F1] px-5 py-6 sm:px-7 sm:py-7 lg:border-l lg:border-t-0" aria-label="Reflection history and Practice Map">
-              <h4 class="font-serif text-xl font-semibold">Review Reflections</h4>
-              <div class="mt-3 flex flex-wrap gap-2 text-[14px] text-ink-muted" aria-label="Illustrative reflection search and theme filter">
-                <span class="min-w-0 flex-1 rounded-control border border-border bg-surface-raised px-3 py-2">Search reflections…</span>
-                <span class="rounded-control border border-border bg-surface-raised px-3 py-2">All themes ▾</span>
-              </div>
-              <div class="mt-4 divide-y divide-border border-y border-border">
-                <div class="py-3">
-                  <p class="text-[13px] text-ink-muted">15 September</p>
-                  <p class="mt-1 text-base font-semibold">Staying with uncertainty</p>
-                </div>
-                <div class="py-3">
-                  <p class="text-[13px] text-ink-muted">8 September</p>
-                  <p class="mt-1 text-base text-ink-secondary">Making room for silence</p>
-                </div>
-              </div>
-              <div class="mt-6">
-                <h4 class="font-serif text-xl font-semibold">Practice Map</h4>
-                <p class="mt-1 text-[14px] text-accent">Therapist-authored mapping</p>
-                <div class="mt-3 border-l-2 border-accent/40 pl-3">
-                  <p class="text-base font-semibold">Wanting to reassure</p>
-                  <p class="mt-1 text-[14px] leading-5 text-ink-secondary">An inner position you named in 3 mapped reflections.</p>
-                </div>
-                <p class="mt-4 text-[13px] font-semibold uppercase tracking-wide text-ink-muted">Recorded themes</p>
-                <p class="mt-1 text-base text-ink-secondary">Uncertainty · Boundaries</p>
-                <p class="mt-3 text-[14px] leading-5 text-ink-muted">Helios groups the positions and themes you record. Their meaning remains yours to consider.</p>
-              </div>
-            </aside>
-          </div>
-
-          <div class="border-t border-border bg-surface px-5 py-6 sm:px-7">
-            <div class="grid gap-5 lg:grid-cols-[.9fr_1.1fr] lg:gap-8">
-              <div>
-                <p class="type-eyebrow text-ink-muted">When useful · A next step</p>
-                <h4 class="mt-2 font-serif text-xl font-semibold">Supervision preparation</h4>
-                <p class="mt-2 text-base leading-6 text-ink-secondary">Bring selected reflections into supervision preparation. Choose what to include and add the questions you want to explore.</p>
-              </div>
-              <div class="border-l-2 border-accent/30 pl-4 sm:pl-5">
-                <p class="text-[14px] font-semibold text-accent">Selected reflection · Case A</p>
-                <p class="mt-2 text-base text-ink">Preparation note: What helps me stay curious when I feel an urge to reassure?</p>
-                <p class="mt-3 text-[14px] leading-5 text-ink-muted">Privacy review · Client names excluded by default; case aliases used.</p>
-                <div class="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-[14px] font-semibold text-accent"><span>Choose report contents</span><span>Preview</span><span>Copy</span><span>Download PDF</span></div>
-              </div>
+        <div class="feature-grid">
+          <article v-for="(feature, index) in features" :key="feature.title" class="feature-card">
+            <div class="feature-top">
+              <component :is="feature.icon" :size="34" :stroke-width="1.35" />
+              <span>0{{ index + 1 }}</span>
             </div>
-          </div>
-          <figcaption class="border-t border-border-muted px-5 py-4 text-[14px] leading-5 text-ink-muted sm:px-7">Illustrative workspace with therapist-authored material. You remain responsible for interpretation and clinical meaning; private reflection stays separate from Clinical Records.</figcaption>
-        </figure>
+            <h3>{{ feature.title }}</h3>
+            <p>{{ feature.detail }}</p>
+          </article>
+        </div>
       </div>
     </section>
 
-    <section id="trust" class="scroll-mt-24 border-t border-[#1D546D]/30 bg-surface text-ink">
-      <div class="mx-auto w-full max-w-[1200px] px-5 py-12 sm:px-8 sm:py-16 lg:py-20">
-        <p class="type-eyebrow text-accent">Clinical control</p>
-        <h2 class="mt-3 font-serif text-3xl font-semibold tracking-[-0.035em] sm:text-4xl">AI assists. You remain the clinician.</h2>
-        <p class="mt-3 text-[18px] leading-7 text-ink-secondary">You review and approve what becomes a Clinical Record.</p>
+    <section id="integrations" class="integrations-section">
+      <div class="section-container">
+        <p class="section-eyebrow light">INTEGRATIONS</p>
+        <div class="integrations-intro">
+          <h2>Works with the tools <em>you already use.</em></h2>
+          <p>Join Zoom meetings from Helios, sync your Google Calendar, and keep the practical side of your work connected. Outlook integration is coming soon.</p>
+        </div>
 
-        <ul class="mt-6 grid gap-4 border-y border-border py-5 text-base leading-6 text-ink-secondary md:grid-cols-3 md:gap-6" aria-label="Clinical control commitments">
-          <li class="border-l-2 border-accent/30 pl-3">Session Summaries are editable until finalised.</li>
-          <li class="border-l-2 border-accent/30 pl-3">Approved Clinical Records are read-only; corrections are added through amendments.</li>
-          <li class="border-l-2 border-accent/30 pl-3">Private reflection is not automatically included in Clinical Records.</li>
-        </ul>
+        <div class="integration-grid">
+          <article class="integration-card">
+            <span class="integration-logo"><Video :size="28" :stroke-width="1.5" /></span>
+            <div><h3>Zoom</h3><p>Join from Helios</p></div>
+            <ArrowUpRight :size="19" class="integration-arrow" />
+          </article>
+          <article class="integration-card">
+            <span class="integration-logo calendar-logo">31</span>
+            <div><h3>Google Calendar</h3><p>Sync your schedule</p></div>
+            <ArrowUpRight :size="19" class="integration-arrow" />
+          </article>
+          <article class="integration-card">
+            <span class="integration-logo"><Mail :size="28" :stroke-width="1.5" /></span>
+            <div><h3>Outlook</h3><p>Coming soon</p></div>
+            <ArrowUpRight :size="19" class="integration-arrow" />
+          </article>
+          <article class="integration-card">
+            <span class="integration-logo"><Plus :size="29" :stroke-width="1.3" /></span>
+            <div><h3>More to come</h3><p>Additional integrations</p></div>
+            <ArrowUpRight :size="19" class="integration-arrow" />
+          </article>
+        </div>
+      </div>
+    </section>
 
-        <nav class="mt-5 flex flex-wrap gap-x-5 gap-y-2 text-base font-medium text-accent" aria-label="Trust information">
-          <router-link to="/privacy" class="hover:text-ink hover:underline">Privacy</router-link>
-          <router-link to="/ai-data" class="hover:text-ink hover:underline">AI &amp; data</router-link>
-          <router-link to="/terms" class="hover:text-ink hover:underline">Terms</router-link>
-          <router-link to="/support" class="hover:text-ink hover:underline">Support</router-link>
+    <section id="get-started" class="final-section">
+      <div class="section-container final-inner">
+        <p class="section-eyebrow">A CLEARER WAY FORWARD</p>
+        <h2>A more focused, organised practice <em>starts here.</em></h2>
+        <div class="final-actions">
+          <router-link to="/get-started" class="primary-button">Create your workspace <ArrowUpRight :size="18" /></router-link>
+          <a href="#workspace" class="secondary-button">See Helios in action <ArrowRight :size="18" /></a>
+        </div>
+      </div>
+    </section>
+
+    <footer class="landing-footer">
+      <div class="section-container footer-inner">
+        <router-link to="/" class="brand brand-small" aria-label="Helios home">
+          <span class="brand-mark" aria-hidden="true"><span /></span>
+          <span>helios<span class="brand-dot">.</span></span>
+        </router-link>
+        <span>Continuity &amp; reflection for therapists.</span>
+        <nav aria-label="Legal and support">
+          <router-link to="/privacy">Privacy</router-link>
+          <router-link to="/ai-data">AI &amp; data</router-link>
+          <router-link to="/terms">Terms</router-link>
+          <router-link to="/cookies">Cookies</router-link>
+          <router-link to="/support">Support</router-link>
         </nav>
-      </div>
-    </section>
-
-    <section class="border-t border-[#1D546D]/30 bg-surface-raised">
-      <div class="mx-auto w-full max-w-[1200px] px-5 py-12 sm:px-8 sm:py-16 lg:py-20">
-        <div class="max-w-3xl">
-          <p class="type-eyebrow text-accent">Built from clinical practice</p>
-          <h2 class="mt-2 font-serif text-2xl font-semibold tracking-[-0.035em] sm:text-3xl">A practitioner’s perspective.</h2>
-          <p class="mt-3 text-[18px] leading-7 text-ink-secondary">
-            Helios has been shaped through clinical practice — including the need to keep editable working material, formal Clinical Records and private reflection clearly distinct.
-          </p>
-          <p class="mt-5 border-l-2 border-accent/30 pl-3 text-base leading-6 text-ink-secondary">
-            <span class="font-semibold text-ink">Developed by Robert Ormston</span> · Practising psychotherapist · Chrysalis Therapy Services
-            <span class="block text-[14px] leading-5 text-ink-muted">Member of the British Association for Counselling and Psychotherapy (BACP)</span>
-          </p>
-        </div>
-      </div>
-    </section>
-
-    <section id="pricing" class="border-t border-[#1D546D]/30">
-      <div class="mx-auto grid w-full max-w-[1200px] gap-10 px-5 py-12 sm:px-8 sm:py-16 lg:grid-cols-[.8fr_1.2fr] lg:items-center lg:py-20">
-        <div>
-          <p class="type-eyebrow text-accent">Pricing</p>
-          <h2 class="mt-3 font-serif text-4xl font-semibold tracking-[-0.035em]">One workspace. One simple price.</h2>
-          <p class="mt-5 text-[18px] leading-7 text-ink-secondary">The full Helios therapist workspace, included.</p>
-        </div>
-        <div class="rounded-panel border border-border bg-surface-raised p-6 sm:p-8">
-          <p class="type-eyebrow text-ink-muted">Launch pricing</p>
-          <p class="mt-3 flex items-baseline gap-2"><span class="font-serif text-6xl font-semibold tracking-[-0.04em]">£29</span><span class="text-[18px] text-ink-secondary">/ month</span></p>
-          <p class="mt-3 text-[18px] text-ink-secondary">7 days free, then £29/month. Or £290/year paid upfront — two months free. Cancel anytime.</p>
-          <router-link to="/get-started" class="mt-6 inline-flex rounded-control bg-action-primary px-6 py-3 text-base font-semibold text-on-action hover:bg-action-primary-hover">Create your workspace</router-link>
-        </div>
-      </div>
-    </section>
-
-    <footer class="bg-[#061E29] text-[#F4F0E7]">
-      <div class="mx-auto w-full max-w-[1200px] px-5 py-12 sm:px-8">
-        <div class="flex flex-col gap-8 lg:flex-row lg:items-center lg:justify-between">
-          <div class="flex items-center gap-3">
-            <svg class="h-9 w-9 text-accent" viewBox="0 0 48 48" fill="none" aria-hidden="true">
-              <path d="M9 31h30" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-              <path d="M15 31a9 9 0 0 1 18 0" stroke="currentColor" stroke-width="2"/>
-              <path d="M24 8v7M9.5 14.5l5 5M38.5 14.5l-5 5M5 26h7M36 26h7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-            </svg>
-            <span class="text-[22px] font-semibold tracking-[-0.02em]">Helios</span>
-          </div>
-
-          <nav class="flex flex-wrap gap-x-6 gap-y-3 text-base font-medium lg:justify-end" aria-label="Legal and support">
-            <router-link to="/privacy" class="hover:text-accent">Privacy</router-link>
-            <router-link to="/terms" class="hover:text-accent">Terms</router-link>
-            <router-link to="/ai-data" class="hover:text-accent">AI &amp; data</router-link>
-            <router-link to="/cookies" class="hover:text-accent">Cookies</router-link>
-            <router-link to="/support" class="hover:text-accent">Support</router-link>
-          </nav>
-        </div>
-
-        <div class="mt-8 border-t border-[#F4F0E7]/18 pt-8">
-          <div class="flex flex-col gap-4 text-[15px] sm:flex-row sm:items-center sm:justify-between">
-            <p class="text-[#F4F0E7]/70">A continuity and reflection workspace for therapists.</p>
-            <p class="text-[#F4F0E7]/70">© 2026 Helios.</p>
-          </div>
-        </div>
+        <span class="copyright">© {{ new Date().getFullYear() }} Helios</span>
       </div>
     </footer>
   </main>
 </template>
 
 <script setup>
+import {
+  ArrowRight,
+  ArrowUpRight,
+  CalendarDays,
+  FileText,
+  Link2,
+  Mail,
+  MoreHorizontal,
+  Plus,
+  Search,
+  Sparkles,
+  Star,
+  Users,
+  Video,
+  RefreshCw,
+} from '@lucide/vue'
 import openingImage from '../assets/helios-opening.webp'
-import heroDashboard from '../assets/helios-dashboard-hero.png'
 import clientWorkspace from '../assets/client-workspace-section.png'
+
+const documentRows = [
+  { title: 'Therapy agreement', detail: 'Practice document', type: 'Agreement' },
+  { title: 'Consent form', detail: 'Practice document', type: 'Consent' },
+  { title: 'Information sheet', detail: 'Practice resource', type: 'Information' },
+  { title: 'Session summary template', detail: 'Reusable template', type: 'Template' },
+  { title: 'Client information sheet', detail: 'Practice resource', type: 'Information' },
+  { title: 'Psychoeducation – Anxiety', detail: 'Client resource', type: 'Resource' },
+  { title: 'Working with parts (IFS)', detail: 'Client resource', type: 'Resource' },
+]
+
+const features = [
+  { icon: CalendarDays, title: 'Calendar', detail: 'Google Calendar sync' },
+  { icon: Sparkles, title: 'Session capture', detail: 'AI-assisted notes' },
+  { icon: Users, title: 'Client records', detail: 'The full picture' },
+  { icon: FileText, title: 'Documents', detail: 'Templates & resources' },
+  { icon: RefreshCw, title: 'CPD & reflection', detail: 'Track your development' },
+  { icon: Link2, title: 'Integrations', detail: 'Zoom, Google and more' },
+]
 </script>
+
+<style scoped>
+.landing-shell { overflow: hidden; background:#f7f5ef; color:#172e38; font-family: "Noto Sans", ui-sans-serif, system-ui, sans-serif; }
+.section-container { max-width:1440px; margin:0 auto; padding-left:72px; padding-right:72px; }
+.landing-header { height:88px; background:#f7f5ef; border-bottom:1px solid #e8e6df; position:relative; z-index:20; }
+.header-inner { max-width:1440px; height:100%; margin:auto; padding:0 72px; display:flex; align-items:center; gap:28px; }
+.brand { display:inline-flex; align-items:center; gap:9px; color:#18333c; font-family:Georgia,"Times New Roman",serif; font-size:35px; line-height:1; letter-spacing:-.065em; white-space:nowrap; }
+.brand-dot { color:#c58a5c; }
+.brand-mark { display:inline-flex; align-items:center; justify-content:center; width:27px; height:27px; border:1.7px solid currentColor; border-radius:50%; position:relative; transform:rotate(-28deg); }
+.brand-mark::before,.brand-mark::after { content:""; position:absolute; width:35px; height:1.5px; background:currentColor; }
+.brand-mark::after { transform:rotate(90deg); }
+.brand-mark span { width:8px; height:8px; background:currentColor; border-radius:50%; z-index:1; box-shadow:0 0 0 3px #f7f5ef; }
+.header-nav { display:flex; align-items:center; gap:36px; margin-left:auto; }
+.header-nav a,.sign-in-link { font-size:12px; font-weight:650; color:#43565a; white-space:nowrap; }
+.account-nav { display:flex; align-items:center; gap:14px; margin-left:20px; }
+.header-cta { display:inline-flex; align-items:center; gap:17px; background:#19343e; color:#fffaf1; padding:13px 17px; border-radius:3px; font-size:11px; font-weight:650; white-space:nowrap; }
+
+.opening-splash { position:relative; min-height:min(720px,82vh); display:flex; align-items:flex-start; overflow:hidden; background:#061e29; color:#f4f0e7; }
+.opening-image { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+.opening-shade { position:absolute; inset:0; }
+.opening-shade-side { background:linear-gradient(90deg,rgba(6,30,41,.78),rgba(6,30,41,.25),transparent); }
+.opening-shade-bottom { background:linear-gradient(0deg,rgba(6,30,41,.5),transparent 55%); }
+.opening-copy { position:relative; z-index:2; width:100%; max-width:1200px; margin:0 auto; padding:80px 40px 64px; }
+.opening-eyebrow,.section-eyebrow { font-size:10px; line-height:1.4; font-weight:750; letter-spacing:.19em; text-transform:uppercase; color:#a47756; }
+.opening-eyebrow { color:#e7b877; }
+.opening-copy h1 { max-width:650px; margin:20px 0 0; font-family:Georgia,"Times New Roman",serif; font-size:clamp(42px,5vw,76px); line-height:1.06; font-weight:400; letter-spacing:-.035em; }
+.opening-copy > p:not(.opening-eyebrow) { margin-top:20px; max-width:500px; font-size:18px; line-height:1.55; color:rgba(244,240,231,.95); }
+.opening-button { margin-top:32px; display:inline-flex; align-items:center; gap:10px; border:1px solid rgba(244,240,231,.7); background:rgba(6,30,41,.35); padding:12px 20px; border-radius:4px; font-size:15px; font-weight:650; }
+
+.workspace-section { padding:115px 0; background:#eeeee7; }
+.editorial-heading { max-width:735px; margin-bottom:43px; }
+.editorial-heading h2,.documents-copy h2,.features-intro h2,.integrations-intro h2,.final-inner h2 { font-family:Georgia,"Times New Roman",serif; font-weight:400; letter-spacing:-.035em; }
+.editorial-heading h2 { max-width:650px; font-size:clamp(54px,5vw,72px); line-height:1.02; margin:20px 0 15px; }
+.editorial-heading h2 em,.documents-copy h2 em,.features-intro h2 em,.final-inner h2 em { color:#a17b60; font-weight:400; }
+.editorial-heading > p:last-child { max-width:490px; color:#697674; font-size:14px; line-height:1.75; }
+.clinical-showcase { padding:11px; background:#d9ded9; border:1px solid #d3d9d2; box-shadow:0 30px 60px rgba(29,47,45,.09); border-radius:7px; }
+.clinical-screenshot { display:block; width:100%; aspect-ratio:1272/652; object-fit:cover; object-position:center top; border:1px solid #cdd5d0; border-radius:5px; }
+.showcase-footnote { display:flex; justify-content:space-between; margin-top:17px; font-size:9px; font-weight:700; letter-spacing:.12em; color:#9a9e94; }
+.showcase-footnote span:last-child { text-transform:none; font-weight:400; letter-spacing:0; }
+
+.documents-section { background:#f8f6f1; padding:108px 0 112px; }
+.documents-layout { display:grid; grid-template-columns:minmax(280px,.48fr) minmax(0,1.52fr); align-items:center; gap:42px; }
+.documents-copy h2 { max-width:440px; font-size:clamp(54px,4.6vw,70px); line-height:1.02; margin:20px 0 23px; }
+.documents-copy > p { max-width:350px; font-size:14px; line-height:1.8; color:#687a77; }
+.copy-detail { margin-top:36px; display:flex; gap:16px; align-items:flex-start; max-width:310px; font-size:11px; line-height:1.7; color:#849089; }
+.copy-detail > span { display:block; margin-top:8px; width:28px; height:1px; background:#ad8e70; flex:none; }
+.documents-showcase { min-width:0; background:#fff; box-shadow:0 32px 65px rgba(34,57,53,.13); border:8px solid #e6e9e3; border-radius:9px; overflow:hidden; }
+.documents-appbar { display:flex; align-items:center; justify-content:space-between; gap:20px; padding:22px 24px 18px; border-bottom:1px solid #e1e5df; }
+.documents-appbar strong { display:block; margin-top:4px; font-family:Georgia,serif; font-size:27px; font-weight:400; color:#203842; }
+.mini-overline { font-size:8px; font-weight:700; letter-spacing:.14em; color:#87948d; }
+.documents-appbar button { display:inline-flex; align-items:center; gap:7px; border:0; border-radius:3px; background:#19343e; color:#fffaf1; padding:10px 12px; font-size:10px; font-weight:650; }
+.documents-tabs { display:flex; gap:22px; padding:12px 24px 0; font-size:10px; color:#78857f; border-bottom:1px solid #e4e7e2; }
+.documents-tabs span { padding:0 0 11px; }
+.documents-tabs .active { color:#203842; border-bottom:2px solid #a77d60; font-weight:700; }
+.documents-search { margin:15px 24px 12px; display:flex; align-items:center; gap:9px; padding:10px 12px; border:1px solid #dde2dc; border-radius:4px; color:#9aa39e; font-size:10px; }
+.document-row { display:grid; grid-template-columns:32px minmax(0,1fr) 90px 20px 20px; align-items:center; gap:10px; padding:12px 24px; border-top:1px solid #edf0ec; }
+.document-icon { width:29px; height:29px; display:grid; place-items:center; border-radius:4px; background:#edf1ed; color:#456d60; }
+.document-meta strong { display:block; font-size:10px; color:#2e4549; }
+.document-meta small { display:block; margin-top:3px; font-size:8px; color:#8a9690; }
+.document-type { font-size:8px; color:#7a8882; }
+.document-star,.document-more { color:#a2aaa5; }
+
+.features-section { background:#f2f1eb; padding:121px 0 136px; }
+.features-intro { display:flex; justify-content:space-between; align-items:flex-end; gap:80px; margin:20px 0 53px; }
+.features-intro h2 { max-width:740px; font-size:clamp(56px,5vw,76px); line-height:1.03; }
+.features-intro > p { width:280px; color:#79857f; font-size:13px; line-height:1.75; padding-bottom:7px; flex:none; }
+.feature-grid { display:grid; grid-template-columns:repeat(3,1fr); border-top:1px solid #cdd5cb; }
+.feature-card { min-height:240px; padding:31px 32px 29px 0; border-bottom:1px solid #cdd5cb; position:relative; }
+.feature-card:not(:nth-child(3n+1)) { padding-left:38px; border-left:1px solid #cdd5cb; }
+.feature-top { display:flex; justify-content:space-between; align-items:flex-start; color:#456d60; }
+.feature-top span { font-family:Georgia,serif; color:#a3afa3; font-size:19px; }
+.feature-card h3 { margin-top:43px; font-family:Georgia,serif; font-size:34px; font-weight:400; letter-spacing:-.025em; line-height:1.1; color:#243e41; }
+.feature-card p { color:#71827a; font-size:13px; margin-top:9px; }
+
+.integrations-section { background:#182f39; color:#f3f0e7; padding:117px 0 127px; }
+.section-eyebrow.light { color:#c9aa8c; }
+.integrations-intro { display:flex; justify-content:space-between; align-items:flex-end; gap:50px; margin:18px 0 61px; }
+.integrations-intro h2 { max-width:700px; font-size:clamp(57px,5.2vw,80px); line-height:1.02; color:#f3f0e7; }
+.integrations-intro h2 em { color:#d5b99d; font-weight:400; }
+.integrations-intro > p { max-width:310px; color:#aabbb8; font-size:13px; line-height:1.8; padding-bottom:5px; }
+.integration-grid { display:grid; grid-template-columns:repeat(4,1fr); border-top:1px solid #45606a; border-bottom:1px solid #45606a; }
+.integration-card { min-height:208px; padding:26px 20px 25px 0; display:flex; flex-direction:column; position:relative; }
+.integration-card + .integration-card { border-left:1px solid #45606a; padding-left:27px; }
+.integration-logo { display:grid; place-items:center; width:49px; height:49px; border:1px solid #5c7479; border-radius:5px; color:#e8e8dd; font-family:Georgia,serif; font-size:26px; }
+.integration-card > div { margin-top:auto; }
+.integration-card h3 { font-family:Georgia,serif; font-size:27px; font-weight:400; line-height:1; }
+.integration-card p { font-size:11px; color:#aabcb9; margin-top:7px; }
+.integration-arrow { position:absolute; right:21px; top:29px; color:#8da7a9; }
+
+.final-section { background:#f7f5ef; padding:137px 0 147px; text-align:center; }
+.final-inner h2 { max-width:850px; margin:19px auto 0; font-size:clamp(60px,6.3vw,88px); line-height:1.02; }
+.final-actions { display:flex; justify-content:center; align-items:center; gap:14px; margin-top:40px; }
+.primary-button,.secondary-button { min-width:195px; display:inline-flex; align-items:center; justify-content:space-between; gap:18px; padding:16px 18px; border-radius:3px; font-size:12px; font-weight:650; }
+.primary-button { min-width:213px; background:#19343e; color:#fffaf1; border:1px solid #19343e; }
+.secondary-button { border:1px solid #bac9c1; color:#25453f; }
+
+.landing-footer { background:#f7f5ef; border-top:1px solid #e5e5dc; }
+.footer-inner { min-height:112px; display:flex; align-items:center; gap:24px; color:#909c93; font-size:10px; }
+.brand-small { font-size:28px; }
+.footer-inner nav { display:flex; flex-wrap:wrap; gap:14px; margin-left:auto; }
+.footer-inner nav a:hover { color:#43565a; }
+.copyright { white-space:nowrap; }
+
+@media (max-width:1200px) {
+  .section-container,.header-inner { padding-left:44px; padding-right:44px; }
+  .header-nav { gap:20px; }
+  .documents-layout { gap:28px; }
+}
+@media (max-width:950px) {
+  .header-nav { display:none; }
+  .documents-layout { display:block; }
+  .documents-copy { padding-bottom:38px; }
+  .documents-copy h2 { max-width:650px; }
+  .documents-copy > p { max-width:540px; }
+  .copy-detail { display:none; }
+  .features-intro,.integrations-intro { align-items:flex-start; flex-direction:column; gap:20px; }
+  .features-intro > p { width:auto; max-width:450px; }
+  .integrations-intro > p { max-width:480px; }
+  .footer-inner { flex-wrap:wrap; padding-top:24px; padding-bottom:24px; }
+  .footer-inner nav { order:4; width:100%; margin-left:0; }
+}
+@media (max-width:650px) {
+  .section-container,.header-inner { padding-left:22px; padding-right:22px; }
+  .landing-header { height:72px; }
+  .brand { font-size:31px; }
+  .sign-in-link { display:none; }
+  .header-cta { padding:11px; font-size:0; gap:0; }
+  .opening-splash { min-height:570px; }
+  .opening-image { object-position:84% center; }
+  .opening-copy { padding:55px 22px 60px; }
+  .workspace-section,.documents-section,.features-section { padding:82px 0 90px; }
+  .editorial-heading h2,.documents-copy h2,.features-intro h2,.integrations-intro h2 { font-size:clamp(49px,10vw,64px); }
+  .clinical-showcase { padding:5px; overflow:hidden; }
+  .clinical-screenshot { aspect-ratio:950/653; }
+  .showcase-footnote { font-size:7px; gap:15px; }
+  .documents-showcase { border-width:5px; }
+  .document-row { grid-template-columns:30px minmax(0,1fr) 20px; padding-left:14px; padding-right:14px; }
+  .document-type,.document-star { display:none; }
+  .documents-appbar,.documents-tabs { padding-left:14px; padding-right:14px; }
+  .documents-search { margin-left:14px; margin-right:14px; }
+  .feature-grid,.integration-grid { grid-template-columns:1fr 1fr; }
+  .feature-card { min-height:205px; padding:26px 10px 24px 0; }
+  .feature-card:not(:nth-child(3n+1)) { border-left:0; padding-left:0; }
+  .feature-card:nth-child(even) { border-left:1px solid #cdd5cb; padding-left:19px; }
+  .feature-card h3 { margin-top:27px; font-size:27px; }
+  .feature-card p { font-size:11px; line-height:1.45; }
+  .integrations-section { padding:83px 0 90px; }
+  .integration-card { min-height:170px; }
+  .integration-card + .integration-card { border-left:0; padding-left:0; }
+  .integration-card:nth-child(even) { border-left:1px solid #45606a; padding-left:18px; }
+  .integration-card:nth-child(n+3) { border-top:1px solid #45606a; }
+  .integration-card h3 { font-size:23px; }
+  .integration-arrow { right:12px; }
+  .final-section { padding:92px 0 100px; }
+  .final-inner h2 { font-size:clamp(52px,11vw,70px); }
+  .final-actions { flex-direction:column; }
+  .final-actions a { width:100%; max-width:310px; }
+  .footer-inner .brand { width:100%; }
+  .copyright { margin-left:0; }
+}
+</style>
