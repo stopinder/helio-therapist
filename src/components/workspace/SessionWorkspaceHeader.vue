@@ -2,13 +2,6 @@
   <header class="bg-surface border-b border-border-muted px-inline-lg py-stack-md">
     <div class="flex flex-col md:flex-row md:items-center justify-between gap-stack-md">
       <div class="flex items-center gap-inline-md">
-        <RouterLink
-            :to="`/clients/${session.clientId}`"
-            class="h-10 w-10 rounded-pill bg-avatar flex items-center justify-center text-h3 font-semibold text-ink shrink-0 hover:bg-avatar-hover transition-colors"
-            title="Back to Client Workspace"
-        >
-          ←
-        </RouterLink>
 
         <div class="flex flex-col min-w-0">
           <div class="flex items-center gap-inline-sm flex-wrap">
