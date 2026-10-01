@@ -65,9 +65,11 @@ test('copy is disabled for empty content', () => {
   assert.match(source, /:disabled="!summaryDocument\?\.content\?\.body"/)
 })
 
-test('Session Workspace still exposes Zoom rejoin guidance', () => {
+test('Session Workspace keeps Zoom guidance without the dead Return action', () => {
   assert.match(headerSource, /Zoom opens the video call/i)
-  assert.match(headerSource, /@click="emit\('join-meeting'\)"/)
+  assert.doesNotMatch(headerSource, /emit\('join-meeting'\)/)
+  assert.doesNotMatch(headerSource, /joiningMeeting/)
+  assert.doesNotMatch(headerSource, /videoLabel/)
 })
 
 
