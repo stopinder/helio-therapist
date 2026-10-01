@@ -1,5 +1,5 @@
 <script setup>
-import clientWorkspace from '@/assets/client-workspace.jpg'
+import clientWorkspace from '../assets/client-workspace.jpg'
 </script>
 
 <template>
