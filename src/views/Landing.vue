@@ -116,16 +116,8 @@
     </section>
 
     <section id="clients" class="scroll-mt-24 border-t border-[#1D546D]/30 bg-surface-elevated">
-      <div class="mx-auto w-full max-w-[1200px] px-5 py-12 sm:px-8 sm:py-16 lg:py-20">
-        <div class="max-w-[820px]">
-          <p class="type-eyebrow text-accent">The Clinical Workspace</p>
-          <h2 class="mt-3 font-serif text-4xl font-semibold tracking-[-0.035em] sm:text-5xl">The whole thread of the work, in one place.</h2>
-          <p class="mt-5 text-[18px] leading-7 text-ink-secondary">
-            Helios brings sessions, transcripts, documents, follow-ups and the developing clinical picture into one workspace — so you can return to a client without rebuilding the story from memory.
-          </p>
-        </div>
-
-        <div class="mt-10 grid gap-9 lg:grid-cols-[minmax(0,2.2fr)_minmax(260px,.95fr)] lg:items-start lg:gap-12">
+      <div class="mx-auto w-full max-w-[1200px] px-5 py-12 sm:px-8 sm:py-16 lg:px-10 lg:py-20">
+        <div class="grid gap-10 lg:grid-cols-[minmax(0,2fr)_minmax(320px,1fr)] lg:items-start lg:gap-12">
           <figure class="min-w-0">
             <img
               :src="clientWorkspace"
@@ -134,28 +126,30 @@
             />
           </figure>
 
-          <aside class="min-w-0 lg:border-l lg:border-border lg:pl-8" aria-label="What the Client Workspace keeps in view">
-            <p class="type-eyebrow text-ink-muted">Before the next session</p>
-            <h3 class="mt-2 font-serif text-3xl font-semibold tracking-[-0.025em] text-ink">Pick up where you left off.</h3>
-            <p class="mt-4 text-[17px] leading-[1.65] text-ink-secondary">
-              Open a client and immediately see where the work stands — what matters now, what needs attention and what you want to return to next.
+          <aside class="min-w-0 lg:pt-1" aria-label="What the Client Workspace keeps in view">
+            <p class="type-eyebrow text-accent">The Clinical Workspace</p>
+            <h2 class="mt-3 font-serif text-3xl font-semibold leading-[1.08] tracking-[-0.035em] text-ink sm:text-4xl lg:text-[2.65rem]">
+              The whole thread of the work, in one place.
+            </h2>
+            <p class="mt-5 text-[17px] leading-[1.65] text-ink-secondary">
+              Helios brings sessions, transcripts, documents, follow-ups and the developing clinical picture into one workspace — so you can return to a client without rebuilding the story from memory.
             </p>
 
-            <div class="mt-7 divide-y divide-border-muted border-y border-border-muted">
+            <div class="mt-7 border-t border-border-muted">
               <div class="py-4">
-                <h4 class="text-[15px] font-semibold text-ink">Current focus</h4>
-                <p class="mt-1 text-[14px] leading-5 text-ink-secondary">Keep the developing work visible between sessions.</p>
+                <h3 class="text-[15px] font-semibold text-ink">Current focus</h3>
+                <p class="mt-1 text-[14px] leading-5 text-ink-secondary">See what matters now before the next session.</p>
               </div>
-              <div class="py-4">
-                <h4 class="text-[15px] font-semibold text-ink">Care aims</h4>
-                <p class="mt-1 text-[14px] leading-5 text-ink-secondary">Keep the direction of the work in view without searching through notes.</p>
+              <div class="border-t border-border-muted py-4">
+                <h3 class="text-[15px] font-semibold text-ink">Care aims</h3>
+                <p class="mt-1 text-[14px] leading-5 text-ink-secondary">Keep the direction of the work visible without searching through notes.</p>
               </div>
-              <div class="py-4">
-                <h4 class="text-[15px] font-semibold text-ink">Next steps</h4>
+              <div class="border-t border-border-muted py-4">
+                <h3 class="text-[15px] font-semibold text-ink">Next steps</h3>
                 <p class="mt-1 text-[14px] leading-5 text-ink-secondary">Carry follow-ups and unfinished threads into the next conversation.</p>
               </div>
-              <div class="py-4">
-                <h4 class="text-[15px] font-semibold text-ink">Everything connected</h4>
+              <div class="border-y border-border-muted py-4">
+                <h3 class="text-[15px] font-semibold text-ink">Everything connected</h3>
                 <p class="mt-1 text-[14px] leading-5 text-ink-secondary">Move into the Clinical Workspace, documents or supervision without losing context.</p>
               </div>
             </div>
