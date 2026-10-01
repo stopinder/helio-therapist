@@ -51,6 +51,7 @@
 </template>
 
 <script setup>
+import { computed } from 'vue'
 import { RouterLink } from 'vue-router'
 import StatusBadge from './StatusBadge.vue'
 
@@ -65,4 +66,5 @@ const props = defineProps({
   }
 })
 
+const isInPerson = computed(() => props.session.type === 'In-person')
 </script>
