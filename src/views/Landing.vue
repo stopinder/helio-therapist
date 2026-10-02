@@ -274,20 +274,23 @@ const features = [
 .feature-detail { color:#536d64; font-size:12px; line-height:1.45; margin-top:7px; font-weight:700; }
 .feature-blurb { color:#5f665f; font-size:11.5px; line-height:1.55; margin-top:11px; max-width:34ch; }
 
-.integrations-section { background:#182f39; color:#f3f0e7; padding:62px 0 70px; }
-.section-eyebrow.light { color:#c9aa8c; }
-.integrations-intro { display:flex; justify-content:space-between; align-items:flex-end; gap:40px; margin:14px 0 30px; }
-.integrations-intro h2 { max-width:700px; font-size:clamp(57px,5.2vw,80px); line-height:1.02; color:#f3f0e7; }
-.integrations-intro h2 em { color:#d5b99d; font-weight:400; }
-.integrations-intro > p { max-width:310px; color:#aabbb8; font-size:13px; line-height:1.8; padding-bottom:5px; }
-.integration-grid { display:grid; grid-template-columns:repeat(4,1fr); border-top:1px solid #45606a; border-bottom:1px solid #45606a; }
-.integration-card { min-height:166px; padding:21px 20px 20px 0; display:flex; flex-direction:column; position:relative; }
-.integration-card + .integration-card { border-left:1px solid #45606a; padding-left:27px; }
-.integration-logo { display:grid; place-items:center; width:49px; height:49px; border:1px solid #5c7479; border-radius:5px; color:#e8e8dd; font-family:Georgia,serif; font-size:26px; }
+.integrations-section { background:#eee9df; color:#203a3d; padding:54px 0 64px; }
+.section-eyebrow.light { color:#9a7358; }
+.integrations-intro { display:flex; justify-content:space-between; align-items:flex-end; gap:40px; margin:14px 0 28px; }
+.integrations-intro h2 { max-width:700px; font-size:clamp(54px,5vw,74px); line-height:1.03; color:#203a3d; }
+.integrations-intro h2 em { color:#8f6d52; font-weight:400; }
+.integrations-intro > p { max-width:350px; color:#65716b; font-size:13px; line-height:1.75; padding-bottom:5px; }
+.integration-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; }
+.integration-card { min-height:176px; padding:20px 20px 19px; display:flex; flex-direction:column; position:relative; border:1px solid rgba(59,78,70,.09); border-radius:19px; box-shadow:0 10px 24px rgba(48,62,56,.035); }
+.integration-card:nth-child(1) { background:#dfe7dc; }
+.integration-card:nth-child(2) { background:#eee6d3; }
+.integration-card:nth-child(3) { background:#dce7e3; }
+.integration-card:nth-child(4) { background:#e3e6d6; }
+.integration-logo { display:grid; place-items:center; width:44px; height:44px; border:0; border-radius:12px; background:rgba(250,248,241,.58); color:#3f6c5c; font-family:Georgia,serif; font-size:23px; }
 .integration-card > div { margin-top:auto; }
-.integration-card h3 { font-family:Georgia,serif; font-size:27px; font-weight:400; line-height:1; }
-.integration-card p { font-size:11px; color:#aabcb9; margin-top:7px; }
-.integration-arrow { position:absolute; right:21px; top:29px; color:#8da7a9; }
+.integration-card h3 { font-family:Georgia,serif; font-size:29px; font-weight:400; letter-spacing:-.025em; line-height:1.02; color:#203a3d; }
+.integration-card p { font-size:11.5px; line-height:1.5; color:#5f6b64; margin-top:7px; }
+.integration-arrow { position:absolute; right:17px; top:19px; color:#81938a; }
 
 .final-section { background:#f7f5ef; padding:68px 0 76px; text-align:center; }
 .final-inner h2 { max-width:850px; margin:19px auto 0; font-size:clamp(60px,6.3vw,88px); line-height:1.02; }
@@ -348,13 +351,13 @@ const features = [
   .feature-card h3 { margin-top:16px; font-size:25px; }
   .feature-detail { font-size:10.5px; line-height:1.4; }
   .feature-blurb { font-size:9.5px; line-height:1.5; margin-top:9px; }
-  .integrations-section { padding:50px 0 58px; }
-  .integration-card { min-height:170px; }
-  .integration-card + .integration-card { border-left:0; padding-left:0; }
-  .integration-card:nth-child(even) { border-left:1px solid #45606a; padding-left:18px; }
-  .integration-card:nth-child(n+3) { border-top:1px solid #45606a; }
-  .integration-card h3 { font-size:23px; }
-  .integration-arrow { right:12px; }
+  .integrations-section { padding:44px 0 52px; }
+  .integration-grid { gap:12px; }
+  .integration-card { min-height:160px; padding:17px 15px 16px; border-radius:17px; }
+  .integration-logo { width:40px; height:40px; border-radius:11px; font-size:21px; }
+  .integration-card h3 { font-size:24px; }
+  .integration-card p { font-size:10px; }
+  .integration-arrow { right:12px; top:16px; }
   .final-section { padding:56px 0 64px; }
   .final-inner h2 { font-size:clamp(52px,11vw,70px); }
   .final-actions { flex-direction:column; }
