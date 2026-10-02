@@ -26,6 +26,26 @@
         </router-link>
       </nav>
 
+      <section aria-labelledby="therapist-stance-heading">
+        <router-link
+          to="/supervision/practice-reflection"
+          class="group grid overflow-hidden rounded-panel border border-border bg-surface-raised transition-colors hover:bg-surface-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-state-selected lg:grid-cols-[minmax(0,1fr)_220px]"
+        >
+          <div class="p-7 md:p-9">
+            <p class="type-eyebrow text-action-link">Guided reflection</p>
+            <h2 id="therapist-stance-heading" class="mt-3 text-2xl font-semibold tracking-[-0.025em] text-ink">What kind of therapist are you?</h2>
+            <p class="mt-3 max-w-2xl text-sm leading-6 text-ink-secondary">Explore your therapeutic stance through 15 situations and reflect on the approaches you tend to reach for first.</p>
+            <span class="mt-5 inline-flex text-sm font-semibold text-action-link">Take the reflection <span class="ml-1 transition-transform group-hover:translate-x-1" aria-hidden="true">→</span></span>
+          </div>
+          <div class="flex items-end border-t border-border-muted bg-surface-muted p-7 lg:border-l lg:border-t-0">
+            <div>
+              <p class="text-4xl font-semibold tracking-[-0.04em] text-ink">15</p>
+              <p class="mt-2 text-sm leading-6 text-ink-muted">practice situations</p>
+            </div>
+          </div>
+        </router-link>
+      </section>
+
       <section aria-labelledby="discovery-heading">
         <article v-if="discovery" class="grid overflow-hidden rounded-panel border border-border bg-surface-raised lg:grid-cols-[minmax(0,1fr)_240px]">
           <div class="p-7 md:p-10">
