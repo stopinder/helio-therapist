@@ -4,7 +4,7 @@
       <div class="header-inner">
         <router-link to="/" class="brand" aria-label="Helios home">
           <span class="brand-sun" aria-hidden="true"><span class="sun-disc" /><span class="sun-line" /></span>
-          <span>helios<span class="brand-dot">.</span></span>
+          <span>Helios<span class="brand-dot">.</span></span>
         </router-link>
 
         <nav class="header-nav" aria-label="Landing page sections">
@@ -144,8 +144,8 @@
       <div class="section-container footer-inner">
         <div class="footer-brand-block">
           <router-link to="/" class="brand brand-small" aria-label="Helios home">
-            <span class="brand-mark" aria-hidden="true"><span /></span>
-            <span>helios<span class="brand-dot">.</span></span>
+            <span class="brand-sun" aria-hidden="true"><span class="sun-disc" /><span class="sun-line" /></span>
+            <span>Helios<span class="brand-dot">.</span></span>
           </router-link>
           <p class="footer-credential">Robert Ormiston MBACP</p>
           <p class="footer-role">Psychotherapist · Founder of Helios</p>
