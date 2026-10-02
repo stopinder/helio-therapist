@@ -11,7 +11,7 @@
     </header>
 
     <main class="space-y-12 pt-9">
-      <nav class="grid border-y border-border-muted md:grid-cols-3" aria-label="Practice destinations">
+      <nav class="grid border-y border-border-muted md:grid-cols-2 lg:grid-cols-4" aria-label="Practice destinations">
         <router-link
           v-for="item in navigation"
           :key="item.path"
@@ -169,6 +169,7 @@ function lowercaseFirst(value) {
 
 const navigation = [
   { label: 'Reflections', description: 'What has stayed with you.', path: '/supervision/reflections' },
+  { label: 'Therapist Stance', description: 'A 15-question reflection on how you tend to work.', path: '/supervision/practice-reflection' },
   { label: 'Map', description: 'What is recurring or beginning to take shape.', path: '/supervision/insights' },
   { label: 'Growth', description: 'Your learning edge.', path: '/supervision/growth' }
 ]
