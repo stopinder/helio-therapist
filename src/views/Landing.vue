@@ -194,7 +194,7 @@ import {
   RefreshCw,
 } from '@lucide/vue'
 import openingImage from '../assets/helios-opening-light.webp'
-import clientWorkspace from '../assets/client-workspace-section.webp'
+import clientWorkspace from '../assets/client-workspace-section.png'
 import documentsScreenshot1 from '../assets/documents-landing-1.b64?raw'
 import documentsScreenshot2 from '../assets/documents-landing-2.b64?raw'
 import documentsScreenshot3 from '../assets/documents-landing-3.b64?raw'
