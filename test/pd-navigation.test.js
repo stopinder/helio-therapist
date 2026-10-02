@@ -26,7 +26,7 @@ test('Professional Development routes retain clear page headings', () => {
   }
 })
 
-test('CPD home puts the three primary practice destinations first', () => {
+test('CPD home puts the primary practice destinations first', () => {
   const content = readFileSync(join(process.cwd(), 'src/views/supervision/SupervisionHome.vue'), 'utf8')
   const navIndex = content.indexOf('aria-label="Practice destinations"')
   const discoveryIndex = content.indexOf('aria-labelledby="discovery-heading"')
@@ -37,6 +37,7 @@ test('CPD home puts the three primary practice destinations first', () => {
 
   const expectedDestinations = [
     ["label: 'Reflections'", "description: 'What has stayed with you.'", "path: '/supervision/reflections'"],
+    ["label: 'Therapist Stance'", "description: 'A 15-question reflection on how you tend to work.'", "path: '/supervision/practice-reflection'"],
     ["label: 'Map'", "description: 'What is recurring or beginning to take shape.'", "path: '/supervision/insights'"],
     ["label: 'Growth'", "description: 'Your learning edge.'", "path: '/supervision/growth'"]
   ]

@@ -7,6 +7,8 @@ const terms = fs.readFileSync('src/views/Terms.vue', 'utf8');
 
 test('public pricing exposes only the £29 monthly offer with a 7 day trial', () => {
   assert.match(landing, /7 days free, then £29\/month\. Cancel anytime\./);
+  assert.match(landing, /id="pricing"/);
+  assert.match(landing, /Start your 7-day free trial/);
   assert.doesNotMatch(landing, /£24|Founder offer/);
 });
 
