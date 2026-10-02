@@ -89,7 +89,9 @@
               <span>0{{ index + 1 }}</span>
             </div>
             <h3>{{ feature.title }}</h3>
-            <p>{{ feature.detail }}</p>
+            <p class="feature-detail">{{ feature.detail }}</p>
+            <p class="feature-blurb">{{ feature.blurb }}</p>
+            <span class="feature-tag">{{ feature.tag }}</span>
           </article>
         </div>
       </div>
@@ -197,12 +199,12 @@ const documentRows = [
 const documentsScreenshot = `data:image/webp;base64,${[documentsScreenshot1, documentsScreenshot2, documentsScreenshot3, documentsScreenshot4, documentsScreenshot5].join('').trim()}`
 
 const features = [
-  { icon: CalendarDays, title: 'Calendar', detail: 'Google Calendar sync' },
-  { icon: Sparkles, title: 'Session capture', detail: 'AI-assisted notes' },
-  { icon: Users, title: 'Client records', detail: 'The full picture' },
-  { icon: FileText, title: 'Documents', detail: 'Templates & resources' },
-  { icon: RefreshCw, title: 'CPD & reflection', detail: 'Track your development' },
-  { icon: Link2, title: 'Integrations', detail: 'Zoom, Google and more' },
+  { icon: CalendarDays, title: 'Calendar', detail: 'Google Calendar sync', blurb: 'See your week at a glance and keep appointments alongside the rest of your clinical work.', tag: 'Your week, connected' },
+  { icon: Sparkles, title: 'Session capture', detail: 'AI-assisted notes', blurb: 'Capture the session, shape the notes and keep continuity without breaking your focus.', tag: 'Stay present in the room' },
+  { icon: Users, title: 'Client records', detail: 'The full picture', blurb: 'Bring care direction, session context and relevant documents together around each client.', tag: 'One continuous thread' },
+  { icon: FileText, title: 'Documents', detail: 'Templates & resources', blurb: 'Create, store and reuse agreements, resources and everyday practice materials in one place.', tag: 'Ready when you need them' },
+  { icon: RefreshCw, title: 'CPD & reflection', detail: 'Track your development', blurb: 'Capture reflections and carry useful learning forward into supervision and ongoing development.', tag: 'Make learning visible' },
+  { icon: Link2, title: 'Integrations', detail: 'Zoom, Google and more', blurb: 'Bring the tools you already use into the same working flow, with more integrations to come.', tag: 'Less switching, more flow' },
 ]
 </script>
 
@@ -254,17 +256,25 @@ const features = [
 .documents-showcase { min-width:0; box-shadow:0 32px 65px rgba(34,57,53,.13); border:8px solid #e6e9e3; border-radius:9px; overflow:hidden; background:#e6e9e3; }
 .documents-screenshot { display:block; width:100%; height:auto; aspect-ratio:1594/1000; object-fit:cover; object-position:center top; border:1px solid #cdd5d0; border-radius:5px; }
 
-.features-section { background:#f4f1e9; padding:50px 0 68px; }
+.features-section { background:#efe8dc; padding:50px 0 70px; }
 .features-intro { display:flex; justify-content:space-between; align-items:flex-end; gap:56px; margin:14px 0 30px; }
 .features-intro h2 { max-width:740px; font-size:clamp(56px,5vw,76px); line-height:1.03; }
-.features-intro > p { width:280px; color:#79857f; font-size:13px; line-height:1.75; padding-bottom:7px; flex:none; }
+.features-intro > p { width:280px; color:#746f66; font-size:13px; line-height:1.75; padding-bottom:7px; flex:none; }
 .feature-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; }
-.feature-card { min-height:206px; padding:28px 28px 26px; position:relative; background:rgba(255,255,255,.46); border:1px solid rgba(126,144,132,.18); border-radius:22px; box-shadow:0 14px 34px rgba(54,72,65,.045); }
+.feature-card { min-height:300px; padding:28px 28px 26px; position:relative; display:flex; flex-direction:column; border:1px solid rgba(113,103,88,.14); border-radius:24px; box-shadow:0 16px 36px rgba(84,64,44,.055); }
+.feature-card:nth-child(1) { background:#f6eadc; }
+.feature-card:nth-child(2) { background:#e9efe7; }
+.feature-card:nth-child(3) { background:#f3e5de; }
+.feature-card:nth-child(4) { background:#f2eadc; }
+.feature-card:nth-child(5) { background:#e7ede3; }
+.feature-card:nth-child(6) { background:#f1e4dc; }
 .feature-top { display:flex; justify-content:space-between; align-items:flex-start; color:#456d60; }
-.feature-top svg { box-sizing:content-box; padding:9px; border-radius:14px; background:#e8eee8; }
-.feature-top span { font-family:Georgia,serif; color:#aab3a8; font-size:17px; }
-.feature-card h3 { margin-top:26px; font-family:Georgia,serif; font-size:34px; font-weight:400; letter-spacing:-.025em; line-height:1.1; color:#243e41; }
-.feature-card p { color:#71827a; font-size:13px; line-height:1.55; margin-top:10px; }
+.feature-top svg { box-sizing:content-box; padding:9px; border-radius:14px; background:rgba(255,255,255,.48); }
+.feature-top span { font-family:Georgia,serif; color:#a49c8d; font-size:17px; }
+.feature-card h3 { margin-top:24px; font-family:Georgia,serif; font-size:34px; font-weight:400; letter-spacing:-.025em; line-height:1.08; color:#243e41; }
+.feature-detail { color:#667871; font-size:13px; line-height:1.55; margin-top:9px; font-weight:650; }
+.feature-blurb { color:#696b63; font-size:12px; line-height:1.65; margin-top:15px; max-width:31ch; }
+.feature-tag { margin-top:auto; padding-top:22px; font-size:10px; line-height:1.4; font-weight:750; letter-spacing:.09em; text-transform:uppercase; color:#9a7358; }
 
 .integrations-section { background:#182f39; color:#f3f0e7; padding:62px 0 70px; }
 .section-eyebrow.light { color:#c9aa8c; }
@@ -335,10 +345,12 @@ const features = [
   .documents-screenshot { aspect-ratio:690/619; width:125%; max-width:none; transform:translateX(-10%); }
   .feature-grid,.integration-grid { grid-template-columns:1fr 1fr; }
   .feature-grid { gap:12px; }
-  .feature-card { min-height:190px; padding:22px 18px 20px; border-radius:18px; }
+  .feature-card { min-height:270px; padding:22px 18px 20px; border-radius:18px; }
   .feature-top svg { padding:7px; border-radius:12px; }
   .feature-card h3 { margin-top:22px; font-size:27px; }
-  .feature-card p { font-size:11px; line-height:1.5; }
+  .feature-detail { font-size:11px; line-height:1.5; }
+  .feature-blurb { font-size:10px; line-height:1.55; margin-top:12px; }
+  .feature-tag { font-size:8px; padding-top:16px; }
   .integrations-section { padding:50px 0 58px; }
   .integration-card { min-height:170px; }
   .integration-card + .integration-card { border-left:0; padding-left:0; }
