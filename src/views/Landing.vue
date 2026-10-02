@@ -177,7 +177,8 @@ import {
   RefreshCw,
 } from '@lucide/vue'
 import openingImage from '../assets/helios-opening.webp'
-import clientWorkspace from '../assets/client-workspace-section.png'\nimport documentsScreenshot from '../assets/documents-landing.webp'
+import clientWorkspace from '../assets/client-workspace-section.png'
+import documentsScreenshot from '../assets/documents-landing.webp'
 
 const documentRows = [
   { title: 'Therapy agreement', detail: 'Practice document', type: 'Agreement' },
