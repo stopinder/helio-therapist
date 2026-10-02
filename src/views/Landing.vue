@@ -142,18 +142,34 @@
 
     <footer class="landing-footer">
       <div class="section-container footer-inner">
-        <router-link to="/" class="brand brand-small" aria-label="Helios home">
-          <span class="brand-mark" aria-hidden="true"><span /></span>
-          <span>helios<span class="brand-dot">.</span></span>
-        </router-link>
-        <span>Continuity &amp; reflection for therapists.</span>
-        <nav aria-label="Legal and support">
-          <router-link to="/privacy">Privacy</router-link>
-          <router-link to="/ai-data">AI &amp; data</router-link>
-          <router-link to="/terms">Terms</router-link>
-          <router-link to="/cookies">Cookies</router-link>
-          <router-link to="/support">Support</router-link>
-        </nav>
+        <div class="footer-brand-block">
+          <router-link to="/" class="brand brand-small" aria-label="Helios home">
+            <span class="brand-mark" aria-hidden="true"><span /></span>
+            <span>helios<span class="brand-dot">.</span></span>
+          </router-link>
+          <p class="footer-credential">Robert Ormiston MBACP</p>
+          <p class="footer-role">Psychotherapist · Founder of Helios</p>
+        </div>
+
+        <div class="footer-trust">
+          <p class="footer-kicker">THERAPIST-CONTROLLED BY DESIGN</p>
+          <p>AI-assisted features run when you choose to use them. Drafts remain editable until you deliberately approve a Clinical Record.</p>
+          <p>Helios is not an advertising platform. Google Workspace data is not used to train general-purpose AI models.</p>
+        </div>
+
+        <div class="footer-links">
+          <p class="footer-kicker">DATA, PRIVACY &amp; SUPPORT</p>
+          <nav aria-label="Legal, data and support">
+            <router-link to="/privacy">Privacy notice</router-link>
+            <router-link to="/ai-data">AI &amp; data processing</router-link>
+            <router-link to="/cookies">Cookie information</router-link>
+            <router-link to="/terms">Terms of service</router-link>
+            <router-link to="/support">Support</router-link>
+          </nav>
+        </div>
+      </div>
+      <div class="section-container footer-bottom">
+        <span>Helios is operated by Chrysalis Therapy Services.</span>
         <span class="copyright">© {{ new Date().getFullYear() }} Helios</span>
       </div>
     </footer>
@@ -299,11 +315,19 @@ const features = [
 .primary-button { min-width:213px; background:#19343e; color:#fffaf1; border:1px solid #19343e; }
 .secondary-button { border:1px solid #bac9c1; color:#25453f; }
 
-.landing-footer { background:#f7f5ef; border-top:1px solid #e5e5dc; }
-.footer-inner { min-height:82px; display:flex; align-items:center; gap:24px; color:#909c93; font-size:10px; }
-.brand-small { font-size:28px; }
-.footer-inner nav { display:flex; flex-wrap:wrap; gap:14px; margin-left:auto; }
-.footer-inner nav a:hover { color:#43565a; }
+.landing-footer { background:#eee9df; border-top:1px solid rgba(59,78,70,.1); color:#203a3d; }
+.footer-inner { display:grid; grid-template-columns:minmax(220px,.9fr) minmax(320px,1.35fr) minmax(230px,.85fr); gap:54px; padding-top:42px; padding-bottom:34px; }
+.footer-brand-block,.footer-trust,.footer-links { min-width:0; }
+.brand-small { font-size:30px; }
+.footer-credential { margin-top:19px; font-family:Georgia,serif; font-size:19px; color:#284548; }
+.footer-role { margin-top:4px; font-size:11px; line-height:1.55; color:#748078; }
+.footer-kicker { margin-bottom:12px; color:#9a7358; font-size:9px; font-weight:750; letter-spacing:.16em; }
+.footer-trust > p:not(.footer-kicker) { max-width:48ch; color:#657069; font-size:11px; line-height:1.72; }
+.footer-trust > p + p { margin-top:8px; }
+.footer-links nav { display:grid; gap:8px; }
+.footer-links nav a { width:max-content; max-width:100%; color:#526861; font-size:11px; line-height:1.45; }
+.footer-links nav a:hover { color:#203a3d; }
+.footer-bottom { min-height:52px; display:flex; align-items:center; justify-content:space-between; gap:24px; border-top:1px solid rgba(59,78,70,.1); color:#899087; font-size:9px; }
 .copyright { white-space:nowrap; }
 
 @media (max-width:1200px) {
@@ -321,8 +345,9 @@ const features = [
   .features-intro,.integrations-intro { align-items:flex-start; flex-direction:column; gap:20px; }
   .features-intro > p { width:auto; max-width:450px; }
   .integrations-intro > p { max-width:480px; }
-  .footer-inner { flex-wrap:wrap; padding-top:24px; padding-bottom:24px; }
-  .footer-inner nav { order:4; width:100%; margin-left:0; }
+  .footer-inner { grid-template-columns:1fr 1fr; gap:34px; padding-top:36px; padding-bottom:30px; }
+  .footer-brand-block { grid-column:1 / -1; }
+  .footer-bottom { padding-top:14px; padding-bottom:14px; }
 }
 @media (max-width:650px) {
   .section-container,.header-inner { padding-left:22px; padding-right:22px; }
@@ -362,7 +387,9 @@ const features = [
   .final-inner h2 { font-size:clamp(52px,11vw,70px); }
   .final-actions { flex-direction:column; }
   .final-actions a { width:100%; max-width:310px; }
-  .footer-inner .brand { width:100%; }
+  .footer-inner { grid-template-columns:1fr; gap:28px; padding-top:32px; padding-bottom:28px; }
+  .footer-brand-block { grid-column:auto; }
+  .footer-bottom { min-height:0; align-items:flex-start; flex-direction:column; gap:6px; padding-top:14px; padding-bottom:18px; }
   .copyright { margin-left:0; }
 }
 </style>
