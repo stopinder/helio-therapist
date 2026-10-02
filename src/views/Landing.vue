@@ -193,7 +193,7 @@ import {
   Video,
   RefreshCw,
 } from '@lucide/vue'
-import openingImage from '../assets/helios-opening.webp'
+import openingImage from '../assets/helios-opening-light.webp'
 import clientWorkspace from '../assets/client-workspace-section.png'
 import documentsScreenshot1 from '../assets/documents-landing-1.b64?raw'
 import documentsScreenshot2 from '../assets/documents-landing-2.b64?raw'
@@ -242,7 +242,7 @@ const features = [
 .header-cta { display:inline-flex; align-items:center; gap:17px; background:#19343e; color:#fffaf1; padding:13px 17px; border-radius:3px; font-size:11px; font-weight:650; white-space:nowrap; }
 
 .opening-splash { position:relative; min-height:min(700px,80vh); display:flex; align-items:flex-start; overflow:hidden; background:#efe8dc; color:#f8f4ea; }
-.opening-image { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; filter:brightness(1.18) saturate(.82) contrast(.9); }
+.opening-image { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; filter:brightness(1.04) saturate(.9) contrast(.96); }
 .opening-shade { position:absolute; inset:0; }
 .opening-shade-side { background:linear-gradient(90deg,rgba(20,48,56,.68) 0%,rgba(20,48,56,.42) 34%,rgba(20,48,56,.08) 64%,transparent 82%); }
 .opening-shade-bottom { background:linear-gradient(0deg,rgba(20,48,56,.22),transparent 48%); }
