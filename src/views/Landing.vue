@@ -10,6 +10,7 @@
         <nav class="header-nav" aria-label="Landing page sections">
           <a href="#workspace">The workspace</a>
           <a href="#documents">Documents</a>
+          <a href="#transcripts">Transcripts</a>
           <a href="#features">Features</a>
           <a href="#integrations">Integrations</a>
           <a href="#pricing">Pricing</a>
@@ -70,6 +71,47 @@
             :src="documentsScreenshot"
             class="documents-screenshot"
             alt="Helios Documents workspace showing the practice library, document creation controls, practice identity, filters and document list"
+          />
+        </div>
+      </div>
+    </section>
+
+    <section id="transcripts" class="transcript-section">
+      <div class="section-container transcript-layout">
+        <div class="transcript-copy">
+          <p class="section-eyebrow">TRANSCRIPT INBOX</p>
+          <h2>Bring transcripts in <em>from wherever you work.</em></h2>
+          <p class="transcript-lede">Import transcript text from Zoom, paste it from another tool, or upload a transcript file. Assign it to the right client and session when you’re ready.</p>
+
+          <div class="transcript-trust">
+            <ShieldCheck :size="18" :stroke-width="1.7" />
+            <span><strong>No audio or video is imported.</strong> Helios only brings in transcript text.</span>
+          </div>
+
+          <div class="transcript-methods">
+            <article>
+              <span class="transcript-icon"><Video :size="20" :stroke-width="1.6" /></span>
+              <div><h3>From Zoom</h3><p>Bring in transcript text when it’s available.</p></div>
+            </article>
+            <article>
+              <span class="transcript-icon"><ClipboardPaste :size="20" :stroke-width="1.6" /></span>
+              <div><h3>Paste from anywhere</h3><p>Copy transcript text from another service or document.</p></div>
+            </article>
+            <article>
+              <span class="transcript-icon"><Upload :size="20" :stroke-width="1.6" /></span>
+              <div><h3>Upload a file</h3><p>Import <strong>.txt</strong> or <strong>.vtt</strong> transcript files.</p></div>
+            </article>
+          </div>
+
+          <p class="transcript-control"><strong>You stay in control.</strong> Nothing is analysed automatically until you choose what happens next.</p>
+          <router-link to="/transcripts" class="transcript-button">See how Transcript Inbox works <ArrowRight :size="18" /></router-link>
+        </div>
+
+        <div class="transcript-showcase">
+          <img
+            :src="transcriptScreenshot"
+            class="transcript-screenshot"
+            alt="Helios Transcript Inbox showing Zoom transcript checking, paste transcript and choose file controls"
           />
         </div>
       </div>
@@ -193,20 +235,24 @@ import {
   ArrowRight,
   ArrowUpRight,
   CalendarDays,
+  ClipboardPaste,
   FileText,
   Link2,
   Mail,
   MoreHorizontal,
   Plus,
   Search,
+  ShieldCheck,
   Sparkles,
   Star,
+  Upload,
   Users,
   Video,
   RefreshCw,
 } from '@lucide/vue'
 import openingImage from '../assets/helios-opening-light.webp'
 import clientWorkspace from '../assets/client-workspace-section.png'
+import transcriptScreenshot from '../assets/transcript-inbox-section.webp'
 import documentsScreenshot1 from '../assets/documents-landing-1.b64?raw'
 import documentsScreenshot2 from '../assets/documents-landing-2.b64?raw'
 import documentsScreenshot3 from '../assets/documents-landing-3.b64?raw'
@@ -285,6 +331,23 @@ const features = [
 .documents-showcase { min-width:0; box-shadow:0 32px 65px rgba(34,57,53,.13); border:8px solid #e6e9e3; border-radius:9px; overflow:hidden; background:#e6e9e3; }
 .documents-screenshot { display:block; width:100%; height:auto; aspect-ratio:1594/1000; object-fit:cover; object-position:center top; border:1px solid #cdd5d0; border-radius:5px; }
 
+.transcript-section { background:#f3efe6; padding:58px 0 58px; }
+.transcript-layout { display:grid; grid-template-columns:minmax(320px,.78fr) minmax(0,1.22fr); align-items:center; gap:48px; }
+.transcript-copy h2 { max-width:590px; margin:16px 0 18px; font-family:Georgia,"Times New Roman",serif; font-size:clamp(52px,4.7vw,72px); font-weight:400; line-height:1.01; letter-spacing:-.04em; }
+.transcript-copy h2 em { color:#8f6d52; font-weight:400; }
+.transcript-lede { max-width:540px; color:#66726d; font-size:14px; line-height:1.75; }
+.transcript-trust { max-width:520px; margin-top:22px; display:flex; align-items:center; gap:11px; padding:12px 14px; border:1px solid #ced9cf; border-radius:16px; background:#e2e8df; color:#465c52; font-size:12px; line-height:1.5; }
+.transcript-trust svg { flex:none; color:#355e50; }
+.transcript-methods { display:grid; gap:9px; margin-top:14px; max-width:560px; }
+.transcript-methods article { display:flex; align-items:center; gap:14px; padding:12px 14px; border:1px solid #ddd4c7; border-radius:17px; background:#f9f6ef; }
+.transcript-icon { display:grid; place-items:center; width:38px; height:38px; flex:none; border-radius:50%; background:#e2e8df; color:#355e50; }
+.transcript-methods h3 { margin:0; color:#203a3d; font-family:Georgia,"Times New Roman",serif; font-size:18px; font-weight:400; line-height:1.15; }
+.transcript-methods p { margin-top:3px; color:#707971; font-size:11px; line-height:1.5; }
+.transcript-control { max-width:540px; margin-top:18px; padding-top:16px; border-top:1px solid #d9d1c3; color:#657069; font-size:11.5px; line-height:1.6; }
+.transcript-button { margin-top:17px; display:inline-flex; align-items:center; justify-content:space-between; gap:18px; min-width:230px; padding:14px 16px; border-radius:14px; background:#23483f; color:#fffaf1; font-size:11px; font-weight:650; }
+.transcript-showcase { min-width:0; padding:9px; border:1px solid #d8d1c5; border-radius:22px; background:#f8f4ec; box-shadow:0 26px 58px rgba(32,50,45,.11); overflow:hidden; }
+.transcript-screenshot { display:block; width:100%; height:auto; aspect-ratio:2048/1277; object-fit:cover; object-position:center top; border-radius:15px; }
+
 .features-section { background:#f3efe6; padding:48px 0 62px; }
 .features-intro { display:flex; justify-content:space-between; align-items:flex-end; gap:56px; margin:14px 0 28px; }
 .features-intro h2 { max-width:740px; font-size:clamp(56px,5vw,76px); line-height:1.03; }
@@ -360,6 +423,9 @@ const features = [
   .header-nav { display:none; }
   .account-nav { margin-left:auto; }
   .documents-layout { display:block; }
+  .transcript-layout { grid-template-columns:1fr; gap:30px; }
+  .transcript-copy { max-width:760px; }
+  .transcript-showcase { max-width:900px; }
   .documents-copy { padding-bottom:28px; }
   .documents-copy h2 { max-width:650px; }
   .documents-copy > p { max-width:540px; }
@@ -383,6 +449,13 @@ const features = [
   .opening-copy { padding:55px 22px 60px; }
   .workspace-section { padding:48px 0 42px; }
   .documents-section { padding:42px 0 34px; }
+  .transcript-section { padding:44px 0 46px; }
+  .transcript-copy h2 { font-size:clamp(46px,11vw,58px); line-height:1.04; }
+  .transcript-trust { align-items:flex-start; }
+  .transcript-methods article { padding:11px 12px; }
+  .transcript-showcase { padding:5px; border-radius:18px; }
+  .transcript-screenshot { width:124%; max-width:none; transform:translateX(-9.5%); aspect-ratio:900/730; object-position:center top; }
+  .transcript-button { width:100%; max-width:320px; }
   .features-section { padding:40px 0 54px; }
   .editorial-heading { margin-bottom:20px; }
   .editorial-heading h2 { font-size:clamp(39px,11vw,44px); line-height:1.07; margin:13px 0 12px; }
