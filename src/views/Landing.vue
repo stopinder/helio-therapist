@@ -91,7 +91,6 @@
             <h3>{{ feature.title }}</h3>
             <p class="feature-detail">{{ feature.detail }}</p>
             <p class="feature-blurb">{{ feature.blurb }}</p>
-            <span class="feature-tag">{{ feature.tag }}</span>
           </article>
         </div>
       </div>
@@ -199,12 +198,12 @@ const documentRows = [
 const documentsScreenshot = `data:image/webp;base64,${[documentsScreenshot1, documentsScreenshot2, documentsScreenshot3, documentsScreenshot4, documentsScreenshot5].join('').trim()}`
 
 const features = [
-  { icon: CalendarDays, title: 'Calendar', detail: 'Google Calendar sync', blurb: 'See your week at a glance and keep appointments alongside the rest of your clinical work.', tag: 'Your week, connected' },
-  { icon: Sparkles, title: 'Session capture', detail: 'AI-assisted notes', blurb: 'Capture the session, shape the notes and keep continuity without breaking your focus.', tag: 'Stay present in the room' },
-  { icon: Users, title: 'Client records', detail: 'The full picture', blurb: 'Bring care direction, session context and relevant documents together around each client.', tag: 'One continuous thread' },
-  { icon: FileText, title: 'Documents', detail: 'Templates & resources', blurb: 'Create, store and reuse agreements, resources and everyday practice materials in one place.', tag: 'Ready when you need them' },
-  { icon: RefreshCw, title: 'CPD & reflection', detail: 'Track your development', blurb: 'Capture reflections and carry useful learning forward into supervision and ongoing development.', tag: 'Make learning visible' },
-  { icon: Link2, title: 'Integrations', detail: 'Zoom, Google and more', blurb: 'Bring the tools you already use into the same working flow, with more integrations to come.', tag: 'Less switching, more flow' },
+  { icon: CalendarDays, title: 'Calendar', detail: 'Google Calendar sync', blurb: 'See your week at a glance and keep appointments alongside the rest of your clinical work.' },
+  { icon: Sparkles, title: 'Session capture', detail: 'AI-assisted notes', blurb: 'Capture the session, shape the notes and keep continuity without breaking your focus.' },
+  { icon: Users, title: 'Client records', detail: 'The full picture', blurb: 'Bring care direction, session context and relevant documents together around each client.' },
+  { icon: FileText, title: 'Documents', detail: 'Templates & resources', blurb: 'Create, store and reuse agreements, resources and everyday practice materials in one place.' },
+  { icon: RefreshCw, title: 'CPD & reflection', detail: 'Track your development', blurb: 'Capture reflections and carry useful learning forward into supervision and ongoing development.' },
+  { icon: Link2, title: 'Integrations', detail: 'Zoom, Google and more', blurb: 'Bring the tools you already use into the same working flow, with more integrations to come.' },
 ]
 </script>
 
@@ -256,25 +255,24 @@ const features = [
 .documents-showcase { min-width:0; box-shadow:0 32px 65px rgba(34,57,53,.13); border:8px solid #e6e9e3; border-radius:9px; overflow:hidden; background:#e6e9e3; }
 .documents-screenshot { display:block; width:100%; height:auto; aspect-ratio:1594/1000; object-fit:cover; object-position:center top; border:1px solid #cdd5d0; border-radius:5px; }
 
-.features-section { background:#efe8dc; padding:50px 0 70px; }
-.features-intro { display:flex; justify-content:space-between; align-items:flex-end; gap:56px; margin:14px 0 30px; }
+.features-section { background:#f3efe6; padding:48px 0 62px; }
+.features-intro { display:flex; justify-content:space-between; align-items:flex-end; gap:56px; margin:14px 0 28px; }
 .features-intro h2 { max-width:740px; font-size:clamp(56px,5vw,76px); line-height:1.03; }
-.features-intro > p { width:280px; color:#746f66; font-size:13px; line-height:1.75; padding-bottom:7px; flex:none; }
-.feature-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; }
-.feature-card { min-height:300px; padding:28px 28px 26px; position:relative; display:flex; flex-direction:column; border:1px solid rgba(113,103,88,.14); border-radius:24px; box-shadow:0 16px 36px rgba(84,64,44,.055); }
-.feature-card:nth-child(1) { background:#f6eadc; }
-.feature-card:nth-child(2) { background:#e9efe7; }
-.feature-card:nth-child(3) { background:#f3e5de; }
-.feature-card:nth-child(4) { background:#f2eadc; }
-.feature-card:nth-child(5) { background:#e7ede3; }
-.feature-card:nth-child(6) { background:#f1e4dc; }
-.feature-top { display:flex; justify-content:space-between; align-items:flex-start; color:#456d60; }
-.feature-top svg { box-sizing:content-box; padding:9px; border-radius:14px; background:rgba(255,255,255,.48); }
-.feature-top span { font-family:Georgia,serif; color:#a49c8d; font-size:17px; }
-.feature-card h3 { margin-top:24px; font-family:Georgia,serif; font-size:34px; font-weight:400; letter-spacing:-.025em; line-height:1.08; color:#243e41; }
-.feature-detail { color:#667871; font-size:13px; line-height:1.55; margin-top:9px; font-weight:650; }
-.feature-blurb { color:#696b63; font-size:12px; line-height:1.65; margin-top:15px; max-width:31ch; }
-.feature-tag { margin-top:auto; padding-top:22px; font-size:10px; line-height:1.4; font-weight:750; letter-spacing:.09em; text-transform:uppercase; color:#9a7358; }
+.features-intro > p { width:280px; color:#70786f; font-size:13px; line-height:1.75; padding-bottom:7px; flex:none; }
+.feature-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; }
+.feature-card { min-height:224px; padding:22px 24px 23px; position:relative; border:1px solid rgba(59,78,70,.09); border-radius:20px; box-shadow:0 10px 24px rgba(48,62,56,.04); }
+.feature-card:nth-child(1) { background:#dfe7dc; }
+.feature-card:nth-child(2) { background:#eee6d3; }
+.feature-card:nth-child(3) { background:#dce7e3; }
+.feature-card:nth-child(4) { background:#e9e3d2; }
+.feature-card:nth-child(5) { background:#e3e6d6; }
+.feature-card:nth-child(6) { background:#dbe5df; }
+.feature-top { display:flex; justify-content:space-between; align-items:flex-start; color:#3f6c5c; }
+.feature-top svg { box-sizing:content-box; padding:7px; border-radius:12px; background:rgba(250,248,241,.55); }
+.feature-top span { font-family:Georgia,serif; color:#9a917f; font-size:16px; }
+.feature-card h3 { margin-top:17px; font-family:Georgia,serif; font-size:30px; font-weight:400; letter-spacing:-.025em; line-height:1.06; color:#203a3d; }
+.feature-detail { color:#536d64; font-size:12px; line-height:1.45; margin-top:7px; font-weight:700; }
+.feature-blurb { color:#5f665f; font-size:11.5px; line-height:1.55; margin-top:11px; max-width:34ch; }
 
 .integrations-section { background:#182f39; color:#f3f0e7; padding:62px 0 70px; }
 .section-eyebrow.light { color:#c9aa8c; }
@@ -345,12 +343,11 @@ const features = [
   .documents-screenshot { aspect-ratio:690/619; width:125%; max-width:none; transform:translateX(-10%); }
   .feature-grid,.integration-grid { grid-template-columns:1fr 1fr; }
   .feature-grid { gap:12px; }
-  .feature-card { min-height:270px; padding:22px 18px 20px; border-radius:18px; }
-  .feature-top svg { padding:7px; border-radius:12px; }
-  .feature-card h3 { margin-top:22px; font-size:27px; }
-  .feature-detail { font-size:11px; line-height:1.5; }
-  .feature-blurb { font-size:10px; line-height:1.55; margin-top:12px; }
-  .feature-tag { font-size:8px; padding-top:16px; }
+  .feature-card { min-height:218px; padding:19px 16px 18px; border-radius:17px; }
+  .feature-top svg { padding:6px; border-radius:11px; }
+  .feature-card h3 { margin-top:16px; font-size:25px; }
+  .feature-detail { font-size:10.5px; line-height:1.4; }
+  .feature-blurb { font-size:9.5px; line-height:1.5; margin-top:9px; }
   .integrations-section { padding:50px 0 58px; }
   .integration-card { min-height:170px; }
   .integration-card + .integration-card { border-left:0; padding-left:0; }
