@@ -178,7 +178,11 @@ import {
 } from '@lucide/vue'
 import openingImage from '../assets/helios-opening.webp'
 import clientWorkspace from '../assets/client-workspace-section.png'
-import documentsScreenshot from '../assets/documents-landing.webp'
+import documentsScreenshot1 from '../assets/documents-landing-1.b64?raw'
+import documentsScreenshot2 from '../assets/documents-landing-2.b64?raw'
+import documentsScreenshot3 from '../assets/documents-landing-3.b64?raw'
+import documentsScreenshot4 from '../assets/documents-landing-4.b64?raw'
+import documentsScreenshot5 from '../assets/documents-landing-5.b64?raw'
 
 const documentRows = [
   { title: 'Therapy agreement', detail: 'Practice document', type: 'Agreement' },
@@ -189,6 +193,8 @@ const documentRows = [
   { title: 'Psychoeducation – Anxiety', detail: 'Client resource', type: 'Resource' },
   { title: 'Working with parts (IFS)', detail: 'Client resource', type: 'Resource' },
 ]
+
+const documentsScreenshot = `data:image/webp;base64,${[documentsScreenshot1, documentsScreenshot2, documentsScreenshot3, documentsScreenshot4, documentsScreenshot5].join('').trim()}`
 
 const features = [
   { icon: CalendarDays, title: 'Calendar', detail: 'Google Calendar sync' },
