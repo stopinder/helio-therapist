@@ -11,18 +11,25 @@
     </header>
 
     <main class="space-y-12 pt-9">
-      <nav class="grid border-y border-border-muted md:grid-cols-2 lg:grid-cols-4" aria-label="Practice destinations">
+      <nav class="grid gap-4 md:grid-cols-2" aria-label="Practice destinations">
         <router-link
-          v-for="item in navigation"
+          v-for="(item, index) in navigation"
           :key="item.path"
           :to="item.path"
-          class="group flex min-h-[132px] items-start justify-between gap-5 border-b border-border-muted px-5 py-6 transition-colors last:border-b-0 hover:bg-surface-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-state-selected md:border-b-0 md:border-r md:last:border-r-0"
+          class="group flex min-h-[168px] flex-col justify-between rounded-[22px] border border-border-muted bg-surface-raised p-6 shadow-[0_10px_28px_rgba(32,50,45,0.045)] transition duration-200 hover:-translate-y-0.5 hover:border-border hover:bg-[#fbf8f1] hover:shadow-[0_16px_34px_rgba(32,50,45,0.08)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-state-selected"
         >
-          <div>
-            <h2 class="text-lg font-semibold text-ink">{{ item.label }}</h2>
-            <p class="mt-2 max-w-xs text-sm leading-6 text-ink-secondary">{{ item.description }}</p>
+          <div class="flex items-start justify-between gap-5">
+            <span class="inline-flex min-w-9 items-center justify-center rounded-full bg-surface-muted px-3 py-1.5 text-[11px] font-semibold tracking-[0.12em] text-ink-muted">
+              0{{ index + 1 }}
+            </span>
+            <span class="inline-flex items-center gap-2 rounded-full border border-border-muted bg-surface-canvas px-3 py-1.5 text-xs font-semibold text-action-link transition group-hover:border-border group-hover:bg-white" aria-hidden="true">
+              Open <span class="transition-transform group-hover:translate-x-0.5">→</span>
+            </span>
           </div>
-          <span class="mt-0.5 text-action-link transition-transform group-hover:translate-x-1" aria-hidden="true">→</span>
+          <div class="mt-8">
+            <h2 class="text-[24px] font-semibold tracking-[-0.025em] text-ink">{{ item.label }}</h2>
+            <p class="mt-3 max-w-md text-[15px] leading-6 text-ink-secondary">{{ item.description }}</p>
+          </div>
         </router-link>
       </nav>
 
