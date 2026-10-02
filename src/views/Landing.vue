@@ -64,27 +64,12 @@
           <div class="copy-detail"><span /><p>A home for your templates, client resources and everyday documents.</p></div>
         </div>
 
-        <div class="documents-showcase" aria-label="Illustrative Helios practice documents library">
-          <div class="documents-appbar">
-            <div>
-              <span class="mini-overline">PRACTICE LIBRARY</span>
-              <strong>Documents</strong>
-            </div>
-            <button type="button" tabindex="-1"><Plus :size="16" /> New document</button>
-          </div>
-          <div class="documents-tabs" aria-hidden="true">
-            <span class="active">All</span><span>Templates</span><span>Shared</span><span>Favourites</span>
-          </div>
-          <div class="documents-search" aria-hidden="true"><Search :size="15" /> Search practice documents or client records…</div>
-          <div class="document-list" aria-hidden="true">
-            <div v-for="doc in documentRows" :key="doc.title" class="document-row">
-              <span class="document-icon"><FileText :size="17" /></span>
-              <div class="document-meta"><strong>{{ doc.title }}</strong><small>{{ doc.detail }}</small></div>
-              <span class="document-type">{{ doc.type }}</span>
-              <Star :size="15" class="document-star" />
-              <MoreHorizontal :size="17" class="document-more" />
-            </div>
-          </div>
+        <div class="documents-showcase">
+          <img
+            :src="documentsScreenshot"
+            class="documents-screenshot"
+            alt="Helios Documents workspace showing the practice library, document creation controls, practice identity, filters and document list"
+          />
         </div>
       </div>
     </section>
@@ -192,7 +177,7 @@ import {
   RefreshCw,
 } from '@lucide/vue'
 import openingImage from '../assets/helios-opening.webp'
-import clientWorkspace from '../assets/client-workspace-section.png'
+import clientWorkspace from '../assets/client-workspace-section.png'\nimport documentsScreenshot from '../assets/documents-landing.webp'
 
 const documentRows = [
   { title: 'Therapy agreement', detail: 'Practice document', type: 'Agreement' },
@@ -259,21 +244,8 @@ const features = [
 .documents-copy > p { max-width:350px; font-size:14px; line-height:1.8; color:#687a77; }
 .copy-detail { margin-top:22px; display:flex; gap:16px; align-items:flex-start; max-width:310px; font-size:11px; line-height:1.7; color:#849089; }
 .copy-detail > span { display:block; margin-top:8px; width:28px; height:1px; background:#ad8e70; flex:none; }
-.documents-showcase { min-width:0; background:#fff; box-shadow:0 32px 65px rgba(34,57,53,.13); border:8px solid #e6e9e3; border-radius:9px; overflow:hidden; }
-.documents-appbar { display:flex; align-items:center; justify-content:space-between; gap:20px; padding:22px 24px 18px; border-bottom:1px solid #e1e5df; }
-.documents-appbar strong { display:block; margin-top:4px; font-family:Georgia,serif; font-size:27px; font-weight:400; color:#203842; }
-.mini-overline { font-size:8px; font-weight:700; letter-spacing:.14em; color:#87948d; }
-.documents-appbar button { display:inline-flex; align-items:center; gap:7px; border:0; border-radius:3px; background:#19343e; color:#fffaf1; padding:10px 12px; font-size:10px; font-weight:650; }
-.documents-tabs { display:flex; gap:22px; padding:12px 24px 0; font-size:10px; color:#78857f; border-bottom:1px solid #e4e7e2; }
-.documents-tabs span { padding:0 0 11px; }
-.documents-tabs .active { color:#203842; border-bottom:2px solid #a77d60; font-weight:700; }
-.documents-search { margin:15px 24px 12px; display:flex; align-items:center; gap:9px; padding:10px 12px; border:1px solid #dde2dc; border-radius:4px; color:#9aa39e; font-size:10px; }
-.document-row { display:grid; grid-template-columns:32px minmax(0,1fr) 90px 20px 20px; align-items:center; gap:10px; padding:12px 24px; border-top:1px solid #edf0ec; }
-.document-icon { width:29px; height:29px; display:grid; place-items:center; border-radius:4px; background:#edf1ed; color:#456d60; }
-.document-meta strong { display:block; font-size:10px; color:#2e4549; }
-.document-meta small { display:block; margin-top:3px; font-size:8px; color:#8a9690; }
-.document-type { font-size:8px; color:#7a8882; }
-.document-star,.document-more { color:#a2aaa5; }
+.documents-showcase { min-width:0; box-shadow:0 32px 65px rgba(34,57,53,.13); border:8px solid #e6e9e3; border-radius:9px; overflow:hidden; background:#e6e9e3; }
+.documents-screenshot { display:block; width:100%; height:auto; aspect-ratio:1594/1000; object-fit:cover; object-position:center top; border:1px solid #cdd5d0; border-radius:5px; }
 
 .features-section { background:#f2f1eb; padding:46px 0 62px; }
 .features-intro { display:flex; justify-content:space-between; align-items:flex-end; gap:56px; margin:14px 0 28px; }
@@ -353,10 +325,7 @@ const features = [
   .clinical-screenshot { aspect-ratio:950/653; }
   .showcase-footnote { font-size:7px; gap:15px; }
   .documents-showcase { border-width:5px; }
-  .document-row { grid-template-columns:30px minmax(0,1fr) 20px; padding-left:14px; padding-right:14px; }
-  .document-type,.document-star { display:none; }
-  .documents-appbar,.documents-tabs { padding-left:14px; padding-right:14px; }
-  .documents-search { margin-left:14px; margin-right:14px; }
+  .documents-screenshot { aspect-ratio:690/619; width:125%; max-width:none; transform:translateX(-10%); }
   .feature-grid,.integration-grid { grid-template-columns:1fr 1fr; }
   .feature-card { min-height:205px; padding:26px 10px 24px 0; }
   .feature-card:not(:nth-child(3n+1)) { border-left:0; padding-left:0; }
