@@ -4,6 +4,7 @@ import test from 'node:test'
 
 const apiSource = fs.readFileSync(new URL('../api/zoom/transcripts.js', import.meta.url), 'utf8')
 const viewSource = fs.readFileSync(new URL('../src/views/Transcripts.vue', import.meta.url), 'utf8')
+const inboxSource = fs.readFileSync(new URL('../src/components/TranscriptInbox.vue', import.meta.url), 'utf8')
 
 test('manual transcript import is authenticated, bounded and idempotent', () => {
   assert.match(apiSource, /requireAuthenticatedUser\(req\)/)
@@ -46,4 +47,17 @@ test('manual import returns safe therapist-facing validation messages', () => {
   assert.match(apiSource, /Import a Zoom transcript in \.vtt or \.txt format\./)
   assert.match(apiSource, /That transcript file is too large to import\./)
   assert.match(viewSource, /Couldn’t import the transcript\. Please try again\./)
+})
+
+
+test('Transcript Inbox explains transcript-only import routes and therapist control', () => {
+  assert.match(inboxSource, /How transcripts get here/)
+  assert.match(inboxSource, /Helios does not import meeting audio or video/)
+  assert.match(inboxSource, /From Zoom/)
+  assert.match(inboxSource, /Paste from anywhere/)
+  assert.match(inboxSource, /Upload a transcript/)
+  assert.match(inboxSource, /\.txt/)
+  assert.match(inboxSource, /\.vtt/)
+  assert.match(inboxSource, /You stay in control/)
+  assert.match(inboxSource, /Nothing is analysed automatically/)
 })
