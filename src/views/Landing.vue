@@ -242,10 +242,10 @@ const features = [
 .opening-copy > p:not(.opening-eyebrow) { margin-top:20px; max-width:500px; font-size:18px; line-height:1.55; color:rgba(244,240,231,.95); }
 .opening-button { margin-top:32px; display:inline-flex; align-items:center; gap:10px; border:1px solid rgba(244,240,231,.7); background:rgba(6,30,41,.35); padding:12px 20px; border-radius:4px; font-size:15px; font-weight:650; }
 
-.workspace-section { padding:72px 0 54px; background:#eeeee7; }
-.editorial-heading { max-width:735px; margin-bottom:26px; }
+.workspace-section { padding:64px 0 54px; background:#eeeee7; }
+.editorial-heading { max-width:690px; margin-bottom:20px; }
 .editorial-heading h2,.documents-copy h2,.features-intro h2,.integrations-intro h2,.final-inner h2 { font-family:Georgia,"Times New Roman",serif; font-weight:400; letter-spacing:-.035em; }
-.editorial-heading h2 { max-width:650px; font-size:clamp(54px,5vw,72px); line-height:1.02; margin:20px 0 15px; }
+.editorial-heading h2 { max-width:620px; font-size:clamp(46px,4vw,58px); line-height:1.04; margin:14px 0 12px; }
 .editorial-heading h2 em,.documents-copy h2 em,.features-intro h2 em,.final-inner h2 em { color:#a17b60; font-weight:400; }
 .editorial-heading > p:last-child { max-width:490px; color:#697674; font-size:14px; line-height:1.75; }
 .clinical-showcase { padding:11px; background:#d9ded9; border:1px solid #d3d9d2; box-shadow:0 30px 60px rgba(29,47,45,.09); border-radius:7px; }
@@ -343,8 +343,12 @@ const features = [
   .opening-splash { min-height:570px; }
   .opening-image { object-position:84% center; }
   .opening-copy { padding:55px 22px 60px; }
-  .workspace-section { padding:54px 0 42px; }\n  .documents-section { padding:42px 0 34px; }\n  .features-section { padding:40px 0 54px; }
-  .editorial-heading h2,.documents-copy h2,.features-intro h2,.integrations-intro h2 { font-size:clamp(49px,10vw,64px); }
+  .workspace-section { padding:48px 0 42px; }
+  .documents-section { padding:42px 0 34px; }
+  .features-section { padding:40px 0 54px; }
+  .editorial-heading { margin-bottom:20px; }
+  .editorial-heading h2 { font-size:clamp(39px,11vw,44px); line-height:1.07; margin:13px 0 12px; }
+  .documents-copy h2,.features-intro h2,.integrations-intro h2 { font-size:clamp(49px,10vw,64px); }
   .clinical-showcase { padding:5px; overflow:hidden; }
   .clinical-screenshot { aspect-ratio:950/653; }
   .showcase-footnote { font-size:7px; gap:15px; }
