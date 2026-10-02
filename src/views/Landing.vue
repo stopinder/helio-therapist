@@ -252,7 +252,7 @@ import {
 } from '@lucide/vue'
 import openingImage from '../assets/helios-opening-light.webp'
 import clientWorkspace from '../assets/client-workspace-section.png'
-import transcriptScreenshot from '../assets/transcript-inbox-section.webp'
+import transcriptScreenshotData from '../assets/transcript-inbox-landing.b64?raw'
 import documentsScreenshot1 from '../assets/documents-landing-1.b64?raw'
 import documentsScreenshot2 from '../assets/documents-landing-2.b64?raw'
 import documentsScreenshot3 from '../assets/documents-landing-3.b64?raw'
@@ -270,6 +270,7 @@ const documentRows = [
 ]
 
 const documentsScreenshot = `data:image/webp;base64,${[documentsScreenshot1, documentsScreenshot2, documentsScreenshot3, documentsScreenshot4, documentsScreenshot5].join('').trim()}`
+const transcriptScreenshot = `data:image/webp;base64,${transcriptScreenshotData.trim()}`
 
 const features = [
   { icon: CalendarDays, title: 'Calendar', detail: 'Google Calendar sync', blurb: 'See your week at a glance and keep appointments alongside the rest of your clinical work.' },
