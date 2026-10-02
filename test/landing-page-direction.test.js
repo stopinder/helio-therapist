@@ -24,6 +24,16 @@ describe('Landing Page Direction', () => {
     assert.match(landingSource, /A home for your templates, client resources and everyday documents\./);
   });
 
+  test('shows how transcript text enters Helios without importing audio or video', () => {
+    assert.match(landingSource, /TRANSCRIPT INBOX/);
+    assert.match(landingSource, /Bring transcripts in <em>from wherever you work\.<\/em>/);
+    assert.match(landingSource, /No audio or video is imported\./);
+    assert.match(landingSource, /From Zoom/);
+    assert.match(landingSource, /Paste from anywhere/);
+    assert.match(landingSource, /Upload a file/);
+    assert.match(landingSource, /transcript-inbox-section\.webp/);
+  });
+
   test('feature grid matches the approved product set', () => {
     for (const label of ['Calendar', 'Session capture', 'Client records', 'Documents', 'CPD & reflection', 'Integrations']) {
       assert.ok(landingSource.includes(label), `Missing feature: ${label}`);
