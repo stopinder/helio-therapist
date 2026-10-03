@@ -14,7 +14,7 @@ export default async function handler(req, res) {
       const query = clean(req.query.q, 100)
       let request = supabase
         .from('resource_library_items')
-        .select('id,title,resource_kind,content_type,category,audience,description,updated_at,resource_versions(id,version_number,completion_mode,client_title,client_description,published_at,created_at)')
+        .select('id,title,resource_kind,content_type,category,audience,description,updated_at,resource_versions(id,version_number,completion_mode,client_title,client_description,form_definition,published_at,created_at)')
         .eq('user_id', user.id)
         .eq('archived', false)
         .order('updated_at', { ascending: false })
@@ -30,7 +30,7 @@ export default async function handler(req, res) {
       return res.status(200).json({ resources: resources.filter(item => item.audience !== 'therapist').map(item => ({
         key: `resource:${item.id}`, id: item.id, type: item.resource_kind === 'outcome_measure' ? 'outcome_measure' : 'resource',
         title: item.title, subtitle: item.description || null, category: item.category || item.resource_kind,
-        completionMode: item.version.completion_mode, audience: item.audience, canSendToClient: item.audience === 'client' || item.audience === 'both',
+        completionMode: item.version.completion_mode, audience: item.audience, canSendToClient: (item.audience === 'client' || item.audience === 'both') && (item.version.completion_mode !== 'complete_in_helio' || Array.isArray(item.version.form_definition?.items) && item.version.form_definition.items.length > 0),
         version: item.version, resource_kind: item.resource_kind
       })) })
     }
