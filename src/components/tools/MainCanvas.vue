@@ -76,7 +76,7 @@
       </article>
     </div>
     <ResourcePicker v-if="pickerOpen" :client="selectedClient" @close="pickerOpen = false" @sent="handleResourceSent" />
-    <div v-if="completionLinks.length" class="modal-backdrop" @click.self="completionLinks = []"><article class="share-link" role="dialog" aria-modal="true"><p class="eyebrow">Ready to send</p><h2>Share {{ completionLinks.length === 1 ? 'this secure link' : 'these secure links' }} with {{ selectedClient.name }}</h2><p>Each link opens its assignment on mobile and expires in 30 days.</p><label v-for="item in completionLinks" :key="item.url"><strong>{{ item.title }}</strong><input readonly :value="item.url" @focus="$event.target.select()" /></label><div><button class="secondary" @click="completionLinks = []">Close</button><button class="primary" @click="copyCompletionLinks">{{ copyLabel }}</button></div></article></div>
+    <div v-if="completionLinks.length" class="modal-backdrop" @click.self="completionLinks = []"><article class="share-link" role="dialog" aria-modal="true"><p class="eyebrow">Ready to send</p><h2>Share {{ completionLinks.length === 1 ? 'this secure link' : 'these secure links' }} with {{ selectedClient.name }}</h2><p>Each link opens its assignment on mobile and expires in 30 days.</p><label v-for="item in completionLinks" :key="item.url"><strong>{{ item.title }}</strong><input readonly :value="item.url" @focus="$event.target.select()" /></label><p v-if="deliveryMessage" class="quiet-copy">{{ deliveryMessage }}</p><div><button class="secondary" @click="completionLinks = []">Close</button><button class="secondary" :disabled="deliverySending || !selectedClient?.email" @click="emailCompletionLinks">{{ deliverySending ? 'Sending…' : selectedClient?.email ? 'Email to client' : 'No client email' }}</button><button class="primary" @click="copyCompletionLinks">{{ copyLabel }}</button></div></article></div>
   </section>
   <div v-else class="empty-state large"><h2>No client selected</h2><p>Choose a client from Clients to open their orientation workspace.</p></div>
 </template>
@@ -139,6 +139,8 @@ const clinicalTimelineEvents = ref([])
 const pickerOpen = ref(false)
 const completionLinks = ref([])
 const copyLabel = ref('Copy link')
+const deliverySending = ref(false)
+const deliveryMessage = ref('')
 const isDictating = ref(false)
 const transcribing = ref(false)
 const dictationError = ref('')
@@ -240,8 +242,44 @@ function videoMeetingDescription(session) {
 }
 function openSession(session) { editingSession.value = session; draftNotes.value = session.notes || ''; sessionWorkspaceTab.value = 'overview'; activeTab.value = 'sessions' }
 function openPicker() { pickerOpen.value = true }
-async function handleResourceSent({ assignments, clientAccessTokens }) { pickerOpen.value = false; completionLinks.value = assignments.map((assignment, index) => ({ title: assignment.sent_snapshot?.title || 'Resource', url: assignmentCompletionUrl(clientAccessTokens[index]) })); await loadClinicalTimeline() }
+async function handleResourceSent({ assignments, clientAccessTokens }) {
+  pickerOpen.value = false
+  deliveryMessage.value = ''
+  completionLinks.value = assignments.map((assignment, index) => ({
+    assignmentId: assignment.id,
+    token: clientAccessTokens[index],
+    title: assignment.sent_snapshot?.title || 'Resource',
+    url: assignmentCompletionUrl(clientAccessTokens[index])
+  }))
+  await loadClinicalTimeline()
+}
 async function copyCompletionLinks() { try { await navigator.clipboard.writeText(completionLinks.value.map(item => `${item.title}: ${item.url}`).join('\n')); copyLabel.value = 'Copied'; setTimeout(() => { copyLabel.value = 'Copy links' }, 1600) } catch { copyLabel.value = 'Select and copy' } }
+
+async function emailCompletionLinks() {
+  if (!props.selectedClient?.email || deliverySending.value || !completionLinks.value.length) return
+  deliverySending.value = true
+  deliveryMessage.value = ''
+  try {
+    const response = await authenticatedFetch('/api/resource-delivery', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        clientId: props.selectedClient.id,
+        items: completionLinks.value.map(item => ({
+          assignmentId: item.assignmentId,
+          token: item.token
+        }))
+      })
+    })
+    const data = await response.json().catch(() => ({}))
+    if (!response.ok) throw new Error(data.error || 'The email could not be sent.')
+    deliveryMessage.value = `Sent securely to ${data.email}.`
+  } catch (cause) {
+    deliveryMessage.value = cause.message || 'The email could not be sent. You can still copy the secure link.'
+  } finally {
+    deliverySending.value = false
+  }
+}
 async function saveNotes() {
   if (!editingSession.value || sessionSaving.value) return
   sessionSaving.value = true

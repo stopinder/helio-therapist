@@ -20,4 +20,20 @@ export function calculatePhq9(answers) {
   if (itemScores.some(score => !Number.isInteger(score) || score < 0 || score > 3)) return null
   return { total: itemScores.reduce((sum, score) => sum + score, 0), itemScores, calculationVersion: 'phq-9-v1' }
 }
-export function phq9Definition() { return { template: 'phq9', instrument: 'PHQ-9', version: 1, items: phq9Items.map((label, index) => ({ id: `q${index + 1}`, label, choices: phq9Choices })) } }
+export function phq9Definition() {
+  return {
+    schema: 'helio-form-v1',
+    template: 'phq9',
+    instrument: 'PHQ-9',
+    version: 1,
+    introduction: 'Over the last two weeks, how often have you been bothered by any of the following problems?',
+    safety: { itemId: 'q9', triggerValues: ['1', '2', '3'] },
+    items: phq9Items.map((label, index) => ({
+      id: `q${index + 1}`,
+      type: 'single_choice',
+      label,
+      choices: phq9Choices,
+      required: true
+    }))
+  }
+}
