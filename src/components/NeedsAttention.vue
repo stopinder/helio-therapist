@@ -15,14 +15,14 @@
         <button class="primary" @click="act(item)">{{ item.action }} <span aria-hidden="true">›</span></button>
       </article>
     </div>
-    <div v-if="reviewing" class="review-backdrop" @click.self="closeReview"><article class="review-dialog" role="dialog" aria-modal="true"><p class="eyebrow">Review client response</p><h2>{{ reviewing.resource_versions?.client_title || 'Outcome measure' }}</h2><p v-if="reviewing.therapist_instruction" class="instruction"><strong>Instruction:</strong> {{ reviewing.therapist_instruction }}</p><template v-if="measureResult"><p class="score"><strong>Calculated total:</strong> {{ measureResult.scores?.total }}</p><p class="quiet">This score organises the submitted answers. It is not a diagnosis or a clinical conclusion.</p></template><ol v-if="response?.structured_answers" class="answers"><li v-for="(question, index) in phq9Items" :key="index"><strong>{{ question }}</strong><span>{{ answerLabel(response.structured_answers[`q${index + 1}`]) }}</span></li></ol><p v-else class="quiet">No structured response is available.</p><p v-if="reviewError" class="notice">{{ reviewError }}</p><footer><button class="refresh" @click="closeReview">Close</button><button class="primary" :disabled="reviewSaving" @click="markReviewed">{{ reviewSaving ? 'Saving…' : 'Mark reviewed' }}</button></footer></article></div>
+    <div v-if="reviewing" class="review-backdrop" @click.self="closeReview"><article class="review-dialog" role="dialog" aria-modal="true"><p class="eyebrow">Review client response</p><h2>{{ reviewing.resource_versions?.client_title || 'Outcome measure' }}</h2><p v-if="reviewing.therapist_instruction" class="instruction"><strong>Instruction:</strong> {{ reviewing.therapist_instruction }}</p><template v-if="measureResult"><p class="score"><strong>Calculated total:</strong> {{ measureResult.scores?.total }}</p><p class="quiet">This score organises the submitted answers. It is not a diagnosis or a clinical conclusion.</p></template><ol v-if="response?.structured_answers" class="answers"><li v-for="item in responseItems" :key="item.id"><strong>{{ item.label }}</strong><span>{{ displayAnswer(item, response.structured_answers[item.id]) }}</span></li></ol><p v-else class="quiet">No structured response is available.</p><p v-if="reviewError" class="notice">{{ reviewError }}</p><footer><button class="refresh" @click="closeReview">Close</button><button class="primary" :disabled="reviewSaving" @click="markReviewed">{{ reviewSaving ? 'Saving…' : 'Mark reviewed' }}</button></footer></article></div>
   </section>
 </template>
 
 <script setup>
 import { computed, onMounted, ref } from 'vue'
 import { authenticatedFetch } from '../lib/api.js'
-import { phq9Choices, phq9Items } from '../lib/phq9.js'
+import { displayAnswer, formItems } from '../lib/resourceForms.js'
 import { listSessions } from '../lib/sessions.js'
 
 const props = defineProps({ clients: { type: Array, default: () => [] } })
@@ -31,7 +31,7 @@ const transcripts = ref([]), sessions = ref([]), assignments = ref([]), loading 
 const reviewing = ref(null), reviewSaving = ref(false), reviewError = ref('')
 const response = computed(() => reviewing.value?.client_resource_responses?.[0] || null)
 const measureResult = computed(() => reviewing.value?.outcome_measure_results?.[0] || null)
-const answerLabel = value => phq9Choices.find(([id]) => id === String(value))?.[1] || 'Not answered'
+const responseItems = computed(() => formItems(reviewing.value?.resource_versions?.form_definition || {}))
 const clientName = id => props.clients.find(client => String(client.id) === String(id))?.name || ''
 function transcriptAction(transcript) {
   if (!transcript.clientId || transcript.status === 'unassigned') return { title: 'Assign a client to a Zoom transcript', detail: 'This source transcript needs a client before it can be linked to a session.', action: 'Assign client' }
