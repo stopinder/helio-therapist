@@ -179,6 +179,13 @@
             <router-link to="/support">Support</router-link>
           </nav>
         </div>
+
+        <div class="footer-built-for">
+          <p class="footer-kicker">BUILT FOR THERAPISTS</p>
+          <p class="footer-built-title">Independent, therapist-built practice software.</p>
+          <p class="footer-built-copy">Designed around the way real clinical work unfolds — not around billing, advertising or engagement.</p>
+          <p class="footer-built-offer">7 days free · £29/month · Cancel anytime</p>
+        </div>
       </div>
       <div class="section-container footer-bottom">
         <span>Helios is operated by Chrysalis Therapy Services.</span>
@@ -337,8 +344,8 @@ const features = [
 .secondary-button { border:1px solid #bac9c1; color:#25453f; }
 
 .landing-footer { background:#eee9df; border-top:1px solid rgba(59,78,70,.1); color:#203a3d; }
-.footer-inner { display:grid; grid-template-columns:minmax(220px,.9fr) minmax(320px,1.35fr) minmax(230px,.85fr); gap:54px; padding-top:42px; padding-bottom:34px; }
-.footer-brand-block,.footer-trust,.footer-links { min-width:0; }
+.footer-inner { display:grid; grid-template-columns:minmax(220px,.95fr) minmax(300px,1.25fr) minmax(210px,.8fr) minmax(240px,1fr); gap:42px; padding-top:42px; padding-bottom:34px; }
+.footer-brand-block,.footer-trust,.footer-links,.footer-built-for { min-width:0; }
 .brand-small { font-size:30px; }
 .footer-credential { margin-top:19px; font-family:Georgia,serif; font-size:19px; color:#284548; }
 .footer-role { margin-top:4px; font-size:11px; line-height:1.55; color:#748078; }
@@ -348,6 +355,9 @@ const features = [
 .footer-links nav { display:grid; gap:8px; }
 .footer-links nav a { width:max-content; max-width:100%; color:#526861; font-size:11px; line-height:1.45; }
 .footer-links nav a:hover { color:#203a3d; }
+.footer-built-title { max-width:24ch; color:#284548; font-family:Georgia,serif; font-size:18px; line-height:1.3; }
+.footer-built-copy { max-width:34ch; margin-top:8px; color:#657069; font-size:11px; line-height:1.68; }
+.footer-built-offer { margin-top:13px; color:#526861; font-size:10px; font-weight:650; letter-spacing:.01em; }
 .footer-bottom { min-height:52px; display:flex; align-items:center; justify-content:space-between; gap:24px; border-top:1px solid rgba(59,78,70,.1); color:#899087; font-size:9px; }
 .copyright { white-space:nowrap; }
 
@@ -370,6 +380,7 @@ const features = [
   .offer-inner { align-items:flex-start; flex-direction:column; gap:24px; }
   .footer-inner { grid-template-columns:1fr 1fr; gap:34px; padding-top:36px; padding-bottom:30px; }
   .footer-brand-block { grid-column:1 / -1; }
+  .footer-trust { grid-column:1 / -1; }
   .footer-bottom { padding-top:14px; padding-bottom:14px; }
 }
 @media (max-width:650px) {
