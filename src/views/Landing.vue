@@ -252,7 +252,19 @@ import {
 } from '@lucide/vue'
 import openingImage from '../assets/helios-opening-light.webp'
 import clientWorkspace from '../assets/client-workspace-section.png'
-import transcriptScreenshotData from '../assets/transcript-inbox-landing.b64?raw'
+import transcriptScreenshot1 from '../assets/transcript-shot-01.b64?raw'
+import transcriptScreenshot2 from '../assets/transcript-shot-02.b64?raw'
+import transcriptScreenshot3 from '../assets/transcript-shot-03.b64?raw'
+import transcriptScreenshot4 from '../assets/transcript-shot-04.b64?raw'
+import transcriptScreenshot5 from '../assets/transcript-shot-05.b64?raw'
+import transcriptScreenshot6 from '../assets/transcript-shot-06.b64?raw'
+import transcriptScreenshot7 from '../assets/transcript-shot-07.b64?raw'
+import transcriptScreenshot8 from '../assets/transcript-shot-08.b64?raw'
+import transcriptScreenshot9a from '../assets/transcript-shot-09a.b64?raw'
+import transcriptScreenshot9b from '../assets/transcript-shot-09b.b64?raw'
+import transcriptScreenshot9c from '../assets/transcript-shot-09c.b64?raw'
+import transcriptScreenshot9d from '../assets/transcript-shot-09d.b64?raw'
+import transcriptScreenshot9e from '../assets/transcript-shot-09e.b64?raw'
 import documentsScreenshot1 from '../assets/documents-landing-1.b64?raw'
 import documentsScreenshot2 from '../assets/documents-landing-2.b64?raw'
 import documentsScreenshot3 from '../assets/documents-landing-3.b64?raw'
@@ -270,7 +282,7 @@ const documentRows = [
 ]
 
 const documentsScreenshot = `data:image/webp;base64,${[documentsScreenshot1, documentsScreenshot2, documentsScreenshot3, documentsScreenshot4, documentsScreenshot5].join('').trim()}`
-const transcriptScreenshot = `data:image/webp;base64,${transcriptScreenshotData.trim()}`
+const transcriptScreenshot = `data:image/webp;base64,${[transcriptScreenshot1, transcriptScreenshot2, transcriptScreenshot3, transcriptScreenshot4, transcriptScreenshot5, transcriptScreenshot6, transcriptScreenshot7, transcriptScreenshot8, transcriptScreenshot9a, transcriptScreenshot9b, transcriptScreenshot9c, transcriptScreenshot9d, transcriptScreenshot9e].join('').trim()}`
 
 const features = [
   { icon: CalendarDays, title: 'Calendar', detail: 'Google Calendar sync', blurb: 'See your week at a glance and keep appointments alongside the rest of your clinical work.' },
