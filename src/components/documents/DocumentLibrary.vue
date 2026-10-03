@@ -73,52 +73,60 @@
         </div>
       </section>
 
-      <div v-if="resourceLibrary==='helios'" class="rounded-[24px] border border-dashed border-[#cdd8cf] bg-[#f8f6ef] px-7 py-10 text-center">
-        <p class="font-serif text-[25px] text-[#284548]">The Helios library is taking shape.</p>
-        <p class="mx-auto mt-2 max-w-xl text-body-sm leading-6 text-[#6f7972]">Verified measures and carefully designed worksheets will live here. The first set will include outcome measures, CBT worksheets and everyday practice resources.</p>
-      </div>
-
-      <div v-else-if="resourceCards.length" class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+      <div v-if="resourceLibrary==='helios' && heliosCards.length" class="grid gap-4 md:grid-cols-2">
         <article
-          v-for="doc in resourceCards"
-          :key="doc.id"
+          v-for="item in heliosCards"
+          :key="item.template"
           class="group rounded-[24px] border border-[#dce3db] bg-[#fbfaf6] p-5 shadow-[0_12px_36px_rgba(54,72,65,0.045)] transition hover:-translate-y-0.5 hover:shadow-[0_18px_42px_rgba(54,72,65,0.07)]"
         >
           <div class="flex items-start justify-between gap-4">
-            <div class="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#e3ebe3] text-lg text-[#4a675e]" aria-hidden="true">{{ resourceIcon(doc) }}</div>
-            <span class="rounded-full bg-[#eee8dc] px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-[#8b6e4e]">{{ typeLabel(doc.documentType) }}</span>
+            <div class="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#e3ebe3] text-lg text-[#4a675e]" aria-hidden="true">{{ item.icon }}</div>
+            <span class="rounded-full bg-[#eee8dc] px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-[#8b6e4e]">{{ item.category }}</span>
           </div>
-
-          <h3 class="mt-5 font-serif text-[25px] leading-tight text-[#2c474a]">{{ doc.title }}</h3>
-          <p class="mt-2 min-h-[44px] text-[12px] leading-5 text-[#6d7771]">{{ resourceDescription(doc) }}</p>
-
+          <h3 class="mt-5 font-serif text-[27px] leading-tight text-[#2c474a]">{{ item.title }}</h3>
+          <p class="mt-2 text-[12px] font-semibold text-[#62746b]">{{ item.detail }}</p>
+          <p class="mt-2 min-h-[44px] text-[12px] leading-5 text-[#6d7771]">{{ item.description }}</p>
           <div class="mt-5 flex items-center justify-between border-t border-[#e5e8e2] pt-4">
-            <span class="text-[10px] text-[#929b95]">Updated {{ formatDate(doc.updatedAt) || 'recently' }}</span>
-            <div class="flex gap-2">
-              <button
-                v-if="doc.status==='draft'"
-                type="button"
-                class="rounded-full border border-[#ccd7ce] bg-white px-3.5 py-1.5 text-[11px] font-semibold text-[#476159] transition hover:bg-[#eef3ee]"
-                @click="$emit('edit',doc)"
-              >
-                Edit
-              </button>
-              <button
-                v-if="doc.status==='completed'"
-                type="button"
-                class="rounded-full border border-[#ccd7ce] bg-white px-3.5 py-1.5 text-[11px] font-semibold text-[#476159] transition hover:bg-[#eef3ee]"
-                @click="$emit('download',doc)"
-              >
-                Open
-              </button>
-            </div>
+            <span class="text-[10px] uppercase tracking-[.08em] text-[#929b95]">Helios resource</span>
+            <button
+              type="button"
+              class="rounded-full border px-4 py-2 text-[11px] font-semibold transition"
+              :class="hasTemplate(item.template) ? 'border-[#d6ddd5] bg-[#eef2ec] text-[#738078]' : 'border-[#31584f] bg-[#31584f] text-white hover:bg-[#274b44]'"
+              :disabled="hasTemplate(item.template) || resourceBusy===item.template"
+              @click="emit('add-resource-template', item.template)"
+            >
+              {{ hasTemplate(item.template) ? 'In my resources' : resourceBusy===item.template ? 'Adding…' : 'Add to my resources' }}
+            </button>
+          </div>
+        </article>
+      </div>
+
+      <div v-else-if="resourceLibrary==='mine' && resourcesLoading" class="rounded-[24px] border border-[#dce3db] bg-[#fbfaf6] px-7 py-10 text-center">
+        <p class="font-serif text-[24px] text-[#284548]">Loading your resources…</p>
+      </div>
+
+      <div v-else-if="resourceLibrary==='mine' && myResourceCards.length" class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <article
+          v-for="item in myResourceCards"
+          :key="item.id"
+          class="group rounded-[24px] border border-[#dce3db] bg-[#fbfaf6] p-5 shadow-[0_12px_36px_rgba(54,72,65,0.045)] transition hover:-translate-y-0.5 hover:shadow-[0_18px_42px_rgba(54,72,65,0.07)]"
+        >
+          <div class="flex items-start justify-between gap-4">
+            <div class="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#e3ebe3] text-lg text-[#4a675e]" aria-hidden="true">{{ resourceIcon(item) }}</div>
+            <span class="rounded-full bg-[#eee8dc] px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-[#8b6e4e]">{{ typeLabel(item.category || item.resource_kind) }}</span>
+          </div>
+          <h3 class="mt-5 font-serif text-[25px] leading-tight text-[#2c474a]">{{ item.title }}</h3>
+          <p class="mt-2 min-h-[44px] text-[12px] leading-5 text-[#6d7771]">{{ item.subtitle || resourceDescription(item) }}</p>
+          <div class="mt-5 flex items-center justify-between border-t border-[#e5e8e2] pt-4">
+            <span class="text-[10px] text-[#929b95]">{{ completionLabel(item.completionMode) }}</span>
+            <span class="rounded-full bg-[#e7eee8] px-3 py-1.5 text-[10px] font-semibold text-[#4d675f]">Ready to send</span>
           </div>
         </article>
       </div>
 
       <div v-else class="rounded-[24px] border border-[#dce3db] bg-[#fbfaf6] px-7 py-10 text-center">
         <p class="font-serif text-[24px] text-[#284548]">No matching resources</p>
-        <p class="mt-2 text-body-sm text-[#727c75]">{{ query ? 'Try a different search or category.' : 'Your own worksheets and reusable practice materials will appear here.' }}</p>
+        <p class="mt-2 text-body-sm text-[#727c75]">{{ query ? 'Try a different search or category.' : resourceLibrary==='mine' ? 'Add a Helios resource and it will appear here, ready to send to clients.' : 'More Helios resources will appear here as they are added.' }}</p>
       </div>
     </template>
 
@@ -193,13 +201,18 @@
 <script setup>
 import { computed, defineComponent, h, ref } from 'vue'
 
-const props = defineProps({ documents: { type: Array, default: () => [] } })
-defineEmits(['edit', 'download'])
+const props = defineProps({
+  documents: { type: Array, default: () => [] },
+  resources: { type: Array, default: () => [] },
+  resourcesLoading: { type: Boolean, default: false },
+  resourceBusy: { type: String, default: '' }
+})
+const emit = defineEmits(['edit', 'download', 'add-resource-template'])
 
 const view = ref('documents')
 const query = ref('')
 const filter = ref('practice')
-const resourceLibrary = ref('mine')
+const resourceLibrary = ref('helios')
 const resourceCategory = ref('All')
 const open = ref(new Set(['scope:practice']))
 
@@ -219,18 +232,50 @@ const typeLabel = value => String(value || 'other')
 
 const formatDate = value => value ? new Date(value).toLocaleDateString('en-GB') : ''
 
-const practiceResources = computed(() => props.documents.filter(doc => doc.scope === 'prospect'))
+const builtInResources = [
+  {
+    template: 'phq9',
+    title: 'PHQ-9',
+    category: 'Outcome measures',
+    detail: '9 questions · about 2 minutes',
+    description: 'A brief questionnaire about mood over the last two weeks.',
+    icon: '◌'
+  },
+  {
+    template: 'thought_record',
+    title: 'CBT thought record',
+    category: 'CBT worksheets',
+    detail: 'Structured worksheet · client completes in Helios',
+    description: 'Explore a situation, emotions, automatic thoughts and a more balanced perspective.',
+    icon: '✎'
+  }
+]
 
 const resourceCategories = computed(() => {
-  const types = [...new Set(practiceResources.value.map(doc => typeLabel(doc.documentType)).filter(Boolean))]
-  return ['All', ...types].slice(0, 7)
+  const source = resourceLibrary.value === 'helios'
+    ? builtInResources.map(item => item.category)
+    : props.resources.map(item => typeLabel(item.category || item.resource_kind))
+  return ['All', ...new Set(source.filter(Boolean))].slice(0, 7)
 })
 
-const resourceCards = computed(() => {
+const heliosCards = computed(() => {
   const q = query.value.trim().toLowerCase()
-  return practiceResources.value
-    .filter(doc => resourceCategory.value === 'All' || typeLabel(doc.documentType) === resourceCategory.value)
-    .filter(doc => !q || matchesQuery(doc, q))
+  return builtInResources
+    .filter(item => resourceCategory.value === 'All' || item.category === resourceCategory.value)
+    .filter(item => !q || [item.title, item.category, item.description].some(value => value.toLowerCase().includes(q)))
+})
+
+const myResourceCards = computed(() => {
+  const q = query.value.trim().toLowerCase()
+  return props.resources
+    .filter(item => resourceCategory.value === 'All' || typeLabel(item.category || item.resource_kind) === resourceCategory.value)
+    .filter(item => !q || [item.title, item.subtitle, item.category, item.resource_kind].some(value => String(value || '').toLowerCase().includes(q)))
+})
+
+const hasTemplate = template => props.resources.some(item => {
+  if (template === 'phq9') return item.title === 'PHQ-9'
+  if (template === 'thought_record') return item.title === 'CBT thought record'
+  return false
 })
 
 const visibleDocuments = computed(() => {
@@ -267,7 +312,7 @@ function groupTypes(documents, prefix) {
 }
 
 function resourceDescription(doc) {
-  const type = String(doc.documentType || '').toLowerCase()
+  const type = String(doc.documentType || doc.resource_kind || doc.category || '').toLowerCase()
   if (type.includes('question') || type.includes('measure') || type.includes('assessment')) return 'A reusable client-facing measure or questionnaire kept ready for the work.'
   if (type.includes('worksheet') || type.includes('exercise')) return 'A practical worksheet you can adapt and return to with clients.'
   if (type.includes('psycho')) return 'Clear client-facing information to support understanding between sessions.'
@@ -275,11 +320,20 @@ function resourceDescription(doc) {
 }
 
 function resourceIcon(doc) {
-  const type = String(doc.documentType || '').toLowerCase()
+  const type = String(doc.documentType || doc.resource_kind || doc.category || '').toLowerCase()
   if (type.includes('question') || type.includes('measure') || type.includes('assessment')) return '◌'
   if (type.includes('worksheet') || type.includes('exercise')) return '✎'
   if (type.includes('psycho')) return '◐'
   return '✦'
+}
+
+function completionLabel(value) {
+  return ({
+    complete_in_helio: 'Client completes in Helios',
+    read_only: 'Read-only resource',
+    upload: 'Client uploads a completed copy',
+    complete_or_upload: 'Complete in Helios or upload'
+  })[value] || 'Reusable resource'
 }
 
 function isOpen(key) {
