@@ -1,7 +1,7 @@
 import crypto from 'crypto'
 import { getSupabaseClient } from './_lib/supabase.js'
 import { calculatePhq9, isPhq9Definition } from '../src/lib/phq9.js'
-import { validateStructuredAnswers } from '../src/lib/resourceForms.js'
+import { formItems, validateStructuredAnswers } from '../src/lib/resourceForms.js'
 
 const hash = token => crypto.createHash('sha256').update(String(token || '')).digest('hex')
 const tokenFrom = value => String(value || '').trim()
@@ -41,6 +41,7 @@ export default async function handler(req, res) {
     }
 
     const definition = assignment.resource_versions?.form_definition || {}
+    if (!formItems(definition).length) return res.status(400).json({ error: 'This item does not yet have a client-completable form.' })
     const validation = validateStructuredAnswers(definition, req.body?.answers)
     if (!validation.valid) return res.status(400).json({ error: 'Please complete the required questions before submitting.', fieldErrors: validation.errors })
 
