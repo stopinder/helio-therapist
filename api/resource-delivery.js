@@ -5,6 +5,7 @@ const RESEND_API = 'https://api.resend.com'
 const DEFAULT_FROM = 'Helios <hello@helio.works>'
 const clean = (value, maximum = 1600) => String(value || '').trim().slice(0, maximum)
 const tokenHash = token => crypto.createHash('sha256').update(String(token || '')).digest('hex')
+const escapeHtml = value => String(value || '').replace(/[&<>"']/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[character])
 
 function baseUrl(req) {
   const forwarded = clean(req.headers['x-forwarded-host'], 200)
@@ -90,7 +91,7 @@ export default async function handler(req, res) {
       url: `${origin}/complete?token=${encodeURIComponent(item.token)}`
     }))
 
-    const linkHtml = links.map(item => `<p style="margin:0 0 14px"><strong>${item.title}</strong><br><a href="${item.url}" style="color:#31584f">${item.url}</a></p>`).join('')
+    const linkHtml = links.map(item => `<p style="margin:0 0 14px"><strong>${escapeHtml(item.title)}</strong><br><a href="${escapeHtml(item.url)}" style="color:#31584f">${escapeHtml(item.url)}</a></p>`).join('')
     const linkText = links.map(item => `${item.title}: ${item.url}`).join('\n\n')
     const from = clean(process.env.RESEND_FROM_EMAIL || DEFAULT_FROM, 320)
 
@@ -98,7 +99,7 @@ export default async function handler(req, res) {
       from,
       to: [email],
       subject: `${therapist} has sent you ${links.length === 1 ? 'a secure practice resource' : 'secure practice resources'}`,
-      html: `<div style="font-family:Arial,sans-serif;color:#284548;line-height:1.6;max-width:620px;margin:auto"><p>Hello,</p><p>${therapist} has sent you ${links.length === 1 ? 'a resource' : 'some resources'} to complete or review securely through ${practice}.</p>${linkHtml}<p>Each link is private to this request and expires automatically. If you were not expecting this email, contact your therapist directly.</p></div>`,
+      html: `<div style="font-family:Arial,sans-serif;color:#284548;line-height:1.6;max-width:620px;margin:auto"><p>Hello,</p><p>${escapeHtml(therapist)} has sent you ${links.length === 1 ? 'a resource' : 'some resources'} to complete or review securely through ${escapeHtml(practice)}.</p>${linkHtml}<p>Each link is private to this request and expires automatically. If you were not expecting this email, contact your therapist directly.</p></div>`,
       text: `Hello,\n\n${therapist} has sent you ${links.length === 1 ? 'a resource' : 'some resources'} to complete or review securely through ${practice}.\n\n${linkText}\n\nEach link is private to this request and expires automatically. If you were not expecting this email, contact your therapist directly.`
     })
 
