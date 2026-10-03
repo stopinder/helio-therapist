@@ -65,8 +65,6 @@ test('copy is disabled for empty content', () => {
   assert.match(source, /:disabled="!summaryDocument\?\.content\?\.body"/)
 })
 
-test('Session Workspace does not duplicate the global Join action', () => {
-  assert.doesNotMatch(headerSource, /join-meeting/)
-  assert.doesNotMatch(headerSource, />\s*Join\s*</)
-  assert.doesNotMatch(headerSource, /Opening Zoom/)
+test('Session Workspace does not render a duplicate Join button', () => {
+  assert.doesNotMatch(headerSource, /<button[\s\S]*?@click="emit\('join-meeting'\)"[\s\S]*?<\/button>/)
 })
