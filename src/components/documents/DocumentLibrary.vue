@@ -87,7 +87,11 @@
         <article
           v-for="item in heliosCards"
           :key="item.template"
-          class="group rounded-[24px] border border-[#dce3db] bg-[#fbfaf6] p-5 shadow-[0_12px_36px_rgba(54,72,65,0.045)] transition hover:-translate-y-0.5 hover:shadow-[0_18px_42px_rgba(54,72,65,0.07)]"
+          class="group cursor-pointer rounded-[24px] border border-[#dce3db] bg-[#fbfaf6] p-5 shadow-[0_12px_36px_rgba(54,72,65,0.045)] transition hover:-translate-y-0.5 hover:shadow-[0_18px_42px_rgba(54,72,65,0.07)]"
+          role="button"
+          tabindex="0"
+          @click="openTemplatePreview(item)"
+          @keydown.enter.prevent="openTemplatePreview(item)"
         >
           <div class="flex items-start justify-between gap-4">
             <div class="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#e3ebe3] text-lg text-[#4a675e]" aria-hidden="true">{{ item.icon }}</div>
@@ -103,7 +107,7 @@
               class="rounded-full border px-4 py-2 text-[11px] font-semibold transition"
               :class="hasTemplate(item.template) ? 'border-[#d6ddd5] bg-[#eef2ec] text-[#738078]' : 'border-[#31584f] bg-[#31584f] text-white hover:bg-[#274b44]'"
               :disabled="hasTemplate(item.template) || resourceBusy===item.template"
-              @click="emit('add-resource-template', item.template)"
+              @click.stop="emit('add-resource-template', item.template)"
             >
               {{ hasTemplate(item.template) ? 'In my resources' : resourceBusy===item.template ? 'Adding…' : 'Add to my resources' }}
             </button>
@@ -215,11 +219,47 @@
         <DocumentRow v-for="doc in clientSearchResults" :key="doc.id" :doc="doc" @edit="$emit('edit',$event)" @download="$emit('download',$event)" />
       </section>
     </template>
+      <teleport to="body">
+        <div v-if="previewTemplate" class="fixed inset-0 z-[110] flex items-center justify-center bg-black/35 p-4" @mousedown.self="closeTemplatePreview">
+          <section class="flex max-h-[92vh] w-full max-w-3xl flex-col overflow-hidden rounded-[26px] border border-[#d9e1d9] bg-[#fffdf8] shadow-[0_30px_90px_rgba(31,49,41,0.18)]" role="dialog" aria-modal="true">
+            <header class="flex items-start justify-between gap-4 border-b border-[#e2e7e1] px-6 py-5">
+              <div>
+                <p class="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#9a7358]">Resource preview</p>
+                <h2 class="mt-1 font-serif text-[32px] leading-tight text-[#284548]">{{ previewTemplate.title }}</h2>
+                <p class="mt-2 max-w-2xl text-[13px] leading-5 text-[#6d7871]">{{ previewTemplate.description }}</p>
+              </div>
+              <button type="button" class="text-2xl text-[#7a857f]" aria-label="Close preview" @click="closeTemplatePreview">×</button>
+            </header>
+            <div class="min-h-0 overflow-auto bg-[#eef1eb] p-5 sm:p-6">
+              <div class="rounded-[20px] border border-[#dce3db] bg-[#fffdf8] p-4 sm:p-5">
+                <ResourceFormRenderer v-model="previewAnswers" :definition="previewDefinition(previewTemplate.template)" />
+              </div>
+            </div>
+            <footer class="flex flex-wrap items-center justify-between gap-3 border-t border-[#e2e7e1] bg-[#fffdf8] px-6 py-4">
+              <span class="text-[11px] text-[#7c8781]">Preview only — nothing is saved until you add it to your resources.</span>
+              <div class="flex gap-2">
+                <button type="button" class="rounded-full border border-[#ccd7ce] bg-white px-4 py-2 text-[11px] font-semibold text-[#52665f]" @click="closeTemplatePreview">Close</button>
+                <button
+                  type="button"
+                  class="rounded-full border border-[#31584f] bg-[#31584f] px-4 py-2 text-[11px] font-semibold text-white disabled:opacity-50"
+                  :disabled="hasTemplate(previewTemplate.template) || resourceBusy===previewTemplate.template"
+                  @click="addPreviewedTemplate"
+                >
+                  {{ hasTemplate(previewTemplate.template) ? 'Already in my resources' : resourceBusy===previewTemplate.template ? 'Adding…' : 'Add to my resources' }}
+                </button>
+              </div>
+            </footer>
+          </section>
+        </div>
+      </teleport>
   </section>
 </template>
 
 <script setup>
 import { computed, defineComponent, h, ref } from 'vue'
+import ResourceFormRenderer from '../resources/ResourceFormRenderer.vue'
+import { phq9Definition } from '../../lib/phq9.js'
+import { thoughtRecordDefinition } from '../../lib/resourceTemplates.js'
 
 const props = defineProps({
   documents: { type: Array, default: () => [] },
@@ -234,6 +274,8 @@ const query = ref('')
 const filter = ref('practice')
 const resourceLibrary = ref('helios')
 const resourceCategory = ref('All')
+const previewTemplate = ref(null)
+const previewAnswers = ref({})
 const open = ref(new Set(['scope:practice']))
 
 const documentFilters = [
@@ -345,6 +387,28 @@ function resourceIcon(doc) {
   if (type.includes('worksheet') || type.includes('exercise')) return '✎'
   if (type.includes('psycho')) return '◐'
   return '✦'
+}
+
+function previewDefinition(template) {
+  if (template === 'phq9') return phq9Definition()
+  if (template === 'thought_record') return thoughtRecordDefinition()
+  return { schema: 'helio-form-v1', items: [] }
+}
+
+function openTemplatePreview(item) {
+  previewAnswers.value = {}
+  previewTemplate.value = item
+}
+
+function closeTemplatePreview() {
+  previewTemplate.value = null
+  previewAnswers.value = {}
+}
+
+function addPreviewedTemplate() {
+  if (!previewTemplate.value) return
+  emit('add-resource-template', previewTemplate.value.template)
+  closeTemplatePreview()
 }
 
 function completionLabel(value) {
