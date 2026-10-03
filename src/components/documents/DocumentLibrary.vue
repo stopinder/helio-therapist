@@ -1,10 +1,10 @@
 <template>
   <section class="space-y-6" data-testid="document-library">
-    <div class="inline-flex rounded-full border border-border bg-[#eef1eb] p-1 shadow-sm" aria-label="Library view">
+    <div class="inline-flex rounded-full border border-[#d9e1da] bg-[#eef2ed] p-1" aria-label="Library view">
       <button
         type="button"
         class="rounded-full px-5 py-2 text-body-sm transition"
-        :class="view==='documents' ? 'bg-white text-ink shadow-sm font-semibold' : 'text-ink-muted hover:text-ink'"
+        :class="view==='documents' ? 'bg-[#fffdf8] text-[#284548] shadow-[0_1px_2px_rgba(40,69,72,0.06)] font-semibold' : 'text-ink-muted hover:text-ink'"
         @click="view='documents'"
       >
         Documents
@@ -12,7 +12,7 @@
       <button
         type="button"
         class="rounded-full px-5 py-2 text-body-sm transition"
-        :class="view==='resources' ? 'bg-white text-ink shadow-sm font-semibold' : 'text-ink-muted hover:text-ink'"
+        :class="view==='resources' ? 'bg-[#fffdf8] text-[#284548] shadow-[0_1px_2px_rgba(40,69,72,0.06)] font-semibold' : 'text-ink-muted hover:text-ink'"
         @click="view='resources'"
       >
         Practice Resources
@@ -20,12 +20,12 @@
     </div>
 
     <template v-if="view==='resources'">
-      <section class="overflow-hidden rounded-[28px] border border-[#dce4db] bg-[#f4f1e8] shadow-[0_18px_55px_rgba(53,72,65,0.06)]">
+      <section class="overflow-hidden rounded-[26px] border border-[#dde4dc] bg-[#f5f2e9]">
         <div class="px-6 py-7 sm:px-8 sm:py-9">
           <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#8c6b48]">Practice resources</p>
-          <div class="mt-3 grid gap-5 lg:grid-cols-[minmax(0,1fr)_340px] lg:items-end">
+          <div class="mt-3 grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-end">
             <div>
-              <h2 class="max-w-3xl font-serif text-[34px] leading-[1.05] text-[#284548] sm:text-[42px]">Useful material for the work you do with clients.</h2>
+              <h2 class="max-w-3xl font-serif text-[32px] leading-[1.08] text-[#284548] sm:text-[39px]">Useful material for the work you do with clients.</h2>
               <p class="mt-3 max-w-2xl text-body-sm leading-6 text-[#69736d]">Keep worksheets, measures and psychoeducation close at hand. Build a small library that feels like your practice, not a file store.</p>
             </div>
             <label class="relative block">
@@ -42,7 +42,7 @@
           </div>
         </div>
 
-        <div class="border-t border-[#dde4dc] bg-white/35 px-6 py-5 sm:px-8">
+        <div class="border-t border-[#dde4dc] bg-[#faf8f2]/80 px-6 py-4 sm:px-8">
           <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div class="flex flex-wrap items-center gap-2">
               <div class="inline-flex w-fit rounded-full bg-[#e6ebe4] p-1">
@@ -60,7 +60,7 @@
               <button
                 v-if="resourceLibrary==='mine'"
                 type="button"
-                class="rounded-full border border-[#31584f] bg-[#31584f] px-4 py-2 text-[11px] font-semibold text-white transition hover:bg-[#274b44]"
+                class="rounded-full border border-[#b9c9bd] bg-[#eef3ee] px-4 py-2 text-[11px] font-semibold text-[#3d5d54] transition hover:border-[#9fb3a4] hover:bg-[#e6eee7]"
                 @click="emit('create-resource')"
               >
                 + Create resource
@@ -83,24 +83,32 @@
         </div>
       </section>
 
-      <div v-if="resourceLibrary==='helios' && heliosCards.length" class="grid gap-4 md:grid-cols-2">
+      <div class="flex items-end justify-between gap-4 px-1">
+        <div>
+          <p class="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#9a7358]">{{ resourceLibrary==='helios' ? 'Curated by Helios' : 'Your practice library' }}</p>
+          <p class="mt-1 text-[12px] text-[#7a847e]">{{ resourceLibrary==='helios' ? 'Preview a resource, then add it to your own library.' : 'Resources you can edit, reuse and send from client work.' }}</p>
+        </div>
+        <span class="text-[11px] text-[#9aa29d]">{{ resourceLibrary==='helios' ? heliosCards.length : myResourceCards.length }} {{ (resourceLibrary==='helios' ? heliosCards.length : myResourceCards.length) === 1 ? 'resource' : 'resources' }}</span>
+      </div>
+
+      <div v-if="resourceLibrary==='helios' && heliosCards.length" class="grid gap-5 md:grid-cols-2">
         <article
           v-for="item in heliosCards"
           :key="item.template"
-          class="group cursor-pointer rounded-[24px] border border-[#dce3db] bg-[#fbfaf6] p-5 shadow-[0_12px_36px_rgba(54,72,65,0.045)] transition hover:-translate-y-0.5 hover:shadow-[0_18px_42px_rgba(54,72,65,0.07)]"
+          class="group cursor-pointer rounded-[22px] border border-[#dbe2da] bg-[#fffdf8] p-5 transition hover:border-[#c7d4c9] hover:shadow-[0_12px_28px_rgba(54,72,65,0.055)]"
           role="button"
           tabindex="0"
           @click="openTemplatePreview(item)"
           @keydown.enter.prevent="openTemplatePreview(item)"
         >
           <div class="flex items-start justify-between gap-4">
-            <div class="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#e3ebe3] text-lg text-[#4a675e]" aria-hidden="true">{{ item.icon }}</div>
-            <span class="rounded-full bg-[#eee8dc] px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-[#8b6e4e]">{{ item.category }}</span>
+            <div class="flex h-10 w-10 items-center justify-center rounded-[14px] bg-[#e8eee7] text-[17px] text-[#4a675e]" aria-hidden="true">{{ item.icon }}</div>
+            <span class="rounded-full bg-[#f0eadf] px-3 py-1 text-[9px] font-semibold uppercase tracking-[0.1em] text-[#8a6d4e]">{{ item.category }}</span>
           </div>
-          <h3 class="mt-5 font-serif text-[27px] leading-tight text-[#2c474a]">{{ item.title }}</h3>
+          <h3 class="mt-4 font-serif text-[26px] leading-tight text-[#2c474a]">{{ item.title }}</h3>
           <p class="mt-2 text-[12px] font-semibold text-[#62746b]">{{ item.detail }}</p>
           <p class="mt-2 min-h-[44px] text-[12px] leading-5 text-[#6d7771]">{{ item.description }}</p>
-          <div class="mt-5 flex items-center justify-between border-t border-[#e5e8e2] pt-4">
+          <div class="mt-5 flex items-center justify-between gap-3 border-t border-[#e8ebe6] pt-4">
             <span class="text-[10px] uppercase tracking-[.08em] text-[#929b95]">Helios resource</span>
             <button
               type="button"
@@ -123,13 +131,13 @@
         <article
           v-for="item in myResourceCards"
           :key="item.id"
-          class="group rounded-[24px] border border-[#dce3db] bg-[#fbfaf6] p-5 shadow-[0_12px_36px_rgba(54,72,65,0.045)] transition hover:-translate-y-0.5 hover:shadow-[0_18px_42px_rgba(54,72,65,0.07)]"
+          class="group rounded-[22px] border border-[#dbe2da] bg-[#fffdf8] p-5 transition hover:border-[#c7d4c9] hover:shadow-[0_12px_28px_rgba(54,72,65,0.055)]"
         >
           <div class="flex items-start justify-between gap-4">
             <div class="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#e3ebe3] text-lg text-[#4a675e]" aria-hidden="true">{{ resourceIcon(item) }}</div>
-            <span class="rounded-full bg-[#eee8dc] px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-[#8b6e4e]">{{ typeLabel(item.category || item.resource_kind) }}</span>
+            <span class="rounded-full bg-[#f0eadf] px-3 py-1 text-[9px] font-semibold uppercase tracking-[0.1em] text-[#8a6d4e]">{{ typeLabel(item.category || item.resource_kind) }}</span>
           </div>
-          <h3 class="mt-5 font-serif text-[25px] leading-tight text-[#2c474a]">{{ item.title }}</h3>
+          <h3 class="mt-4 font-serif text-[24px] leading-tight text-[#2c474a]">{{ item.title }}</h3>
           <p class="mt-2 min-h-[44px] text-[12px] leading-5 text-[#6d7771]">{{ item.subtitle || resourceDescription(item) }}</p>
           <div class="mt-5 flex items-center justify-between gap-3 border-t border-[#e5e8e2] pt-4">
             <span class="text-[10px] text-[#929b95]">{{ completionLabel(item.completionMode) }}</span>
@@ -221,7 +229,7 @@
     </template>
       <teleport to="body">
         <div v-if="previewTemplate" class="fixed inset-0 z-[110] flex items-center justify-center bg-black/35 p-4" @mousedown.self="closeTemplatePreview">
-          <section class="flex max-h-[92vh] w-full max-w-3xl flex-col overflow-hidden rounded-[26px] border border-[#d9e1d9] bg-[#fffdf8] shadow-[0_30px_90px_rgba(31,49,41,0.18)]" role="dialog" aria-modal="true">
+          <section class="flex max-h-[92vh] w-full max-w-3xl flex-col overflow-hidden rounded-[24px] border border-[#d9e1d9] bg-[#fffdf8] shadow-[0_24px_70px_rgba(31,49,41,0.15)]" role="dialog" aria-modal="true">
             <header class="flex items-start justify-between gap-4 border-b border-[#e2e7e1] px-6 py-5">
               <div>
                 <p class="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#9a7358]">Resource preview</p>
@@ -230,8 +238,8 @@
               </div>
               <button type="button" class="text-2xl text-[#7a857f]" aria-label="Close preview" @click="closeTemplatePreview">×</button>
             </header>
-            <div class="min-h-0 overflow-auto bg-[#eef1eb] p-5 sm:p-6">
-              <div class="rounded-[20px] border border-[#dce3db] bg-[#fffdf8] p-4 sm:p-5">
+            <div class="min-h-0 overflow-auto bg-[#f0f2ed] p-5 sm:p-6">
+              <div class="rounded-[18px] border border-[#dce3db] bg-[#fffdf8] p-4 sm:p-5">
                 <ResourceFormRenderer v-model="previewAnswers" :definition="previewDefinition(previewTemplate.template)" />
               </div>
             </div>
