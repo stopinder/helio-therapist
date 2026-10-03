@@ -44,7 +44,8 @@
 
         <div class="border-t border-[#dde4dc] bg-white/35 px-6 py-5 sm:px-8">
           <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-            <div class="inline-flex w-fit rounded-full bg-[#e6ebe4] p-1">
+            <div class="flex flex-wrap items-center gap-2">
+              <div class="inline-flex w-fit rounded-full bg-[#e6ebe4] p-1">
               <button
                 v-for="item in resourceLibraries"
                 :key="item.value"
@@ -54,6 +55,15 @@
                 @click="resourceLibrary=item.value"
               >
                 {{ item.label }}
+              </button>
+              </div>
+              <button
+                v-if="resourceLibrary==='mine'"
+                type="button"
+                class="rounded-full border border-[#31584f] bg-[#31584f] px-4 py-2 text-[11px] font-semibold text-white transition hover:bg-[#274b44]"
+                @click="emit('create-resource')"
+              >
+                + Create resource
               </button>
             </div>
 
@@ -117,9 +127,19 @@
           </div>
           <h3 class="mt-5 font-serif text-[25px] leading-tight text-[#2c474a]">{{ item.title }}</h3>
           <p class="mt-2 min-h-[44px] text-[12px] leading-5 text-[#6d7771]">{{ item.subtitle || resourceDescription(item) }}</p>
-          <div class="mt-5 flex items-center justify-between border-t border-[#e5e8e2] pt-4">
+          <div class="mt-5 flex items-center justify-between gap-3 border-t border-[#e5e8e2] pt-4">
             <span class="text-[10px] text-[#929b95]">{{ completionLabel(item.completionMode) }}</span>
-            <span class="rounded-full bg-[#e7eee8] px-3 py-1.5 text-[10px] font-semibold text-[#4d675f]">Ready to send</span>
+            <div class="flex items-center gap-2">
+              <span class="rounded-full bg-[#e7eee8] px-3 py-1.5 text-[10px] font-semibold text-[#4d675f]">Ready to send</span>
+              <button
+                v-if="item.resource_kind!=='outcome_measure'"
+                type="button"
+                class="rounded-full border border-[#ccd7ce] bg-white px-3 py-1.5 text-[10px] font-semibold text-[#4d675f] hover:bg-[#eef3ee]"
+                @click="emit('edit-resource', item)"
+              >
+                Edit
+              </button>
+            </div>
           </div>
         </article>
       </div>
@@ -207,7 +227,7 @@ const props = defineProps({
   resourcesLoading: { type: Boolean, default: false },
   resourceBusy: { type: String, default: '' }
 })
-const emit = defineEmits(['edit', 'download', 'add-resource-template'])
+const emit = defineEmits(['edit', 'download', 'add-resource-template', 'edit-resource', 'create-resource'])
 
 const view = ref('documents')
 const query = ref('')
