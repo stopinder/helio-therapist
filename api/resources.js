@@ -1,5 +1,6 @@
 import { requireAuthenticatedUser } from './_lib/supabase.js'
 import { phq9Definition } from '../src/lib/phq9.js'
+import { resourceTemplates } from '../src/lib/resourceTemplates.js'
 
 const KINDS = new Set(['worksheet', 'thought_record', 'behavioural_experiment', 'sleep_diary', 'psychoeducation', 'diagnostic_tool', 'outcome_measure', 'therapist_resource', 'document'])
 const MODES = new Set(['complete_in_helio', 'upload', 'complete_or_upload', 'read_only'])
@@ -35,12 +36,22 @@ export default async function handler(req, res) {
     }
     if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
     const isPhq9 = req.body?.template === 'phq9'
-    const title = isPhq9 ? 'PHQ-9' : clean(req.body?.title)
-    const kind = isPhq9 ? 'outcome_measure' : clean(req.body?.resourceKind, 40)
-    const completionMode = isPhq9 ? 'complete_in_helio' : clean(req.body?.completionMode, 30)
-    const audience = isPhq9 ? 'client' : clean(req.body?.audience, 20) || 'client'
+    const builtInTemplate = isPhq9 ? {
+      title: 'PHQ-9',
+      resourceKind: 'outcome_measure',
+      completionMode: 'complete_in_helio',
+      audience: 'client',
+      description: 'A brief questionnaire about mood over the last two weeks.',
+      formDefinition: phq9Definition(),
+      scoringDefinition: { calculation: 'sum', calculationVersion: 'phq-9-v1' }
+    } : resourceTemplates[req.body?.template]
+
+    const title = builtInTemplate?.title || clean(req.body?.title)
+    const kind = builtInTemplate?.resourceKind || clean(req.body?.resourceKind, 40)
+    const completionMode = builtInTemplate?.completionMode || clean(req.body?.completionMode, 30)
+    const audience = builtInTemplate?.audience || clean(req.body?.audience, 20) || 'client'
     if (!title || !KINDS.has(kind) || !MODES.has(completionMode) || !AUDIENCES.has(audience)) return res.status(400).json({ error: 'A title, valid resource type, audience, and completion method are required.' })
-    const description = isPhq9 ? 'A brief questionnaire about mood over the last two weeks.' : clean(req.body?.description, 1200)
+    const description = builtInTemplate?.description || clean(req.body?.description, 1200)
     const { data: created, error } = await supabase.rpc('create_resource_with_version', {
       p_user_id: user.id,
       p_title: title,
@@ -50,8 +61,8 @@ export default async function handler(req, res) {
       p_audience: audience,
       p_description: description,
       p_completion_mode: completionMode,
-      p_form_definition: isPhq9 ? phq9Definition() : {},
-      p_scoring_definition: isPhq9 ? { calculation: 'sum', calculationVersion: 'phq-9-v1' } : {},
+      p_form_definition: builtInTemplate?.formDefinition || {},
+      p_scoring_definition: builtInTemplate?.scoringDefinition || {},
       p_published_at: new Date().toISOString()
     })
     if (error) throw error
