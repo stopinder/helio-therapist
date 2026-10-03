@@ -26,9 +26,18 @@
       @edit="edit"
       @download="download"
       @add-resource-template="addResourceTemplate"
+      @edit-resource="openResourceEditor"
+      @create-resource="createResource"
     />
     <div v-if="error" class="rounded-control bg-state-danger/10 text-state-danger p-4">{{ error }}</div>
   </div>
+
+  <ResourceEditor
+    v-if="resourceEditorOpen"
+    :resource="editingResource"
+    @close="closeResourceEditor"
+    @saved="resourceSaved"
+  />
 
   <teleport to="body">
     <div v-if="composerOpen" class="fixed inset-0 z-[70] bg-black/45 flex" data-testid="professional-document-composer">
@@ -89,9 +98,10 @@ import { createUnscopedDocumentDraft, downloadDocument, listDocuments, saveDocum
 import { DOCUMENT_TEMPLATES, getDocumentTemplate, templateBody } from '../lib/documentTemplates.js'
 import PracticeIdentityEditor from '../components/documents/PracticeIdentityEditor.vue'
 import DocumentLibrary from '../components/documents/DocumentLibrary.vue'
+import ResourceEditor from '../components/resources/ResourceEditor.vue'
 import { authenticatedFetch } from '../lib/api.js'
 
-const docs = ref([]), resources = ref([]), loading = ref(true), resourcesLoading = ref(false), resourceBusy = ref(''), error = ref(''), composerOpen = ref(false), current = ref(null), busy = ref(false), uploading = ref(false), modalError = ref(''), saveMessage = ref('Not saved yet'), baseline = ref('')
+const docs = ref([]), resources = ref([]), loading = ref(true), resourcesLoading = ref(false), resourceBusy = ref(''), resourceEditorOpen = ref(false), editingResource = ref(null), error = ref(''), composerOpen = ref(false), current = ref(null), busy = ref(false), uploading = ref(false), modalError = ref(''), saveMessage = ref('Not saved yet'), baseline = ref('')
 const profile = ref({ fullName: '', practiceName: '', professionalTitle: '', email: '', phone: '', website: '', address: '', footer: '' })
 const templates = DOCUMENT_TEMPLATES
 const form = reactive({ scope: 'practice', documentType: 'agreement', title: '', recipient: '', purpose: '', body: '' })
@@ -120,6 +130,26 @@ async function refresh() {
     loading.value = false
     resourcesLoading.value = false
   }
+}
+
+function openResourceEditor(resource) {
+  editingResource.value = resource
+  resourceEditorOpen.value = true
+}
+
+function createResource() {
+  editingResource.value = null
+  resourceEditorOpen.value = true
+}
+
+function closeResourceEditor() {
+  resourceEditorOpen.value = false
+  editingResource.value = null
+}
+
+function resourceSaved(resource) {
+  resources.value = [resource, ...resources.value.filter(item => item.id !== resource.id)]
+  closeResourceEditor()
 }
 
 async function addResourceTemplate(template) {
