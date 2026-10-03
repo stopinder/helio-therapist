@@ -203,6 +203,7 @@
           </router-link>
           <p class="footer-credential">Robert Ormiston MBACP</p>
           <p class="footer-role">Psychotherapist · Founder of Helios</p>
+          <p class="footer-security-line">Row-level security · Privacy by design · Therapist-controlled data</p>
         </div>
 
         <div class="footer-trust">
@@ -416,6 +417,7 @@ const features = [
 .brand-small { font-size:30px; }
 .footer-credential { margin-top:19px; font-family:Georgia,serif; font-size:19px; color:#284548; }
 .footer-role { margin-top:4px; font-size:11px; line-height:1.55; color:#748078; }
+.footer-security-line { margin-top:18px; color:#526861; font-size:10px; font-weight:700; line-height:1.45; }
 .footer-kicker { margin-bottom:12px; color:#9a7358; font-size:9px; font-weight:750; letter-spacing:.16em; }
 .footer-trust > p:not(.footer-kicker) { max-width:48ch; color:#657069; font-size:11px; line-height:1.72; }
 .footer-trust > p + p { margin-top:8px; }
