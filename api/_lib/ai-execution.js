@@ -17,6 +17,7 @@ export const AI_FEATURES = Object.freeze({
 const DEFAULT_TEXT_MODEL = 'gpt-4o-mini';
 const CLIENT_SESSION_SUMMARY_MODEL = 'gpt-5.6-terra';
 const THERAPEUTIC_STANCE_REPORT_MODEL = 'gpt-5.6-terra';
+const GROWTH_LONGITUDINAL_MODEL = 'gpt-5.6-terra';
 export const AI_PRICING_VERSION = 'openai-2026-07-30';
 export const MODEL_PRICING_USD_PER_MILLION = Object.freeze({
   'gpt-4o-mini': { input: 0.15, cachedInput: 0.075, output: 0.60 },
@@ -24,7 +25,8 @@ export const MODEL_PRICING_USD_PER_MILLION = Object.freeze({
 });
 
 export function getTextModel(feature) {
-  if (feature === AI_FEATURES.REFLECTION_ANALYSIS || feature === AI_FEATURES.REFLECTION_REPHRASE || feature === AI_FEATURES.GROWTH_LONGITUDINAL_SUMMARY) return process.env.OPENAI_REFLECTION_MODEL || DEFAULT_TEXT_MODEL;
+  if (feature === AI_FEATURES.REFLECTION_ANALYSIS || feature === AI_FEATURES.REFLECTION_REPHRASE) return process.env.OPENAI_REFLECTION_MODEL || DEFAULT_TEXT_MODEL;
+  if (feature === AI_FEATURES.GROWTH_LONGITUDINAL_SUMMARY) return process.env.OPENAI_GROWTH_MODEL || GROWTH_LONGITUDINAL_MODEL;
   if (feature === AI_FEATURES.THERAPEUTIC_STANCE_REPORT) return process.env.OPENAI_THERAPEUTIC_STANCE_MODEL || THERAPEUTIC_STANCE_REPORT_MODEL;
   if (feature === AI_FEATURES.TRANSCRIPT_CLINICAL_SUMMARY) return process.env.OPENAI_CLINICAL_SUMMARY_MODEL || DEFAULT_TEXT_MODEL;
   if (feature === AI_FEATURES.TRANSCRIPT_DRAFT_CLINICAL_NOTE) return process.env.OPENAI_DRAFT_CLINICAL_NOTE_MODEL || DEFAULT_TEXT_MODEL;
