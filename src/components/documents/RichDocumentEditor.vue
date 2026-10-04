@@ -121,7 +121,7 @@ onBeforeUnmount(() => editor.destroy())
 .toolbar-divider{width:1px;height:24px;background:var(--border-muted);margin:0 .15rem}
 .toolbar-spacer{flex:1}
 .document-editor-content{width:100%}
-.document-prosemirror{min-height:520px;outline:0;font:400 10.5pt/1.55 'Noto Sans',Arial,sans-serif;color:#26343b}
+.document-prosemirror{min-height:520px;outline:0;font:400 10.5pt/1.4 'Noto Sans',Arial,sans-serif;color:#26343b}
 .document-prosemirror p{margin:0 0 .9em}
 .document-prosemirror h2{font-size:15pt;line-height:1.3;font-weight:700;color:#17242b;margin:1.4em 0 .55em}
 .document-prosemirror h3{font-size:12.5pt;line-height:1.35;font-weight:700;color:#17242b;margin:1.2em 0 .45em}
