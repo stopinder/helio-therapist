@@ -34,14 +34,14 @@
             @click="emit('join-meeting')"
             :disabled="isInPerson || joiningMeeting"
             :aria-busy="joiningMeeting"
-            class="px-inline-sm py-stack-xs bg-[#0b4654] text-white text-body-sm font-medium rounded-control hover:bg-[#123f49] disabled:opacity-50 transition-colors"
+            class="px-inline-sm py-stack-xs bg-action-primary text-on-action text-body-sm font-medium rounded-control hover:bg-action-primary-hover disabled:opacity-50 transition-colors"
         >
           {{ joiningMeeting ? 'Opening Zoom…' : videoLabel }}
         </button>
 
         <RouterLink
             :to="`/clients/${session.clientId}`"
-            class="px-inline-sm py-stack-xs bg-[#0b4654] text-white text-body-sm font-medium rounded-control hover:bg-[#123f49] transition-colors"
+            class="px-inline-sm py-stack-xs bg-action-primary text-on-action text-body-sm font-medium rounded-control hover:bg-action-primary-hover transition-colors"
         >
           Client Workspace
         </RouterLink>

@@ -16,7 +16,7 @@
 
   <router-view v-else-if="route.meta.public" />
 
-  <main v-else-if="!supabase" class="min-h-screen bg-state-danger-surface flex items-center justify-center p-4">
+  <main v-else-if="!supabase" class="min-h-screen bg-surface-canvas flex items-center justify-center p-4">
     <div class="max-w-md w-full rounded-panel bg-surface p-6 border border-state-danger/20 text-center">
       <h1 class="text-h2 font-semibold text-state-danger mb-2">Configuration Error</h1>
       <p class="text-ink-secondary">Supabase URL or Anon Key is missing. Check your .env file.</p>

@@ -50,7 +50,7 @@
           left: node.x + 'px',
           top: node.y + 'px',
           backgroundColor: typeColors[node.type || 'General'],
-          borderColor: node.id === selectedNodeId ? 'var(--action-link)' : '#d9dce1'
+          borderColor: node.id === selectedNodeId ? 'var(--action-link)' : 'var(--border)'
         }"
           @mousedown.stop="beginNodeDrag(node, $event)"
           @click.stop="handleNodeClick(node)"
@@ -147,10 +147,10 @@ const editType = ref("General")
 // Soft color palette by type
 const typeColors = {
   General: "var(--surface-elevated)",
-  Part: "#f3f0ff",
+  Part: "var(--surface-cream)",
   Emotion: "var(--state-selected)",
-  Memory: "#f0fdfa",
-  Theme: "#f9fafb",
+  Memory: "var(--surface-green)",
+  Theme: "var(--surface-warm)",
 }
 
 // === Load/Save ===

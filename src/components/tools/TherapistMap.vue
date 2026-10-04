@@ -25,7 +25,7 @@
           :y1="getNode(conn.from)?.y + nodeSize / 2"
           :x2="getNode(conn.to)?.x + nodeSize / 2"
           :y2="getNode(conn.to)?.y + nodeSize / 2"
-          stroke="#9ca3af"
+          stroke="var(--border-strong)"
           stroke-width="2"
           @click.stop="deleteConnection(conn.id)"
           class="cursor-pointer"
@@ -42,8 +42,8 @@
         left: node.x + 'px',
         width: nodeSize + 'px',
         height: nodeSize + 'px',
-        backgroundColor: node.color,
-        borderColor: selectedNode?.id === node.id ? 'var(--action-link)' : '#d1d5db',
+        backgroundColor: nodeSurface(node.color),
+        borderColor: selectedNode?.id === node.id ? 'var(--action-link)' : 'var(--border)',
       }"
         @mousedown="startDrag($event, node)"
         @click="handleNodeClick(node, $event)"
@@ -76,10 +76,18 @@ watch([nodes, connections], () => {
   localStorage.setItem('helio_map', JSON.stringify({ nodes: nodes.value, connections: connections.value }))
 }, { deep: true })
 
+// Keep persisted map colours within the same semantic palette as new nodes.
+const nodeSurfaces = ['var(--surface-teal)', 'var(--surface-warm)', 'var(--surface-cream)', 'var(--surface-green)', 'var(--surface-sage)']
+function nodeSurface(color) {
+  if (nodeSurfaces.includes(color)) return color
+  const legacyIndex = ['#e0f2fe', '#fee2e2', '#fef9c3', '#dcfce7', '#ede9fe'].indexOf(color)
+  return nodeSurfaces[legacyIndex < 0 ? 0 : legacyIndex]
+}
+
 // --- Node Management ---
 function addNode() {
   const id = Date.now()
-  const colors = ['#e0f2fe', '#fee2e2', '#fef9c3', '#dcfce7', '#ede9fe']
+  const colors = nodeSurfaces
   nodes.value.push({
     id,
     label: 'New Node',

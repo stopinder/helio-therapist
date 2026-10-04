@@ -1,24 +1,24 @@
-/* Consumes the host app's semantic tokens. Fallbacks mirror helio-therapist
- * src/main.css at 7c9ade8. These are local aliases, not global theme overrides.
+/* Consumes the host app's semantic tokens. Fallbacks mirror the canonical landing palette
+ * in src/main.css. These are local aliases, not global theme overrides.
  * No logo, branded masthead, marketing footer or external font request.
  */
 .cpd-reflection {
   /* Progress positioning and question scroll clearance use the same host inset. */
   --cpd-sticky-top: 4rem;
-  --cpd-canvas: var(--surface-canvas, #F4F0E7);
-  --cpd-muted-surface: var(--surface-muted, #ECE7DD);
-  --cpd-text: var(--text-primary, #20241F);
-  --cpd-secondary: var(--text-secondary, #4E534C);
-  --cpd-muted: var(--text-muted, #62665F);
-  --cpd-teal: var(--action-primary, #1D546D);
+  --cpd-canvas: var(--surface-canvas, #F7F5EF);
+  --cpd-muted-surface: var(--surface-muted, #EEEEE7);
+  --cpd-text: var(--text-primary, #172E38);
+  --cpd-secondary: var(--text-secondary, #203A3D);
+  --cpd-muted: var(--text-muted, #697674);
+  --cpd-teal: var(--action-primary, #19343E);
   --cpd-deep: var(--surface-sidebar, #061E29);
-  --cpd-dusty: var(--border-reflection-tag, #5F9598);
-  --cpd-selected: var(--surface-reflection, #E8F0F2);
-  --cpd-selected-border: var(--border-reflection, #B8CED4);
-  --cpd-border: var(--border-muted, #D9D1C4);
-  --cpd-on-action: var(--text-on-action, #FFFFFF);
+  --cpd-dusty: var(--border-reflection-tag, #697674);
+  --cpd-selected: var(--surface-reflection, #DCE7E3);
+  --cpd-selected-border: var(--border-reflection, #BAC9C1);
+  --cpd-border: var(--border-muted, #BAC9C1);
+  --cpd-on-action: var(--text-on-action, #FFFAF1);
   --cpd-danger: var(--state-danger, #9A4F47);
-  --cpd-danger-surface: var(--state-danger-surface, #F4E6E3);
+  --cpd-danger-surface: var(--state-danger-surface, #F3EFE6);
   min-height: 100vh;
   background: var(--cpd-canvas);
   color: var(--cpd-text);

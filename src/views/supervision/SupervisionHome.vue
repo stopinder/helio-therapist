@@ -16,14 +16,14 @@
           v-for="(item, index) in navigation"
           :key="item.path"
           :to="item.path"
-          class="group relative flex min-h-[158px] flex-col justify-between overflow-hidden rounded-[24px] border border-[#d9d1c3] bg-[#f2ede3] p-6 shadow-[0_10px_28px_rgba(32,50,45,0.05)] transition duration-200 hover:-translate-y-0.5 hover:border-[#bfcabc] hover:bg-[#eee8dc] hover:shadow-[0_18px_40px_rgba(32,50,45,0.09)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-state-selected"
+          class="group relative flex min-h-[158px] flex-col justify-between overflow-hidden rounded-[24px] border border-border bg-surface-warm p-6 shadow-[0_10px_28px_rgba(32,50,45,0.05)] transition duration-200 hover:-translate-y-0.5 hover:border-border-strong hover:bg-surface-warm-muted hover:shadow-[0_18px_40px_rgba(32,50,45,0.09)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-state-selected"
         >
-          <div class="absolute inset-x-0 top-0 h-1 bg-[#bfd0c3]" aria-hidden="true"></div>
+          <div class="absolute inset-x-0 top-0 h-1 bg-surface-sage" aria-hidden="true"></div>
           <div class="flex items-start justify-between gap-5">
-            <span class="inline-flex min-w-9 items-center justify-center rounded-full bg-[#e2e8df] px-3 py-1.5 text-[11px] font-semibold tracking-[0.12em] text-[#5c6b62]">
+            <span class="inline-flex min-w-9 items-center justify-center rounded-full bg-surface-green px-3 py-1.5 text-[11px] font-semibold tracking-[0.12em] text-ink-muted">
               0{{ index + 1 }}
             </span>
-            <span class="inline-flex items-center gap-2 rounded-full border border-[#c8d2c9] bg-[#f8f5ee] px-3 py-1.5 text-xs font-semibold text-action-link transition group-hover:border-[#9fb3a4] group-hover:bg-[#edf3ed]" aria-hidden="true">
+            <span class="inline-flex items-center gap-2 rounded-full border border-border bg-surface-raised px-3 py-1.5 text-xs font-semibold text-action-link transition group-hover:border-border-strong group-hover:bg-surface-sage" aria-hidden="true">
               Open <span class="transition-transform group-hover:translate-x-0.5">→</span>
             </span>
           </div>
@@ -35,14 +35,14 @@
       </nav>
 
       <section aria-labelledby="discovery-heading">
-        <article v-if="discovery" class="grid overflow-hidden rounded-[24px] border border-[#d9d1c3] bg-[#eee8dc] shadow-[0_14px_34px_rgba(32,50,45,0.055)] lg:grid-cols-[minmax(0,1fr)_240px]">
+        <article v-if="discovery" class="grid overflow-hidden rounded-[24px] border border-border bg-surface-warm-muted shadow-[0_14px_34px_rgba(32,50,45,0.055)] lg:grid-cols-[minmax(0,1fr)_240px]">
           <div class="p-7 md:p-10">
             <p class="type-eyebrow text-action-link">Discovery</p>
             <h2 id="discovery-heading" class="mt-4 max-w-3xl text-2xl font-semibold tracking-[-0.025em] text-ink md:text-3xl">{{ discovery.title }}</h2>
             <p class="mt-5 max-w-3xl text-base leading-7 text-ink-secondary">{{ discovery.body }}</p>
             <router-link to="/supervision/insights" class="mt-7 inline-flex text-sm font-semibold text-action-link">Open this →</router-link>
           </div>
-          <div class="flex items-end border-t border-[#d3cabb] bg-[#e2e8df] p-7 lg:border-l lg:border-t-0">
+          <div class="flex items-end border-t border-border bg-surface-green p-7 lg:border-l lg:border-t-0">
             <div>
               <p class="text-5xl font-semibold tracking-[-0.05em] text-ink">{{ discovery.count }}</p>
               <p class="mt-2 text-sm leading-6 text-ink-muted">{{ discovery.countLabel }}</p>
@@ -50,7 +50,7 @@
           </div>
         </article>
 
-        <div v-else class="rounded-[24px] border border-[#d9d1c3] bg-[#eee8dc] px-7 py-10 shadow-[0_14px_34px_rgba(32,50,45,0.05)] md:px-10">
+        <div v-else class="rounded-[24px] border border-border bg-surface-warm-muted px-7 py-10 shadow-[0_14px_34px_rgba(32,50,45,0.05)] md:px-10">
           <p class="type-eyebrow text-ink-muted">Practice map</p>
           <h2 id="discovery-heading" class="mt-3 text-2xl font-semibold text-ink">Your map will take shape as you work.</h2>
           <p class="mt-3 max-w-2xl text-sm leading-6 text-ink-secondary">Reflections and things you choose to map will begin to reveal recurrence and change here.</p>
@@ -67,7 +67,7 @@
         </div>
 
         <div class="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
-          <router-link v-for="thread in practiceThreads" :key="`${thread.kind}-${thread.label}`" to="/supervision/insights" class="group min-h-[180px] rounded-[20px] border border-[#d9d1c3] bg-[#f2ede3] p-6 shadow-[0_8px_22px_rgba(32,50,45,0.04)] transition hover:-translate-y-0.5 hover:bg-[#eee8dc] hover:shadow-[0_14px_30px_rgba(32,50,45,0.075)]">
+          <router-link v-for="thread in practiceThreads" :key="`${thread.kind}-${thread.label}`" to="/supervision/insights" class="group min-h-[180px] rounded-[20px] border border-border bg-surface-warm p-6 shadow-[0_8px_22px_rgba(32,50,45,0.04)] transition hover:-translate-y-0.5 hover:bg-surface-warm-muted hover:shadow-[0_14px_30px_rgba(32,50,45,0.075)]">
             <div class="flex items-start justify-between gap-4">
               <span class="type-eyebrow text-ink-muted">{{ thread.kind }}</span>
               <span class="text-xs font-semibold text-ink-muted">{{ thread.count }}×</span>

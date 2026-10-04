@@ -77,7 +77,7 @@
           </div>
           <p class="mt-2 text-body text-ink-secondary line-clamp-4">{{ r.text }}</p>
           <div class="mt-2 text-caption text-ink-muted">
-            <span v-for="t in r.tags" :key="t" class="mr-2 inline-block px-2 py-0.5 rounded bg-state-warning-surface border border-border-reflection-tag">
+            <span v-for="t in r.tags" :key="t" class="mr-2 inline-block px-2 py-0.5 rounded bg-surface-cream border border-border-reflection-tag">
               #{{ t }}
             </span>
           </div>
@@ -100,7 +100,7 @@
             </div>
             <div class="text-body text-ink-secondary whitespace-pre-wrap">{{ detail.text }}</div>
             <div class="mt-2 text-caption text-ink-muted">
-              <span v-for="t in detail.tags" :key="t" class="mr-2 inline-block px-2 py-0.5 rounded bg-state-warning-surface border border-border-reflection-tag">
+              <span v-for="t in detail.tags" :key="t" class="mr-2 inline-block px-2 py-0.5 rounded bg-surface-cream border border-border-reflection-tag">
                 #{{ t }}
               </span>
             </div>
