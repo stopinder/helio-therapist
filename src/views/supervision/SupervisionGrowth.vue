@@ -26,15 +26,16 @@
               AI-generated reflection support is not a judgement of competence or a clinical assessment. Your saved reflections are sent to the configured AI service only when you ask for this summary.
             </p>
           </div>
-          <button
+          <AppButton
+            variant="primary"
             @click="generateLongitudinalSummary"
             :disabled="aiSummaryLoading || reflections.length < 3"
-            class="inline-flex shrink-0 items-center justify-center gap-2 rounded-control bg-state-selected px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-state-selected-hover disabled:cursor-not-allowed disabled:opacity-50"
+            class="shrink-0 px-5 py-3"
           >
-            <span v-if="aiSummaryLoading" class="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></span>
+            <span v-if="aiSummaryLoading" class="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent"></span>
             <span v-else>✨</span>
             {{ aiSummary ? 'Regenerate summary' : 'Generate summary' }}
-          </button>
+          </AppButton>
         </div>
 
         <p v-if="reflections.length < 3" class="mt-5 rounded-control border border-dashed border-border px-4 py-3 text-sm text-ink-muted">
@@ -215,6 +216,7 @@
 <script setup>
 import { computed, ref } from 'vue'
 import { authenticatedFetch } from '../../lib/api.js'
+import AppButton from '../../components/ui/AppButton.vue'
 
 const props = defineProps({
   reflections: { type: Array, default: () => [] },
