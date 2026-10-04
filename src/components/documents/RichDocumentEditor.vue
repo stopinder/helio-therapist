@@ -57,11 +57,14 @@ const editorHost = ref(null)
 const pageGaps = ref([])
 const pageCount = ref(1)
 const finalPageNumberTop = ref(0)
-const pageGapPx = 26
+const MM_TO_PX = 96 / 25.4
+const PAGE_HEIGHT_PX = 297 * MM_TO_PX
+const PAGE_GAP_PX = 8 * MM_TO_PX
+const PAGE_TOP_PADDING_PX = 18 * MM_TO_PX
+const PAGE_BOTTOM_PADDING_PX = 18 * MM_TO_PX
+const pageGapPx = PAGE_GAP_PX
 let resizeObserver = null
 let paginationFrame = 0
-
-const MM_TO_PX = 96 / 25.4
 
 const PageBreak = Node.create({
   name: 'pageBreak',
@@ -125,9 +128,14 @@ function recalculatePagination() {
 
   const children = [...root.children]
   const gaps = []
+  const paper = root.closest('.document-paper, .clinical-paper')
+  const paperRect = paper?.getBoundingClientRect()
+  const rootRect = root.getBoundingClientRect()
+  const rootOffset = paperRect ? Math.max(PAGE_TOP_PADDING_PX, rootRect.top - paperRect.top) : (297 - props.firstPageContentMm - 18) * MM_TO_PX
+
   let page = 1
   let pageStart = 0
-  let capacity = props.firstPageContentMm * MM_TO_PX
+  let capacity = Math.max(80 * MM_TO_PX, PAGE_HEIGHT_PX - PAGE_BOTTOM_PADDING_PX - rootOffset)
   let used = 0
 
   for (const child of children) {
@@ -136,24 +144,26 @@ function recalculatePagination() {
 
     if (isManualBreak) {
       const remaining = Math.max(0, capacity - used)
-      child.style.setProperty('--auto-page-spacer', `${remaining + pageGapPx}px`)
+      const spacer = remaining + PAGE_BOTTOM_PADDING_PX + PAGE_GAP_PX + PAGE_TOP_PADDING_PX
+      child.style.setProperty('--auto-page-spacer', `${spacer}px`)
       child.classList.add('auto-page-break-before')
-      gaps.push({ page, top: pageStart + capacity })
+      gaps.push({ page, top: pageStart + capacity + PAGE_BOTTOM_PADDING_PX })
       page += 1
-      pageStart += capacity + pageGapPx
-      capacity = props.followingPageContentMm * MM_TO_PX
+      pageStart += capacity + PAGE_BOTTOM_PADDING_PX + PAGE_GAP_PX + PAGE_TOP_PADDING_PX
+      capacity = PAGE_HEIGHT_PX - PAGE_TOP_PADDING_PX - PAGE_BOTTOM_PADDING_PX
       used = 0
       continue
     }
 
     if (used > 0 && used + blockHeight > capacity) {
       const remaining = Math.max(0, capacity - used)
-      child.style.setProperty('--auto-page-spacer', `${remaining + pageGapPx}px`)
+      const spacer = remaining + PAGE_BOTTOM_PADDING_PX + PAGE_GAP_PX + PAGE_TOP_PADDING_PX
+      child.style.setProperty('--auto-page-spacer', `${spacer}px`)
       child.classList.add('auto-page-break-before')
-      gaps.push({ page, top: pageStart + capacity })
+      gaps.push({ page, top: pageStart + capacity + PAGE_BOTTOM_PADDING_PX })
       page += 1
-      pageStart += capacity + pageGapPx
-      capacity = props.followingPageContentMm * MM_TO_PX
+      pageStart += capacity + PAGE_BOTTOM_PADDING_PX + PAGE_GAP_PX + PAGE_TOP_PADDING_PX
+      capacity = PAGE_HEIGHT_PX - PAGE_TOP_PADDING_PX - PAGE_BOTTOM_PADDING_PX
       used = blockHeight
     } else {
       used += blockHeight
@@ -162,9 +172,9 @@ function recalculatePagination() {
 
   pageGaps.value = gaps
   pageCount.value = Math.max(1, page)
-  const minHeight = pageStart + capacity
+  const minHeight = pageStart + capacity + PAGE_BOTTOM_PADDING_PX
   root.style.minHeight = `${Math.ceil(minHeight)}px`
-  finalPageNumberTop.value = Math.max(0, pageStart + capacity - 18)
+  finalPageNumberTop.value = Math.max(0, pageStart + capacity + PAGE_BOTTOM_PADDING_PX - 18)
 }
 
 const editor = new Editor({
@@ -249,7 +259,7 @@ onBeforeUnmount(() => {
 .document-prosemirror .document-page-break{position:relative;height:0;margin:0;border:0;background:transparent;break-after:page;page-break-after:always}
 .document-prosemirror .document-page-break span{display:none}
 .document-prosemirror:empty:before{content:attr(data-placeholder);color:#9aa5aa;pointer-events:none}
-.document-auto-page-gap{position:absolute;left:-19mm;right:-19mm;z-index:3;background:var(--surface-subtle);border-top:1px solid var(--border-muted);border-bottom:1px solid var(--border-muted);box-shadow:inset 0 1px 0 rgba(255,255,255,.65),inset 0 -1px 0 rgba(255,255,255,.65);pointer-events:none}
+.document-auto-page-gap{position:absolute;left:-19mm;right:-19mm;z-index:3;background:#e7ecee;border-top:1px solid #cfd8dc;border-bottom:1px solid #cfd8dc;box-shadow:inset 0 1px 0 rgba(255,255,255,.75),inset 0 -1px 0 rgba(255,255,255,.75);pointer-events:none}
 .document-page-number,.document-next-page-number,.document-final-page-number{position:absolute;right:4px;font-size:9px;font-weight:600;letter-spacing:.02em;color:#8a979c}
 .document-page-number{top:-18px}
 .document-next-page-number{bottom:-18px}
