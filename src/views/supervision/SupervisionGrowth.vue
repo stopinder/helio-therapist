@@ -1,5 +1,5 @@
 <template>
-  <div class="mx-auto max-w-6xl space-y-10 p-4 pb-20 md:p-10">
+  <div class="mx-auto max-w-6xl space-y-8 p-4 pb-20 md:p-10">
     <header class="max-w-4xl space-y-4">
       <p class="type-eyebrow text-action-link">Professional development</p>
       <h1 class="text-3xl font-semibold tracking-[-0.03em] text-ink md:text-4xl">Growth</h1>
@@ -14,7 +14,7 @@
     </section>
 
     <template v-else>
-      <section class="rounded-panel border border-border bg-surface-raised p-6 md:p-7">
+      <section class="rounded-panel border border-border-muted bg-surface-subtle p-6 shadow-sm md:p-7">
         <div class="max-w-4xl">
           <p class="type-eyebrow text-action-link">AI longitudinal reflection</p>
           <h2 class="mt-2 text-2xl font-semibold text-ink">What is changing in your practice?</h2>
@@ -57,7 +57,7 @@
           </div>
 
           <div v-if="aiSummary.developmental_threads?.length" class="mt-6 space-y-4">
-            <article v-for="item in aiSummary.developmental_threads" :key="`thread-${item.title}`" class="rounded-panel border border-border bg-surface-muted p-5 md:p-6">
+            <article v-for="item in aiSummary.developmental_threads" :key="`thread-${item.title}`" class="rounded-panel border border-border-muted/70 bg-surface p-5 shadow-sm md:p-6">
               <div class="flex flex-wrap items-start justify-between gap-3">
                 <div>
                   <p class="type-eyebrow text-ink-muted">Developmental thread</p>
@@ -67,11 +67,11 @@
               </div>
               <p class="mt-3 text-sm leading-6 text-ink-secondary">{{ item.synthesis }}</p>
               <div class="mt-4 grid gap-3 md:grid-cols-2">
-                <div class="rounded-control border border-border-muted bg-surface-raised px-4 py-3">
+                <div class="rounded-panel border border-border-muted/60 bg-white/50 px-4 py-3">
                   <p class="type-eyebrow text-ink-muted">Movement</p>
                   <p class="mt-1 text-sm leading-6 text-ink-secondary">{{ item.movement }}</p>
                 </div>
-                <div class="rounded-control border border-border-muted bg-surface-raised px-4 py-3">
+                <div class="rounded-panel border border-border-muted/60 bg-white/50 px-4 py-3">
                   <p class="type-eyebrow text-ink-muted">Why it may matter</p>
                   <p class="mt-1 text-sm leading-6 text-ink-secondary">{{ item.practice_significance }}</p>
                 </div>
@@ -94,7 +94,7 @@
           <div v-if="aiSummary.supervision_focus?.length" class="mt-7">
             <h3 class="text-lg font-semibold text-ink">For supervision</h3>
             <div class="mt-3 space-y-3">
-              <article v-for="item in aiSummary.supervision_focus" :key="item.question" class="rounded-control border border-border bg-surface-raised px-4 py-4">
+              <article v-for="item in aiSummary.supervision_focus" :key="item.question" class="rounded-panel border border-border-muted/70 bg-white/50 px-4 py-4 shadow-sm">
                 <p class="text-sm font-semibold leading-6 text-ink">{{ item.question }}</p>
                 <p v-if="item.why_this_question" class="mt-1 text-sm leading-6 text-ink-secondary">{{ item.why_this_question }}</p>
               </article>
@@ -108,17 +108,17 @@
       </section>
 
       <section class="grid gap-4 md:grid-cols-3">
-        <article class="rounded-panel border border-border bg-surface-raised p-6">
+        <article class="rounded-panel border border-border-muted/70 bg-surface-subtle p-6 shadow-sm">
           <p class="type-eyebrow text-ink-muted">Reflection history</p>
           <p class="mt-3 text-3xl font-semibold text-ink">{{ reflections.length }}</p>
           <p class="mt-1 text-sm text-ink-secondary">{{ historyLabel }}</p>
         </article>
-        <article class="rounded-panel border border-border bg-surface-raised p-6">
+        <article class="rounded-panel border border-border-muted/70 bg-surface-subtle p-6 shadow-sm">
           <p class="type-eyebrow text-ink-muted">Mapped reflections</p>
           <p class="mt-3 text-3xl font-semibold text-ink">{{ mappedReflections.length }}</p>
           <p class="mt-1 text-sm text-ink-secondary">{{ mappedCoverageLabel }}</p>
         </article>
-        <article class="rounded-panel border border-border bg-surface-raised p-6">
+        <article class="rounded-panel border border-border-muted/70 bg-surface-subtle p-6 shadow-sm">
           <p class="type-eyebrow text-ink-muted">Recurring threads</p>
           <p class="mt-3 text-3xl font-semibold text-ink">{{ recurringThreads.length }}</p>
           <p class="mt-1 text-sm text-ink-secondary">Themes or inner positions appearing more than once.</p>
@@ -137,7 +137,7 @@
             <article
               v-for="thread in recurringThreads"
               :key="`${thread.kind}-${thread.key}`"
-              class="rounded-panel border border-border bg-surface-raised p-5"
+              class="rounded-panel border border-border-muted/70 bg-surface p-5 shadow-sm transition-shadow hover:shadow-md"
             >
               <div class="flex flex-wrap items-start justify-between gap-3">
                 <div>
@@ -156,13 +156,13 @@
           </p>
         </div>
 
-        <aside class="rounded-panel border border-border bg-surface-muted p-6">
+        <aside class="rounded-panel border border-border-muted/70 bg-surface-subtle p-6 shadow-sm">
           <p class="type-eyebrow text-ink-muted">Recent movement</p>
           <h2 class="mt-2 text-xl font-semibold text-ink">{{ recentMovement.title }}</h2>
           <p class="mt-3 text-sm leading-6 text-ink-secondary">{{ recentMovement.body }}</p>
 
           <div v-if="recentMovement.items.length" class="mt-5 space-y-3">
-            <div v-for="item in recentMovement.items" :key="item.label" class="rounded-control border border-border bg-surface-raised px-4 py-3">
+            <div v-for="item in recentMovement.items" :key="item.label" class="rounded-panel border border-border-muted/60 bg-white/50 px-4 py-3">
               <div class="flex items-center justify-between gap-3">
                 <span class="text-sm font-semibold text-ink">{{ item.label }}</span>
                 <span class="text-xs text-ink-muted">{{ item.recent }} recent / {{ item.earlier }} earlier</span>
@@ -172,7 +172,7 @@
         </aside>
       </section>
 
-      <section class="border-y border-border-muted py-8">
+      <section class="rounded-panel bg-surface-subtle/50 px-5 py-6 md:px-6">
         <div class="grid gap-6 lg:grid-cols-[.75fr_1.25fr]">
           <div>
             <p class="type-eyebrow text-ink-muted">Learning edge</p>
@@ -183,7 +183,7 @@
           </div>
 
           <div v-if="learningEdges.length" class="space-y-3">
-            <article v-for="edge in learningEdges" :key="edge.key" class="rounded-panel border border-border bg-surface-raised p-5">
+            <article v-for="edge in learningEdges" :key="edge.key" class="rounded-panel border border-border-muted/70 bg-surface p-5 shadow-sm transition-shadow hover:shadow-md">
               <p class="type-eyebrow text-ink-muted">{{ edge.kind }}</p>
               <h3 class="mt-2 text-base font-semibold text-ink">{{ edge.title }}</h3>
               <p class="mt-2 text-sm leading-6 text-ink-secondary">{{ edge.question }}</p>
@@ -191,7 +191,7 @@
             </article>
           </div>
 
-          <p v-else class="rounded-panel border border-dashed border-border p-6 text-sm leading-6 text-ink-muted">
+          <p v-else class="rounded-panel border border-dashed border-border-muted bg-surface-subtle/60 p-6 text-sm leading-6 text-ink-muted">
             Once a theme or mapped inner position recurs, Helios will turn that evidence into a specific supervision or learning question here.
           </p>
         </div>
@@ -206,15 +206,15 @@
           </p>
         </div>
 
-        <div v-if="nextSteps.length" class="grid overflow-hidden rounded-panel border border-border bg-border md:grid-cols-2">
-          <article v-for="step in nextSteps" :key="step.title" class="bg-surface-raised p-6">
+        <div v-if="nextSteps.length" class="grid gap-px overflow-hidden rounded-panel border border-border-muted bg-border-muted/70 shadow-sm md:grid-cols-2">
+          <article v-for="step in nextSteps" :key="step.title" class="bg-surface-subtle p-6">
             <p class="type-eyebrow text-ink-muted">{{ step.source }}</p>
             <h3 class="mt-2 text-base font-semibold text-ink">{{ step.title }}</h3>
             <p class="mt-2 text-sm leading-6 text-ink-secondary">{{ step.description }}</p>
           </article>
         </div>
 
-        <p v-else class="rounded-panel border border-dashed border-border p-6 text-sm leading-6 text-ink-muted">
+        <p v-else class="rounded-panel border border-dashed border-border-muted bg-surface-subtle/60 p-6 text-sm leading-6 text-ink-muted">
           No development route is being suggested yet because there is not enough repeated evidence in the reflection history.
         </p>
       </section>
