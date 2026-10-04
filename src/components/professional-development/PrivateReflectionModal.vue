@@ -250,6 +250,60 @@
       </div>
 
       <div class="p-6 border-t border-border-muted bg-surface flex flex-col gap-4">
+        <section class="p-4 bg-surface-subtle border border-border-muted rounded-panel animate-fade-up" aria-labelledby="supervision-summary-heading">
+          <div class="flex items-start justify-between gap-4">
+            <div>
+              <h4 id="supervision-summary-heading" class="text-body-sm font-semibold text-ink">Supervision summary</h4>
+              <p class="text-caption text-ink-muted mt-1">Create a private, editable summary from this reflection for use in human supervision.</p>
+            </div>
+            <span v-if="savedSummary && !summaryEditing" class="text-overline font-bold text-state-success uppercase tracking-wider">Saved</span>
+          </div>
+
+          <div v-if="summaryEditing" class="mt-4 space-y-3">
+            <textarea
+              v-model="summaryDraft"
+              aria-label="Supervision summary"
+              rows="7"
+              class="w-full p-3 bg-surface-elevated border border-border rounded-panel text-body-sm text-ink leading-relaxed focus:ring-2 focus:ring-state-selected focus:border-transparent outline-none"
+            ></textarea>
+            <p v-if="summaryError" class="text-caption text-state-danger" role="alert">{{ summaryError }}</p>
+            <div class="flex flex-wrap justify-between gap-3">
+              <div class="flex gap-2">
+                <button type="button" class="button-secondary" :disabled="summaryGenerating" @click="generateSupervisionSummary(true)">
+                  {{ summaryGenerating ? 'Preparing…' : 'Regenerate' }}
+                </button>
+                <button type="button" class="button-secondary" @click="cancelSummaryEditing">Cancel</button>
+              </div>
+              <button type="button" class="button-primary" :disabled="summarySaving || !summaryDraft.trim()" @click="saveSupervisionSummary">
+                {{ summarySaving ? 'Saving…' : 'Save summary' }}
+              </button>
+            </div>
+          </div>
+
+          <div v-else-if="savedSummary" class="mt-4">
+            <p class="text-body-sm text-ink-secondary whitespace-pre-wrap leading-relaxed">{{ savedSummary.edited_content }}</p>
+            <div class="mt-3 flex flex-wrap gap-2">
+              <button type="button" class="button-secondary" @click="editSavedSummary">Edit summary</button>
+              <button type="button" class="button-secondary" :disabled="summaryGenerating" @click="generateSupervisionSummary(true)">
+                {{ summaryGenerating ? 'Preparing…' : 'Regenerate summary' }}
+              </button>
+            </div>
+          </div>
+
+          <div v-else class="mt-4">
+            <p v-if="summaryError" class="text-caption text-state-danger mb-3" role="alert">{{ summaryError }}</p>
+            <button
+              type="button"
+              class="button-secondary"
+              :disabled="summaryGenerating || !canSummariseReflection"
+              @click="generateSupervisionSummary(false)"
+            >
+              {{ summaryGenerating ? 'Preparing summary…' : 'Summarise for supervision' }}
+            </button>
+            <p v-if="!canSummariseReflection" class="text-caption text-state-warning mt-2">This reflection needs at least 80 characters before a useful summary can be prepared.</p>
+          </div>
+        </section>
+
         <div 
           v-if="!aiResult && !showAIConfirmation && !showRephraseWorkflow" 
           class="flex items-center justify-between p-4 bg-surface-subtle border border-border-muted rounded-panel animate-fade-up"
@@ -306,8 +360,9 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
-import { authenticatedFetch } from '../../lib/api.js';
+import { computed, ref, onMounted } from 'vue';
+import { authenticatedFetch, withSessionRecovery } from '../../lib/api.js';
+import { supabase } from '../../lib/supabase.js';
 
 const props = defineProps({
   reflection: {
@@ -345,6 +400,112 @@ const aiRephraseResult = ref(null);
 const localRephrasing = ref('');
 const isEditingRephrase = ref(false);
 const rephraseError = ref(null);
+
+// Supervision summary state
+const savedSummary = ref(null);
+const summaryDraft = ref('');
+const summaryGeneratedContent = ref('');
+const summaryMetadata = ref(null);
+const summaryEditing = ref(false);
+const summaryGenerating = ref(false);
+const summarySaving = ref(false);
+const summaryError = ref('');
+const canSummariseReflection = computed(() => String(props.reflection?.body || '').trim().length >= 80);
+
+async function loadSupervisionSummary() {
+  if (!supabase || !props.reflection?.id) return;
+  try {
+    const { data, error } = await withSessionRecovery(() => supabase
+      .from('reflection_supervision_summaries')
+      .select('*')
+      .eq('reflection_id', props.reflection.id)
+      .eq('generation_status', 'saved')
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle());
+    if (error) throw error;
+    savedSummary.value = data || null;
+  } catch (err) {
+    console.error('[Supervision Summary] Load error:', err);
+  }
+}
+
+async function generateSupervisionSummary(forceRegenerate = false) {
+  if (!canSummariseReflection.value || summaryGenerating.value) return;
+  summaryGenerating.value = true;
+  summaryError.value = '';
+  try {
+    const response = await authenticatedFetch('/api/ai/supervision-summary', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ reflectionId: props.reflection.id, forceRegenerate })
+    });
+    const result = await response.json();
+    if (!response.ok || !result?.success || typeof result.summary !== 'string') {
+      throw new Error(result?.error?.message || 'The summary could not be prepared.');
+    }
+    summaryGeneratedContent.value = result.summary;
+    summaryDraft.value = result.summary;
+    summaryMetadata.value = {
+      model: result.model || null,
+      promptVersion: result.promptVersion || null,
+      modelPolicyVersion: result.modelPolicyVersion || null
+    };
+    summaryEditing.value = true;
+  } catch (err) {
+    console.error('[Supervision Summary] Generate error:', err);
+    summaryError.value = err.message || 'The summary could not be prepared. Your reflection was not changed.';
+  } finally {
+    summaryGenerating.value = false;
+  }
+}
+
+function editSavedSummary() {
+  summaryDraft.value = savedSummary.value?.edited_content || '';
+  summaryGeneratedContent.value = savedSummary.value?.generated_content || summaryDraft.value;
+  summaryMetadata.value = {
+    model: savedSummary.value?.model || null,
+    promptVersion: savedSummary.value?.prompt_version || null
+  };
+  summaryError.value = '';
+  summaryEditing.value = true;
+}
+
+function cancelSummaryEditing() {
+  summaryEditing.value = false;
+  summaryDraft.value = '';
+  summaryGeneratedContent.value = '';
+  summaryMetadata.value = null;
+  summaryError.value = '';
+}
+
+async function saveSupervisionSummary() {
+  if (!supabase || !props.reflection?.id || summarySaving.value || !summaryDraft.value.trim()) return;
+  summarySaving.value = true;
+  summaryError.value = '';
+  try {
+    const { data, error } = await withSessionRecovery(() => supabase.rpc('save_reflection_supervision_summary', {
+      p_reflection_id: props.reflection.id,
+      p_generated_content: summaryGeneratedContent.value || summaryDraft.value.trim(),
+      p_edited_content: summaryDraft.value.trim(),
+      p_model: summaryMetadata.value?.model || null,
+      p_prompt_version: summaryMetadata.value?.promptVersion || null,
+      p_generated_at: new Date().toISOString()
+    }));
+    const saved = Array.isArray(data) ? data[0] : data;
+    if (error || !saved) throw error || new Error('The summary could not be saved.');
+    savedSummary.value = saved;
+    summaryEditing.value = false;
+    summaryDraft.value = '';
+    summaryGeneratedContent.value = '';
+    summaryMetadata.value = null;
+  } catch (err) {
+    console.error('[Supervision Summary] Save error:', err);
+    summaryError.value = 'The draft is still open, but could not be saved. Please try again.';
+  } finally {
+    summarySaving.value = false;
+  }
+}
 
 async function startAIReflection() {
   showAIConfirmation.value = false;
@@ -471,6 +632,7 @@ function copyRephrase() {
 }
 
 onMounted(() => {
+  loadSupervisionSummary();
   if (props.initialAIMode) {
     showAIConfirmation.value = true;
   }
