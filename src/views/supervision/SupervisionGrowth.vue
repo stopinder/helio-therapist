@@ -14,6 +14,89 @@
     </section>
 
     <template v-else>
+      <section class="rounded-panel border border-border bg-surface-raised p-6 md:p-8">
+        <div class="flex flex-col gap-5 md:flex-row md:items-start md:justify-between">
+          <div class="max-w-3xl">
+            <p class="type-eyebrow text-action-link">AI longitudinal reflection</p>
+            <h2 class="mt-2 text-2xl font-semibold text-ink">What seems to be changing across your reflections?</h2>
+            <p class="mt-3 text-sm leading-6 text-ink-secondary">
+              Helios can read your saved reflection history together and produce a cautious summary of repeated material, observable changes over time, possible emerging capacities, and questions for supervision. It cites the dated reflections supporting each observation.
+            </p>
+            <p class="mt-2 text-xs leading-5 text-ink-muted">
+              AI-generated reflection support is not a judgement of competence or a clinical assessment. Your saved reflections are sent to the configured AI service only when you ask for this summary.
+            </p>
+          </div>
+          <button
+            @click="generateLongitudinalSummary"
+            :disabled="aiSummaryLoading || reflections.length < 3"
+            class="inline-flex shrink-0 items-center justify-center gap-2 rounded-control bg-state-selected px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-state-selected-hover disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <span v-if="aiSummaryLoading" class="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></span>
+            <span v-else>✨</span>
+            {{ aiSummary ? 'Regenerate summary' : 'Generate summary' }}
+          </button>
+        </div>
+
+        <p v-if="reflections.length < 3" class="mt-5 rounded-control border border-dashed border-border px-4 py-3 text-sm text-ink-muted">
+          At least three saved reflections are needed before Helios can compare material over time.
+        </p>
+
+        <p v-if="aiSummaryError" role="alert" class="mt-5 rounded-control border border-state-danger/20 bg-state-danger-surface px-4 py-3 text-sm text-state-danger">
+          {{ aiSummaryError }}
+        </p>
+
+        <div v-if="aiSummary" class="mt-7 space-y-7 border-t border-border-muted pt-7">
+          <div>
+            <div class="flex flex-wrap items-center justify-between gap-3">
+              <p class="type-eyebrow text-ink-muted">Longitudinal overview</p>
+              <span class="text-xs text-ink-muted">AI-generated — review critically</span>
+            </div>
+            <p class="mt-3 text-base leading-7 text-ink-secondary">{{ aiSummary.overview }}</p>
+          </div>
+
+          <div v-if="aiSummary.repeated_patterns?.length" class="space-y-3">
+            <h3 class="text-lg font-semibold text-ink">Repeated material</h3>
+            <article v-for="item in aiSummary.repeated_patterns" :key="`repeat-${item.title}`" class="rounded-panel border border-border bg-surface-muted p-5">
+              <h4 class="text-sm font-semibold text-ink">{{ item.title }}</h4>
+              <p class="mt-2 text-sm leading-6 text-ink-secondary">{{ item.observation }}</p>
+              <p v-if="formatEvidence(item.evidence_refs)" class="mt-3 text-xs text-ink-muted">Evidence: {{ formatEvidence(item.evidence_refs) }}</p>
+            </article>
+          </div>
+
+          <div v-if="aiSummary.changes_over_time?.length" class="space-y-3">
+            <h3 class="text-lg font-semibold text-ink">Observable changes over time</h3>
+            <article v-for="item in aiSummary.changes_over_time" :key="`change-${item.title}`" class="rounded-panel border border-border bg-surface-muted p-5">
+              <h4 class="text-sm font-semibold text-ink">{{ item.title }}</h4>
+              <p class="mt-2 text-sm leading-6 text-ink-secondary">{{ item.observation }}</p>
+              <p v-if="formatEvidence(item.evidence_refs)" class="mt-3 text-xs text-ink-muted">Evidence: {{ formatEvidence(item.evidence_refs) }}</p>
+            </article>
+          </div>
+
+          <div v-if="aiSummary.emerging_capacities?.length" class="space-y-3">
+            <h3 class="text-lg font-semibold text-ink">Possible emerging capacities</h3>
+            <p class="text-xs leading-5 text-ink-muted">Included only where later reflections contain directly observable differences in the therapist's own wording or described response.</p>
+            <article v-for="item in aiSummary.emerging_capacities" :key="`capacity-${item.title}`" class="rounded-panel border border-border bg-surface-muted p-5">
+              <h4 class="text-sm font-semibold text-ink">{{ item.title }}</h4>
+              <p class="mt-2 text-sm leading-6 text-ink-secondary">{{ item.observation }}</p>
+              <p v-if="formatEvidence(item.evidence_refs)" class="mt-3 text-xs text-ink-muted">Evidence: {{ formatEvidence(item.evidence_refs) }}</p>
+            </article>
+          </div>
+
+          <div v-if="aiSummary.supervision_questions?.length">
+            <h3 class="text-lg font-semibold text-ink">Questions to take to supervision</h3>
+            <div class="mt-3 space-y-2">
+              <p v-for="question in aiSummary.supervision_questions" :key="question" class="rounded-control border border-border bg-surface-muted px-4 py-3 text-sm leading-6 text-ink-secondary">
+                {{ question }}
+              </p>
+            </div>
+          </div>
+
+          <div class="rounded-control border border-border-muted bg-surface-subtle px-4 py-3 text-xs leading-5 text-ink-muted">
+            <strong>Limits:</strong> {{ aiSummary.limitations }}
+          </div>
+        </div>
+      </section>
+
       <section class="grid gap-4 md:grid-cols-3">
         <article class="rounded-panel border border-border bg-surface-raised p-6">
           <p class="type-eyebrow text-ink-muted">Reflection history</p>
@@ -130,13 +213,51 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
+import { authenticatedFetch } from '../../lib/api.js'
 
 const props = defineProps({
   reflections: { type: Array, default: () => [] },
   loading: Boolean,
   themes: { type: Array, default: () => [] }
 })
+
+const aiSummaryLoading = ref(false)
+const aiSummary = ref(null)
+const aiSummaryError = ref('')
+
+async function generateLongitudinalSummary() {
+  if (aiSummaryLoading.value || props.reflections.length < 3) return
+  aiSummaryLoading.value = true
+  aiSummaryError.value = ''
+
+  try {
+    const response = await authenticatedFetch('/api/ai/growth-summary', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({})
+    })
+    const result = await response.json()
+    if (!response.ok || !result.success) throw new Error(result.error?.message || 'Could not generate longitudinal summary')
+    aiSummary.value = result.data
+  } catch (error) {
+    console.error('[Growth Summary] Error:', error)
+    aiSummaryError.value = error.message || 'The longitudinal summary is temporarily unavailable.'
+  } finally {
+    aiSummaryLoading.value = false
+  }
+}
+
+function formatEvidence(refs) {
+  if (!Array.isArray(refs) || !refs.length || !aiSummary.value?.source_dates) return ''
+  const dateMap = new Map(aiSummary.value.source_dates.map(item => [item.ref, item.date]))
+  return refs
+    .map(ref => {
+      const date = dateMap.get(ref)
+      return date ? `${ref} · ${formatDate(date)}` : ref
+    })
+    .join(', ')
+}
 
 function clean(value) {
   return typeof value === 'string' ? value.trim() : ''
