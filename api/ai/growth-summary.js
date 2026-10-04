@@ -26,7 +26,7 @@ export default async function handler(req, res) {
       .from('private_reflections')
       .select('id, body, theme, supervision_question, workspace_content, created_at, updated_at')
       .eq('user_id', user.id)
-      .order('created_at', { ascending: true })
+      .order('created_at', { ascending: false })
       .limit(GROWTH_SUMMARY_MAX_REFLECTIONS)
 
     if (error) {
