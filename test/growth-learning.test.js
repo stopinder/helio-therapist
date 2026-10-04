@@ -2,7 +2,7 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 
-test('Growth is derived from saved reflection history rather than static development copy', async () => {
+test('Growth is derived from saved reflection history and supports grounded longitudinal AI', async () => {
   const content = await readFile(new URL('../src/views/supervision/SupervisionGrowth.vue', import.meta.url), 'utf8')
 
   assert.match(content, /<h1[^>]*>Growth<\/h1>/)
@@ -20,11 +20,17 @@ test('Growth is derived from saved reflection history rather than static develop
   assert.match(content, /props\.reflections/)
   assert.match(content, /reflection\.theme/)
 
+  assert.match(content, /AI longitudinal reflection/)
+  assert.match(content, /generateLongitudinalSummary/)
+  assert.match(content, /\/api\/ai\/growth-summary/)
+  assert.match(content, /Repeated material/)
+  assert.match(content, /Observable changes over time/)
+  assert.match(content, /Possible emerging capacities/)
+  assert.match(content, /Questions to take to supervision/)
+  assert.match(content, /formatEvidence/)
+  assert.match(content, /AI-generated — review critically/)
+
   assert.doesNotMatch(content, /const learningPrompts\s*=\s*\[/)
   assert.doesNotMatch(content, /const developmentRoutes\s*=\s*\[/)
   assert.doesNotMatch(content, /Persistent goals will be introduced/)
-  assert.doesNotMatch(content, /Human supervision', description/)
-  assert.doesNotMatch(content, /Focused reading', description/)
-  assert.doesNotMatch(content, /Skills practice', description/)
-  assert.doesNotMatch(content, /Further reflection', description/)
 })
