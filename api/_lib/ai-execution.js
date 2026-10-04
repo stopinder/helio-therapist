@@ -4,6 +4,7 @@ import { getSupabaseClient } from './supabase.js';
 export const AI_FEATURES = Object.freeze({
   REFLECTION_ANALYSIS: 'reflection.analysis',
   REFLECTION_REPHRASE: 'reflection.rephrase',
+  GROWTH_LONGITUDINAL_SUMMARY: 'reflection.growth_longitudinal_summary',
   THERAPEUTIC_STANCE_REPORT: 'reflection.therapeutic_stance_report',
   SUPERVISION_SUMMARY: 'reflection.supervision_summary',
   TRANSCRIPT_CLINICAL_SUMMARY: 'transcript.clinical_summary',
@@ -23,7 +24,7 @@ export const MODEL_PRICING_USD_PER_MILLION = Object.freeze({
 });
 
 export function getTextModel(feature) {
-  if (feature === AI_FEATURES.REFLECTION_ANALYSIS || feature === AI_FEATURES.REFLECTION_REPHRASE) return process.env.OPENAI_REFLECTION_MODEL || DEFAULT_TEXT_MODEL;
+  if (feature === AI_FEATURES.REFLECTION_ANALYSIS || feature === AI_FEATURES.REFLECTION_REPHRASE || feature === AI_FEATURES.GROWTH_LONGITUDINAL_SUMMARY) return process.env.OPENAI_REFLECTION_MODEL || DEFAULT_TEXT_MODEL;
   if (feature === AI_FEATURES.THERAPEUTIC_STANCE_REPORT) return process.env.OPENAI_THERAPEUTIC_STANCE_MODEL || THERAPEUTIC_STANCE_REPORT_MODEL;
   if (feature === AI_FEATURES.TRANSCRIPT_CLINICAL_SUMMARY) return process.env.OPENAI_CLINICAL_SUMMARY_MODEL || DEFAULT_TEXT_MODEL;
   if (feature === AI_FEATURES.TRANSCRIPT_DRAFT_CLINICAL_NOTE) return process.env.OPENAI_DRAFT_CLINICAL_NOTE_MODEL || DEFAULT_TEXT_MODEL;
