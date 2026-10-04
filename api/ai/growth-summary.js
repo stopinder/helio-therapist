@@ -6,7 +6,8 @@ import {
   validateGrowthSummaryResponse,
   GROWTH_SUMMARY_PROMPT_VERSION,
   GROWTH_SUMMARY_MIN_REFLECTIONS,
-  GROWTH_SUMMARY_MAX_REFLECTIONS
+  GROWTH_SUMMARY_MAX_REFLECTIONS,
+  isDirectPracticeReflection
 } from '../_lib/ai-growth-summary.js'
 
 export default async function handler(req, res) {
@@ -34,18 +35,20 @@ export default async function handler(req, res) {
       return res.status(500).json({ success: false, error: { code: 'REFLECTION_FETCH_FAILED', message: 'Could not load reflection history.' } })
     }
 
-    const usable = (reflections || []).filter(reflection =>
-      String(reflection.body || '').trim() ||
-      String(reflection.theme || '').trim() ||
-      reflection?.workspace_content?.reflectiveMap
-    )
+    const usable = (reflections || [])
+      .filter(isDirectPracticeReflection)
+      .filter(reflection =>
+        String(reflection.body || '').trim() ||
+        String(reflection.theme || '').trim() ||
+        reflection?.workspace_content?.reflectiveMap
+      )
 
     if (usable.length < GROWTH_SUMMARY_MIN_REFLECTIONS) {
       return res.status(422).json({
         success: false,
         error: {
           code: 'NOT_ENOUGH_REFLECTIONS',
-          message: `At least ${GROWTH_SUMMARY_MIN_REFLECTIONS} saved reflections are needed for a longitudinal summary.`
+          message: `At least ${GROWTH_SUMMARY_MIN_REFLECTIONS} directly practice-based reflections are needed for a longitudinal summary.`
         }
       })
     }
