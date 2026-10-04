@@ -82,7 +82,7 @@
               <p class="document-eyebrow">{{ selectedTemplate.eyebrow }}</p>
               <h1 class="document-title">{{ form.title || 'Untitled Document' }}</h1>
               <dl v-if="form.recipient || form.purpose" class="document-meta"><div v-if="form.recipient"><dt>For</dt><dd>{{ form.recipient }}</dd></div><div v-if="form.purpose"><dt>Purpose</dt><dd>{{ form.purpose }}</dd></div></dl>
-              <textarea v-model="form.body" class="document-body-editor" aria-label="Document content" spellcheck="true" />
+              <RichDocumentEditor v-model="form.body" v-model:rich-content="form.richContent" />
               <footer class="document-footer"><span>{{ profile.address || profile.practiceName || profile.fullName || 'Helio Therapist' }}</span><span>{{ profile.footer || 'Professional document' }}</span></footer>
             </article>
           </div>
@@ -99,12 +99,13 @@ import { DOCUMENT_TEMPLATES, getDocumentTemplate, templateBody } from '../lib/do
 import PracticeIdentityEditor from '../components/documents/PracticeIdentityEditor.vue'
 import DocumentLibrary from '../components/documents/DocumentLibrary.vue'
 import ResourceEditor from '../components/resources/ResourceEditor.vue'
+import RichDocumentEditor from '../components/documents/RichDocumentEditor.vue'
 import { authenticatedFetch } from '../lib/api.js'
 
 const docs = ref([]), resources = ref([]), loading = ref(true), resourcesLoading = ref(false), resourceBusy = ref(''), resourceEditorOpen = ref(false), editingResource = ref(null), error = ref(''), composerOpen = ref(false), current = ref(null), busy = ref(false), uploading = ref(false), modalError = ref(''), saveMessage = ref('Not saved yet'), baseline = ref('')
 const profile = ref({ fullName: '', practiceName: '', professionalTitle: '', email: '', phone: '', website: '', address: '', footer: '' })
 const templates = DOCUMENT_TEMPLATES
-const form = reactive({ scope: 'practice', documentType: 'agreement', title: '', recipient: '', purpose: '', body: '' })
+const form = reactive({ scope: 'practice', documentType: 'agreement', title: '', recipient: '', purpose: '', body: '', richContent: null })
 const selectedTemplate = computed(() => getDocumentTemplate(form.documentType))
 const snapshot = () => JSON.stringify(form)
 const dirty = computed(() => baseline.value !== snapshot())
@@ -187,11 +188,12 @@ function applyTemplate(template) {
   form.title = template.title
   form.purpose = template.purpose
   form.body = templateBody(template)
+  form.richContent = null
 }
 
 function startCreate() {
   current.value = null
-  Object.assign(form, { scope: 'practice', documentType: 'agreement', title: '', recipient: '', purpose: '', body: '' })
+  Object.assign(form, { scope: 'practice', documentType: 'agreement', title: '', recipient: '', purpose: '', body: '', richContent: null })
   applyTemplate(getDocumentTemplate('agreement'))
   baseline.value = snapshot()
   saveMessage.value = 'Not saved yet'
@@ -201,14 +203,14 @@ function startCreate() {
 
 function edit(document) {
   current.value = document
-  Object.assign(form, { scope: document.scope, documentType: document.documentType, title: document.title, recipient: document.recipient, purpose: document.purpose, body: document.content?.body || '' })
+  Object.assign(form, { scope: document.scope, documentType: document.documentType, title: document.title, recipient: document.recipient, purpose: document.purpose, body: document.content?.body || '', richContent: document.content?.richContent || null })
   baseline.value = snapshot()
   saveMessage.value = 'Saved'
   modalError.value = ''
   composerOpen.value = true
 }
 
-function changes() { return { title: form.title, documentType: form.documentType, recipient: form.recipient, purpose: form.purpose, content: { body: form.body } } }
+function changes() { return { title: form.title, documentType: form.documentType, recipient: form.recipient, purpose: form.purpose, content: { body: form.body, richContent: form.richContent } } }
 async function persist() { current.value = current.value ? await saveDocumentDraft(current.value, changes()) : await createUnscopedDocumentDraft({ scope: form.scope, ...changes() }); baseline.value = snapshot(); saveMessage.value = `Saved ${new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })} to Documents`; await refresh(); return current.value }
 async function save() { if (busy.value || !form.title.trim()) return; busy.value = true; modalError.value = ''; try { await persist() } catch (e) { modalError.value = e.message || 'Could not save this document draft.' } finally { busy.value = false } }
 async function exportPdf() { if (busy.value) return; busy.value = true; modalError.value = ''; try { await persist(); window.print() } catch (e) { modalError.value = e.message || 'Could not prepare this document for export.' } finally { busy.value = false } }
@@ -217,5 +219,5 @@ function requestClose() { if (busy.value) return; if (dirty.value && !window.con
 </script>
 
 <style scoped>
-.document-paper{width:min(210mm,100%);min-height:297mm;padding:18mm 19mm;display:flex;flex-direction:column;font-family:'Noto Sans',Arial,sans-serif}.document-letterhead{display:flex;justify-content:space-between;gap:24px;font-size:10px;color:#52616b}.document-letterhead strong{display:block;font-size:15px;color:#17242b}.document-letterhead span{display:block;margin-top:2px}.document-contact{text-align:right}.document-rule{height:1px;background:#cfd8dc;margin:16px 0 38px}.document-eyebrow{font-size:10px;font-weight:700;letter-spacing:.16em;color:#657780;margin:0 0 12px}.document-title{font-size:30px;line-height:1.2;font-weight:600;letter-spacing:-.02em;margin:0 0 24px;color:#17242b}.document-meta{display:grid;grid-template-columns:1fr 1fr;gap:16px;padding:14px 0;border-top:1px solid #e2e8ea;border-bottom:1px solid #e2e8ea;margin-bottom:28px}.document-meta dt{font-size:9px;text-transform:uppercase;letter-spacing:.12em;color:#718087}.document-meta dd{font-size:12px;margin:4px 0 0}.document-body-editor{width:100%;flex:1;min-height:560px;border:0;outline:0;resize:none;background:transparent;font:400 11pt/1.7 'Noto Sans',Arial,sans-serif;color:#26343b;white-space:pre-wrap;overflow:hidden}.document-footer{margin-top:36px;padding-top:12px;border-top:1px solid #e2e8ea;display:flex;justify-content:space-between;gap:20px;font-size:9px;color:#718087;white-space:pre-line}@media print{:global(body *){visibility:hidden!important}.document-paper,.document-paper *{visibility:visible!important}.document-paper{position:absolute;left:0;top:0;width:210mm;min-height:297mm;box-shadow:none;padding:18mm 19mm}.document-body-editor{overflow:visible;resize:none}@page{size:A4;margin:0}}
+.document-paper{width:min(210mm,100%);min-height:297mm;padding:18mm 19mm;display:flex;flex-direction:column;font-family:'Noto Sans',Arial,sans-serif}.document-letterhead{display:flex;justify-content:space-between;gap:24px;font-size:10px;color:#52616b}.document-letterhead strong{display:block;font-size:15px;color:#17242b}.document-letterhead span{display:block;margin-top:2px}.document-contact{text-align:right}.document-rule{height:1px;background:#cfd8dc;margin:16px 0 38px}.document-eyebrow{font-size:10px;font-weight:700;letter-spacing:.16em;color:#657780;margin:0 0 12px}.document-title{font-size:30px;line-height:1.2;font-weight:600;letter-spacing:-.02em;margin:0 0 24px;color:#17242b}.document-meta{display:grid;grid-template-columns:1fr 1fr;gap:16px;padding:14px 0;border-top:1px solid #e2e8ea;border-bottom:1px solid #e2e8ea;margin-bottom:28px}.document-meta dt{font-size:9px;text-transform:uppercase;letter-spacing:.12em;color:#718087}.document-meta dd{font-size:12px;margin:4px 0 0}.document-footer{margin-top:36px;padding-top:12px;border-top:1px solid #e2e8ea;display:flex;justify-content:space-between;gap:20px;font-size:9px;color:#718087;white-space:pre-line}@media print{:global(body *){visibility:hidden!important}.document-paper,.document-paper *{visibility:visible!important}.document-paper{position:absolute;left:0;top:0;width:210mm;min-height:297mm;box-shadow:none;padding:18mm 19mm}.document-body-editor{overflow:visible;resize:none}@page{size:A4;margin:0}}
 </style>
