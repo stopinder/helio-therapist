@@ -74,8 +74,9 @@ export default async function handler(req, res) {
       return res.status(502).json({ success: false, error: { code: 'INVALID_AI_RESPONSE', message: 'The longitudinal summary could not be generated.' } })
     }
 
-    const sourceDates = usable
-      .slice(0, GROWTH_SUMMARY_MAX_REFLECTIONS)
+    const sourceDates = [...usable]
+      .sort((a, b) => new Date(a.created_at || 0) - new Date(b.created_at || 0))
+      .slice(-GROWTH_SUMMARY_MAX_REFLECTIONS)
       .map((reflection, index) => ({
         ref: `R${index + 1}`,
         date: reflection.created_at ? String(reflection.created_at).slice(0, 10) : null
