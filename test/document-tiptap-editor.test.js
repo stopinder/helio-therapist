@@ -2,7 +2,7 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 
-test('practice and client document composers use the shared Tiptap editor', async () => {
+test('practice and client document composers use the shared paginated Tiptap editor', async () => {
   const [practice, client, editor, pkg, pdf] = await Promise.all([
     readFile(new URL('../src/views/Documents.vue', import.meta.url), 'utf8'),
     readFile(new URL('../src/components/workspace/ClientDocumentComposer.vue', import.meta.url), 'utf8'),
@@ -24,7 +24,16 @@ test('practice and client document composers use the shared Tiptap editor', asyn
   assert.match(editor, /toggleOrderedList/)
   assert.match(editor, /toggleBold/)
   assert.match(editor, /toggleItalic/)
-  assert.match(editor, /1\.55/)
+  assert.match(editor, /10\.5pt\/1\.4/)
+
+  assert.match(editor, /recalculatePagination/)
+  assert.match(editor, /ResizeObserver/)
+  assert.match(editor, /firstPageContentMm/)
+  assert.match(editor, /followingPageContentMm/)
+  assert.match(editor, /document-auto-page-gap/)
+  assert.match(editor, /auto-page-break-before/)
+  assert.match(editor, /document-page-number/)
+  assert.match(editor, /pageCount/)
 
   const dependencies = JSON.parse(pkg).dependencies
   assert.ok(dependencies['@tiptap/vue-3'])
