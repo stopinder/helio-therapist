@@ -3,17 +3,26 @@ import assert from 'node:assert/strict'
 import {
   buildGrowthSummaryInput,
   validateGrowthSummaryResponse,
-  growthSummarySystemPrompt
+  growthSummarySystemPrompt,
+  isDirectPracticeReflection
 } from '../api/_lib/ai-growth-summary.js'
 
-test('longitudinal Growth prompt requires evidence and avoids competence claims', () => {
-  assert.match(growthSummarySystemPrompt, /Ground every substantive observation/)
-  assert.match(growthSummarySystemPrompt, /evidence_refs/)
+test('longitudinal Growth prompt requires synthesis rather than record recap', () => {
+  assert.match(growthSummarySystemPrompt, /This is NOT a summarisation task/)
+  assert.match(growthSummarySystemPrompt, /Do not walk through records one by one/)
+  assert.match(growthSummarySystemPrompt, /WHY it matters for practice/)
   assert.match(growthSummarySystemPrompt, /Never infer competence/)
   assert.match(growthSummarySystemPrompt, /Frequency is not importance/)
 })
 
-test('Growth input is chronological and includes therapist-authored mapped fields', () => {
+test('Growth input excludes stance questionnaire records and keeps direct practice chronological', () => {
+  const questionnaire = {
+    created_at: '2026-01-15T10:00:00Z',
+    body: 'Questionnaire material',
+    workspace_content: { captureSource: 'practice_reflection' }
+  }
+  assert.equal(isDirectPracticeReflection(questionnaire), false)
+
   const input = buildGrowthSummaryInput([
     {
       created_at: '2026-02-01T10:00:00Z',
@@ -21,34 +30,47 @@ test('Growth input is chronological and includes therapist-authored mapped field
       theme: 'Boundaries',
       workspace_content: { reflectiveMap: { innerPosition: 'Rescuer', protectiveIntention: 'Keep the alliance safe' } }
     },
+    questionnaire,
     {
       created_at: '2026-01-01T10:00:00Z',
       body: 'Earlier reflection',
-      theme: 'Boundaries'
+      theme: 'Boundaries',
+      workspace_content: { captureSource: 'quick_capture' }
     }
   ])
 
   assert.ok(input.indexOf('2026-01-01') < input.indexOf('2026-02-01'))
-  assert.match(input, /Theme: Boundaries/)
+  assert.doesNotMatch(input, /Questionnaire material/)
+  assert.match(input, /Therapist-assigned theme: Boundaries/)
   assert.match(input, /Inner position: Rescuer/)
   assert.match(input, /Protective intention: Keep the alliance safe/)
 })
 
-test('Growth AI response validation limits arrays and evidence references', () => {
+test('Growth AI response validation keeps developmental structure and evidence', () => {
   const result = validateGrowthSummaryResponse({
-    overview: 'A cautious overview.',
-    repeated_patterns: [{
-      title: 'Boundaries',
-      observation: 'This wording recurs.',
-      evidence_refs: ['r1', 'R2', 'bad']
+    overview: 'A cautious synthesis.',
+    developmental_threads: [{
+      title: 'From filling space to noticing the urge',
+      synthesis: 'A cross-record pattern.',
+      movement: 'Recognition appears earlier.',
+      practice_significance: 'This may affect how much space clients have.',
+      evidence_refs: ['r1', 'R2', 'bad'],
+      confidence: 'moderate'
     }],
-    changes_over_time: [],
-    emerging_capacities: [],
-    supervision_questions: ['What is changing?'],
-    limitations: 'This is reflective support only.'
+    tensions_or_contradictions: [{
+      title: 'Structure versus space',
+      synthesis: 'Two pulls recur.',
+      evidence_refs: ['R1', 'R2']
+    }],
+    supervision_focus: [{
+      question: 'What happens just before the urge to organise?',
+      why_this_question: 'It tests the repeated sequence.',
+      evidence_refs: ['R1', 'R2']
+    }],
+    limitations: 'Evidence remains sparse.'
   })
 
-  assert.equal(result.repeated_patterns[0].evidence_refs.length, 2)
-  assert.deepEqual(result.repeated_patterns[0].evidence_refs, ['R1', 'R2'])
-  assert.equal(result.supervision_questions[0], 'What is changing?')
+  assert.deepEqual(result.developmental_threads[0].evidence_refs, ['R1', 'R2'])
+  assert.equal(result.developmental_threads[0].confidence, 'moderate')
+  assert.equal(result.supervision_focus[0].question, 'What happens just before the urge to organise?')
 })
