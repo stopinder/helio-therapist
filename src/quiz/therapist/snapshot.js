@@ -3,8 +3,9 @@ import { REPORT_VERSION, DISCLAIMER, BOUNDARY_NOTE, reportSections } from './con
 import { buildResult } from './buildResult.js'
 import { isPlainObject, validateAnswers } from './scoring.js'
 
-export const SNAPSHOT_VERSION = 'cpd-stance-snapshot-v2'
+export const SNAPSHOT_VERSION = 'cpd-stance-snapshot-v3'
 export const LEGACY_SNAPSHOT_VERSION = 'cpd-stance-snapshot-v1'
+export const PREVIOUS_SNAPSHOT_VERSION = 'cpd-stance-snapshot-v2'
 export const SCORING_VERSION = 'therapist-dimensions-v1-draft1'
 export const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 
@@ -67,11 +68,15 @@ export function createReflectionSnapshot({ id, completedAt, answers, report, mod
 /** Rebuild before persistence. Preserve v1 representations for historical save confirmation. */
 export function validateReflectionSnapshot(snapshot) {
   if (!isPlainObject(snapshot)) throw new Error('No reflection to save.')
-  if (![SNAPSHOT_VERSION, LEGACY_SNAPSHOT_VERSION].includes(snapshot.schemaVersion)) throw new Error('Unsupported reflection version.')
+  if (![SNAPSHOT_VERSION, PREVIOUS_SNAPSHOT_VERSION, LEGACY_SNAPSHOT_VERSION].includes(snapshot.schemaVersion)) throw new Error('Unsupported reflection version.')
   const rebuilt = createReflectionSnapshot({ id: snapshot.id, completedAt: snapshot.completedAt,
     answers: snapshot.responses, report: snapshot.narrative?.report, mode: snapshot.narrative?.mode,
     questionSetId: snapshot.questionSetId || 'original',
     promptVersion: snapshot.narrative?.promptVersion, model: snapshot.narrative?.model })
+  if (snapshot.schemaVersion === PREVIOUS_SNAPSHOT_VERSION) {
+    rebuilt.schemaVersion = PREVIOUS_SNAPSHOT_VERSION
+    delete rebuilt.questionSetId
+  }
   if (snapshot.schemaVersion === LEGACY_SNAPSHOT_VERSION) {
     const label = snapshot.provenance?.providerMetadata
     if (!LEGACY_METADATA_LABELS.has(label)) throw new Error('Unsupported reflection provenance.')
@@ -105,7 +110,7 @@ export function reflectionText(snapshot) {
         : 'A dated reflective snapshot, not a permanent profile or measured competence. Saving does not trigger continuity analysis.'
     ].join('\n\n')
   }
-  if (snapshot.schemaVersion !== SNAPSHOT_VERSION) throw new Error('Unsupported reflection version.')
+  if (![SNAPSHOT_VERSION, PREVIOUS_SNAPSHOT_VERSION].includes(snapshot.schemaVersion)) throw new Error('Unsupported reflection version.')
   return [
     ...heading,
     narrative.mode === 'ai' ? 'AI-written integrative reflection.' : 'Question-based reflection — authored wording, not AI-generated.',
