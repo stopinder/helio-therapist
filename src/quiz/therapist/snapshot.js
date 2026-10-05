@@ -30,10 +30,10 @@ const LEGACY_METADATA_LABELS = new Set([
 ])
 
 /** Capture once per report, not once per save retry. No identity or client data. */
-export function createReflectionSnapshot({ id, completedAt, answers, report, mode, promptVersion = null, model = null }) {
+export function createReflectionSnapshot({ id, completedAt, answers, report, mode, promptVersion = null, model = null, questionSetId = 'original' }) {
   if (!UUID_PATTERN.test(id || '')) throw new Error('A valid reflection identifier is required.')
   if (typeof completedAt !== 'string' || !Number.isFinite(Date.parse(completedAt)) || new Date(completedAt).toISOString() !== completedAt) throw new Error('A valid completion date is required.')
-  validateAnswers(answers)
+  validateAnswers(answers, questionSetId)
   if (!['fallback', 'ai'].includes(mode) || !validReportShape(report)) throw new Error('The reflection is not ready to save.')
   const cleanReport = { sections: report.sections.map(s => ({ id: s.id, title: s.title, paragraphs: [...s.paragraphs] })) }
   const cleanPromptVersion = mode === 'ai' ? cleanMeta(promptVersion) : null
@@ -44,10 +44,11 @@ export function createReflectionSnapshot({ id, completedAt, answers, report, mod
     exerciseId: 'therapeutic-stance',
     completedAt,
     questionVersion: QUIZ_VERSION,
+    questionSetId,
     scoringVersion: SCORING_VERSION,
     interpretationVersion: REPORT_VERSION,
     responses: { ...answers },
-    interpretation: buildResult(answers),
+    interpretation: buildResult(answers, questionSetId),
     narrative: { mode, report: cleanReport, promptVersion: cleanPromptVersion, model: cleanModel },
     provenance: {
       source: 'self_selected_hypothetical_scenarios',
@@ -69,6 +70,7 @@ export function validateReflectionSnapshot(snapshot) {
   if (![SNAPSHOT_VERSION, LEGACY_SNAPSHOT_VERSION].includes(snapshot.schemaVersion)) throw new Error('Unsupported reflection version.')
   const rebuilt = createReflectionSnapshot({ id: snapshot.id, completedAt: snapshot.completedAt,
     answers: snapshot.responses, report: snapshot.narrative?.report, mode: snapshot.narrative?.mode,
+    questionSetId: snapshot.questionSetId || 'original',
     promptVersion: snapshot.narrative?.promptVersion, model: snapshot.narrative?.model })
   if (snapshot.schemaVersion === LEGACY_SNAPSHOT_VERSION) {
     const label = snapshot.provenance?.providerMetadata
