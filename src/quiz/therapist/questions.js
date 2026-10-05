@@ -1,6 +1,6 @@
 // New content only. No imports from the retired ADHD/investigation quiz.
 // Editorial weights are provisional organising rules, not psychometric measurements.
-export const QUIZ_VERSION = 'therapist-style-v2-draft1'
+export const QUIZ_VERSION = 'therapist-style-v1-draft1'
 export const CONTEXT_ANSWER = 'context'
 export const CONTEXT_LABEL = 'I cannot choose a usual response in this situation.'
 
