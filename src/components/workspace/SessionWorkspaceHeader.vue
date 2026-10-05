@@ -2,13 +2,6 @@
   <header class="bg-surface border-b border-border-muted px-inline-lg py-stack-md">
     <div class="flex flex-col md:flex-row md:items-center justify-between gap-stack-md">
       <div class="flex items-center gap-inline-md">
-        <RouterLink
-            :to="`/clients/${session.clientId}`"
-            class="h-10 w-10 rounded-pill bg-avatar flex items-center justify-center text-h3 font-semibold text-ink shrink-0 hover:bg-avatar-hover transition-colors"
-            title="Back to Client Workspace"
-        >
-          ←
-        </RouterLink>
 
         <div class="flex flex-col min-w-0">
           <div class="flex items-center gap-inline-sm flex-wrap">
@@ -30,14 +23,6 @@
       </div>
 
       <div class="flex items-center gap-inline-sm">
-        <button
-            @click="emit('join-meeting')"
-            :disabled="isInPerson || joiningMeeting"
-            :aria-busy="joiningMeeting"
-            class="px-inline-sm py-stack-xs bg-[#0b4654] text-white text-body-sm font-medium rounded-control hover:bg-[#123f49] disabled:opacity-50 transition-colors"
-        >
-          {{ joiningMeeting ? 'Opening Zoom…' : videoLabel }}
-        </button>
 
         <RouterLink
             :to="`/clients/${session.clientId}`"
@@ -69,16 +54,11 @@
 import { computed } from 'vue'
 import { RouterLink } from 'vue-router'
 import StatusBadge from './StatusBadge.vue'
-import { videoProviderService } from '../../lib/videoProvider.js'
 
 const props = defineProps({
   session: {
     type: Object,
     required: true
-  },
-  joiningMeeting: {
-    type: Boolean,
-    default: false
   },
   meetingError: {
     type: String,
@@ -86,17 +66,5 @@ const props = defineProps({
   }
 })
 
-const emit = defineEmits(['join-meeting'])
-
 const isInPerson = computed(() => props.session.type === 'In-person')
-
-const videoLabel = computed(() =>
-    isInPerson.value
-        ? 'In-person session'
-        : videoProviderService.getVideoActionLabel({
-          videoProvider: 'zoom',
-          meetingUrl: 'server-resolved',
-          status: props.session.status
-        })
-)
 </script>
