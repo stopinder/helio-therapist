@@ -13,18 +13,25 @@
         <p>Fifteen situations invite you to notice familiar approaches, useful tensions and questions for supervision.</p>
         <p>Choose your usual first response, rather than everything you might eventually do.</p>
         <p class="muted">Your choices stay in this page until you save or request AI writing. Refreshing clears unsaved work.</p>
-        <button type="button" class="primary" @click="start">Begin reflection <span aria-hidden="true">→</span></button>
+        <div class="actions">
+          <button type="button" class="primary" @click="start">Begin reflection <span aria-hidden="true">→</span></button>
+          <button type="button" class="secondary" @click="regenerateQuestions">↻ Different questions</button>
+        </div>
+        <p class="muted question-set-note">Different questions keeps the same 15-situation reflection structure and scoring dimensions.</p>
       </section>
 
       <header v-if="stage === 'quiz'" ref="stickyHeader" class="progress-header no-print" data-testid="progress-header">
         <div class="progress-row"><span>Practice reflection · 15 situations</span><span data-testid="answered-count">{{ progress.answered }} answered</span></div>
-        <progress :value="progress.answered" :max="therapistQuestions.length" aria-label="Questions answered"></progress>
-        <label class="scroll-preference"><input v-model="autoScroll" type="checkbox" @change="cancelScroll" /><span>Scroll to the next question after selection</span></label>
+        <progress :value="progress.answered" :max="activeQuestions.length" aria-label="Questions answered"></progress>
+        <div class="progress-controls">
+          <label class="scroll-preference"><input v-model="autoScroll" type="checkbox" @change="cancelScroll" /><span>Scroll to the next question after selection</span></label>
+          <button type="button" class="text-button" @click="regenerateQuestions">↻ Different questions</button>
+        </div>
       </header>
 
       <section v-if="stage === 'quiz'" class="question-screen">
         <p class="muted">Click or tap an answer to move down to the next situation. With a keyboard, choose an answer and use Continue. You can turn automatic scrolling off above.</p>
-        <section v-for="(question, index) in therapistQuestions" :key="question.id" :ref="el => questionRefs[index] = el" class="question-block" :data-question="question.id">
+        <section v-for="(question, index) in activeQuestions" :key="question.id" :ref="el => questionRefs[index] = el" class="question-block" :data-question="question.id">
           <p class="eyebrow">Situation {{ index + 1 }} of 15 · {{ question.title }}</p>
           <fieldset :aria-describedby="`help-${question.id} feedback-${question.id}`">
             <legend tabindex="-1">{{ question.text }}</legend>
@@ -41,7 +48,7 @@
           <p :id="`feedback-${question.id}`" class="answer-feedback" :class="{ 'has-error': questionErrorId === question.id }" aria-live="polite">{{ questionErrorId === question.id ? 'Choose a response, or use the final option to continue.' : isAnswered(question, answers[question.id]) ? 'Response recorded.' : '' }}</p>
           <div class="actions">
             <button type="button" class="secondary" @click="index ? scrollToQuestion(index - 1) : showIntro()">{{ index ? 'Previous situation' : 'Introduction' }}</button>
-            <button v-if="editing || index < therapistQuestions.length - 1" type="button" class="primary" :data-testid="`continue-${question.id}`" @click="continueFrom(index)">{{ editing ? 'Return to review' : 'Continue' }} <span aria-hidden="true">→</span></button>
+            <button v-if="editing || index < activeQuestions.length - 1" type="button" class="primary" :data-testid="`continue-${question.id}`" @click="continueFrom(index)">{{ editing ? 'Return to review' : 'Continue' }} <span aria-hidden="true">→</span></button>
           </div>
         </section>
         <div ref="reviewTarget" class="review-target" tabindex="-1">
@@ -55,7 +62,7 @@
         <p>Revisit any situation before reading your reflection.</p>
         <p class="completion-message" role="status">{{ progress.complete ? 'All 15 situations have a response. Your reflection is ready to read.' : 'Some situations still need a response.' }}</p>
         <div class="review-list">
-          <div v-for="(question, index) in therapistQuestions" :key="question.id" class="review-row">
+          <div v-for="(question, index) in activeQuestions" :key="question.id" class="review-row">
             <div><h2>{{ index + 1 }}. {{ question.title }}</h2><p>{{ selectedText(question) }}</p></div>
             <button type="button" class="text-button" :aria-label="`Change answer to ${question.title}`" :disabled="busy" @click="editQuestion(index)">Change</button>
           </div>
@@ -115,7 +122,7 @@
 
 <script setup>
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
-import { therapistQuestions, QUIZ_VERSION, CONTEXT_ANSWER, CONTEXT_LABEL } from '../quiz/therapist/questions.js'
+import { therapistQuestions, getTherapistQuestions, otherTherapistQuestionSet, QUIZ_VERSION, CONTEXT_ANSWER, CONTEXT_LABEL } from '../quiz/therapist/questions.js'
 import { DISCLAIMER } from '../quiz/therapist/content.js'
 import { buildResult, buildFallbackReport } from '../quiz/therapist/buildResult.js'
 import { answerProgress, isAnswered } from '../quiz/therapist/progress.js'
@@ -128,7 +135,9 @@ const props = defineProps({
 })
 defineEmits(['open-library'])
 const stage = ref('intro'), editing = ref(false)
-const answers = reactive({}), progress = computed(() => answerProgress(answers))
+const questionSetId = ref('original')
+const activeQuestions = computed(() => getTherapistQuestions(questionSetId.value) || therapistQuestions)
+const answers = reactive({}), progress = computed(() => answerProgress(answers, activeQuestions.value))
 const autoScroll = ref(true), questionErrorId = ref(''), stickyHeader = ref(null), headerHeight = ref(115), root = ref(null)
 const focusTarget = ref(null), reviewTarget = ref(null), questionRefs = []
 const busy = ref(false), canUseAI = ref(false), availabilityChecked = ref(false)
@@ -160,9 +169,18 @@ async function scrollToTarget(element, smooth = true) {
 async function focusHeading() { await nextTick(); return scrollToTarget(focusTarget.value, false) }
 async function scrollToQuestion(index) { await nextTick(); return scrollToTarget(questionRefs[index]) }
 function start() { stage.value = 'quiz'; editing.value = false; scrollToQuestion(0) }
+function regenerateQuestions() {
+  cancelScroll()
+  questionSetId.value = otherTherapistQuestionSet(questionSetId.value)
+  Object.keys(answers).forEach(key => delete answers[key])
+  questionErrorId.value = ''
+  snapshot.value = null; report.value = null; result.value = null; savedId.value = ''; saveError.value = ''; errorMessage.value = ''; notice.value = ''
+  editing.value = false
+  if (stage.value === 'quiz') scrollToQuestion(0)
+}
 function showIntro() { cancelScroll(); stage.value = 'intro'; focusHeading() }
 function recordAnswer(id, value) {
-  const q = therapistQuestions.find(q => q.id === id)
+  const q = activeQuestions.value.find(q => q.id === id)
   if (!q || !isAnswered(q, value)) return
   questionErrorId.value = ''
   if (answers[id] === value) return
@@ -173,16 +191,16 @@ function answerClicked(index, event) {
   if (!autoScroll.value || event.detail === 0 || editing.value) return
   cancelScroll()
   scrollTimer = setTimeout(() => {
-    if (stage.value !== 'quiz' || !active || !isAnswered(therapistQuestions[index], answers[therapistQuestions[index].id])) return
-    if (index < therapistQuestions.length - 1) scrollToQuestion(index + 1)
+    if (stage.value !== 'quiz' || !active || !isAnswered(activeQuestions.value[index], answers[activeQuestions.value[index].id])) return
+    if (index < activeQuestions.value.length - 1) scrollToQuestion(index + 1)
     else scrollToTarget(reviewTarget.value)
   }, 260)
 }
 function continueFrom(index) {
   cancelScroll()
-  const q = therapistQuestions[index]
+  const q = activeQuestions.value[index]
   if (!isAnswered(q, answers[q.id])) { questionErrorId.value = q.id; return }
-  if (editing.value || index === therapistQuestions.length - 1) goToReview()
+  if (editing.value || index === activeQuestions.value.length - 1) goToReview()
   else scrollToQuestion(index + 1)
 }
 function goToReview() {
@@ -190,7 +208,7 @@ function goToReview() {
   if (!progress.value.complete) {
     const missing = progress.value.missing[0]
     questionErrorId.value = missing.id
-    scrollToQuestion(therapistQuestions.findIndex(q => q.id === missing.id))
+    scrollToQuestion(activeQuestions.value.findIndex(q => q.id === missing.id))
     return
   }
   stage.value = 'review'; editing.value = false; questionErrorId.value = ''; focusHeading()
@@ -204,7 +222,7 @@ function captureReport(nextReport, nextResult, nextMode, metadata = {}) {
     snapshot.value.narrative.promptVersion === promptVersion && snapshot.value.narrative.model === model &&
     canonicalJSON(snapshot.value.responses) === canonicalJSON(answers) && canonicalJSON(snapshot.value.narrative.report) === canonicalJSON(nextReport)
   if (!unchanged) {
-    snapshot.value = createReflectionSnapshot({ id: crypto.randomUUID(), completedAt: new Date().toISOString(), answers: { ...answers }, report: nextReport, mode: nextMode, promptVersion, model })
+    snapshot.value = createReflectionSnapshot({ id: crypto.randomUUID(), completedAt: new Date().toISOString(), answers: { ...answers }, report: nextReport, mode: nextMode, promptVersion, model, questionSetId: questionSetId.value })
     savedId.value = ''
   }
   report.value = nextReport; result.value = nextResult; mode.value = nextMode
@@ -214,7 +232,7 @@ function showQuestionBasedReport() {
   if (busy.value || !progress.value.complete) return
   try {
     errorMessage.value = ''
-    const next = buildResult({ ...answers })
+    const next = buildResult({ ...answers }, questionSetId.value)
     notice.value = next.sufficientForNarrative ? '' : 'There is not enough evidence for a developed narrative. No default type is assigned.'
     captureReport(buildFallbackReport(next), next, 'fallback')
   } catch { errorMessage.value = 'The reflection could not be prepared. Your choices are still here.' }
@@ -222,7 +240,7 @@ function showQuestionBasedReport() {
 async function requestAIReport() {
   if (busy.value || !canUseAI.value || !progress.value.complete) return
   busy.value = true; errorMessage.value = ''; notice.value = ''
-  const selected = { ...answers }, expected = buildResult(selected)
+  const selected = { ...answers }, expected = buildResult(selected, questionSetId.value)
   requestController = new AbortController()
   const timer = setTimeout(() => requestController?.abort(), 50000)
   try {
@@ -230,7 +248,7 @@ async function requestAIReport() {
       method: 'POST',
       headers: reportHeaders(true),
       signal: requestController.signal,
-      body: JSON.stringify({ quizVersion: QUIZ_VERSION, answers: selected })
+      body: JSON.stringify({ quizVersion: QUIZ_VERSION, questionSetId: questionSetId.value, answers: selected })
     })
     const data = await response.json()
     if (!response.ok) throw new Error(data?.error || (response.status === 429 ? 'Please wait a minute before another AI request.' : 'AI writing is unavailable. Your choices are preserved; you can read the question-based reflection.'))
@@ -274,6 +292,10 @@ onBeforeUnmount(() => { active = false; cancelScroll(); resizeObserver?.disconne
 </script>
 
 <style scoped src="../quiz/therapist/reflection.css"></style>
+<style scoped>
+.progress-controls { display: flex; gap: 16px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
+.question-set-note { margin-top: 10px; }
+</style>
 <style scoped>
 .progress-header { position: sticky; top: var(--cpd-sticky-top, 0px); z-index: 20; padding: 14px 0 12px; margin-bottom: 24px; background: var(--cpd-canvas); border-bottom: 1px solid var(--cpd-border); }
 .progress-header progress { margin-bottom: 12px; }
