@@ -192,7 +192,7 @@ function answerClicked(index, event) {
   cancelScroll()
   scrollTimer = setTimeout(() => {
     if (stage.value !== 'quiz' || !active || !isAnswered(activeQuestions.value[index], answers[activeQuestions.value[index].id])) return
-    if (index < activeQuestions.length - 1) scrollToQuestion(index + 1)
+    if (index < activeQuestions.value.length - 1) scrollToQuestion(index + 1)
     else scrollToTarget(reviewTarget.value)
   }, 260)
 }
@@ -200,7 +200,7 @@ function continueFrom(index) {
   cancelScroll()
   const q = activeQuestions.value[index]
   if (!isAnswered(q, answers[q.id])) { questionErrorId.value = q.id; return }
-  if (editing.value || index === activeQuestions.length - 1) goToReview()
+  if (editing.value || index === activeQuestions.value.length - 1) goToReview()
   else scrollToQuestion(index + 1)
 }
 function goToReview() {
