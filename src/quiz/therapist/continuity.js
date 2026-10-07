@@ -47,6 +47,7 @@ export function buildContinuitySourcePacket(reflection) {
       interpretation: snapshot.interpretationVersion
     },
     therapistSelections: { ...snapshot.responses },
+    ...(snapshot.questionIds ? { questionIds: [...snapshot.questionIds] } : {}),
     deterministicInterpretation: snapshot.interpretation,
     therapistAmendments: Array.isArray(snapshot.therapistAmendments) ? [...snapshot.therapistAmendments] : [],
     narrativeContext: {

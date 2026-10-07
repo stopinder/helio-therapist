@@ -11,15 +11,19 @@
         <h1 ref="focusTarget" tabindex="-1">Your therapeutic stance</h1>
         <p class="lead">A reflection on how you work, at this point in your practice.</p>
         <p>Fifteen situations invite you to notice familiar approaches, useful tensions and questions for supervision.</p>
+        <p>A balanced selection comes from a bank of 60 authored situations, with preference for those you have not seen before.</p>
         <p>Choose your usual first response, rather than everything you might eventually do.</p>
         <p class="muted">Your choices stay in this page until you save or request AI writing. Refreshing clears unsaved work.</p>
-        <button type="button" class="primary" @click="start">Begin reflection <span aria-hidden="true">→</span></button>
+        <button type="button" class="primary" @click="start">{{ therapistQuestions.length ? 'Resume reflection' : 'Begin reflection' }} <span aria-hidden="true">→</span></button>
+        <button v-if="therapistQuestions.length" type="button" class="secondary" @click="replaceAttempt">Start a new reflection</button>
+        <p v-if="historyUnavailable" class="muted" role="status">Saved question history could not be loaded. This selection uses question history available in this browser.</p>
       </section>
 
       <header v-if="stage === 'quiz'" ref="stickyHeader" class="progress-header no-print" data-testid="progress-header">
         <div class="progress-row"><span>Practice reflection · 15 situations</span><span data-testid="answered-count">{{ progress.answered }} answered</span></div>
         <progress :value="progress.answered" :max="therapistQuestions.length" aria-label="Questions answered"></progress>
         <label class="scroll-preference"><input v-model="autoScroll" type="checkbox" @change="cancelScroll" /><span>Scroll to the next question after selection</span></label>
+        <button type="button" class="text-button" @click="replaceAttempt">Start a new reflection</button>
       </header>
 
       <section v-if="stage === 'quiz'" class="question-screen">
@@ -53,6 +57,7 @@
       <section v-else-if="stage === 'review'">
         <h1 ref="focusTarget" tabindex="-1">Review your choices</h1>
         <p>Revisit any situation before reading your reflection.</p>
+        <button type="button" class="text-button" :disabled="busy" @click="replaceAttempt">Start a new reflection</button>
         <p class="completion-message" role="status">{{ progress.complete ? 'All 15 situations have a response. Your reflection is ready to read.' : 'Some situations still need a response.' }}</p>
         <div class="review-list">
           <div v-for="(question, index) in therapistQuestions" :key="question.id" class="review-row">
@@ -106,6 +111,7 @@
           <p v-if="saveError" class="error-message" role="alert">{{ saveError }}</p>
         </section>
         <button type="button" class="text-button no-print" :disabled="saving" @click="reviewAgain">Review my choices</button>
+        <button type="button" class="secondary no-print" :disabled="saving" @click="replaceAttempt">Take another reflection</button>
       </article>
       <p v-if="errorMessage" class="error-message" role="alert">{{ errorMessage }}</p>
       <p v-if="stage === 'intro' || stage === 'report'" class="reflection-footnote" data-testid="reflection-footnote"><small>{{ DISCLAIMER }}</small></p>
@@ -115,20 +121,27 @@
 
 <script setup>
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
-import { therapistQuestions, QUIZ_VERSION, CONTEXT_ANSWER, CONTEXT_LABEL } from '../quiz/therapist/questions.js'
+import { generateQuestionSet, BANK_VERSION as QUIZ_VERSION, CONTEXT_ANSWER, CONTEXT_LABEL } from '../quiz/therapist/questions.js'
+import { mergeSeenQuestions, readSeenQuestions, writeSeenQuestions } from '../quiz/therapist/history.js'
 import { DISCLAIMER } from '../quiz/therapist/content.js'
 import { buildResult, buildFallbackReport } from '../quiz/therapist/buildResult.js'
 import { answerProgress, isAnswered } from '../quiz/therapist/progress.js'
 import { createReflectionSnapshot, reflectionText, validReportShape, canonicalJSON } from '../quiz/therapist/snapshot.js'
 
 const props = defineProps({
+  therapistId: { type: String, default: '' },
+  previouslySeen: { type: Array, default: () => [] },
+  historyUnavailable: { type: Boolean, default: false },
   saveToLibrary: { type: Function, default: null },
   reportEndpoint: { type: String, default: '/api/therapist-report' },
   reportAuthorization: { type: String, default: '' }
 })
 defineEmits(['open-library'])
 const stage = ref('intro'), editing = ref(false)
-const answers = reactive({}), progress = computed(() => answerProgress(answers))
+const therapistQuestions = ref([])
+const questionIds = computed(() => therapistQuestions.value.map(q => q.id))
+const seenQuestions = ref([])
+const answers = reactive({}), progress = computed(() => answerProgress(answers, therapistQuestions.value))
 const autoScroll = ref(true), questionErrorId = ref(''), stickyHeader = ref(null), headerHeight = ref(115), root = ref(null)
 const focusTarget = ref(null), reviewTarget = ref(null), questionRefs = []
 const busy = ref(false), canUseAI = ref(false), availabilityChecked = ref(false)
@@ -159,10 +172,32 @@ async function scrollToTarget(element, smooth = true) {
 }
 async function focusHeading() { await nextTick(); return scrollToTarget(focusTarget.value, false) }
 async function scrollToQuestion(index) { await nextTick(); return scrollToTarget(questionRefs[index]) }
-function start() { stage.value = 'quiz'; editing.value = false; scrollToQuestion(0) }
+function generateAttempt() {
+  cancelScroll()
+  seenQuestions.value = mergeSeenQuestions(props.previouslySeen, seenQuestions.value)
+  therapistQuestions.value = generateQuestionSet(seenQuestions.value)
+  seenQuestions.value = mergeSeenQuestions(seenQuestions.value, questionIds.value)
+  try { writeSeenQuestions(window.localStorage, props.therapistId, seenQuestions.value) } catch { /* Storage may be disabled. */ }
+  Object.keys(answers).forEach(id => delete answers[id])
+  questionRefs.length = 0
+  snapshot.value = null; report.value = null; result.value = null
+  savedId.value = ''; saveError.value = ''; errorMessage.value = ''; notice.value = ''; questionErrorId.value = ''
+}
+function start() {
+  if (!therapistQuestions.value.length) generateAttempt()
+  stage.value = 'quiz'; editing.value = false; scrollToQuestion(0)
+}
+function replaceAttempt() {
+  if (busy.value || saving.value) return
+  const message = stage.value === 'report'
+    ? 'Take another reflection? Keep a copy or save this reflection first if you want to retain it. Your current responses and unsaved reflection will be replaced.'
+    : 'Start a new reflection? Your current responses will be replaced by a new set of 15 situations.'
+  if (therapistQuestions.value.length && !(stage.value === 'report' && savedId.value) && !window.confirm(message)) return
+  generateAttempt(); start()
+}
 function showIntro() { cancelScroll(); stage.value = 'intro'; focusHeading() }
 function recordAnswer(id, value) {
-  const q = therapistQuestions.find(q => q.id === id)
+  const q = therapistQuestions.value.find(q => q.id === id)
   if (!q || !isAnswered(q, value)) return
   questionErrorId.value = ''
   if (answers[id] === value) return
@@ -173,16 +208,16 @@ function answerClicked(index, event) {
   if (!autoScroll.value || event.detail === 0 || editing.value) return
   cancelScroll()
   scrollTimer = setTimeout(() => {
-    if (stage.value !== 'quiz' || !active || !isAnswered(therapistQuestions[index], answers[therapistQuestions[index].id])) return
-    if (index < therapistQuestions.length - 1) scrollToQuestion(index + 1)
+    if (stage.value !== 'quiz' || !active || !isAnswered(therapistQuestions.value[index], answers[therapistQuestions.value[index].id])) return
+    if (index < therapistQuestions.value.length - 1) scrollToQuestion(index + 1)
     else scrollToTarget(reviewTarget.value)
   }, 260)
 }
 function continueFrom(index) {
   cancelScroll()
-  const q = therapistQuestions[index]
+  const q = therapistQuestions.value[index]
   if (!isAnswered(q, answers[q.id])) { questionErrorId.value = q.id; return }
-  if (editing.value || index === therapistQuestions.length - 1) goToReview()
+  if (editing.value || index === therapistQuestions.value.length - 1) goToReview()
   else scrollToQuestion(index + 1)
 }
 function goToReview() {
@@ -190,7 +225,7 @@ function goToReview() {
   if (!progress.value.complete) {
     const missing = progress.value.missing[0]
     questionErrorId.value = missing.id
-    scrollToQuestion(therapistQuestions.findIndex(q => q.id === missing.id))
+    scrollToQuestion(therapistQuestions.value.findIndex(q => q.id === missing.id))
     return
   }
   stage.value = 'review'; editing.value = false; questionErrorId.value = ''; focusHeading()
@@ -204,7 +239,7 @@ function captureReport(nextReport, nextResult, nextMode, metadata = {}) {
     snapshot.value.narrative.promptVersion === promptVersion && snapshot.value.narrative.model === model &&
     canonicalJSON(snapshot.value.responses) === canonicalJSON(answers) && canonicalJSON(snapshot.value.narrative.report) === canonicalJSON(nextReport)
   if (!unchanged) {
-    snapshot.value = createReflectionSnapshot({ id: crypto.randomUUID(), completedAt: new Date().toISOString(), answers: { ...answers }, report: nextReport, mode: nextMode, promptVersion, model })
+    snapshot.value = createReflectionSnapshot({ id: crypto.randomUUID(), completedAt: new Date().toISOString(), answers: { ...answers }, questionIds: questionIds.value, report: nextReport, mode: nextMode, promptVersion, model })
     savedId.value = ''
   }
   report.value = nextReport; result.value = nextResult; mode.value = nextMode
@@ -214,7 +249,7 @@ function showQuestionBasedReport() {
   if (busy.value || !progress.value.complete) return
   try {
     errorMessage.value = ''
-    const next = buildResult({ ...answers })
+    const next = buildResult({ ...answers }, questionIds.value)
     notice.value = next.sufficientForNarrative ? '' : 'There is not enough evidence for a developed narrative. No default type is assigned.'
     captureReport(buildFallbackReport(next), next, 'fallback')
   } catch { errorMessage.value = 'The reflection could not be prepared. Your choices are still here.' }
@@ -222,7 +257,7 @@ function showQuestionBasedReport() {
 async function requestAIReport() {
   if (busy.value || !canUseAI.value || !progress.value.complete) return
   busy.value = true; errorMessage.value = ''; notice.value = ''
-  const selected = { ...answers }, expected = buildResult(selected)
+  const selected = { ...answers }, selectedQuestionIds = [...questionIds.value], expected = buildResult(selected, selectedQuestionIds)
   requestController = new AbortController()
   const timer = setTimeout(() => requestController?.abort(), 50000)
   try {
@@ -230,7 +265,7 @@ async function requestAIReport() {
       method: 'POST',
       headers: reportHeaders(true),
       signal: requestController.signal,
-      body: JSON.stringify({ quizVersion: QUIZ_VERSION, answers: selected })
+      body: JSON.stringify({ quizVersion: QUIZ_VERSION, answers: selected, questionIds: selectedQuestionIds })
     })
     const data = await response.json()
     if (!response.ok) throw new Error(data?.error || (response.status === 429 ? 'Please wait a minute before another AI request.' : 'AI writing is unavailable. Your choices are preserved; you can read the question-based reflection.'))
@@ -259,6 +294,7 @@ function downloadReport() {
   document.body.appendChild(link); link.click(); link.remove(); setTimeout(() => URL.revokeObjectURL(url), 1000)
 }
 onMounted(async () => {
+  try { seenQuestions.value = readSeenQuestions(window.localStorage, props.therapistId) } catch { /* Use in-memory history. */ }
   if (!props.saveToLibrary) document.title = 'CPD · Practice reflection'
   if (!props.reportEndpoint || !props.reportAuthorization) { availabilityChecked.value = true; return }
   statusController = new AbortController()
@@ -280,6 +316,7 @@ onBeforeUnmount(() => { active = false; cancelScroll(); resizeObserver?.disconne
 .scroll-preference { display: flex; gap: 10px; align-items: center; color: var(--cpd-secondary); font-size: 13px; }
 .scroll-preference input { accent-color: var(--cpd-teal); width: 17px; height: 17px; }
 .question-block, .review-target { scroll-margin-top: calc(var(--cpd-progress-height, 130px) + var(--cpd-sticky-top, 0px) + 18px); }
+h1 { scroll-margin-top: calc(var(--cpd-sticky-top, 0px) + 18px); }
 .question-block { padding: 12px 0 36px; margin-bottom: 36px; border-bottom: 1px solid var(--cpd-border); }
 .review-target { padding: 24px 0 12px; }
 .reflection-footnote { margin: 32px 0 0; color: var(--cpd-muted); font-weight: 400; line-height: 1.5; }

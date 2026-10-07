@@ -1,7 +1,7 @@
 import { requireAuthenticatedUser } from './_lib/supabase.js';
 import { AI_FEATURES, runTextAI } from './_lib/ai-execution.js';
 import { buildResult } from '../src/quiz/therapist/buildResult.js';
-import { QUIZ_VERSION } from '../src/quiz/therapist/questions.js';
+import { QUIZ_VERSION, BANK_VERSION } from '../src/quiz/therapist/questions.js';
 import {
   THERAPEUTIC_STANCE_PROMPT_VERSION,
   therapeuticStanceSystemPrompt,
@@ -22,13 +22,13 @@ export default async function handler(req, res) {
     try {
       await requireAuthenticatedUser(req);
       return res.status(200).json({
-        quizVersion: QUIZ_VERSION,
+        quizVersion: BANK_VERSION,
         aiAvailable: Boolean(process.env.OPENAI_API_KEY),
         promptVersion: THERAPEUTIC_STANCE_PROMPT_VERSION
       });
     } catch (error) {
       return res.status(error.status || 500).json({
-        quizVersion: QUIZ_VERSION,
+        quizVersion: BANK_VERSION,
         aiAvailable: false,
         error: error.status === 401 ? 'Please sign in again.' : 'AI writing status is unavailable.'
       });
@@ -47,15 +47,18 @@ export default async function handler(req, res) {
 
     // POST is sent only when the therapist chooses Generate AI reflection.
     const body = req.body || {};
-    const allowedKeys = new Set(['quizVersion', 'answers']);
+    const allowedKeys = new Set(['quizVersion', 'answers', 'questionIds']);
     if (Object.keys(body).some(key => !allowedKeys.has(key))) return invalidRequest(res);
-    if (body.quizVersion !== QUIZ_VERSION || !body.answers || typeof body.answers !== 'object' || Array.isArray(body.answers)) {
+    if (![QUIZ_VERSION, BANK_VERSION].includes(body.quizVersion) || !body.answers || typeof body.answers !== 'object' || Array.isArray(body.answers) ||
+      (body.quizVersion === BANK_VERSION ? !Array.isArray(body.questionIds) : body.questionIds !== undefined)) {
       return invalidRequest(res);
     }
 
     // Recompute the deterministic interpretation server-side. The model never receives
     // a client-authored profile or scores that the browser could have altered.
-    const result = buildResult(body.answers);
+    let result;
+    try { result = buildResult(body.answers, body.questionIds); }
+    catch { return invalidRequest(res, 'The question set or responses are invalid.'); }
     if (!result.sufficientForNarrative) {
       return res.status(422).json({
         error: 'There is not enough quiz evidence for an AI-written narrative. The question-based reflection remains available.'
@@ -82,7 +85,7 @@ export default async function handler(req, res) {
 
     return res.status(200).json({
       mode: 'ai',
-      quizVersion: QUIZ_VERSION,
+      quizVersion: body.quizVersion,
       result,
       report,
       promptVersion: THERAPEUTIC_STANCE_PROMPT_VERSION,

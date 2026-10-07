@@ -9,6 +9,9 @@
     <TherapistQuizView
       v-else-if="ownerId"
       :key="ownerId"
+      :therapist-id="ownerId"
+      :previously-seen="previouslySeen"
+      :history-unavailable="historyUnavailable"
       :save-to-library="saveToLibrary"
       report-endpoint="/api/therapist-report"
       :report-authorization="reportAuthorization"
@@ -21,7 +24,7 @@
 import { inject, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { supabase } from '../../lib/supabase.js'
-import { savePracticeReflection } from '../../lib/practiceReflectionLibrary.js'
+import { savePracticeReflection, loadPracticeReflectionHistory } from '../../lib/practiceReflectionLibrary.js'
 import TherapistQuizView from '../TherapistQuizView.vue'
 
 const router = useRouter()
@@ -30,6 +33,7 @@ const ownerId = ref('')
 const reportAuthorization = ref('')
 const loading = ref(true)
 const authError = ref(false)
+const previouslySeen = ref([]), historyUnavailable = ref(false)
 async function checkAccount() {
   loading.value = true
   authError.value = false
@@ -41,6 +45,10 @@ async function checkAccount() {
     if (userError || !userData?.user?.id || sessionError || !sessionData?.session?.access_token) throw new Error('Authentication unavailable')
     ownerId.value = userData.user.id
     reportAuthorization.value = `Bearer ${sessionData.session.access_token}`
+    historyUnavailable.value = false
+    try {
+      previouslySeen.value = await loadPracticeReflectionHistory({ supabaseClient: supabase, expectedUserId: ownerId.value })
+    } catch { previouslySeen.value = []; historyUnavailable.value = true }
   } catch {
     ownerId.value = ''
     reportAuthorization.value = ''

@@ -1,6 +1,9 @@
 // New content only. No imports from the retired ADHD/investigation quiz.
 // Editorial weights are provisional organising rules, not psychometric measurements.
+import { questionVariants } from './questionVariants.js'
+
 export const QUIZ_VERSION = 'therapist-style-v1-draft1'
+export const BANK_VERSION = 'therapist-style-bank-v2-draft1'
 export const CONTEXT_ANSWER = 'context'
 export const CONTEXT_LABEL = 'I cannot choose a usual response in this situation.'
 
@@ -160,3 +163,43 @@ export const therapistQuestions = [
     ]
   }
 ]
+
+// One slot per dimension pair. Every attempt has five items per dimension,
+// all four sign combinations per item, and the original ±2 weight capacity.
+export const questionBank = therapistQuestions.flatMap((original, slot) => [
+  { ...original, slot: original.id },
+  ...questionVariants.map((form, variant) => {
+    const [title, text, ...options] = form[slot]
+    return {
+      id: `q${String((variant + 1) * 15 + slot + 1).padStart(2, '0')}`,
+      slot: original.id, title, text,
+      options: options.map((text, index) => ({
+        id: original.options[index].id, text, weights: { ...original.options[index].weights }
+      }))
+    }
+  })
+])
+
+export function resolveQuestionSet(questionIds) {
+  if (questionIds === undefined) return therapistQuestions
+  if (!Array.isArray(questionIds) || questionIds.length !== 15 || new Set(questionIds).size !== 15) {
+    throw new Error('A reflection requires 15 distinct question IDs.')
+  }
+  const questions = questionIds.map(id => questionBank.find(q => q.id === id))
+  if (questions.some(q => !q) || new Set(questions.map(q => q.slot)).size !== 15) {
+    throw new Error('The question set is unknown or unbalanced.')
+  }
+  return questions
+}
+
+/** Unseen first, then least recently seen. Random ties never affect scoring. */
+export function generateQuestionSet(seenIds = [], random = Math.random) {
+  const recency = new Map(seenIds.map((id, index) => [id, index]))
+  return therapistQuestions.map(original => {
+    const candidates = questionBank.filter(q => q.slot === original.id)
+    const priority = q => recency.has(q.id) ? recency.get(q.id) : -1
+    const oldest = Math.min(...candidates.map(priority))
+    const preferred = candidates.filter(q => priority(q) === oldest)
+    return preferred[Math.floor(random() * preferred.length)]
+  })
+}

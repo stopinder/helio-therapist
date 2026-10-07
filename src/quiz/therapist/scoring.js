@@ -1,4 +1,4 @@
-import { therapistQuestions, CONTEXT_ANSWER, QUIZ_VERSION } from './questions.js'
+import { resolveQuestionSet, CONTEXT_ANSWER, QUIZ_VERSION, BANK_VERSION } from './questions.js'
 import { dimensions } from './content.js'
 
 export class QuizInputError extends Error {
@@ -11,7 +11,8 @@ export function isPlainObject(value) {
 }
 
 /** Validate IDs, not a client-supplied psychological profile. No unknown fields are accepted. */
-export function validateAnswers(answers) {
+export function validateAnswers(answers, questionIds) {
+  const therapistQuestions = resolveQuestionSet(questionIds)
   if (!isPlainObject(answers)) throw new QuizInputError('Answers must be an object.')
   const keys = Object.keys(answers)
   if (keys.length !== therapistQuestions.length || keys.some(id => !therapistQuestions.some(q => q.id === id))) {
@@ -28,8 +29,9 @@ export function validateAnswers(answers) {
 }
 
 /** Pure and deterministic. Numeric positions are internal editorial calculations, not clinical scores. */
-export function scoreAnswers(input) {
-  const answers = validateAnswers(input)
+export function scoreAnswers(input, questionIds) {
+  const therapistQuestions = resolveQuestionSet(questionIds)
+  const answers = validateAnswers(input, questionIds)
   const evidence = []
   const skippedQuestions = []
   // Iterate in content order so object insertion order cannot change a result.
@@ -84,5 +86,5 @@ export function scoreAnswers(input) {
     }
   })
 
-  return { quizVersion: QUIZ_VERSION, evidence, skippedQuestions, dimensionScores }
+  return { quizVersion: questionIds === undefined ? QUIZ_VERSION : BANK_VERSION, evidence, skippedQuestions, dimensionScores }
 }

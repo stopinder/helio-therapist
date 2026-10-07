@@ -1,7 +1,27 @@
 import { validateReflectionSnapshot, reflectionText, canonicalJSON } from '../quiz/therapist/snapshot.js'
 import { buildFallbackReport } from '../quiz/therapist/buildResult.js'
+import { mergeSeenQuestions, snapshotQuestionIds } from '../quiz/therapist/history.js'
 
 const FIELDS = 'id,user_id,body,workspace_content,created_at'
+
+/** Saved history follows the therapist across browsers. Query is owner-filtered
+ * and paginated; existing private_reflections RLS remains authoritative. */
+export async function loadPracticeReflectionHistory({ supabaseClient, expectedUserId }) {
+  const auth = await supabaseClient.auth.getUser()
+  if (auth.error || !expectedUserId || auth.data?.user?.id !== expectedUserId) throw new Error('Account could not be confirmed.')
+  let seen = []
+  const pageSize = 500
+  for (let offset = 0; ; offset += pageSize) {
+    const { data, error } = await supabaseClient.from('private_reflections')
+      .select('id,workspace_content,created_at').eq('user_id', expectedUserId)
+      .eq('workspace_content->>captureSource', 'practice_reflection')
+      .order('created_at', { ascending: true }).order('id', { ascending: true })
+      .range(offset, offset + pageSize - 1)
+    if (error || !Array.isArray(data)) throw new Error('Reflection history is unavailable.')
+    seen = mergeSeenQuestions(seen, ...data.map(row => snapshotQuestionIds(row.workspace_content?.practiceReflection)))
+    if (data.length < pageSize) return seen
+  }
+}
 
 /** An explicit, insert-only private-library action. No AI call and no service-role client. */
 export async function savePracticeReflection({ snapshot, supabaseClient, expectedUserId } = {}) {

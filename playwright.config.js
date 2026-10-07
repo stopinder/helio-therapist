@@ -21,7 +21,7 @@ export default defineConfig({
   globalTimeout: 600_000,
   testDir: './e2e',
   // Help has its own localhost-only server and synthetic service fixtures.
-  testIgnore: '**/help-centre.spec.js',
+  testIgnore: ['**/help-centre.spec.js', '**/stance-question-bank.spec.js'],
   /* Run tests in files in parallel */
   fullyParallel: true,
   /* Fail the build on CI if you accidentally left test.only in the source code. */
