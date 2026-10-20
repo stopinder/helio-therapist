@@ -88,6 +88,11 @@ test.describe('Zoom My Notes transcript inbox', () => {
       await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ connected: false }) });
     });
 
+    await page.route('**/api/billing/status*', route => route.fulfill({
+      status: 200, contentType: 'application/json',
+      body: JSON.stringify({ hasWorkspaceAccess: true, subscription: { status: 'trialing' } })
+    }));
+
     await page.route('**/api/zoom/status', async route => {
       await route.fulfill({
         status: 200,

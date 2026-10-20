@@ -15,6 +15,8 @@ test.describe('Authentication Lifecycle', () => {
     await page.route('**/rest/v1/sessions*', route => route.fulfill({ status:200, contentType:'application/json', body:'[]' }));
     await page.route('**/rest/v1/therapist_reminders*', route => route.fulfill({ status:200, contentType:'application/json', body:'[]' }));
     await page.route('**/api/google/status', route => route.fulfill({ status:200, contentType:'application/json', body:JSON.stringify({ connected:false }) }));
+    // The real app requires a server billing decision before showing the workspace.
+    await page.route('**/api/billing/status*', route => route.fulfill({ status:200, contentType:'application/json', body:JSON.stringify({ hasWorkspaceAccess:true, subscription:{ status:'trialing' } }) }));
   });
 
   async function login(page) {
