@@ -57,7 +57,7 @@ test.describe('Authentication Lifecycle', () => {
     await expect(page.getByText('Your session has expired. Please sign in again.')).toBeVisible();
   });
 
-  test('forgot-password request sends the production recovery redirect and confirms delivery', async ({ page }) => {
+  test('forgot-password request stays on the current site and confirms delivery', async ({ page }) => {
     let recoveryRequest;
     await page.route('**/auth/v1/recover*', async route => {
       recoveryRequest = { url:route.request().url(), body:route.request().postDataJSON() };
@@ -68,7 +68,7 @@ test.describe('Authentication Lifecycle', () => {
     await page.getByRole('button',{name:'Forgot your password?'}).click();
     await expect(page.getByText('Check your email for the password reset link.')).toBeVisible();
     expect(recoveryRequest.body.email).toBe(email);
-    expect(new URL(recoveryRequest.url).searchParams.get('redirect_to')).toBe('https://helio.works/sign-in');
+    expect(new URL(recoveryRequest.url).searchParams.get('redirect_to')).toBe(new URL('/sign-in', page.url()).toString());
   });
 
   test('password-recovery route can show the reset form', async ({ page }) => {
