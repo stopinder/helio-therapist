@@ -48,7 +48,7 @@ jobs:
       - name: Create synthetic tables and execute migration
         run: |
           psql -X -v ON_ERROR_STOP=1 -f test/sql/free-client-cap-schema.sql
-          psql -X -v ON_ERROR_STOP=1 -f supabase/migrations/20261020150100_enforce_free_active_client_limit.sql
+          psql -X -v ON_ERROR_STOP=1 -f supabase/migrations/20261020143022_enforce_free_active_client_limit.sql
       - name: Verify insert, archive, unarchive, downgrade, ownership and RLS
         run: psql -X -v ON_ERROR_STOP=1 -f test/sql/free-client-cap-cases.sql
       - name: Verify simultaneous inserts cannot exceed five
