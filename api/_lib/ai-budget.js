@@ -22,8 +22,6 @@ export async function checkDictationFairUse({ userId, durationSeconds, supabase 
     response = await supabase.rpc('check_dictation_fair_use', {
       p_user_id: userId,
       p_duration_seconds: Math.ceil(durationSeconds)
-    }, {
-      schema: 'private'
     });
   } catch (error) {
     throw budgetError('AI_BUDGET_UNAVAILABLE', 503, 'AI allowance could not be checked.');

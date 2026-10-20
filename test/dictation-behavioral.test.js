@@ -18,10 +18,10 @@ function mockSupabase(responses = {}) {
   };
 }
 
-test('checkDictationFairUse uses private schema', async () => {
+test('checkDictationFairUse uses public gateway', async () => {
   const supabase = mockSupabase({
     check_dictation_fair_use: (params, options) => {
-      assert.equal(options.schema, 'private');
+      assert.strictEqual(options, undefined);
       return { data: null, error: null };
     }
   });

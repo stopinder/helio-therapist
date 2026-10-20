@@ -13,7 +13,11 @@ const SUPPORTED_AUDIO_TYPES = new Set(['audio/webm', 'audio/ogg', 'audio/mp4']);
 async function getDurationSeconds(buffer, mimeType) {
   try {
     const metadata = await mm.parseBuffer(buffer, { mimeType });
-    return metadata.format.duration || null;
+    const duration = metadata.format.duration;
+    if (typeof duration !== 'number' || !Number.isFinite(duration) || duration <= 0) {
+      return null;
+    }
+    return duration;
   } catch (error) {
     console.error('[Dictation] Duration parsing failed:', error.message);
     return null;

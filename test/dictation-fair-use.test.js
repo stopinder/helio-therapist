@@ -6,7 +6,7 @@ import {
   isBudgetError
 } from '../api/_lib/ai-budget.js';
 
-const migration = readFileSync(new URL('../supabase/migrations/20261020221801_dictation_fair_use.sql', import.meta.url), 'utf8');
+const migration = readFileSync(new URL('../supabase/migrations/20261020224448_secure_dictation_fair_use_gateway.sql', import.meta.url), 'utf8');
 const transcribe = readFileSync(new URL('../api/ai/transcribe.js', import.meta.url), 'utf8');
 
 function client(data, error = null) {
@@ -15,11 +15,14 @@ function client(data, error = null) {
 }
 
 test('Dictation fair-use RPC is defined correctly in migration', () => {
-  assert.match(migration, /create table if not exists private\.dictation_usage/);
-  assert.match(migration, /check_dictation_fair_use/);
+  assert.match(migration, /create or replace function private\.check_dictation_fair_use/);
+  assert.match(migration, /create or replace function public\.check_dictation_fair_use/);
+  assert.match(migration, /v_max_individual_seconds integer := 120/);
   assert.match(migration, /v_daily_limit integer := 1800/);
   assert.match(migration, /v_rate_limit_count integer := 10/);
   assert.match(migration, /security definer/);
+  assert.match(migration, /security invoker/);
+  assert.match(migration, /if current_setting\('role'\) <> 'service_role'/);
   assert.match(migration, /to service_role/);
 });
 
