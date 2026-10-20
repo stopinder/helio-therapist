@@ -42,6 +42,7 @@ test.describe('Transcript Workflow - A11y & Responsive', () => {
         await page.route('**/rest/v1/sessions*', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([]) }));
         await page.route('**/rest/v1/therapist_reminders*', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([]) }));
         await page.route('**/api/google/status', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ connected: true }) }));
+        await page.route('**/api/billing/status*', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ hasWorkspaceAccess: true, subscription: { status: 'trialing' } }) }));
         await page.route('**/api/zoom/transcripts*', async route => {
             if (route.request().method() === 'GET') {
                 return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ transcripts: [{ id: 'trans-1', meetingId: '123456789', receivedAt: new Date().toISOString(), status: 'unassigned', clientId: null, sessionRef: null, text: 'Mock transcript text content for testing review.' }] }) });

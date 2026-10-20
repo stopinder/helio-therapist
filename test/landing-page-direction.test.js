@@ -45,7 +45,8 @@ describe('Landing Page Direction', () => {
   });
 
   test('does not reintroduce the retired long-form landing sections', () => {
-    assert.doesNotMatch(landingSource, /id="sessions"|id="continuity"|id="reflect"|id="trust"|id="pricing"/);
+    assert.doesNotMatch(landingSource, /id="sessions"|id="continuity"|id="reflect"|id="trust"/);
+    assert.match(landingSource, /id="pricing"/);
     assert.doesNotMatch(landingSource, /Sarah M\.|Daniel Reed/);
   });
 });

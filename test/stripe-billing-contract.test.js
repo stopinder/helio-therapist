@@ -6,9 +6,9 @@ const checkout = fs.readFileSync('api/billing/checkout.js','utf8');
 const webhook = fs.readFileSync('api/billing/webhook.js','utf8');
 const migration = fs.readFileSync('supabase/migrations/20260924110000_add_therapist_subscriptions.sql','utf8');
 
-test('Stripe checkout uses configured price and 30 day trial', () => {
+test('Stripe checkout uses configured price and 7 day trial', () => {
   assert.match(checkout, /getStripePriceId/);
-  assert.match(checkout, /trial_period_days:\s*30/);
+  assert.match(checkout, /trial_period_days:\s*7/);
   assert.match(checkout, /therapist_id:\s*user\.id/);
 });
 test('Stripe webhook verifies signatures before syncing subscriptions', () => {

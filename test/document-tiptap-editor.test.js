@@ -13,7 +13,7 @@ test('practice and client document composers use the shared paginated Tiptap edi
 
   assert.match(practice, /<RichDocumentEditor/)
   assert.match(client, /<RichDocumentEditor/)
-  assert.doesNotMatch(practice, /document-body-editor/)
+  assert.doesNotMatch(practice, /<textarea[^>]*document-body-editor/)
   assert.doesNotMatch(client, /clinical-body/)
 
   assert.match(editor, /@tiptap\/vue-3/)

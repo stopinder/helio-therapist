@@ -346,6 +346,11 @@ test.describe('Clinical Record approval and amendment flow', () => {
             })
         );
 
+        // Clinical workflow tests use a synthetic authenticated subscription.
+        await page.route('**/api/billing/status*', route =>
+            route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ hasWorkspaceAccess: true, subscription: { status: 'trialing' } }) })
+        );
+
         await page.route('**/api/zoom/transcripts*', route =>
             route.fulfill({
                 status: 200,

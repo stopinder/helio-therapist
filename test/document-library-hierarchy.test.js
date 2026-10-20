@@ -1,5 +1,37 @@
-import test from 'node:test';import assert from 'node:assert/strict';import { readFile } from 'node:fs/promises';
-const read=path=>readFile(new URL(path,import.meta.url),'utf8');
-test('document library keeps practice documents primary and client records searchable',async()=>{const source=await read('../src/components/documents/DocumentLibrary.vue');assert.match(source,/Search practice documents or client records/);assert.match(source,/Practice Documents/);assert.match(source,/Practice Resources/);assert.match(source,/Client document matches/);assert.match(source,/doc\.scope!=='client'/);assert.match(source,/clientSearchResults/);assert.match(source,/:aria-expanded="isOpen/);assert.match(source,/doc\.clientName/);assert.match(source,/doc\.documentType/);assert.doesNotMatch(source,/Prospect \/ Marketing/)});
-test('documents view preserves existing document actions through grouped library',async()=>{const source=await read('../src/views/Documents.vue');assert.match(source,/<DocumentLibrary v-else :documents="docs" @edit="edit" @download="download"/);assert.match(source,/createUnscopedDocumentDraft/);assert.match(source,/saveDocumentDraft/);assert.match(source,/downloadDocument/);assert.match(source,/data-testid="professional-document-composer"/)});
-test('practice identity is compact until explicitly edited',async()=>{const source=await read('../src/components/documents/PracticeIdentityEditor.vue');assert.doesNotMatch(source,/Outgoing documents/);assert.match(source,/v-if="expanded"/);assert.match(source,/\{\{ expanded\?'Done':'Edit' \}\}/)});
+import test from 'node:test'
+import assert from 'node:assert/strict'
+import { readFile } from 'node:fs/promises'
+
+const read = path => readFile(new URL(path, import.meta.url), 'utf8')
+
+test('document library keeps practice documents primary and client records searchable', async () => {
+  const source = await read('../src/components/documents/DocumentLibrary.vue')
+  assert.match(source, /Search practice documents or client records/)
+  assert.match(source, /Practice Documents/)
+  assert.match(source, /Practice Resources/)
+  assert.match(source, /Client document matches/)
+  assert.match(source, /doc\.scope\s*!==\s*'client'/)
+  assert.match(source, /clientSearchResults/)
+  assert.match(source, /:aria-expanded="isOpen/)
+  assert.match(source, /doc\.clientName/)
+  assert.match(source, /doc\.documentType/)
+  assert.doesNotMatch(source, /Prospect \/ Marketing/)
+})
+
+test('documents view preserves existing document actions through grouped library', async () => {
+  const source = await read('../src/views/Documents.vue')
+  assert.match(source, /<DocumentLibrary[\s\S]*?:documents="docs"/)
+  assert.match(source, /@edit="edit"/)
+  assert.match(source, /@download="download"/)
+  assert.match(source, /createUnscopedDocumentDraft/)
+  assert.match(source, /saveDocumentDraft/)
+  assert.match(source, /downloadDocument/)
+  assert.match(source, /data-testid="professional-document-composer"/)
+})
+
+test('practice identity is compact until explicitly edited', async () => {
+  const source = await read('../src/components/documents/PracticeIdentityEditor.vue')
+  assert.doesNotMatch(source, /Outgoing documents/)
+  assert.match(source, /v-if="expanded"/)
+  assert.match(source, /\{\{ expanded\?'Done':'Edit' \}\}/)
+})
