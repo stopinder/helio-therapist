@@ -15,7 +15,11 @@ All changes use existing table ownership constraints, schema-qualified relations
 - `node --test test/clinical-integrity-hardening.test.js`: all three scenarios pass using **PGlite, disposable in-memory PostgreSQL** with the **complete ordered repository migration chain** and `authenticated` role plus JWT `auth.uid()` RLS simulation. Zero live network/database calls.
 - Negative paths exercised: insert completed session; insert forged completion timestamp; mutate/delete a finalised Storage file; mutate/delete an existing published resource version; mutate a just-published draft version.
 - Positive paths exercised: insert valid in-progress session; owner update/delete of temporary and draft files; cross-owner Storage denial; edit/delete unpublished resource versions before publishing.
-- Run `npm test` and `npm run test:components` / `npm run build` on the review branch. GitHub CI must pass before merge.
+- All **87 ordered repository migrations** applied successfully in a fresh isolated local Supabase PostgreSQL 17 environment (`helio-integrity-staging-20261020`; ports 56321/56322). No hosted project was touched.
+- **16/16** local API integration assertions passed with synthetic users and data. They include the authorised `complete_session` RPC, direct-insert denial, authenticated Storage file upload/replace/delete, rejected finalised-file overwrite/deletion, preserved finalised-file bytes, a working expiring signed URL, and rejected published-version update/delete through the Data API.
+- The repeatable opt-in harness is `scripts/verify-local-clinical-integrity.mjs`. It **requires** three environment variables (`HELIO_LOCAL_API`, `HELIO_LOCAL_ANON`, `HELIO_LOCAL_SERVICE`) populated with disposable *local* Supabase keys, refuses API URLs not starting with `http://127.0.0.1:56321`, and creates only synthetic local records. Do not put keys in tracked files. Never point it at Platform.
+- Run `npm test` and `npm run test:components` / `npm run build` on the review branch. GitHub Quality and Help Centre workflows passed on the pre-documentation clinical branch; recheck after any change.
+- The disposable local environment was stopped and its data volumes and temporary credentials removed after verification. This is **not** a hosted staging-project deployment.
 
 ## Approval gates before production
 
