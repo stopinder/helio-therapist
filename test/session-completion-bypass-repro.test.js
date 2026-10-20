@@ -22,6 +22,7 @@ test('session completion bypass reproduction', async () => {
       create schema auth;
       create table auth.users (
         id uuid primary key,
+        created_at timestamptz not null default now(),
         raw_user_meta_data jsonb not null default '{}'::jsonb
       );
       create function auth.uid() returns uuid language sql stable as $$ select nullif(current_setting('request.jwt.claim.sub', true), '')::uuid $$;
