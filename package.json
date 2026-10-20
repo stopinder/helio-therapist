@@ -25,6 +25,10 @@
     "@heroicons/vue": "^2.2.0",
     "@lucide/vue": "^1.31.0",
     "@supabase/supabase-js": "^2.89.0",
+    "@tiptap/core": "^3.31.4",
+    "@tiptap/pm": "^3.31.4",
+    "@tiptap/starter-kit": "^3.31.4",
+    "@tiptap/vue-3": "^3.31.4",
     "@vercel/analytics": "^2.0.1",
     "@vercel/functions": "3.9.5",
     "@vercel/speed-insights": "^2.0.0",
@@ -34,12 +38,8 @@
     "pinia": "^2.1.7",
     "serialize-javascript": "^7.0.7",
     "stripe": "^18.5.0",
-    "vue": "^3.4.0",
-    "vue-router": "^4.6.4",
-    "@tiptap/core": "^3.31.4",
-    "@tiptap/pm": "^3.31.4",
-    "@tiptap/starter-kit": "^3.31.4",
-    "@tiptap/vue-3": "^3.31.4"
+    "vue": "^3.5.44",
+    "vue-router": "^4.6.4"
   },
   "devDependencies": {
     "@electric-sql/pglite": "^0.5.4",
