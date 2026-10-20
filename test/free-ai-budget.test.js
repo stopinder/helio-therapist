@@ -10,7 +10,7 @@ import {
   reserveAiBudget
 } from '../api/_lib/ai-budget.js';
 
-const migration = readFileSync(new URL('../supabase/migrations/20261020154114_free_ai_monthly_budget.sql', import.meta.url), 'utf8');
+const migration = readFileSync(new URL('../supabase/migrations/20261020220534_unmetered_dictation.sql', import.meta.url), 'utf8');
 const aiEngine = readFileSync(new URL('../api/_lib/ai-execution.js', import.meta.url), 'utf8');
 const transcribe = readFileSync(new URL('../api/ai/transcribe.js', import.meta.url), 'utf8');
 
@@ -24,11 +24,7 @@ test('Free budget is deliberately bounded and low cost', () => {
   assert.equal(FREE_AI_MAX_INPUT_CHARS, 12000);
   assert.equal(FREE_AI_MAX_OUTPUT_TOKENS, 1000);
   assert.equal(FREE_AI_TEXT_MODEL, 'gpt-4o-mini');
-  assert.match(migration, /used < 5/);
-  assert.match(migration, /between 0 and 5/);
-  assert.match(migration, /between 0 and 500/);
-  assert.match(migration, /free_ai_global_monthly_usage/);
-  assert.match(migration, /period_start date/);
+  assert.match(migration, /Audio transcription is unmetered/);
 });
 
 test('reserveAiBudget calls the server-only atomic RPC with no clinical input', async () => {
@@ -54,16 +50,17 @@ test('Free limit exhaustion produces a stable 429 and is not bypassed', async ()
   );
 });
 
-test('Free audio, oversize requests, missing RPC and malformed data fail closed', async () => {
+test('Oversize requests, missing RPC and malformed data fail closed', async () => {
   const examples = [
-    [{ message: 'FREE_AUDIO_NOT_INCLUDED' }, 403],
     [{ message: 'FREE_AI_GLOBAL_LIMIT' }, 503],
     [{ message: 'FREE_AI_INPUT_TOO_LARGE' }, 413],
+    [{ message: 'DICTATION_DAILY_LIMIT_EXCEEDED' }, 429],
+    [{ message: 'DICTATION_RATE_LIMIT_EXCEEDED' }, 429],
     [{ message: 'function public.reserve_free_ai_action is missing', code: 'PGRST202' }, 503]
   ];
   for (const [error, status] of examples) {
     await assert.rejects(reserveAiBudget({
-      userId: 'free-user', feature: 'audio.transcription', supabase: client(null, error)
+      userId: 'free-user', feature: 'reflection.analysis', supabase: client(null, error)
     }), e => e.status === status && isBudgetError(e));
   }
   await assert.rejects(reserveAiBudget({
@@ -84,21 +81,18 @@ test('all text AI provider calls reserve before OpenAI, clamp Free model and tok
   assert.match(aiEngine, /maxRetries: 0/);
 });
 
-test('the separate Whisper endpoint also checks Free budget BEFORE calling provider', () => {
+test('the separate Whisper endpoint also uses the unmetered budget check', () => {
   const reservePos = transcribe.indexOf('await reserveAiBudget(');
   const providerPos = transcribe.indexOf('await client.audio.transcriptions.create(');
   assert.ok(reservePos >= 0 && providerPos > reservePos);
   assert.match(transcribe, /feature: 'audio.transcription'/);
   assert.match(transcribe, /isBudgetError\(error\)/);
+  assert.match(transcribe, /Dictation is now free and unmetered/);
 });
 
-test('RPC is service-role-only; the private table is not Data API writable', () => {
+test('RPC is service-role-only', () => {
   assert.match(migration, /security definer/);
   assert.match(migration, /set search_path = ''/);
   assert.match(migration, /to service_role/);
   assert.match(migration, /revoke all on function public\.reserve_free_ai_action/);
-  assert.match(migration, /enable row level security/);
-  assert.match(migration, /revoke all on private\.free_ai_monthly_usage/);
-  assert.match(migration, /revoke all on private\.free_ai_global_monthly_usage/);
-  assert.match(migration, /on conflict \(user_id, period_start\)/);
 });

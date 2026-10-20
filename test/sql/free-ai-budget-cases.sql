@@ -38,14 +38,13 @@ BEGIN
     if err <> 'FREE_AI_INPUT_TOO_LARGE' then raise; end if;
   END;
   BEGIN
-    perform public.reserve_free_ai_action(free_user,'audio.transcription',0,0);
-    raise exception 'Free audio unexpectedly accepted';
-  EXCEPTION WHEN raise_exception THEN
-    get stacked diagnostics err = MESSAGE_TEXT;
-    if err <> 'FREE_AUDIO_NOT_INCLUDED' then raise; end if;
+    select public.reserve_free_ai_action(free_user,'audio.transcription',0,0) into value;
+    if value is not null then
+      raise exception 'Free audio transcription unexpectedly consumed a credit';
+    end if;
   END;
   if exists(select 1 from private.free_ai_monthly_usage where user_id=free_user) then
-    raise exception 'A denied request consumed an AI credit';
+    raise exception 'A free request consumed an AI credit';
   end if;
 
   for n in 1..5 loop

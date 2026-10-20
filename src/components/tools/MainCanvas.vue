@@ -321,12 +321,28 @@ function requestCloseEditor() {
 function beginEditFocus() { draftFocus.value = props.selectedClient?.note || ''; editingFocus.value = true }
 function cancelFocusEdit() { editingFocus.value = false; draftFocus.value = '' }
 function saveFocus() { emit('update-focus', draftFocus.value.trim()); editingFocus.value = false }
-function stopRecording() { if (recorder?.state === 'recording') recorder.stop(); else recordingStream?.getTracks().forEach(track => track.stop()) }
-function dictationMessage() { if (dictationError.value) return dictationError.value; if (isDictating.value) return 'Recording. Select Stop dictation when you have finished.'; if (transcribing.value) return 'Transcribing your recording. Audio is discarded immediately after this request.'; return 'Optional: dictate a note, then review and edit the transcript before saving. Audio is not retained.' }
+const recordingInterval = ref(null)
+const recordingSeconds = ref(0)
+const MAX_RECORDING_SECONDS = 120
+
+function stopRecording() {
+  if (recordingInterval.value) { clearInterval(recordingInterval.value); recordingInterval.value = null }
+  if (recorder?.state === 'recording') recorder.stop(); else recordingStream?.getTracks().forEach(track => track.stop())
+}
+function dictationMessage() {
+  if (dictationError.value) return dictationError.value;
+  if (isDictating.value) {
+    const remaining = MAX_RECORDING_SECONDS - recordingSeconds.value
+    if (remaining <= 30) return `Recording. ${remaining} seconds remaining before automatic stop.`
+    return 'Recording. Select Stop dictation when you have finished.';
+  }
+  if (transcribing.value) return 'Transcribing your recording. Audio is discarded immediately after this request.';
+  return 'Optional: dictate a note, then review and edit the transcript before saving. Audio is not retained.'
+}
 function microphoneError(error) { if (error?.name === 'NotAllowedError' || error?.name === 'SecurityError') return 'Microphone access was blocked. Allow microphone access in your browser settings, then try again.'; if (error?.name === 'NotFoundError') return 'No microphone was found. Connect one, then try again.'; if (error?.name === 'NotReadableError') return 'Your microphone is in use by another application. Close it, then try again.'; return 'We could not start the microphone. Please try again.' }
 async function audioDataUrl(blob) { return new Promise((resolve, reject) => { const reader = new FileReader(); reader.onload = () => resolve(reader.result); reader.onerror = () => reject(new Error('The recording could not be prepared for transcription.')); reader.readAsDataURL(blob) }) }
 async function toggleDictation() {
-  if (isDictating.value) { recorder?.stop(); return }
+  if (isDictating.value) { stopRecording(); return }
   dictationError.value = ''
   if (!navigator.mediaDevices?.getUserMedia || !window.MediaRecorder) { dictationError.value = 'Dictation is not supported by this browser. Please use a current version of Chrome, Edge, Firefox, or Safari.'; return }
   try {
@@ -340,22 +356,31 @@ async function toggleDictation() {
       recordingStream = null
       stream?.getTracks().forEach(track => track.stop())
       isDictating.value = false
+      const duration = recordingSeconds.value
       const blob = new Blob(chunks, { type: recorder?.mimeType || 'audio/webm' })
       chunks = []
       recorder = null
-      if (!blob.size) { dictationError.value = 'No audio was captured. Please try again.'; return }
+      if (!blob.size) { if (!dictationError.value) dictationError.value = 'No audio was captured. Please try again.'; return }
       transcribing.value = true
       try {
-        const response = await authenticatedFetch('/api/ai/transcribe', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ audio: await audioDataUrl(blob) }) })
+        const response = await authenticatedFetch('/api/ai/transcribe', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ audio: await audioDataUrl(blob), duration }) })
         const data = await response.json().catch(() => ({}))
-        if (!response.ok) throw new Error(data.error || 'The recording could not be transcribed.')
+        if (!response.ok) throw new Error(data.error?.message || data.error || 'The recording could not be transcribed.')
         const text = String(data.text || '').trim()
         if (!text) throw new Error('No speech was detected. Please try again or type the note.')
         draftNotes.value = (draftNotes.value + (draftNotes.value ? '\n\n' : '') + text).trim()
       } catch (error) { dictationError.value = error.message || 'The recording could not be transcribed. Please try again.' } finally { transcribing.value = false }
     }
+    recordingSeconds.value = 0
     recorder.start()
     isDictating.value = true
+    recordingInterval.value = setInterval(() => {
+      recordingSeconds.value++
+      if (recordingSeconds.value >= MAX_RECORDING_SECONDS) {
+        dictationError.value = 'Dictation is limited to two minutes per recording. You can continue with another recording.'
+        stopRecording()
+      }
+    }, 1000)
   } catch (error) {
     recordingStream?.getTracks().forEach(track => track.stop())
     recordingStream = null

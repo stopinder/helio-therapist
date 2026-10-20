@@ -33,6 +33,7 @@
     "@vercel/functions": "3.9.5",
     "@vercel/speed-insights": "^2.0.0",
     "cookie": "^2.0.1",
+    "music-metadata": "^12.2.3",
     "openai": "^6.15.0",
     "pdfkit": "^0.19.1",
     "pinia": "^2.1.7",

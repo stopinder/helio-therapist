@@ -1,0 +1,218 @@
+✔ checkDictationFairUse uses private schema (1.9095ms)
+✔ music-metadata correctly parses duration (0.215ms)
+✔ Daily limit error mapping (0.8666ms)
+✔ Rate limit error mapping (0.1905ms)
+✔ Supabase unavailable handling (0.4629ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 5
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 11.0727
+✔ Free budget is deliberately bounded and low cost (0.9738ms)
+✔ reserveAiBudget calls the server-only atomic RPC with no clinical input (0.9657ms)
+✔ paid and grandfathered accounts get a null reservation from DB (0.1541ms)
+✔ Free limit exhaustion produces a stable 429 and is not bypassed (0.5476ms)
+✔ Oversize requests, missing RPC and malformed data fail closed (0.7352ms)
+✔ all text AI provider calls reserve before OpenAI, clamp Free model and tokens (0.2609ms)
+✖ the separate Whisper endpoint also uses the unmetered budget check (1.2137ms)
+✔ RPC is service-role-only (0.2227ms)
+ℹ tests 8
+ℹ suites 0
+ℹ pass 7
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 15.6659
+✖ failing tests:
+test at test\free-ai-budget.test.js:84:1
+✖ the separate Whisper endpoint also uses the unmetered budget check (1.2137ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /Dictation is now free and unmetered/. Input:
+
+  "import OpenAI, { toFile } from 'openai';\r\n" +
+    "import { requireAuthenticatedUser } from '../_lib/supabase.js';\r\n" +
+    "import { isBudgetError, reserveAiBudget, checkDictationFairUse } from '../_lib/ai-budget.js';\r\n" +
+    "import * as mm from 'music-metadata';\r\n" +
+    '\r\n' +
+    'const MAX_AUDIO_BYTES = 3 * 1024 * 1024;\r\n' +
+    'const MAX_AUDIO_SECONDS = 120;\r\n' +
+    "const SUPPORTED_AUDIO_TYPES = new Set(['audio/webm', 'audio/ogg', 'audio/mp4']);\r\n" +
+    '\r\n' +
+    '/**\r\n' +
+    ' * Server-validated audio duration using music-metadata.\r\n' +
+    ' */\r\n' +
+    'async function getDurationSeconds(buffer, mimeType) {\r\n' +
+    '  try {\r\n' +
+    '    const metadata = await mm.parseBuffer(buffer, { mimeType });\r\n' +
+    '    return metadata.format.duration || null;\r\n' +
+    '  } catch (error) {\r\n' +
+    "    console.error('[Dictation] Duration parsing failed:', error.message);\r\n" +
+    '    return null;\r\n' +
+    '  }\r\n' +
+    '}\r\n' +
+    '\r\n' +
+    'function parseAudioDataUrl(value) {\r\n' +
+    '  // Chrome normally supplies audio/webm;codecs=opus. Accept that browser\r\n' +
+    '  // parameter while passing OpenAI the underlying audio MIME type.\r\n' +
+    "  const match = String(value || '').match(/^data:([^;,]+)(?:;[^,]*)*;base64,([A-Za-z0-9+/=]+)$/i);\r\n" +
+    '  if (!match || !SUPPORTED_AUDIO_TYPES.has(match[1].toLowerCase())) return null;\r\n' +
+    "  return { mimeType: match[1].toLowerCase(), audio: Buffer.from(match[2], 'base64') };\r\n" +
+    '}\r\n' +
+    '\r\n' +
+    "const model = 'whisper-1'\r\n" +
+    '\r\n' +
+    'export default async function handler(req, res) {\r\n' +
+    "  if (req.method !== 'POST') {\r\n" +
+    "    res.setHeader('Content-Type', 'application/json')\r\n" +
+    '    return res.status(405).json({\r\n' +
+    '      success: false,\r\n' +
+    "      error: { code: 'METHOD_NOT_ALLOWED', message: 'Method not allowed' }\r\n" +
+    '    })\r\n' +
+    '  }\r\n' +
+    '\r\n' +
+    '  try {\r\n' +
+    '    const { user } = await requireAuthenticatedUser(req);\r\n' +
+    '    const receivedAudio = parseAudioDataUrl(req.body?.audio);\r\n' +
+    '    if (!receivedAudio) {\r\n' +
+    '      return res.status(400).json({\r\n' +
+    '        success: false,\r\n' +
+    '        error: {\r\n' +
+    "          code: 'INVALID_AUDIO_FORMAT',\r\n" +
+    "          message: 'The recording format was not supported. Please try again in Chrome, Edge, Firefox, or Safari.'\r\n" +
+    '        }\r\n' +
+    '      });\r\n' +
+    '    }\r\n' +
+    '\r\n' +
+    '    const { mimeType, audio } = receivedAudio;\r\n' +
+    '    if (!audio.length) {\r\n' +
+    '      return res.status(400).json({\r\n' +
+    '        success: false,\r\n' +
+    "        error: { code: 'EMPTY_AUDIO', message: 'No audio was captured. Please try again.' }\r\n" +
+    '      });\r\n' +
+    '    }\r\n' +
+    '    if (audio.length > MAX_AUDIO_BYTES) {\r\n' +
+    '      return res.status(400).json({\r\n' +
+    '        success: false,\r\n' +
+    "        error: { code: 'AUDIO_TOO_LARGE', message: 'This recording exceeds the permitted size. Please try a shorter recording.' }\r\n" +
+    '      });\r\n' +
+    '    }\r\n' +
+    '\r\n' +
+    '    // Server-side duration validation\r\n' +
+    '    const serverDuration = await getDurationSeconds(audio, mimeType);\r\n' +
+    '\r\n' +
+    '    if (serverDuration === null) {\r\n' +
+    '      return res.status(400).json({\r\n' +
+    '        success: false,\r\n' +
+    '        error: {\r\n' +
+    "          code: 'INVALID_AUDIO_DURATION',\r\n" +
+    "          message: 'The recording duration could not be verified. Please try a different recording method.'\r\n" +
+    '        }\r\n' +
+    '      });\r\n' +
+    '    }\r\n' +
+    '\r\n' +
+    '    if (serverDuration > MAX_AUDIO_SECONDS) {\r\n' +
+    '      return res.status(400).json({\r\n' +
+    '        success: false,\r\n' +
+    '        error: {\r\n' +
+    "          code: 'DICTATION_DURATION_EXCEEDED',\r\n" +
+    "          message: 'Dictation is limited to two minutes per recording. You can continue with another recording.'\r\n" +
+    '        }\r\n' +
+    '      });\r\n' +
+    '    }\r\n' +
+    '\r\n' +
+    '    if (!process.env.OPENAI_API_KEY) {\r\n' +
+    "      console.error('[Dictation] OPENAI_API_KEY is missing');\r\n" +
+    '      return res.status(503).json({\r\n' +
+    '        success: false,\r\n' +
+    '        error: {\r\n' +
+    "          code: 'SERVICE_UNAVAILABLE',\r\n" +
+    "          message: 'Dictation is not configured yet. Please contact the practice administrator.'\r\n" +
+    '        }\r\n' +
+    '      });\r\n' +
+    '    }\r\n' +
+    '\r\n' +
+    '    // Dictation is free but subject to fair-use limits (daily total and rate limit)\r\n' +
+    "    await reserveAiBudget({ userId: user.id, feature: 'audio.transcription' });\r\n" +
+    '    try {\r\n' +
+    '      await checkDictationFairUse({ userId: user.id, durationSeconds: serverDuration });\r\n' +
+    '    } catch (error) {\r\n' +
+    '      if (isBudgetError(error)) {\r\n' +
+    '        // Return 429 for fair-use limit breaches\r\n' +
+    '        return res.status(error.status).json({ success: false, error: { code: error.code, message: error.message } });\r\n' +
+    '      }\r\n' +
+    '      throw error;\r\n' +
+    '    }\r\n' +
+    '\r\n' +
+    '    const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });\r\n' +
+    "    const file = await toFile(audio, `dictation.${mimeType.split('/')[1]}`, { type: mimeType });\r\n" +
+    '    const result = await client.audio.transcriptions.create({ model, file });\r\n' +
+    "    return res.status(200).json({ success: true, text: result.text || '' });\r\n" +
+    '  } catch (error) {\r\n' +
+    '    if (isBudgetError(error)) {\r\n' +
+    '      return res.status(error.status).json({ success: false, error: { code: error.code, message: error.message } });\r\n' +
+    '    }\r\n' +
+    "    console.error('[Dictation] Transcription failed:', error.message, error.stack);\r\n" +
+    '    const status = error.status || 500\r\n' +
+    '    return res.status(status).json({\r\n' +
+    '      success: false,\r\n' +
+    '      error: {\r\n' +
+    "        code: status === 401 ? 'UNAUTHORIZED' : 'TRANSCRIPTION_FAILED',\r\n" +
+    "        message: status === 401 ? 'Please sign in again, then try dictation once more.' : 'The recording could not be transcribed. Your audio was not saved; please try again.'\r\n" +
+    '      }\r\n' +
+    '    });\r\n' +
+    '  }\r\n' +
+    '}\r\n'
+
+      at TestContext.<anonymous> (file:///C:/Users/Rob/WebstormProjects/helio-therapist/test/free-ai-budget.test.js:90:10)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1047:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+      at Test.postRun (node:internal/test_runner/test:1173:19)
+      at Test.run (node:internal/test_runner/test:1101:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:744:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: "import OpenAI, { toFile } from 'openai';\r\nimport { requireAuthenticatedUser } from '../_lib/supabase.js';\r\nimport { isBudgetError, reserveAiBudget, checkDictationFairUse } from '../_lib/ai-budget.js';\r\nimport * as mm from 'music-metadata';\r\n\r\nconst MAX_AUDIO_BYTES = 3 * 1024 * 1024;\r\nconst MAX_AUDIO_SECONDS = 120;\r\nconst SUPPORTED_AUDIO_TYPES = new Set(['audio/webm', 'audio/ogg', 'audio/mp4']);\r\n\r\n/**\r\n...",
+    expected: /Dictation is now free and unmetered/,
+    operator: 'match',
+    diff: 'simple'
+  }
+✔ Free signup does not require Stripe or payment card (0.9971ms)
+✔ Free client quota is five; archiving restores a slot (0.2881ms)
+✔ Paid, grandfathered and existing trials retain access (0.1394ms)
+✔ Canceled billing reverts to Free but never erases records or blocks workspace (0.232ms)
+✔ Billing status reports plan and limit from authenticated backend (0.1321ms)
+✔ Trial email is not sent for a new paid subscription (0.1595ms)
+ℹ tests 6
+ℹ suites 0
+ℹ pass 6
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 10.6451
+✔ Free client quota is enforced by a database trigger (1.4916ms)
+✔ archived clients are excluded; Free allows at most five active clients (0.3921ms)
+✔ paid and grandfathered customers retain access (0.2024ms)
+ℹ tests 3
+ℹ suites 0
+ℹ pass 3
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 13.4282
+✔ Stripe checkout uses configured live price without starting a trial (1.2585ms)
+✔ Stripe webhook verifies signatures before syncing subscriptions (0.2421ms)
+✔ subscription table is server-write and therapist-read only (0.3529ms)
+ℹ tests 3
+ℹ suites 0
+ℹ pass 3
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 12.7643

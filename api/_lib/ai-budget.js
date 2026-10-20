@@ -11,8 +11,31 @@ const BUDGET_ERRORS = {
   FREE_AI_MONTHLY_LIMIT: [429, 'Your five Free AI actions for this month are used. Upgrade to Professional for more AI processing.'],
   FREE_AI_GLOBAL_LIMIT: [503, 'Free AI is temporarily at capacity. Your workspace remains available; Professional AI is unaffected.'],
   FREE_AI_INPUT_TOO_LARGE: [413, 'This request is too long for the Free AI allowance. Shorten the text or upgrade to Professional.'],
-  FREE_AUDIO_NOT_INCLUDED: [403, 'AI dictation is not included on the Free plan. Upgrade to Professional to use dictation.']
+  DICTATION_DAILY_LIMIT_EXCEEDED: [429, "You've reached today's free dictation allowance. Dictation will be available again tomorrow."],
+  DICTATION_RATE_LIMIT_EXCEEDED: [429, 'Please wait a few minutes before starting another dictation.']
 };
+
+export async function checkDictationFairUse({ userId, durationSeconds, supabase = getSupabaseClient() }) {
+  if (!userId) throw budgetError('AI_BUDGET_UNAVAILABLE', 503, 'AI allowance could not be checked.');
+  let response;
+  try {
+    response = await supabase.rpc('check_dictation_fair_use', {
+      p_user_id: userId,
+      p_duration_seconds: Math.ceil(durationSeconds)
+    }, {
+      schema: 'private'
+    });
+  } catch (error) {
+    throw budgetError('AI_BUDGET_UNAVAILABLE', 503, 'AI allowance could not be checked.');
+  }
+  if (response?.error) {
+    for (const [code, [status, message]] of Object.entries(BUDGET_ERRORS)) {
+      if (String(response.error.message || '').includes(code)) throw budgetError(code, status, message);
+    }
+    throw budgetError('AI_BUDGET_UNAVAILABLE', 503, 'AI allowance could not be checked.');
+  }
+  return true;
+}
 
 export function budgetError(code, status, message) {
   const error = new Error(message);
