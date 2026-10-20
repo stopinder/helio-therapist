@@ -6,8 +6,8 @@ test('resource picker separates resource selection from request configuration', 
   const picker = await readFile(new URL('../src/components/tools/ResourcePicker.vue', import.meta.url), 'utf8')
   const canvas = await readFile(new URL('../src/components/tools/MainCanvas.vue', import.meta.url), 'utf8')
 
-  assert.match(picker, /Find something to send/)
-  assert.match(picker, /Search resources, measures, questionnaires and documents/)
+  assert.match(picker, /Choose resources/)
+  assert.match(picker, /Search resources, measures and worksheets/)
   assert.match(picker, /No items selected/)
   assert.match(picker, /useClientRequestDraft/)
   assert.match(picker, /v-for="group in visibleGroups"/)

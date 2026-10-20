@@ -19,6 +19,12 @@ vi.mock('../../../lib/documentProfile.js', () => ({
   profileDisplay: vi.fn(() => ({ heading: 'Dr. Therapist', contactLines: [], footer: 'Helios' }))
 }))
 
+const RichDocumentEditorStub = {
+  props: ['modelValue'],
+  emits: ['update:modelValue'],
+  template: `<textarea data-testid="rich-document-editor-stub" :value="modelValue" @input="$emit('update:modelValue', $event.target.value)" />`
+}
+
 describe('ClientDocumentComposer', () => {
   const mockClient = { id: 'c1', display_name: 'Jane Doe' }
   const mockDocument = {
@@ -51,12 +57,12 @@ describe('ClientDocumentComposer', () => {
   it('renders editable workspace when loaded', async () => {
     const wrapper = mount(ClientDocumentComposer, {
       props: { client: mockClient, document: mockDocument },
-      global: { stubs: { teleport: true } }
+      global: { stubs: { teleport: true, RichDocumentEditor: RichDocumentEditorStub } }
     })
     await flushPromises()
 
     expect(wrapper.text()).toContain('Edit client document')
-    expect(wrapper.find('textarea[aria-label="Clinical document content"]').element.value).toBe('Draft body text')
+    expect(wrapper.find('[data-testid="rich-document-editor-stub"]').element.value).toBe('Draft body text')
     const buttons = wrapper.findAll('button')
     expect(buttons.some(b => b.text().includes('Save Draft'))).toBe(true)
   })
@@ -65,7 +71,7 @@ describe('ClientDocumentComposer', () => {
     const finalisedDoc = { ...mockDocument, status: 'completed', finalizedAt: '2026-09-14T12:00:00Z' }
     const wrapper = mount(ClientDocumentComposer, {
       props: { client: mockClient, document: finalisedDoc },
-      global: { stubs: { teleport: true } }
+      global: { stubs: { teleport: true, RichDocumentEditor: RichDocumentEditorStub } }
     })
     await flushPromises()
 
@@ -80,7 +86,7 @@ describe('ClientDocumentComposer', () => {
   it('handles session summary specific UI', async () => {
     const wrapper = mount(ClientDocumentComposer, {
       props: { client: mockClient, initialDocumentType: 'session_summary' },
-      global: { stubs: { teleport: true } }
+      global: { stubs: { teleport: true, RichDocumentEditor: RichDocumentEditorStub } }
     })
     await flushPromises()
 
@@ -94,17 +100,21 @@ describe('ClientDocumentComposer', () => {
     
     const wrapper = mount(ClientDocumentComposer, {
       props: { client: mockClient, initialDocumentType: 'session_summary' },
-      global: { stubs: { teleport: true } }
+      global: { stubs: { teleport: true, RichDocumentEditor: RichDocumentEditorStub } }
     })
     await flushPromises()
 
-    const textarea = wrapper.find('textarea[aria-label="Client session summary content"]')
-    await textarea.setValue('Original Text')
+    const editor = wrapper.find('[data-testid="rich-document-editor-stub"]')
+    expect(editor.exists()).toBe(true)
+    await editor.setValue('Original Text')
+    await flushPromises()
     
     const generateBtn = wrapper.findAll('button').find(b => b.text().includes('Generate client summary'))
     await generateBtn.trigger('click')
     await flushPromises()
 
-    expect(textarea.element.value).toBe('Original Text')
+    expect(clientDocs.generateClientSessionSummary).toHaveBeenCalledTimes(1)
+    expect(wrapper.text()).toContain('AI failed')
+    expect(editor.element.value).toBe('Original Text')
   })
 })

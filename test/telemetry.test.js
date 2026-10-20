@@ -46,14 +46,17 @@ test('unknown paths, malformed URLs, credentials and custom events fail closed',
 test('application initializes both SDKs with the tested filter and logging disabled', async () => {
   const main = await readFile(new URL('../src/main.js', import.meta.url), 'utf8')
   const calls = []
+  let adsTagCalls = 0
   runInNewContext(main.replace(/^import .*$/gm, ''), {
     sanitiseTelemetryEvent,
+    installGoogleAdsTag: () => { adsTagCalls += 1 },
     inject: options => calls.push(['analytics', options]),
     injectSpeedInsights: options => calls.push(['speed', options]),
     createApp: () => ({ use() {}, mount() {} }), AuthGate: {},
     router: { isReady: () => ({ then() {} }) },
   })
   assert.equal(calls.length, 2)
+  assert.equal(adsTagCalls, 1)
   for (const [, options] of calls) {
     assert.equal(options.beforeSend, sanitiseTelemetryEvent)
     assert.equal(options.debug, false)
