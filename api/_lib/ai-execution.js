@@ -1,5 +1,6 @@
 import OpenAI from 'openai';
 import { getSupabaseClient } from './supabase.js';
+import { FREE_AI_MAX_OUTPUT_TOKENS, FREE_AI_TEXT_MODEL, reserveAiBudget } from './ai-budget.js';
 
 export const AI_FEATURES = Object.freeze({
   REFLECTION_ANALYSIS: 'reflection.analysis',
@@ -55,4 +56,54 @@ export function buildTemperatureParams(model, temperature) {
   return { temperature };
 }
 
-export async function runTextAI({ feature,userId,promptVersion=null,messages,temperature,maxTokens,responseFormat,timeout=20000 }) { if(!Object.values(AI_FEATURES).includes(feature))throw new Error(`Unknown AI feature: ${feature}`); if(!userId)throw new Error('AI execution requires an authenticated user ID'); if(!process.env.OPENAI_API_KEY){const error=new Error('OPENAI_API_KEY is missing');error.code='AI_PROVIDER_NOT_CONFIGURED';error.status=503;throw error;} const model=getTextModel(feature),startedAt=Date.now(),openai=new OpenAI({apiKey:process.env.OPENAI_API_KEY,timeout}); try { const completion=await openai.chat.completions.create({model,messages,...buildTemperatureParams(model, temperature),...buildTokenLimitParams(model, maxTokens),...(responseFormat===undefined?{}:{response_format:responseFormat})}); const latencyMs=Date.now()-startedAt; await persistUsage(buildUsageRecord({feature,userId,model,promptVersion,usage:completion.usage,status:'succeeded',latencyMs})); return {completion,model}; } catch(error) { const latencyMs=Date.now()-startedAt; await persistUsage(buildUsageRecord({feature,userId,model,promptVersion,status:'failed',latencyMs,errorCode:String(error.code||error.status||error.name||'AI_PROVIDER_ERROR').slice(0,100)})); throw error; } }
+export async function runTextAI({
+  feature, userId, promptVersion = null, messages, temperature,
+  maxTokens, responseFormat, timeout = 20000
+}) {
+  if (!Object.values(AI_FEATURES).includes(feature)) throw new Error(`Unknown AI feature: ${feature}`);
+  if (!userId) throw new Error('AI execution requires an authenticated user ID');
+  if (!process.env.OPENAI_API_KEY) {
+    const error = new Error('OPENAI_API_KEY is missing');
+    error.code = 'AI_PROVIDER_NOT_CONFIGURED';
+    error.status = 503;
+    throw error;
+  }
+
+  // The service-role-only RPC checks the live subscription and atomically
+  // reserves one Free action. A missing DB/RPC fails CLOSED, before OpenAI.
+  // Validation occurs in Postgres before consuming an allowance unit.
+  const requestChars = JSON.stringify({ messages, responseFormat }).length;
+  const freeOutputLimit = Number.isInteger(maxTokens) && maxTokens > 0
+    ? Math.min(maxTokens, FREE_AI_MAX_OUTPUT_TOKENS)
+    : FREE_AI_MAX_OUTPUT_TOKENS;
+  const usedFreeCredits = await reserveAiBudget({
+    userId, feature, requestChars, maxOutputTokens: freeOutputLimit
+  });
+  const isFree = usedFreeCredits !== null;
+  const model = isFree ? FREE_AI_TEXT_MODEL : getTextModel(feature);
+  const outputLimit = isFree ? freeOutputLimit : maxTokens;
+  const startedAt = Date.now();
+  const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY, timeout, ...(isFree ? { maxRetries: 0 } : {}) });
+
+  try {
+    const completion = await openai.chat.completions.create({
+      model, messages,
+      ...buildTemperatureParams(model, temperature),
+      ...buildTokenLimitParams(model, outputLimit),
+      ...(responseFormat === undefined ? {} : { response_format: responseFormat })
+    });
+    const latencyMs = Date.now() - startedAt;
+    await persistUsage(buildUsageRecord({
+      feature, userId, model, promptVersion, usage: completion.usage,
+      status: 'succeeded', latencyMs
+    }));
+    return { completion, model };
+  } catch (error) {
+    const latencyMs = Date.now() - startedAt;
+    await persistUsage(buildUsageRecord({
+      feature, userId, model, promptVersion, status: 'failed', latencyMs,
+      errorCode: String(error.code || error.status || error.name || 'AI_PROVIDER_ERROR').slice(0, 100)
+    }));
+    throw error;
+  }
+}

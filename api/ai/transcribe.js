@@ -1,5 +1,6 @@
 import OpenAI, { toFile } from 'openai';
 import { requireAuthenticatedUser } from '../_lib/supabase.js';
+import { isBudgetError, reserveAiBudget } from '../_lib/ai-budget.js';
 
 const MAX_AUDIO_BYTES = 3 * 1024 * 1024;
 const SUPPORTED_AUDIO_TYPES = new Set(['audio/webm', 'audio/ogg', 'audio/mp4']);
@@ -24,7 +25,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    await requireAuthenticatedUser(req);
+    const { user } = await requireAuthenticatedUser(req);
     const receivedAudio = parseAudioDataUrl(req.body?.audio);
     if (!receivedAudio) {
       return res.status(400).json({
@@ -60,11 +61,18 @@ export default async function handler(req, res) {
       });
     }
 
+    // Free plans cannot make paid audio calls; DB checks are authoritative.
+    // If quota infrastructure is unavailable, do not call the provider.
+    await reserveAiBudget({ userId: user.id, feature: 'audio.transcription' });
+
     const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
     const file = await toFile(audio, `dictation.${mimeType.split('/')[1]}`, { type: mimeType });
     const result = await client.audio.transcriptions.create({ model, file });
     return res.status(200).json({ success: true, text: result.text || '' });
   } catch (error) {
+    if (isBudgetError(error)) {
+      return res.status(error.status).json({ success: false, error: { code: error.code, message: error.message } });
+    }
     console.error('[Dictation] Transcription failed:', error.message, error.stack);
     const status = error.status || 500
     return res.status(status).json({

@@ -1,0 +1,59 @@
+name: Free AI budget (isolated PostgreSQL)
+
+on:
+  pull_request:
+    paths:
+      - 'supabase/migrations/*free_ai_monthly_budget.sql'
+      - 'test/sql/free-ai-budget-*.sql'
+      - 'test/free-ai-budget.test.js'
+      - 'scripts/verify-free-ai-race.sh'
+      - '.github/workflows/free-ai-budget.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  verify-free-ai-budget:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: helios_test
+          POSTGRES_PASSWORD: local-only
+          POSTGRES_DB: helios_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    env:
+      PGHOST: 127.0.0.1
+      PGPORT: '5432'
+      PGUSER: helios_test
+      PGPASSWORD: local-only
+      PGDATABASE: helios_test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install app packages
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Test server-side budget helper
+        run: node --test test/free-ai-budget.test.js
+      - name: Install PostgreSQL client
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+      - name: Apply synthetic tables and quota migration
+        run: |
+          psql -X -v ON_ERROR_STOP=1 -f test/sql/free-ai-budget-schema.sql
+          psql -X -v ON_ERROR_STOP=1 -f supabase/migrations/20261020154114_free_ai_monthly_budget.sql
+      - name: Test service-role restrictions, quota, audio denial and monthly rollover
+        run: psql -X -v ON_ERROR_STOP=1 -f test/sql/free-ai-budget-cases.sql
+      - name: Two concurrent requests cannot spend the same fifth credit
+        run: bash scripts/verify-free-ai-race.sh
+      - name: Global Free circuit-breaker stops multi-account abuse without consuming a user's credit
+        run: psql -X -v ON_ERROR_STOP=1 -f test/sql/free-ai-global-limit-cases.sql

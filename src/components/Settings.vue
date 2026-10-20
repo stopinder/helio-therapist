@@ -59,6 +59,7 @@
             <div class="text-body font-medium text-ink">Helios Therapist</div>
             <div class="mt-1 text-body-sm text-ink-subtle">{{ subscriptionSummary }}</div>
             <div v-if="subscriptionDetail" class="mt-1 text-caption text-ink-subtle">{{ subscriptionDetail }}</div>
+            <p v-if="!legacyAccess && (!subscription || ['canceled','incomplete','incomplete_expired'].includes(subscription.status))" class="mt-2 text-caption text-ink-subtle">Free includes five short text AI actions per calendar month (UTC). AI dictation requires Professional. Requests that reach the AI provider count even if generation fails.</p>
           </div>
           <div class="flex flex-wrap gap-2 sm:justify-end">
             <button v-if="subscription?.status === 'trialing' && !subscription.cancel_at_period_end" type="button" :disabled="isBillingBusy" @click="cancelTrial" class="min-h-touch px-4 py-2 rounded-control border border-border-muted text-body-sm font-medium text-state-danger disabled:opacity-50">{{ isBillingBusy ? 'Cancelling trial...' : 'Cancel trial' }}</button>
