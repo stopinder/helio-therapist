@@ -18,6 +18,7 @@ test.describe('Transcript CBT Care handoff', () => {
 
     await page.route('**/auth/v1/token*', route => route.fulfill({ status:200, contentType:'application/json', body:JSON.stringify({ access_token:mockToken, refresh_token:'mock-refresh-token', token_type:'bearer', expires_in:3600, user:{ id:userId, email, role:'authenticated', aud:'authenticated', user_metadata:{ full_name:'Test Therapist' } } }) }));
     await page.route('**/auth/v1/user', route => route.fulfill({ status:200, contentType:'application/json', body:JSON.stringify({ id:userId, email, user_metadata:{ full_name:'Test Therapist' } }) }));
+    await page.route('**/api/billing/status*', route => route.fulfill({ status:200, contentType:'application/json', body:JSON.stringify({ hasWorkspaceAccess:true, subscription:{ status:'trialing' } }) }));
 
     await page.route('**/api/zoom/transcripts*', route => route.fulfill({ status:200, contentType:'application/json', body:JSON.stringify({ transcripts:[{ id:transcriptId, text:'Client described avoiding a feared situation and noticing an anxious prediction before choosing a small approach step.', requestedLens:'cbt', clientId, sessionRef:sessionId }] }) }));
     await page.route('**/api/ai/transcript-cbt-care-suggestions', route => {
