@@ -146,6 +146,10 @@ const clearFeedback = () => {
   errorMessage.value = ''
 }
 
+// Return to the same deployed site (Preview or Production) after email confirmation.
+// Supabase Auth must allowlist preview callback URLs before live preview signup tests.
+const authEmailRedirectUrl = () => new URL('/sign-in', window.location.origin).toString()
+
 const authRedirectTarget = () => {
   const redirect = typeof route.query.redirect === 'string' ? route.query.redirect : ''
   return redirect.startsWith('/') && !redirect.startsWith('//') ? redirect : '/overview'
@@ -286,7 +290,7 @@ const submit = async () => {
         email: email.value,
         password: password.value,
         options: {
-          emailRedirectTo: 'https://helio.works/sign-in',
+          emailRedirectTo: authEmailRedirectUrl(),
           data: { full_name: fullName.value, marketing_email_consent: marketingEmailConsent.value }
         }
       })
@@ -337,7 +341,7 @@ const resetPassword = async () => {
   submitting.value = true
   clearFeedback()
   try {
-    const { error } = await supabase.auth.resetPasswordForEmail(email.value, { redirectTo: 'https://helio.works/sign-in' })
+    const { error } = await supabase.auth.resetPasswordForEmail(email.value, { redirectTo: authEmailRedirectUrl() })
     if (error) throw error
     message.value = 'Check your email for the password reset link.'
   } catch (error) {
