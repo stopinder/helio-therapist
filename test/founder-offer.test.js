@@ -7,8 +7,9 @@ const page = fs.readFileSync('src/views/FounderOffer.vue', 'utf8')
 const loops = fs.readFileSync('api/_lib/loops-trial.js', 'utf8')
 const checkout = fs.readFileSync('api/billing/checkout.js', 'utf8')
 
-test('new Helios trials are seven days', () => {
-  assert.match(checkout, /trial_period_days:\s*7/)
+test('Free registration does not create a Stripe trial or an automatic charge', () => {
+  assert.doesNotMatch(checkout, /trial_period_days\s*:/)
+  assert.match(checkout, /getStripePriceId\(\)/)
 })
 
 test('founding subscriber monthly option charges the standard £29 price immediately', () => {

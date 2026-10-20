@@ -7,6 +7,7 @@ export function hasLegacyAccess(user) {
 }
 
 export function hasWorkspaceAccess(user, subscription) {
-  if (hasLegacyAccess(user)) return true;
-  return ['trialing', 'active'].includes(subscription?.status);
+  // An authenticated therapist always has Free workspace access.
+  // The five-active-client quota is enforced independently in Postgres.
+  return Boolean(user?.id);
 }

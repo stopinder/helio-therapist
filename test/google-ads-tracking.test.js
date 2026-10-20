@@ -17,10 +17,9 @@ test('trial start conversion uses the Helios conversion label with zero value', 
   assert.match(tracking, /currency:\s*'EUR'/)
 })
 
-test('trial conversion fires only after the existing successful billing flow grants access', () => {
-  assert.match(authGate, /route\.query\.billing === 'success'/)
-  assert.match(authGate, /billingAllowed\.value/)
-  assert.match(authGate, /trackTrialStarted\(session\.value\?\.user\?\.id\)/)
+test('Free access does not emit a legacy paid-trial conversion', () => {
+  assert.doesNotMatch(authGate, /trackTrialStarted\(/)
+  assert.match(authGate, /data\.hasWorkspaceAccess === true/)
 })
 
 test('trial conversion is deduplicated per signed-in therapist in this browser', () => {

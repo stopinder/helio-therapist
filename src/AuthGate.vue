@@ -42,13 +42,9 @@
 
   <main v-else-if="session && !billingAllowed" class="min-h-screen bg-surface-muted flex items-center justify-center px-4 py-8">
     <section class="w-full max-w-md rounded-panel bg-surface-elevated border border-border-muted p-6 sm:p-8">
-      <h1 class="text-h1 font-semibold text-ink">Choose your Helios plan</h1>
-      <p class="mt-3 text-body text-ink-muted">Start with 7 days free, then £29/month — or pay £290 for a year upfront and get the equivalent of two months free.</p>
-      <p v-if="route.query.billing === 'success'" class="mt-4 text-body text-ink-muted" role="status">Your checkout is complete. Your subscription may take a moment to appear. Check again to enter Helios.</p>
-      <p v-if="route.query.billing === 'cancelled'" class="mt-4 text-body text-ink-muted">Checkout was cancelled. You can start your trial when you’re ready.</p>
-      <button v-if="route.query.billing !== 'success'" type="button" :disabled="billingBusy" class="mt-6 min-h-12 w-full rounded-panel bg-action-link px-4 font-medium text-on-action disabled:opacity-50" @click="openBilling">{{ billingBusy ? 'Opening billing…' : billingSubscription ? 'Manage subscription' : 'Start 7-day free trial' }}</button>
-      <button v-if="!billingSubscription && route.query.billing !== 'success'" type="button" :disabled="billingBusy" class="mt-3 min-h-12 w-full rounded-panel border border-border px-4 font-medium text-action-link disabled:opacity-50" @click="openAnnualBilling">Pay annually — £290/year</button>
-      <button type="button" :disabled="billingBusy" class="mt-3 min-h-11 w-full text-body font-medium text-action-link disabled:opacity-50" @click="checkBilling">Check subscription again</button>
+      <h1 class="text-h1 font-semibold text-ink">Workspace access unavailable</h1>
+      <p class="mt-3 text-body text-ink-muted">We couldn't confirm your account access. Free accounts do not require a payment card. Please try again.</p>
+      <button type="button" :disabled="billingBusy" class="mt-3 min-h-11 w-full text-body font-medium text-action-link disabled:opacity-50" @click="checkBilling">Check access again</button>
       <button type="button" class="mt-2 min-h-11 w-full text-body text-ink-muted" @click="supabase.auth.signOut()">Sign out</button>
     </section>
   </main>
@@ -59,7 +55,7 @@
     <section class="w-full max-w-md rounded-panel bg-surface-elevated border border-border-muted p-6 sm:p-8">
       <router-link to="/" class="type-ui text-action-link">← Helios home</router-link>
       <h1 class="mt-5 text-h1 font-semibold text-ink">Helios</h1>
-      <p class="mt-2 text-body text-ink-muted">{{ mode === 'signup' ? 'Create your therapist workspace.' : 'Sign in to your therapist workspace.' }}</p>
+      <p class="mt-2 text-body text-ink-muted">{{ mode === 'signup' ? 'Start Free: up to five active clients. No payment card required.' : 'Sign in to your therapist workspace.' }}</p>
 
       <div class="mt-6 grid grid-cols-2 rounded-panel bg-surface-muted p-1" role="tablist" aria-label="Account access">
         <router-link to="/sign-in" class="min-h-11 rounded-control px-3 text-body font-medium flex items-center justify-center transition-colors duration-standard ease-out" :class="mode === 'signin' ? 'bg-surface-elevated text-ink' : 'text-ink-muted'">Sign in</router-link>
@@ -114,7 +110,6 @@ import { onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import AppShell from './layouts/AppShell.vue'
 import { supabase } from './lib/supabase.js'
-import { trackTrialStarted } from './lib/googleAds.js'
 
 const route = useRoute()
 const router = useRouter()
@@ -182,9 +177,6 @@ const checkBilling = async () => {
     if (!response.ok) throw new Error(data.error || 'Unable to check subscription')
     billingSubscription.value = data.subscription
     billingAllowed.value = data.hasWorkspaceAccess === true
-    if (billingAllowed.value && route.query.billing === 'success') {
-      trackTrialStarted(session.value?.user?.id)
-    }
   } catch (error) {
     if (token !== session.value?.access_token) return
     billingAllowed.value = false

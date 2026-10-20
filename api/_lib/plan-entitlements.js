@@ -1,7 +1,7 @@
 import { hasLegacyAccess } from './billing-access.js';
 
-// This policy defines proposed plans; it is not yet connected to live signup or RLS.
-// Database-side limits and AI metering must be implemented before activation.
+// The five-client quota is enforced in Postgres. AI metering is a separate release gate;
+// do not promise unlimited AI use on the Free tier.
 export const FREE_ACTIVE_CLIENT_LIMIT = 5;
 const PAID_ACCESS_STATUSES = new Set(['active', 'trialing']);
 

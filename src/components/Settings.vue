@@ -62,7 +62,7 @@
           </div>
           <div class="flex flex-wrap gap-2 sm:justify-end">
             <button v-if="subscription?.status === 'trialing' && !subscription.cancel_at_period_end" type="button" :disabled="isBillingBusy" @click="cancelTrial" class="min-h-touch px-4 py-2 rounded-control border border-border-muted text-body-sm font-medium text-state-danger disabled:opacity-50">{{ isBillingBusy ? 'Cancelling trial...' : 'Cancel trial' }}</button>
-            <template v-else-if="subscription && subscription.status !== 'trialing'">
+            <template v-else-if="subscription && ['active','trialing','past_due','unpaid','paused'].includes(subscription.status)">
               <button v-if="canSwitchToAnnual" type="button" :disabled="isBillingBusy" @click="switchToAnnual" class="min-h-touch px-4 py-2 rounded-control bg-action-link text-on-action text-body-sm font-medium disabled:opacity-50">{{ isBillingBusy ? 'Switching…' : 'Switch to annual — £290/year' }}</button>
               <button type="button" :disabled="isBillingBusy" @click="manageSubscription" class="min-h-touch px-4 py-2 rounded-control border border-border-muted text-body-sm font-medium text-action-link disabled:opacity-50">Manage subscription</button>
             </template>
@@ -70,8 +70,8 @@
               <button type="button" :disabled="isBillingBusy || isLoadingSubscription" @click="startSubscription" class="min-h-touch px-4 py-2 rounded-control bg-action-link text-on-action text-body-sm font-medium disabled:opacity-50">{{ isBillingBusy ? 'Opening checkout...' : 'Subscribe monthly — £29/month' }}</button>
               <button type="button" :disabled="isBillingBusy || isLoadingSubscription" @click="startAnnualSubscription" class="min-h-touch px-4 py-2 rounded-control border border-border-muted text-body-sm font-medium text-action-link disabled:opacity-50">Pay annually — £290/year</button>
             </template>
-            <template v-else-if="!subscription">
-              <button type="button" :disabled="isBillingBusy || isLoadingSubscription" @click="startSubscription" class="min-h-touch px-4 py-2 rounded-control bg-action-link text-on-action text-body-sm font-medium disabled:opacity-50">{{ isBillingBusy ? 'Opening checkout...' : 'Start 7-day free trial' }}</button>
+            <template v-else>
+              <button type="button" :disabled="isBillingBusy || isLoadingSubscription" @click="startSubscription" class="min-h-touch px-4 py-2 rounded-control bg-action-link text-on-action text-body-sm font-medium disabled:opacity-50">{{ isBillingBusy ? 'Opening checkout...' : 'Upgrade — £29/month' }}</button>
               <button type="button" :disabled="isBillingBusy || isLoadingSubscription" @click="startAnnualSubscription" class="min-h-touch px-4 py-2 rounded-control border border-border-muted text-body-sm font-medium text-action-link disabled:opacity-50">Pay annually — £290/year</button>
             </template>
           </div>
@@ -102,7 +102,7 @@ const ANNUAL_PRICE_ID='price_1ULJ1uBCxePdT6Vno9ULJ9v0'
 const isAnnualSubscription=computed(()=>subscription.value?.stripe_price_id===ANNUAL_PRICE_ID)
 const canSwitchToAnnual=computed(()=>subscription.value?.status==='active'&&!subscription.value?.cancel_at_period_end&&!isAnnualSubscription.value)
 const formatBillingDate=(value)=>value?new Date(value).toLocaleDateString(undefined,{day:'numeric',month:'short',year:'numeric'}):''
-const subscriptionSummary=computed(()=>{if(isLoadingSubscription.value)return'Checking subscription...';if(!subscription.value&&legacyAccess.value)return'Existing Helios account. Choose £29/month or £290/year (two months free).';if(!subscription.value)return'7 days free, then £29/month — or £290/year (two months free).';if(subscription.value.status==='trialing')return'Free trial';if(subscription.value.status==='active')return isAnnualSubscription.value?'£290/year':'£29/month';return subscription.value.status.replaceAll('_',' ')})
+const subscriptionSummary=computed(()=>{if(isLoadingSubscription.value)return'Checking subscription...';if(!subscription.value&&legacyAccess.value)return'Existing Helios account. Choose £29/month or £290/year (two months free).';if(!subscription.value||['canceled','incomplete_expired','incomplete'].includes(subscription.value.status))return'Free plan: up to five active clients, no payment card required. Upgrade to Professional for unlimited clients.';if(subscription.value.status==='trialing')return'Free trial';if(subscription.value.status==='active')return isAnnualSubscription.value?'£290/year':'£29/month';return subscription.value.status.replaceAll('_',' ')})
 const subscriptionDetail=computed(()=>{if(!subscription.value)return'';if(subscription.value.cancel_at_period_end)return`Cancels ${formatBillingDate(subscription.value.trial_ends_at||subscription.value.current_period_ends_at)}`;if(subscription.value.status==='trialing'&&subscription.value.trial_ends_at)return`Trial ends ${formatBillingDate(subscription.value.trial_ends_at)}`;if(subscription.value.current_period_ends_at)return`Next billing date ${formatBillingDate(subscription.value.current_period_ends_at)}`;return''})
 
 function notifyProfileChanged(){window.dispatchEvent(new CustomEvent('helios-profile-changed'))}
