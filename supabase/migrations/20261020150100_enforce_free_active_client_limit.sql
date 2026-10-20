@@ -18,8 +18,10 @@ begin
     return new;
   end if;
 
-  if tg_op = 'UPDATE' and old.archived = false and old.user_id = new.user_id then
-    return new;
+  if tg_op = 'UPDATE' then
+    if old.archived = false and old.user_id = new.user_id then
+      return new;
+    end if;
   end if;
 
   -- Serialize quota-increasing writes for one therapist.
