@@ -35,7 +35,7 @@ test('cancellation endpoint checks the signed-in owner; Settings exposes trial c
   assert.match(endpoint, /requireAuthenticatedUser\(req\)/);
   assert.match(endpoint, /\.eq\('therapist_id', user\.id\)/);
   assert.match(settings, /subscription\?\.status === 'trialing' && !subscription\.cancel_at_period_end/);
-  assert.match(settings, /v-else-if="!subscription"[^>]*@click="startSubscription"/);
+  assert.match(settings, /<template v-else-if="!subscription">\s*<button[^>]*@click="startSubscription"/);
   assert.match(settings, /Cancel trial/);
   assert.match(settings, /authenticatedFetch\('\/api\/billing\/cancel-trial',\{method:'POST'\}\)/);
 });

@@ -6,7 +6,10 @@ const landing = fs.readFileSync('src/views/Landing.vue', 'utf8');
 const terms = fs.readFileSync('src/views/Terms.vue', 'utf8');
 
 test('public pricing exposes only the £29 monthly offer with a 7 day trial', () => {
-  assert.match(landing, /7 days free, then £29\/month\. Cancel anytime\./);
+  const pricingSection = landing.match(/<section id="pricing"[\s\S]*?<\/section>/)?.[0] || '';
+  const pricingText = pricingSection.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ');
+  assert.match(pricingText, /7 days free, then £29\/month\./);
+  assert.match(pricingText, /Cancel anytime\./);
   assert.match(landing, /id="pricing"/);
   assert.match(landing, /Start your 7-day free trial/);
   assert.doesNotMatch(landing, /£24|Founder offer/);
