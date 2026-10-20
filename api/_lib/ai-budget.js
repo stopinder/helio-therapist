@@ -9,6 +9,7 @@ export const FREE_AI_TEXT_MODEL = 'gpt-4o-mini';
 
 const BUDGET_ERRORS = {
   FREE_AI_MONTHLY_LIMIT: [429, 'Your five Free AI actions for this month are used. Upgrade to Professional for more AI processing.'],
+  FREE_AI_GLOBAL_LIMIT: [503, 'Free AI is temporarily at capacity. Your workspace remains available; Professional AI is unaffected.'],
   FREE_AI_INPUT_TOO_LARGE: [413, 'This request is too long for the Free AI allowance. Shorten the text or upgrade to Professional.'],
   FREE_AUDIO_NOT_INCLUDED: [403, 'AI dictation is not included on the Free plan. Upgrade to Professional to use dictation.']
 };

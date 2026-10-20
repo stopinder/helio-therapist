@@ -26,6 +26,8 @@ test('Free budget is deliberately bounded and low cost', () => {
   assert.equal(FREE_AI_TEXT_MODEL, 'gpt-4o-mini');
   assert.match(migration, /used < 5/);
   assert.match(migration, /between 0 and 5/);
+  assert.match(migration, /between 0 and 500/);
+  assert.match(migration, /free_ai_global_monthly_usage/);
   assert.match(migration, /period_start date/);
 });
 
@@ -55,6 +57,7 @@ test('Free limit exhaustion produces a stable 429 and is not bypassed', async ()
 test('Free audio, oversize requests, missing RPC and malformed data fail closed', async () => {
   const examples = [
     [{ message: 'FREE_AUDIO_NOT_INCLUDED' }, 403],
+    [{ message: 'FREE_AI_GLOBAL_LIMIT' }, 503],
     [{ message: 'FREE_AI_INPUT_TOO_LARGE' }, 413],
     [{ message: 'function public.reserve_free_ai_action is missing', code: 'PGRST202' }, 503]
   ];
@@ -96,5 +99,6 @@ test('RPC is service-role-only; the private table is not Data API writable', () 
   assert.match(migration, /revoke all on function public\.reserve_free_ai_action/);
   assert.match(migration, /enable row level security/);
   assert.match(migration, /revoke all on private\.free_ai_monthly_usage/);
+  assert.match(migration, /revoke all on private\.free_ai_global_monthly_usage/);
   assert.match(migration, /on conflict \(user_id, period_start\)/);
 });

@@ -55,3 +55,5 @@ jobs:
         run: psql -X -v ON_ERROR_STOP=1 -f test/sql/free-ai-budget-cases.sql
       - name: Two concurrent requests cannot spend the same fifth credit
         run: bash scripts/verify-free-ai-race.sh
+      - name: Global Free circuit-breaker stops multi-account abuse without consuming a user's credit
+        run: psql -X -v ON_ERROR_STOP=1 -f test/sql/free-ai-global-limit-cases.sql

@@ -12,6 +12,16 @@ create table if not exists private.free_ai_monthly_usage (
 alter table private.free_ai_monthly_usage enable row level security;
 revoke all on private.free_ai_monthly_usage from public, anon, authenticated;
 
+-- A separate global circuit-breaker limits multi-account signup abuse.
+-- 500 Free text actions across all Free accounts in a UTC calendar month.
+create table if not exists private.free_ai_global_monthly_usage (
+  period_start date primary key,
+  used integer not null default 0 check (used between 0 and 500),
+  created_at timestamptz not null default now()
+);
+alter table private.free_ai_global_monthly_usage enable row level security;
+revoke all on private.free_ai_global_monthly_usage from public, anon, authenticated;
+
 create or replace function public.reserve_free_ai_action(
   p_user_id uuid,
   p_feature text,
@@ -26,6 +36,7 @@ as $$
 declare
   v_created_at timestamptz;
   v_used integer;
+  v_global_used integer;
   v_period_start date := date_trunc('month', now() at time zone 'UTC')::date;
 begin
   if p_user_id is null or p_feature is null or
@@ -81,6 +92,18 @@ begin
 
   if v_used is null then
     raise exception 'FREE_AI_MONTHLY_LIMIT' using errcode = 'P0001';
+  end if;
+
+  -- Global cap: the same transaction rolls back the user's reservation
+  -- if the whole Free pool reaches the configured circuit-breaker.
+  insert into private.free_ai_global_monthly_usage (period_start, used)
+  values (v_period_start, 1)
+  on conflict (period_start)
+  do update set used = private.free_ai_global_monthly_usage.used + 1
+  where private.free_ai_global_monthly_usage.used < 500
+  returning used into v_global_used;
+  if v_global_used is null then
+    raise exception 'FREE_AI_GLOBAL_LIMIT' using errcode = 'P0001';
   end if;
 
   return v_used;
