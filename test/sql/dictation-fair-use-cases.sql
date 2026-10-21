@@ -1,8 +1,13 @@
 -- Behavioural tests for dictation fair-use protection.
 DO $$
 DECLARE
-  u1 uuid := '00000000-0000-4000-8000-000000000201';
-  u2 uuid := '00000000-0000-4000-8000-000000000202';
+  u_sec uuid := '00000000-0000-4000-8000-000000000201'; -- Security
+  u_basic uuid := '00000000-0000-4000-8000-000000000202'; -- Basic
+  u_daily uuid := '00000000-0000-4000-8000-000000000203'; -- Daily limit
+  u_rate uuid := '00000000-0000-4000-8000-000000000204'; -- Rate limit
+  u_roll uuid := '00000000-0000-4000-8000-000000000205'; -- Rolling window
+  u_iso1 uuid := '00000000-0000-4000-8000-000000000206'; -- Isolation 1
+  u_iso2 uuid := '00000000-0000-4000-8000-000000000207'; -- Isolation 2
   value integer;
   err text;
   n integer;
@@ -16,21 +21,20 @@ BEGIN
   end if;
 
   -- 2. Basic success
-  perform private.check_dictation_fair_use(u1, 10);
-  perform private.check_dictation_fair_use(u1, 110);
+  perform private.check_dictation_fair_use(u_basic, 10);
+  perform private.check_dictation_fair_use(u_basic, 110);
   
-  select daily_seconds_used into value from private.dictation_usage where user_id = u1;
+  select daily_seconds_used into value from private.dictation_usage where user_id = u_basic;
   if value <> 120 then raise exception 'Expected 120s daily used, got %', value; end if;
 
   -- 3. Daily limit (1800s)
-  -- Individual limit is 120s. We need to reach 1800s using valid segments.
-  -- 120 (already used) + (14 * 120) = 1800
-  for n in 1..14 loop
-    perform private.check_dictation_fair_use(u1, 120);
+  -- 15 * 120s = 1800s
+  for n in 1..15 loop
+    perform private.check_dictation_fair_use(u_daily, 120);
   end loop;
 
   BEGIN
-    perform private.check_dictation_fair_use(u1, 1);
+    perform private.check_dictation_fair_use(u_daily, 1);
     raise exception 'Daily limit breach unexpectedly allowed';
   EXCEPTION WHEN raise_exception THEN
     get stacked diagnostics err = MESSAGE_TEXT;
@@ -38,37 +42,49 @@ BEGIN
   END;
 
   -- 4. Rate limit (10 requests / 10m)
-  -- u1 has already exceeded 10 requests in this window.
-  -- Let's use a fresh user u3 to test rate limit precisely.
-  DECLARE
-    u3 uuid := '00000000-0000-4000-8000-000000000203';
-  BEGIN
-    for n in 1..10 loop
-      perform private.check_dictation_fair_use(u3, 10);
-    end loop;
+  for n in 1..10 loop
+    perform private.check_dictation_fair_use(u_rate, 10);
+  end loop;
 
-    BEGIN
-      perform private.check_dictation_fair_use(u3, 10);
-      raise exception 'Rate limit breach unexpectedly allowed';
-    EXCEPTION WHEN raise_exception THEN
-      get stacked diagnostics err = MESSAGE_TEXT;
-      if err <> 'DICTATION_RATE_LIMIT_EXCEEDED' then raise; end if;
-    END;
+  BEGIN
+    perform private.check_dictation_fair_use(u_rate, 10);
+    raise exception 'Rate limit breach unexpectedly allowed';
+  EXCEPTION WHEN raise_exception THEN
+    get stacked diagnostics err = MESSAGE_TEXT;
+    if err <> 'DICTATION_RATE_LIMIT_EXCEEDED' then raise; end if;
   END;
 
   -- 5. Rolling window verification
+  for n in 1..10 loop
+    perform private.check_dictation_fair_use(u_roll, 10);
+  end loop;
+  
+  -- Verify rate limit is active
+  BEGIN
+    perform private.check_dictation_fair_use(u_roll, 10);
+    raise exception 'Rate limit breach unexpectedly allowed (rolling test)';
+  EXCEPTION WHEN raise_exception THEN
+    get stacked diagnostics err = MESSAGE_TEXT;
+    if err <> 'DICTATION_RATE_LIMIT_EXCEEDED' then raise; end if;
+  END;
+
   -- Simulate time passing by manually updating timestamps
   update private.dictation_requests 
   set created_at = now() - interval '11 minutes'
-  where user_id = u1;
+  where user_id = u_roll;
 
-  -- Now u1 should be able to make requests again
-  perform private.check_dictation_fair_use(u1, 1);
+  -- Now u_roll should be able to make requests again
+  perform private.check_dictation_fair_use(u_roll, 1);
   
   -- 6. User isolation
-  perform private.check_dictation_fair_use(u2, 10);
-  select daily_seconds_used into value from private.dictation_usage where user_id = u2;
-  if value <> 10 then raise exception 'User 2 usage affected by User 1'; end if;
+  perform private.check_dictation_fair_use(u_iso1, 10);
+  perform private.check_dictation_fair_use(u_iso2, 20);
+  
+  select daily_seconds_used into value from private.dictation_usage where user_id = u_iso1;
+  if value <> 10 then raise exception 'User 1 usage affected by User 2'; end if;
+  
+  select daily_seconds_used into value from private.dictation_usage where user_id = u_iso2;
+  if value <> 20 then raise exception 'User 2 usage affected by User 1'; end if;
 
 END
 $$;

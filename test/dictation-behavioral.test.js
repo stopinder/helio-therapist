@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as mm from 'music-metadata';
 import { reserveAiBudget, checkDictationFairUse } from '../api/_lib/ai-budget.js';
+import { validWebmOpus } from './fixtures/audio-fixtures.js';
 
 // Mock Supabase client
 function mockSupabase(responses = {}) {
@@ -37,21 +38,11 @@ test('checkDictationFairUse uses public gateway', async () => {
 });
 
 test('music-metadata correctly parses duration for real WebM fixture', async () => {
-  // A tiny valid WebM/Opus base64 string
-  const webmBase64 = 'GkXfo6NChoEBQveBAULygQRC84EIQoKEd2VibUKHgQJChSAEthoBFXcgDAAAAAAABiCAARARhxAFGlkhkhWWH10QhxdTEBIAR0sgAAAAAAARsRBBsQBCioCAABERmxBEGkcrrEZAawCAAAAAAAAsRnBkgERgAQAAAAAAAGSgR6dEr6S9iEBkkEaWR6enq7K9h4EDQoWBAUfQgAEDV94EAsWIgAD9iAARdwAFHIAEBkCQd2VibUKHgQJChSAEthoBFXcgDGF4AAAAAAARcRBBsQBCioCAABERmxBEGkcrrEZAawCAAAAAAAAsRnBkgERgAQAAAAAAAGSgR6dEr6S9iEBkkEaWR6enq7K9h4EDQoWBAUfQgAEDV94EAsWIgAD9iAARdwAFHIAEBkWQUrBBV1NggERgAQAAAAAAAECQRLBBV1NggERgAQAAAAAAAECQR5BHlkesh7mIgEBkkEaWR6enq7K9iEAPV0dIgEFXS2CBj4CDgECQRDtghyCBI4BAgR+AQ4EiE1NLSUZUR1dISUNIBEl2iEBFSUxM';
-  const buffer = Buffer.from(webmBase64, 'base64');
-  
-  try {
-    const metadata = await mm.parseBuffer(buffer, { mimeType: 'audio/webm' });
-    const duration = metadata.format.duration;
-    if (duration !== undefined) {
-       assert.ok(typeof duration === 'number', 'Duration should be a number');
-    }
-  } catch (e) {
-    // If our fixture is still broken, we at least verify the failure mode matches transcribe.js
-    // which expects null duration for invalid files.
-    assert.ok(e instanceof Error);
-  }
+  const metadata = await mm.parseBuffer(validWebmOpus, { mimeType: 'audio/webm' });
+  const duration = metadata.format.duration;
+  assert.ok(duration !== undefined && duration !== null, 'Duration should be defined');
+  assert.ok(typeof duration === 'number', 'Duration should be a number');
+  assert.ok(duration > 0, 'Duration should be positive');
 });
 
 test('music-metadata rejects invalid files', async () => {
