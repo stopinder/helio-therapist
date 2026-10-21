@@ -1,8 +1,8 @@
-✔ checkDictationFairUse uses private schema (1.9095ms)
-✔ music-metadata correctly parses duration (0.215ms)
-✔ Daily limit error mapping (0.8666ms)
-✔ Rate limit error mapping (0.1905ms)
-✔ Supabase unavailable handling (0.4629ms)
+✔ checkDictationFairUse uses public gateway (1.1011ms)
+✔ music-metadata correctly parses duration (0.3182ms)
+✔ Daily limit error mapping (1.7024ms)
+✔ Rate limit error mapping (1.6825ms)
+✔ Supabase unavailable handling (0.7435ms)
 ℹ tests 5
 ℹ suites 0
 ℹ pass 5
@@ -10,15 +10,15 @@
 ℹ cancelled 0
 ℹ skipped 0
 ℹ todo 0
-ℹ duration_ms 11.0727
-✔ Free budget is deliberately bounded and low cost (0.9738ms)
-✔ reserveAiBudget calls the server-only atomic RPC with no clinical input (0.9657ms)
-✔ paid and grandfathered accounts get a null reservation from DB (0.1541ms)
-✔ Free limit exhaustion produces a stable 429 and is not bypassed (0.5476ms)
-✔ Oversize requests, missing RPC and malformed data fail closed (0.7352ms)
-✔ all text AI provider calls reserve before OpenAI, clamp Free model and tokens (0.2609ms)
-✖ the separate Whisper endpoint also uses the unmetered budget check (1.2137ms)
-✔ RPC is service-role-only (0.2227ms)
+ℹ duration_ms 15.1534
+✔ Free budget is deliberately bounded and low cost (1.103ms)
+✔ reserveAiBudget calls the server-only atomic RPC with no clinical input (1.1039ms)
+✔ paid and grandfathered accounts get a null reservation from DB (0.163ms)
+✔ Free limit exhaustion produces a stable 429 and is not bypassed (0.6002ms)
+✔ Oversize requests, missing RPC and malformed data fail closed (0.8295ms)
+✔ all text AI provider calls reserve before OpenAI, clamp Free model and tokens (0.3123ms)
+✖ the separate Whisper endpoint also uses the unmetered budget check (3.6974ms)
+✔ RPC is service-role-only (0.4333ms)
 ℹ tests 8
 ℹ suites 0
 ℹ pass 7
@@ -26,10 +26,10 @@
 ℹ cancelled 0
 ℹ skipped 0
 ℹ todo 0
-ℹ duration_ms 15.6659
+ℹ duration_ms 22.5623
 ✖ failing tests:
 test at test\free-ai-budget.test.js:84:1
-✖ the separate Whisper endpoint also uses the unmetered budget check (1.2137ms)
+✖ the separate Whisper endpoint also uses the unmetered budget check (3.6974ms)
   AssertionError [ERR_ASSERTION]: The input did not match the regular expression /Dictation is now free and unmetered/. Input:
 
   "import OpenAI, { toFile } from 'openai';\r\n" +
@@ -47,7 +47,11 @@ test at test\free-ai-budget.test.js:84:1
     'async function getDurationSeconds(buffer, mimeType) {\r\n' +
     '  try {\r\n' +
     '    const metadata = await mm.parseBuffer(buffer, { mimeType });\r\n' +
-    '    return metadata.format.duration || null;\r\n' +
+    '    const duration = metadata.format.duration;\r\n' +
+    "    if (typeof duration !== 'number' || !Number.isFinite(duration) || duration <= 0) {\r\n" +
+    '      return null;\r\n' +
+    '    }\r\n' +
+    '    return duration;\r\n' +
     '  } catch (error) {\r\n' +
     "    console.error('[Dictation] Duration parsing failed:', error.message);\r\n" +
     '    return null;\r\n' +
@@ -180,12 +184,12 @@ test at test\free-ai-budget.test.js:84:1
     operator: 'match',
     diff: 'simple'
   }
-✔ Free signup does not require Stripe or payment card (0.9971ms)
-✔ Free client quota is five; archiving restores a slot (0.2881ms)
-✔ Paid, grandfathered and existing trials retain access (0.1394ms)
-✔ Canceled billing reverts to Free but never erases records or blocks workspace (0.232ms)
-✔ Billing status reports plan and limit from authenticated backend (0.1321ms)
-✔ Trial email is not sent for a new paid subscription (0.1595ms)
+✔ Free signup does not require Stripe or payment card (2.1392ms)
+✔ Free client quota is five; archiving restores a slot (0.6909ms)
+✔ Paid, grandfathered and existing trials retain access (0.5253ms)
+✔ Canceled billing reverts to Free but never erases records or blocks workspace (0.602ms)
+✔ Billing status reports plan and limit from authenticated backend (0.3941ms)
+✔ Trial email is not sent for a new paid subscription (0.2423ms)
 ℹ tests 6
 ℹ suites 0
 ℹ pass 6
@@ -193,10 +197,10 @@ test at test\free-ai-budget.test.js:84:1
 ℹ cancelled 0
 ℹ skipped 0
 ℹ todo 0
-ℹ duration_ms 10.6451
-✔ Free client quota is enforced by a database trigger (1.4916ms)
-✔ archived clients are excluded; Free allows at most five active clients (0.3921ms)
-✔ paid and grandfathered customers retain access (0.2024ms)
+ℹ duration_ms 22.2296
+✔ Free client quota is enforced by a database trigger (4.3871ms)
+✔ archived clients are excluded; Free allows at most five active clients (0.3664ms)
+✔ paid and grandfathered customers retain access (0.1532ms)
 ℹ tests 3
 ℹ suites 0
 ℹ pass 3
@@ -204,10 +208,10 @@ test at test\free-ai-budget.test.js:84:1
 ℹ cancelled 0
 ℹ skipped 0
 ℹ todo 0
-ℹ duration_ms 13.4282
-✔ Stripe checkout uses configured live price without starting a trial (1.2585ms)
-✔ Stripe webhook verifies signatures before syncing subscriptions (0.2421ms)
-✔ subscription table is server-write and therapist-read only (0.3529ms)
+ℹ duration_ms 17.197
+✔ Stripe checkout uses configured live price without starting a trial (1.347ms)
+✔ Stripe webhook verifies signatures before syncing subscriptions (0.2312ms)
+✔ subscription table is server-write and therapist-read only (0.2812ms)
 ℹ tests 3
 ℹ suites 0
 ℹ pass 3
@@ -215,4 +219,4 @@ test at test\free-ai-budget.test.js:84:1
 ℹ cancelled 0
 ℹ skipped 0
 ℹ todo 0
-ℹ duration_ms 12.7643
+ℹ duration_ms 12.6433

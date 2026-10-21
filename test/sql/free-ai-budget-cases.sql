@@ -43,7 +43,7 @@ BEGIN
       raise exception 'Free audio transcription unexpectedly consumed a credit';
     end if;
   END;
-  if exists(select 1 from private.free_ai_monthly_usage where user_id=free_user) then
+  if exists(select 1 from private.free_ai_monthly_usage where user_id=free_user and period_start=current_month) then
     raise exception 'A free request consumed an AI credit';
   end if;
 

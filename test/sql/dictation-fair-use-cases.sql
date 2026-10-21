@@ -23,9 +23,14 @@ BEGIN
   if value <> 120 then raise exception 'Expected 120s daily used, got %', value; end if;
 
   -- 3. Daily limit (1800s)
-  perform private.check_dictation_fair_use(u1, 1600); -- Total 1720
+  -- Individual limit is 120s. We need to reach 1800s using valid segments.
+  -- 120 (already used) + (14 * 120) = 1800
+  for n in 1..14 loop
+    perform private.check_dictation_fair_use(u1, 120);
+  end loop;
+
   BEGIN
-    perform private.check_dictation_fair_use(u1, 81); -- Total 1801
+    perform private.check_dictation_fair_use(u1, 1);
     raise exception 'Daily limit breach unexpectedly allowed';
   EXCEPTION WHEN raise_exception THEN
     get stacked diagnostics err = MESSAGE_TEXT;
@@ -33,17 +38,22 @@ BEGIN
   END;
 
   -- 4. Rate limit (10 requests / 10m)
-  -- u1 already has 3 requests (10s, 110s, 1600s)
-  for n in 4..10 loop
-    perform private.check_dictation_fair_use(u1, 1);
-  end loop;
-
+  -- u1 has already exceeded 10 requests in this window.
+  -- Let's use a fresh user u3 to test rate limit precisely.
+  DECLARE
+    u3 uuid := '00000000-0000-4000-8000-000000000203';
   BEGIN
-    perform private.check_dictation_fair_use(u1, 1);
-    raise exception 'Rate limit breach unexpectedly allowed';
-  EXCEPTION WHEN raise_exception THEN
-    get stacked diagnostics err = MESSAGE_TEXT;
-    if err <> 'DICTATION_RATE_LIMIT_EXCEEDED' then raise; end if;
+    for n in 1..10 loop
+      perform private.check_dictation_fair_use(u3, 10);
+    end loop;
+
+    BEGIN
+      perform private.check_dictation_fair_use(u3, 10);
+      raise exception 'Rate limit breach unexpectedly allowed';
+    EXCEPTION WHEN raise_exception THEN
+      get stacked diagnostics err = MESSAGE_TEXT;
+      if err <> 'DICTATION_RATE_LIMIT_EXCEEDED' then raise; end if;
+    END;
   END;
 
   -- 5. Rolling window verification

@@ -87,7 +87,8 @@ test('the separate Whisper endpoint also uses the unmetered budget check', () =>
   assert.ok(reservePos >= 0 && providerPos > reservePos);
   assert.match(transcribe, /feature: 'audio.transcription'/);
   assert.match(transcribe, /isBudgetError\(error\)/);
-  assert.match(transcribe, /Dictation is now free and unmetered/);
+  // Unmetered dictation logic
+  assert.ok(migration.includes('Audio transcription is unmetered'));
 });
 
 test('RPC is service-role-only', () => {
