@@ -176,10 +176,10 @@
       <div class="section-container offer-inner">
         <div class="offer-copy">
           <p class="section-eyebrow">SIMPLE PRICING</p>
-          <h2>7 days free, then <em>£29/month.</em></h2>
-          <p>Cancel anytime. One therapist workspace, with the core Helios practice tools included.</p>
+          <h2>Free forever. <em>Professional when you need it.</em></h2>
+          <p>Free: five active clients and up to five short text-AI actions monthly, no payment card required. Professional: £29/month or £290/year paid upfront, with unlimited active clients. For Clinic or Enterprise, <a href="mailto:hello@helio.works?subject=Helios%20Clinic%20enquiry">talk to us</a>.</p>
         </div>
-        <router-link to="/get-started" class="offer-button">Start your 7-day free trial <ArrowUpRight :size="18" /></router-link>
+        <router-link to="/get-started" class="offer-button">Start Free — no card required <ArrowUpRight :size="18" /></router-link>
       </div>
     </section>
 
@@ -227,7 +227,7 @@
           <p class="footer-kicker">BUILT FOR THERAPISTS</p>
           <p class="footer-built-title">Independent, therapist-built practice software.</p>
           <p class="footer-built-copy">Designed around the way real clinical work unfolds — not around billing, advertising or engagement.</p>
-          <p class="footer-built-offer">7 days free · £29/month · Cancel anytime</p>
+          <p class="footer-built-offer">Free forever · Professional £29/month or £290/year</p>
         </div>
       </div>
       <div class="section-container footer-bottom">

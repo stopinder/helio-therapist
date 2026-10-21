@@ -14,27 +14,6 @@ const BUDGET_ERRORS = {
   DICTATION_DAILY_LIMIT_EXCEEDED: [429, "You've reached today's free dictation allowance. Dictation will be available again tomorrow."],
   DICTATION_RATE_LIMIT_EXCEEDED: [429, 'Please wait a few minutes before starting another dictation.']
 };
-
-export async function checkDictationFairUse({ userId, durationSeconds, supabase = getSupabaseClient() }) {
-  if (!userId) throw budgetError('AI_BUDGET_UNAVAILABLE', 503, 'AI allowance could not be checked.');
-  let response;
-  try {
-    response = await supabase.rpc('check_dictation_fair_use', {
-      p_user_id: userId,
-      p_duration_seconds: Math.ceil(durationSeconds)
-    });
-  } catch (error) {
-    throw budgetError('AI_BUDGET_UNAVAILABLE', 503, 'AI allowance could not be checked.');
-  }
-  if (response?.error) {
-    for (const [code, [status, message]] of Object.entries(BUDGET_ERRORS)) {
-      if (String(response.error.message || '').includes(code)) throw budgetError(code, status, message);
-    }
-    throw budgetError('AI_BUDGET_UNAVAILABLE', 503, 'AI allowance could not be checked.');
-  }
-  return true;
-}
-
 export function budgetError(code, status, message) {
   const error = new Error(message);
   error.code = code;
@@ -77,4 +56,24 @@ export async function reserveAiBudget({
 
 export function isBudgetError(error) {
   return Boolean(error?.code && (error.code in BUDGET_ERRORS || error.code === 'AI_BUDGET_UNAVAILABLE'));
+}
+
+export async function checkDictationFairUse({ userId, durationSeconds, supabase = getSupabaseClient() }) {
+  if (!userId) throw budgetError('AI_BUDGET_UNAVAILABLE', 503, 'AI allowance could not be checked.');
+  let response;
+  try {
+    response = await supabase.rpc('check_dictation_fair_use', {
+      p_user_id: userId,
+      p_duration_seconds: Math.ceil(durationSeconds)
+    });
+  } catch (error) {
+    throw budgetError('AI_BUDGET_UNAVAILABLE', 503, 'AI allowance could not be checked.');
+  }
+  if (response?.error) {
+    for (const [code, [status, message]] of Object.entries(BUDGET_ERRORS)) {
+      if (String(response.error.message || '').includes(code)) throw budgetError(code, status, message);
+    }
+    throw budgetError('AI_BUDGET_UNAVAILABLE', 503, 'AI allowance could not be checked.');
+  }
+  return true;
 }
