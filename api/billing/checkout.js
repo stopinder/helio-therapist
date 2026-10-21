@@ -1,6 +1,5 @@
 import { requireAuthenticatedUser } from '../_lib/supabase.js';
 import { getStripeClient, getStripePriceId } from '../_lib/stripe.js';
-import { hasLegacyAccess } from '../_lib/billing-access.js';
 
 function appOrigin(req) {
   const configured = (process.env.APP_URL || '').trim();
@@ -22,10 +21,9 @@ export default async function handler(req, res) {
     }
     const stripe = getStripeClient();
     const origin = appOrigin(req);
-    const legacyAccess = hasLegacyAccess(user);
-    const subscriptionData = legacyAccess
-      ? { metadata: { therapist_id: user.id, billing_plan: 'monthly' } }
-      : { trial_period_days: 7, metadata: { therapist_id: user.id, billing_plan: 'monthly' } };
+    // A paid upgrade begins only when the therapist explicitly chooses Checkout.
+    // Free sign-up never creates a Stripe customer or a seven-day auto-billing trial.
+    const subscriptionData = { metadata: { therapist_id: user.id, billing_plan: 'monthly' } };
 
     const session = await stripe.checkout.sessions.create({
       mode: 'subscription',

@@ -9,6 +9,13 @@ const endpoint = await readFile(new URL('../api/signup/welcome.js', import.meta.
 const migration = await readFile(new URL('../supabase/migrations/20260822122932_add_marketing_email_consent.sql', import.meta.url), 'utf8')
 const resourceExchangeMigration = await readFile(new URL('../supabase/migrations/20260721120000_add_clinical_resource_exchange_architecture.sql', import.meta.url), 'utf8')
 
+test('signup and password reset links stay on the current site rather than redirecting Preview to Production', () => {
+  assert.match(authGate, /new URL\('\/sign-in', window\.location\.origin\)\.toString\(\)/)
+  assert.match(authGate, /emailRedirectTo: authEmailRedirectUrl\(\)/)
+  assert.match(authGate, /redirectTo: authEmailRedirectUrl\(\)/)
+  assert.doesNotMatch(authGate, /emailRedirectTo: 'https:\/\/helio\.works/)
+})
+
 test('signup marketing consent is explicit and optional', () => {
   assert.match(authGate, /marketingEmailConsent = ref\(false\)/)
   assert.match(authGate, /Send me occasional Helios product updates/)

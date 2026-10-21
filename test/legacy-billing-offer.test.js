@@ -4,9 +4,8 @@ import fs from 'node:fs'
 
 const checkout = fs.readFileSync('api/billing/checkout.js', 'utf8')
 
-test('existing Helios accounts do not receive a new free trial', () => {
-  assert.match(checkout, /hasLegacyAccess\(user\)/)
-  assert.match(checkout, /legacyAccess\s*\?\s*\{ metadata:/)
-  assert.match(checkout, /trial_period_days:\s*7/)
+test('no account receives an automatic trial when upgrading to Professional', () => {
+  assert.doesNotMatch(checkout, /trial_period_days\s*:/)
   assert.match(checkout, /billing_plan:\s*'monthly'/)
+  assert.match(checkout, /mode:\s*'subscription'/)
 })

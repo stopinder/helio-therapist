@@ -48,13 +48,12 @@ describe('new-account billing gate', () => {
     wrapper.unmount()
   })
 
-  it('holds the workspace behind checkout when the account has no subscription', async () => {
-    fetch.mockResolvedValue({ ok: true, json: async () => ({ subscription: null, hasWorkspaceAccess: false }) })
+  it('opens a Free workspace when the therapist has no subscription', async () => {
+    fetch.mockResolvedValue({ ok: true, json: async () => ({ subscription: null, plan: 'free', activeClientLimit: 5, hasWorkspaceAccess: true }) })
     const wrapper = mount(AuthGate)
     await flushPromises()
-    expect(wrapper.text()).toContain('Choose your Helios plan')
-    expect(wrapper.text()).toContain('Start 7-day free trial')
-    expect(wrapper.find('[data-testid="workspace-shell"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="workspace-shell"]').exists()).toBe(true)
+    expect(wrapper.text()).not.toContain('Start 7-day free trial')
     wrapper.unmount()
   })
 

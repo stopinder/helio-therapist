@@ -1,5 +1,6 @@
 import { requireAuthenticatedUser } from '../_lib/supabase.js';
 import { hasLegacyAccess, hasWorkspaceAccess } from '../_lib/billing-access.js';
+import { resolvePlanEntitlements } from '../_lib/plan-entitlements.js';
 
 export default async function handler(req, res) {
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
@@ -9,9 +10,12 @@ export default async function handler(req, res) {
       .select('status,trial_ends_at,current_period_ends_at,cancel_at_period_end,stripe_price_id')
       .eq('therapist_id', user.id).maybeSingle();
     if (error) throw error;
+    const entitlement = resolvePlanEntitlements({ user, subscription: data });
     return res.status(200).json({
       subscription: data || null,
       hasWorkspaceAccess: hasWorkspaceAccess(user, data),
+      plan: entitlement.plan,
+      activeClientLimit: entitlement.activeClientLimit,
       legacyAccess: hasLegacyAccess(user)
     });
   } catch (error) {

@@ -649,9 +649,14 @@ function dictationButtonLabel(key) {
   return 'Dictate';
 }
 
+const recordingInterval = ref(null);
+const recordingSeconds = ref(0);
+const MAX_RECORDING_SECONDS = 120;
+
 async function toggleDictation(key) {
   if (status.value !== 'draft') return;
   if (activeDictationKey.value === key) {
+    if (recordingInterval.value) { clearInterval(recordingInterval.value); recordingInterval.value = null; }
     recorder?.stop();
     return;
   }
@@ -667,8 +672,24 @@ async function toggleDictation(key) {
       if (event.data.size > 0) chunks.push(event.data);
     };
     recorder.onstop = () => processDictation(key);
+    
+    recordingSeconds.value = 0;
     recorder.start();
     activeDictationKey.value = key;
+    
+    recordingInterval.value = setInterval(() => {
+      recordingSeconds.value++;
+      if (recordingSeconds.value >= MAX_RECORDING_SECONDS - 30 && recordingSeconds.value < MAX_RECORDING_SECONDS) {
+        dictationErrorKey.value = key;
+        dictationError.value = `Recording. ${MAX_RECORDING_SECONDS - recordingSeconds.value} seconds remaining before automatic stop.`;
+      }
+      if (recordingSeconds.value >= MAX_RECORDING_SECONDS) {
+        if (recordingInterval.value) { clearInterval(recordingInterval.value); recordingInterval.value = null; }
+        dictationErrorKey.value = key;
+        dictationError.value = 'Dictation is limited to two minutes per recording. You can continue with another recording.';
+        recorder?.stop();
+      }
+    }, 1000);
   } catch {
     dictationErrorKey.value = key;
     dictationError.value = 'Microphone access was not available. You can continue by typing.';
@@ -676,21 +697,25 @@ async function toggleDictation(key) {
 }
 
 async function processDictation(key) {
+  if (recordingInterval.value) { clearInterval(recordingInterval.value); recordingInterval.value = null; }
   activeDictationKey.value = '';
   stream?.getTracks().forEach(track => track.stop());
 
+  const duration = recordingSeconds.value;
   const blob = new Blob(chunks, { type: recorder?.mimeType || 'audio/webm' });
   if (!blob.size) return;
 
   transcribingKey.value = key;
   dictationErrorKey.value = '';
-  dictationError.value = '';
+  if (!dictationError.value.includes('limited to two minutes')) {
+    dictationError.value = '';
+  }
   try {
     const audio = await blobToDataUrl(blob);
     const response = await authenticatedFetch('/api/ai/transcribe', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ audio })
+      body: JSON.stringify({ audio, duration })
     });
     const payload = await response.json().catch(() => ({}));
     if (!response.ok) throw new Error(payload?.error?.message || 'Dictation could not be transcribed.');

@@ -14,7 +14,7 @@ test('annual billing uses the live £290 yearly Stripe price', () => {
 })
 
 test('non-trial users can choose annual billing', () => {
-  assert.match(authGate, /Pay annually — £290\/year/)
+  assert.match(authGate, /No payment card required/)
   assert.match(authGate, /\/api\/billing\/annual/)
   assert.match(settings, /@click="startAnnualSubscription"/)
   assert.match(settings, /\/api\/billing\/annual/)
