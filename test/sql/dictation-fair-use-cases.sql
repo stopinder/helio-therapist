@@ -1,4 +1,15 @@
 -- Behavioural tests for dictation fair-use protection.
+-- Disposable PostgreSQL test fixtures; never execute this suite on live Platform.
+insert into auth.users (id, created_at) values
+('00000000-0000-4000-8000-000000000201', now()),
+('00000000-0000-4000-8000-000000000202', now()),
+('00000000-0000-4000-8000-000000000203', now()),
+('00000000-0000-4000-8000-000000000204', now()),
+('00000000-0000-4000-8000-000000000205', now()),
+('00000000-0000-4000-8000-000000000206', now()),
+('00000000-0000-4000-8000-000000000207', now())
+on conflict (id) do nothing;
+
 DO $$
 DECLARE
   u_sec uuid := '00000000-0000-4000-8000-000000000201'; -- Security
@@ -28,10 +39,19 @@ BEGIN
   if value <> 120 then raise exception 'Expected 120s daily used, got %', value; end if;
 
   -- 3. Daily limit (1800s)
-  -- 15 * 120s = 1800s
+  -- 15 * 120s = 1800s. After ten clips, age their request timestamps so
+  -- the independent rolling-window limit does not mask the daily-limit test.
   for n in 1..15 loop
+    if n = 11 then
+      update private.dictation_requests
+      set created_at = now() - interval '11 minutes'
+      where user_id = u_daily;
+    end if;
     perform private.check_dictation_fair_use(u_daily, 120);
   end loop;
+
+  select daily_seconds_used into value from private.dictation_usage where user_id = u_daily;
+  if value <> 1800 then raise exception 'Expected 1800s daily used, got %', value; end if;
 
   BEGIN
     perform private.check_dictation_fair_use(u_daily, 1);
