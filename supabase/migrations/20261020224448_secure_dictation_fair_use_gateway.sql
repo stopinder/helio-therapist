@@ -98,5 +98,6 @@ end;
 $$;
 
 -- 3. Revoke and Grant permissions
+grant usage on schema private to service_role;
 revoke all on function public.check_dictation_fair_use(uuid, integer) from public, anon, authenticated;
 grant execute on function public.check_dictation_fair_use(uuid, integer) to service_role;
