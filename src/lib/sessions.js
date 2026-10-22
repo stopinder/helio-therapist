@@ -130,8 +130,8 @@ export async function createSessionFromTranscript(clientId, occurredAt) {
   try {
     const { data, error } = await client.rpc('create_session_from_transcript', { p_client_id: clientId, p_occurred_at: occurredAt || new Date().toISOString() })
     if (error) {
-      if (error.code === 'P0003') {
-        const conflict = new Error('An earlier in-progress session is blocking creation. Please complete or discard it before creating a new one.')
+      if (error.code === 'P0003' || (error.code === '23505' && String(error.message || error.details || '').includes('sessions_one_open_per_client_unique'))) {
+        const conflict = new Error('This client already has a session in progress. Review that session before creating another; link this transcript only if it belongs to that encounter.')
         conflict.code = 'SESSION_EXISTS'
         throw conflict
       }
