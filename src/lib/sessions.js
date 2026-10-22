@@ -127,9 +127,28 @@ export async function completeSessionRecord(session, notes) {
 
 export async function createSessionFromTranscript(clientId, occurredAt) {
   const client = requireSupabase()
-  const { data, error } = await client.rpc('create_session_from_transcript', { p_client_id: clientId, p_occurred_at: occurredAt || new Date().toISOString() })
-  if (error) throw error
-  return presentSession(singleResult(data))
+  try {
+    const { data, error } = await client.rpc('create_session_from_transcript', { p_client_id: clientId, p_occurred_at: occurredAt || new Date().toISOString() })
+    if (error) {
+      if (error.code === 'P0003') {
+        const conflict = new Error('An earlier in-progress session is blocking creation. Please complete or discard it before creating a new one.')
+        conflict.code = 'SESSION_EXISTS'
+        throw conflict
+      }
+      if (error.code === '42501' || error.message?.includes('Sessions must begin in progress')) {
+        const wrap = new Error('Unable to create the session. Your original transcript is safe. Please try again.')
+        wrap.code = 'SESSION_CREATION_RESTRICTED'
+        throw wrap
+      }
+      throw error
+    }
+    return presentSession(singleResult(data))
+  } catch (error) {
+    if (error.code === 'SESSION_EXISTS' || error.code === 'SESSION_CREATION_RESTRICTED') throw error
+    const wrap = new Error('Unable to create the session. Your original transcript is safe. Please try again.')
+    wrap.originalError = error
+    throw wrap
+  }
 }
 
 export async function migrateLegacySessions() {
