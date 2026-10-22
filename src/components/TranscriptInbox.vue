@@ -82,8 +82,11 @@
             </div>
             
             <div class="mt-8 pt-8 border-t border-helio-gray-200">
-              <p class="text-sm text-helio-gray-600 mb-4">Alternatively, link this transcript to an existing encounter if one matches.</p>
-              <div class="flex items-center gap-2">
+              <button type="button" class="secondary" :aria-expanded="showExistingSessions" @click="showExistingSessions = !showExistingSessions">
+                {{ showExistingSessions ? 'Hide existing sessions' : 'Link to an existing encounter instead' }}
+              </button>
+              <p v-if="showExistingSessions" class="field-help">Only link a previous record if it represents this exact encounter.</p>
+              <div v-if="showExistingSessions" class="flex items-center gap-2">
                 <label for="session-select" class="sr-only">Existing session</label>
                 <select id="session-select" v-model="selectedSessionRef" class="flex-1">
                   <option value="" disabled>Select an existing session…</option>
@@ -95,7 +98,7 @@
                   {{ saving ? 'Linking…' : 'Link to existing' }}
                 </button>
               </div>
-              <p v-if="selectedSessionRef && selectedSessionDetails" class="field-help">Selected: {{ selectedSessionDetails }} — confirm this is the same encounter before linking.</p>
+              <p v-if="showExistingSessions && selectedSessionRef && selectedSessionDetails" class="field-help">Selected: {{ selectedSessionDetails }} — confirm this is the same encounter before linking.</p>
             </div>
           </div>
         </template>
@@ -144,7 +147,7 @@ const props = defineProps({ clients: { type: Array, default: () => [] }, openTra
 const emit = defineEmits(['client-added'])
 const router = useRouter()
 const transcripts = ref([]), selected = ref(null), selectedClientId = ref(''), selectedSessionRef = ref(''), selectedLens = ref(''), sourceRetention = ref('keep_until_review')
-const sessionDate = ref(''), sessionTime = ref('')
+const sessionDate = ref(''), sessionTime = ref(''), showExistingSessions = ref(false)
 const localTimezoneLabel = Intl.DateTimeFormat().resolvedOptions().timeZone || 'device local'
 const editingClient = ref(false), editingSession = ref(false), editingChoices = ref(false), searchQuery = ref(''), filterMode = ref('attention'), showRaw = ref(false), expandedRows = ref(new Set())
 const loading = ref(true), saving = ref(false), errorMessage = ref(''), successMessage = ref(''), sessionRecords = ref([])
@@ -278,6 +281,7 @@ function toggleExpand(id, event) {
 }
 function openTranscript(transcript){
   selected.value=transcript;
+  showExistingSessions.value = false;
   selectedClientId.value=transcript.clientId||'';
   const linkedSession=sessionRecords.value.find(session=>String(session.id)===String(transcript.sessionRef)||String(session.legacyRef||'')===String(transcript.sessionRef));
   selectedSessionRef.value=linkedSession?.id||transcript.sessionRef||'';
@@ -313,11 +317,15 @@ async function createSessionFromTranscript(){
     if (transcript) {
       editingSession.value = false;
       successMessage.value = 'Session created and linked. You can now open the session to continue.';
+    } else {
+      // The new session is retained: expose its selection for an explicit retry.
+      showExistingSessions.value = true;
     }
   } catch (error) {
     if (error.code === 'SESSION_EXISTS') {
       errorMessage.value = error.message;
       editingSession.value = true;
+      showExistingSessions.value = true;
     } else {
       errorMessage.value = error?.message || 'Unable to create a session from this transcript.';
     }
