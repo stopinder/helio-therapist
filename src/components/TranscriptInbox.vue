@@ -73,6 +73,7 @@
               <label for="session-time">Session time</label>
               <input id="session-time" v-model="sessionTime" type="time" class="control-field" />
             </div>
+            <p class="field-help">Confirm when this encounter actually happened ({{ localTimezoneLabel }} time). Zoom transcript import time may differ.</p>
             <div class="assignment-actions">
               <button class="primary" :disabled="saving || !sessionDate || !sessionTime" @click="createSessionFromTranscript">
                 {{ saving ? 'Creating…' : 'Create session' }}
@@ -135,6 +136,7 @@ import { useRouter } from 'vue-router'
 import { authenticatedFetch } from '../lib/api.js'
 import { createClient } from '../lib/clients.js'
 import { createSessionFromTranscript as createTranscriptSession, listSessions } from '../lib/sessions.js'
+import { localSessionDateTime, localSessionDateTimeToUtc } from '../lib/sessionDateTime.js'
 import AddClientModal from './sidebar/AddClientModal.vue'
 import StatusIndicator from './ui/StatusIndicator.vue'
 const props = defineProps({ clients: { type: Array, default: () => [] }, openTranscriptId: { type: [String, Number], default: null } })
@@ -142,6 +144,7 @@ const emit = defineEmits(['client-added'])
 const router = useRouter()
 const transcripts = ref([]), selected = ref(null), selectedClientId = ref(''), selectedSessionRef = ref(''), selectedLens = ref(''), sourceRetention = ref('keep_until_review')
 const sessionDate = ref(''), sessionTime = ref('')
+const localTimezoneLabel = Intl.DateTimeFormat().resolvedOptions().timeZone || 'device local'
 const editingClient = ref(false), editingSession = ref(false), editingChoices = ref(false), searchQuery = ref(''), filterMode = ref('attention'), showRaw = ref(false), expandedRows = ref(new Set())
 const loading = ref(true), saving = ref(false), errorMessage = ref(''), successMessage = ref(''), sessionRecords = ref([])
 const showAddClient = ref(false), addingClient = ref(false), addClientError = ref('')
@@ -280,9 +283,11 @@ function openTranscript(transcript){
   selectedLens.value=transcript.requestedLens||'';
   sourceRetention.value=transcript.sourceRetention||'keep_until_review';
   
-  const dateObj = new Date(transcript.receivedAt);
-  sessionDate.value = dateObj.toISOString().split('T')[0];
-  sessionTime.value = dateObj.toTimeString().split(' ')[0].substring(0, 5);
+  // Zoom transcript receivedAt is an import timestamp, not the meeting start.
+  // Until the API supplies a verified meeting start, use an editable local fallback.
+  const defaultTime = localSessionDateTime();
+  sessionDate.value = defaultTime.date;
+  sessionTime.value = defaultTime.time;
   
   errorMessage.value='';
   successMessage.value='';
@@ -299,7 +304,7 @@ async function createSessionFromTranscript(){
   saving.value = true;
   errorMessage.value = '';
   try {
-    const occurredAt = new Date(`${sessionDate.value}T${sessionTime.value}:00`).toISOString();
+    const occurredAt = localSessionDateTimeToUtc(sessionDate.value, sessionTime.value);
     const newSession = await createTranscriptSession(selected.value.clientId, occurredAt);
     sessionRecords.value = [newSession, ...sessionRecords.value.filter(session => session.id !== newSession.id)];
     selectedSessionRef.value = String(newSession.id);
