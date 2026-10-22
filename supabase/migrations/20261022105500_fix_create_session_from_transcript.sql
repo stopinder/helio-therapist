@@ -17,6 +17,7 @@ declare
   current_user_id uuid := (select auth.uid());
   created_session public.sessions%rowtype;
   session_time timestamptz := coalesce(p_occurred_at, now());
+  v_failed_constraint text;
 begin
   if current_user_id is null then
     raise exception 'Authentication required' using errcode = '28000';
@@ -40,7 +41,7 @@ begin
 
   if found then
     -- Using a custom error message that can be caught by the frontend.
-    raise exception 'An in-progress session already exists for this client. Please complete or discard it before creating a new one.' using errcode = 'P0003';
+    raise exception 'An in-progress session already exists for this client. Review that session before creating another.' using errcode = 'P0003';
   end if;
 
   insert into public.sessions (
@@ -64,7 +65,16 @@ begin
   returning * into created_session;
 
   return created_session;
+exception
+  when unique_violation then
+    -- Two requests can both pass the SELECT. The partial unique index decides
+    -- the winner; translate only that specific race to the same safe conflict.
+    get stacked diagnostics v_failed_constraint = CONSTRAINT_NAME;
+    if v_failed_constraint = 'sessions_one_open_per_client_unique' then
+      raise exception 'An in-progress session already exists for this client. Review that session before creating another.' using errcode = 'P0003';
+    end if;
+    raise;
 end;
-$$;
+$;
 
 commit;
