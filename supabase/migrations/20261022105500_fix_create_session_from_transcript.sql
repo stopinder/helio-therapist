@@ -75,6 +75,6 @@ exception
     end if;
     raise;
 end;
-$;
+$$;
 
 commit;
