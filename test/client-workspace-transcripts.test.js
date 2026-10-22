@@ -29,7 +29,9 @@ test('client transcript without a session exposes the existing session-link work
   assert.match(transcriptsViewSource, /route\.query\.transcript/)
   assert.match(transcriptsViewSource, /:open-transcript-id="openTranscriptId"/)
   assert.match(transcriptInboxSource, /openTranscriptId/)
-  assert.match(transcriptInboxSource, /No sessions for this client yet\. Create one from this transcript when you are ready\./)
+  assert.match(transcriptInboxSource, /Session date/)
+  assert.match(transcriptInboxSource, /Session time/)
+  assert.match(transcriptInboxSource, /Link to existing/)
   assert.match(transcriptInboxSource, /Create session/)
 })
 
