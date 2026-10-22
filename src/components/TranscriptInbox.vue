@@ -95,6 +95,7 @@
                   {{ saving ? 'Linking…' : 'Link to existing' }}
                 </button>
               </div>
+              <p v-if="selectedSessionRef && selectedSessionDetails" class="field-help">Selected: {{ selectedSessionDetails }} — confirm this is the same encounter before linking.</p>
             </div>
           </div>
         </template>
