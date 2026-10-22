@@ -57,7 +57,60 @@
       <p v-if="errorMessage" class="notice error" role="alert">{{ errorMessage }}</p><p v-else-if="successMessage" class="notice success" role="status">{{ successMessage }}</p>
       <ol class="review-progress" aria-label="Transcript review progress"><li :class="{ complete: selected.clientId, current: !selected.clientId }"><span>{{ selected.clientId ? '✓' : '1' }}</span><div><strong>Client</strong><small>{{ selected.clientId ? clientName(selected.clientId) : 'Choose client' }}</small></div></li><li :class="{ complete: selected.sessionRef, current: selected.clientId && !selected.sessionRef }"><span>{{ selected.sessionRef ? '✓' : '2' }}</span><div><strong>Session</strong><small>{{ selected.sessionRef ? 'Linked' : 'Link or create a session' }}</small></div></li></ol>
       <section class="workflow-section client-section"><template v-if="!selected.clientId || editingClient"><div><p class="eyebrow">Client</p><h2>Client</h2><p>Select the client this original Zoom transcript belongs to. Helio will not guess.</p></div><div class="assignment-controls"><div class="flex items-center gap-2"><label for="client-select" class="sr-only">Client</label><select id="client-select" v-model="selectedClientId" class="flex-1"><option value="" disabled>Select a client…</option><option v-for="client in clients" :key="client.id" :value="client.id">{{ client.name }}</option></select><button type="button" class="secondary whitespace-nowrap" @click="showAddClient = true">Add new client</button></div><div class="assignment-actions"><button v-if="selected.clientId" class="secondary" :disabled="saving" @click="editingClient = false">Cancel</button><button class="primary" :disabled="saving || !selectedClientId || selectedClientId === selected.clientId" @click="saveAssignment">{{ saving ? 'Saving…' : selected.clientId ? 'Change client' : 'Assign client' }}</button></div></div></template><template v-else><div><p class="eyebrow">Client</p><h2>{{ clientName(selected.clientId) }}</h2><p>Assigned client</p></div><button class="secondary" @click="editingClient = true">Change</button></template></section>
-      <section v-if="selected.clientId" class="workflow-section session-section"><template v-if="!selected.sessionRef || editingSession"><div><p class="eyebrow">Session</p><h2>Session</h2><p>Link this transcript to an existing session or create a new one.</p></div><div class="assignment-controls"><label for="session-select">Session</label><select id="session-select" v-model="selectedSessionRef"><option value="" disabled>Select a session…</option><option v-for="session in sessionsForClient" :key="session.id" :value="String(session.id)">{{ sessionOptionLabel(session) }}</option></select><p v-if="selectedSessionRef && selectedSessionDetails" class="field-help text-action-link font-medium">Selected: {{ selectedSessionDetails }}</p><p v-if="!sessionsForClient.length" class="field-help">No sessions for this client yet. Create one from this transcript when you are ready.</p><div class="assignment-actions"><button class="secondary" :disabled="saving" @click="createSessionFromTranscript">{{ saving ? 'Creating…' : 'Create session' }}</button><button v-if="selected.sessionRef" class="secondary" :disabled="saving" @click="editingSession = false">Cancel</button><button class="primary" :disabled="saving || !selectedSessionRef || selectedSessionRef === selected.sessionRef" @click="saveSessionLink">{{ saving ? 'Saving…' : selected.sessionRef ? 'Change session' : 'Link session' }}</button></div></div></template><template v-else><div><p class="eyebrow">Session</p><h2>Linked session</h2><p>This transcript is linked to one therapeutic encounter.</p></div><button class="secondary" @click="editingSession = true">Change</button></template></section>
+      <section v-if="selected.clientId" class="workflow-section session-section">
+        <template v-if="!selected.sessionRef || editingSession">
+          <div>
+            <p class="eyebrow">Session</p>
+            <h2>Session</h2>
+            <p>Assign this transcript to a therapeutic encounter. Sessions must begin in progress.</p>
+          </div>
+          <div class="assignment-controls">
+            <div class="field-group">
+              <label for="session-date">Session date</label>
+              <input id="session-date" v-model="sessionDate" type="date" class="control-field" />
+            </div>
+            <div class="field-group">
+              <label for="session-time">Session time</label>
+              <input id="session-time" v-model="sessionTime" type="time" class="control-field" />
+            </div>
+            <p class="field-help">Confirm when this encounter actually happened ({{ localTimezoneLabel }} time). Zoom transcript import time may differ.</p>
+            <div class="assignment-actions">
+              <button class="primary" :disabled="saving || !sessionDate || !sessionTime" @click="createSessionFromTranscript">
+                {{ saving ? 'Creating…' : 'Create session' }}
+              </button>
+              <button v-if="selected.sessionRef" class="secondary" :disabled="saving" @click="editingSession = false">Cancel</button>
+            </div>
+            
+            <div class="mt-8 pt-8 border-t border-helio-gray-200">
+              <button type="button" class="secondary" :aria-expanded="showExistingSessions" @click="showExistingSessions = !showExistingSessions">
+                {{ showExistingSessions ? 'Hide existing sessions' : 'Link to an existing encounter instead' }}
+              </button>
+              <p v-if="showExistingSessions" class="field-help">Only link a previous record if it represents this exact encounter.</p>
+              <div v-if="showExistingSessions" class="flex items-center gap-2">
+                <label for="session-select" class="sr-only">Existing session</label>
+                <select id="session-select" v-model="selectedSessionRef" class="flex-1">
+                  <option value="" disabled>Select an existing session…</option>
+                  <option v-for="session in sessionsForClient" :key="session.id" :value="String(session.id)">
+                    {{ sessionOptionLabel(session) }}
+                  </option>
+                </select>
+                <button class="secondary whitespace-nowrap" :disabled="saving || !selectedSessionRef || selectedSessionRef === selected.sessionRef" @click="saveSessionLink">
+                  {{ saving ? 'Linking…' : 'Link to existing' }}
+                </button>
+              </div>
+              <p v-if="showExistingSessions && selectedSessionRef && selectedSessionDetails" class="field-help">Selected: {{ selectedSessionDetails }} — confirm this is the same encounter before linking.</p>
+            </div>
+          </div>
+        </template>
+        <template v-else>
+          <div>
+            <p class="eyebrow">Session</p>
+            <h2>Linked session</h2>
+            <p>This transcript is linked to one therapeutic encounter.</p>
+          </div>
+          <button class="secondary" @click="editingSession = true">Change</button>
+        </template>
+      </section>
       <section v-if="selected.clientId && selected.sessionRef && !editingSession" class="ready-card"><div><p class="eyebrow">Ready to continue</p><h2>Ready to continue</h2><p>This transcript is linked to {{ clientName(selected.clientId) }} and the session.</p></div><div class="assignment-actions"><button class="primary" :disabled="saving" @click="openLinkedSession">Open session</button></div></section>
       <section class="raw-transcript"><header><div><h2>Original transcript</h2><p>This is the original transcript imported from Zoom. Helio has not analysed or changed it.</p></div><div class="source-actions"><button class="secondary" :aria-expanded="showRaw" @click="showRaw = !showRaw">{{ showRaw ? 'Hide original transcript' : 'View original transcript' }}</button><button class="secondary download" @click="downloadRaw(selected)">Download .txt</button><button v-if="isEligibleForDeletion" class="secondary text-state-danger" :disabled="saving" @click="deleteTranscript">{{ saving ? 'Deleting…' : 'Delete transcript' }}</button></div></header><pre v-if="showRaw">{{ selected.text }}</pre></section>
       <section v-if="selected.reviewChoicesSavedAt || editingChoices" class="review-choices"><div><p class="eyebrow">Review choices</p><h2>Review choices</h2><p>Choose what, if anything, should be requested later and how the original source should be retained. This does not start analysis.</p></div><label for="clinical-output">Requested output</label><select id="clinical-output" v-model="selectedLens"><option value="">No output requested</option><option value="clinical_summary">Clinical summary</option><option value="draft_note">Draft clinical note</option><option value="cbt">CBT reflection</option></select><fieldset><legend>Source retention</legend><label><input v-model="sourceRetention" type="radio" value="keep_until_review" /> Keep the original source until I review it</label><label><input v-model="sourceRetention" type="radio" value="delete_after_approved_output" /> Mark for deletion after I approve an output</label></fieldset><div class="assignment-actions"><button v-if="selected.reviewChoicesSavedAt" class="secondary" :disabled="saving" @click="editingChoices = false">Cancel</button><button class="primary save-choices" :disabled="saving" @click="saveReviewChoices">{{ saving ? 'Saving…' : selected.reviewChoicesSavedAt ? 'Update review choices' : 'Save review choices' }}</button></div></section>
@@ -87,12 +140,15 @@ import { useRouter } from 'vue-router'
 import { authenticatedFetch } from '../lib/api.js'
 import { createClient } from '../lib/clients.js'
 import { createSessionFromTranscript as createTranscriptSession, listSessions } from '../lib/sessions.js'
+import { localSessionDateTime, localSessionDateTimeToUtc } from '../lib/sessionDateTime.js'
 import AddClientModal from './sidebar/AddClientModal.vue'
 import StatusIndicator from './ui/StatusIndicator.vue'
 const props = defineProps({ clients: { type: Array, default: () => [] }, openTranscriptId: { type: [String, Number], default: null } })
 const emit = defineEmits(['client-added'])
 const router = useRouter()
 const transcripts = ref([]), selected = ref(null), selectedClientId = ref(''), selectedSessionRef = ref(''), selectedLens = ref(''), sourceRetention = ref('keep_until_review')
+const sessionDate = ref(''), sessionTime = ref(''), showExistingSessions = ref(false)
+const localTimezoneLabel = Intl.DateTimeFormat().resolvedOptions().timeZone || 'device local'
 const editingClient = ref(false), editingSession = ref(false), editingChoices = ref(false), searchQuery = ref(''), filterMode = ref('attention'), showRaw = ref(false), expandedRows = ref(new Set())
 const loading = ref(true), saving = ref(false), errorMessage = ref(''), successMessage = ref(''), sessionRecords = ref([])
 const showAddClient = ref(false), addingClient = ref(false), addClientError = ref('')
@@ -225,11 +281,19 @@ function toggleExpand(id, event) {
 }
 function openTranscript(transcript){
   selected.value=transcript;
+  showExistingSessions.value = false;
   selectedClientId.value=transcript.clientId||'';
   const linkedSession=sessionRecords.value.find(session=>String(session.id)===String(transcript.sessionRef)||String(session.legacyRef||'')===String(transcript.sessionRef));
   selectedSessionRef.value=linkedSession?.id||transcript.sessionRef||'';
   selectedLens.value=transcript.requestedLens||'';
   sourceRetention.value=transcript.sourceRetention||'keep_until_review';
+  
+  // Zoom transcript receivedAt is an import timestamp, not the meeting start.
+  // Until the API supplies a verified meeting start, use an editable local fallback.
+  const defaultTime = localSessionDateTime();
+  sessionDate.value = defaultTime.date;
+  sessionTime.value = defaultTime.time;
+  
   errorMessage.value='';
   successMessage.value='';
   showRaw.value=false;
@@ -240,7 +304,35 @@ async function load(){loading.value=true;errorMessage.value='';try{const respons
 async function patchTranscript(body,fallbackMessage){saving.value=true;errorMessage.value='';successMessage.value='';try{const response=await authenticatedFetch('/api/zoom/transcripts',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:selected.value.id,expectedUpdatedAt:selected.value.updatedAt,...body})});const data=await response.json().catch(()=>({}));if(!response.ok)throw new Error(data.error||fallbackMessage);if(body.restoreAttention && !isRestoredTranscript(data?.transcript,selected.value.id))throw new Error(fallbackMessage);replaceTranscript(data.transcript);return data.transcript}catch(error){errorMessage.value=error.message||fallbackMessage;return null}finally{saving.value=false}}
 async function saveAssignment(){const transcript=await patchTranscript({clientId:selectedClientId.value},'Unable to save the client assignment.');if(transcript){selectedSessionRef.value='';editingClient.value=false;successMessage.value=`Assigned to ${clientName(transcript.clientId)}. Link the session next.`}}
 async function saveSessionLink(){const transcript=await patchTranscript({sessionRef:selectedSessionRef.value},'Unable to link this session.');if(transcript){editingSession.value=false;successMessage.value='Session linked. You can now open the session to continue.'}}
-async function createSessionFromTranscript(){if(!selected.value?.clientId)return;saving.value=true;errorMessage.value='';try{const newSession=await createTranscriptSession(selected.value.clientId,selected.value.receivedAt);sessionRecords.value=[newSession,...sessionRecords.value.filter(session=>session.id!==newSession.id)];selectedSessionRef.value=String(newSession.id);const transcript=await patchTranscript({sessionRef:selectedSessionRef.value},'Unable to link the new session. Your original transcript is safe. You can retry linking this session manually.');if(transcript){editingSession.value=false;successMessage.value='Session created and linked. You can now open the session to continue.'}}catch(error){if(error.code==='SESSION_EXISTS'){errorMessage.value=error.message;editingSession.value=true}else{errorMessage.value=error?.message||'Unable to create a session from this transcript.'}}finally{saving.value=false}}
+async function createSessionFromTranscript(){
+  if(!selected.value?.clientId) return;
+  saving.value = true;
+  errorMessage.value = '';
+  try {
+    const occurredAt = localSessionDateTimeToUtc(sessionDate.value, sessionTime.value);
+    const newSession = await createTranscriptSession(selected.value.clientId, occurredAt);
+    sessionRecords.value = [newSession, ...sessionRecords.value.filter(session => session.id !== newSession.id)];
+    selectedSessionRef.value = String(newSession.id);
+    const transcript = await patchTranscript({ sessionRef: selectedSessionRef.value }, 'Unable to link the new session. Your original transcript is safe. You can retry linking this session manually.');
+    if (transcript) {
+      editingSession.value = false;
+      successMessage.value = 'Session created and linked. You can now open the session to continue.';
+    } else {
+      // The new session is retained: expose its selection for an explicit retry.
+      showExistingSessions.value = true;
+    }
+  } catch (error) {
+    if (error.code === 'SESSION_EXISTS') {
+      errorMessage.value = error.message;
+      editingSession.value = true;
+      showExistingSessions.value = true;
+    } else {
+      errorMessage.value = error?.message || 'Unable to create a session from this transcript.';
+    }
+  } finally {
+    saving.value = false;
+  }
+}
 async function saveReviewChoices(){const transcript=await patchTranscript({requestedLens:selectedLens.value||null,sourceRetention:sourceRetention.value,reviewChoicesSaved:true},'Unable to save review choices.');if(transcript){editingChoices.value=false;successMessage.value='Review choices saved. No analysis has started.'}}
 async function deleteTranscript(){if(!selected.value)return;if(!window.confirm('Delete this unassigned transcript? This permanently removes the imported source from Helios.'))return;saving.value=true;errorMessage.value='';successMessage.value='';try{const response=await authenticatedFetch('/api/zoom/transcripts',{method:'DELETE',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:selected.value.id})});if(!response.ok){const data=await response.json().catch(()=>({}));throw new Error(data.error||'Unable to delete transcript.')}transcripts.value=transcripts.value.filter(item=>item.id!==selected.value.id);selected.value=null;successMessage.value='Transcript deleted.'}catch(error){errorMessage.value=error.message||'Unable to delete transcript.'}finally{saving.value=false}}
 async function handleAddClient(payload) {
@@ -264,5 +356,69 @@ async function openQueuedTranscript(id){if(!id)return;if(!transcripts.value.leng
 watch(()=>props.openTranscriptId,openQueuedTranscript);watch(searchQuery,()=>{historyLimit.value=historyPageSize});onMounted(async()=>{await Promise.all([load(),loadSessionRecords()]);openQueuedTranscript(props.openTranscriptId)})
 </script>
 <style scoped>
-.transcript-inbox{max-width:68rem;margin:0 auto;color:var(--text-primary)}.page-header{display:flex;align-items:flex-start;justify-content:space-between;gap:var(--space-inline-lg);margin-bottom:var(--space-stack-xl)}.eyebrow{margin:0 0 var(--space-stack-xs);color:var(--text-muted);font:600 var(--type-eyebrow-size)/var(--type-eyebrow-line) var(--font-ui);letter-spacing:var(--type-eyebrow-tracking);text-transform:uppercase}.page-header h1,.review-header h1{margin:0;font:600 var(--type-page-title-size)/var(--type-page-title-line) var(--font-ui);letter-spacing:var(--type-page-title-tracking)}.page-header p:not(.eyebrow),.review-header p:not(.eyebrow){margin:var(--space-stack-xs) 0 0;color:var(--text-muted);font:400 var(--type-body-size)/var(--type-body-line) var(--font-ui)}.queue-controls{display:flex;align-items:center;justify-content:space-between;gap:var(--space-inline-lg);margin:0 0 var(--space-stack-lg);padding-bottom:var(--space-stack-lg);border-bottom:1px solid var(--border-muted)}.inbox-search{display:block;flex:0 1 24rem}.filters{display:flex;gap:var(--space-inline-xs);padding:var(--space-inline-xs);background:var(--surface-muted);border:1px solid var(--border-muted);border-radius:var(--radius-control)}.filters button{border:0;background:transparent;border-radius:var(--radius-control);padding:0 var(--space-inline-md);color:var(--text-muted)}.filters button.active{background:var(--surface-elevated);color:var(--text-primary);font-weight:600}.notice{margin:0 0 var(--space-stack-lg);padding:var(--space-stack-md);border-radius:var(--radius-control)}.notice.error{background:var(--state-danger-surface);color:var(--state-danger)}.notice.success{background:var(--state-success-surface);color:var(--state-success)}.empty-card{min-height:18rem;display:flex;flex-direction:column;justify-content:center;align-items:center;border:1px solid var(--border-muted);border-radius:var(--radius-panel);padding:var(--space-stack-2xl);text-align:center;color:var(--text-muted)}.empty-card.compact{min-height:9rem;background:transparent;border-style:dashed}.empty-card h2{color:var(--text-secondary);margin:var(--space-stack-xs);font:600 var(--type-section-title-size)/var(--type-section-title-line) var(--font-editorial)}.empty-card p{max-width:30rem;line-height:var(--type-body-line);margin:var(--space-stack-xs)}.inbox-list{border-top:1px solid var(--border-muted);border-bottom:1px solid var(--border-muted)}.transcript-row{display:grid;grid-template-columns:minmax(0,1fr) auto auto;align-items:center;gap:var(--space-inline-lg);width:100%;border:0;border-bottom:1px solid var(--border-muted);background:transparent;padding:var(--space-stack-md) var(--space-inline-xs);text-align:left;color:var(--text-secondary)}.transcript-row:last-of-type{border-bottom:0}.transcript-row:hover{background:var(--surface-subtle)}.row-main{display:flex;min-width:0;flex-direction:column;gap:var(--space-stack-xs)}.row-main strong{font:600 var(--type-body-size)/var(--type-body-line) var(--font-ui);color:var(--text-primary)}.row-main small{color:var(--text-muted);font:500 var(--type-metadata-size)/var(--type-metadata-line) var(--font-ui)}.open{color:var(--action-link);font:600 var(--type-ui-size)/var(--type-ui-line) var(--font-ui);white-space:nowrap}.load-more-row{text-align:center;padding:var(--space-stack-md) 0;border-top:1px solid var(--border-muted)}.load-more,.back{border:0;background:transparent;color:var(--action-link);font:600 var(--type-ui-size)/var(--type-ui-line) var(--font-ui);padding:var(--space-stack-sm) var(--space-inline-md)}.review-header{margin-bottom:var(--space-stack-lg)}.review-progress{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--space-inline-sm);list-style:none;padding:0;margin:0 0 var(--space-stack-lg)}.review-progress li{display:flex;gap:var(--space-inline-sm);align-items:center;padding:var(--space-stack-sm) var(--space-inline-md);border:1px solid var(--border-muted);border-radius:var(--radius-control);background:var(--surface-elevated);color:var(--text-muted)}.review-progress li>span{display:grid;place-items:center;width:1.45rem;height:1.45rem;border-radius:var(--radius-pill);background:var(--border-muted);color:var(--text-secondary);font:700 var(--type-metadata-size)/1 var(--font-ui)}.review-progress strong,.review-progress small{display:block}.review-progress small{font-size:var(--type-metadata-size);margin-top:var(--space-stack-xs)}.review-progress .complete{border-color:var(--state-success);background:var(--state-success-surface);color:var(--state-success)}.review-progress .complete>span{background:var(--state-success);color:var(--text-on-action)}.review-progress .current{background:var(--state-selected);color:var(--action-link-hover)}.review-progress .current>span{background:var(--action-link);color:var(--text-on-action)}.workflow-section,.raw-transcript,.review-choices,.ready-card{background:var(--surface-elevated);border:1px solid var(--border-muted);border-radius:var(--radius-panel);padding:var(--space-stack-lg);margin-bottom:var(--space-stack-lg)}.workflow-section{display:grid;grid-template-columns:minmax(0,1fr) minmax(18rem,24rem);gap:var(--space-stack-xl);align-items:center;background:var(--surface-muted)}.workflow-section>button{justify-self:end}.workflow-section h2,.raw-transcript h2,.ready-card h2,.review-choices h2{font:600 var(--type-subsection-size)/var(--type-subsection-line) var(--font-ui);margin:var(--space-stack-xs) 0}.workflow-section p:not(.eyebrow),.raw-transcript p,.ready-card p,.review-choices p:not(.eyebrow){color:var(--text-muted);font:400 var(--type-body-size)/var(--type-body-line) var(--font-ui);margin:var(--space-stack-xs) 0}.assignment-controls select,.review-choices select{width:100%;box-sizing:border-box;border:1px solid var(--border);border-radius:var(--radius-control);min-height:var(--control-target);padding:0 var(--space-inline-md);font:400 var(--type-body-size)/var(--type-body-line) var(--font-ui);color:var(--text-secondary);background:var(--surface-elevated)}.assignment-controls label,.review-choices>label,.review-choices legend{display:block;font:600 var(--type-ui-size)/var(--type-ui-line) var(--font-ui);margin-bottom:var(--space-stack-xs)}.field-help{font:500 var(--type-metadata-size)/var(--type-metadata-line) var(--font-ui);color:var(--state-warning);margin:var(--space-stack-xs) 0 0}.assignment-actions{display:flex;gap:var(--space-inline-sm);margin-top:var(--space-stack-md);flex-wrap:wrap}.primary,.secondary{min-height:var(--control-target);padding:0 var(--space-inline-md);border-radius:var(--radius-control);font:600 var(--type-ui-size)/var(--type-ui-line) var(--font-ui)}.primary{border:1px solid var(--action-primary);background:var(--action-primary);color:var(--text-on-action)}.secondary{border:1px solid var(--border);background:var(--surface-elevated);color:var(--text-secondary)}.raw-transcript header{display:flex;align-items:flex-start;justify-content:space-between;gap:var(--space-inline-lg)}.source-actions{display:flex;gap:var(--space-inline-sm);flex-wrap:wrap}.raw-transcript pre{margin:var(--space-stack-lg) 0 0;max-height:28rem;overflow:auto;white-space:pre-wrap;word-break:break-word;border-radius:var(--radius-control);background:var(--surface-muted);padding:var(--space-stack-lg);color:var(--text-secondary);font:.86rem/1.6 ui-monospace,SFMono-Regular,Menlo,monospace}.review-choices{display:grid;gap:var(--space-stack-md);background:var(--surface-muted)}.review-choices fieldset{margin:0;padding:var(--space-stack-md);border:1px solid var(--border-muted);border-radius:var(--radius-control);display:grid;gap:var(--space-stack-sm)}.review-choices fieldset label{color:var(--text-secondary);font:400 var(--type-body-size)/var(--type-body-line) var(--font-ui)}.review-choices input{accent-color:var(--action-link)}.save-choices{justify-self:start}.ready-card{display:flex;align-items:center;justify-content:space-between;gap:var(--space-inline-lg)}.complete-card{border-color:var(--state-success);background:var(--state-success-surface)}@media(max-width:700px){.page-header,.queue-controls,.raw-transcript header,.ready-card{flex-direction:column;align-items:stretch}.filters{align-self:flex-start}.inbox-search{width:100%;flex-basis:auto}.transcript-row{grid-template-columns:minmax(0,1fr) auto;gap:var(--space-inline-sm)}.transcript-row>span:nth-child(2){grid-column:1;justify-self:start}.open{grid-column:2;grid-row:1}.workflow-section{grid-template-columns:1fr}.workflow-section>button{justify-self:start}.review-progress{grid-template-columns:1fr}.assignment-actions{flex-direction:column}.assignment-actions button,.save-choices{width:100%}.source-actions,.source-actions button{width:100%}}
+.transcript-inbox { max-width: 680px; margin: 0 auto; padding: 2rem 1.5rem; }
+.review-progress { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin: 2rem 0; padding: 0; list-style: none; }
+.review-progress li { display: flex; align-items: center; gap: 1rem; padding: 1rem; background: var(--helio-gray-50); border-radius: 8px; border: 1px solid var(--helio-gray-200); opacity: 0.6; }
+.review-progress li.current { opacity: 1; border-color: var(--helio-action-primary); background: white; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+.review-progress li.complete { opacity: 1; border-color: var(--helio-gray-200); background: white; }
+.review-progress span { width: 24px; height: 24px; border-radius: 50%; background: var(--helio-gray-200); display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: bold; }
+.review-progress li.current span { background: var(--helio-action-primary); color: white; }
+.review-progress li.complete span { background: var(--helio-state-success); color: white; }
+.review-progress div { display: flex; flex-direction: column; line-height: 1.2; }
+.review-progress small { color: var(--helio-gray-600); margin-top: 0.25rem; font-size: 0.8125rem; }
+
+.workflow-section { margin-bottom: 2rem; padding: 2rem; background: white; border: 1px solid var(--helio-gray-200); border-radius: 12px; display: flex; justify-content: space-between; align-items: flex-start; gap: 2rem; }
+.workflow-section > div { flex: 1; }
+.workflow-section h2 { margin: 0.5rem 0; font-size: 1.25rem; }
+.assignment-controls { flex: 1.5; display: flex; flex-direction: column; gap: 1rem; }
+.assignment-actions { display: flex; gap: 0.75rem; align-items: center; margin-top: 0.5rem; }
+
+.field-group { display: flex; flex-direction: column; gap: 0.5rem; }
+.field-group label { font-size: 0.875rem; font-weight: 500; color: var(--helio-gray-700); }
+
+.queue-controls { display: flex; gap: 1rem; margin: 2rem 0; align-items: center; }
+.inbox-search { flex: 1; }
+.filters { display: flex; gap: 0.5rem; }
+.filters button { border: none; background: none; color: var(--helio-gray-600); cursor: pointer; padding: 0.5rem 0.75rem; border-radius: 20px; transition: all 0.2s; }
+.filters button.active { background: var(--helio-gray-100); color: var(--helio-gray-900); font-weight: 600; }
+.clear-all { margin-left: auto; }
+
+.inbox-list { display: flex; flex-direction: column; gap: 0.5rem; }
+.transcript-row { display: flex; justify-content: space-between; align-items: center; padding: 1.25rem; background: white; border: 1px solid var(--helio-gray-200); border-radius: 12px; cursor: pointer; text-align: left; transition: all 0.2s; }
+.transcript-row:hover { border-color: var(--helio-action-primary); transform: translateY(-1px); box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+.row-main { display: flex; flex-direction: column; gap: 0.25rem; flex: 1; }
+.row-header { display: flex; align-items: center; gap: 0.5rem; }
+.chevron { background: none; border: none; padding: 0.25rem; color: var(--helio-gray-400); cursor: pointer; font-size: 1.125rem; }
+.transcript-row .open { color: var(--helio-action-primary); font-weight: 600; font-size: 0.875rem; margin-left: 1rem; }
+
+.review-header { margin-bottom: 2rem; }
+.header-main { display: flex; flex-direction: column; gap: 1.5rem; }
+.back { background: none; border: none; color: var(--helio-action-primary); font-weight: 600; cursor: pointer; padding: 0; text-align: left; width: fit-content; }
+.title-area h1 { margin: 0.25rem 0; }
+
+.ready-card { background: var(--helio-state-success-bg, #f0fdf4); border: 1px solid var(--helio-state-success, #22c55e); padding: 2rem; border-radius: 12px; margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center; }
+.complete-card { background: var(--helio-gray-50); border-color: var(--helio-gray-200); }
+
+.raw-transcript { margin: 2rem 0; border: 1px solid var(--helio-gray-200); border-radius: 12px; overflow: hidden; }
+.raw-transcript header { padding: 1.5rem 2rem; background: var(--helio-gray-50); border-bottom: 1px solid var(--helio-gray-200); display: flex; justify-content: space-between; align-items: flex-start; gap: 2rem; }
+.raw-transcript pre { padding: 2rem; background: white; margin: 0; font-family: monospace; white-space: pre-wrap; font-size: 0.875rem; line-height: 1.6; max-height: 400px; overflow-y: auto; }
+.source-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; justify-content: flex-end; }
+
+.review-choices { margin-top: 2rem; padding: 2rem; background: white; border: 1px solid var(--helio-gray-200); border-radius: 12px; }
+.review-choices select { width: 100%; margin: 0.5rem 0 1.5rem; }
+.review-choices fieldset { border: none; padding: 0; margin: 0 0 1.5rem; display: flex; flex-direction: column; gap: 0.75rem; }
+.review-choices fieldset label { display: flex; align-items: center; gap: 0.75rem; font-weight: normal; cursor: pointer; }
+
+.undo-link { background: none; border: none; color: var(--helio-action-primary); font-weight: 600; cursor: pointer; padding: 0.5rem 0; margin-bottom: 1rem; display: block; }
+.load-more-row { display: flex; justify-content: center; padding: 1rem; }
+.load-more { background: none; border: 1px solid var(--helio-gray-200); padding: 0.5rem 1.5rem; border-radius: 20px; color: var(--helio-gray-600); cursor: pointer; transition: all 0.2s; }
+.load-more:hover { border-color: var(--helio-gray-400); color: var(--helio-gray-900); }
+
+@media (max-width: 640px) {
+  .workflow-section { flex-direction: column; gap: 1.5rem; padding: 1.5rem; }
+  .assignment-controls { width: 100%; }
+  .ready-card { flex-direction: column; gap: 1.5rem; align-items: flex-start; }
+  .raw-transcript header { flex-direction: column; gap: 1rem; padding: 1.5rem; }
+  .source-actions { justify-content: flex-start; }
+}
 </style>
