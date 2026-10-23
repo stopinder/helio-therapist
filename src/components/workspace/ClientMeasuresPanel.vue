@@ -46,12 +46,30 @@
     </div>
 
     <ResourcePicker v-if="pickerOpen" :client="client" @close="pickerOpen = false" @sent="handleSent" />
+    <div v-if="deliveryLinks.length" class="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4" @click.self="deliveryLinks = []; deliveryMailto = ''">
+      <article class="w-full max-w-xl rounded-panel border border-border bg-surface-elevated p-inline-lg py-stack-lg shadow-xl" role="dialog" aria-modal="true" aria-labelledby="measure-delivery-title">
+        <p class="text-caption uppercase tracking-wide text-ink-muted">Ready to send</p>
+        <h3 id="measure-delivery-title" class="text-h3 font-semibold text-ink mt-1">Copy the secure link</h3>
+        <p v-if="deliveryMailto" class="text-body-sm text-ink-secondary mt-2">Your email draft is ready. Open it without leaving Helios, or copy the secure link instead.</p>
+        <p v-else class="text-body-sm text-ink-secondary mt-2">No email address is saved for {{ client.name }}. Copy the link and send it using your usual contact method.</p>
+        <label v-for="item in deliveryLinks" :key="item.url" class="block mt-stack-md text-body-sm font-medium text-ink">
+          {{ item.title }}
+          <input class="mt-1 w-full rounded-control border border-border bg-surface px-3 py-2 text-body-sm" readonly :value="item.url" @focus="$event.target.select()" />
+        </label>
+        <div class="mt-stack-lg flex flex-wrap justify-end gap-inline-sm">
+          <button type="button" class="min-h-[2.75rem] px-inline-md py-stack-xs border border-border rounded-control" @click="deliveryLinks = []; deliveryMailto = ''">Close</button>
+          <button type="button" class="min-h-[2.75rem] px-inline-md py-stack-xs border border-border rounded-control" @click="copyLinks">{{ copyLabel }}</button>
+          <a v-if="deliveryMailto" :href="deliveryMailto" target="_blank" rel="noopener" class="min-h-[2.75rem] inline-flex items-center px-inline-md py-stack-xs rounded-control bg-action-primary text-on-action font-medium">Open email</a>
+        </div>
+      </article>
+    </div>
   </section>
 </template>
 
 <script setup>
 import { onMounted, ref } from 'vue'
 import { listClientMeasureHistory } from '../../lib/clientMeasures.js'
+import { buildResourceDelivery } from '../../lib/resourceDelivery.js'
 import ResourcePicker from '../tools/ResourcePicker.vue'
 
 const props = defineProps({
@@ -62,6 +80,9 @@ const measures = ref([])
 const loading = ref(false)
 const error = ref('')
 const pickerOpen = ref(false)
+const deliveryLinks = ref([])
+const deliveryMailto = ref('')
+const copyLabel = ref('Copy link')
 const archived = props.client?.archived === true
 
 async function load() {
@@ -76,9 +97,22 @@ async function load() {
   }
 }
 
-function handleSent() {
+async function handleSent(payload = {}) {
   pickerOpen.value = false
-  load()
+  const delivery = buildResourceDelivery({ ...payload, client: props.client, origin: window.location.origin })
+  deliveryLinks.value = delivery.links
+  deliveryMailto.value = delivery.mailto
+  await load()
+}
+
+async function copyLinks() {
+  try {
+    await navigator.clipboard.writeText(deliveryLinks.value.map(item => `${item.title}: ${item.url}`).join('\n'))
+    copyLabel.value = 'Copied'
+    setTimeout(() => { copyLabel.value = 'Copy link' }, 1600)
+  } catch {
+    copyLabel.value = 'Select and copy'
+  }
 }
 
 function scoreLabel(scores) {
