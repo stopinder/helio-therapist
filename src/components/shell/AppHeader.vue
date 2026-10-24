@@ -39,6 +39,17 @@
         <span v-else class="type-metadata text-ink-subtle">No upcoming appointment</span>
       </div>
 
+      <button
+        type="button"
+        class="inline-flex h-9 items-center gap-1.5 whitespace-nowrap rounded-control border border-border-muted bg-surface px-3 type-ui font-semibold text-ink-secondary transition-colors hover:bg-surface-subtle hover:text-ink"
+        :class="{ 'bg-surface-subtle text-ink': isPanelOpen }"
+        aria-label="Ask Helios AI Research Assistant"
+        @click="togglePanel"
+      >
+        <Sparkles class="workspace-icon-sm text-accent" aria-hidden="true" />
+        <span class="hidden sm:inline">Ask Helios</span>
+      </button>
+
       <span class="mx-1 hidden h-6 w-px bg-border-muted md:block" aria-hidden="true"></span>
 
       <button
@@ -90,7 +101,10 @@
 </template>
 
 <script setup>
-import { CalendarDays, Menu, Plus } from '@lucide/vue'
+import { CalendarDays, Menu, Plus, Sparkles } from '@lucide/vue'
+import { useAskHelios } from '../../composables/useAskHelios.js'
+
+const { isPanelOpen, togglePanel } = useAskHelios()
 
 defineProps({
   pageName: { type: String, required: true },

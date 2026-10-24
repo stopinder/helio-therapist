@@ -12,7 +12,8 @@ export const AI_FEATURES = Object.freeze({
   TRANSCRIPT_DRAFT_CLINICAL_NOTE: 'transcript.draft_clinical_note',
   CARE_SUGGESTIONS: 'care.suggestions',
   TRANSCRIPT_CBT_CARE_SUGGESTIONS: 'transcript.cbt_care_suggestions',
-  CLIENT_SESSION_SUMMARY: 'client.session_summary'
+  CLIENT_SESSION_SUMMARY: 'client.session_summary',
+  ASK_HELIOS_RESEARCH: 'ask_helios.research'
 });
 
 const DEFAULT_TEXT_MODEL = 'gpt-4o-mini';
@@ -33,6 +34,7 @@ export function getTextModel(feature) {
   if (feature === AI_FEATURES.TRANSCRIPT_DRAFT_CLINICAL_NOTE) return process.env.OPENAI_DRAFT_CLINICAL_NOTE_MODEL || DEFAULT_TEXT_MODEL;
   if (feature === AI_FEATURES.CARE_SUGGESTIONS || feature === AI_FEATURES.TRANSCRIPT_CBT_CARE_SUGGESTIONS) return process.env.OPENAI_CARE_MODEL || DEFAULT_TEXT_MODEL;
   if (feature === AI_FEATURES.CLIENT_SESSION_SUMMARY) return process.env.OPENAI_CLIENT_SUMMARY_MODEL || CLIENT_SESSION_SUMMARY_MODEL;
+  if (feature === AI_FEATURES.ASK_HELIOS_RESEARCH) return process.env.OPENAI_RESEARCH_MODEL || 'gpt-4o';
   return process.env.OPENAI_SUPERVISION_MODEL || DEFAULT_TEXT_MODEL;
 }
 

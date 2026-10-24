@@ -26,7 +26,10 @@
       <AppSidebar :account-identity="accountIdentity" @sign-out="handleSignOut" />
     </aside>
 
-    <div class="flex h-full min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+    <div
+      class="flex h-full min-h-0 min-w-0 flex-1 flex-col overflow-hidden transition-[margin] duration-300 ease-in-out"
+      :style="{ marginRight: isPanelOpen && !isExpanded ? `${panelWidth}px` : '0' }"
+    >
       <AppHeader
         :page-name="currentPageName"
         :route-path="route.path"
@@ -60,6 +63,7 @@
       @saved="refreshReminders"
       @changed="refreshReminders"
     />
+    <AskHeliosPanel />
     <HelpPanel />
   </div>
 </template>
@@ -78,6 +82,11 @@ import { listTherapistReminders } from '../lib/therapistReminders.js'
 import AppHeader from '../components/shell/AppHeader.vue'
 import AppSidebar from '../components/shell/AppSidebar.vue'
 import GlobalQuickCapture from '../components/reminders/GlobalQuickCapture.vue'
+
+import { useAskHelios } from '../composables/useAskHelios.js'
+import AskHeliosPanel from '../components/ui/AskHeliosPanel.vue'
+
+const { isPanelOpen, panelWidth, isExpanded } = useAskHelios()
 
 const { closeHelp } = useHelp()
 const route = useRoute()
