@@ -542,270 +542,270 @@ stderr | src/components/professional-development/__tests__/ProfessionalDevelopme
   at <Anonymous class="workspace-icon-lg" >
   at <ProfessionalDevelopmentTimeline reflections= [] ref="VTU_COMPONENT" >
   at <VTUROOT>
- ✓ src/components/professional-development/__tests__/ProfessionalDevelopmentTimeline.spec.js (4 tests) 162ms
+ ✓ src/components/professional-development/__tests__/ProfessionalDevelopmentTimeline.spec.js (4 tests) 185ms
 stdout | src/components/workspace/__tests__/ClientMeasuresPanel.spec.js
 [Supabase Diagnostics] { urlExists: true, urlValid: true, anonKeyExists: true }
+stdout | src/components/ui/AskHeliosPanel.spec.js
+[Supabase Diagnostics] { urlExists: true, urlValid: true, anonKeyExists: true }
+stderr | src/views/supervision/__tests__/SupervisionReflections.spec.js > SupervisionReflections.spec.js > filters reflections based on search query
+[Vue warn]: Extraneous non-props attributes (class, aria-hidden) were passed to component but could not be automatically inherited because component renders fragment or text or teleport root nodes.
+  at <Anonymous class="h-4 w-4" aria-hidden="true" >
+  at <HelpLink topic="reflection-ai" label="How the reflection library works" >
+  at <SupervisionReflections reflections= [
+  {
+    id: '1',
+    created_at: '2026-09-01T10:00:00Z',
+    body: 'Therapeutic alliance and rapport',
+    theme: 'Clinical',
+    clients: { display_name: 'John Doe' },
+    session_ref: 'SESS-001'
+  },
+  {
+    id: '2',
+    created_at: '2026-08-15T10:00:00Z',
+    body: 'Exploring countertransference',
+    theme: 'Personal Growth',
+    clients: { display_name: 'Jane Smith' },
+    session_ref: 'SESS-002'
+  }
+] themes= [ { name: 'All', count: 2 }, { name: 'Clinical', count: 1 } ] ref="VTU_COMPONENT" >
+  at <VTUROOT>
+[Vue warn]: Extraneous non-props attributes (class, aria-hidden) were passed to component but could not be automatically inherited because component renders fragment or text or teleport root nodes.
+  at <Anonymous class="workspace-icon text-accent" aria-hidden="true" >
+  at <ProfessionalDevelopmentTimeline reflections= [
+  {
+    id: '1',
+    created_at: '2026-09-01T10:00:00Z',
+    body: 'Therapeutic alliance and rapport',
+    theme: 'Clinical',
+    clients: { display_name: 'John Doe' },
+    session_ref: 'SESS-001'
+  },
+  {
+    id: '2',
+    created_at: '2026-08-15T10:00:00Z',
+    body: 'Exploring countertransference',
+    theme: 'Personal Growth',
+    clients: { display_name: 'Jane Smith' },
+    session_ref: 'SESS-002'
+  }
+] menu-open-for=null has-more=false  ... >
+  at <SupervisionReflections reflections= [
+  {
+    id: '1',
+    created_at: '2026-09-01T10:00:00Z',
+    body: 'Therapeutic alliance and rapport',
+    theme: 'Clinical',
+    clients: { display_name: 'John Doe' },
+    session_ref: 'SESS-001'
+  },
+  {
+    id: '2',
+    created_at: '2026-08-15T10:00:00Z',
+    body: 'Exploring countertransference',
+    theme: 'Personal Growth',
+    clients: { display_name: 'Jane Smith' },
+    session_ref: 'SESS-002'
+  }
+] themes= [ { name: 'All', count: 2 }, { name: 'Clinical', count: 1 } ] ref="VTU_COMPONENT" >
+  at <VTUROOT>
+[Vue warn]: Extraneous non-props attributes (class) were passed to component but could not be automatically inherited because component renders fragment or text or teleport root nodes.
+  at <Anonymous class="workspace-icon-lg" >
+  at <ProfessionalDevelopmentTimeline reflections= [
+  {
+    id: '1',
+    created_at: '2026-09-01T10:00:00Z',
+    body: 'Therapeutic alliance and rapport',
+    theme: 'Clinical',
+    clients: { display_name: 'John Doe' },
+    session_ref: 'SESS-001'
+  },
+  {
+    id: '2',
+    created_at: '2026-08-15T10:00:00Z',
+    body: 'Exploring countertransference',
+    theme: 'Personal Growth',
+    clients: { display_name: 'Jane Smith' },
+    session_ref: 'SESS-002'
+  }
+] menu-open-for=null has-more=false  ... >
+  at <SupervisionReflections reflections= [
+  {
+    id: '1',
+    created_at: '2026-09-01T10:00:00Z',
+    body: 'Therapeutic alliance and rapport',
+    theme: 'Clinical',
+    clients: { display_name: 'John Doe' },
+    session_ref: 'SESS-001'
+  },
+  {
+    id: '2',
+    created_at: '2026-08-15T10:00:00Z',
+    body: 'Exploring countertransference',
+    theme: 'Personal Growth',
+    clients: { display_name: 'Jane Smith' },
+    session_ref: 'SESS-002'
+  }
+] themes= [ { name: 'All', count: 2 }, { name: 'Clinical', count: 1 } ] ref="VTU_COMPONENT" >
+  at <VTUROOT>
+[Vue warn]: Extraneous non-props attributes (class, aria-hidden) were passed to component but could not be automatically inherited because component renders fragment or text or teleport root nodes.
+  at <Anonymous class="workspace-icon-lg text-ink-subtle transition-transform duration-standard" aria-hidden="true" >
+  at <ProfessionalDevelopmentTimeline reflections= [
+  {
+    id: '1',
+    created_at: '2026-09-01T10:00:00Z',
+    body: 'Therapeutic alliance and rapport',
+    theme: 'Clinical',
+    clients: { display_name: 'John Doe' },
+    session_ref: 'SESS-001'
+  },
+  {
+    id: '2',
+    created_at: '2026-08-15T10:00:00Z',
+    body: 'Exploring countertransference',
+    theme: 'Personal Growth',
+    clients: { display_name: 'Jane Smith' },
+    session_ref: 'SESS-002'
+  }
+] menu-open-for=null has-more=false  ... >
+  at <SupervisionReflections reflections= [
+  {
+    id: '1',
+    created_at: '2026-09-01T10:00:00Z',
+    body: 'Therapeutic alliance and rapport',
+    theme: 'Clinical',
+    clients: { display_name: 'John Doe' },
+    session_ref: 'SESS-001'
+  },
+  {
+    id: '2',
+    created_at: '2026-08-15T10:00:00Z',
+    body: 'Exploring countertransference',
+    theme: 'Personal Growth',
+    clients: { display_name: 'Jane Smith' },
+    session_ref: 'SESS-002'
+  }
+] themes= [ { name: 'All', count: 2 }, { name: 'Clinical', count: 1 } ] ref="VTU_COMPONENT" >
+  at <VTUROOT>
+[Vue warn]: Extraneous non-props attributes (class, aria-hidden) were passed to component but could not be automatically inherited because component renders fragment or text or teleport root nodes.
+  at <Anonymous class="workspace-icon text-accent" aria-hidden="true" >
+  at <ProfessionalDevelopmentTimeline reflections= [
+  {
+    id: '1',
+    created_at: '2026-09-01T10:00:00Z',
+    body: 'Therapeutic alliance and rapport',
+    theme: 'Clinical',
+    clients: { display_name: 'John Doe' },
+    session_ref: 'SESS-001'
+  },
+  {
+    id: '2',
+    created_at: '2026-08-15T10:00:00Z',
+    body: 'Exploring countertransference',
+    theme: 'Personal Growth',
+    clients: { display_name: 'Jane Smith' },
+    session_ref: 'SESS-002'
+  }
+] menu-open-for=null has-more=false  ... >
+  at <SupervisionReflections reflections= [
+  {
+    id: '1',
+    created_at: '2026-09-01T10:00:00Z',
+    body: 'Therapeutic alliance and rapport',
+    theme: 'Clinical',
+    clients: { display_name: 'John Doe' },
+    session_ref: 'SESS-001'
+  },
+  {
+    id: '2',
+    created_at: '2026-08-15T10:00:00Z',
+    body: 'Exploring countertransference',
+    theme: 'Personal Growth',
+    clients: { display_name: 'Jane Smith' },
+    session_ref: 'SESS-002'
+  }
+] themes= [ { name: 'All', count: 2 }, { name: 'Clinical', count: 1 } ] ref="VTU_COMPONENT" >
+  at <VTUROOT>
+[Vue warn]: Extraneous non-props attributes (class) were passed to component but could not be automatically inherited because component renders fragment or text or teleport root nodes.
+  at <Anonymous class="workspace-icon-lg" >
+  at <ProfessionalDevelopmentTimeline reflections= [
+  {
+    id: '1',
+    created_at: '2026-09-01T10:00:00Z',
+    body: 'Therapeutic alliance and rapport',
+    theme: 'Clinical',
+    clients: { display_name: 'John Doe' },
+    session_ref: 'SESS-001'
+  },
+  {
+    id: '2',
+    created_at: '2026-08-15T10:00:00Z',
+    body: 'Exploring countertransference',
+    theme: 'Personal Growth',
+    clients: { display_name: 'Jane Smith' },
+    session_ref: 'SESS-002'
+  }
+] menu-open-for=null has-more=false  ... >
+  at <SupervisionReflections reflections= [
+  {
+    id: '1',
+    created_at: '2026-09-01T10:00:00Z',
+    body: 'Therapeutic alliance and rapport',
+    theme: 'Clinical',
+    clients: { display_name: 'John Doe' },
+    session_ref: 'SESS-001'
+  },
+  {
+    id: '2',
+    created_at: '2026-08-15T10:00:00Z',
+    body: 'Exploring countertransference',
+    theme: 'Personal Growth',
+    clients: { display_name: 'Jane Smith' },
+    session_ref: 'SESS-002'
+  }
+] themes= [ { name: 'All', count: 2 }, { name: 'Clinical', count: 1 } ] ref="VTU_COMPONENT" >
+  at <VTUROOT>
+[Vue warn]: Extraneous non-props attributes (class, aria-hidden) were passed to component but could not be automatically inherited because component renders fragment or text or teleport root nodes.
+  at <Anonymous class="workspace-icon-lg text-ink-subtle transition-transform duration-standard" aria-hidden="true" >
+  at <ProfessionalDevelopmentTimeline reflections= [
+  {
+    id: '1',
+    created_at: '2026-09-01T10:00:00Z',
+    body: 'Therapeutic alliance and rapport',
+    theme: 'Clinical',
+    clients: { display_name: 'John Doe' },
+    session_ref: 'SESS-001'
+  },
+  {
+    id: '2',
+    created_at: '2026-08-15T10:00:00Z',
+    body: 'Exploring countertransference',
+    theme: 'Personal Growth',
+    clients: { display_name: 'Jane Smith' },
+    session_ref: 'SESS-002'
+  }
+] menu-open-for=null has-more=false  ... >
+  at <SupervisionReflections reflections= [
+  {
+    id: '1',
+    created_at: '2026-09-01T10:00:00Z',
+    body: 'Therapeutic alliance and rapport',
+    theme: 'Clinical',
+    clients: { display_name: 'John Doe' },
+    session_ref: 'SESS-001'
+  },
+  {
+    id: '2',
+    created_at: '2026-08-15T10:00:00Z',
+    body: 'Exploring countertransference',
+    theme: 'Personal Growth',
+    clients: { display_name: 'Jane Smith' },
+    session_ref: 'SESS-002'
+  }
+] themes= [ { name: 'All', count: 2 }, { name: 'Clinical', count: 1 } ] ref="VTU_COMPONENT" >
+  at <VTUROOT>
 stdout | src/components/workspace/__tests__/ClientResourcesPanel.spec.js
 [Supabase Diagnostics] { urlExists: true, urlValid: true, anonKeyExists: true }
-stdout | src/components/workspace/__tests__/ClientDocumentsPanel.spec.js
-[Supabase Diagnostics] { urlExists: true, urlValid: true, anonKeyExists: true }
-stderr | src/views/supervision/__tests__/SupervisionReflections.spec.js > SupervisionReflections.spec.js > filters reflections based on search query
-[Vue warn]: Extraneous non-props attributes (class, aria-hidden) were passed to component but could not be automatically inherited because component renders fragment or text or teleport root nodes.
-  at <Anonymous class="h-4 w-4" aria-hidden="true" >
-  at <HelpLink topic="reflection-ai" label="How the reflection library works" >
-  at <SupervisionReflections reflections= [
-  {
-    id: '1',
-    created_at: '2026-09-01T10:00:00Z',
-    body: 'Therapeutic alliance and rapport',
-    theme: 'Clinical',
-    clients: { display_name: 'John Doe' },
-    session_ref: 'SESS-001'
-  },
-  {
-    id: '2',
-    created_at: '2026-08-15T10:00:00Z',
-    body: 'Exploring countertransference',
-    theme: 'Personal Growth',
-    clients: { display_name: 'Jane Smith' },
-    session_ref: 'SESS-002'
-  }
-] themes= [ { name: 'All', count: 2 }, { name: 'Clinical', count: 1 } ] ref="VTU_COMPONENT" >
-  at <VTUROOT>
-[Vue warn]: Extraneous non-props attributes (class, aria-hidden) were passed to component but could not be automatically inherited because component renders fragment or text or teleport root nodes.
-  at <Anonymous class="workspace-icon text-accent" aria-hidden="true" >
-  at <ProfessionalDevelopmentTimeline reflections= [
-  {
-    id: '1',
-    created_at: '2026-09-01T10:00:00Z',
-    body: 'Therapeutic alliance and rapport',
-    theme: 'Clinical',
-    clients: { display_name: 'John Doe' },
-    session_ref: 'SESS-001'
-  },
-  {
-    id: '2',
-    created_at: '2026-08-15T10:00:00Z',
-    body: 'Exploring countertransference',
-    theme: 'Personal Growth',
-    clients: { display_name: 'Jane Smith' },
-    session_ref: 'SESS-002'
-  }
-] menu-open-for=null has-more=false  ... >
-  at <SupervisionReflections reflections= [
-  {
-    id: '1',
-    created_at: '2026-09-01T10:00:00Z',
-    body: 'Therapeutic alliance and rapport',
-    theme: 'Clinical',
-    clients: { display_name: 'John Doe' },
-    session_ref: 'SESS-001'
-  },
-  {
-    id: '2',
-    created_at: '2026-08-15T10:00:00Z',
-    body: 'Exploring countertransference',
-    theme: 'Personal Growth',
-    clients: { display_name: 'Jane Smith' },
-    session_ref: 'SESS-002'
-  }
-] themes= [ { name: 'All', count: 2 }, { name: 'Clinical', count: 1 } ] ref="VTU_COMPONENT" >
-  at <VTUROOT>
-[Vue warn]: Extraneous non-props attributes (class) were passed to component but could not be automatically inherited because component renders fragment or text or teleport root nodes.
-  at <Anonymous class="workspace-icon-lg" >
-  at <ProfessionalDevelopmentTimeline reflections= [
-  {
-    id: '1',
-    created_at: '2026-09-01T10:00:00Z',
-    body: 'Therapeutic alliance and rapport',
-    theme: 'Clinical',
-    clients: { display_name: 'John Doe' },
-    session_ref: 'SESS-001'
-  },
-  {
-    id: '2',
-    created_at: '2026-08-15T10:00:00Z',
-    body: 'Exploring countertransference',
-    theme: 'Personal Growth',
-    clients: { display_name: 'Jane Smith' },
-    session_ref: 'SESS-002'
-  }
-] menu-open-for=null has-more=false  ... >
-  at <SupervisionReflections reflections= [
-  {
-    id: '1',
-    created_at: '2026-09-01T10:00:00Z',
-    body: 'Therapeutic alliance and rapport',
-    theme: 'Clinical',
-    clients: { display_name: 'John Doe' },
-    session_ref: 'SESS-001'
-  },
-  {
-    id: '2',
-    created_at: '2026-08-15T10:00:00Z',
-    body: 'Exploring countertransference',
-    theme: 'Personal Growth',
-    clients: { display_name: 'Jane Smith' },
-    session_ref: 'SESS-002'
-  }
-] themes= [ { name: 'All', count: 2 }, { name: 'Clinical', count: 1 } ] ref="VTU_COMPONENT" >
-  at <VTUROOT>
-[Vue warn]: Extraneous non-props attributes (class, aria-hidden) were passed to component but could not be automatically inherited because component renders fragment or text or teleport root nodes.
-  at <Anonymous class="workspace-icon-lg text-ink-subtle transition-transform duration-standard" aria-hidden="true" >
-  at <ProfessionalDevelopmentTimeline reflections= [
-  {
-    id: '1',
-    created_at: '2026-09-01T10:00:00Z',
-    body: 'Therapeutic alliance and rapport',
-    theme: 'Clinical',
-    clients: { display_name: 'John Doe' },
-    session_ref: 'SESS-001'
-  },
-  {
-    id: '2',
-    created_at: '2026-08-15T10:00:00Z',
-    body: 'Exploring countertransference',
-    theme: 'Personal Growth',
-    clients: { display_name: 'Jane Smith' },
-    session_ref: 'SESS-002'
-  }
-] menu-open-for=null has-more=false  ... >
-  at <SupervisionReflections reflections= [
-  {
-    id: '1',
-    created_at: '2026-09-01T10:00:00Z',
-    body: 'Therapeutic alliance and rapport',
-    theme: 'Clinical',
-    clients: { display_name: 'John Doe' },
-    session_ref: 'SESS-001'
-  },
-  {
-    id: '2',
-    created_at: '2026-08-15T10:00:00Z',
-    body: 'Exploring countertransference',
-    theme: 'Personal Growth',
-    clients: { display_name: 'Jane Smith' },
-    session_ref: 'SESS-002'
-  }
-] themes= [ { name: 'All', count: 2 }, { name: 'Clinical', count: 1 } ] ref="VTU_COMPONENT" >
-  at <VTUROOT>
-[Vue warn]: Extraneous non-props attributes (class, aria-hidden) were passed to component but could not be automatically inherited because component renders fragment or text or teleport root nodes.
-  at <Anonymous class="workspace-icon text-accent" aria-hidden="true" >
-  at <ProfessionalDevelopmentTimeline reflections= [
-  {
-    id: '1',
-    created_at: '2026-09-01T10:00:00Z',
-    body: 'Therapeutic alliance and rapport',
-    theme: 'Clinical',
-    clients: { display_name: 'John Doe' },
-    session_ref: 'SESS-001'
-  },
-  {
-    id: '2',
-    created_at: '2026-08-15T10:00:00Z',
-    body: 'Exploring countertransference',
-    theme: 'Personal Growth',
-    clients: { display_name: 'Jane Smith' },
-    session_ref: 'SESS-002'
-  }
-] menu-open-for=null has-more=false  ... >
-  at <SupervisionReflections reflections= [
-  {
-    id: '1',
-    created_at: '2026-09-01T10:00:00Z',
-    body: 'Therapeutic alliance and rapport',
-    theme: 'Clinical',
-    clients: { display_name: 'John Doe' },
-    session_ref: 'SESS-001'
-  },
-  {
-    id: '2',
-    created_at: '2026-08-15T10:00:00Z',
-    body: 'Exploring countertransference',
-    theme: 'Personal Growth',
-    clients: { display_name: 'Jane Smith' },
-    session_ref: 'SESS-002'
-  }
-] themes= [ { name: 'All', count: 2 }, { name: 'Clinical', count: 1 } ] ref="VTU_COMPONENT" >
-  at <VTUROOT>
-[Vue warn]: Extraneous non-props attributes (class) were passed to component but could not be automatically inherited because component renders fragment or text or teleport root nodes.
-  at <Anonymous class="workspace-icon-lg" >
-  at <ProfessionalDevelopmentTimeline reflections= [
-  {
-    id: '1',
-    created_at: '2026-09-01T10:00:00Z',
-    body: 'Therapeutic alliance and rapport',
-    theme: 'Clinical',
-    clients: { display_name: 'John Doe' },
-    session_ref: 'SESS-001'
-  },
-  {
-    id: '2',
-    created_at: '2026-08-15T10:00:00Z',
-    body: 'Exploring countertransference',
-    theme: 'Personal Growth',
-    clients: { display_name: 'Jane Smith' },
-    session_ref: 'SESS-002'
-  }
-] menu-open-for=null has-more=false  ... >
-  at <SupervisionReflections reflections= [
-  {
-    id: '1',
-    created_at: '2026-09-01T10:00:00Z',
-    body: 'Therapeutic alliance and rapport',
-    theme: 'Clinical',
-    clients: { display_name: 'John Doe' },
-    session_ref: 'SESS-001'
-  },
-  {
-    id: '2',
-    created_at: '2026-08-15T10:00:00Z',
-    body: 'Exploring countertransference',
-    theme: 'Personal Growth',
-    clients: { display_name: 'Jane Smith' },
-    session_ref: 'SESS-002'
-  }
-] themes= [ { name: 'All', count: 2 }, { name: 'Clinical', count: 1 } ] ref="VTU_COMPONENT" >
-  at <VTUROOT>
-[Vue warn]: Extraneous non-props attributes (class, aria-hidden) were passed to component but could not be automatically inherited because component renders fragment or text or teleport root nodes.
-  at <Anonymous class="workspace-icon-lg text-ink-subtle transition-transform duration-standard" aria-hidden="true" >
-  at <ProfessionalDevelopmentTimeline reflections= [
-  {
-    id: '1',
-    created_at: '2026-09-01T10:00:00Z',
-    body: 'Therapeutic alliance and rapport',
-    theme: 'Clinical',
-    clients: { display_name: 'John Doe' },
-    session_ref: 'SESS-001'
-  },
-  {
-    id: '2',
-    created_at: '2026-08-15T10:00:00Z',
-    body: 'Exploring countertransference',
-    theme: 'Personal Growth',
-    clients: { display_name: 'Jane Smith' },
-    session_ref: 'SESS-002'
-  }
-] menu-open-for=null has-more=false  ... >
-  at <SupervisionReflections reflections= [
-  {
-    id: '1',
-    created_at: '2026-09-01T10:00:00Z',
-    body: 'Therapeutic alliance and rapport',
-    theme: 'Clinical',
-    clients: { display_name: 'John Doe' },
-    session_ref: 'SESS-001'
-  },
-  {
-    id: '2',
-    created_at: '2026-08-15T10:00:00Z',
-    body: 'Exploring countertransference',
-    theme: 'Personal Growth',
-    clients: { display_name: 'Jane Smith' },
-    session_ref: 'SESS-002'
-  }
-] themes= [ { name: 'All', count: 2 }, { name: 'Clinical', count: 1 } ] ref="VTU_COMPONENT" >
-  at <VTUROOT>
 stderr | src/views/supervision/__tests__/SupervisionReflections.spec.js > SupervisionReflections.spec.js > filters reflections based on search query
 [Vue warn]: Extraneous non-props attributes (class, aria-hidden) were passed to component but could not be automatically inherited because component renders fragment or text or teleport root nodes.
   at <Anonymous class="workspace-icon text-accent" aria-hidden="true" >
@@ -1369,7 +1369,6 @@ stderr | src/views/supervision/__tests__/SupervisionReflections.spec.js > Superv
   }
 ] themes= [ { name: 'All', count: 2 } ] ref="VTU_COMPONENT" >
   at <VTUROOT>
- ✓ src/components/workspace/__tests__/ClientDocumentsPanel.spec.js (5 tests) 175ms
 stderr | src/views/supervision/__tests__/SupervisionReflections.spec.js > SupervisionReflections.spec.js > shows "Your Reflective Space" for zero-result search
 [Vue warn]: Extraneous non-props attributes (class, aria-hidden) were passed to component but could not be automatically inherited because component renders fragment or text or teleport root nodes.
   at <Anonymous class="h-4 w-4" aria-hidden="true" >
@@ -1649,137 +1648,140 @@ stderr | src/views/supervision/__tests__/SupervisionReflections.spec.js > Superv
   }
 ] themes= [ { name: 'All', count: 2 } ] ref="VTU_COMPONENT" >
   at <VTUROOT>
- ✓ src/views/supervision/__tests__/SupervisionReflections.spec.js (3 tests) 278ms
- ✓ src/views/__tests__/OverviewZoomNotes.spec.js (5 tests) 201ms
- ✓ src/views/__tests__/CalendarToday.spec.js (4 tests) 478ms
- ✓ src/views/__tests__/CalendarLocation.spec.js (4 tests) 509ms
- ✓ src/components/workspace/__tests__/ClientMeasuresPanel.spec.js (8 tests) 237ms
- ✓ src/components/workspace/__tests__/ClientResourcesPanel.spec.js (8 tests) 277ms
- ✓ src/views/__tests__/CalendarWorkspace.spec.js (5 tests) 740ms
- ✓ src/components/help/HelpBrowser.spec.js (6 tests) 391ms
- ✓ src/components/workspace/__tests__/ClientDocumentComposer.spec.js (5 tests) 401ms
- ✓ src/components/workspace/__tests__/ClinicalSummaryWorkingMaterial.spec.js (2 tests) 110ms
-stderr | src/__tests__/AuthGateBilling.spec.js > new-account billing gate > shows a neutral access check while billing status is unresolved
-[Vue warn]: Failed to resolve component: router-view
-If this is a native custom element, make sure to exclude it from component resolution via compilerOptions.isCustomElement.
-  at <AuthGate ref="VTU_COMPONENT" >
-  at <VTUROOT>
-[Vue warn]: Failed to resolve component: router-link
-If this is a native custom element, make sure to exclude it from component resolution via compilerOptions.isCustomElement.
-  at <AuthGate ref="VTU_COMPONENT" >
-  at <VTUROOT>
-stderr | src/__tests__/AuthGateBilling.spec.js > new-account billing gate > shows a neutral access check while billing status is unresolved
-[Vue warn]: Failed to resolve component: router-view
-If this is a native custom element, make sure to exclude it from component resolution via compilerOptions.isCustomElement.
-  at <AuthGate ref="VTU_COMPONENT" >
-  at <VTUROOT>
-[Vue warn]: Failed to resolve component: router-link
-If this is a native custom element, make sure to exclude it from component resolution via compilerOptions.isCustomElement.
-  at <AuthGate ref="VTU_COMPONENT" >
-  at <VTUROOT>
-stderr | src/__tests__/AuthGateBilling.spec.js > new-account billing gate > shows a neutral access check while billing status is unresolved
-[Vue warn]: Failed to resolve component: router-view
-If this is a native custom element, make sure to exclude it from component resolution via compilerOptions.isCustomElement.
-  at <AuthGate ref="VTU_COMPONENT" >
-  at <VTUROOT>
-[Vue warn]: Failed to resolve component: router-link
-If this is a native custom element, make sure to exclude it from component resolution via compilerOptions.isCustomElement.
-  at <AuthGate ref="VTU_COMPONENT" >
-  at <VTUROOT>
- ✓ src/components/workspace/__tests__/ClientWorkspaceHeader.spec.js (4 tests) 66ms
-stderr | src/__tests__/AuthGateBilling.spec.js > new-account billing gate > does not show the trial offer when the access check fails
-[Vue warn]: Failed to resolve component: router-view
-If this is a native custom element, make sure to exclude it from component resolution via compilerOptions.isCustomElement.
-  at <AuthGate ref="VTU_COMPONENT" >
-  at <VTUROOT>
-[Vue warn]: Failed to resolve component: router-link
-If this is a native custom element, make sure to exclude it from component resolution via compilerOptions.isCustomElement.
-  at <AuthGate ref="VTU_COMPONENT" >
-  at <VTUROOT>
-stderr | src/__tests__/AuthGateBilling.spec.js > new-account billing gate > does not show the trial offer when the access check fails
-[Vue warn]: Failed to resolve component: router-view
-If this is a native custom element, make sure to exclude it from component resolution via compilerOptions.isCustomElement.
-  at <AuthGate ref="VTU_COMPONENT" >
-  at <VTUROOT>
-[Vue warn]: Failed to resolve component: router-link
-If this is a native custom element, make sure to exclude it from component resolution via compilerOptions.isCustomElement.
-  at <AuthGate ref="VTU_COMPONENT" >
-  at <VTUROOT>
-stderr | src/__tests__/AuthGateBilling.spec.js > new-account billing gate > does not show the trial offer when the access check fails
-[Vue warn]: Failed to resolve component: router-view
-If this is a native custom element, make sure to exclude it from component resolution via compilerOptions.isCustomElement.
-  at <AuthGate ref="VTU_COMPONENT" >
-  at <VTUROOT>
-[Vue warn]: Failed to resolve component: router-link
-If this is a native custom element, make sure to exclude it from component resolution via compilerOptions.isCustomElement.
-  at <AuthGate ref="VTU_COMPONENT" >
-  at <VTUROOT>
-stderr | src/__tests__/AuthGateBilling.spec.js > new-account billing gate > opens a Free workspace when the therapist has no subscription
-[Vue warn]: Failed to resolve component: router-view
-If this is a native custom element, make sure to exclude it from component resolution via compilerOptions.isCustomElement.
-  at <AuthGate ref="VTU_COMPONENT" >
-  at <VTUROOT>
-[Vue warn]: Failed to resolve component: router-link
-If this is a native custom element, make sure to exclude it from component resolution via compilerOptions.isCustomElement.
-  at <AuthGate ref="VTU_COMPONENT" >
-  at <VTUROOT>
-stderr | src/__tests__/AuthGateBilling.spec.js > new-account billing gate > opens a Free workspace when the therapist has no subscription
-[Vue warn]: Failed to resolve component: router-view
-If this is a native custom element, make sure to exclude it from component resolution via compilerOptions.isCustomElement.
-  at <AuthGate ref="VTU_COMPONENT" >
-  at <VTUROOT>
-[Vue warn]: Failed to resolve component: router-link
-If this is a native custom element, make sure to exclude it from component resolution via compilerOptions.isCustomElement.
-  at <AuthGate ref="VTU_COMPONENT" >
-  at <VTUROOT>
-stderr | src/__tests__/AuthGateBilling.spec.js > new-account billing gate > opens a Free workspace when the therapist has no subscription
-[Vue warn]: Failed to resolve component: router-view
-If this is a native custom element, make sure to exclude it from component resolution via compilerOptions.isCustomElement.
-  at <AuthGate ref="VTU_COMPONENT" >
-  at <VTUROOT>
-[Vue warn]: Failed to resolve component: router-link
-If this is a native custom element, make sure to exclude it from component resolution via compilerOptions.isCustomElement.
-  at <AuthGate ref="VTU_COMPONENT" >
-  at <VTUROOT>
-stderr | src/__tests__/AuthGateBilling.spec.js > new-account billing gate > opens the workspace for an active trial
-[Vue warn]: Failed to resolve component: router-view
-If this is a native custom element, make sure to exclude it from component resolution via compilerOptions.isCustomElement.
-  at <AuthGate ref="VTU_COMPONENT" >
-  at <VTUROOT>
-[Vue warn]: Failed to resolve component: router-link
-If this is a native custom element, make sure to exclude it from component resolution via compilerOptions.isCustomElement.
-  at <AuthGate ref="VTU_COMPONENT" >
-  at <VTUROOT>
-stderr | src/__tests__/AuthGateBilling.spec.js > new-account billing gate > opens the workspace for an active trial
-[Vue warn]: Failed to resolve component: router-view
-If this is a native custom element, make sure to exclude it from component resolution via compilerOptions.isCustomElement.
-  at <AuthGate ref="VTU_COMPONENT" >
-  at <VTUROOT>
-[Vue warn]: Failed to resolve component: router-link
-If this is a native custom element, make sure to exclude it from component resolution via compilerOptions.isCustomElement.
-  at <AuthGate ref="VTU_COMPONENT" >
-  at <VTUROOT>
-stderr | src/__tests__/AuthGateBilling.spec.js > new-account billing gate > opens the workspace for an active trial
-[Vue warn]: Failed to resolve component: router-view
-If this is a native custom element, make sure to exclude it from component resolution via compilerOptions.isCustomElement.
-  at <AuthGate ref="VTU_COMPONENT" >
-  at <VTUROOT>
-[Vue warn]: Failed to resolve component: router-link
-If this is a native custom element, make sure to exclude it from component resolution via compilerOptions.isCustomElement.
-  at <AuthGate ref="VTU_COMPONENT" >
-  at <VTUROOT>
- ✓ src/__tests__/AuthGateBilling.spec.js (4 tests) 79ms
-stdout | src/components/ui/AskHeliosPanel.spec.js
-[Supabase Diagnostics] { urlExists: true, urlValid: true, anonKeyExists: true }
+ ✓ src/views/supervision/__tests__/SupervisionReflections.spec.js (3 tests) 354ms
 stderr | src/components/ui/AskHeliosPanel.spec.js > AskHeliosPanel > renders correctly when open
 Failed to fetch conversations TypeError: Cannot read properties of undefined (reading 'json')
     at fetchConversations (C:/Users/Rob/WebstormProjects/helio-therapist/src/composables/useAskHelios.js:44:31)
     at processTicksAndRejections (node:internal/process/task_queues:105:5)
- ✓ src/components/ui/AskHeliosPanel.spec.js (4 tests) 106ms
+ ✓ src/views/__tests__/CalendarLocation.spec.js (4 tests) 521ms
+ ✓ src/views/__tests__/CalendarToday.spec.js (4 tests) 577ms
+ ✓ src/views/__tests__/OverviewZoomNotes.spec.js (5 tests) 253ms
+ ✓ src/components/ui/AskHeliosPanel.spec.js (4 tests) 338ms
+ ✓ src/views/__tests__/CalendarWorkspace.spec.js (5 tests) 813ms
+ ✓ src/components/workspace/__tests__/ClientMeasuresPanel.spec.js (8 tests) 273ms
+ ✓ src/components/workspace/__tests__/ClientResourcesPanel.spec.js (8 tests) 372ms
+ ✓ src/components/help/HelpBrowser.spec.js (6 tests) 590ms
+ ✓ src/components/workspace/__tests__/ClientDocumentComposer.spec.js (5 tests) 987ms
+   ✓ ClientDocumentComposer (5)
+     ✓ renders loading state initially 361ms
+stdout | src/components/workspace/__tests__/ClientDocumentsPanel.spec.js
+[Supabase Diagnostics] { urlExists: true, urlValid: true, anonKeyExists: true }
+ ✓ src/components/workspace/__tests__/ClientDocumentsPanel.spec.js (5 tests) 103ms
+stderr | src/__tests__/AuthGateBilling.spec.js > new-account billing gate > shows a neutral access check while billing status is unresolved
+[Vue warn]: Failed to resolve component: router-view
+If this is a native custom element, make sure to exclude it from component resolution via compilerOptions.isCustomElement.
+  at <AuthGate ref="VTU_COMPONENT" >
+  at <VTUROOT>
+[Vue warn]: Failed to resolve component: router-link
+If this is a native custom element, make sure to exclude it from component resolution via compilerOptions.isCustomElement.
+  at <AuthGate ref="VTU_COMPONENT" >
+  at <VTUROOT>
+stderr | src/__tests__/AuthGateBilling.spec.js > new-account billing gate > shows a neutral access check while billing status is unresolved
+[Vue warn]: Failed to resolve component: router-view
+If this is a native custom element, make sure to exclude it from component resolution via compilerOptions.isCustomElement.
+  at <AuthGate ref="VTU_COMPONENT" >
+  at <VTUROOT>
+[Vue warn]: Failed to resolve component: router-link
+If this is a native custom element, make sure to exclude it from component resolution via compilerOptions.isCustomElement.
+  at <AuthGate ref="VTU_COMPONENT" >
+  at <VTUROOT>
+stderr | src/__tests__/AuthGateBilling.spec.js > new-account billing gate > shows a neutral access check while billing status is unresolved
+[Vue warn]: Failed to resolve component: router-view
+If this is a native custom element, make sure to exclude it from component resolution via compilerOptions.isCustomElement.
+  at <AuthGate ref="VTU_COMPONENT" >
+  at <VTUROOT>
+[Vue warn]: Failed to resolve component: router-link
+If this is a native custom element, make sure to exclude it from component resolution via compilerOptions.isCustomElement.
+  at <AuthGate ref="VTU_COMPONENT" >
+  at <VTUROOT>
+stderr | src/__tests__/AuthGateBilling.spec.js > new-account billing gate > does not show the trial offer when the access check fails
+[Vue warn]: Failed to resolve component: router-view
+If this is a native custom element, make sure to exclude it from component resolution via compilerOptions.isCustomElement.
+  at <AuthGate ref="VTU_COMPONENT" >
+  at <VTUROOT>
+[Vue warn]: Failed to resolve component: router-link
+If this is a native custom element, make sure to exclude it from component resolution via compilerOptions.isCustomElement.
+  at <AuthGate ref="VTU_COMPONENT" >
+  at <VTUROOT>
+stderr | src/__tests__/AuthGateBilling.spec.js > new-account billing gate > does not show the trial offer when the access check fails
+[Vue warn]: Failed to resolve component: router-view
+If this is a native custom element, make sure to exclude it from component resolution via compilerOptions.isCustomElement.
+  at <AuthGate ref="VTU_COMPONENT" >
+  at <VTUROOT>
+[Vue warn]: Failed to resolve component: router-link
+If this is a native custom element, make sure to exclude it from component resolution via compilerOptions.isCustomElement.
+  at <AuthGate ref="VTU_COMPONENT" >
+  at <VTUROOT>
+stderr | src/__tests__/AuthGateBilling.spec.js > new-account billing gate > does not show the trial offer when the access check fails
+[Vue warn]: Failed to resolve component: router-view
+If this is a native custom element, make sure to exclude it from component resolution via compilerOptions.isCustomElement.
+  at <AuthGate ref="VTU_COMPONENT" >
+  at <VTUROOT>
+[Vue warn]: Failed to resolve component: router-link
+If this is a native custom element, make sure to exclude it from component resolution via compilerOptions.isCustomElement.
+  at <AuthGate ref="VTU_COMPONENT" >
+  at <VTUROOT>
+stderr | src/__tests__/AuthGateBilling.spec.js > new-account billing gate > opens a Free workspace when the therapist has no subscription
+[Vue warn]: Failed to resolve component: router-view
+If this is a native custom element, make sure to exclude it from component resolution via compilerOptions.isCustomElement.
+  at <AuthGate ref="VTU_COMPONENT" >
+  at <VTUROOT>
+[Vue warn]: Failed to resolve component: router-link
+If this is a native custom element, make sure to exclude it from component resolution via compilerOptions.isCustomElement.
+  at <AuthGate ref="VTU_COMPONENT" >
+  at <VTUROOT>
+stderr | src/__tests__/AuthGateBilling.spec.js > new-account billing gate > opens a Free workspace when the therapist has no subscription
+[Vue warn]: Failed to resolve component: router-view
+If this is a native custom element, make sure to exclude it from component resolution via compilerOptions.isCustomElement.
+  at <AuthGate ref="VTU_COMPONENT" >
+  at <VTUROOT>
+[Vue warn]: Failed to resolve component: router-link
+If this is a native custom element, make sure to exclude it from component resolution via compilerOptions.isCustomElement.
+  at <AuthGate ref="VTU_COMPONENT" >
+  at <VTUROOT>
+stderr | src/__tests__/AuthGateBilling.spec.js > new-account billing gate > opens a Free workspace when the therapist has no subscription
+[Vue warn]: Failed to resolve component: router-view
+If this is a native custom element, make sure to exclude it from component resolution via compilerOptions.isCustomElement.
+  at <AuthGate ref="VTU_COMPONENT" >
+  at <VTUROOT>
+[Vue warn]: Failed to resolve component: router-link
+If this is a native custom element, make sure to exclude it from component resolution via compilerOptions.isCustomElement.
+  at <AuthGate ref="VTU_COMPONENT" >
+  at <VTUROOT>
+stderr | src/__tests__/AuthGateBilling.spec.js > new-account billing gate > opens the workspace for an active trial
+[Vue warn]: Failed to resolve component: router-view
+If this is a native custom element, make sure to exclude it from component resolution via compilerOptions.isCustomElement.
+  at <AuthGate ref="VTU_COMPONENT" >
+  at <VTUROOT>
+[Vue warn]: Failed to resolve component: router-link
+If this is a native custom element, make sure to exclude it from component resolution via compilerOptions.isCustomElement.
+  at <AuthGate ref="VTU_COMPONENT" >
+  at <VTUROOT>
+stderr | src/__tests__/AuthGateBilling.spec.js > new-account billing gate > opens the workspace for an active trial
+[Vue warn]: Failed to resolve component: router-view
+If this is a native custom element, make sure to exclude it from component resolution via compilerOptions.isCustomElement.
+  at <AuthGate ref="VTU_COMPONENT" >
+  at <VTUROOT>
+[Vue warn]: Failed to resolve component: router-link
+If this is a native custom element, make sure to exclude it from component resolution via compilerOptions.isCustomElement.
+  at <AuthGate ref="VTU_COMPONENT" >
+  at <VTUROOT>
+stderr | src/__tests__/AuthGateBilling.spec.js > new-account billing gate > opens the workspace for an active trial
+[Vue warn]: Failed to resolve component: router-view
+If this is a native custom element, make sure to exclude it from component resolution via compilerOptions.isCustomElement.
+  at <AuthGate ref="VTU_COMPONENT" >
+  at <VTUROOT>
+[Vue warn]: Failed to resolve component: router-link
+If this is a native custom element, make sure to exclude it from component resolution via compilerOptions.isCustomElement.
+  at <AuthGate ref="VTU_COMPONENT" >
+  at <VTUROOT>
+ ✓ src/__tests__/AuthGateBilling.spec.js (4 tests) 90ms
+ ✓ src/components/workspace/__tests__/ClientWorkspaceHeader.spec.js (4 tests) 48ms
+ ✓ src/components/workspace/__tests__/ClinicalSummaryWorkingMaterial.spec.js (2 tests) 62ms
  Test Files  15 passed (15)
       Tests  71 passed (71)
-   Start at  20:28:25
-   Duration  6.59s (environment 58%, transform 23%, import 11%, tests 8%, worker 1%)
-Environment  happy-dom was created 15 times · 31.46s total, 58% of tracked time
+   Start at  10:41:02
+   Duration  7.82s (environment 51%, transform 28%, import 12%, tests 9%, worker 1%)
+Environment  happy-dom was created 15 times · 31.73s total, 51% of tracked time
              create it once per worker with pool: 'vmThreads' (keeps per-file isolation) or isolate: false (shares it across files)
              learn more: https://vitest.dev/guide/improving-performance#test-environments
