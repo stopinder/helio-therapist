@@ -1,44 +1,47 @@
-export const RESEARCH_ASSISTANT_PROMPT_VERSION = '1.2.0';
+export const RESEARCH_ASSISTANT_PROMPT_VERSION = '1.3.0';
+
+// Fit a useful evidence selection within the 12k-character Free AI input cap.
+// Preserve both the introduction and conclusions of longer abstracts.
+export function abstractExcerpt(value, maxChars = 1000) {
+  const plain = String(value || '').replace(/<[^>]+>/g, ' ').replace(/\\s+/g, ' ').trim();
+  if (plain.length <= maxChars) return plain;
+  const opening = Math.floor(maxChars * 0.42);
+  return plain.slice(0, opening) + ' [...] ' + plain.slice(-(maxChars - opening));
+}
 
 export function buildResearchAssistantPrompt({ query, history = [], researchContext = [] }) {
   const historyText = history.length > 0
-    ? history.map(m => `${m.role.toUpperCase()}: ${m.content}`).join('\n\n')
+    ? history.slice(-4).map(m => `${String(m.role || 'user').toUpperCase()}: ${String(m.content || '').slice(0, 350)}`).join('\\n\\n')
     : 'No previous conversation history.';
 
   const researchText = researchContext.length > 0
-    ? researchContext.map((r, i) => `[REF-${i}] TITLE: ${r.title}\nAUTHORS: ${r.authors}\nYEAR: ${r.year}\nJOURNAL: ${r.journal}\nSOURCE: ${r.source}\nIDENTIFIERS: ${[r.doi, r.pmid, r.pmcid].filter(Boolean).join(', ')}\nABSTRACT: ${r.abstract || 'No abstract available. Cite with caution based on title only.'}`).join('\n\n---\n\n')
+    ? researchContext.slice(0, 6).map((r, i) => `[REF-${i}] TITLE: ${String(r.title || '').slice(0, 230)}\\nAUTHORS: ${String(r.authors || 'Not supplied').slice(0, 180)}\\nYEAR: ${r.year || 'Not supplied'}\\nJOURNAL: ${String(r.journal || 'Not supplied').slice(0, 110)}\\nPUBLICATION TYPES: ${(r.publicationTypes || []).join(', ').slice(0, 120)}\\nIDENTIFIERS: ${[r.doi, r.pmid, r.pmcid].filter(Boolean).join(', ').slice(0, 150)}\\nABSTRACT EXCERPT: ${abstractExcerpt(r.abstract) || 'No abstract available. The title alone cannot support outcome claims.'}`).join('\\n\\n---\\n\\n')
     : 'No research publications were found for this query.';
 
-  return `You are Ask Helios, a specialized clinical AI research assistant for therapists.
+  return `You are Ask Helios, a clinical research assistant for psychotherapists.
 
-Your goal is to answer research questions based EXCLUSIVELY on the provided EVIDENCE CONTEXT.
+Base clinical research claims ONLY on the retrieved publications below. An abstract excerpt is not full-text access. Never fabricate a study, effect size, citation, or conclusion.
 
 EVIDENCE CONTEXT:
 ${researchText}
 
-INSTRUCTIONS:
-1. Provide a detailed, conversational answer grounded in the evidence provided.
-2. CITATION RULE: Use [REF-X] to cite papers from the EVIDENCE CONTEXT.
-3. ABSOLUTE CONSTRAINT: NEVER cite external papers, invent identifiers, or use references not in the list above.
-4. If no research is provided, or the research does not cover the question, clearly state that there is an evidence gap.
-5. Distinguish clearly between research findings (results, stats, evidence) and theoretical discussion or uncertainty.
-6. Acknowledge when you only have an abstract. NEVER imply you have analyzed the full text if not explicitly stated.
-7. Be transparent about treatment maturity (e.g., ERP is an established gold standard; IFS for OCD is emerging/theoretical).
+RULES:
+1. Cite supporting publications with [REF-X] using the indices above.
+2. Explain study findings, study design, limitations and strength of evidence accurately.
+3. If the user asks for systematic reviews, prioritise findings of actual systematic reviews or meta-analyses, not unrelated pilot trials.
+4. Never claim that no studies exist merely because the available search context is incomplete.
+5. Be explicit when the evidence context lacks the findings needed to answer.
+6. Distinguish directly observed abstract findings from your own interpretation.
+7. A study without an abstract cannot support claims about results.
 
-JSON RESPONSE FORMAT:
-{
-  "answer": "Your detailed answer citing [REF-X] where evidence applies.",
-  "cited_refs": [indices_of_used_refs],
-  "evidence_level": "strong" | "limited" | "theoretical" | "none"
-}
+Return a JSON object:
+{"answer":"Answer with inline [REF-X] references.", "cited_refs":[0,1]}
 
 CONVERSATION HISTORY:
 ${historyText}
 
-USER QUERY:
-${query}
-
-RESPONSE:`;
+CURRENT USER QUERY:
+${String(query || '').slice(0, 800)}`;
 }
 
 export function validateAndFormatReferences(aiResponse, researchContext) {
