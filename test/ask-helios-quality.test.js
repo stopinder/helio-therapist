@@ -31,7 +31,8 @@ async function testRetrievalQuality() {
   });
   assert.ok(prompt.includes('EVIDENCE CONTEXT:'), 'Prompt should contain EVIDENCE CONTEXT');
   assert.ok(prompt.includes('[REF-0]'), 'Prompt should include reference placeholders');
-  assert.ok(prompt.includes('ERP is an established gold standard'), 'Prompt should include established treatment guidance');
+  assert.ok(prompt.includes('Base clinical research claims ONLY on the retrieved publications'), 'Prompt must ground research claims in retrieved evidence');
+  assert.ok(prompt.includes('If the user asks for systematic reviews'), 'Prompt must prioritise requested review evidence');
   console.log('✓ Prompt generation includes research context and treatment maturity guidance');
 }
 
