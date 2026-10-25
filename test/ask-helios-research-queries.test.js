@@ -128,3 +128,21 @@ test('Review-only comparisons do not silently substitute ordinary trials', () =>
   ];
   assert.deepEqual(selectResearchEvidence(results, 'Compare CBT and psychodynamic therapy systematic reviews').map(r => r.id), ['review']);
 });
+
+test('Schizophrenia mortality uses epidemiological outcomes rather than generic words', () => {
+  const queries = generateResearchQueries('What are the mortality rates for those people diagnosed with schizophrenia?');
+  assert.equal(queries.length, 3);
+  assert.ok(queries.every(q => /schizophrenia/i.test(q)));
+  assert.ok(queries.some(q => /standardized mortality ratio/i.test(q)));
+  assert.ok(queries.some(q => /life expectancy/i.test(q)));
+  assert.ok(queries.every(q => !/rates people diagnosed/i.test(q)));
+});
+
+test('Mortality evidence ranking favours outcome-relevant papers', () => {
+  const make = (id, title, abstract) => ({ id, title, abstract, url: 'https://example.org/' + id });
+  const selected = selectResearchEvidence([
+    make('general', 'Schizophrenia symptoms', 'Psychiatric presentation'),
+    make('mortality', 'Schizophrenia mortality: systematic review', 'All-cause mortality and standardized mortality ratio')
+  ], 'What are mortality rates for schizophrenia?');
+  assert.equal(selected[0].id, 'mortality');
+});
