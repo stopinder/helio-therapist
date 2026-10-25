@@ -5,7 +5,7 @@ const DEFAULT_TIMEOUT = 8000;
 /**
  * Normalizes research metadata from PubMed and Europe PMC.
  */
-function normalizeResult(source, raw) {
+export function normalizeResult(source, raw) {
   if (source === 'pubmed') {
     return {
       id: `pmid:${raw.uid}`,
