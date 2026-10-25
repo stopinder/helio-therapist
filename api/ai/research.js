@@ -1,4 +1,4 @@
-import { requireAuthenticatedUser } from '../_lib/supabase.js';
+import { requireAuthenticatedUser, getSupabaseUserClient } from '../_lib/supabase.js';
 import { AI_FEATURES, runTextAI } from '../_lib/ai-execution.js';
 import { buildResearchAssistantPrompt, RESEARCH_ASSISTANT_PROMPT_VERSION, parseResearchResponse, validateAndFormatReferences } from '../_lib/ai-research.js';
 import { searchResearch } from '../_lib/research-retrieval.js';
@@ -8,7 +8,8 @@ export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ success: false, error: { code: 'METHOD_NOT_ALLOWED', message: 'Method not allowed' } });
 
   try {
-    const { user, supabase } = await requireAuthenticatedUser(req);
+    const { user } = await requireAuthenticatedUser(req);
+    const supabase = getSupabaseUserClient(req);
     const query = String(req.body?.query || '').trim();
     const conversationId = req.body?.conversationId;
     const history = Array.isArray(req.body?.history) ? req.body.history.slice(-10) : [];
