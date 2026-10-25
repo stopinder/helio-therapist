@@ -1,4 +1,4 @@
-export const RESEARCH_ASSISTANT_PROMPT_VERSION = '1.3.0';
+export const RESEARCH_ASSISTANT_PROMPT_VERSION = '1.4.0';
 
 // Fit a useful evidence selection within the 12k-character Free AI input cap.
 // Preserve both the introduction and conclusions of longer abstracts.
@@ -32,7 +32,7 @@ RULES:
 4. Never claim that no studies exist merely because the available search context is incomplete.
 5. Be explicit when the evidence context lacks the findings needed to answer.
 6. Distinguish directly observed abstract findings from your own interpretation.
-7. A study without an abstract cannot support claims about results.
+7. A study without an abstract cannot support claims about results.\n8. For comparisons, organise findings by direct head-to-head evidence, each treatment\'s condition-specific evidence, methodological limits and what cannot be concluded. Do not mistake the number of retrieved papers for superiority.\n9. If one approach or direct comparative evidence is absent from retrieved context, say the retrieval is incomplete rather than implying that no such studies exist. Do not invent missing comparisons.
 
 Return a JSON object:
 {"answer":"Answer with inline [REF-X] references.", "cited_refs":[0,1]}
