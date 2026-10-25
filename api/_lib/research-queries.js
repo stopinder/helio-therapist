@@ -22,7 +22,7 @@ const CONDITIONS = [
   { re: /\b(?:anxiety[\s-]+disorders?|anxiety)\b/i, terms: ['anxiety'] }
 ];
 const OUTCOMES = [
-  { re: /\\b(?:mortality|death rates?|premature deaths?|dying earlier|survival|life expectancy|lifespan|life span|years? of (?:life )?lost)\\b/i,
+  { re: /\b(?:mortality|death rates?|premature deaths?|dying earlier|survival|life expectancy|lifespan|life span|years? of (?:life )?lost)\b/i,
     terms: ['mortality', '"standardized mortality ratio"', '"life expectancy"', '"years of potential life lost"'] }
 ];
 const REVIEW_REQUEST = /\b(?:systematic\s+reviews?|meta[\s-]?analys(?:is|es)|evidence\s+synthes(?:is|es)|umbrella\s+reviews?)\b/i;
@@ -95,7 +95,7 @@ function relevanceScore(result, approaches, condition) {
   ));
   const direct = matched.length > 1 && matched.every(Boolean);
   const review = isSystematicReview(result);
-  const comparative = /\\b(?:compar(?:e|ed|ison|ative)|versus|vs\\.?|noninferior|non-inferior|head.to.head|randomi[sz]ed)\\b/i.test(title);
+  const comparative = /\b(?:compar(?:e|ed|ison|ative)|versus|vs\.?|noninferior|non-inferior|head.to.head|randomi[sz]ed)\b/i.test(title);
   const conditionMatch = !condition || condition.terms.some(term => text.includes(term.replace(/"/g, '').toLowerCase()));
   return (direct ? 20 : 0) + (review ? 8 : 0) + (comparative ? 5 : 0) +
     (matched.some(Boolean) ? 3 : 0) + (conditionMatch ? 2 : 0) + (result.abstract ? 2 : 0);
