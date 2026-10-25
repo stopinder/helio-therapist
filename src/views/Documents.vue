@@ -153,7 +153,8 @@ function openLinkedDocument() {
   // Editable practice/prospect drafts open directly in the existing composer.
   // For client-linked documents we navigate to the owning Client Workspace.
   if (document.clientId) {
-    router.push('/clients/' + encodeURIComponent(document.clientId))
+    router.push({ path: '/clients/' + encodeURIComponent(document.clientId),
+      query: { document: document.id } })
     return
   } else if (document.storagePath) {
     download(document)

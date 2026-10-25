@@ -302,18 +302,20 @@ async function sendMessage(override = null) {
   if (!text || isLoading.value) return
   // Natural-language questions about the practice must never accidentally
   // become a PubMed search simply because Research was previously selected.
-  const sentMode = resolveAskHeliosMode(text, mode.value)
+  const lastWorkspaceTask = mode.value === 'workspace' && messages.value.at(-1)?.documentSearch ? 'documents' : null
+  const sentMode = resolveAskHeliosMode(text, mode.value, { lastWorkspaceTask })
   if (sentMode !== mode.value) {
     setMode(sentMode) // starts a fresh, correctly scoped conversation
     showHistory.value = false
-    modeNotice.value = 'Switched to Workspace: this question concerns your practice, not published research.'
+    modeNotice.value = sentMode === 'workspace'
+      ? 'Switched to Workspace: this question concerns your practice, not published research.'
+      : 'Switched to Research: this question requests published evidence.'
   } else {
     modeNotice.value = ''
   }
   const existingId = activeConversationId.value
-  const documentSearch = sentMode === 'workspace'
-    ? (messages.value.at(-1)?.role === 'assistant' ? messages.value.at(-1)?.documentSearch : null) || null
-    : null
+  // Document task context is recovered by the authenticated API from the
+  // persisted conversation, including after browser refresh or reopening.
   const history = messages.value.filter(m => ['user', 'assistant'].includes(m.role))
     .slice(-6).map(m => ({ role: m.role, content: m.content }))
   input.value = ''
@@ -327,7 +329,7 @@ async function sendMessage(override = null) {
       body: JSON.stringify({
         mode: sentMode, query: text, conversationId: existingId, history,
         clientId: sentMode === 'workspace' ? selectedClientId.value : null,
-        documentSearch
+        // The server reconstructs trusted Workspace context from the saved transcript.
       })
     })
     const data = await resp.json()

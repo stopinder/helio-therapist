@@ -8,7 +8,7 @@ const validUUID = value => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-
 export function isDocumentDiscoveryQuery(query, prior = null) {
   const t = clean(query).toLowerCase();
   if (/\b(documents?|files?|paperwork|forms?|templates?|letters?|agreements?|consent|assessment|intake|report|summary)\b/.test(t)) return true;
-  return !!prior && /\b(?:only\s+(?:the\s+)?(?:drafts?|completed|finali[sz]ed|reviews?)|next\s+page|more\s+(?:results?|documents?)|show\s+more|previous\s+page|go\s+back|what\s+about\s+(?:the\s+)?(?:drafts?|consent|intake)|which\s+of\s+these)\b/.test(t);
+  return !!prior && /\b(?:only\s+(?:the\s+)?(?:drafts?|completed|finali[sz]ed|reviews?)|next\s+page|more\s+(?:results?|documents?)|show\s+more|previous\s+page|go\s+back|what\s+about\s+(?:the\s+)?(?:drafts?|consent|intake)|which\s+of\s+these|which\s+ones\s+are\s+(?:still\s+)?(?:draft|unfinished|completed)|show\s+only\s+drafts?)\b/.test(t);
 }
 
 export function parseDocumentSearch(query, prior = null) {
@@ -84,6 +84,7 @@ export async function listWorkspaceDocuments({ supabase, userId, search }) {
   const answer = lines.join('\n') + '\n\nResults are drawn from your authorised Helios documents. Nothing was changed.';
   return {
     answer,
+    records: list,
     references: list.map(doc => ({ title: doc.title, url: doc.url, citation: doc.status + ' · ' + doc.type })),
     documentSearch: { kind: 'documents', type, status, page, total, shown: to, hasMore: to < total },
     proposedAction: null

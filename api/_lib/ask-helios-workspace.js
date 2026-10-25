@@ -1,6 +1,7 @@
 // Read-only workspace retrieval. No service-role database client and no OpenAI
 // call receives client or practice records.
 import { isDocumentDiscoveryQuery, parseDocumentSearch, listWorkspaceDocuments } from './ask-helios-documents.js';
+import { isContextualDocumentRequest, isDocumentRecordFollowUp, isAmbiguousDocumentFollowUp, needsDocumentClarification, resolveDocumentSelection } from './ask-helios-context.js';
 const LIMIT = 8;
 const safe = (value, max = 220) => String(value ?? '').replace(/\s+/g, ' ').trim().slice(0, max);
 const source = (title, url) => ({ title: safe(title, 110), url, citation: 'Open in Helios' });
@@ -136,6 +137,19 @@ async function clientBrief(db, uid, clientId) {
 export async function answerWorkspaceQuestion({ supabase, userId, query, clientId = null, documentSearch = null, now = new Date() }) {
   // Search follow-ups are contextual. Reuse validated document filters without
   // loading any document body or involving a language model.
+  if ((isDocumentRecordFollowUp(query) || isAmbiguousDocumentFollowUp(query)) && !documentSearch) {
+    return { answer: 'I need a specific document search first. Try “find my documents”, then choose one of the results.', references: [], proposedAction: null };
+  }
+  if (needsDocumentClarification(query, documentSearch)) {
+    return { answer: 'Which document do you mean? Choose a document link, or say “open the first one”.', references: [], proposedAction: null, documentSearch };
+  }
+  if (isDocumentRecordFollowUp(query) && documentSearch) {
+    const listing = await listWorkspaceDocuments({ supabase, userId, search: documentSearch });
+    const choice = resolveDocumentSelection(query, listing.records);
+    return { answer: choice?.error || 'Here is the document you selected. Open its link to view the original record.',
+      references: choice?.reference ? [choice.reference] : [], proposedAction: null,
+      documentSearch: listing.documentSearch };
+  }
   if (isDocumentDiscoveryQuery(query, documentSearch)) {
     return listWorkspaceDocuments({ supabase, userId, search: parseDocumentSearch(query, documentSearch) });
   }
