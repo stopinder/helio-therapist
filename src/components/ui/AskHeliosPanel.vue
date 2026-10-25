@@ -37,6 +37,8 @@
           @click="changeMode(tab.id)">{{ tab.label }}</button>
       </div>
 
+      <div v-if="modeNotice" role="status" class="border-b border-border-muted bg-accent/10 px-4 py-2 text-xs text-ink-secondary">{{ modeNotice }}</div>
+
       <div v-if="showHistory" class="min-h-0 flex-1 overflow-y-auto p-4">
         <h3 class="type-body-small font-bold uppercase tracking-wider text-ink-muted mb-4">Past Conversations</h3>
         <div v-if="conversations.length === 0" class="text-center py-8 text-ink-subtle italic">
@@ -177,6 +179,7 @@
 import { computed, nextTick, ref, watch } from 'vue'
 import { Sparkles, X, Maximize2, Minimize2, Send, ExternalLink, History, MessageSquare, Trash2 } from '@lucide/vue'
 import { useAskHelios } from '../../composables/useAskHelios.js'
+import { resolveAskHeliosMode } from '../../lib/askHeliosIntent.js'
 import { authenticatedFetch } from '../../lib/api.js'
 
 const tabs = [
@@ -210,15 +213,17 @@ const {
   selectConversation, deleteConversation, fetchConversations,
   setMode, assignConversationId, setSelectedClient, patchMessage
 } = useAskHelios()
-const currentTab = computed(() => tabs.find(t => t.id === mode.value) || tabs[1])
+const currentTab = computed(() => tabs.find(t => t.id === mode.value) || tabs[0])
 const input = ref('')
 const isLoading = ref(false)
 const isSavingAction = ref(false)
 const scrollContainer = ref(null)
 const showHistory = ref(false)
+const modeNotice = ref('')
 
 function changeMode(next) {
   setMode(next)
+  modeNotice.value = ''
   showHistory.value = false
   input.value = ''
 }
@@ -289,7 +294,16 @@ async function confirmReflection(index, msg) {
 async function sendMessage() {
   const text = input.value.trim()
   if (!text || isLoading.value) return
-  const sentMode = mode.value
+  // Natural-language questions about the practice must never accidentally
+  // become a PubMed search simply because Research was previously selected.
+  const sentMode = resolveAskHeliosMode(text, mode.value)
+  if (sentMode !== mode.value) {
+    setMode(sentMode) // starts a fresh, correctly scoped conversation
+    showHistory.value = false
+    modeNotice.value = 'Switched to Workspace: this question concerns your practice, not published research.'
+  } else {
+    modeNotice.value = ''
+  }
   const existingId = activeConversationId.value
   const history = messages.value.filter(m => ['user', 'assistant'].includes(m.role))
     .slice(-6).map(m => ({ role: m.role, content: m.content }))

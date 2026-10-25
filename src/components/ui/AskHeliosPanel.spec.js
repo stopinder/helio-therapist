@@ -51,6 +51,45 @@ describe('AskHeliosPanel', () => {
     expect(w.text()).toContain('CBT Study')
   })
 
+  it('automatically routes the reported weekly-attention question to Workspace even from an existing Research conversation', async () => {
+    api.authenticatedFetch.mockImplementation(async url => {
+      if (url === '/api/ai/assist') {
+        return ok({ mode: 'workspace', answer: 'Open reminders: review session notes.', conversationId: 'workspace-new' })
+      }
+      return ok({ conversations: [], clients: [] })
+    })
+    ask.assignConversationId('old-research-conversation')
+    ask.addMessage({ role: 'assistant', content: 'Previous unrelated research.' })
+    const w = mount(AskHeliosPanel)
+    expect(ask.mode.value).toBe('research')
+    await w.find('textarea').setValue('What needs my attention this week?')
+    await w.find('form').trigger('submit')
+    await vi.waitFor(() => expect(ask.messages.value).toHaveLength(2))
+    expect(ask.mode.value).toBe('workspace')
+    expect(w.find('[role="status"]').text()).toContain('Switched to Workspace')
+    expect(ask.messages.value[1].content).toContain('Open reminders')
+    const assist = api.authenticatedFetch.mock.calls.find(call => call[0] === '/api/ai/assist')
+    expect(assist).toBeTruthy()
+    expect(JSON.parse(assist[1].body)).toMatchObject({
+      mode: 'workspace', query: 'What needs my attention this week?', conversationId: null, history: []
+    })
+    expect(api.authenticatedFetch.mock.calls.filter(call => call[0] === '/api/ai/research')).toHaveLength(0)
+  })
+
+  it('still sends deliberate research about appointment reminders to Research', async () => {
+    api.authenticatedFetch.mockImplementation(async url => {
+      if (url === '/api/ai/research') return ok({ answer: 'Published evidence about reminders.', references: [] })
+      return ok({ conversations: [] })
+    })
+    const w = mount(AskHeliosPanel)
+    await w.find('textarea').setValue('What does the research say about appointment reminders?')
+    await w.find('form').trigger('submit')
+    await vi.waitFor(() => expect(ask.messages.value).toHaveLength(2))
+    expect(ask.mode.value).toBe('research')
+    expect(api.authenticatedFetch.mock.calls.some(call => call[0] === '/api/ai/research')).toBe(true)
+    expect(api.authenticatedFetch.mock.calls.some(call => call[0] === '/api/ai/assist')).toBe(false)
+  })
+
   it('switches to workspace and queries only the workspace endpoint', async () => {
     api.authenticatedFetch.mockImplementation(async url => {
       if (url === '/api/ai/workspace-clients') return ok({

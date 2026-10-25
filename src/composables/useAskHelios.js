@@ -6,7 +6,8 @@ export const ASK_HELIOS_MODES = Object.freeze(['workspace', 'research', 'reflect
 const isPanelOpen = ref(false)
 const isExpanded = ref(false)
 const panelWidth = ref(440)
-const mode = ref('research')
+// Practice management is the safest starting mode; research must be intentional.
+const mode = ref('workspace')
 const messages = ref([])
 const conversations = ref([])
 const activeConversationId = ref(null)
