@@ -25,12 +25,18 @@ function normalizeResult(source, raw) {
       id: `pmcid:${raw.pmcid || raw.id}`,
       title: raw.title,
       authors: raw.authorString,
-      journal: raw.journalTitle,
-      year: raw.pubYear,
+      journal: raw.journalTitle || raw.journalInfo?.journal?.title || 'Journal not supplied',
+      year: raw.pubYear || raw.firstPublicationDate?.slice(0, 4) || 'Year not supplied',
       doi: raw.doi,
       pmid: raw.pmid,
       pmcid: raw.pmcid,
-      url: raw.doi ? `https://doi.org/${raw.doi}` : `https://europepmc.org/article/PMC/${raw.pmcid}`,
+      url: raw.pmid
+        ? `https://pubmed.ncbi.nlm.nih.gov/${encodeURIComponent(raw.pmid)}/`
+        : raw.pmcid
+          ? `https://europepmc.org/articles/${encodeURIComponent(raw.pmcid)}`
+          : raw.doi
+            ? `https://doi.org/${encodeURIComponent(raw.doi)}`
+            : `https://europepmc.org/article/${encodeURIComponent(raw.source || 'MED')}/${encodeURIComponent(raw.id)}`,
       abstract: raw.abstractText || null,
       source: 'Europe PMC'
     };
