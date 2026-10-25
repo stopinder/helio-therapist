@@ -254,7 +254,12 @@ function startResizing(e) {
   document.addEventListener('mouseup', onUp)
 }
 async function scrollToMessageStart(index) {
+  const targetMessage = messages.value[index]
   await nextTick()
+  // A pending render must not scroll a closed panel or a different/restoring
+  // conversation. Only the chat pane moves, never the surrounding workspace.
+  if (!isPanelOpen.value || showHistory.value || isRestoring.value || restoreError.value ||
+      !targetMessage || messages.value[index] !== targetMessage) return
   const container = scrollContainer.value
   const message = container?.querySelector('[data-ask-message-index="' + index + '"]')
   if (!container || !message) return
@@ -265,11 +270,20 @@ async function scrollToLatestAnswer() {
   if (index >= 0) await scrollToMessageStart(index)
   else if (messages.value.length) await scrollToMessageStart(messages.value.length - 1)
 }
-watch(isPanelOpen, open => { if (open && !showHistory.value) scrollToLatestAnswer() })
+// Opening precedes async restoration. Position the latest answer only after
+// restoration and rendering finish, including a return from the history list.
+// Do not watch messages deeply: background metadata updates must not interrupt
+// someone deliberately scrolling up to read an earlier answer.
+watch(
+  [isPanelOpen, showHistory, isRestoring, activeConversationId, restoreError],
+  ([open, history, restoring, , error]) => {
+    if (open && !history && !restoring && !error) void scrollToLatestAnswer()
+  },
+  { flush: 'post', immediate: true }
+)
 async function handleSelectConversation(id) {
   await selectConversation(id)
   showHistory.value = false
-  await scrollToLatestAnswer()
 }
 async function confirmAction(index, msg) {
   if (isSavingAction.value || msg.proposedAction?.type !== 'create_reminder') return

@@ -45,6 +45,9 @@ jobs:
       - name: Install Playwright Chromium
         run: npx playwright install --with-deps chromium
 
+      - name: Verify Ask Helios restored scroll in desktop and mobile Chromium
+        run: node scripts/verify-ask-helios-scroll.mjs
+
       - name: Run Zoom My Notes Playwright acceptance
         env:
           VITE_SUPABASE_URL: http://127.0.0.1:54321
