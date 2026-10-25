@@ -39,3 +39,13 @@
 - Broader natural-language interpretation of arbitrary queries and a dynamic tool planner; use controlled, auditable additions after observing actual test failures.
 - Rich session preparation, client-selected clinical context sent to an AI model, action execution, and automatic multi-source summaries. These need separate clinical/privacy approvals.
 - Persisting a structured context snapshot as a dedicated column is not required for this phase; historical replay is bounded to 36 messages. If conversations become longer, add a typed per-conversation context record with migration and RLS review.
+
+## Refresh-reset correction (25 October 2026)
+
+The initial context replay implementation did not retain the active conversation identity across page reloads. History-load errors were also silently ignored. A new stateful regression fixture reproduced loss of the active ID after page 9-16, despite server-side search replay being present.
+
+The tab now stores only an opaque conversation UUID in sessionStorage under an account-specific key. Opening Ask Helios restores that conversation through the authenticated API before enabling submission. No chat text, client information or filter state is stored in browser storage. Failed restores show Retry / Start new chat controls instead of silently making a new conversation. New chat and sign-out clear the pointer; late history and answer responses are discarded after an account/task change.
+
+A continuation without an owned saved document search now returns DOCUMENT_CONTEXT_REQUIRED (409), without querying documents, saving a new conversation or calling AI. It cannot quietly return page one.
+
+The regression tests exercise the real Assist/history handlers, real context replay and real document-search logic, with only authentication, persistence and HTTP transport replaced by a stateful 40-document fixture. They verify 1-8 -> 9-16 -> reset browser-module state -> restore the same conversation -> 17-24, plus draft/consent filters, manual history reopening, failed restore/retry, account isolation, sign-out races, explicit New chat and minimal browser storage. This is not a claim of testing the user's authenticated live production account. Production database records and schema remain unchanged.

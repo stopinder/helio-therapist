@@ -39,6 +39,15 @@
 
       <div v-if="modeNotice" role="status" class="border-b border-border-muted bg-accent/10 px-4 py-2 text-xs text-ink-secondary">{{ modeNotice }}</div>
 
+      <div v-if="isRestoring" role="status" class="border-b border-border-muted px-4 py-2 text-xs text-ink-secondary">Restoring your saved conversation...</div>
+      <div v-if="restoreError" role="alert" class="border-b border-border-muted px-4 py-3 text-xs text-state-danger">
+        <p>{{ restoreError }}</p>
+        <div class="mt-2 flex gap-3">
+          <button type="button" class="font-medium underline" :disabled="isRestoring" @click="retryRestore">Retry restoration</button>
+          <button type="button" class="font-medium underline" @click="clearConversation">Start a new chat</button>
+        </div>
+      </div>
+
       <div v-if="showHistory" class="min-h-0 flex-1 overflow-y-auto p-4">
         <h3 class="type-body-small font-bold uppercase tracking-wider text-ink-muted mb-4">Past Conversations</h3>
         <div v-if="conversations.length === 0" class="text-center py-8 text-ink-subtle italic">
@@ -163,10 +172,10 @@
         <form class="relative flex items-end gap-2" @submit.prevent="sendMessage">
           <textarea v-model="input" rows="2" maxlength="1200"
             class="block w-full resize-none rounded-control border border-border-muted bg-surface px-3 py-2 text-sm text-ink placeholder:text-ink-subtle focus:border-accent focus:ring-1 focus:ring-accent"
-            :placeholder="currentTab.placeholder" :disabled="isLoading" @keydown.enter.exact.prevent="sendMessage"></textarea>
+            :placeholder="currentTab.placeholder" :disabled="isLoading || isRestoring || !!restoreError" @keydown.enter.exact.prevent="sendMessage"></textarea>
           <button type="submit" title="Send to Ask Helios"
             class="flex h-9 w-9 shrink-0 items-center justify-center rounded-control bg-action-primary text-on-action shadow-sm hover:bg-action-primary-hover disabled:opacity-50"
-            :disabled="!input.trim() || isLoading"><Send class="h-4 w-4" /></button>
+            :disabled="!input.trim() || isLoading || isRestoring || !!restoreError"><Send class="h-4 w-4" /></button>
         </form>
         <div class="mt-2 flex justify-between items-center px-1">
           <span class="text-[10px] text-ink-subtle">{{ currentTab.footer }}</span>
@@ -215,7 +224,8 @@ const {
   activeConversationId, clients, selectedClientId,
   closePanel, setWidth, toggleExpand, addMessage, clearConversation,
   selectConversation, deleteConversation, fetchConversations,
-  setMode, assignConversationId, setSelectedClient, patchMessage
+  setMode, assignConversationId, setSelectedClient, patchMessage,
+  isRestoring, restoreError, ensureConversationReady, retryRestore, getContextVersion, isContextCurrent
 } = useAskHelios()
 const currentTab = computed(() => tabs.find(t => t.id === mode.value) || tabs[0])
 const input = ref('')
@@ -299,7 +309,11 @@ async function sendMessage(override = null) {
   // Vue passes an event object for submit handlers; only a deliberate string
   // argument is a programmatic follow-up search.
   const text = typeof override === 'string' ? override.trim() : input.value.trim()
-  if (!text || isLoading.value) return
+  if (!text || isLoading.value || isRestoring.value || restoreError.value) return
+  // Wait for the owned conversation ID/history before deciding the destination.
+  // A failed restore must never become an implicit new document search.
+  if (!(await ensureConversationReady())) return
+  if (isLoading.value) return
   // Natural-language questions about the practice must never accidentally
   // become a PubMed search simply because Research was previously selected.
   const lastWorkspaceTask = mode.value === 'workspace' && messages.value.at(-1)?.documentSearch ? 'documents' : null
@@ -314,6 +328,7 @@ async function sendMessage(override = null) {
     modeNotice.value = ''
   }
   const existingId = activeConversationId.value
+  const requestVersion = getContextVersion()
   // Document task context is recovered by the authenticated API from the
   // persisted conversation, including after browser refresh or reopening.
   const history = messages.value.filter(m => ['user', 'assistant'].includes(m.role))
@@ -333,6 +348,7 @@ async function sendMessage(override = null) {
       })
     })
     const data = await resp.json()
+    if (!isContextCurrent(requestVersion)) return
     if (!resp.ok) {
       const message = typeof data.error === 'string' ? data.error : data.error?.message
       throw new Error(message || 'Ask Helios is temporarily unavailable.')
@@ -348,6 +364,7 @@ async function sendMessage(override = null) {
     }
     await scrollToMessageStart(messages.value.length - 1)
   } catch (error) {
+    if (!isContextCurrent(requestVersion)) return
     addMessage({ role: 'assistant', content: 'I could not complete that request. ' + error.message })
     await scrollToMessageStart(messages.value.length - 1)
   } finally { isLoading.value = false }

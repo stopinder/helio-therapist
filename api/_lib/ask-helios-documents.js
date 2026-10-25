@@ -5,6 +5,10 @@ const SEARCH_TYPES = ['consent', 'assessment', 'intake', 'agreement', 'letter', 
 const clean = value => String(value || '').replace(/\s+/g, ' ').trim();
 const validUUID = value => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
 
+export function isDocumentPaginationRequest(query) {
+  return /^(?:please\s+)?(?:(?:show|list|give)\s+(?:me\s+)?)?(?:more(?:\s+(?:documents?|results?|files?))?|(?:the\s+)?(?:next|previous)\s+page)[.!?]*$/i.test(clean(query));
+}
+
 export function isDocumentDiscoveryQuery(query, prior = null) {
   const t = clean(query).toLowerCase();
   if (/\b(documents?|files?|paperwork|forms?|templates?|letters?|agreements?|consent|assessment|intake|report|summary)\b/.test(t)) return true;

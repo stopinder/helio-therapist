@@ -129,7 +129,8 @@ export default async function handler(req, res) {
   } catch (error) {
     const status = [400, 401, 404, 409, 413, 429, 503].includes(error.status) ? error.status : 500;
     console.error('[Ask Helios Assist] request failed', error.code || status);
-    const message = status === 401 ? 'Please sign in again.'
+    const message = error.code === 'DOCUMENT_CONTEXT_REQUIRED' ? error.message
+      : status === 401 ? 'Please sign in again.'
       : status === 404 ? 'That client is not accessible in your workspace.'
       : status === 400 ? error.message
       : status === 503 ? 'Workspace information is temporarily unavailable.'

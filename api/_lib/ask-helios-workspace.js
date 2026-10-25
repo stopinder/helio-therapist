@@ -1,6 +1,6 @@
 // Read-only workspace retrieval. No service-role database client and no OpenAI
 // call receives client or practice records.
-import { isDocumentDiscoveryQuery, parseDocumentSearch, listWorkspaceDocuments } from './ask-helios-documents.js';
+import { isDocumentDiscoveryQuery, isDocumentPaginationRequest, parseDocumentSearch, listWorkspaceDocuments } from './ask-helios-documents.js';
 import { isContextualDocumentRequest, isDocumentRecordFollowUp, isAmbiguousDocumentFollowUp, needsDocumentClarification, resolveDocumentSelection } from './ask-helios-context.js';
 const LIMIT = 8;
 const safe = (value, max = 220) => String(value ?? '').replace(/\s+/g, ' ').trim().slice(0, max);
@@ -135,6 +135,12 @@ async function clientBrief(db, uid, clientId) {
 }
 
 export async function answerWorkspaceQuestion({ supabase, userId, query, clientId = null, documentSearch = null, now = new Date() }) {
+  if (!documentSearch && isDocumentPaginationRequest(query)) {
+    const failure = new Error('No saved document search is active. Reopen the original conversation, or start a new search with "Find my documents".');
+    failure.status = 409;
+    failure.code = 'DOCUMENT_CONTEXT_REQUIRED';
+    throw failure;
+  }
   // Search follow-ups are contextual. Reuse validated document filters without
   // loading any document body or involving a language model.
   if ((isDocumentRecordFollowUp(query) || isAmbiguousDocumentFollowUp(query)) && !documentSearch) {
