@@ -3,31 +3,31 @@ import { AI_FEATURES, runTextAI } from '../_lib/ai-execution.js';
 import { buildResearchAssistantPrompt, RESEARCH_ASSISTANT_PROMPT_VERSION, parseResearchResponse, validateAndFormatReferences } from '../_lib/ai-research.js';
 import { searchResearch } from '../_lib/research-retrieval.js';
 
-async function generateResearchQueries(query, history, userId) {
-  try {
-    const { completion } = await runTextAI({
-      feature: AI_FEATURES.ASK_HELIOS_RESEARCH,
-      userId,
-      promptVersion: 'query-gen-1.0.0',
-      messages: [
-        { 
-          role: 'system', 
-          content: 'You are a research query generator. Extract 2-3 specific, targeted search queries for PubMed/Europe PMC from the user\'s question. Focus on clinical concepts, therapies, and conditions. Use Boolean operators if helpful. Output a JSON array of strings.' 
-        },
-        { role: 'user', content: `Question: ${query}\nHistory: ${JSON.stringify(history.slice(-2))}` }
-      ],
-      responseFormat: { type: 'json_object' },
-      temperature: 0,
-      maxTokens: 200,
-      skipBudget: true
-    });
-    const parsed = JSON.parse(completion.choices?.[0]?.message?.content || '{}');
-    const queries = Array.isArray(parsed.queries) ? parsed.queries : [query];
-    return queries.slice(0, 3);
-  } catch (e) {
-    console.error('[Query Gen] failed', e.message);
-    return [query];
+function generateResearchQueries(query, history) {
+  // Deterministic search query construction from the user's question.
+  // We extract keywords and combine them to form bounded PubMed/Europe PMC queries.
+  // Avoids an extra OpenAI call.
+  const cleanQuery = query.replace(/[^\w\s-]/g, ' ').trim();
+  const words = cleanQuery.split(/\s+/).filter(w => w.length > 3);
+  
+  // Basic query: the original query
+  const queries = [query];
+  
+  // Specific query: extract potential clinical terms (first 3 long words)
+  if (words.length > 0) {
+    queries.push(words.slice(0, 4).join(' '));
   }
+  
+  // Combined query with history context if available
+  const lastUserMsg = history.findLast(m => m.role === 'user');
+  if (lastUserMsg && lastUserMsg.content !== query) {
+    const historyWords = lastUserMsg.content.replace(/[^\w\s-]/g, ' ').split(/\s+/).filter(w => w.length > 3);
+    if (historyWords.length > 0) {
+      queries.push(`${words.slice(0, 2).join(' ')} ${historyWords.slice(0, 2).join(' ')}`);
+    }
+  }
+
+  return [...new Set(queries)].slice(0, 3);
 }
 
 async function performMultiQuerySearch(queries) {
@@ -58,21 +58,10 @@ export default async function handler(req, res) {
       return res.status(400).json({ success: false, error: { code: 'QUERY_REQUIRED', message: 'Please provide a research question.' } });
     }
 
-    // 1. Genuine research retrieval
-    const researchQueries = await generateResearchQueries(query, history, user.id);
+    // 1. Genuine research retrieval - Deterministic query generation (No AI call)
+    const researchQueries = generateResearchQueries(query, history);
     let researchContext;
-    try {
-      researchContext = await performMultiQuerySearch(researchQueries);
-    } catch (e) {
-      console.error('[Ask Helios Research] search failed:', e.message);
-      return res.status(502).json({
-        success: false,
-        error: { 
-          code: 'RESEARCH_PROVIDER_FAILED', 
-          message: 'Clinical research providers (PubMed/Europe PMC) are currently unreachable. Please try again in a few minutes.' 
-        }
-      });
-    }
+    researchContext = await performMultiQuerySearch(researchQueries);
 
     if (researchContext.length === 0) {
       return res.status(200).json({

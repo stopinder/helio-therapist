@@ -65,7 +65,7 @@ export async function searchResearch(query) {
     if (pubmedError) console.error('[Research Retrieval] PubMed failed:', pubmedError);
     if (epcmcError) console.error('[Research Retrieval] Europe PMC failed:', epcmcError);
 
-    // If all providers failed, throw to distinguish from "no results found"
+    // If all providers failed, propagate the 502 error
     if (pubmedSettled.status === 'rejected' && epcmcSettled.status === 'rejected') {
       const error = new Error('All research providers failed');
       error.status = 502;
@@ -88,6 +88,7 @@ export async function searchResearch(query) {
 
     return unique.slice(0, 10); // Return top 10 relevant results
   } catch (error) {
+    if (error.status === 502) throw error;
     console.error('[Research Retrieval] Critical failure:', error.message);
     return [];
   }

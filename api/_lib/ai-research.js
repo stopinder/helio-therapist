@@ -48,11 +48,12 @@ export function validateAndFormatReferences(aiResponse, researchContext) {
   const validIndices = new Set();
 
   // 1. Gather all markers from the text to ensure they are included even if AI missed cited_refs
+  // Use a strict numeric regex for [REF-X] where X is a series of digits.
   const textMarkers = [...answer.matchAll(/\[REF-(\d+)\]/g)].map(m => parseInt(m[1], 10));
   const allPotentialIndices = new Set([...cited_refs, ...textMarkers]);
 
   allPotentialIndices.forEach(idx => {
-    if (researchContext[idx]) {
+    if (Number.isInteger(idx) && researchContext[idx]) {
       validIndices.add(idx);
       const r = researchContext[idx];
       // Avoid duplicate entries in validatedReferences if both cited_refs and textMarkers have it
@@ -68,11 +69,17 @@ export function validateAndFormatReferences(aiResponse, researchContext) {
   });
 
   // Scrub any [REF-X] from the answer where X is NOT in our validIndices
-  // Also scrub any malformed [REF-X] where X is not a digit (e.g. [REF-X])
+  // Also scrub any malformed [REF-X] where X is not purely numeric (e.g. [REF-X], [REF-0abc])
+  // We use a capture group to replace the entire [REF-...] marker.
   answer = answer.replace(/\[REF-(.+?)\]/g, (match, p1) => {
+    // Only allow purely numeric content inside the brackets
+    if (!/^\d+$/.test(p1)) return '';
     const idx = parseInt(p1, 10);
-    return (!isNaN(idx) && validIndices.has(idx)) ? match : '';
+    return validIndices.has(idx) ? match : '';
   });
+
+  // Clean up any double spaces introduced by scrubbing
+  answer = answer.replace(/\s\s+/g, ' ');
 
   return {
     answer: answer.trim(),
