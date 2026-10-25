@@ -16,7 +16,8 @@ test('Generates a targeted ERP + OCD + review query, not question preamble', () 
 
 test('Compares IFS and ERP using separate searches with OCD as shared condition', () => {
   const queries = generateResearchQueries('What does research say about IFS versus ERP for OCD?');
-  assert.equal(queries.length, 2);
+  assert.equal(queries.length, 3);
+  assert.ok(queries[0].includes('"internal family systems"') && queries[0].includes('"exposure and response prevention"'));
   assert.ok(queries.some(query => query.includes('"internal family systems"')));
   assert.ok(queries.some(query => query.includes('"exposure and response prevention"')));
   assert.ok(queries.every(query => query.includes('"obsessive-compulsive disorder"')));
@@ -95,4 +96,35 @@ test('Both providers offline propagates a research-service failure', async () =>
     globalThis.fetch = async () => { throw new Error('upstream offline'); };
     await assert.rejects(searchResearch('OCD'), { status:502 });
   } finally { globalThis.fetch = original; }
+});
+
+test('CBT versus psychodynamic therapy searches head-to-head studies and both arms', () => {
+  const queries = generateResearchQueries('Compare evidence for CBT and psychodynamic therapy');
+  assert.equal(queries.length, 3);
+  assert.match(queries[0], /cognitive behavioral therapy/i);
+  assert.match(queries[0], /psychodynamic/i);
+  assert.ok(queries.slice(1).some(q => /CBT/.test(q) && !/psychodynamic/.test(q)));
+  assert.ok(queries.slice(1).some(q => /psychodynamic/.test(q) && !/CBT/.test(q)));
+});
+
+test('Comparative evidence selection prioritises direct trials and retains both approaches', () => {
+  const make = (id, title, abstract) => ({ id, title, abstract, url:'https://example.org/' + id });
+  const results = [
+    ...Array.from({ length: 7 }, (_, i) => make('cbt' + i, 'CBT for depression trial ' + i, 'CBT treatment outcomes')),
+    make('psychodynamic', 'Psychodynamic psychotherapy outcomes', 'Psychodynamic treatment'),
+    make('direct', 'CBT compared with psychodynamic therapy: randomized trial', 'Direct comparison of CBT and psychodynamic therapy')
+  ];
+  const selected = selectResearchEvidence(results, 'Compare evidence for CBT and psychodynamic therapy');
+  assert.equal(selected.length, 6);
+  assert.equal(selected[0].id, 'direct');
+  assert.ok(selected.some(r => r.id === 'psychodynamic'));
+  assert.ok(selected.some(r => r.id.startsWith('cbt')));
+});
+
+test('Review-only comparisons do not silently substitute ordinary trials', () => {
+  const results = [
+    { id:'trial', title:'CBT versus psychodynamic therapy trial', url:'https://example.org/trial' },
+    { id:'review', title:'Psychodynamic therapy systematic review', url:'https://example.org/review' }
+  ];
+  assert.deepEqual(selectResearchEvidence(results, 'Compare CBT and psychodynamic therapy systematic reviews').map(r => r.id), ['review']);
 });
