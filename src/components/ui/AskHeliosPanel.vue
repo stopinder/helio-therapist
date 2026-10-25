@@ -86,7 +86,7 @@
               <ul class="space-y-1.5">
                 <li v-for="(reference, rIndex) in msg.references" :key="rIndex" class="text-xs">
                   <router-link v-if="reference.url?.startsWith('/')"
-                    :to="reference.url" class="text-accent hover:underline">{{ reference.title }}</router-link>
+                    :to="reference.url" class="text-accent hover:underline" @click="closePanel">{{ reference.title }}</router-link>
                   <a v-else :href="reference.url" target="_blank" rel="noopener noreferrer"
                     class="text-accent hover:underline inline-flex items-center gap-1">
                     {{ reference.title }} <ExternalLink class="h-3 w-3" aria-hidden="true" />
@@ -96,6 +96,10 @@
               </ul>
             </div>
             <p v-if="msg.warning" class="mt-2 text-xs text-state-danger">{{ msg.warning }}</p>
+            <div v-if="mode === 'workspace' && msg.documentSearch?.hasMore" class="mt-3 border-t border-border-muted pt-2">
+              <button type="button" class="rounded-control border border-border-muted px-3 py-2 text-xs font-medium text-accent"
+                :disabled="isLoading" @click="sendMessage('Show more documents')">Show next {{ Math.min(8, Math.max(0, msg.documentSearch.total - msg.documentSearch.shown)) }} documents</button>
+            </div>
             <div v-if="msg.proposedAction?.type === 'create_reminder'" class="mt-3 border-t border-border-muted pt-2">
               <p class="text-xs text-ink-muted mb-2">Approve this change to your Today reminders?</p>
               <div class="flex flex-wrap gap-2">
@@ -291,8 +295,10 @@ async function confirmReflection(index, msg) {
     patchMessage(index, { actionStatus: 'Unable to save reflection. Review the text and retry.' })
   } finally { isSavingAction.value = false }
 }
-async function sendMessage() {
-  const text = input.value.trim()
+async function sendMessage(override = null) {
+  // Vue passes an event object for submit handlers; only a deliberate string
+  // argument is a programmatic follow-up search.
+  const text = typeof override === 'string' ? override.trim() : input.value.trim()
   if (!text || isLoading.value) return
   // Natural-language questions about the practice must never accidentally
   // become a PubMed search simply because Research was previously selected.
@@ -305,6 +311,9 @@ async function sendMessage() {
     modeNotice.value = ''
   }
   const existingId = activeConversationId.value
+  const documentSearch = sentMode === 'workspace'
+    ? (messages.value.at(-1)?.role === 'assistant' ? messages.value.at(-1)?.documentSearch : null) || null
+    : null
   const history = messages.value.filter(m => ['user', 'assistant'].includes(m.role))
     .slice(-6).map(m => ({ role: m.role, content: m.content }))
   input.value = ''
@@ -317,7 +326,8 @@ async function sendMessage() {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         mode: sentMode, query: text, conversationId: existingId, history,
-        clientId: sentMode === 'workspace' ? selectedClientId.value : null
+        clientId: sentMode === 'workspace' ? selectedClientId.value : null,
+        documentSearch
       })
     })
     const data = await resp.json()
@@ -327,7 +337,8 @@ async function sendMessage() {
     }
     addMessage({
       role: 'assistant', content: data.answer, references: data.references || [],
-      proposedAction: data.proposedAction || null, warning: data.warning
+      proposedAction: data.proposedAction || null, warning: data.warning,
+      documentSearch: data.documentSearch || null
     })
     if (data.saved !== false && data.conversationId) {
       assignConversationId(data.conversationId)

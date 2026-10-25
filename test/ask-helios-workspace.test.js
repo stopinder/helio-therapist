@@ -21,6 +21,8 @@ function createDatabase(fixtures) {
         is(k, v) { restrictions.push(r => r[k] === v); return obj; },
         in(k, values) { restrictions.push(r => values.includes(r[k])); return obj; },
         ilike(k, value) { restrictions.push(r => String(r[k] || '').toLowerCase().includes(value.replaceAll('%', '').toLowerCase())); return obj; },
+        or(value) { const keyword = value.match(/%([a-z]+)%/)?.[1]; restrictions.push(r => [r.title,r.document_type,r.original_filename].some(x => String(x || '').toLowerCase().includes(keyword))); return obj; },
+        range(start, end) { const all = obj.result(); return Promise.resolve({ data:all.slice(start, end+1), count:all.length, error:null }); },
         gte(k, v) { restrictions.push(r => String(r[k]) >= String(v)); return obj; },
         lte(k, v) { restrictions.push(r => String(r[k]) <= String(v)); return obj; },
         order(k, options = {}) { sort = [k, options.ascending !== false]; return obj; },
@@ -52,7 +54,7 @@ const fixtures = {
     { id:'session1',user_id:OWNER,client_id:CLIENT,status:'in_progress',notes_status:'draft',occurred_at:'2026-10-24T12:00:00Z' },
     { id:'session2',user_id:OTHER,client_id:FOREIGN,status:'in_progress',notes_status:'draft',occurred_at:'2026-10-23T12:00:00Z' }
   ],
-  documents: [{ id:'doc1',user_id:OWNER,title:'Consent template',status:'draft',updated_at:'2026-10-25T12:00:00Z' }],
+  documents: [{ id:'doc1',user_id:OWNER,title:'Consent template',document_type:'consent',status:'draft',archived_at:null,updated_at:'2026-10-25T12:00:00Z' }],
   therapist_reminders: [{ id:'rem1',therapist_id:OWNER,body:'Review appointment notes',completed_at:null,created_at:'2026-10-24T12:00:00Z' }],
   private_reflections: [
     { id:'refl1',user_id:OWNER,client_id:null,theme:'Professional growth',created_at:'2026-10-24T12:00:00Z' },
@@ -93,7 +95,7 @@ test('Document lookups find named records rather than only drafts', async () => 
   const { db } = createDatabase(fixtures);
   const result = await answerWorkspaceQuestion({ supabase: db, userId: OWNER, query: 'Find the consent form' });
   assert.match(result.answer, /Consent template/);
-  assert.match(result.answer, /matching consent/);
+  assert.match(result.answer, /matching "consent"/);
 });
 test('Client preparation requires an explicit, owned client identifier', async () => {
   const { db } = createDatabase(fixtures);

@@ -93,6 +93,31 @@ describe('AskHeliosPanel', () => {
     expect(JSON.parse(options.body)).toMatchObject({ mode: 'workspace', query: 'Find my consent forms and documents.' })
   })
 
+  it('shows paginated document results and sends the current search context on Show next', async () => {
+    const previous = { kind: 'documents', type: null, status: null, page: 0, total: 19, shown: 8, hasMore: true }
+    api.authenticatedFetch.mockImplementation(async url => {
+      if (url === '/api/ai/assist') {
+        return ok({
+          mode: 'workspace', answer: 'Showing 1–8 of 19 matching documents',
+          documentSearch: previous,
+          references: [{ title: 'Document A', url: '/documents?open=aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa', citation: 'draft' }]
+        })
+      }
+      return ok({ conversations: [], clients: [] })
+    })
+    const w = mount(AskHeliosPanel)
+    await w.findAll('[role="tab"]')[0].trigger('click')
+    await w.find('textarea').setValue('Find my documents')
+    await w.find('form').trigger('submit')
+    await vi.waitFor(() => expect(w.text()).toContain('Show next 8 documents'))
+    const next = w.findAll('button').find(b => b.text().includes('Show next'))
+    await next.trigger('click')
+    await vi.waitFor(() => expect(api.authenticatedFetch.mock.calls.filter(c => c[0] === '/api/ai/assist')).toHaveLength(2))
+    const [, params] = api.authenticatedFetch.mock.calls.filter(c => c[0] === '/api/ai/assist')[1]
+    expect(JSON.parse(params.body)).toMatchObject({ mode: 'workspace', query: 'Show more documents', documentSearch: previous })
+    expect(api.authenticatedFetch.mock.calls.filter(c => c[0] === '/api/ai/research')).toHaveLength(0)
+  })
+
   it('still sends deliberate research about appointment reminders to Research', async () => {
     api.authenticatedFetch.mockImplementation(async url => {
       if (url === '/api/ai/research') return ok({ answer: 'Published evidence about reminders.', references: [] })

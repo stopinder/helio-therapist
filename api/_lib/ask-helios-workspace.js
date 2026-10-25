@@ -1,5 +1,6 @@
 // Read-only workspace retrieval. No service-role database client and no OpenAI
 // call receives client or practice records.
+import { isDocumentDiscoveryQuery, parseDocumentSearch, listWorkspaceDocuments } from './ask-helios-documents.js';
 const LIMIT = 8;
 const safe = (value, max = 220) => String(value ?? '').replace(/\s+/g, ' ').trim().slice(0, max);
 const source = (title, url) => ({ title: safe(title, 110), url, citation: 'Open in Helios' });
@@ -132,7 +133,12 @@ async function clientBrief(db, uid, clientId) {
   };
 }
 
-export async function answerWorkspaceQuestion({ supabase, userId, query, clientId = null, now = new Date() }) {
+export async function answerWorkspaceQuestion({ supabase, userId, query, clientId = null, documentSearch = null, now = new Date() }) {
+  // Search follow-ups are contextual. Reuse validated document filters without
+  // loading any document body or involving a language model.
+  if (isDocumentDiscoveryQuery(query, documentSearch)) {
+    return listWorkspaceDocuments({ supabase, userId, search: parseDocumentSearch(query, documentSearch) });
+  }
   const intent = classifyWorkspaceRequest(query, clientId);
   if (intent === 'propose_reminder') {
     const action = parseReminderProposal(query);

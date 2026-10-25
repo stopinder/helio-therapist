@@ -77,14 +77,16 @@ export default async function handler(req, res) {
       }
     }
 
-    let answer, references = [], proposedAction = null;
+    let answer, references = [], proposedAction = null, documentSearch = null;
     if (mode === 'workspace') {
       const result = await answerWorkspaceQuestion({
-        supabase: db, userId: user.id, query, clientId
+        supabase: db, userId: user.id, query, clientId,
+        documentSearch: req.body?.documentSearch
       });
       answer = result.answer;
       references = result.references;
       proposedAction = result.proposedAction;
+      documentSearch = result.documentSearch || null;
     } else {
       // The established Ask Helios quota feature covers all AI-generating Ask
       // Helios modes for now. The promptVersion distinguishes Reflect usage.
@@ -114,7 +116,7 @@ export default async function handler(req, res) {
     }
     return res.status(200).json({
       success: true, mode, answer, references, conversationId: activeId,
-      saved, proposedAction,
+      saved, proposedAction, documentSearch,
       ...(saved ? {} : { warning: 'Answer displayed but conversation could not be saved. Copy anything you wish to keep.' })
     });
   } catch (error) {

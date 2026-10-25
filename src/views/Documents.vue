@@ -93,7 +93,8 @@
 </template>
 
 <script setup>
-import { computed, onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { createUnscopedDocumentDraft, downloadDocument, listDocuments, saveDocumentDraft, uploadPracticeDocument } from '../lib/documents.js'
 import { DOCUMENT_TEMPLATES, getDocumentTemplate, templateBody } from '../lib/documentTemplates.js'
 import PracticeIdentityEditor from '../components/documents/PracticeIdentityEditor.vue'
@@ -102,6 +103,9 @@ import ResourceEditor from '../components/resources/ResourceEditor.vue'
 import RichDocumentEditor from '../components/documents/RichDocumentEditor.vue'
 import { authenticatedFetch } from '../lib/api.js'
 
+const route = useRoute()
+const router = useRouter()
+const linkedDocument = ref(null)
 const docs = ref([]), resources = ref([]), loading = ref(true), resourcesLoading = ref(false), resourceBusy = ref(''), resourceEditorOpen = ref(false), editingResource = ref(null), error = ref(''), composerOpen = ref(false), current = ref(null), busy = ref(false), uploading = ref(false), modalError = ref(''), saveMessage = ref('Not saved yet'), baseline = ref('')
 const profile = ref({ fullName: '', practiceName: '', professionalTitle: '', email: '', phone: '', website: '', address: '', footer: '' })
 const templates = DOCUMENT_TEMPLATES
@@ -125,6 +129,7 @@ async function refresh() {
     if (!resourceResponse.ok) throw new Error(resourceData.error || 'Could not load practice resources.')
     docs.value = documentData
     resources.value = resourceData.resources || []
+    openLinkedDocument()
   } catch (e) {
     error.value = e.message || 'Could not load practice library.'
   } finally {
@@ -132,6 +137,33 @@ async function refresh() {
     resourcesLoading.value = false
   }
 }
+
+// Deep links from Ask Helios open the *actual* owned document. We use the
+// existing authenticated document list (RLS-filtered); no record identifier
+// alone authorises access.
+function openLinkedDocument() {
+  const id = typeof route.query.open === 'string' ? route.query.open : null
+  if (!id || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) return
+  const document = docs.value.find(item => item.id === id)
+  if (!document) {
+    error.value = 'This document could not be found in your library.'
+    return
+  }
+  linkedDocument.value = document
+  // Editable practice/prospect drafts open directly in the existing composer.
+  // For client-linked documents we navigate to the owning Client Workspace.
+  if (document.clientId) {
+    router.push('/clients/' + encodeURIComponent(document.clientId))
+    return
+  } else if (document.storagePath) {
+    download(document)
+  } else {
+    edit(document)
+  }
+  // The identifier is no longer needed after the target is resolved.
+  router.replace({ path: '/documents', query: {} })
+}
+watch(() => route.query.open, id => { if (id && !loading.value) openLinkedDocument() })
 
 function openResourceEditor(resource) {
   editingResource.value = resource
