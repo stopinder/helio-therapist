@@ -11,6 +11,7 @@ const BUDGET_ERRORS = {
   FREE_AI_MONTHLY_LIMIT: [429, 'Your five Free AI actions for this month are used. Upgrade to Professional for more AI processing.'],
   FREE_AI_GLOBAL_LIMIT: [503, 'Free AI is temporarily at capacity. Your workspace remains available; Professional AI is unaffected.'],
   FREE_AI_INPUT_TOO_LARGE: [413, 'This request is too long for the Free AI allowance. Shorten the text or upgrade to Professional.'],
+  AI_FEATURE_NOT_ALLOWED: [403, 'This AI feature is not included in your current allowance.'],
   DICTATION_DAILY_LIMIT_EXCEEDED: [429, "You've reached today's free dictation allowance. Dictation will be available again tomorrow."],
   DICTATION_RATE_LIMIT_EXCEEDED: [429, 'Please wait a few minutes before starting another dictation.']
 };

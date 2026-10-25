@@ -73,7 +73,7 @@ test('Oversize requests, missing RPC and malformed data fail closed', async () =
 });
 
 test('all text AI provider calls reserve before OpenAI, clamp Free model and tokens', () => {
-  const reservePos = aiEngine.indexOf('const usedFreeCredits = await reserveAiBudget');
+  const reservePos = aiEngine.indexOf('usedFreeCredits = await reserveAiBudget');
   const providerPos = aiEngine.indexOf('await openai.chat.completions.create');
   assert.ok(reservePos >= 0 && providerPos > reservePos);
   assert.match(aiEngine, /isFree \? FREE_AI_TEXT_MODEL : getTextModel\(feature\)/);
