@@ -19,7 +19,13 @@ test('high-confidence practice-management questions do not use literature resear
     'Open my documents',
     'Remind me to write my CPD reflection',
     'Prepare for my next session',
-    'What reminders are on my list?'
+    'What reminders are on my list?',
+    'Find my consent forms and documents.',
+    'Find my signed consent form',
+    'Show me my intake paperwork',
+    'Where are my client documents?',
+    'Find my clinical assessment templates',
+    'Show my consent agreements'
   ];
   for (const question of questions) {
     assert.equal(isClearlyWorkspaceQuestion(question), true, question);
@@ -33,7 +39,9 @@ test('research questions retain the explicitly selected Research mode', () => {
     'What evidence supports exposure and response prevention?',
     'What research addresses ADHD treatment?',
     'What does the literature say about appointment reminders?',
-    'Find studies on therapist burnout and session preparation'
+    'Find studies on therapist burnout and session preparation',
+    'What does research say about informed consent forms in psychotherapy?',
+    'Find papers about clinical consent forms and privacy'
   ];
   for (const query of questions) {
     assert.equal(isClearlyWorkspaceQuestion(query), false, query);

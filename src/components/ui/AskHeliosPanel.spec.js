@@ -76,6 +76,23 @@ describe('AskHeliosPanel', () => {
     expect(api.authenticatedFetch.mock.calls.filter(call => call[0] === '/api/ai/research')).toHaveLength(0)
   })
 
+  it('routes a consent-form document search to Workspace from Research mode', async () => {
+    api.authenticatedFetch.mockImplementation(async url => {
+      if (url === '/api/ai/assist') return ok({ mode: 'workspace', answer: 'Recently updated documents matching consent', references: [] })
+      return ok({ conversations: [], clients: [] })
+    })
+    const w = mount(AskHeliosPanel)
+    expect(ask.mode.value).toBe('research')
+    await w.find('textarea').setValue('Find my consent forms and documents.')
+    await w.find('form').trigger('submit')
+    await vi.waitFor(() => expect(ask.messages.value).toHaveLength(2))
+    expect(ask.mode.value).toBe('workspace')
+    expect(ask.messages.value[1].content).toContain('Recently updated documents matching consent')
+    expect(api.authenticatedFetch.mock.calls.filter(c => c[0] === '/api/ai/research')).toHaveLength(0)
+    const [, options] = api.authenticatedFetch.mock.calls.find(c => c[0] === '/api/ai/assist')
+    expect(JSON.parse(options.body)).toMatchObject({ mode: 'workspace', query: 'Find my consent forms and documents.' })
+  })
+
   it('still sends deliberate research about appointment reminders to Research', async () => {
     api.authenticatedFetch.mockImplementation(async url => {
       if (url === '/api/ai/research') return ok({ answer: 'Published evidence about reminders.', references: [] })

@@ -9,6 +9,10 @@ const workspacePatterns = [
   /\bwhat\s+(?:do|should)\s+i\s+(?:need\s+to|have\s+to|do)\s+(?:do\s+)?(?:today|tomorrow|this\s+week)\b/i,
   /\bwhat\s+(?:needs?|requires?)\s+attention\s+(?:today|tomorrow|this\s+week)\b/i,
   /\b(?:show|list|find|locate|open|check|review)\s+(?:me\s+)?(?:my|the)\s+(?:upcoming\s+)?(?:appointments?|calendar|schedule|clients?|documents?|files?|reminders?|tasks?|sessions?|notes?|unfinished\s+sessions?)\b/i,
+  // A modifier can occur between "my" and the requested record. Examples:
+  // "Find my consent forms and documents"; "Where are my client files?".
+  /\b(?:show|list|find|locate|open|check|review|where\s+(?:are|can\s+i\s+find))\s+(?:me\s+)?(?:my|the|our)\s+(?:(?:client|clinical|practice|signed|blank|completed|draft|intake|therapy|consent|informed\s+consent|assessment|agreement|confidentiality|treatment|registration|disclosure|session)\s+){0,3}(?:forms?|documents?|files?|templates?|paperwork|agreements?|notes?|records?)\b/i,
+  /\b(?:consent|informed\s+consent|confidentiality|intake|assessment)\s+(?:forms?|documents?|paperwork|templates?|agreements?)\b/i,
   /\b(?:my|our)\s+(?:appointments?|calendar|schedule|reminders?|clients?|documents?|sessions?)\b/i,
   /\b(?:what|which)\s+(?:of\s+my\s+)?(?:reminders?|appointments?|tasks?)\s+(?:are|do\s+i\s+have)\b/i,
   /\b(?:unfinished|incomplete|outstanding|overdue)\s+(?:sessions?|notes?|documents?|tasks?|reminders?|appointments?)\b/i,
