@@ -3,6 +3,7 @@ import { AI_FEATURES, runTextAI } from '../_lib/ai-execution.js';
 import { buildResearchAssistantPrompt, RESEARCH_ASSISTANT_PROMPT_VERSION, parseResearchResponse, validateAndFormatReferences } from '../_lib/ai-research.js';
 import { searchResearch } from '../_lib/research-retrieval.js';
 import { generateResearchQueries, selectResearchEvidence } from '../_lib/research-queries.js';
+import { isClearlyWorkspaceQuestion } from '../../src/lib/askHeliosIntent.js';
 
 // Multiple targeted searches are fault-tolerant: keep useful results even if
 // a separate query fails. Never treat total provider outage as no evidence.
@@ -37,6 +38,18 @@ export default async function handler(req, res) {
 
     if (!query) {
       return res.status(400).json({ success: false, error: { code: 'QUERY_REQUIRED', message: 'Please provide a research question.' } });
+    }
+
+    // Defence in depth: even direct or stale clients may not turn a clear
+    // practice-management question into an external research query or AI charge.
+    if (isClearlyWorkspaceQuestion(query)) {
+      return res.status(409).json({
+        success: false, suggestedMode: 'workspace',
+        error: {
+          code: 'WORKSPACE_QUESTION',
+          message: 'This is a Workspace question. Open Workspace to review your practice records.'
+        }
+      });
     }
 
     // 1. Genuine research retrieval - Deterministic query generation (No AI call)
