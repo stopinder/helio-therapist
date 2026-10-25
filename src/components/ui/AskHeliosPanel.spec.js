@@ -114,8 +114,51 @@ describe('AskHeliosPanel', () => {
     await next.trigger('click')
     await vi.waitFor(() => expect(api.authenticatedFetch.mock.calls.filter(c => c[0] === '/api/ai/assist')).toHaveLength(2))
     const [, params] = api.authenticatedFetch.mock.calls.filter(c => c[0] === '/api/ai/assist')[1]
-    expect(JSON.parse(params.body)).toMatchObject({ mode: 'workspace', query: 'Show more documents', documentSearch: previous })
+    expect(JSON.parse(params.body)).toMatchObject({ mode: 'workspace', query: 'Show more documents' })
+    expect(JSON.parse(params.body)).not.toHaveProperty('documentSearch')
     expect(api.authenticatedFetch.mock.calls.filter(c => c[0] === '/api/ai/research')).toHaveLength(0)
+  })
+
+  it('reopened Workspace conversations use their persisted identity for follow-up searches', async () => {
+    const id = 'aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa'
+    api.authenticatedFetch.mockImplementation(async url => {
+      if (url === '/api/ai/conversations?id=' + id) return ok({
+        conversation: { title: '[Workspace] Find my documents', id },
+        messages: [
+          { role: 'user', content: 'Find my documents' },
+          { role: 'assistant', content: 'Showing 1–8 of 19 matching documents', citation_metadata: [] }
+        ]
+      })
+      if (url === '/api/ai/assist') return ok({
+        answer: 'Showing 9–16 of 19 matching documents.', mode: 'workspace', conversationId: id
+      })
+      return ok({ conversations: [], clients: [] })
+    })
+    await ask.selectConversation(id)
+    expect(ask.mode.value).toBe('workspace')
+    const w = mount(AskHeliosPanel)
+    await w.find('textarea').setValue('Show more documents')
+    await w.find('form').trigger('submit')
+    await vi.waitFor(() => expect(ask.messages.value.at(-1)?.content).toContain('Showing 9'))
+    const [, params] = api.authenticatedFetch.mock.calls.find(c => c[0] === '/api/ai/assist')
+    const body = JSON.parse(params.body)
+    expect(body).toMatchObject({ mode: 'workspace', conversationId: id, query: 'Show more documents' })
+    expect(body).not.toHaveProperty('documentSearch')
+  })
+
+  it('clearly announces the transition from Workspace to published research', async () => {
+    api.authenticatedFetch.mockImplementation(async url => {
+      if (url === '/api/ai/research') return ok({ answer: 'Evidence summary', references: [] })
+      return ok({ conversations: [], clients: [] })
+    })
+    const w = mount(AskHeliosPanel)
+    await w.findAll('[role="tab"]')[0].trigger('click')
+    await w.find('textarea').setValue('What does the research say about therapist appointment reminders?')
+    await w.find('form').trigger('submit')
+    await vi.waitFor(() => expect(ask.messages.value).toHaveLength(2))
+    expect(ask.mode.value).toBe('research')
+    expect(w.find('[role="status"]').text()).toContain('Switched to Research')
+    expect(api.authenticatedFetch.mock.calls.some(c => c[0] === '/api/ai/assist')).toBe(false)
   })
 
   it('still sends deliberate research about appointment reminders to Research', async () => {

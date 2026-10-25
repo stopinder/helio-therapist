@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { isClearlyWorkspaceQuestion, resolveAskHeliosMode } from '../src/lib/askHeliosIntent.js';
+import { isClearlyWorkspaceQuestion, resolveAskHeliosMode, decideAskHeliosRoute } from '../src/lib/askHeliosIntent.js';
 
 test('the reported weekly-attention question always resolves to Workspace', () => {
   for (const selected of ['research', 'reflect', 'workspace', null]) {
@@ -54,6 +54,17 @@ test('Reflect remains available for genuinely reflective questions', () => {
   assert.equal(resolveAskHeliosMode('What would I like to learn from this?', 'reflect'), 'reflect');
 });
 
+test('explicit literature intent overrides Workspace and contextual document follow-ups keep their task', () => {
+  assert.deepEqual(decideAskHeliosRoute('What does the research say about consent forms?', 'workspace'), {
+    mode: 'research', reason: 'explicit-literature-intent', confidence: 'high'
+  });
+  assert.deepEqual(decideAskHeliosRoute('Open the first one', 'research', { lastWorkspaceTask: 'documents' }), {
+    mode: 'workspace', reason: 'document-follow-up', confidence: 'high'
+  });
+  assert.deepEqual(decideAskHeliosRoute('Hello there', 'workspace'), {
+    mode: 'workspace', reason: 'selected-mode', confidence: 'low'
+  });
+});
 test('unknown input and unspecified mode fail safely to Workspace', () => {
   assert.equal(isClearlyWorkspaceQuestion(null), false);
   assert.equal(isClearlyWorkspaceQuestion({ query: 'What needs my attention?' }), false);

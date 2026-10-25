@@ -1,6 +1,7 @@
 import { requireAuthenticatedUser, getSupabaseUserClient } from '../_lib/supabase.js';
 import { AI_FEATURES, runTextAI } from '../_lib/ai-execution.js';
 import { answerWorkspaceQuestion } from '../_lib/ask-helios-workspace.js';
+import { loadOwnedWorkspaceContext } from '../_lib/ask-helios-context.js';
 
 const MODES = Object.freeze({ workspace: 'Workspace', reflect: 'Reflect' });
 const REFLECT_PROMPT_VERSION = 'ask-helios-reflect/1.0.0';
@@ -61,7 +62,7 @@ export default async function handler(req, res) {
     const mode = req.body?.mode;
     const query = typeof req.body?.query === 'string' ? req.body.query.trim() : '';
     const clientId = req.body?.clientId || null;
-    const conversationId = req.body?.conversationId || null;
+    const conversationId = typeof req.body?.conversationId === 'string' ? req.body.conversationId : null;
     if (!Object.hasOwn(MODES, mode) || !query || query.length > 1200) {
       return res.status(400).json({
         success: false, error: { message: 'Choose a supported mode and provide a question of up to 1,200 characters.' }
@@ -77,11 +78,17 @@ export default async function handler(req, res) {
       }
     }
 
+    // Recover task state from owned server-side history, not caller-provided
+    // documentSearch. This survives refresh and prevents forged client filters.
+    let priorWorkspaceContext = null;
+    if (mode === 'workspace' && conversationId) {
+      priorWorkspaceContext = await loadOwnedWorkspaceContext(db, user.id, conversationId);
+    }
     let answer, references = [], proposedAction = null, documentSearch = null;
     if (mode === 'workspace') {
       const result = await answerWorkspaceQuestion({
         supabase: db, userId: user.id, query, clientId,
-        documentSearch: req.body?.documentSearch
+        documentSearch: priorWorkspaceContext
       });
       answer = result.answer;
       references = result.references;
@@ -122,7 +129,8 @@ export default async function handler(req, res) {
   } catch (error) {
     const status = [400, 401, 404, 409, 413, 429, 503].includes(error.status) ? error.status : 500;
     console.error('[Ask Helios Assist] request failed', error.code || status);
-    const message = status === 401 ? 'Please sign in again.'
+    const message = error.code === 'DOCUMENT_CONTEXT_REQUIRED' ? error.message
+      : status === 401 ? 'Please sign in again.'
       : status === 404 ? 'That client is not accessible in your workspace.'
       : status === 400 ? error.message
       : status === 503 ? 'Workspace information is temporarily unavailable.'
