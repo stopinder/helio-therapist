@@ -13,7 +13,7 @@ function getSupabaseHost() {
  * Throws an error if required variables are missing.
  */
 export function getSupabaseClient() {
-  const supabaseUrl = (process.env.SUPABASE_URL || '').trim();
+  const supabaseUrl = (process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '').trim();
   const supabaseServiceKey = (
     process.env.SUPABASE_SERVICE_ROLE_KEY ||
     process.env.SUPABASE_SECRET_KEY ||
@@ -39,8 +39,8 @@ export function getSupabaseClient() {
  * This ensures RLS is applied.
  */
 export function getSupabaseUserClient(req) {
-  const supabaseUrl = (process.env.SUPABASE_URL || '').trim();
-  const supabaseAnonKey = (process.env.SUPABASE_ANON_KEY || '').trim();
+  const supabaseUrl = (process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '').trim();
+  const supabaseAnonKey = (process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY || '').trim();
   const authorization = req.headers.authorization || '';
   const match = authorization.match(/^Bearer\s+(.+)$/i);
   const token = match ? match[1] : null;
