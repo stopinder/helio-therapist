@@ -17,8 +17,13 @@ const CONDITIONS = [
   { re: /\b(?:social[\s-]+anxiety|social[\s-]+phobia)\b/i, terms: ['"social anxiety disorder"', '"social phobia"'] },
   { re: /\b(?:panic[\s-]+disorder|panic[\s-]+attacks?)\b/i, terms: ['"panic disorder"'] },
   { re: /\b(?:borderline[\s-]+personality[\s-]+disorder|BPD)\b/i, terms: ['"borderline personality disorder"'] },
+  { re: /\b(?:schizophreni(?:a|c)|schizoaffective)\b/i, terms: ['schizophrenia', '"schizophrenia spectrum"'] },
   { re: /\b(?:insomnia|sleep[\s-]+disorder)\b/i, terms: ['insomnia', '"sleep disorder"'] },
   { re: /\b(?:anxiety[\s-]+disorders?|anxiety)\b/i, terms: ['anxiety'] }
+];
+const OUTCOMES = [
+  { re: /\\b(?:mortality|death rates?|premature deaths?|dying earlier|survival|life expectancy|lifespan|life span|years? of (?:life )?lost)\\b/i,
+    terms: ['mortality', '"standardized mortality ratio"', '"life expectancy"', '"years of potential life lost"'] }
 ];
 const REVIEW_REQUEST = /\b(?:systematic\s+reviews?|meta[\s-]?analys(?:is|es)|evidence\s+synthes(?:is|es)|umbrella\s+reviews?)\b/i;
 const REVIEW_RESULT = /\b(?:systematic\s+reviews?|meta[\s-]?analys(?:is|es)|network\s+meta[\s-]?analysis|umbrella\s+reviews?)\b/i;
@@ -48,6 +53,7 @@ export function generateResearchQueries(question, history = []) {
   const wantsReviews = REVIEW_REQUEST.test(text) || (!approaches.length && REVIEW_REQUEST.test(prior));
   const condition = conditions.length ? group(conditions[0].terms) : null;
   const review = wantsReviews ? group(['"systematic review"', '"meta-analysis"']) : null;
+  const outcome = matchGroups(text, OUTCOMES)[0] || (prior ? matchGroups(prior, OUTCOMES)[0] : null);
   let queries = [];
 
   if (approaches.length) {
@@ -58,6 +64,14 @@ export function generateResearchQueries(question, history = []) {
     }
     queries.push(...approaches.map(approach =>
       [group(approach.terms), condition, review].filter(Boolean).join(' AND ')));
+  } else if (conditions.length && outcome) {
+    // Outcome searches need scientific synonyms, not filler such as 'rates people diagnosed'.
+    // A broad condition+outcome query ensures we do not overconstrain the index.
+    queries = [
+      [condition, group(outcome.terms), review].filter(Boolean).join(' AND '),
+      [condition, 'mortality', review].filter(Boolean).join(' AND '),
+      [condition, '"life expectancy"', review].filter(Boolean).join(' AND ')
+    ];
   } else if (conditions.length) {
     const extras = fallbackTerms(text).filter(word => !conditions[0].re.test(word));
     queries = [[condition, extras.length ? extras.slice(0, 2).join(' ') : null, review].filter(Boolean).join(' AND ')];
@@ -94,7 +108,9 @@ export function selectResearchEvidence(results, question, maxResults = 6) {
     : valid;
   const approaches = matchGroups(String(question || ''), APPROACHES);
   const condition = matchGroups(String(question || ''), CONDITIONS)[0];
-  const ranked = pool.map((result, index) => ({ result, index, score: relevanceScore(result, approaches, condition) }))
+  const outcome = matchGroups(String(question || ''), OUTCOMES)[0];
+  const ranked = pool.map((result, index) => ({ result, index, score: relevanceScore(result, approaches, condition) +
+    (outcome && outcome.terms.some(term => (String(result.title || '') + ' ' + String(result.abstract || '')).toLowerCase().includes(term.replace(/"/g, '').toLowerCase())) ? 12 : 0) }))
     .sort((a, b) => b.score - a.score || a.index - b.index);
   if (approaches.length < 2) return ranked.slice(0, maxResults).map(item => item.result);
 
