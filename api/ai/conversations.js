@@ -1,8 +1,10 @@
-import { requireAuthenticatedUser } from '../_lib/supabase.js';
+import { requireAuthenticatedUser, getSupabaseUserClient } from '../_lib/supabase.js';
 
 export default async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
-  const { user, supabase } = await requireAuthenticatedUser(req);
+  try {
+    await requireAuthenticatedUser(req);
+    const supabase = getSupabaseUserClient(req);
 
   if (req.method === 'GET') {
     // List conversations or fetch one
@@ -45,4 +47,9 @@ export default async function handler(req, res) {
   }
 
   return res.status(405).json({ success: false, error: 'Method not allowed' });
+  } catch (error) {
+    console.error('[Ask Helios Conversations] request failed', error.code || error.message);
+    const status = error.status === 401 ? 401 : 500;
+    return res.status(status).json({ success: false, error: status === 401 ? 'Authentication required' : 'Unable to process research history request' });
+  }
 }
