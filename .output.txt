@@ -542,10 +542,12 @@ stderr | src/components/professional-development/__tests__/ProfessionalDevelopme
   at <Anonymous class="workspace-icon-lg" >
   at <ProfessionalDevelopmentTimeline reflections= [] ref="VTU_COMPONENT" >
   at <VTUROOT>
- ✓ src/components/professional-development/__tests__/ProfessionalDevelopmentTimeline.spec.js (4 tests) 185ms
-stdout | src/components/workspace/__tests__/ClientMeasuresPanel.spec.js
-[Supabase Diagnostics] { urlExists: true, urlValid: true, anonKeyExists: true }
+ ✓ src/components/professional-development/__tests__/ProfessionalDevelopmentTimeline.spec.js (4 tests) 134ms
 stdout | src/components/ui/AskHeliosPanel.spec.js
+[Supabase Diagnostics] { urlExists: true, urlValid: true, anonKeyExists: true }
+stdout | src/components/workspace/__tests__/ClientResourcesPanel.spec.js
+[Supabase Diagnostics] { urlExists: true, urlValid: true, anonKeyExists: true }
+stdout | src/components/workspace/__tests__/ClientMeasuresPanel.spec.js
 [Supabase Diagnostics] { urlExists: true, urlValid: true, anonKeyExists: true }
 stderr | src/views/supervision/__tests__/SupervisionReflections.spec.js > SupervisionReflections.spec.js > filters reflections based on search query
 [Vue warn]: Extraneous non-props attributes (class, aria-hidden) were passed to component but could not be automatically inherited because component renders fragment or text or teleport root nodes.
@@ -804,8 +806,10 @@ stderr | src/views/supervision/__tests__/SupervisionReflections.spec.js > Superv
   }
 ] themes= [ { name: 'All', count: 2 }, { name: 'Clinical', count: 1 } ] ref="VTU_COMPONENT" >
   at <VTUROOT>
-stdout | src/components/workspace/__tests__/ClientResourcesPanel.spec.js
-[Supabase Diagnostics] { urlExists: true, urlValid: true, anonKeyExists: true }
+stderr | src/components/ui/AskHeliosPanel.spec.js > AskHeliosPanel > renders correctly when open
+Failed to fetch conversations TypeError: Cannot read properties of undefined (reading 'json')
+    at fetchConversations (C:/Users/Rob/WebstormProjects/helio-therapist/src/composables/useAskHelios.js:44:31)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
 stderr | src/views/supervision/__tests__/SupervisionReflections.spec.js > SupervisionReflections.spec.js > filters reflections based on search query
 [Vue warn]: Extraneous non-props attributes (class, aria-hidden) were passed to component but could not be automatically inherited because component renders fragment or text or teleport root nodes.
   at <Anonymous class="workspace-icon text-accent" aria-hidden="true" >
@@ -1648,25 +1652,19 @@ stderr | src/views/supervision/__tests__/SupervisionReflections.spec.js > Superv
   }
 ] themes= [ { name: 'All', count: 2 } ] ref="VTU_COMPONENT" >
   at <VTUROOT>
- ✓ src/views/supervision/__tests__/SupervisionReflections.spec.js (3 tests) 354ms
-stderr | src/components/ui/AskHeliosPanel.spec.js > AskHeliosPanel > renders correctly when open
-Failed to fetch conversations TypeError: Cannot read properties of undefined (reading 'json')
-    at fetchConversations (C:/Users/Rob/WebstormProjects/helio-therapist/src/composables/useAskHelios.js:44:31)
-    at processTicksAndRejections (node:internal/process/task_queues:105:5)
- ✓ src/views/__tests__/CalendarLocation.spec.js (4 tests) 521ms
- ✓ src/views/__tests__/CalendarToday.spec.js (4 tests) 577ms
- ✓ src/views/__tests__/OverviewZoomNotes.spec.js (5 tests) 253ms
- ✓ src/components/ui/AskHeliosPanel.spec.js (4 tests) 338ms
- ✓ src/views/__tests__/CalendarWorkspace.spec.js (5 tests) 813ms
- ✓ src/components/workspace/__tests__/ClientMeasuresPanel.spec.js (8 tests) 273ms
- ✓ src/components/workspace/__tests__/ClientResourcesPanel.spec.js (8 tests) 372ms
- ✓ src/components/help/HelpBrowser.spec.js (6 tests) 590ms
- ✓ src/components/workspace/__tests__/ClientDocumentComposer.spec.js (5 tests) 987ms
-   ✓ ClientDocumentComposer (5)
-     ✓ renders loading state initially 361ms
+ ✓ src/views/__tests__/CalendarLocation.spec.js (4 tests) 380ms
+ ✓ src/views/supervision/__tests__/SupervisionReflections.spec.js (3 tests) 267ms
+ ✓ src/views/__tests__/CalendarToday.spec.js (4 tests) 432ms
+ ✓ src/views/__tests__/OverviewZoomNotes.spec.js (5 tests) 263ms
+ ✓ src/components/ui/AskHeliosPanel.spec.js (4 tests) 364ms
+ ✓ src/views/__tests__/CalendarWorkspace.spec.js (5 tests) 648ms
+ ✓ src/components/workspace/__tests__/ClientMeasuresPanel.spec.js (8 tests) 224ms
+ ✓ src/components/workspace/__tests__/ClientResourcesPanel.spec.js (8 tests) 228ms
+ ✓ src/components/help/HelpBrowser.spec.js (6 tests) 351ms
+ ✓ src/components/workspace/__tests__/ClientDocumentComposer.spec.js (5 tests) 397ms
 stdout | src/components/workspace/__tests__/ClientDocumentsPanel.spec.js
 [Supabase Diagnostics] { urlExists: true, urlValid: true, anonKeyExists: true }
- ✓ src/components/workspace/__tests__/ClientDocumentsPanel.spec.js (5 tests) 103ms
+ ✓ src/components/workspace/__tests__/ClientDocumentsPanel.spec.js (5 tests) 104ms
 stderr | src/__tests__/AuthGateBilling.spec.js > new-account billing gate > shows a neutral access check while billing status is unresolved
 [Vue warn]: Failed to resolve component: router-view
 If this is a native custom element, make sure to exclude it from component resolution via compilerOptions.isCustomElement.
@@ -1775,13 +1773,13 @@ If this is a native custom element, make sure to exclude it from component resol
 If this is a native custom element, make sure to exclude it from component resolution via compilerOptions.isCustomElement.
   at <AuthGate ref="VTU_COMPONENT" >
   at <VTUROOT>
- ✓ src/__tests__/AuthGateBilling.spec.js (4 tests) 90ms
- ✓ src/components/workspace/__tests__/ClientWorkspaceHeader.spec.js (4 tests) 48ms
- ✓ src/components/workspace/__tests__/ClinicalSummaryWorkingMaterial.spec.js (2 tests) 62ms
+ ✓ src/__tests__/AuthGateBilling.spec.js (4 tests) 93ms
+ ✓ src/components/workspace/__tests__/ClientWorkspaceHeader.spec.js (4 tests) 51ms
+ ✓ src/components/workspace/__tests__/ClinicalSummaryWorkingMaterial.spec.js (2 tests) 57ms
  Test Files  15 passed (15)
       Tests  71 passed (71)
-   Start at  10:41:02
-   Duration  7.82s (environment 51%, transform 28%, import 12%, tests 9%, worker 1%)
-Environment  happy-dom was created 15 times · 31.73s total, 51% of tracked time
+   Start at  11:31:31
+   Duration  5.73s (environment 49%, transform 28%, import 14%, tests 8%, worker 1%)
+Environment  happy-dom was created 15 times · 22.91s total, 49% of tracked time
              create it once per worker with pool: 'vmThreads' (keeps per-file isolation) or isolate: false (shares it across files)
              learn more: https://vitest.dev/guide/improving-performance#test-environments

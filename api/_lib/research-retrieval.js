@@ -1,5 +1,6 @@
 const PUBMED_API_BASE = 'https://eutils.ncbi.nlm.nih.gov/entrez/eutils';
 const EUROPE_PMC_API_BASE = 'https://www.ebi.ac.uk/europepmc/webservices/rest';
+const DEFAULT_TIMEOUT = 8000;
 
 /**
  * Normalizes research metadata from PubMed and Europe PMC.
@@ -36,24 +37,40 @@ function normalizeResult(source, raw) {
   }
 }
 
+async function fetchWithTimeout(url, timeout = DEFAULT_TIMEOUT) {
+  const controller = new AbortController();
+  const id = setTimeout(() => controller.abort(), timeout);
+  try {
+    const response = await fetch(url, { signal: controller.signal });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    return await response.json();
+  } finally {
+    clearTimeout(id);
+  }
+}
+
 export async function searchResearch(query) {
   try {
-    const [pubmedIds, epcmcResults] = await Promise.all([
-      fetchPubMedIds(query),
+    const [pubmedSettled, epcmcSettled] = await Promise.allSettled([
+      fetchPubMed(query),
       fetchEuropePMC(query)
     ]);
 
-    const pubmedDetails = pubmedIds.length > 0 ? await fetchPubMedDetails(pubmedIds) : [];
-    
+    const pubmedResults = pubmedSettled.status === 'fulfilled' ? pubmedSettled.value : [];
+    const epcmcResults = epcmcSettled.status === 'fulfilled' ? (epcmcSettled.value.resultList?.result || []) : [];
+
+    if (pubmedSettled.status === 'rejected') console.error('[Research Retrieval] PubMed failed:', pubmedSettled.reason?.message);
+    if (epcmcSettled.status === 'rejected') console.error('[Research Retrieval] Europe PMC failed:', epcmcSettled.reason?.message);
+
     const allResults = [
-      ...pubmedDetails.map(r => normalizeResult('pubmed', r)),
-      ...(epcmcResults.resultList?.result || []).map(r => normalizeResult('europepmc', r))
+      ...pubmedResults.map(r => normalizeResult('pubmed', r)),
+      ...epcmcResults.map(r => normalizeResult('europepmc', r))
     ];
 
     // Deduplicate by DOI or PMID/PMCID
     const seen = new Set();
     const unique = allResults.filter(r => {
-      const key = r.doi || r.pmid || r.pmcid || r.title.toLowerCase();
+      const key = (r.doi || r.pmid || r.pmcid || r.title.toLowerCase()).toString();
       if (seen.has(key)) return false;
       seen.add(key);
       return true;
@@ -61,28 +78,61 @@ export async function searchResearch(query) {
 
     return unique.slice(0, 10); // Return top 10 relevant results
   } catch (error) {
-    console.error('[Research Retrieval] Failed', error.message);
+    console.error('[Research Retrieval] Critical failure:', error.message);
     return [];
   }
 }
 
-async function fetchPubMedIds(query) {
-  const url = `${PUBMED_API_BASE}/esearch.fcgi?db=pubmed&term=${encodeURIComponent(query)}&retmode=json&retmax=5`;
-  const resp = await fetch(url);
-  const data = await resp.json();
-  return data.esearchresult?.idlist || [];
-}
+async function fetchPubMed(query) {
+  // 1. Search for IDs
+  const searchUrl = `${PUBMED_API_BASE}/esearch.fcgi?db=pubmed&term=${encodeURIComponent(query)}&retmode=json&retmax=5`;
+  const searchData = await fetchWithTimeout(searchUrl);
+  const ids = searchData.esearchresult?.idlist || [];
+  if (ids.length === 0) return [];
 
-async function fetchPubMedDetails(ids) {
-  const url = `${PUBMED_API_BASE}/esummary.fcgi?db=pubmed&id=${ids.join(',')}&retmode=json`;
-  const resp = await fetch(url);
-  const data = await resp.json();
-  const results = data.result || {};
-  return ids.map(id => results[id]).filter(Boolean);
+  // 2. Fetch Summaries & Abstracts
+  // Using esummary first for basic metadata
+  const summaryUrl = `${PUBMED_API_BASE}/esummary.fcgi?db=pubmed&id=${ids.join(',')}&retmode=json`;
+  const summaryData = await fetchWithTimeout(summaryUrl);
+  const summaryResults = summaryData.result || {};
+  
+  // PubMed abstracts are notoriously hard to get via JSON API. 
+  // We'll use efetch with retmode=xml and a simple regex to extract the abstract text.
+  const fetchUrl = `${PUBMED_API_BASE}/efetch.fcgi?db=pubmed&id=${ids.join(',')}&retmode=xml&rettype=abstract`;
+  const controller = new AbortController();
+  const id = setTimeout(() => controller.abort(), DEFAULT_TIMEOUT);
+  let abstractMap = {};
+  try {
+    const resp = await fetch(fetchUrl, { signal: controller.signal });
+    if (resp.ok) {
+      const xml = await resp.text();
+      // Simple regex to extract PMID and AbstractText
+      const articles = xml.split('<PubmedArticle>');
+      for (const article of articles) {
+        const pmidMatch = article.match(/<PMID[^>]*>(\d+)<\/PMID>/);
+        const abstractMatch = article.match(/<AbstractText[^>]*>(.*?)<\/AbstractText>/s);
+        if (pmidMatch && abstractMatch) {
+          abstractMap[pmidMatch[1]] = abstractMatch[1].replace(/<[^>]*>/g, '').trim();
+        }
+      }
+    }
+  } catch (e) {
+    console.warn('[Research Retrieval] PubMed abstract fetch failed', e.message);
+  } finally {
+    clearTimeout(id);
+  }
+
+  return ids.map(id => {
+    const res = summaryResults[id];
+    if (res) {
+      res.abstract = abstractMap[id] || null;
+    }
+    return res;
+  }).filter(Boolean);
 }
 
 async function fetchEuropePMC(query) {
-  const url = `${EUROPE_PMC_API_BASE}/search?query=${encodeURIComponent(query + ' AND (HAS_ABSTRACT:y)')}&format=json&pageSize=5`;
-  const resp = await fetch(url);
-  return await resp.json();
+  // Use resultType=core to get abstracts
+  const url = `${EUROPE_PMC_API_BASE}/search?query=${encodeURIComponent(query)}&format=json&pageSize=5&resultType=core`;
+  return await fetchWithTimeout(url);
 }

@@ -3,6 +3,45 @@ import { AI_FEATURES, runTextAI } from '../_lib/ai-execution.js';
 import { buildResearchAssistantPrompt, RESEARCH_ASSISTANT_PROMPT_VERSION, parseResearchResponse, validateAndFormatReferences } from '../_lib/ai-research.js';
 import { searchResearch } from '../_lib/research-retrieval.js';
 
+async function generateResearchQueries(query, history, userId) {
+  try {
+    const { completion } = await runTextAI({
+      feature: AI_FEATURES.ASK_HELIOS_RESEARCH,
+      userId,
+      promptVersion: 'query-gen-1.0.0',
+      messages: [
+        { 
+          role: 'system', 
+          content: 'You are a research query generator. Extract 2-3 specific, targeted search queries for PubMed/Europe PMC from the user\'s question. Focus on clinical concepts, therapies, and conditions. Use Boolean operators if helpful. Output a JSON array of strings.' 
+        },
+        { role: 'user', content: `Question: ${query}\nHistory: ${JSON.stringify(history.slice(-2))}` }
+      ],
+      responseFormat: { type: 'json_object' },
+      temperature: 0,
+      maxTokens: 200
+    });
+    const parsed = JSON.parse(completion.choices?.[0]?.message?.content || '{}');
+    const queries = Array.isArray(parsed.queries) ? parsed.queries : [query];
+    return queries.slice(0, 3);
+  } catch (e) {
+    console.error('[Query Gen] failed', e.message);
+    return [query];
+  }
+}
+
+async function performMultiQuerySearch(queries) {
+  const allResults = await Promise.all(queries.map(q => searchResearch(q)));
+  const flat = allResults.flat();
+  
+  const seen = new Set();
+  return flat.filter(r => {
+    const key = (r.doi || r.pmid || r.pmcid || r.title.toLowerCase()).toString();
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  }).slice(0, 15);
+}
+
 export default async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
   if (req.method !== 'POST') return res.status(405).json({ success: false, error: { code: 'METHOD_NOT_ALLOWED', message: 'Method not allowed' } });
@@ -19,7 +58,17 @@ export default async function handler(req, res) {
     }
 
     // 1. Genuine research retrieval
-    const researchContext = await searchResearch(query);
+    const researchQueries = await generateResearchQueries(query, history, user.id);
+    const researchContext = await performMultiQuerySearch(researchQueries);
+
+    if (researchContext.length === 0) {
+      return res.status(200).json({
+        success: true,
+        answer: "I couldn't find any specific clinical research in PubMed or Europe PMC that directly addresses your question. This may indicate an evidence gap in the current literature. Would you like to try rephrasing your search?",
+        references: [],
+        promptVersion: RESEARCH_ASSISTANT_PROMPT_VERSION
+      });
+    }
 
     const prompt = buildResearchAssistantPrompt({ query, history, researchContext });
 
@@ -67,7 +116,11 @@ export default async function handler(req, res) {
           citation_metadata: finalResult.references 
         }
       ]);
-    if (msgErr) throw msgErr;
+    if (msgErr) {
+      // If we failed to save to DB, don't throw as we've already consumed the AI credit.
+      // Just return the result to the user.
+      console.error('[Ask Helios Research] DB persistence failed', msgErr.message);
+    }
 
     return res.status(200).json({
       success: true,
