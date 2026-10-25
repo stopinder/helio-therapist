@@ -12,7 +12,7 @@ export function normalizeResult(source, raw) {
       title: raw.title,
       authors: (raw.authors || []).map(a => a.name).join(', '),
       journal: raw.fulljournalname || raw.source,
-      year: raw.pubdate?.match(/\\b(?:19|20)\\d{2}\\b/)?.[0] || 'Year not supplied',
+      year: raw.pubdate?.match(/\b(?:19|20)\d{2}\b/)?.[0] || 'Year not supplied',
       publicationTypes: Array.isArray(raw.pubtype) ? raw.pubtype : [],
       doi: raw.elocationid?.startsWith('doi:') ? raw.elocationid.replace('doi: ', '') : null,
       pmid: raw.uid,
