@@ -12,7 +12,8 @@ export function normalizeResult(source, raw) {
       title: raw.title,
       authors: (raw.authors || []).map(a => a.name).join(', '),
       journal: raw.fulljournalname || raw.source,
-      year: raw.pubdate ? new Date(raw.pubdate).getFullYear() : null,
+      year: raw.pubdate?.match(/\\b(?:19|20)\\d{2}\\b/)?.[0] || 'Year not supplied',
+      publicationTypes: Array.isArray(raw.pubtype) ? raw.pubtype : [],
       doi: raw.elocationid?.startsWith('doi:') ? raw.elocationid.replace('doi: ', '') : null,
       pmid: raw.uid,
       pmcid: raw.articleids?.find(id => id.idtype === 'pmc')?.value,
@@ -27,6 +28,11 @@ export function normalizeResult(source, raw) {
       authors: raw.authorString,
       journal: raw.journalTitle || raw.journalInfo?.journal?.title || 'Journal not supplied',
       year: raw.pubYear || raw.firstPublicationDate?.slice(0, 4) || 'Year not supplied',
+      publicationTypes: Array.isArray(raw.pubTypeList?.pubType)
+        ? raw.pubTypeList.pubType
+        : raw.pubTypeList?.pubType
+          ? [raw.pubTypeList.pubType]
+          : [],
       doi: raw.doi,
       pmid: raw.pmid,
       pmcid: raw.pmcid,
@@ -83,16 +89,17 @@ export async function searchResearch(query) {
       ...epcmcResults.map(r => normalizeResult('europepmc', r))
     ];
 
-    // Deduplicate by DOI or PMID/PMCID
-    const seen = new Set();
-    const unique = allResults.filter(r => {
-      const key = (r.doi || r.pmid || r.pmcid || r.title.toLowerCase()).toString();
-      if (seen.has(key)) return false;
-      seen.add(key);
-      return true;
-    });
-
-    return unique.slice(0, 10); // Return top 10 relevant results
+    // Prefer a version with an actual abstract when both indexes hold a paper.
+    const byPublication = new Map();
+    for (const result of allResults.filter(r => r?.title)) {
+      const key = result.pmid ? `pmid:${result.pmid}`
+        : result.doi ? `doi:${result.doi.toLowerCase()}`
+          : result.pmcid ? `pmcid:${result.pmcid}`
+            : result.title.toLowerCase();
+      const prior = byPublication.get(key);
+      if (!prior || (!prior.abstract && result.abstract)) byPublication.set(key, result);
+    }
+    return [...byPublication.values()].slice(0, 10);
   } catch (error) {
     if (error.status === 502) throw error;
     console.error('[Research Retrieval] Critical failure:', error.message);
@@ -102,7 +109,7 @@ export async function searchResearch(query) {
 
 async function fetchPubMed(query) {
   // 1. Search for IDs
-  const searchUrl = `${PUBMED_API_BASE}/esearch.fcgi?db=pubmed&term=${encodeURIComponent(query)}&retmode=json&retmax=5`;
+  const searchUrl = `${PUBMED_API_BASE}/esearch.fcgi?db=pubmed&term=${encodeURIComponent(query)}&retmode=json&retmax=5&sort=relevance`;
   const searchData = await fetchWithTimeout(searchUrl);
   const ids = searchData.esearchresult?.idlist || [];
   if (ids.length === 0) return [];
