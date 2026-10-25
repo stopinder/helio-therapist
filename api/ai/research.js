@@ -2,45 +2,26 @@ import { requireAuthenticatedUser, getSupabaseUserClient } from '../_lib/supabas
 import { AI_FEATURES, runTextAI } from '../_lib/ai-execution.js';
 import { buildResearchAssistantPrompt, RESEARCH_ASSISTANT_PROMPT_VERSION, parseResearchResponse, validateAndFormatReferences } from '../_lib/ai-research.js';
 import { searchResearch } from '../_lib/research-retrieval.js';
+import { generateResearchQueries, selectResearchEvidence } from '../_lib/research-queries.js';
 
-function generateResearchQueries(query, history) {
-  // Deterministic search query construction from the user's question.
-  // We extract keywords and combine them to form bounded PubMed/Europe PMC queries.
-  // Avoids an extra OpenAI call.
-  const cleanQuery = query.replace(/[^\w\s-]/g, ' ').trim();
-  const words = cleanQuery.split(/\s+/).filter(w => w.length > 3);
-  
-  // Basic query: the original query
-  const queries = [query];
-  
-  // Specific query: extract potential clinical terms (first 3 long words)
-  if (words.length > 0) {
-    queries.push(words.slice(0, 4).join(' '));
-  }
-  
-  // Combined query with history context if available
-  const lastUserMsg = history.findLast(m => m.role === 'user');
-  if (lastUserMsg && lastUserMsg.content !== query) {
-    const historyWords = lastUserMsg.content.replace(/[^\w\s-]/g, ' ').split(/\s+/).filter(w => w.length > 3);
-    if (historyWords.length > 0) {
-      queries.push(`${words.slice(0, 2).join(' ')} ${historyWords.slice(0, 2).join(' ')}`);
-    }
-  }
-
-  return [...new Set(queries)].slice(0, 3);
-}
-
+// Multiple targeted searches are fault-tolerant: keep useful results even if
+// a separate query fails. Never treat total provider outage as no evidence.
 async function performMultiQuerySearch(queries) {
-  const allResults = await Promise.all(queries.map(q => searchResearch(q)));
-  const flat = allResults.flat();
-  
+  const settled = await Promise.allSettled(queries.map(query => searchResearch(query)));
+  const successful = settled.filter(result => result.status === 'fulfilled');
+  const results = successful.flatMap(result => result.value);
+  if (!results.length && settled.some(result => result.status === 'rejected')) {
+    const error = new Error('Clinical research sources are temporarily unavailable');
+    error.status = 502;
+    throw error;
+  }
   const seen = new Set();
-  return flat.filter(r => {
-    const key = (r.doi || r.pmid || r.pmcid || r.title.toLowerCase()).toString();
-    if (seen.has(key)) return false;
+  return results.filter(result => {
+    const key = String(result.pmid || result.doi || result.pmcid || result.title || '').toLowerCase();
+    if (!key || seen.has(key)) return false;
     seen.add(key);
     return true;
-  }).slice(0, 15);
+  });
 }
 
 export default async function handler(req, res) {
@@ -60,13 +41,15 @@ export default async function handler(req, res) {
 
     // 1. Genuine research retrieval - Deterministic query generation (No AI call)
     const researchQueries = generateResearchQueries(query, history);
-    let researchContext;
-    researchContext = await performMultiQuerySearch(researchQueries);
+    const retrieved = await performMultiQuerySearch(researchQueries);
+    const researchContext = selectResearchEvidence(retrieved, query);
 
     if (researchContext.length === 0) {
       return res.status(200).json({
         success: true,
-        answer: "I couldn't find any specific clinical research in PubMed or Europe PMC that directly addresses your question. This may indicate an evidence gap in the current literature. Would you like to try rephrasing your search?",
+        answer: /\\b(?:systematic\\s+review|meta[\\s-]?analysis)\\b/i.test(query)
+          ? "No matching systematic reviews were retrieved from PubMed or Europe PMC for this search. That does not mean none exist; try refining the treatment or condition."
+          : "No matching publications were retrieved from PubMed or Europe PMC for this search. This does not establish that no research exists.",
         references: [],
         promptVersion: RESEARCH_ASSISTANT_PROMPT_VERSION
       });
