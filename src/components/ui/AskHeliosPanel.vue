@@ -100,6 +100,7 @@
           v-for="(msg, index) in messages"
           :key="index"
           class="flex flex-col"
+          :data-ask-message-index="index"
           :class="msg.role === 'user' ? 'items-end' : 'items-start'"
         >
           <div
@@ -221,21 +222,30 @@ const startResizing = (e) => {
   document.addEventListener('mouseup', onMouseUp)
 }
 
-const scrollToBottom = async () => {
+// Scroll the new answer to its beginning, not to the references at its end.
+// Only move the chat pane: never scroll the surrounding application window.
+const scrollToMessageStart = async (index) => {
   await nextTick()
-  if (scrollContainer.value) {
-    scrollContainer.value.scrollTop = scrollContainer.value.scrollHeight
-  }
+  const container = scrollContainer.value
+  const message = container?.querySelector(`[data-ask-message-index="${index}"]`)
+  if (!container || !message) return
+  container.scrollTop += message.getBoundingClientRect().top - container.getBoundingClientRect().top
 }
 
-watch(messages, scrollToBottom, { deep: true })
+const scrollToLatestAnswer = async () => {
+  const lastAssistant = messages.value.findLastIndex(msg => msg.role === 'assistant')
+  if (lastAssistant >= 0) await scrollToMessageStart(lastAssistant)
+  else if (messages.value.length > 0) await scrollToMessageStart(messages.value.length - 1)
+}
+
 watch(isPanelOpen, (open) => {
-  if (open) scrollToBottom()
+  if (open && !showHistory.value) scrollToLatestAnswer()
 })
 
 const handleSelectConversation = async (id) => {
   await selectConversation(id)
   showHistory.value = false
+  await scrollToLatestAnswer()
 }
 
 const sendMessage = async () => {
@@ -245,6 +255,7 @@ const sendMessage = async () => {
   input.value = ''
   addMessage({ role: 'user', content: text })
   isLoading.value = true
+  await scrollToMessageStart(messages.value.length - 1)
 
   try {
     const response = await authenticatedFetch('/api/ai/research', {
@@ -268,6 +279,7 @@ const sendMessage = async () => {
       content: data.answer,
       references: data.references
     })
+    await scrollToMessageStart(messages.value.length - 1)
     
     // Refresh conversations list in background if it was a new conversation
     if (!activeConversationId.value) {
@@ -278,6 +290,7 @@ const sendMessage = async () => {
       role: 'assistant',
       content: `I'm sorry, I encountered an error while researching: ${err.message}`
     })
+    await scrollToMessageStart(messages.value.length - 1)
   } finally {
     isLoading.value = false
   }
