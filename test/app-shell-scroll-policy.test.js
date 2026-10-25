@@ -18,9 +18,9 @@ test('app shell propagates min-height zero through the flex content chain', () =
   const shellContentClass = shell.match(/<div class="([^"]*overflow-hidden[^"]*)"\s*>[\s\S]*?<AppHeader/)?.[1] || ''
   const mainClass = shell.match(/<main\s+class="([^"]*)"\s+:class="isFullHeightWorkspace/)?.[1] || ''
 
-  // shellContentClass should match the inner wrapper, but it picked up the outer root div
-  // We need to be more specific to skip the outer div.
-  const innerContentMatch = shell.match(/<\/aside>\s*<div class="([^"]*overflow-hidden[^"]*)"\s*>[\s\S]*?<AppHeader/);
+  // shellContentClass should match the inner wrapper.
+  // We need to be specific to skip the root div.
+  const innerContentMatch = shell.match(/class="[^"]*shrink-0[^"]*">[\s\S]*?<\/aside>\s*<div\s+class="([^"]*)"/);
   const innerContentClass = innerContentMatch?.[1] || '';
 
   const classes = innerContentClass.split(/\s+/).filter(Boolean)
