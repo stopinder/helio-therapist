@@ -18,7 +18,8 @@ async function generateResearchQueries(query, history, userId) {
       ],
       responseFormat: { type: 'json_object' },
       temperature: 0,
-      maxTokens: 200
+      maxTokens: 200,
+      skipBudget: true
     });
     const parsed = JSON.parse(completion.choices?.[0]?.message?.content || '{}');
     const queries = Array.isArray(parsed.queries) ? parsed.queries : [query];
@@ -59,7 +60,19 @@ export default async function handler(req, res) {
 
     // 1. Genuine research retrieval
     const researchQueries = await generateResearchQueries(query, history, user.id);
-    const researchContext = await performMultiQuerySearch(researchQueries);
+    let researchContext;
+    try {
+      researchContext = await performMultiQuerySearch(researchQueries);
+    } catch (e) {
+      console.error('[Ask Helios Research] search failed:', e.message);
+      return res.status(502).json({
+        success: false,
+        error: { 
+          code: 'RESEARCH_PROVIDER_FAILED', 
+          message: 'Clinical research providers (PubMed/Europe PMC) are currently unreachable. Please try again in a few minutes.' 
+        }
+      });
+    }
 
     if (researchContext.length === 0) {
       return res.status(200).json({

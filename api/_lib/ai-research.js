@@ -42,22 +42,40 @@ RESPONSE:`;
 }
 
 export function validateAndFormatReferences(aiResponse, researchContext) {
-  const { answer, cited_refs = [] } = aiResponse;
+  let { answer = '', cited_refs = [] } = aiResponse;
   
-  const validatedReferences = cited_refs
-    .filter(idx => researchContext[idx])
-    .map(idx => {
+  const validatedReferences = [];
+  const validIndices = new Set();
+
+  // 1. Gather all markers from the text to ensure they are included even if AI missed cited_refs
+  const textMarkers = [...answer.matchAll(/\[REF-(\d+)\]/g)].map(m => parseInt(m[1], 10));
+  const allPotentialIndices = new Set([...cited_refs, ...textMarkers]);
+
+  allPotentialIndices.forEach(idx => {
+    if (researchContext[idx]) {
+      validIndices.add(idx);
       const r = researchContext[idx];
-      return {
-        title: r.title,
-        url: r.url,
-        citation: `${r.authors} (${r.year}). ${r.title}. ${r.journal}.`,
-        id: r.id
-      };
-    });
+      // Avoid duplicate entries in validatedReferences if both cited_refs and textMarkers have it
+      if (!validatedReferences.find(v => v.id === r.id)) {
+        validatedReferences.push({
+          title: r.title,
+          url: r.url,
+          citation: `${r.authors} (${r.year}). ${r.title}. ${r.journal}.`,
+          id: r.id
+        });
+      }
+    }
+  });
+
+  // Scrub any [REF-X] from the answer where X is NOT in our validIndices
+  // Also scrub any malformed [REF-X] where X is not a digit (e.g. [REF-X])
+  answer = answer.replace(/\[REF-(.+?)\]/g, (match, p1) => {
+    const idx = parseInt(p1, 10);
+    return (!isNaN(idx) && validIndices.has(idx)) ? match : '';
+  });
 
   return {
-    answer,
+    answer: answer.trim(),
     references: validatedReferences
   };
 }

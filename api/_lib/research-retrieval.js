@@ -59,8 +59,18 @@ export async function searchResearch(query) {
     const pubmedResults = pubmedSettled.status === 'fulfilled' ? pubmedSettled.value : [];
     const epcmcResults = epcmcSettled.status === 'fulfilled' ? (epcmcSettled.value.resultList?.result || []) : [];
 
-    if (pubmedSettled.status === 'rejected') console.error('[Research Retrieval] PubMed failed:', pubmedSettled.reason?.message);
-    if (epcmcSettled.status === 'rejected') console.error('[Research Retrieval] Europe PMC failed:', epcmcSettled.reason?.message);
+    const pubmedError = pubmedSettled.status === 'rejected' ? pubmedSettled.reason?.message : null;
+    const epcmcError = epcmcSettled.status === 'rejected' ? epcmcSettled.reason?.message : null;
+
+    if (pubmedError) console.error('[Research Retrieval] PubMed failed:', pubmedError);
+    if (epcmcError) console.error('[Research Retrieval] Europe PMC failed:', epcmcError);
+
+    // If all providers failed, throw to distinguish from "no results found"
+    if (pubmedSettled.status === 'rejected' && epcmcSettled.status === 'rejected') {
+      const error = new Error('All research providers failed');
+      error.status = 502;
+      throw error;
+    }
 
     const allResults = [
       ...pubmedResults.map(r => normalizeResult('pubmed', r)),

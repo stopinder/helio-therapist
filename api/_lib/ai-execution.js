@@ -60,7 +60,7 @@ export function buildTemperatureParams(model, temperature) {
 
 export async function runTextAI({
   feature, userId, promptVersion = null, messages, temperature,
-  maxTokens, responseFormat, timeout = 20000
+  maxTokens, responseFormat, timeout = 20000, skipBudget = false
 }) {
   if (!Object.values(AI_FEATURES).includes(feature)) throw new Error(`Unknown AI feature: ${feature}`);
   if (!userId) throw new Error('AI execution requires an authenticated user ID');
@@ -78,9 +78,14 @@ export async function runTextAI({
   const freeOutputLimit = Number.isInteger(maxTokens) && maxTokens > 0
     ? Math.min(maxTokens, FREE_AI_MAX_OUTPUT_TOKENS)
     : FREE_AI_MAX_OUTPUT_TOKENS;
-  const usedFreeCredits = await reserveAiBudget({
-    userId, feature, requestChars, maxOutputTokens: freeOutputLimit
-  });
+
+  let usedFreeCredits = null;
+  if (!skipBudget) {
+    usedFreeCredits = await reserveAiBudget({
+      userId, feature, requestChars, maxOutputTokens: freeOutputLimit
+    });
+  }
+
   const isFree = usedFreeCredits !== null;
   const model = isFree ? FREE_AI_TEXT_MODEL : getTextModel(feature);
   const outputLimit = isFree ? freeOutputLimit : maxTokens;
