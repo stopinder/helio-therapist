@@ -1,162 +1,130 @@
-const PUBMED_API_BASE = 'https://eutils.ncbi.nlm.nih.gov/entrez/eutils';
-const EUROPE_PMC_API_BASE = 'https://www.ebi.ac.uk/europepmc/webservices/rest';
-const DEFAULT_TIMEOUT = 8000;
+const PUBMED = 'https://eutils.ncbi.nlm.nih.gov/entrez/eutils';
+const EPMC = 'https://www.ebi.ac.uk/europepmc/webservices/rest';
+const TIMEOUT = 5000;
+let nextPubMedRequest = 0;
+const clean = value => String(value || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+const decode = value => String(value || '').replace(/&#(x[\da-f]+|\d+);/gi, (match, n) => {
+  const code = n[0].toLowerCase() === 'x' ? parseInt(n.slice(1), 16) : Number(n);
+  return code > 0 && code <= 0x10ffff ? String.fromCodePoint(code) : '';
+}).replace(/&(amp|lt|gt|quot|apos);/g, (_, n) => ({ amp: '&', lt: '<', gt: '>', quot: '"', apos: "'" }[n]));
 
-/**
- * Normalizes research metadata from PubMed and Europe PMC.
- */
+export function parsePubMedAbstracts(xml) {
+  const result = {};
+  for (const article of String(xml).split(/<PubmedArticle\b[^>]*>/)) {
+    const pmid = article.match(/<PMID\b[^>]*>(\d+)<\/PMID>/)?.[1];
+    const sections = [...article.matchAll(/<AbstractText\b([^>]*)>([\s\S]*?)<\/AbstractText>/g)].map(m => {
+      const label = m[1].match(/\bLabel=["']([^"']+)["']/)?.[1];
+      return (label ? decode(label) + ': ' : '') + decode(clean(m[2]));
+    });
+    if (pmid && sections.length) result[pmid] = sections.join('\n');
+  }
+  return result;
+}
+
 export function normalizeResult(source, raw) {
   if (source === 'pubmed') {
-    return {
-      id: `pmid:${raw.uid}`,
-      title: raw.title,
+    const doi = raw.articleids?.find(i => i.idtype === 'doi')?.value ||
+      (raw.elocationid?.startsWith('doi:') ? raw.elocationid.replace(/^doi:\s*/, '') : null);
+    return { id: 'pmid:' + raw.uid, title: decode(clean(raw.title)),
       authors: (raw.authors || []).map(a => a.name).join(', '),
-      journal: raw.fulljournalname || raw.source,
+      journal: raw.fulljournalname || raw.source || 'Journal not supplied',
       year: raw.pubdate?.match(/\b(?:19|20)\d{2}\b/)?.[0] || 'Year not supplied',
-      publicationTypes: Array.isArray(raw.pubtype) ? raw.pubtype : [],
-      doi: raw.elocationid?.startsWith('doi:') ? raw.elocationid.replace('doi: ', '') : null,
-      pmid: raw.uid,
-      pmcid: raw.articleids?.find(id => id.idtype === 'pmc')?.value,
-      url: `https://pubmed.ncbi.nlm.nih.gov/${raw.uid}/`,
-      abstract: raw.abstract || null,
-      source: 'PubMed'
-    };
-  } else if (source === 'europepmc') {
-    return {
-      id: `pmcid:${raw.pmcid || raw.id}`,
-      title: raw.title,
-      authors: raw.authorString,
-      journal: raw.journalTitle || raw.journalInfo?.journal?.title || 'Journal not supplied',
-      year: raw.pubYear || raw.firstPublicationDate?.slice(0, 4) || 'Year not supplied',
-      publicationTypes: Array.isArray(raw.pubTypeList?.pubType)
-        ? raw.pubTypeList.pubType
-        : raw.pubTypeList?.pubType
-          ? [raw.pubTypeList.pubType]
-          : [],
-      doi: raw.doi,
-      pmid: raw.pmid,
-      pmcid: raw.pmcid,
-      url: raw.pmid
-        ? `https://pubmed.ncbi.nlm.nih.gov/${encodeURIComponent(raw.pmid)}/`
-        : raw.pmcid
-          ? `https://europepmc.org/articles/${encodeURIComponent(raw.pmcid)}`
-          : raw.doi
-            ? `https://doi.org/${encodeURIComponent(raw.doi)}`
-            : `https://europepmc.org/article/${encodeURIComponent(raw.source || 'MED')}/${encodeURIComponent(raw.id)}`,
-      abstract: raw.abstractText || null,
-      source: 'Europe PMC'
-    };
+      publicationTypes: Array.isArray(raw.pubtype) ? raw.pubtype : [], doi, pmid: raw.uid,
+      pmcid: raw.articleids?.find(i => i.idtype === 'pmc')?.value,
+      url: 'https://pubmed.ncbi.nlm.nih.gov/' + encodeURIComponent(raw.uid) + '/',
+      abstract: raw.abstract || null, source: 'PubMed' };
   }
+  const pmid = raw.pmid, pmcid = raw.pmcid, doi = raw.doi;
+  const types = raw.pubTypeList?.pubType;
+  return { id: pmid ? 'pmid:' + pmid : pmcid ? 'pmcid:' + pmcid : String(raw.source || 'MED') + ':' + raw.id,
+    title: decode(clean(raw.title)), authors: raw.authorString,
+    journal: raw.journalTitle || raw.journalInfo?.journal?.title || 'Journal not supplied',
+    year: raw.pubYear || raw.firstPublicationDate?.slice(0, 4) || 'Year not supplied',
+    publicationTypes: Array.isArray(types) ? types : types ? [types] : [], doi, pmid, pmcid,
+    url: pmid ? 'https://pubmed.ncbi.nlm.nih.gov/' + encodeURIComponent(pmid) + '/'
+      : pmcid ? 'https://europepmc.org/articles/' + encodeURIComponent(pmcid)
+        : doi ? 'https://doi.org/' + encodeURIComponent(doi)
+          : 'https://europepmc.org/article/' + encodeURIComponent(raw.source || 'MED') + '/' + encodeURIComponent(raw.id),
+    abstract: raw.abstractText ? decode(clean(raw.abstractText)) : null, source: 'Europe PMC' };
 }
 
-async function fetchWithTimeout(url, timeout = DEFAULT_TIMEOUT) {
+async function request(url, { signal, fetchImpl = fetch, timeoutMs = TIMEOUT, throttle = true } = {}, json = true) {
+  signal?.throwIfAborted();
+  if (throttle && url.startsWith(PUBMED)) {
+    // NCBI's unauthenticated limit is three requests/second. Coordinate requests
+    // in this process too; no silent retries or per-paper parallel fan-out.
+    const slot = Math.max(Date.now(), nextPubMedRequest);
+    nextPubMedRequest = slot + 360;
+    const wait = slot - Date.now();
+    if (wait > 0) await new Promise((resolve, reject) => {
+      const onAbort = () => { clearTimeout(timer); signal?.removeEventListener('abort', onAbort); reject(signal.reason); };
+      const timer = setTimeout(() => { signal?.removeEventListener('abort', onAbort); resolve(); }, wait);
+      signal?.addEventListener('abort', onAbort, { once: true });
+    });
+  }
   const controller = new AbortController();
-  const id = setTimeout(() => controller.abort(), timeout);
+  const abort = () => controller.abort(signal.reason);
+  signal?.addEventListener('abort', abort, { once: true });
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
-    const response = await fetch(url, { signal: controller.signal });
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    return await response.json();
+    signal?.throwIfAborted();
+    const response = await fetchImpl(url, { signal: controller.signal, redirect: 'error' });
+    if (!response.ok) throw new Error('HTTP ' + response.status);
+    // Bound response bodies as well as request count/time.
+    if (Number(response.headers?.get?.('content-length')) > 2000000) throw new Error('Oversize provider response');
+    if (!response.text && json) return await response.json(); // lightweight test transport
+    const text = await response.text();
+    if (text.length > 2000000) throw new Error('Oversize provider response');
+    return json ? JSON.parse(text) : text;
   } finally {
-    clearTimeout(id);
+    clearTimeout(timer); signal?.removeEventListener('abort', abort);
   }
 }
-
-export async function searchResearch(query) {
+async function pubmed(query, options) {
+  const data = await request(`${PUBMED}/esearch.fcgi?db=pubmed&term=${encodeURIComponent(query)}&retmode=json&retmax=5&sort=relevance&tool=AskHelios`, options);
+  if (!Array.isArray(data.esearchresult?.idlist) || data.error) throw new Error('Invalid PubMed response');
+  const ids = data.esearchresult.idlist.filter(id => /^\d+$/.test(id)).slice(0, 5);
+  if (!ids.length) return { records: [], abstractStatus: 'ok' };
+  const summaries = await request(`${PUBMED}/esummary.fcgi?db=pubmed&id=${ids.join(',')}&retmode=json&tool=AskHelios`, options);
+  if (!summaries.result) throw new Error('Invalid PubMed metadata');
+  let abstracts = {}, abstractStatus = 'ok';
   try {
-    const [pubmedSettled, epcmcSettled] = await Promise.allSettled([
-      fetchPubMed(query),
-      fetchEuropePMC(query)
-    ]);
-
-    const pubmedResults = pubmedSettled.status === 'fulfilled' ? pubmedSettled.value : [];
-    const epcmcResults = epcmcSettled.status === 'fulfilled' ? (epcmcSettled.value.resultList?.result || []) : [];
-
-    const pubmedError = pubmedSettled.status === 'rejected' ? pubmedSettled.reason?.message : null;
-    const epcmcError = epcmcSettled.status === 'rejected' ? epcmcSettled.reason?.message : null;
-
-    if (pubmedError) console.error('[Research Retrieval] PubMed failed:', pubmedError);
-    if (epcmcError) console.error('[Research Retrieval] Europe PMC failed:', epcmcError);
-
-    // If all providers failed, propagate the 502 error
-    if (pubmedSettled.status === 'rejected' && epcmcSettled.status === 'rejected') {
-      const error = new Error('All research providers failed');
-      error.status = 502;
-      throw error;
-    }
-
-    const allResults = [
-      ...pubmedResults.map(r => normalizeResult('pubmed', r)),
-      ...epcmcResults.map(r => normalizeResult('europepmc', r))
-    ];
-
-    // Prefer a version with an actual abstract when both indexes hold a paper.
-    const byPublication = new Map();
-    for (const result of allResults.filter(r => r?.title)) {
-      const key = result.pmid ? `pmid:${result.pmid}`
-        : result.doi ? `doi:${result.doi.toLowerCase()}`
-          : result.pmcid ? `pmcid:${result.pmcid}`
-            : result.title.toLowerCase();
-      const prior = byPublication.get(key);
-      if (!prior || (!prior.abstract && result.abstract)) byPublication.set(key, result);
-    }
-    return [...byPublication.values()].slice(0, 10);
+    abstracts = parsePubMedAbstracts(await request(`${PUBMED}/efetch.fcgi?db=pubmed&id=${ids.join(',')}&retmode=xml&rettype=abstract&tool=AskHelios`, options, false));
   } catch (error) {
-    if (error.status === 502) throw error;
-    console.error('[Research Retrieval] Critical failure:', error.message);
-    return [];
+    options.signal?.throwIfAborted();
+    abstractStatus = 'failed';
   }
+  return { records: ids.filter(id => summaries.result[id]).map(id => normalizeResult('pubmed', { ...summaries.result[id], abstract: abstracts[id] || null })), abstractStatus };
+}
+async function europePMC(query, options) {
+  const data = await request(`${EPMC}/search?query=${encodeURIComponent(query)}&format=json&pageSize=5&resultType=core`, options);
+  if (!Array.isArray(data.resultList?.result)) throw new Error('Invalid Europe PMC response');
+  return { records: data.resultList.result.map(r => normalizeResult('europepmc', r)), abstractStatus: 'ok' };
 }
 
-async function fetchPubMed(query) {
-  // 1. Search for IDs
-  const searchUrl = `${PUBMED_API_BASE}/esearch.fcgi?db=pubmed&term=${encodeURIComponent(query)}&retmode=json&retmax=5&sort=relevance`;
-  const searchData = await fetchWithTimeout(searchUrl);
-  const ids = searchData.esearchresult?.idlist || [];
-  if (ids.length === 0) return [];
-
-  // 2. Fetch Summaries & Abstracts
-  // Using esummary first for basic metadata
-  const summaryUrl = `${PUBMED_API_BASE}/esummary.fcgi?db=pubmed&id=${ids.join(',')}&retmode=json`;
-  const summaryData = await fetchWithTimeout(summaryUrl);
-  const summaryResults = summaryData.result || {};
-  
-  // PubMed abstracts are notoriously hard to get via JSON API. 
-  // We'll use efetch with retmode=xml and a simple regex to extract the abstract text.
-  const fetchUrl = `${PUBMED_API_BASE}/efetch.fcgi?db=pubmed&id=${ids.join(',')}&retmode=xml&rettype=abstract`;
-  const controller = new AbortController();
-  const id = setTimeout(() => controller.abort(), DEFAULT_TIMEOUT);
-  let abstractMap = {};
-  try {
-    const resp = await fetch(fetchUrl, { signal: controller.signal });
-    if (resp.ok) {
-      const xml = await resp.text();
-      // Simple regex to extract PMID and AbstractText
-      const articles = xml.split('<PubmedArticle>');
-      for (const article of articles) {
-        const pmidMatch = article.match(/<PMID[^>]*>(\d+)<\/PMID>/);
-        const abstractMatch = article.match(/<AbstractText[^>]*>(.*?)<\/AbstractText>/s);
-        if (pmidMatch && abstractMatch) {
-          abstractMap[pmidMatch[1]] = abstractMatch[1].replace(/<[^>]*>/g, '').trim();
-        }
-      }
-    }
-  } catch (e) {
-    console.warn('[Research Retrieval] PubMed abstract fetch failed', e.message);
-  } finally {
-    clearTimeout(id);
-  }
-
-  return ids.map(id => {
-    const res = summaryResults[id];
-    if (res) {
-      res.abstract = abstractMap[id] || null;
-    }
-    return res;
-  }).filter(Boolean);
+export async function searchResearchDetailed(query, options = {}) {
+  if (typeof query !== 'string' || query.length < 3 || query.length > 300) throw new Error('Invalid research query');
+  const settled = await Promise.allSettled([pubmed(query, options), europePMC(query, options)]);
+  options.signal?.throwIfAborted();
+  const batches = settled.map(result => result.status === 'fulfilled' ? result.value.records : []);
+  const records = [];
+  for (let i = 0; i < Math.max(...batches.map(b => b.length)); i++) for (const b of batches) if (b[i]) records.push(b[i]);
+  return { records, providers: settled.map((r, i) => ({
+    name: ['PubMed', 'Europe PMC'][i], status: r.status === 'fulfilled' ? 'ok' : 'failed',
+    count: r.status === 'fulfilled' ? r.value.records.length : 0,
+    abstractStatus: r.status === 'fulfilled' ? r.value.abstractStatus : 'failed'
+  })) };
 }
-
-async function fetchEuropePMC(query) {
-  // Use resultType=core to get abstracts
-  const url = `${EUROPE_PMC_API_BASE}/search?query=${encodeURIComponent(query)}&format=json&pageSize=5&resultType=core`;
-  return await fetchWithTimeout(url);
+// Compatibility for other existing research callers. Main orchestration uses the
+// detailed result so partial outages cannot masquerade as an evidence gap.
+export async function searchResearch(query) {
+  const { records, providers } = await searchResearchDetailed(query);
+  if (providers.every(p => p.status === 'failed')) throw Object.assign(new Error('All research providers failed'), { status: 502 });
+  const unique = new Map();
+  for (const r of records) {
+    const key = r.pmid || r.doi?.toLowerCase() || r.pmcid || r.title.toLowerCase();
+    const old = unique.get(key);
+    if (!old || (r.abstract || '').length > (old.abstract || '').length) unique.set(key, r);
+  }
+  return [...unique.values()].slice(0, 10);
 }
