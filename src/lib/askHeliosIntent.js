@@ -1,3 +1,5 @@
+import { isNiceGuidanceRequest } from './niceGuidance.js';
+
 // Explicit, testable request routing. Avoid a model call merely to decide
 // whether a user wants literature research or their private workspace.
 const researchSignal = /\b(?:research|literature|pubmed|europe\s*pmc|evidence|studies?|papers?|systematic\s+reviews?|meta[-\s]?analys(?:is|es)|randomi[sz]ed|clinical\s+trials?|effectiveness|efficacy)\b/i;
@@ -21,7 +23,7 @@ const documentContinuation = /\b(?:documents?|files?|forms?|paperwork|consent|in
 export function isClearlyWorkspaceQuestion(query) {
   if (typeof query !== 'string') return false;
   const text = query.trim().replace(/\s+/g, ' ');
-  if (!text || text.length > 1200 || researchSignal.test(text)) return false;
+  if (!text || text.length > 1200 || researchSignal.test(text) || isNiceGuidanceRequest(text)) return false;
   return workspacePatterns.some(pattern => pattern.test(text));
 }
 
@@ -29,6 +31,7 @@ export function decideAskHeliosRoute(query, selectedMode, { lastWorkspaceTask = 
   const text = typeof query === 'string' ? query.trim() : '';
   const mode = ['workspace', 'research', 'reflect'].includes(selectedMode) ? selectedMode : 'workspace';
   if (!text || text.length > 1200) return { mode, reason: 'invalid-or-empty', confidence: 'none' };
+  if (isNiceGuidanceRequest(text)) return { mode: 'research', reason: 'named-guidance-source', confidence: 'high' };
   if (researchSignal.test(text)) return { mode: 'research', reason: 'explicit-literature-intent', confidence: 'high' };
   if (isClearlyWorkspaceQuestion(text)) return { mode: 'workspace', reason: 'explicit-practice-intent', confidence: 'high' };
   if (lastWorkspaceTask === 'documents' && documentContinuation.test(text)) {

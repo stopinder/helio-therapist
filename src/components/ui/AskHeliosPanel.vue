@@ -37,6 +37,8 @@
           @click="changeMode(tab.id)">{{ tab.label }}</button>
       </div>
 
+      <NiceGuidanceAccess v-if="mode === 'research' && !showHistory" />
+
       <div v-if="modeNotice" role="status" class="border-b border-border-muted bg-accent/10 px-4 py-2 text-xs text-ink-secondary">{{ modeNotice }}</div>
 
       <div v-if="isRestoring" role="status" class="border-b border-border-muted px-4 py-2 text-xs text-ink-secondary">Restoring your saved conversation...</div>
@@ -90,7 +92,7 @@
             <div class="whitespace-pre-wrap">{{ msg.content }}</div>
             <div v-if="msg.references?.length" class="mt-3 pt-3 border-t border-border-muted/30">
               <h4 class="text-[10px] font-bold uppercase tracking-wider text-ink-muted mb-1.5">
-                {{ mode === 'workspace' ? 'Workspace records' : 'References' }}
+                {{ mode === 'workspace' ? 'Workspace records' : researchReferenceHeading(msg.references) }}
               </h4>
               <ul class="space-y-1.5">
                 <li v-for="(reference, rIndex) in msg.references" :key="rIndex" class="text-xs">
@@ -194,6 +196,8 @@ import { Sparkles, X, Maximize2, Minimize2, Send, ExternalLink, History, Message
 import { useAskHelios } from '../../composables/useAskHelios.js'
 import { resolveAskHeliosMode } from '../../lib/askHeliosIntent.js'
 import { authenticatedFetch } from '../../lib/api.js'
+import NiceGuidanceAccess from './NiceGuidanceAccess.vue'
+import { isNiceGuidanceRequest, researchReferenceHeading } from '../../lib/niceGuidance.js'
 
 const tabs = [
   {
@@ -208,7 +212,7 @@ const tabs = [
     description: 'Investigate therapeutic approaches and review published evidence, with links to actual publications.',
     placeholder: 'What does the evidence say about…?',
     footer: 'PubMed + Europe PMC · AI allowance applies',
-    examples: ['What do systematic reviews say about ERP for OCD?', 'Compare evidence for CBT and psychodynamic therapy']
+    examples: ['What do systematic reviews say about ERP for OCD?', 'Compare evidence for CBT and psychodynamic therapy', 'Find NICE guidance']
   },
   {
     id: 'reflect', label: 'Reflect', heading: 'A space to think',
@@ -337,7 +341,9 @@ async function sendMessage(override = null) {
     showHistory.value = false
     modeNotice.value = sentMode === 'workspace'
       ? 'Switched to Workspace: this question concerns your practice, not published research.'
-      : 'Switched to Research: this question requests published evidence.'
+      : isNiceGuidanceRequest(text)
+        ? 'Switched to Research: NICE links open the official source; no guideline text is loaded.'
+        : 'Switched to Research: this question requests published evidence.'
   } else {
     modeNotice.value = ''
   }

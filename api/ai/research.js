@@ -3,6 +3,7 @@ import { runResearchAI } from '../_lib/research-execution.js';
 import { RESEARCH_WORKFLOW_VERSION } from '../_lib/research-workflow.js';
 import { isClearlyWorkspaceQuestion } from '../../src/lib/askHeliosIntent.js';
 import { isBudgetError } from '../_lib/ai-budget.js';
+import { buildNiceGuidanceReply, isNiceGuidanceRequest } from '../../src/lib/niceGuidance.js';
 
 export default async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
@@ -32,7 +33,11 @@ export default async function handler(req, res) {
     }
     // Browser-supplied history is not authoritative. No client clinical records
     // are read here; only this therapist's selected research conversation.
-    const result = await runResearchAI({ userId: user.id, query, history });
+    // Link-only NICE access: validate auth/ownership above, but never call the
+    // model, reserve a credit or retrieve NICE content for this source request.
+    const result = isNiceGuidanceRequest(query)
+      ? buildNiceGuidanceReply()
+      : await runResearchAI({ userId: user.id, query, history });
     let activeId = conversationId, saved = true;
     try {
       if (!activeId) {
