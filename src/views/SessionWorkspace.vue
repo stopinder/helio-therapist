@@ -9,7 +9,7 @@
       <div class="border-b border-border bg-surface px-inline-lg">
         <div class="max-w-4xl mx-auto flex gap-2 py-2" role="tablist" aria-label="Session workspace views">
           <button type="button" role="tab" :aria-selected="activeView === 'summary'" class="px-4 py-2 rounded-control text-body-sm font-medium" :class="activeView === 'summary' ? 'bg-state-selected text-action-link' : 'text-ink-secondary hover:bg-surface-subtle'" @click="activeView = 'summary'">Session Summary</button>
-          <button type="button" role="tab" :aria-selected="activeView === 'clinical'" class="px-4 py-2 rounded-control text-body-sm font-medium" :class="activeView === 'clinical' ? 'bg-state-selected text-action-link' : 'text-ink-secondary hover:bg-surface-subtle'" @click="activeView = 'clinical'">Clinical Record</button>
+          <button type="button" role="tab" :aria-selected="activeView === 'clinical'" :disabled="preparationBusy" class="px-4 py-2 rounded-control text-body-sm font-medium" :class="activeView === 'clinical' ? 'bg-state-selected text-action-link' : 'text-ink-secondary hover:bg-surface-subtle'" @click="changeSessionView('clinical')">Clinical Record</button>
         </div>
       </div>
       
@@ -38,19 +38,22 @@
                   <p v-if="summaryDocument?.id" class="mt-1 text-caption text-ink-muted">{{ summaryDocument.status === 'completed' ? 'Finalised in this client’s Documents.' : 'Saved in this client’s Documents.' }}</p>
                 </div>
                 <div class="flex flex-wrap items-center justify-end gap-3">
-                  <button type="button" class="button-secondary" :disabled="isGenerating || summarySaving" @click="showDocumentPreparation = true">Summary options</button>
+                  <button type="button" class="button-secondary" :aria-expanded="showDocumentPreparation" aria-controls="session-document-options" :disabled="isGenerating || summarySaving || preparationBusy" @click="togglePreparation">Summary options</button>
                   <span v-if="copySuccess" class="text-body-sm text-state-success" role="status">Copied!</span>
-                  <template v-if="summaryDocument?.content?.body && !isGenerating && summaryDocument.status !== 'completed'">
+                  <template v-if="summaryDocument?.content?.body && !isGenerating && !showDocumentPreparation && summaryDocument.status !== 'completed'">
                     <button v-if="!isEditingSummary" @click="isEditingSummary = true" class="text-body-sm font-medium text-action-link hover:underline">Edit</button>
                     <button v-else @click="isEditingSummary = false" class="text-body-sm font-medium text-action-link hover:underline">Done reading</button>
                   </template>
-                  <button v-if="summaryDocument?.content?.body && summaryDocument.status !== 'completed'" @click="generateSummary" :disabled="isGenerating" class="text-body-sm font-medium text-ink-muted hover:text-ink disabled:opacity-50">Regenerate</button>
-                  <RouterLink v-if="summaryDocument?.id" :to="{ name: 'ClientWorkspace', params: { clientId: session.clientId }, query: { document: summaryDocument.id } }" class="button-secondary !min-h-0 py-1.5 px-3 text-body-sm shadow-sm">Open in Client Documents</RouterLink>
-                  <button @click="copySummary" :disabled="!summaryDocument?.content?.body" class="button-secondary !min-h-0 py-1.5 px-3 text-body-sm shadow-sm">Copy summary</button>
+                  <button v-if="summaryDocument?.content?.body && !showDocumentPreparation && summaryDocument.status !== 'completed'" @click="generateSummary" :disabled="isGenerating" class="text-body-sm font-medium text-ink-muted hover:text-ink disabled:opacity-50">Regenerate</button>
+                  <RouterLink v-if="summaryDocument?.id && !showDocumentPreparation" :to="{ name: 'ClientWorkspace', params: { clientId: session.clientId }, query: { document: summaryDocument.id } }" class="button-secondary !min-h-0 py-1.5 px-3 text-body-sm shadow-sm">Open in Client Documents</RouterLink>
+                  <button v-if="!showDocumentPreparation" @click="copySummary" :disabled="!summaryDocument?.content?.body" class="button-secondary !min-h-0 py-1.5 px-3 text-body-sm shadow-sm">Copy summary</button>
                 </div>
               </div>
 
-              <div class="relative min-h-[12rem]">
+              <InlineDocumentWorkbench v-if="showDocumentPreparation && preparationClient" id="session-document-options"
+                ref="inlinePreparation" :key="session.id" :client="preparationClient" :anchor-session-id="session.id"
+                @close="closePreparation" @saved="preparedDocumentSaved" @busy="preparationBusy = $event" @unsaved="preparationDirty = $event" />
+              <div v-show="!showDocumentPreparation" class="relative min-h-[12rem]">
                 <div v-if="isGenerating" role="status" class="py-24 text-center text-ink-muted bg-surface rounded-panel border border-dashed border-border flex flex-col items-center gap-3 shadow-sm">
                   <span class="w-8 h-8 border-4 border-state-selected border-t-transparent rounded-full animate-spin"></span>
                   <p class="type-body-medium">Preparing session summary…</p>
@@ -129,10 +132,6 @@
           </template>
         </div>
       </div>
-      <ClientDocumentComposer v-if="showDocumentPreparation && preparationClient" :key="session.id"
-        :client="preparationClient" :client-email="client?.email || ''" initial-document-type="session_summary"
-        :initial-session-id="session.id" @close="showDocumentPreparation = false"
-        @saved="preparedDocumentSaved" @show-documents="openClientDocuments" />
     </template>
   </div>
 </template>
@@ -149,7 +148,7 @@ import { authenticatedFetch } from '../lib/api.js';
 import SessionWorkspaceHeader from '../components/workspace/SessionWorkspaceHeader.vue';
 import ReflectionTab from '../components/workspace/ReflectionTab.vue';
 import SessionSummaryDocument from '../components/workspace/SessionSummaryDocument.vue';
-import ClientDocumentComposer from '../components/workspace/ClientDocumentComposer.vue';
+import InlineDocumentWorkbench from '../components/workspace/InlineDocumentWorkbench.vue';
 import ClinicalSummaryTab from '../components/workspace/ClinicalSummaryTab.vue';
 import CompletedClinicalRecord from '../components/workspace/CompletedClinicalRecord.vue';
 
@@ -158,6 +157,7 @@ const router = useRouter();
 const session = ref(null), client = ref(null), loading = ref(true), error = ref(''), transcript = ref(null), transcriptLoading = ref(false), transcriptError = ref(''), therapistName = ref('');
 const summaryDocument = ref(null);
 const showDocumentPreparation = ref(false);
+const inlinePreparation = ref(null), preparationBusy = ref(false), preparationDirty = ref(false);
 const summarySaving = ref(false);
 let autosavePromise = null;
 const preparationClient = computed(() => client.value ? {...client.value, display_name: client.value.display_name || client.value.name || 'Client'} : null);
@@ -174,6 +174,16 @@ const preparingCbtCare = ref(false);
 const cbtCareError = ref('');
 let saveTimer = null;
 
+function togglePreparation() {
+  if (showDocumentPreparation.value) inlinePreparation.value?.close();
+  else showDocumentPreparation.value = true;
+}
+function closePreparation() { showDocumentPreparation.value = false; preparationDirty.value = false; preparationBusy.value = false; }
+function changeSessionView(next) {
+  if (preparationBusy.value) return;
+  if (preparationDirty.value && !window.confirm('Change views without saving the unsaved document draft?')) return;
+  closePreparation(); activeView.value = next;
+}
 function handleSessionUpdate(updatedSession) {
   session.value = updatedSession;
   activeView.value = 'clinical';
@@ -285,7 +295,6 @@ async function handleSummaryInput() {
 function preparedDocumentSaved(document) {
   if(document.documentType === 'session_summary' && document.sourceManifest?.some(source => source.sessionId === session.value?.id)) summaryDocument.value=document;
 }
-function openClientDocuments() { showDocumentPreparation.value=false; router.push('/clients/'+session.value.clientId+'#section-documents'); }
 onBeforeUnmount(() => clearTimeout(saveTimer));
 
 async function loadTherapistProfile(){if(!supabase)return;try{const {data:{user}}=await supabase.auth.getUser();if(!user)return;const {data:profile}=await supabase.from('profiles').select('full_name').eq('id',user.id).maybeSingle();const metadataName=typeof user.user_metadata?.full_name==='string'?user.user_metadata.full_name.trim():'';therapistName.value=profile?.full_name?.trim()||metadataName||''}catch(e){console.warn('[Session] Could not load therapist identity',e)}}
