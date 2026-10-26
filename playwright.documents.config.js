@@ -1,7 +1,7 @@
 import { defineConfig, devices } from '@playwright/test'
 // Fictional, localhost-only UI acceptance. No live account, clinical data or AI calls.
 export default defineConfig({
-  testDir: './e2e', testMatch: 'document-preparation.spec.js',
+  testDir: './e2e', testMatch: ['document-preparation.spec.js', 'working-formulation.spec.js'],
   fullyParallel: false, workers: 1, retries: 0, timeout: 45000, globalTimeout: 180000,
   reporter: 'list', outputDir: 'test-results/documents',
   use: { baseURL: 'http://127.0.0.1:5194', trace: 'retain-on-failure' },
