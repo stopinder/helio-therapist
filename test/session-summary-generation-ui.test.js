@@ -35,7 +35,9 @@ test('SessionWorkspace handles generation state', () => {
 })
 
 test('Session summary section includes source provenance', () => {
-  assert.match(source, /Generated from Zoom summary \+ transcript/i)
+  assert.match(source, /clinicalIntelligence\?\.sources\?\.map/)
+  assert.match(source, /sourceManifest/)
+  assert.doesNotMatch(source, /Generated from Zoom summary \+ transcript/i)
 })
 
 test('SessionWorkspace calls generateSessionSummary helper', () => {

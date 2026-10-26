@@ -45,6 +45,9 @@ jobs:
       - name: Install Playwright Chromium
         run: npx playwright install --with-deps chromium
 
+      - name: Verify document preparation and draft preservation
+        run: node node_modules/@playwright/test/cli.js test --config=playwright.documents.config.js
+
       - name: Verify Ask Helios restored scroll in desktop and mobile Chromium
         run: node scripts/verify-ask-helios-scroll.mjs
 

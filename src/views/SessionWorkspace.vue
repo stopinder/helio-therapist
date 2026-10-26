@@ -38,6 +38,7 @@
                   <p v-if="summaryDocument?.id" class="mt-1 text-caption text-ink-muted">{{ summaryDocument.status === 'completed' ? 'Finalised in this client’s Documents.' : 'Saved in this client’s Documents.' }}</p>
                 </div>
                 <div class="flex flex-wrap items-center justify-end gap-3">
+                  <button type="button" class="button-secondary" :disabled="isGenerating || summarySaving" @click="showDocumentPreparation = true">Summary options</button>
                   <span v-if="copySuccess" class="text-body-sm text-state-success" role="status">Copied!</span>
                   <template v-if="summaryDocument?.content?.body && !isGenerating && summaryDocument.status !== 'completed'">
                     <button v-if="!isEditingSummary" @click="isEditingSummary = true" class="text-body-sm font-medium text-action-link hover:underline">Edit</button>
@@ -62,10 +63,10 @@
                 <template v-else-if="summaryDocument">
                   <SessionSummaryDocument v-if="!isEditingSummary" :body="summaryDocument.content.body" :clientName="client?.name" :date="workspaceSession.date" />
                   <div v-else class="bg-surface rounded-panel border border-border p-6 shadow-sm animate-expandIn">
-                    <textarea v-model="summaryDocument.content.body" class="w-full min-h-[30rem] p-6 border border-border rounded-control bg-surface-subtle type-body-long focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-all resize-y" placeholder="No session summary yet." @input="handleSummaryInput"></textarea>
+                    <textarea :disabled="isGenerating || summarySaving" v-model="summaryDocument.content.body" class="w-full min-h-[30rem] p-6 border border-border rounded-control bg-surface-subtle type-body-long focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-all resize-y" placeholder="No session summary yet." @input="handleSummaryInput"></textarea>
                     <p v-if="summarySaveError" class="mt-3 text-body-sm text-state-danger" role="alert">{{ summarySaveError }}</p>
                     <div v-if="summaryDocument.sourceManifest?.length" class="mt-4 flex items-center justify-end">
-                      <span class="type-metadata text-ink-muted">Generated from Zoom summary + transcript</span>
+                      <span class="type-metadata text-ink-muted">{{ summaryDocument.content?.clinicalIntelligence?.sources?.map(s => s.label).filter(Boolean).join(' · ') || 'Session source linked below' }}</span>
                     </div>
                   </div>
                 </template>
@@ -128,13 +129,17 @@
           </template>
         </div>
       </div>
+      <ClientDocumentComposer v-if="showDocumentPreparation && preparationClient" :key="session.id"
+        :client="preparationClient" :client-email="client?.email || ''" initial-document-type="session_summary"
+        :initial-session-id="session.id" @close="showDocumentPreparation = false"
+        @saved="preparedDocumentSaved" @show-documents="openClientDocuments" />
     </template>
   </div>
 </template>
 
 <script setup>
 import HelpLink from '../components/help/HelpLink.vue'
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, onBeforeUnmount, computed } from 'vue';
 import { useRoute, useRouter, RouterLink } from 'vue-router';
 import { supabase } from '../lib/supabase.js';
 import { getSession } from '../lib/sessions.js';
@@ -144,6 +149,7 @@ import { authenticatedFetch } from '../lib/api.js';
 import SessionWorkspaceHeader from '../components/workspace/SessionWorkspaceHeader.vue';
 import ReflectionTab from '../components/workspace/ReflectionTab.vue';
 import SessionSummaryDocument from '../components/workspace/SessionSummaryDocument.vue';
+import ClientDocumentComposer from '../components/workspace/ClientDocumentComposer.vue';
 import ClinicalSummaryTab from '../components/workspace/ClinicalSummaryTab.vue';
 import CompletedClinicalRecord from '../components/workspace/CompletedClinicalRecord.vue';
 
@@ -151,6 +157,10 @@ const route = useRoute();
 const router = useRouter();
 const session = ref(null), client = ref(null), loading = ref(true), error = ref(''), transcript = ref(null), transcriptLoading = ref(false), transcriptError = ref(''), therapistName = ref('');
 const summaryDocument = ref(null);
+const showDocumentPreparation = ref(false);
+const summarySaving = ref(false);
+let autosavePromise = null;
+const preparationClient = computed(() => client.value ? {...client.value, display_name: client.value.display_name || client.value.name || 'Client'} : null);
 const activeView = ref('summary');
 const isEditingSummary = ref(false);
 const showTranscript = ref(false);
@@ -171,23 +181,36 @@ function handleSessionUpdate(updatedSession) {
 
 async function generateSummary() {
   if (!session.value || isGenerating.value || summaryDocument.value?.status === 'completed') return;
+  if (summaryDocument.value?.content?.body && !window.confirm('Generate a replacement summary? The current text will remain available in Previous versions. Nothing will be finalised or shared.')) return;
+  clearTimeout(saveTimer);
   isGenerating.value = true;
   generationError.value = '';
   try {
+    if (autosavePromise) await autosavePromise;
+    const before = summaryDocument.value ? JSON.parse(JSON.stringify(summaryDocument.value.content)) : null;
     const transcriptId = transcript.value?.id;
     const result = await generateSessionSummary({ clientId: session.value.clientId, sessionId: session.value.id, transcriptId });
+    const metadata = { generation: { id:result.generationId,generatedAt:result.generatedAt,promptVersion:result.promptVersion,
+      documentPurpose:result.documentPurpose,audience:result.audience,lens:result.lens,window:result.window,
+      anchorSessionId:result.anchorSessionId,selectedSessionIds:result.selectedSessionIds,includeCare:result.includeCare,
+      sourceVersion:result.sourceVersion,model:result.model }, sources:result.sources||[],claims:result.claims||[],
+      lastGeneratedBody:result.draft.body,history:[...(before?.clinicalIntelligence?.history||[]),...(before?.body?[{
+        body:before.body,richContent:before.richContent||null,generation:before.clinicalIntelligence?.generation||null,
+        sources:before.clinicalIntelligence?.sources||summaryDocument.value?.sourceManifest||[],claims:before.clinicalIntelligence?.claims||[],
+        savedAt:new Date().toISOString(),lastGeneratedBody:before.clinicalIntelligence?.lastGeneratedBody||''
+      }]:[])].slice(-5) };
     if (summaryDocument.value) {
       const updated = await saveClientDocumentDraft(summaryDocument.value, {
         content: {
           ...summaryDocument.value.content,
-          body: result.draft.body,
+          body: result.draft.body, richContent: null, clinicalIntelligence: metadata,
           history: [...(summaryDocument.value.content.history || []), { body: summaryDocument.value.content.body, timestamp: new Date().toISOString(), type: 'pre_regeneration' }]
         },
         sourceManifest: result.sources
       });
       summaryDocument.value = updated;
     } else {
-      summaryDocument.value = await createClientDocumentDraft({ client: client.value, title: `Session Summary - ${workspaceSession.value.date}`, documentType: 'session_summary', content: { body: result.draft.body }, sourceManifest: result.sources });
+      summaryDocument.value = await createClientDocumentDraft({ client: client.value, title: `Session Summary - ${workspaceSession.value.date}`, documentType: 'session_summary', content: { body: result.draft.body, clinicalIntelligence: metadata }, sourceManifest: result.sources });
     }
   } catch (err) {
     generationError.value = err.message || 'Summary generation failed. Please try again.';
@@ -247,21 +270,23 @@ async function copySummary() {
 }
 
 async function handleSummaryInput() {
-  if (summaryDocument.value?.status === 'completed') return;
-  clearTimeout(saveTimer);
-  summarySaveError.value = '';
-  saveTimer = setTimeout(async () => {
-    if (!summaryDocument.value || summaryDocument.value.status === 'completed') return;
-    try {
-      const updated = await saveClientDocumentDraft(summaryDocument.value, { content: summaryDocument.value.content });
-      summaryDocument.value.version = updated.version;
-      summarySaveError.value = '';
-    } catch (err) {
-      summarySaveError.value = 'Your changes could not be saved. Please try editing again.';
-      console.error('Failed to auto-save summary:', err);
-    }
-  }, 1000);
+  if (summaryDocument.value?.status === 'completed' || isGenerating.value) return;
+  clearTimeout(saveTimer); summarySaveError.value = '';
+  saveTimer = setTimeout(() => {
+    if (!summaryDocument.value || summaryDocument.value.status === 'completed' || isGenerating.value) return;
+    const document = summaryDocument.value;
+    summarySaving.value = true;
+    autosavePromise = saveClientDocumentDraft(document, { content: JSON.parse(JSON.stringify(document.content)) })
+      .then(updated => { if(summaryDocument.value?.id === updated.id) summaryDocument.value.version = updated.version; summarySaveError.value = ''; })
+      .catch(err => { summarySaveError.value = 'Your changes could not be saved. Please try editing again.'; console.error('Failed to auto-save summary:', err); })
+      .finally(() => { summarySaving.value = false; autosavePromise = null; });
+  }, 600);
 }
+function preparedDocumentSaved(document) {
+  if(document.documentType === 'session_summary' && document.sourceManifest?.some(source => source.sessionId === session.value?.id)) summaryDocument.value=document;
+}
+function openClientDocuments() { showDocumentPreparation.value=false; router.push('/clients/'+session.value.clientId+'#section-documents'); }
+onBeforeUnmount(() => clearTimeout(saveTimer));
 
 async function loadTherapistProfile(){if(!supabase)return;try{const {data:{user}}=await supabase.auth.getUser();if(!user)return;const {data:profile}=await supabase.from('profiles').select('full_name').eq('id',user.id).maybeSingle();const metadataName=typeof user.user_metadata?.full_name==='string'?user.user_metadata.full_name.trim():'';therapistName.value=profile?.full_name?.trim()||metadataName||''}catch(e){console.warn('[Session] Could not load therapist identity',e)}}
 

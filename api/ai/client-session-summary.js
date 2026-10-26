@@ -3,7 +3,10 @@ import { AI_FEATURES, runTextAI } from '../_lib/ai-execution.js';
 import { randomUUID } from 'node:crypto';
 import { CLIENT_SESSION_SUMMARY_LENSES, CLIENT_SESSION_SUMMARY_PROMPT_VERSION, buildClientSessionSummaryInput, buildClinicalIntelligenceEvidenceMap, clientSessionSummarySystemPrompt, renderClientSessionSummary, selectClinicalIntelligenceSources, validateClientSessionSummaryResponse } from '../_lib/ai-client-session-summary.js';
 
+import { handlePreparedDocument } from '../_lib/prepare-document-handler.js';
+
 export default async function handler(req, res) {
+  if (req.body?.preparation === true) return handlePreparedDocument(req, res);
   res.setHeader('Cache-Control', 'no-store');
   if (req.method !== 'POST') { res.setHeader('Allow', 'POST'); return res.status(405).json({ success:false, error:{ code:'METHOD_NOT_ALLOWED', message:'Method not allowed' } }); }
   try {

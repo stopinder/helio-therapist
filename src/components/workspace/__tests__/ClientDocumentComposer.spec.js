@@ -1,120 +1,70 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { mount, flushPromises } from '@vue/test-utils'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { mount, flushPromises, DOMWrapper } from '@vue/test-utils'
 import ClientDocumentComposer from '../ClientDocumentComposer.vue'
 import * as clientDocs from '../../../lib/clientDocuments.js'
-import * as docProfile from '../../../lib/documentProfile.js'
 
 vi.mock('../../../lib/clientDocuments.js', () => ({
-  createClientDocumentDraft: vi.fn(),
-  downloadClientDocument: vi.fn(),
-  finaliseClientDocument: vi.fn(),
-  generateClientSessionSummary: vi.fn(),
-  listClientSummaryEvidence: vi.fn(() => Promise.resolve([])),
-  listDocumentSourceSessions: vi.fn(() => Promise.resolve([])),
-  saveClientDocumentDraft: vi.fn()
+  createClientDocumentDraft: vi.fn(), downloadClientDocument: vi.fn(), finaliseClientDocument: vi.fn(),
+  generatePreparedDocument: vi.fn(),
+  previewPreparedDocument: vi.fn(() => Promise.resolve({ sourceVersion: 'fixture-hash', sessionCount: 1, sources: [], warnings: [] })),
+  listDocumentPreparationSessions: vi.fn(() => Promise.resolve({ availableSessions: [{ sessionId: '00000000-0000-4000-8000-000000000001', occurredAt: '2026-10-01T10:00:00Z', reviewedAt: '2026-10-02T10:00:00Z', linkedTranscripts: [] }] })),
+  listDocumentSourceSessions: vi.fn(() => Promise.resolve([])), saveClientDocumentDraft: vi.fn()
 }))
-
 vi.mock('../../../lib/documentProfile.js', () => ({
-  loadDocumentProfile: vi.fn(() => Promise.resolve({ full_name: 'Dr. Therapist' })),
-  profileDisplay: vi.fn(() => ({ heading: 'Dr. Therapist', contactLines: [], footer: 'Helios' }))
+  loadDocumentProfile: vi.fn(() => Promise.resolve({ full_name: 'Test Therapist' })),
+  profileDisplay: vi.fn(() => ({ heading: 'Test Therapist', contactLines: [], footer: 'Helios' }))
 }))
-
 const RichDocumentEditorStub = {
-  props: ['modelValue'],
-  emits: ['update:modelValue'],
-  template: `<textarea data-testid="rich-document-editor-stub" :value="modelValue" @input="$emit('update:modelValue', $event.target.value)" />`
+  props: ['modelValue', 'editable'], emits: ['update:modelValue'],
+  template: '<textarea data-testid="rich-document-editor-stub" :disabled="editable === false" :value="modelValue" @input="$emit(\'update:modelValue\', $event.target.value)" />'
 }
+const mockClient = { id: 'cccccccc-cccc-4ccc-cccc-cccccccccccc', display_name: 'Fictional client' }
+const mockDocument = { id: 'd1', title: 'Test Draft', status: 'draft', documentType: 'other', content: { body: 'Draft body text' } }
+const mounted = []
+function mountComposer(props = {}) {
+  // Exercise real Teleport; stubbing its slots can remount the child on busy updates.
+  mounted.push(mount(ClientDocumentComposer, { attachTo: document.body,
+    props: { client: mockClient, ...props }, global: { stubs: { HelpLink: true, RichDocumentEditor: RichDocumentEditorStub } } }))
+  return new DOMWrapper(document.body)
+}
+beforeEach(() => { vi.clearAllMocks(); vi.stubGlobal('confirm', vi.fn(() => true)) })
+afterEach(() => { mounted.splice(0).forEach(w => w.unmount()); document.body.replaceChildren(); vi.unstubAllGlobals() })
 
 describe('ClientDocumentComposer', () => {
-  const mockClient = { id: 'c1', display_name: 'Jane Doe' }
-  const mockDocument = {
-    id: 'd1',
-    title: 'Test Draft',
-    status: 'draft',
-    documentType: 'other',
-    content: { body: 'Draft body text' }
-  }
-
-  beforeEach(() => {
-    vi.clearAllMocks()
-    // Mock window.confirm to always return true
-    vi.stubGlobal('confirm', vi.fn(() => true))
+  it('renders loading state initially', () => {
+    const w = mountComposer()
+    expect(w.find('[data-testid="client-document-composer"]').exists()).toBe(true)
+    expect(w.text()).toContain('Loading document workspace')
   })
-
-  it('renders loading state initially', async () => {
-    const wrapper = mount(ClientDocumentComposer, {
-      props: { client: mockClient },
-      global: {
-        stubs: {
-          teleport: true
-        }
-      }
-    })
-    expect(wrapper.find('[data-testid="client-document-composer"]').exists()).toBe(true)
-    expect(wrapper.text()).toContain('Loading document workspace…')
-  })
-
   it('renders editable workspace when loaded', async () => {
-    const wrapper = mount(ClientDocumentComposer, {
-      props: { client: mockClient, document: mockDocument },
-      global: { stubs: { teleport: true, RichDocumentEditor: RichDocumentEditorStub } }
-    })
-    await flushPromises()
-
-    expect(wrapper.text()).toContain('Edit client document')
-    expect(wrapper.find('[data-testid="rich-document-editor-stub"]').element.value).toBe('Draft body text')
-    const buttons = wrapper.findAll('button')
-    expect(buttons.some(b => b.text().includes('Save Draft'))).toBe(true)
+    const w = mountComposer({ document: mockDocument }); await flushPromises()
+    expect(w.text()).toContain('Edit client document')
+    expect(w.find('[data-testid="rich-document-editor-stub"]').element.value).toBe('Draft body text')
+    expect(w.findAll('button').some(b => b.text() === 'Save Draft')).toBe(true)
   })
-
-  it('renders finalised state', async () => {
-    const finalisedDoc = { ...mockDocument, status: 'completed', finalizedAt: '2026-09-14T12:00:00Z' }
-    const wrapper = mount(ClientDocumentComposer, {
-      props: { client: mockClient, document: finalisedDoc },
-      global: { stubs: { teleport: true, RichDocumentEditor: RichDocumentEditorStub } }
-    })
-    await flushPromises()
-
-    expect(wrapper.text()).toContain('Document Finalised')
-    expect(wrapper.text()).toContain('✓ PDF finalised and saved')
-    const buttons = wrapper.findAll('button')
-    expect(buttons.some(b => b.text().includes('Download PDF'))).toBe(true)
-    // Should NOT show editable canvas textarea in finalised view
-    expect(wrapper.find('textarea.clinical-body').exists()).toBe(false)
+  it('renders finalised state without an editable canvas', async () => {
+    const w = mountComposer({ document: { ...mockDocument, status: 'completed', finalizedAt: '2026-09-14T12:00:00Z' } }); await flushPromises()
+    expect(w.text()).toContain('Document Finalised')
+    expect(w.text()).toContain('PDF finalised and saved')
+    expect(w.findAll('button').some(b => b.text() === 'Download PDF')).toBe(true)
+    expect(w.find('[data-testid="rich-document-editor-stub"]').exists()).toBe(false)
   })
-
   it('handles session summary specific UI', async () => {
-    const wrapper = mount(ClientDocumentComposer, {
-      props: { client: mockClient, initialDocumentType: 'session_summary' },
-      global: { stubs: { teleport: true, RichDocumentEditor: RichDocumentEditorStub } }
-    })
-    await flushPromises()
-
-    expect(wrapper.text()).toContain('Client-facing summary')
-    const buttons = wrapper.findAll('button')
-    expect(buttons.some(b => b.text().includes('Generate client summary'))).toBe(true)
+    const w = mountComposer({ initialDocumentType: 'session_summary' }); await flushPromises()
+    expect(w.text()).toContain('Client-facing summary')
+    expect(w.findAll('button').some(b => b.text().includes('Generate client summary'))).toBe(true)
   })
-
-  it('preserves text on generation failure', async () => {
-    clientDocs.generateClientSessionSummary.mockRejectedValue(new Error('AI failed'))
-    
-    const wrapper = mount(ClientDocumentComposer, {
-      props: { client: mockClient, initialDocumentType: 'session_summary' },
-      global: { stubs: { teleport: true, RichDocumentEditor: RichDocumentEditorStub } }
-    })
-    await flushPromises()
-
-    const editor = wrapper.find('[data-testid="rich-document-editor-stub"]')
-    expect(editor.exists()).toBe(true)
-    await editor.setValue('Original Text')
-    await flushPromises()
-    
-    const generateBtn = wrapper.findAll('button').find(b => b.text().includes('Generate client summary'))
-    await generateBtn.trigger('click')
-    await flushPromises()
-
-    expect(clientDocs.generateClientSessionSummary).toHaveBeenCalledTimes(1)
-    expect(wrapper.text()).toContain('AI failed')
+  it('preserves edited text and displays generation failure', async () => {
+    clientDocs.generatePreparedDocument.mockRejectedValue(new Error('AI failed'))
+    const w = mountComposer({ initialDocumentType: 'session_summary' }); await flushPromises()
+    const editor = w.find('[data-testid="rich-document-editor-stub"]')
+    await editor.setValue('Original Text'); await flushPromises()
+    const button = w.find('[data-testid="generate-prepared-document"]')
+    await vi.waitFor(() => expect(button.element.disabled).toBe(false))
+    await button.trigger('click'); await flushPromises()
+    expect(clientDocs.generatePreparedDocument).toHaveBeenCalledTimes(1)
+    expect(w.text()).toContain('AI failed')
     expect(editor.element.value).toBe('Original Text')
+    expect(editor.element.disabled).toBe(false)
   })
 })

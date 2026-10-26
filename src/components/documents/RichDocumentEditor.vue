@@ -1,6 +1,6 @@
 <template>
   <div ref="editorHost" class="document-rich-editor">
-    <div class="document-editor-toolbar" role="toolbar" aria-label="Document formatting">
+    <div v-if="editable" class="document-editor-toolbar" role="toolbar" aria-label="Document formatting">
       <button type="button" :class="{ active: editor?.isActive('paragraph') }" @click="editor?.chain().focus().setParagraph().run()">Text</button>
       <button type="button" :class="{ active: editor?.isActive('heading', { level: 2 }) }" @click="editor?.chain().focus().toggleHeading({ level: 2 }).run()">Heading</button>
       <span class="toolbar-divider"></span>
@@ -47,6 +47,7 @@ const props = defineProps({
   modelValue: { type: String, default: '' },
   richContent: { type: Object, default: null },
   placeholder: { type: String, default: '' },
+  editable: { type: Boolean, default: true },
   firstPageContentMm: { type: Number, default: 190 },
   followingPageContentMm: { type: Number, default: 245 }
 })
@@ -184,6 +185,7 @@ const editor = new Editor({
     }),
     PageBreak
   ],
+  editable: props.editable,
   content: props.richContent || plainTextToHtml(props.modelValue),
   editorProps: {
     attributes: {
@@ -205,6 +207,8 @@ function insertPageBreak() {
   editor.chain().focus().insertContent({ type: 'pageBreak' }).run()
   schedulePagination()
 }
+
+watch(() => props.editable, value => { editor.setEditable(value, false) })
 
 watch(() => props.modelValue, value => {
   const current = editorPlainText(editor)
