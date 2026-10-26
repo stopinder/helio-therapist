@@ -8,10 +8,10 @@ export function isAnswered(question, value) {
  * Object.hasOwn(proxy, key) alone does not subscribe to these value changes.
  * The context option counts as a completed response, but remains unscored evidence.
  */
-export function answerProgress(answers) {
-  const missing = therapistQuestions.filter(question => !isAnswered(question, answers[question.id]))
+export function answerProgress(answers, questions = therapistQuestions) {
+  const missing = questions.filter(question => !isAnswered(question, answers[question.id]))
   return {
-    answered: therapistQuestions.length - missing.length,
+    answered: questions.length - missing.length,
     complete: missing.length === 0,
     missing
   }

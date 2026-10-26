@@ -160,3 +160,175 @@ export const therapistQuestions = [
     ]
   }
 ]
+
+
+/**
+ * Alternate authored form. It mirrors the same editorial dimension pairings as the
+ * original form so switching forms changes the situations without changing the
+ * interpretation model.
+ */
+export const therapistQuestionsAlternate = [
+  {
+    id: 'q01', title: 'A client wants a recommendation',
+    text: 'A client says, “If you were me, what would you do?” You have enough context to respond thoughtfully. What would usually be your first move?',
+    options: [
+      { id: 'a', text: 'Offer one tentative recommendation and agree how the client might test whether it helps.', weights: { direction: -2, aim: -2 } },
+      { id: 'b', text: 'Invite the client to stay with the dilemma and decide what feels most important to explore.', weights: { direction: 2, aim: 2 } },
+      { id: 'c', text: 'Help the client identify their own preferred course and turn it into a practical next step.', weights: { direction: 2, aim: -2 } },
+      { id: 'd', text: 'Share your reading of the dilemma and use it to deepen the conversation rather than settle the decision.', weights: { direction: -2, aim: 2 } }
+    ]
+  },
+  {
+    id: 'q02', title: 'Wondering about a label',
+    text: 'A client asks whether a psychological label might help them make sense of themselves. Within your role, where would you most naturally begin?',
+    options: [
+      { id: 'a', text: 'Offer a provisional formulation and explain how it differs from a formal diagnosis.', weights: { direction: -2, meaning: -2 } },
+      { id: 'b', text: 'Ask what the label would mean to them and which parts of their experience they most want understood.', weights: { direction: 2, meaning: 2 } },
+      { id: 'c', text: 'Ask focused questions about their current experiences before discussing any explanatory framework.', weights: { direction: -2, meaning: 2 } },
+      { id: 'd', text: 'Invite them to describe the explanations they already hold and follow the meaning they attach to them.', weights: { direction: 2, meaning: -2 } }
+    ]
+  },
+  {
+    id: 'q03', title: 'Emotion rising in the room',
+    text: 'A client becomes tearful while remaining grounded and engaged with you. After checking that it feels okay to continue, what would you tend to offer?',
+    options: [
+      { id: 'a', text: 'Create a brief structure for understanding what happened, what they thought and what it means now.', weights: { structure: -2, mode: -2 } },
+      { id: 'b', text: 'Stay close to the unfolding feeling and let the client determine where the experience goes.', weights: { structure: 2, mode: 2 } },
+      { id: 'c', text: 'Offer a short experiential exercise with a clear frame and an easy way to stop.', weights: { structure: -2, mode: 2 } },
+      { id: 'd', text: 'Follow the meanings and associations that emerge without imposing a sequence.', weights: { structure: 2, mode: -2 } }
+    ]
+  },
+  {
+    id: 'q04', title: 'A very coherent account',
+    text: 'A client can explain a difficult relationship in great detail and with clear logic. You are curious rather than assuming this is avoidance. What would you explore first?',
+    options: [
+      { id: 'a', text: 'Offer a tentative interpretation of what this explanatory style may be doing and ask whether it fits.', weights: { mode: -2, meaning: -2 } },
+      { id: 'b', text: 'Invite attention to present-moment feeling, sensation or tone while they describe the relationship.', weights: { mode: 2, meaning: 2 } },
+      { id: 'c', text: 'Clarify the distinctions and meanings in their account before adding an interpretation.', weights: { mode: -2, meaning: 2 } },
+      { id: 'd', text: 'Suggest a brief experiential test of a hypothesis and then compare the experience with your initial idea.', weights: { mode: 2, meaning: -2 } }
+    ]
+  },
+  {
+    id: 'q05', title: 'The conversation stops',
+    text: 'The room goes quiet for longer than usual. There is no sign of immediate risk and you do not know what the pause means. What feels most natural?',
+    options: [
+      { id: 'a', text: 'Ask a focused question that gives the client a way to put the pause into words.', weights: { direction: -2, mode: -2 } },
+      { id: 'b', text: 'Allow the silence to continue until the client chooses whether and how to speak.', weights: { direction: 2, mode: 2 } },
+      { id: 'c', text: 'Invite the client to notice together what the silence feels like right now.', weights: { direction: -2, mode: 2 } },
+      { id: 'd', text: 'Ask whether they want to think about the silence or move to something else.', weights: { direction: 2, mode: -2 } }
+    ]
+  },
+  {
+    id: 'q06', title: 'The client thanks you',
+    text: 'A client says, “You have really helped me change.” Once you have received the comment, what would you be most interested in understanding?',
+    options: [
+      { id: 'a', text: 'Whether a tentative account of what has happened in therapy helps explain the change.', weights: { time: -2, meaning: -2 } },
+      { id: 'b', text: 'How receiving help from you connects with earlier experiences of relying on other people.', weights: { time: 2, meaning: 2 } },
+      { id: 'c', text: 'What is concretely different in their life now, before proposing why it changed.', weights: { time: -2, meaning: 2 } },
+      { id: 'd', text: 'Whether the change reflects a shift in a longer-standing pattern of relating or self-understanding.', weights: { time: 2, meaning: -2 } }
+    ]
+  },
+  {
+    id: 'q07', title: 'An idea you may be wrong about',
+    text: 'A pattern in the work makes you think you understand something important, but the evidence is still thin. How would you tend to hold that idea?',
+    options: [
+      { id: 'a', text: 'Agree a focused way to test the formulation over the next sessions, including what would count against it.', weights: { structure: -2, meaning: -2 } },
+      { id: 'b', text: 'Leave the idea aside and continue gathering the client’s descriptions without organising them around it.', weights: { structure: 2, meaning: 2 } },
+      { id: 'c', text: 'Use a structured description of specific situations before deciding whether the idea is useful.', weights: { structure: -2, meaning: 2 } },
+      { id: 'd', text: 'Keep the idea provisionally in mind and return to it only if later material makes it relevant.', weights: { structure: 2, meaning: -2 } }
+    ]
+  },
+  {
+    id: 'q08', title: 'Wanting something practical',
+    text: 'A client says they would like therapy to include something they can actively practise. Which offer sounds most like you?',
+    options: [
+      { id: 'a', text: 'Suggest a specific exercise, agree how to try it and set a point to review what happened.', weights: { structure: -2, direction: -2 } },
+      { id: 'b', text: 'Ask the client what kind of practice would feel useful and build it together as the conversation develops.', weights: { structure: 2, direction: 2 } },
+      { id: 'c', text: 'Co-design a repeatable practice where the client chooses the focus and how they will judge usefulness.', weights: { structure: -2, direction: 2 } },
+      { id: 'd', text: 'Use an improvised in-session exercise that grows directly from what is happening between you now.', weights: { structure: 2, direction: -2 } }
+    ]
+  },
+  {
+    id: 'q09', title: 'Only a few sessions left',
+    text: 'You and the client know that therapy will end after a small number of remaining sessions. Several worthwhile areas are still open. What would you usually favour?',
+    options: [
+      { id: 'a', text: 'Create a simple plan for each remaining session around one current recurring difficulty.', weights: { structure: -2, time: -2 } },
+      { id: 'b', text: 'Let what emerges in each session guide whether links with earlier experience need attention.', weights: { structure: 2, time: 2 } },
+      { id: 'c', text: 'Agree a bounded review connecting earlier learning with the concern that brought them to therapy.', weights: { structure: -2, time: 2 } },
+      { id: 'd', text: 'Keep the remaining sessions open to whichever present-life situations feel most important at the time.', weights: { structure: 2, time: -2 } }
+    ]
+  },
+  {
+    id: 'q10', title: 'A familiar relational moment',
+    text: 'A moment between you and the client resembles a pattern that seems important elsewhere in their life. What would you be most likely to do first?',
+    options: [
+      { id: 'a', text: 'Name the specific interaction you have noticed and invite the client to examine it with you now.', weights: { direction: -2, time: -2 } },
+      { id: 'b', text: 'Ask whether anything about the moment feels familiar from earlier relationships and let them choose the link.', weights: { direction: 2, time: 2 } },
+      { id: 'c', text: 'Invite them to describe what they think is happening between you before deciding where to take it.', weights: { direction: 2, time: -2 } },
+      { id: 'd', text: 'Suggest exploring the history of the wider relational pattern through what is happening between you.', weights: { direction: -2, time: 2 } }
+    ]
+  },
+  {
+    id: 'q11', title: 'Anxiety before important moments',
+    text: 'A client often becomes apprehensive before situations that matter to them. You have agreed to explore the pattern. Where would you tend to start?',
+    options: [
+      { id: 'a', text: 'Map the predictions, interpretations and thoughts that show up in recent examples.', weights: { mode: -2, time: -2 } },
+      { id: 'b', text: 'Notice how earlier experiences are felt or remembered while the client talks about the anxiety.', weights: { mode: 2, time: 2 } },
+      { id: 'c', text: 'Build a shared account of how the present meanings developed from earlier experiences.', weights: { mode: -2, time: 2 } },
+      { id: 'd', text: 'Attend to present sensations, feelings and impulses while they describe a recent situation.', weights: { mode: 2, time: -2 } }
+    ]
+  },
+  {
+    id: 'q12', title: 'Insight has not changed much',
+    text: 'A client says they can now explain their pattern clearly, but their day-to-day response has barely shifted. What would you tend to offer?',
+    options: [
+      { id: 'a', text: 'Turn the shared understanding into a small behavioural experiment and review the outcome.', weights: { mode: -2, aim: -2 } },
+      { id: 'b', text: 'Explore the experience of still feeling stuck without requiring an immediate change.', weights: { mode: 2, aim: 2 } },
+      { id: 'c', text: 'Revisit the formulation together to see what remains unclear, missing or contradictory.', weights: { mode: -2, aim: 2 } },
+      { id: 'd', text: 'Invite an in-session experiential rehearsal of responding differently and notice what happens.', weights: { mode: 2, aim: -2 } }
+    ]
+  },
+  {
+    id: 'q13', title: 'Nothing pressing today',
+    text: 'A client arrives saying there is nothing urgent to discuss. Within your existing agreement, how would you tend to use the session?',
+    options: [
+      { id: 'a', text: 'Return to an agreed therapeutic aim and choose one concrete next step.', weights: { structure: -2, aim: -2 } },
+      { id: 'b', text: 'Follow whatever begins to feel significant without fixing the direction in advance.', weights: { structure: 2, aim: 2 } },
+      { id: 'c', text: 'Agree one focused question worth understanding more deeply without requiring an action task.', weights: { structure: -2, aim: 2 } },
+      { id: 'd', text: 'Follow what emerges and use any useful opening to experiment with something different.', weights: { structure: 2, aim: -2 } }
+    ]
+  },
+  {
+    id: 'q14', title: 'Things improved without going back',
+    text: 'A client is doing noticeably better even though the work has focused mainly on present life rather than origins. What would interest you most next?',
+    options: [
+      { id: 'a', text: 'Consolidate what is helping now and identify practical ways to support it.', weights: { time: -2, aim: -2 } },
+      { id: 'b', text: 'Understand how the improvement fits into the client’s longer developmental story.', weights: { time: 2, aim: 2 } },
+      { id: 'c', text: 'Explore how earlier coping patterns have shifted and what that suggests for future choices.', weights: { time: 2, aim: -2 } },
+      { id: 'd', text: 'Deepen the client’s description of what the improvement means in their life now.', weights: { time: -2, aim: 2 } }
+    ]
+  },
+  {
+    id: 'q15', title: 'Therapy is not quite landing',
+    text: 'A client says they value the conversations but therapy is not quite meeting what they hoped for. Where would you begin?',
+    options: [
+      { id: 'a', text: 'Offer a tentative explanation for the mismatch and use their response to suggest an adjustment.', weights: { meaning: -2, aim: -2 } },
+      { id: 'b', text: 'Stay with their experience of what feels absent before offering an explanation or solution.', weights: { meaning: 2, aim: 2 } },
+      { id: 'c', text: 'Ask for a concrete description of what they wanted and agree a practical adjustment from that.', weights: { meaning: 2, aim: -2 } },
+      { id: 'd', text: 'Explore what the mismatch may mean together before deciding how the work should change.', weights: { meaning: -2, aim: 2 } }
+    ]
+  }
+]
+
+export const THERAPIST_QUESTION_SETS = {
+  original: therapistQuestions,
+  alternate: therapistQuestionsAlternate
+}
+
+export function getTherapistQuestions(questionSetId = 'original') {
+  return THERAPIST_QUESTION_SETS[questionSetId] || null
+}
+
+export function otherTherapistQuestionSet(questionSetId = 'original') {
+  return questionSetId === 'alternate' ? 'original' : 'alternate'
+}
