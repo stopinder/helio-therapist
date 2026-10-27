@@ -14,12 +14,13 @@ test('SessionWorkspace offers Regenerate only for non-finalised summary content'
   assert.ok(button, 'Regenerate button must exist')
   const condition = button.match(/v-if="([^"]+)"/)?.[1]
   assert.ok(condition, 'Regenerate must have a visibility condition')
-  const isVisible = new Function('summaryDocument', `return Boolean(${condition})`)
+  const isVisible = new Function('summaryDocument', 'showDocumentPreparation', `return Boolean(${condition})`)
 
-  assert.equal(isVisible({ content: { body: 'Existing summary' }, status: 'draft' }), true)
-  assert.equal(isVisible({ content: { body: 'Finalised summary' }, status: 'completed' }), false)
-  assert.equal(isVisible({ content: { body: '' }, status: 'draft' }), false)
-  assert.equal(isVisible(null), false)
+  assert.equal(isVisible({ content: { body: 'Existing summary' }, status: 'draft' }, false), true)
+  assert.equal(isVisible({ content: { body: 'Existing summary' }, status: 'draft' }, true), false)
+  assert.equal(isVisible({ content: { body: 'Finalised summary' }, status: 'completed' }, false), false)
+  assert.equal(isVisible({ content: { body: '' }, status: 'draft' }, false), false)
+  assert.equal(isVisible(null, false), false)
 
   // The handler must also reject completed documents, even if invoked directly.
   const guard = source.match(/async function generateSummary\(\)\s*\{\s*if\s*\(([^\n]+)\)\s*return;/)?.[1]

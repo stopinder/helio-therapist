@@ -34,9 +34,8 @@ const measureResult = computed(() => reviewing.value?.outcome_measure_results?.[
 const responseItems = computed(() => formItems(reviewing.value?.resource_versions?.form_definition || {}))
 const clientName = id => props.clients.find(client => String(client.id) === String(id))?.name || ''
 function transcriptAction(transcript) {
-  if (!transcript.clientId || transcript.status === 'unassigned') return { title: 'Assign a client to a Zoom transcript', detail: 'This source transcript needs a client before it can be linked to a session.', action: 'Assign client' }
-  if (!transcript.sessionRef) return { title: 'Link a Zoom transcript to a session', detail: 'The transcript is assigned but still needs its therapeutic encounter.', action: 'Link session' }
-  if (!transcript.reviewChoicesSavedAt) return { title: 'Review transcript handling', detail: 'Choose any requested output and source-retention preference. No analysis has started.', action: 'Review transcript' }
+  if (!transcript.clientId || transcript.status === 'unassigned') return { title: 'Assign a client to a Zoom transcript', detail: 'This source transcript needs a client before it can be connected to an encounter.', action: 'Assign client' }
+  if (!transcript.sessionRef) return { title: 'Connect a Zoom transcript to a session', detail: 'The client is saved. Choose the therapeutic encounter this source belongs to.', action: 'Link session' }
   return null
 }
 const items = computed(() => {

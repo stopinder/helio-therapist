@@ -3,14 +3,20 @@ import fs from 'node:fs'
 import test from 'node:test'
 
 const inboxSource = fs.readFileSync(new URL('../src/components/TranscriptInbox.vue', import.meta.url), 'utf8')
+const attentionSource = fs.readFileSync(new URL('../src/components/NeedsAttention.vue', import.meta.url), 'utf8')
 
-test('completed transcript state is named as triage completion', () => {
-  assert.match(inboxSource, /label:'Triage complete'/)
-  assert.match(inboxSource, /<p class="eyebrow">Triage complete<\/p>/)
-  assert.match(inboxSource, /<h2>Transcript triage complete<\/h2>/)
+test('client plus session is the transcript triage completion boundary', () => {
+  assert.match(inboxSource, /function isConnected\(transcript\)/)
+  assert.match(inboxSource, /transcript\?\.clientId && transcript\?\.sessionRef/)
+  assert.match(inboxSource, /<p class="eyebrow">Connected<\/p>/)
+  assert.match(inboxSource, /<h2>Transcript connected<\/h2>/)
+  assert.match(inboxSource, /No further inbox step is required\./)
 })
 
-test('triage completion does not imply requested output or Clinical Record creation', () => {
-  assert.match(inboxSource, /No requested output or Clinical Record was created by this triage step\./)
-  assert.doesNotMatch(inboxSource, /This item is retained for search and in the linked session record\./)
+test('review choices are not a mandatory transcript-inbox gate', () => {
+  assert.doesNotMatch(inboxSource, /<h2>Review choices<\/h2>/)
+  assert.doesNotMatch(inboxSource, /saveReviewChoices/)
+  assert.doesNotMatch(attentionSource, /Review transcript handling/)
+  assert.match(attentionSource, /if \(!transcript\.sessionRef\)/)
+  assert.match(attentionSource, /return null/)
 })

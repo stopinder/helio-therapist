@@ -122,7 +122,7 @@ async function patchTranscript(body) { const req=createReq('token-a','PATCH',{ e
 test('Transcript Matching: Assign valid client and session', async () => {
   resetMockDatabase(); mockDatabase.zoom_transcripts=[versionedTranscript()]
   const res=await patchTranscript({ id:'trans-1', clientId:'client-a1', sessionRef:'sess-a1' })
-  assert.equal(res.statusCode,200); assert.equal(res.body.transcript.clientId,'client-a1'); assert.equal(res.body.transcript.sessionRef,'sess-a1'); assert.equal(res.body.transcript.status,'ready')
+  assert.equal(res.statusCode,200); assert.equal(res.body.transcript.clientId,'client-a1'); assert.equal(res.body.transcript.sessionRef,'sess-a1'); assert.equal(res.body.transcript.status,'ready'); assert.ok(res.body.transcript.completedAt, 'Linking client and session completes transcript triage')
 })
 
 test('Transcript Matching: Reject cross-client session assignment', async () => {
@@ -135,6 +135,18 @@ test('Transcript Matching: Reject cross-therapist client assignment', async () =
   resetMockDatabase(); mockDatabase.zoom_transcripts=[versionedTranscript()]
   const res=await patchTranscript({ id:'trans-1', clientId:'client-b1' })
   assert.equal(res.statusCode,404); assert.equal(res.body.error,'That client was not found.')
+})
+
+test('Transcript listing can be scoped to one owned client without a session filter', async () => {
+  resetMockDatabase()
+  mockDatabase.zoom_transcripts = [
+    versionedTranscript({ id:'trans-a', client_id:'client-a1', status:'ready' }),
+    versionedTranscript({ id:'trans-b', therapist_user_id:THERAPIST_A.id, client_id:'another-client', status:'ready' })
+  ]
+  const req=createReq('token-a','GET',{}, { clientId:'client-a1' })
+  const res=createRes(); await transcriptsHandler(req,res)
+  assert.equal(res.statusCode,200)
+  assert.deepEqual(res.body.transcripts.map(item=>item.id), ['trans-a'])
 })
 
 function signedWebhook(hostId='zoom-host-a') {

@@ -274,6 +274,75 @@ test.describe('Transcripts Workspace', () => {
     await expect(page.getByRole('heading', { name: 'Zoom meeting 123456789' })).toBeVisible();
   });
 
+  test('client then session completes transcript triage without a review-choices gate', async ({ page }) => {
+    let currentTranscript = {
+      id: 'trans-1',
+      meetingId: '123456789',
+      receivedAt: '2026-10-27T14:23:20.000Z',
+      updatedAt: '2026-10-27T14:23:20.000Z',
+      status: 'unassigned',
+      clientId: null,
+      sessionRef: null,
+      completedAt: null,
+      attentionClearedAt: null,
+      text: 'Mock transcript text'
+    }
+
+    await page.route('**/rest/v1/clients*', async route => {
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([
+        { id: 'client-1', display_name: 'Simon Hannah', name: 'Simon Hannah', archived: false }
+      ]) })
+    })
+    await page.route('**/rest/v1/sessions*', async route => {
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([
+        {
+          id: 'session-1', user_id: MOCK_USER_ID, client_id: 'client-1',
+          occurred_at: '2026-10-05T19:40:51.000Z', status: 'completed',
+          notes: '', created_at: '2026-10-05T19:41:37.000Z',
+          updated_at: '2026-10-05T20:00:00.000Z', completed_at: '2026-10-05T20:00:00.000Z',
+          ended_at: '2026-10-05T20:00:00.000Z', workflow_status: 'needs_review',
+          notes_status: 'draft', version: 1, legacy_ref: null, zoom_state: null,
+          zoom_meeting_id: null, zoom_error: null
+        }
+      ]) })
+    })
+    await page.route('**/api/zoom/transcripts*', async route => {
+      if (route.request().method() === 'GET') {
+        await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ transcripts: [currentTranscript] }) })
+        return
+      }
+      if (route.request().method() === 'PATCH') {
+        const body = route.request().postDataJSON()
+        if (body.clientId) {
+          currentTranscript = { ...currentTranscript, clientId: body.clientId, status: 'ready', sessionRef: null, updatedAt: '2026-10-27T14:30:15.000Z' }
+        } else if (body.sessionRef) {
+          currentTranscript = { ...currentTranscript, sessionRef: body.sessionRef, completedAt: '2026-10-27T14:31:00.000Z', updatedAt: '2026-10-27T14:31:00.000Z' }
+        }
+        await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ transcript: currentTranscript }) })
+      }
+    })
+
+    await ensureWorkspaceLoaded(page)
+    await page.getByRole('button', { name: /Meeting 123456789/ }).click()
+    await page.getByLabel('Client', { exact: true }).selectOption('client-1')
+    await page.getByRole('button', { name: 'Assign client' }).click()
+    await expect(page.getByText('Assigned to Simon Hannah. Now choose the session.')).toBeVisible()
+    await expect(page.getByText('Which session was this?')).toBeVisible()
+
+    await page.locator('input[value="session-1"]').check()
+    await page.getByRole('button', { name: 'Link selected session' }).click()
+    await expect(page.getByRole('heading', { name: 'Transcript connected' })).toBeVisible()
+    await expect(page.getByText(/No further inbox step is required/)).toBeVisible()
+    await expect(page.getByText('Review choices')).toHaveCount(0)
+
+    await page.getByRole('button', { name: '‹ Transcript Inbox' }).click()
+    await expect(page.getByText('Needs attention · 0')).toBeVisible()
+    await expect(page.getByRole('button', { name: /Meeting 123456789/ })).toHaveCount(0)
+    await page.getByRole('button', { name: 'History' }).click()
+    await expect(page.getByRole('button', { name: /Meeting 123456789/ })).toBeVisible()
+    await expect(page.getByText('Connected', { exact: true })).toBeVisible()
+  })
+
   test.describe('Clear all attention', () => {
     const mockTranscripts = [
       { id: 'trans-1', meetingId: '101', receivedAt: new Date().toISOString(), status: 'unassigned', updatedAt: '2023-01-01T00:00:00Z' },
