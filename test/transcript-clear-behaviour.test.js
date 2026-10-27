@@ -9,9 +9,10 @@ const source = fs.readFileSync(new URL('../src/components/TranscriptInbox.vue', 
 const script = source.match(/<script setup>([\s\S]*?)<\/script>/)[1].replace(/^import .*$/gm, '')
 const names = 'transcripts, selected, saving, loading, errorMessage, successMessage, lastClearedBatch, filterMode, searchQuery, clearAllAttention, undoClearAttention, restoreToAttention'
 function inbox(fetch) {
-  return new Function('ref', 'computed', 'onMounted', 'watch', 'useRouter', 'authenticatedFetch', 'defineProps', 'defineEmits', `${script}\nreturn {${names}}`)(Vue.ref, Vue.computed, () => {}, () => {}, () => ({}), fetch, () => ({ clients: [] }), () => () => {})
+  return new Function('ref', 'computed', 'nextTick', 'onMounted', 'watch', 'useRouter', 'authenticatedFetch', 'defineProps', 'defineEmits', `${script}\nreturn {${names}}`)(Vue.ref, Vue.computed, Vue.nextTick, () => {}, () => {}, () => ({}), fetch, () => ({ clients: [] }), () => () => {})
 }
-const cleared = id => ({ id, updatedAt: '2026-09-23T10:00:00.000Z', attentionClearedAt: '2026-09-23T10:00:00.000Z', text: 'Original text', status: 'ready', clientId: 'client', sessionRef: 'session', reviewChoicesSavedAt: null, completedAt: null })
+const cleared = id => ({ id, updatedAt: '2026-09-23T10:00:00.000Z', attentionClearedAt: '2026-09-23T10:00:00.000Z', text: 'Original text', status: 'unassigned', clientId: null, sessionRef: null, reviewChoicesSavedAt: null, completedAt: null })
+const connected = id => ({ ...cleared(id), attentionClearedAt: null, status: 'ready', clientId: 'client', sessionRef: 'session' })
 const restored = id => ({ ...cleared(id), attentionClearedAt: null, updatedAt: '2026-09-23T10:01:00.000Z' })
 const response = (transcript, ok = true) => ({ ok, json: async () => ({ transcript }) })
 function seed(state, items) {
@@ -114,24 +115,26 @@ test('individual restoration rejects malformed response data', async () => {
 const template = source.match(/<template>([\s\S]*?)<script setup>/)[1].replace(/<\/template>\s*$/, '')
 const render = new Function('Vue', compile(template, { mode: 'function' }).code)(Vue)
 async function html(overrides) {
-  const bindings = `${names}, expandedRows, editingClient, editingSession, editingChoices, showRaw, filters, matchingTranscripts, visibleTranscripts, hasMoreHistory, actionableCount, historyLimit, historyPageSize, rowTitle, formatDate, workflowTone, workflowState, primaryAction, labelFor, clientName, selectedClientId, selectedSessionRef, selectedLens, sourceRetention, showAddClient, addingClient, addClientError, sessionsForClient, selectedSessionDetails, isEligibleForDeletion, sessionOptionLabel`
-  const state = new Function('ref', 'computed', 'onMounted', 'watch', 'useRouter', 'authenticatedFetch', 'defineProps', 'defineEmits', `${script}\nreturn {${bindings}, clients: props.clients, ${[...script.matchAll(/^(?:async )?function (\w+)/gm)].map(m => m[1]).join(',')}}`)(Vue.ref, Vue.computed, () => {}, () => {}, () => ({}), () => {}, () => ({ clients: [] }), () => () => {})
+  const bindings = `${names}, expandedRows, editingClient, editingSession, showRaw, filters, matchingTranscripts, visibleTranscripts, hasMoreHistory, actionableCount, historyLimit, historyPageSize, rowTitle, formatDate, workflowTone, workflowState, primaryAction, labelFor, clientName, selectedClientId, showAddClient, addingClient, addClientError, sessionsForClient, isEligibleForDeletion, isConnected, needsTranscriptAttention, linkedSessionFor, transcriptMeta, historyLabel`
+  const state = new Function('ref', 'computed', 'nextTick', 'onMounted', 'watch', 'useRouter', 'authenticatedFetch', 'defineProps', 'defineEmits', `${script}\nreturn {${bindings}, clients: props.clients, ${[...script.matchAll(/^(?:async )?function (\w+)/gm)].map(m => m[1]).join(',')}}`)(Vue.ref, Vue.computed, Vue.nextTick, () => {}, () => {}, () => ({}), () => {}, () => ({ clients: [] }), () => () => {})
   for (const [key, value] of Object.entries(overrides)) state[key].value = value
   state.loading.value = false
   const app = Vue.createSSRApp({ setup: () => state, render })
   app.component('StatusIndicator', { template: '<span><slot /></span>' })
   app.component('AddClientModal', { render: () => null })
+  app.component('TranscriptSessionLinker', { render: () => null })
   return renderToString(app)
 }
 
-test('History explanation appears above populated and empty lists; completion label takes precedence', async () => {
-  const explanation = 'Transcripts cleared from the inbox or with completed inbox setup. Clearing does not mark work as complete.'
-  const populated = await html({ filterMode: 'history', transcripts: [cleared('a'), { ...cleared('b'), completedAt: '2026-09-23T10:03:00.000Z' }] })
+test('History explanation appears above connected, completed and cleared items', async () => {
+  const explanation = 'Connected transcripts and items you cleared from the inbox appear here.'
+  const populated = await html({ filterMode: 'history', transcripts: [cleared('a'), connected('b'), { ...cleared('c'), completedAt: '2026-09-23T10:03:00.000Z' }] })
   assert.ok(populated.includes(explanation), 'History explanation exists')
   assert.ok(populated.includes('class="inbox-list"'), 'History inbox list exists')
   assert.ok(populated.indexOf(explanation) < populated.indexOf('class="inbox-list"'))
-  assert.equal(populated.split('Inbox setup complete').length - 1, 1)
-  assert.equal(populated.split('Cleared from inbox').length - 1, 1)
+  assert.ok(populated.includes('Connected'))
+  assert.ok(populated.includes('Completed'))
+  assert.ok(populated.includes('Cleared from inbox'))
   const empty = await html({ filterMode: 'history', transcripts: [] })
   assert.ok(empty.indexOf(explanation) >= 0)
   assert.ok(empty.indexOf(explanation) < empty.indexOf('empty-card'))

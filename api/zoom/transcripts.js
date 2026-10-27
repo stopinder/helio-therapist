@@ -60,13 +60,16 @@ export default async function handler(req, res) {
 
     if (req.method === 'GET') {
       const { sessionRef, clientId } = req.query || {};
-      const hasSessionFilter = sessionRef !== undefined || clientId !== undefined;
-      if (hasSessionFilter && (typeof sessionRef !== 'string' || !sessionRef.trim() || typeof clientId !== 'string' || !clientId.trim())) {
-        return res.status(400).json({ error: 'Session and client ids are required together.' });
+      if (clientId !== undefined && (typeof clientId !== 'string' || !clientId.trim())) {
+        return res.status(400).json({ error: 'Client id must be a non-empty string.' });
+      }
+      if (sessionRef !== undefined && (typeof sessionRef !== 'string' || !sessionRef.trim() || typeof clientId !== 'string' || !clientId.trim())) {
+        return res.status(400).json({ error: 'A client id is required when filtering by session.' });
       }
 
       let query = supabase.from('zoom_transcripts').select(transcriptFields).eq('therapist_user_id', user.id).is('deleted_at', null);
-      if (hasSessionFilter) query = query.eq('session_ref', sessionRef).eq('client_id', clientId);
+      if (clientId !== undefined) query = query.eq('client_id', clientId);
+      if (sessionRef !== undefined) query = query.eq('session_ref', sessionRef);
       const { data, error } = await query.order('received_at', { ascending: false });
       if (error) throw error;
       return res.status(200).json({ transcripts: (data || []).map(serialiseTranscript) });
@@ -207,12 +210,9 @@ export default async function handler(req, res) {
         if (sessionRef && !effectiveClientId) return res.status(400).json({ error: 'Assign a client before linking a session.' });
         if (sessionRef && !(await validateSession(sessionRef, effectiveClientId))) return res.status(404).json({ error: 'That session was not found for this client.' });
         update.session_ref = sessionRef || null;
-        if (clientChanged) {
-          update.review_choices_saved_at = null;
-          update.completed_at = null;
-        } else {
-          update.completed_at = null;
-        }
+        if (clientChanged) update.review_choices_saved_at = null;
+        // Client + encounter is the complete transcript-triage boundary.
+        update.completed_at = sessionRef ? new Date().toISOString() : null;
       }
 
       if (requestedLens !== undefined) update.requested_lens = requestedLens || null;
@@ -225,16 +225,13 @@ export default async function handler(req, res) {
         if (!effectiveSessionRef) return res.status(400).json({ error: 'Link a session before saving review choices.' });
         if (!(await validateSession(effectiveSessionRef, effectiveClientId))) return res.status(409).json({ error: 'This transcript is linked to an unavailable session. Link it to a current session before saving review choices.' });
         update.review_choices_saved_at = new Date().toISOString();
-        update.completed_at = null;
       }
       if (reviewChoicesSaved === false) {
         update.review_choices_saved_at = null;
-        update.completed_at = null;
       }
 
       if (markComplete === true) {
-        const hasReviewChoices = reviewChoicesSaved === true || existing.review_choices_saved_at;
-        if (!effectiveSessionRef || !hasReviewChoices) return res.status(400).json({ error: 'Save review choices before completing this transcript.' });
+        if (!effectiveSessionRef) return res.status(400).json({ error: 'Link a session before completing this transcript.' });
         if (!(await validateSession(effectiveSessionRef, effectiveClientId))) return res.status(409).json({ error: 'This transcript is linked to an unavailable session. Link it to a current session before completing this transcript.' });
         update.completed_at = new Date().toISOString();
       }

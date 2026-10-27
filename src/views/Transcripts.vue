@@ -114,7 +114,7 @@ async function submitTranscriptImport(filename, text) {
     const data = await response.json().catch(() => ({}))
     if (!response.ok) throw new Error(data.error || 'Unable to import the transcript.')
     inboxKey.value += 1
-    importSuccess.value = data.duplicate ? 'That transcript is already in your inbox.' : 'Transcript imported. Assign the client when you are ready.'
+    importSuccess.value = data.duplicate ? 'That transcript is already in your inbox.' : 'Transcript imported. Connect it to the client and session when you are ready.'
     return true
   } catch (err) { console.error('[Transcript Import] Failed', err); importError.value = 'Couldn’t import the transcript. Please try again.'; return false }
   finally { importing.value = false }

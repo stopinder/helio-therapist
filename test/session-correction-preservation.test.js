@@ -134,7 +134,7 @@ test('Session Correction: Preserves review choices when only session changes for
   
   assert.ok(updated.review_choices_saved_at, 'Review choices SHOULD be preserved when session changes within same client')
   assert.equal(updated.review_choices_saved_at, SAVED_AT)
-  assert.equal(updated.completed_at, null, 'Completion state should be cleared on session correction')
+  assert.ok(updated.completed_at, 'Changing to another valid session keeps transcript triage complete')
 })
 
 test('Session Correction: Invalidates review choices when client changes', async () => {

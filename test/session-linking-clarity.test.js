@@ -2,24 +2,21 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 
-const transcriptInboxSource = await readFile(new URL('../src/components/TranscriptInbox.vue', import.meta.url), 'utf8')
+const linkerSource = await readFile(new URL('../src/components/TranscriptSessionLinker.vue', import.meta.url), 'utf8')
+const inboxSource = await readFile(new URL('../src/components/TranscriptInbox.vue', import.meta.url), 'utf8')
 
-test('Transcript Inbox session labels distinguish between session states and show explicit date/time', async () => {
-  assert.match(transcriptInboxSource, /sessionOptionLabel\(session\)/)
-  
-  // Checking for the explicit labels and structure required
-  assert.match(transcriptInboxSource, /'In progress'/)
-  assert.match(transcriptInboxSource, /'Planned'/)
-  assert.match(transcriptInboxSource, /'Completed'/)
-  
-  // Checking for the Current session/Completed session prefixes
-  assert.match(transcriptInboxSource, /Current session · /)
-  assert.match(transcriptInboxSource, /Completed session · /)
+test('Transcript session linker distinguishes encounter states and shows explicit date/time', () => {
+  assert.match(linkerSource, /sessionStatusLabel\(session\)/)
+  assert.match(linkerSource, /'Open session'/)
+  assert.match(linkerSource, /'Planned session'/)
+  assert.match(linkerSource, /'Completed session'/)
+  assert.match(linkerSource, /formatEncounter\(session\.startedAt \|\| session\.createdAt\)/)
 })
 
-test('Transcript Inbox displays a confirmation line for the selected session', async () => {
-  // Goal: Selected: Current session · In progress · 29 Aug 2026, 17:50
-  assert.match(transcriptInboxSource, /Selected:/)
-  assert.match(transcriptInboxSource, /selectedSessionDetails/)
-  assert.match(transcriptInboxSource, /selectedSessionRef/)
+test('Transcript session linker requires explicit therapist selection', () => {
+  assert.match(linkerSource, /v-model="selectedSessionRef"/)
+  assert.match(linkerSource, /type="radio"/)
+  assert.match(linkerSource, /Link selected session/)
+  assert.match(linkerSource, /Helios will not infer the match/)
+  assert.match(inboxSource, /Transcript connected/)
 })
