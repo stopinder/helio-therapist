@@ -70,7 +70,10 @@ async function openClinicalWorkspace() {
   workspaceBusy.value = true
   workspaceError.value = ''
   try {
-    const session = props.activeSession || props.unresolvedSession || (await createOrResumeSession(props.client.id)).session
+    const candidates = [props.activeSession, props.unresolvedSession].filter(Boolean)
+    const session = candidates.sort((a, b) =>
+      new Date(b.startedAt || b.createdAt || 0) - new Date(a.startedAt || a.createdAt || 0)
+    )[0] || (await createOrResumeSession(props.client.id)).session
     await router.push({ name: 'SessionWorkspace', params: { clientId: props.client.id, sessionId: session.id } })
   } catch (error) {
     workspaceError.value = error?.code === 'CLIENT_ARCHIVED'
