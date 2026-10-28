@@ -134,7 +134,7 @@ test('Transcript Matching: Reject cross-client session assignment', async () => 
 test('Transcript Matching: Reject cross-therapist client assignment', async () => {
   resetMockDatabase(); mockDatabase.zoom_transcripts=[versionedTranscript()]
   const res=await patchTranscript({ id:'trans-1', clientId:'client-b1' })
-  assert.equal(res.statusCode,404); assert.equal(res.body.error,'That client was not found.')
+  assert.equal(res.statusCode,404); assert.equal(res.body.error,'That active client was not found.')
 })
 
 function signedWebhook(hostId='zoom-host-a') {
