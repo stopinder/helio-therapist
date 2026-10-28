@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import { requireAuthenticatedUser } from '../_lib/supabase.js';
+import { getSupabaseUserClient, requireAuthenticatedUser } from '../_lib/supabase.js';
 
 const transcriptFields = 'id, zoom_meeting_id, zoom_meeting_uuid, zoom_note_id, source_title, structured_transcript, original_format, original_transcript, source, status, client_id, session_ref, source_occurred_at, received_at, updated_at, requested_lens, source_retention, review_choices_saved_at, completed_at, attention_cleared_at';
 const MAX_MANUAL_TRANSCRIPT_BYTES = 2 * 1024 * 1024;
@@ -196,7 +196,8 @@ export default async function handler(req, res) {
         restoreAttention !== true;
 
       if (assignmentOnly) {
-        const { data, error } = await supabase.rpc('assign_transcript_to_client', {
+        const userSupabase = getSupabaseUserClient(req);
+        const { data, error } = await userSupabase.rpc('assign_transcript_to_client', {
           p_transcript_id: id,
           p_client_id: clientId,
           p_expected_updated_at: expectedUpdatedAt
