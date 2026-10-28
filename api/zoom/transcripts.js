@@ -136,7 +136,7 @@ export default async function handler(req, res) {
     }
 
     if (req.method === 'PATCH') {
-      const { id, ids, action, restoreAttention, expectedUpdatedAt, clientId, sessionRef, requestedLens, sourceRetention, reviewChoicesSaved, markComplete } = req.body || {};
+      const { id, ids, action, restoreAttention, clearAttention, expectedUpdatedAt, clientId, sessionRef, requestedLens, sourceRetention, reviewChoicesSaved, markComplete } = req.body || {};
       const allowedLenses = new Set(['clinical_summary', 'draft_note', 'cbt']);
       const allowedRetention = new Set(['keep_until_review', 'delete_after_approved_output']);
 
@@ -166,6 +166,7 @@ export default async function handler(req, res) {
       if (sourceRetention !== undefined && !allowedRetention.has(sourceRetention)) return res.status(400).json({ error: 'Choose a supported source-retention preference.' });
       if (reviewChoicesSaved !== undefined && typeof reviewChoicesSaved !== 'boolean') return res.status(400).json({ error: 'Review choice state must be true or false.' });
       if (markComplete !== undefined && typeof markComplete !== 'boolean') return res.status(400).json({ error: 'Completion state must be true or false.' });
+      if (clearAttention !== undefined && typeof clearAttention !== 'boolean') return res.status(400).json({ error: 'Attention state must be true or false.' });
 
       const { data: existing, error: existingError } = await supabase.from('zoom_transcripts').select('id, client_id, session_ref, review_choices_saved_at, updated_at, completed_at, deleted_at').eq('id', id).eq('therapist_user_id', user.id).maybeSingle();
       if (existingError) throw existingError;
@@ -240,6 +241,10 @@ export default async function handler(req, res) {
       }
       if (markComplete === false) update.completed_at = null;
 
+      if (clearAttention === true) {
+        if (existing.deleted_at !== null) return res.status(409).json({ error: 'Deleted transcripts cannot be cleared from attention.' });
+        update.attention_cleared_at = new Date().toISOString();
+      }
       if (restoreAttention === true) {
         update.attention_cleared_at = null;
       }
