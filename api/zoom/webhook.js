@@ -115,7 +115,7 @@ async function processMyNotesEvent(supabase, intakeEventId, noteEvent) {
     return;
   }
 
-  const { error: transcriptError } = await supabase.from('zoom_transcripts').upsert({ therapist_user_id: integration.user_id, zoom_note_id: noteEvent.noteId, zoom_meeting_id: noteEvent.meetingId, zoom_meeting_uuid: null, zoom_recording_file_id: null, original_format: 'JSON', original_transcript: originalTranscript, structured_transcript: structuredTranscript, source: 'zoom_my_notes', source_title: sourceTitle, client_id: sessionLink?.client_id || null, session_ref: sessionLink?.session_ref || null, status: sessionLink ? 'ready' : 'unassigned', updated_at: now }, { onConflict: 'therapist_user_id,zoom_note_id' });
+  const { error: transcriptError } = await supabase.from('zoom_transcripts').upsert({ therapist_user_id: integration.user_id, zoom_note_id: noteEvent.noteId, zoom_meeting_id: noteEvent.meetingId, zoom_meeting_uuid: null, zoom_recording_file_id: null, original_format: 'JSON', original_transcript: originalTranscript, structured_transcript: structuredTranscript, source: 'zoom_my_notes', source_title: sourceTitle, source_occurred_at: noteEvent.createdTime || now, client_id: sessionLink?.client_id || null, session_ref: sessionLink?.session_ref || null, status: sessionLink ? 'ready' : 'unassigned', updated_at: now }, { onConflict: 'therapist_user_id,zoom_note_id' });
   if (transcriptError) throw transcriptError;
   if (sessionLink) {
     await markSessionTranscriptReceived(supabase, integration.user_id, sessionLink);
@@ -156,7 +156,7 @@ async function processAcceptedWebhook({ supabase, intakeEventId, body, eventType
     return;
   }
 
-  const { error: transcriptError } = await supabase.from('zoom_transcripts').upsert({ therapist_user_id: integration.user_id, zoom_meeting_id: meetingId, zoom_meeting_uuid: recording.uuid ? String(recording.uuid) : null, zoom_recording_file_id: String(file.id), original_format: String(file.file_extension || 'VTT').toUpperCase(), original_transcript: originalTranscript, source: 'zoom_cloud', client_id: sessionLink?.client_id || null, session_ref: sessionLink?.session_ref || null, status: sessionLink ? 'ready' : 'unassigned', updated_at: new Date().toISOString() }, { onConflict: 'therapist_user_id,zoom_recording_file_id' });
+  const { error: transcriptError } = await supabase.from('zoom_transcripts').upsert({ therapist_user_id: integration.user_id, zoom_meeting_id: meetingId, zoom_meeting_uuid: recording.uuid ? String(recording.uuid) : null, zoom_recording_file_id: String(file.id), original_format: String(file.file_extension || 'VTT').toUpperCase(), original_transcript: originalTranscript, source: 'zoom_cloud', source_occurred_at: recording.start_time || file.recording_start || new Date().toISOString(), client_id: sessionLink?.client_id || null, session_ref: sessionLink?.session_ref || null, status: sessionLink ? 'ready' : 'unassigned', updated_at: new Date().toISOString() }, { onConflict: 'therapist_user_id,zoom_recording_file_id' });
   if (transcriptError) throw transcriptError;
   if (sessionLink) await supabase.from('zoom_session_links').update({ status: 'transcript_received', updated_at: new Date().toISOString() }).eq('therapist_user_id', integration.user_id).eq('zoom_meeting_id', meetingId);
   await updateEvent(supabase, intakeEventId, { processing_status: 'stored', processing_error: null });
