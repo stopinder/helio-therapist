@@ -274,7 +274,10 @@ export async function reconcileZoomMyNotes({ supabase, integration, therapistUse
     if (existingIds.has(note.noteId)) {
       const { error: updateError } = await supabase
         .from('zoom_transcripts')
-        .update({ source_title: sourceTitle })
+        .update({
+          source_title: sourceTitle,
+          ...(note.createdTime ? { source_occurred_at: note.createdTime } : {})
+        })
         .eq('therapist_user_id', therapistUserId)
         .eq('zoom_note_id', note.noteId);
       if (updateError) throw updateError;
@@ -305,6 +308,7 @@ export async function reconcileZoomMyNotes({ supabase, integration, therapistUse
         structured_transcript: structuredTranscript,
         source: 'zoom_my_notes',
         source_title: sourceTitle,
+        source_occurred_at: createdTime || now,
         client_id: sessionLink?.client_id || null,
         session_ref: sessionLink?.session_ref || null,
         status: sessionLink ? 'ready' : 'unassigned',

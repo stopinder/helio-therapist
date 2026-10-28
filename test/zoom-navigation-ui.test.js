@@ -47,24 +47,19 @@ test('Transcript Inbox supports Add New Client', async () => {
   assert.match(inbox, /async function handleAddClient\(payload\)/)
 })
 
-test('Transcript Inbox workflow does not require Review Choices', async () => {
+test('Transcript Inbox workflow is one-step client assignment with direct Clinical Workspace handoff', async () => {
   const inbox = await readFile(new URL('../src/components/TranscriptInbox.vue', import.meta.url), 'utf8')
-  
-  // The progress bar should only have two steps now
-  assert.match(inbox, /<ol class="review-progress"/)
-  const progressListItems = inbox.match(/<li :class="\{ complete: selected\.clientId, current: !selected\.clientId \}">.*?<\/li>/g)
-  assert.ok(progressListItems)
-  
-  // Step 3 (Review choices) should no longer be in the progress bar
+
+  assert.doesNotMatch(inbox, /<ol class="review-progress"/)
+  assert.doesNotMatch(inbox, /<h2>Session<\/h2>/)
+  assert.doesNotMatch(inbox, /Create session/)
+  assert.doesNotMatch(inbox, /Link to an existing encounter instead/)
+
+  assert.match(inbox, /Assign client/)
+  assert.match(inbox, /clientId:selectedClientId\.value,clearAttention:true/)
+  assert.match(inbox, /selected\.sessionRef/)
+  assert.match(inbox, /Open Clinical Workspace/)
+  assert.match(inbox, /@click="openLinkedSession"/)
+
   assert.ok(!inbox.includes('<div><strong>Review choices</strong><small>{{ selected.reviewChoicesSavedAt ? \'Saved\' : \'Choose output and retention\' }}</small></div>'))
-  
-  // Workflow state should have 'ready' instead of 'needs-review' or 'review-saved'
-  assert.match(inbox, /id:'ready',label:'Ready to continue'/)
-  assert.match(inbox, /'ready':'success'/)
-  assert.match(inbox, /'ready':'Open session'/)
-  
-  // Ready to continue card should be visible when client and session are assigned
-  assert.match(inbox, /v-if="selected\.clientId && selected\.sessionRef && !editingSession" class="ready-card"/)
-  assert.match(inbox, /<h2>Ready to continue<\/h2>/)
-  assert.match(inbox, /@click="openLinkedSession">Open session<\/button>/)
 })

@@ -20,38 +20,57 @@ test('client transcript panel only renders transcripts assigned to the current c
   assert.match(panelSource, /Original transcript · unchanged source/)
 })
 
-test('client transcript without a session exposes the existing session-link workflow', () => {
-  assert.match(panelSource, /v-if="!transcript\.sessionRef"/)
-  assert.match(panelSource, /Needs session/)
-  assert.match(panelSource, /Link session/)
-  assert.match(panelSource, /transcript:\s*transcript\.id/)
-  assert.match(panelSource, /returnClientId:\s*props\.clientId/)
-  assert.match(transcriptsViewSource, /route\.query\.transcript/)
-  assert.match(transcriptsViewSource, /:open-transcript-id="openTranscriptId"/)
-  assert.match(transcriptInboxSource, /openTranscriptId/)
-  assert.match(transcriptInboxSource, /Session date/)
-  assert.match(transcriptInboxSource, /Session time/)
-  assert.match(transcriptInboxSource, /Link to existing/)
-  assert.match(transcriptInboxSource, /Create session/)
+test('Transcript Inbox only requires client assignment', () => {
+  assert.match(transcriptInboxSource, /Assign client/)
+  assert.match(transcriptInboxSource, /clearAttention:true/)
+  assert.match(transcriptInboxSource, /Session linking is optional and can be done there\./)
+  assert.doesNotMatch(transcriptInboxSource, /<h2>Session<\/h2>/)
+  assert.doesNotMatch(transcriptInboxSource, /Link to an existing encounter instead/)
+  assert.doesNotMatch(transcriptInboxSource, /Sessions must begin in progress/)
 })
 
-test('client transcript inbox navigation preserves a return to the client transcripts tab', () => {
-  assert.match(panelSource, /returnClientId:\s*props\.clientId/)
+test('client workspace links sessions inline without returning to Transcript Inbox', () => {
+  assert.match(panelSource, /Session link/)
+  assert.match(panelSource, /\(optional\)/)
+  assert.match(panelSource, /An in-progress session is a valid link\./)
+  assert.match(panelSource, /method: 'PATCH'/)
+  assert.match(panelSource, /expectedUpdatedAt: transcript\.updatedAt/)
+  assert.match(panelSource, /sessionRef/)
+  assert.match(panelSource, /Link session/)
+  assert.match(panelSource, /Change session/)
+  assert.doesNotMatch(panelSource, /query: \{ transcript: transcript\.id/)
+})
+
+test('in-progress sessions are valid and prioritised in the inline picker', () => {
+  assert.match(panelSource, /a\.status === 'in_progress'/)
+  assert.match(panelSource, /b\.status === 'in_progress'/)
+  assert.match(panelSource, /In progress ·/)
+  assert.match(apiSource, /\.eq\('id', ref\)\.eq\('client_id', effectiveClientId\)\.eq\('user_id', user\.id\)/)
+  assert.doesNotMatch(apiSource, /validateSession[\s\S]*?\.eq\('status', 'completed'\)/)
+})
+
+test('client transcript inbox navigation still preserves a return to the client transcripts tab', () => {
+  assert.match(panelSource, /returnClientId: props\.clientId/)
   assert.match(transcriptsViewSource, /route\.query\.returnClientId/)
   assert.match(transcriptsViewSource, /name:\s*'ClientWorkspace'/)
   assert.match(transcriptsViewSource, /query:\s*\{\s*tab:\s*'Transcripts'\s*\}/)
   assert.match(transcriptsViewSource, /Back to client transcripts/)
 })
 
-test('client transcript view preserves authenticated therapist ownership boundary', () => {
-  assert.match(panelSource, /authenticatedFetch\('\/api\/zoom\/transcripts'\)/)
+test('transcript assignment can clear Needs attention in the same PATCH', () => {
+  assert.match(apiSource, /clearAttention/)
+  assert.match(apiSource, /update\.attention_cleared_at = new Date\(\)\.toISOString\(\)/)
+  assert.match(transcriptInboxSource, /clientId:selectedClientId\.value,clearAttention:true/)
+})
+
+test('client transcript workflow preserves authenticated therapist ownership boundaries', () => {
+  assert.match(panelSource, /authenticatedFetch\('\/api\/zoom\/transcripts'/)
   assert.match(apiSource, /requireAuthenticatedUser\(req\)/)
   assert.match(apiSource, /\.eq\('therapist_user_id', user\.id\)/)
 })
 
-test('client transcript panel does not mutate transcript assignments or source text', () => {
-  assert.doesNotMatch(panelSource, /method:\s*'PATCH'/)
-  assert.doesNotMatch(panelSource, /method:\s*'POST'/)
+test('inline linking never edits original transcript text', () => {
   assert.doesNotMatch(panelSource, /contenteditable/i)
-  assert.doesNotMatch(panelSource, /v-model=.*transcript/i)
+  assert.doesNotMatch(panelSource, /v-model=.*transcript\.text/i)
+  assert.match(panelSource, /Original transcript · unchanged source/)
 })

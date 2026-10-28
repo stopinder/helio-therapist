@@ -31,6 +31,7 @@
 
       <div class="flex items-center gap-inline-sm">
         <button
+            v-if="!isTranscriptReady"
             @click="emit('join-meeting')"
             :disabled="isInPerson || joiningMeeting"
             :aria-busy="joiningMeeting"
@@ -49,7 +50,7 @@
     </div>
 
     <p
-        v-if="!isInPerson"
+        v-if="!isInPerson && !isTranscriptReady"
         class="mt-stack-sm text-caption text-ink-muted"
     >
       Zoom opens the video call in a separate tab. Keep Clinical Workspace open in Helio for session capture, notes and review.
@@ -89,6 +90,7 @@ const props = defineProps({
 const emit = defineEmits(['join-meeting'])
 
 const isInPerson = computed(() => props.session.type === 'In-person')
+const isTranscriptReady = computed(() => props.session.status === 'Transcript Ready')
 
 const videoLabel = computed(() =>
     isInPerson.value

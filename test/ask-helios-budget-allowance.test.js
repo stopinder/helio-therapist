@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync, readdirSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { AI_FEATURES } from '../api/_lib/ai-execution.js';
 import { isBudgetError, reserveAiBudget } from '../api/_lib/ai-budget.js';
@@ -53,17 +53,10 @@ test('reserveAiBudget maps AI_FEATURE_NOT_ALLOWED to 403', async () => {
   );
 });
 
-test('All migration files are additive and maintain security hardening', () => {
-    const migrationsDir = join(process.cwd(), 'supabase/migrations');
-    const files = readdirSync(migrationsDir).filter(f => f.endsWith('.sql'));
-    
-    // Check the latest one
-    const latestMigration = files.sort().pop();
-    const content = readFileSync(join(migrationsDir, latestMigration), 'utf8');
-    
+test('Ask Helios allowance migration maintains security hardening', () => {
+    const content = migrationContent;
     assert.match(content, /security definer/, 'Missing security definer');
     assert.match(content, /set search_path = ''/, 'Missing search_path hardening');
     assert.match(content, /revoke all on function public\.reserve_free_ai_action/, 'Missing revocation');
-    // Use a more flexible regex that handles potential whitespace/newlines
     assert.match(content, /grant execute on function public\.reserve_free_ai_action[\s\S]*to service_role/, 'Missing service_role grant');
 });

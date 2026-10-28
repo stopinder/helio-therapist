@@ -114,7 +114,10 @@ const nextAppointment=computed(()=>nextClientAppointment(appointments.value));
 const activeSession=computed(()=>sessions.value.find(s=>s.status==='in_progress')||null);
 const unresolvedSession=computed(()=>{
   const unresolvedStates = ['awaiting_transcript', 'transcript_received', 'needs_review', 'review_choices_saved', 'drafts_awaiting_review'];
-  return sessions.value.find(s => s.status === 'completed' && unresolvedStates.includes(s.workflowStatus)) || null;
+  return sessions.value.find(s =>
+    s.status === 'source_ready' ||
+    (s.status === 'completed' && unresolvedStates.includes(s.workflowStatus))
+  ) || null;
 });
 const focusDocumentId=computed(()=>typeof route.query.document==='string'?route.query.document:'');
 
@@ -126,7 +129,7 @@ async function loadAppointments(){appointmentsLoading.value=true;try{appointment
 async function loadTherapist(){therapistLabel.value=await getCurrentTherapistLabel()}
 function openSessionWorkspace(session){if(!session?.id||!client.value?.id)return;router.push({name:'SessionWorkspace',params:{clientId:client.value.id,sessionId:session.id}})}
 function viewTranscript(session){if(!session?.id||!client.value?.id)return;router.push({name:'SessionWorkspace',params:{clientId:client.value.id,sessionId:session.id},query:{view:'transcript'}})}
-function humanReadableState(session){if(session.status==='in_progress')return'Clinical workspace is open.';if(session.workflowStatus==='needs_review'||session.workflowStatus==='drafts_awaiting_review')return'Review is waiting.';return session.completedAt?'Completed.':'Recorded.'}
+function humanReadableState(session){if(session.status==='source_ready')return'Transcript ready for summary.';if(session.status==='in_progress')return'Clinical workspace is open.';if(session.workflowStatus==='needs_review'||session.workflowStatus==='drafts_awaiting_review')return'Review is waiting.';return session.completedAt?'Completed.':'Recorded.'}
 function scrollToSection(id){const el=document.getElementById(`section-${id}`);if(el)el.scrollIntoView({behavior:'smooth'})}
 async function openRequestedDocument(){const documentId=focusDocumentId.value;if(!documentId)return;const requested=documents.value.find(document=>document.id===documentId);if(!requested)return;if(client.value?.archived&&requested.status!=='completed'){await nextTick();scrollToSection('documents');return}editingDocument.value=requested;newDocumentType.value=requested.documentType||'other';documentComposerOpen.value=true}
 function newDocument(documentType='other'){if(client.value?.archived)return;editingDocument.value=null;newDocumentType.value=documentType||'other';documentComposerOpen.value=true}

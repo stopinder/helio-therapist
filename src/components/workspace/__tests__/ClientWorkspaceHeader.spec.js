@@ -31,9 +31,9 @@ describe('ClientWorkspaceHeader', () => {
     useRouter.mockReturnValue(router)
   })
 
-  it('A. activeSession wins over unresolved completed session', async () => {
-    const activeSession = { id: 's-active', status: 'in_progress' }
-    const unresolvedSession = { id: 's-unresolved', status: 'completed', workflowStatus: 'needs_review' }
+  it('A. activeSession wins when it is the newest unresolved workspace', async () => {
+    const activeSession = { id: 's-active', status: 'in_progress', startedAt: '2026-10-28T11:00:00Z' }
+    const unresolvedSession = { id: 's-unresolved', status: 'completed', workflowStatus: 'needs_review', startedAt: '2026-10-27T11:00:00Z' }
     
     const wrapper = mount(ClientWorkspaceHeader, {
       props: {
@@ -48,6 +48,27 @@ describe('ClientWorkspaceHeader', () => {
     expect(router.push).toHaveBeenCalledWith({
       name: 'SessionWorkspace',
       params: { clientId: 'c1', sessionId: 's-active' }
+    })
+    expect(createOrResumeSession).not.toHaveBeenCalled()
+  })
+
+  it('A2. newer source-ready transcript encounter wins over an older active session', async () => {
+    const activeSession = { id: 's-active', status: 'in_progress', startedAt: '2026-10-27T11:00:00Z' }
+    const unresolvedSession = { id: 's-source', status: 'source_ready', workflowStatus: 'transcript_received', startedAt: '2026-10-28T11:00:00Z' }
+
+    const wrapper = mount(ClientWorkspaceHeader, {
+      props: {
+        client,
+        activeSession,
+        unresolvedSession
+      }
+    })
+
+    await wrapper.find('[data-testid="open-clinical-workspace"]').trigger('click')
+
+    expect(router.push).toHaveBeenCalledWith({
+      name: 'SessionWorkspace',
+      params: { clientId: 'c1', sessionId: 's-source' }
     })
     expect(createOrResumeSession).not.toHaveBeenCalled()
   })
