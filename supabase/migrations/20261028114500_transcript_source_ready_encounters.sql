@@ -316,10 +316,17 @@ begin
   for transcript_row in
     select id, therapist_user_id, client_id, zoom_meeting_id,
            coalesce(source_occurred_at, received_at, now()) as occurred_at
-    from public.zoom_transcripts
-    where client_id is not null
-      and session_ref is null
-      and deleted_at is null
+    from public.zoom_transcripts transcript
+    where transcript.client_id is not null
+      and transcript.session_ref is null
+      and transcript.deleted_at is null
+      and exists (
+        select 1
+        from public.clients client
+        where client.id = transcript.client_id
+          and client.user_id = transcript.therapist_user_id
+          and coalesce(client.archived, false) = false
+      )
   loop
     insert into public.sessions (
       user_id,
