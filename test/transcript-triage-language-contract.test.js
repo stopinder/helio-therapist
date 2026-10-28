@@ -4,10 +4,10 @@ import test from 'node:test'
 
 const inboxSource = fs.readFileSync(new URL('../src/components/TranscriptInbox.vue', import.meta.url), 'utf8')
 
-test('completed transcript state is named as triage completion', () => {
-  assert.match(inboxSource, /label:'Triage complete'/)
+test('completed transcript history still names triage completion explicitly', () => {
   assert.match(inboxSource, /<p class="eyebrow">Triage complete<\/p>/)
   assert.match(inboxSource, /<h2>Transcript triage complete<\/h2>/)
+  assert.match(inboxSource, /Inbox setup complete/)
 })
 
 test('triage completion does not imply requested output or Clinical Record creation', () => {
