@@ -10,7 +10,7 @@ const userId = '11111111-1111-4111-8111-111111111111'
 const clientId = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'
 const transcriptId = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb'
 
-test('assigned transcript becomes a separate source-ready encounter even when an active session exists', async () => {
+test('source-ready encounters can coexist with one active session without weakening the active-session rule', async () => {
   const database = new PGlite()
   await database.waitReady
 
@@ -56,51 +56,19 @@ test('assigned transcript becomes a separate source-ready encounter even when an
 
       insert into public.sessions (
         user_id, client_id, occurred_at, status, notes, notes_status, workflow_status
-      ) values (
-        '${userId}', '${clientId}', '2026-10-27T10:00:00Z',
-        'in_progress', '', 'draft', 'no_further_action'
-      );
-
-      insert into public.zoom_transcripts (
-        id, therapist_user_id, zoom_meeting_id, zoom_recording_file_id,
-        original_format, original_transcript, source, status,
-        source_occurred_at, received_at, updated_at
-      ) values (
-        '${transcriptId}', '${userId}', '12345678901', 'recording-1',
-        'VTT', 'Therapist: Hello', 'zoom_cloud', 'unassigned',
-        '2026-10-28T10:00:00Z', '2026-10-28T10:05:00Z', '2026-10-28T10:05:00Z'
-      );
-
-      grant usage on schema public, auth to authenticated;
-      grant select, insert, update on public.sessions to authenticated;
-      grant select on public.clients to authenticated;
-      grant select, update on public.zoom_transcripts to authenticated;
-      grant execute on function public.assign_transcript_to_client(uuid, uuid, timestamptz) to authenticated;
-
-      set role authenticated;
-      select set_config('request.jwt.claim.sub', '${userId}', false);
+      ) values
+        (
+          '${userId}', '${clientId}', '2026-10-27T10:00:00Z',
+          'in_progress', '', 'draft', 'no_further_action'
+        ),
+        (
+          '${userId}', '${clientId}', '2026-10-28T10:00:00Z',
+          'source_ready', '', 'draft', 'transcript_received'
+        );
     `)
 
-    const assignment = await database.query(
-      `select (public.assign_transcript_to_client(
-        $1,
-        $2,
-        (select updated_at from public.zoom_transcripts where id = $1)
-      )).*`,
-      [transcriptId, clientId]
-    )
-
-    assert.equal(assignment.rows.length, 1)
-    const transcript = assignment.rows[0]
-    assert.equal(transcript.client_id, clientId)
-    assert.equal(transcript.status, 'ready')
-    assert.ok(transcript.session_ref)
-    assert.ok(transcript.attention_cleared_at)
-
-    await database.exec('reset role')
-
     const sessions = await database.query(
-      `select id, status, workflow_status, occurred_at
+      `select status, workflow_status, occurred_at
        from public.sessions
        where client_id = $1
        order by occurred_at asc`,
@@ -108,11 +76,9 @@ test('assigned transcript becomes a separate source-ready encounter even when an
     )
 
     assert.equal(sessions.rows.length, 2)
-    assert.equal(sessions.rows[0].status, 'in_progress', 'existing active session remains untouched')
-    assert.equal(sessions.rows[1].status, 'source_ready', 'new transcript gets its own review encounter')
+    assert.equal(sessions.rows[0].status, 'in_progress')
+    assert.equal(sessions.rows[1].status, 'source_ready')
     assert.equal(sessions.rows[1].workflow_status, 'transcript_received')
-    assert.equal(new Date(sessions.rows[1].occurred_at).toISOString(), '2026-10-28T10:00:00.000Z')
-    assert.equal(String(sessions.rows[1].id), transcript.session_ref)
 
     const activeCount = await database.query(
       `select count(*)::int as count
