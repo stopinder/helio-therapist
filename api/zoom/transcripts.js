@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
 import { requireAuthenticatedUser } from '../_lib/supabase.js';
 
-const transcriptFields = 'id, zoom_meeting_id, zoom_meeting_uuid, zoom_note_id, source_title, structured_transcript, original_format, original_transcript, source, status, client_id, session_ref, received_at, updated_at, requested_lens, source_retention, review_choices_saved_at, completed_at, attention_cleared_at';
+const transcriptFields = 'id, zoom_meeting_id, zoom_meeting_uuid, zoom_note_id, source_title, structured_transcript, original_format, original_transcript, source, status, client_id, session_ref, source_occurred_at, received_at, updated_at, requested_lens, source_retention, review_choices_saved_at, completed_at, attention_cleared_at';
 const MAX_MANUAL_TRANSCRIPT_BYTES = 2 * 1024 * 1024;
 const MANUAL_SOURCE = 'zoom_manual';
 
@@ -19,6 +19,7 @@ function serialiseTranscript(row) {
     status: row.status,
     clientId: row.client_id,
     sessionRef: row.session_ref,
+    sourceOccurredAt: row.source_occurred_at,
     receivedAt: row.received_at,
     updatedAt: row.updated_at,
     requestedLens: row.requested_lens,
@@ -128,6 +129,7 @@ export default async function handler(req, res) {
         source: MANUAL_SOURCE,
         status: 'unassigned',
         source_retention: 'keep_until_review',
+        source_occurred_at: now,
         received_at: now,
         updated_at: now
       }).select(transcriptFields).single();
@@ -179,9 +181,36 @@ export default async function handler(req, res) {
       }
 
       if (clientId) {
-        const { data: client, error: clientError } = await supabase.from('clients').select('id').eq('id', clientId).eq('user_id', user.id).maybeSingle();
+        const { data: client, error: clientError } = await supabase.from('clients').select('id, archived').eq('id', clientId).eq('user_id', user.id).maybeSingle();
         if (clientError) throw clientError;
-        if (!client) return res.status(404).json({ error: 'That client was not found.' });
+        if (!client || client.archived) return res.status(404).json({ error: 'That active client was not found.' });
+      }
+
+      const assignmentOnly =
+        Boolean(clientId) &&
+        sessionRef === undefined &&
+        requestedLens === undefined &&
+        sourceRetention === undefined &&
+        reviewChoicesSaved === undefined &&
+        markComplete === undefined &&
+        restoreAttention !== true;
+
+      if (assignmentOnly) {
+        const { data, error } = await supabase.rpc('assign_transcript_to_client', {
+          p_transcript_id: id,
+          p_client_id: clientId,
+          p_expected_updated_at: expectedUpdatedAt
+        });
+        if (error) {
+          if (error.code === '40001') {
+            return res.status(409).json({ error: 'This transcript changed while you were assigning it. Reload it before trying again.' });
+          }
+          if (error.code === 'P0002') {
+            return res.status(404).json({ error: 'That transcript or active client was not found.' });
+          }
+          throw error;
+        }
+        return res.status(200).json({ transcript: serialiseTranscript(Array.isArray(data) ? data[0] : data) });
       }
 
       const validateSession = async (ref, effectiveClientId) => {
