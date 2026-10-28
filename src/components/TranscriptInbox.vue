@@ -63,7 +63,8 @@
           <p>The transcript is now in this client’s workspace. Session linking is optional and can be done there.</p>
         </div>
         <div class="assignment-actions">
-          <button class="primary" @click="openClientTranscripts">Open client transcripts</button>
+          <button v-if="selected.sessionRef" class="primary" @click="openLinkedSession">Open Clinical Workspace</button>
+          <button class="secondary" @click="openClientTranscripts">Client transcripts</button>
           <button class="secondary" @click="selected = null">Back to inbox</button>
         </div>
       </section>
@@ -94,18 +95,14 @@ import { computed, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { authenticatedFetch } from '../lib/api.js'
 import { createClient } from '../lib/clients.js'
-import { createSessionFromTranscript as createTranscriptSession, listSessions } from '../lib/sessions.js'
-import { localSessionDateTime, localSessionDateTimeToUtc } from '../lib/sessionDateTime.js'
 import AddClientModal from './sidebar/AddClientModal.vue'
 import StatusIndicator from './ui/StatusIndicator.vue'
 const props = defineProps({ clients: { type: Array, default: () => [] }, openTranscriptId: { type: [String, Number], default: null } })
 const emit = defineEmits(['client-added'])
 const router = useRouter()
-const transcripts = ref([]), selected = ref(null), selectedClientId = ref(''), selectedSessionRef = ref(''), selectedLens = ref(''), sourceRetention = ref('keep_until_review')
-const sessionDate = ref(''), sessionTime = ref(''), showExistingSessions = ref(false)
-const localTimezoneLabel = Intl.DateTimeFormat().resolvedOptions().timeZone || 'device local'
-const editingClient = ref(false), editingSession = ref(false), editingChoices = ref(false), searchQuery = ref(''), filterMode = ref('attention'), showRaw = ref(false), expandedRows = ref(new Set())
-const loading = ref(true), saving = ref(false), errorMessage = ref(''), successMessage = ref(''), sessionRecords = ref([])
+const transcripts = ref([]), selected = ref(null), selectedClientId = ref(''), selectedLens = ref(''), sourceRetention = ref('keep_until_review')
+const editingClient = ref(false), editingChoices = ref(false), searchQuery = ref(''), filterMode = ref('attention'), showRaw = ref(false), expandedRows = ref(new Set())
+const loading = ref(true), saving = ref(false), errorMessage = ref(''), successMessage = ref('')
 const showAddClient = ref(false), addingClient = ref(false), addClientError = ref('')
 const lastClearedBatch = ref([])
 const historyPageSize = 20
@@ -119,14 +116,7 @@ const isEligibleForDeletion = computed(() => {
     !selected.value.completedAt;
 });
 const filters = [{ id: 'attention', label: 'Needs attention' }, { id: 'history', label: 'History' }]
-const actionableCount = computed(() => transcripts.value.filter(item => !item.completedAt && !item.attentionClearedAt).length)
-const sessionsForClient = computed(() => sessionRecords.value.filter(session => String(session.clientId) === String(selected.value?.clientId)).sort((a,b)=>new Date(b.startedAt||b.createdAt||0)-new Date(a.startedAt||a.createdAt||0)))
-const selectedSessionDetails = computed(() => {
-  if (!selectedSessionRef.value) return '';
-  const session = sessionsForClient.value.find(s => String(s.id) === String(selectedSessionRef.value));
-  return session ? sessionOptionLabel(session) : '';
-})
-const matchingTranscripts = computed(() => {
+const actionableCount = computed(() => transcripts.value.filter(item => !item.completedAt && !item.attentionClearedAt).length)const matchingTranscripts = computed(() => {
   const query = searchQuery.value.trim().toLowerCase();
   return transcripts.value.filter(item => {
     if (filterMode.value === 'attention' && (item.completedAt || item.attentionClearedAt)) return false;
@@ -145,12 +135,6 @@ function workflowState(transcript){ if(!transcript?.clientId||transcript.status=
 function workflowTone(transcript){ return ({'needs-client':'warning','assigned':'success'})[workflowState(transcript).id] || 'neutral' }
 function primaryAction(transcript){ return workflowState(transcript).id === 'needs-client' ? 'Assign client' : 'View' }
 function clientName(clientId){ return props.clients.find(client=>client.id===clientId)?.name||'' }
-function sessionOptionLabel(session){
-  const stateLabel = ({ planned: 'Planned', in_progress: 'In progress', completed: 'Completed', closed: 'Closed' })[session.status] || 'Completed';
-  const prefix = session.status === 'in_progress' ? 'Current session · ' : (session.status === 'completed' || session.status === 'closed' ? 'Completed session · ' : '');
-  return `${prefix}${stateLabel} · ${formatDate(session.startedAt || session.createdAt)}`;
-}
-async function loadSessionRecords(){ try{sessionRecords.value=await listSessions()}catch(error){errorMessage.value=error?.message||'Unable to load sessions.';sessionRecords.value=[]} }
 async function clearAllAttention() {
   if (saving.value || searchQuery.value || !matchingTranscripts.value.length) return;
   saving.value = true;
@@ -236,58 +220,17 @@ function toggleExpand(id, event) {
 }
 function openTranscript(transcript){
   selected.value=transcript;
-  showExistingSessions.value = false;
   selectedClientId.value=transcript.clientId||'';
-  const linkedSession=sessionRecords.value.find(session=>String(session.id)===String(transcript.sessionRef)||String(session.legacyRef||'')===String(transcript.sessionRef));
-  selectedSessionRef.value=linkedSession?.id||transcript.sessionRef||'';
   selectedLens.value=transcript.requestedLens||'';
   sourceRetention.value=transcript.sourceRetention||'keep_until_review';
-  
-  // Zoom transcript receivedAt is an import timestamp, not the meeting start.
-  // Until the API supplies a verified meeting start, use an editable local fallback.
-  const defaultTime = localSessionDateTime();
-  sessionDate.value = defaultTime.date;
-  sessionTime.value = defaultTime.time;
-  
   errorMessage.value='';
   successMessage.value='';
   showRaw.value=false;
-  loadSessionRecords();
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 async function load(){loading.value=true;errorMessage.value='';try{const response=await authenticatedFetch('/api/zoom/transcripts');const data=await response.json().catch(()=>({}));if(!response.ok)throw new Error(data.error||'Unable to load transcripts.');transcripts.value=data.transcripts||[]}catch(error){errorMessage.value=error.message||'Unable to load transcripts.'}finally{loading.value=false}}
 async function patchTranscript(body,fallbackMessage){saving.value=true;errorMessage.value='';successMessage.value='';try{const response=await authenticatedFetch('/api/zoom/transcripts',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:selected.value.id,expectedUpdatedAt:selected.value.updatedAt,...body})});const data=await response.json().catch(()=>({}));if(!response.ok)throw new Error(data.error||fallbackMessage);if(body.restoreAttention && !isRestoredTranscript(data?.transcript,selected.value.id))throw new Error(fallbackMessage);replaceTranscript(data.transcript);return data.transcript}catch(error){errorMessage.value=error.message||fallbackMessage;return null}finally{saving.value=false}}
-async function saveAssignment(){const transcript=await patchTranscript({clientId:selectedClientId.value,clearAttention:true},'Unable to save the client assignment.');if(transcript){selectedSessionRef.value='';editingClient.value=false;successMessage.value=`Assigned to ${clientName(transcript.clientId)}.`}}
-async function saveSessionLink(){const transcript=await patchTranscript({sessionRef:selectedSessionRef.value},'Unable to link this session.');if(transcript){editingSession.value=false;successMessage.value='Session linked. You can now open the session to continue.'}}
-async function createSessionFromTranscript(){
-  if(!selected.value?.clientId) return;
-  saving.value = true;
-  errorMessage.value = '';
-  try {
-    const occurredAt = localSessionDateTimeToUtc(sessionDate.value, sessionTime.value);
-    const newSession = await createTranscriptSession(selected.value.clientId, occurredAt);
-    sessionRecords.value = [newSession, ...sessionRecords.value.filter(session => session.id !== newSession.id)];
-    selectedSessionRef.value = String(newSession.id);
-    const transcript = await patchTranscript({ sessionRef: selectedSessionRef.value }, 'Unable to link the new session. Your original transcript is safe. You can retry linking this session manually.');
-    if (transcript) {
-      editingSession.value = false;
-      successMessage.value = 'Session created and linked. You can now open the session to continue.';
-    } else {
-      // The new session is retained: expose its selection for an explicit retry.
-      showExistingSessions.value = true;
-    }
-  } catch (error) {
-    if (error.code === 'SESSION_EXISTS') {
-      errorMessage.value = error.message;
-      editingSession.value = true;
-      showExistingSessions.value = true;
-    } else {
-      errorMessage.value = error?.message || 'Unable to create a session from this transcript.';
-    }
-  } finally {
-    saving.value = false;
-  }
-}
+async function saveAssignment(){const transcript=await patchTranscript({clientId:selectedClientId.value,clearAttention:true},'Unable to save the client assignment.');if(transcript){editingClient.value=false;successMessage.value=`Assigned to ${clientName(transcript.clientId)} and ready in Clinical Workspace.`}}
 async function saveReviewChoices(){const transcript=await patchTranscript({requestedLens:selectedLens.value||null,sourceRetention:sourceRetention.value,reviewChoicesSaved:true},'Unable to save review choices.');if(transcript){editingChoices.value=false;successMessage.value='Review choices saved. No analysis has started.'}}
 async function deleteTranscript(){if(!selected.value)return;if(!window.confirm('Delete this unassigned transcript? This permanently removes the imported source from Helios.'))return;saving.value=true;errorMessage.value='';successMessage.value='';try{const response=await authenticatedFetch('/api/zoom/transcripts',{method:'DELETE',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:selected.value.id})});if(!response.ok){const data=await response.json().catch(()=>({}));throw new Error(data.error||'Unable to delete transcript.')}transcripts.value=transcripts.value.filter(item=>item.id!==selected.value.id);selected.value=null;successMessage.value='Transcript deleted.'}catch(error){errorMessage.value=error.message||'Unable to delete transcript.'}finally{saving.value=false}}
 async function handleAddClient(payload) {
@@ -309,7 +252,7 @@ async function openClientTranscripts(){if(!selected.value?.clientId)return;await
 async function openLinkedSession(){if(!selected.value?.sessionRef)return;if(selected.value.reviewChoicesSavedAt&&!selected.value.completedAt){const completed=await patchTranscript({markComplete:true},'Unable to complete transcript triage.');if(!completed)return}await router.push({name:'SessionWorkspace',params:{clientId:selected.value.clientId,sessionId:selected.value.sessionRef}})}
 function downloadRaw(transcript){const blob=new Blob([transcript.text],{type:'text/plain;charset=utf-8'});const link=document.createElement('a');link.href=URL.createObjectURL(blob);link.download=`helio-zoom-transcript-${transcript.meetingId||transcript.id}.txt`;link.click();URL.revokeObjectURL(link.href)}
 async function openQueuedTranscript(id){if(!id)return;if(!transcripts.value.length)await load();const transcript=transcripts.value.find(item=>String(item.id)===String(id));if(transcript)openTranscript(transcript)}
-watch(()=>props.openTranscriptId,openQueuedTranscript);watch(searchQuery,()=>{historyLimit.value=historyPageSize});onMounted(async()=>{await Promise.all([load(),loadSessionRecords()]);openQueuedTranscript(props.openTranscriptId)})
+watch(()=>props.openTranscriptId,openQueuedTranscript);watch(searchQuery,()=>{historyLimit.value=historyPageSize});onMounted(async()=>{await load();openQueuedTranscript(props.openTranscriptId)})
 </script>
 <style scoped>
 .transcript-inbox { max-width: 680px; margin: 0 auto; padding: 2rem 1.5rem; }
