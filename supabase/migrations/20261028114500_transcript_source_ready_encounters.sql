@@ -17,6 +17,21 @@ update public.zoom_transcripts
 set source_occurred_at = received_at
 where source_occurred_at is null;
 
+drop policy if exists "Therapists read own zoom transcripts" on public.zoom_transcripts;
+create policy "Therapists read own zoom transcripts"
+  on public.zoom_transcripts for select
+  to authenticated
+  using ((select auth.uid()) = therapist_user_id);
+
+drop policy if exists "Therapists update own zoom transcripts" on public.zoom_transcripts;
+create policy "Therapists update own zoom transcripts"
+  on public.zoom_transcripts for update
+  to authenticated
+  using ((select auth.uid()) = therapist_user_id)
+  with check ((select auth.uid()) = therapist_user_id);
+
+grant select, update on public.zoom_transcripts to authenticated;
+
 create or replace function public.reject_direct_completed_session_insert()
 returns trigger
 language plpgsql
