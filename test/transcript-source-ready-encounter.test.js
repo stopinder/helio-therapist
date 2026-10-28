@@ -81,13 +81,13 @@ test('assigned transcript becomes a separate source-ready encounter even when an
       select set_config('request.jwt.claim.sub', '${userId}', false);
     `)
 
-    const storedTranscript = await database.query(
-      `select updated_at from public.zoom_transcripts where id = $1`,
-      [transcriptId]
-    )
     const assignment = await database.query(
-      `select (public.assign_transcript_to_client($1, $2, $3)).*`,
-      [transcriptId, clientId, storedTranscript.rows[0].updated_at]
+      `select (public.assign_transcript_to_client(
+        $1,
+        $2,
+        (select updated_at from public.zoom_transcripts where id = $1)
+      )).*`,
+      [transcriptId, clientId]
     )
 
     assert.equal(assignment.rows.length, 1)
