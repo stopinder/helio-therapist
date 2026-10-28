@@ -116,7 +116,8 @@ const isEligibleForDeletion = computed(() => {
     !selected.value.completedAt;
 });
 const filters = [{ id: 'attention', label: 'Needs attention' }, { id: 'history', label: 'History' }]
-const actionableCount = computed(() => transcripts.value.filter(item => !item.completedAt && !item.attentionClearedAt).length)const matchingTranscripts = computed(() => {
+const actionableCount = computed(() => transcripts.value.filter(item => !item.completedAt && !item.attentionClearedAt).length)
+const matchingTranscripts = computed(() => {
   const query = searchQuery.value.trim().toLowerCase();
   return transcripts.value.filter(item => {
     if (filterMode.value === 'attention' && (item.completedAt || item.attentionClearedAt)) return false;
