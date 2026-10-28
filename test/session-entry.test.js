@@ -11,7 +11,9 @@ test('Client Workspace session entry behavior', async () => {
   assert.match(header, /data-testid="open-clinical-workspace"/)
   assert.match(header, /import { createOrResumeSession/)
   assert.match(header, /async function openClinicalWorkspace\(\)/)
-  assert.match(header, /props\.activeSession \|\| props\.unresolvedSession \|\| \(await createOrResumeSession\(props\.client\.id\)\)\.session/)
+  assert.match(header, /const candidates = \[props\.activeSession, props\.unresolvedSession\]\.filter\(Boolean\)/)
+  assert.match(header, /new Date\(b\.startedAt \|\| b\.createdAt \|\| 0\)/)
+  assert.match(header, /\[0\] \|\| \(await createOrResumeSession\(props\.client\.id\)\)\.session/)
   assert.match(header, /name: 'SessionWorkspace', params: { clientId: props\.client\.id, sessionId: session\.id }/)
 
   // Negative assertions for removed ceremony/timer
@@ -26,6 +28,8 @@ test('Client Workspace session entry behavior', async () => {
   assert.match(header, /workspaceError/)
   assert.match(header, /Couldn’t open Clinical Workspace\. Please try again\./)
   
+  assert.match(workspace, /s\.status === 'source_ready'/)
+
   // ClientWorkspace view no longer manages session ceremony state
   assert.doesNotMatch(workspace, /const\s+sessionBusy\s*=\s*ref\(false\)/)
   assert.doesNotMatch(workspace, /async\s+function\s+startSession\(\)/)
