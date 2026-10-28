@@ -18,7 +18,7 @@ test('ClientDocumentComposer supports Prepare email handoff for finalised sessio
   assert.match(source, /clientEmail:\s*\{\s*type:\s*String/);
   
   // Button availability logic (should be constrained to session_summary and finalised)
-  assert.match(source, /isSessionSummary && clientEmail/);
+  assert.match(source, /isSessionSummary && preparedAudience === 'client' && clientEmail/);
   assert.match(source, /v-if="finalised"/);
   assert.match(source, /Prepare email/);
   

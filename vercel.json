@@ -14,6 +14,12 @@
   "functions": {
     "api/ai/research.js": {
       "maxDuration": 60
+    },
+    "api/ai/client-session-summary.js": {
+      "maxDuration": 60
+    },
+    "api/ai/session-summary.js": {
+      "maxDuration": 60
     }
   }
 }

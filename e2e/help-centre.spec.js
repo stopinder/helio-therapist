@@ -29,7 +29,7 @@ async function mockWorkspace(page, signedIn = true) {
     }
     if (url.origin === 'http://127.0.0.1:5189') {
       if (url.pathname === '/api/billing/status') return json({ hasWorkspaceAccess: true, subscription: null })
-      if (url.pathname === '/api/ai/client-session-summary' && request.postDataJSON()?.preview === true) return json({ data: { availableSessions: [] } })
+      if (url.pathname === '/api/ai/client-session-summary' && (request.postDataJSON()?.preview === true || request.postDataJSON()?.catalogue === true)) return json({ data: { availableSessions: [] } })
       if (url.pathname.startsWith('/api/')) {
         if (!['GET', 'HEAD'].includes(request.method())) writes.push(url.pathname)
         return json({ connected: false, transcripts: [], events: [], appointments: [], data: [] })

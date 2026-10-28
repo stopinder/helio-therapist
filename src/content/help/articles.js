@@ -119,27 +119,28 @@ export const HELP_ARTICLES = [
   },
   {
     id: 'client-summary', category: 'Sessions',
-    title: 'Create a client summary using the last three reviewed sessions',
-    summary: 'The selected anchor sets the end of the evidence window. Last 3 reviewed sessions means up to three eligible reviewed captures, not the latest three appointments.',
+    title: 'Prepare a summary or review the last three sessions',
+    summary: 'Choose a session summary or a review of recent sessions, a perspective, an audience and the actual source dates. A review compares reviewed captures, not simply the latest appointments.',
     keywords: ['last 3 sessions', 'last three sessions', 'three reviewed sessions', 'continuity', 'anchor', 'evidence window', 'create session summary', 'pdf', 'finalise', 'email'],
     sections: [
-      { heading: 'Use this to connect recent work for the client', paragraphs: [
-        'Open the client document composer using Create session summary in the client Documents area, or choose the session-summary document type in Create Document. This is not the same as opening the regular summary for one session.',
-        'Choose Perspective for the framing and Continuity for the source window. Summary anchored to identifies the reviewed session the document is centred on. Evidence window shows the dates actually included. Therapist additions lets you supply context, corrections or emphasis.'
+      { heading: 'Choose the document before generating', paragraphs: [
+        'Use Create session summary or Review recent sessions in the client Documents area. Summary options in a session opens the same preparation workspace. The existing quick Generate summary action remains available for a single encounter.',
+        'Choose General, Gentle CBT, Transactional Analysis or Integrative. Choose Client-facing draft or Therapist working document before writing. A draft keeps its audience once it contains text; start a separate document for another audience. Your additions or focus remain therapist-authored context, not client statements.'
       ] },
       { heading: 'How the window is chosen', paragraphs: [
-        'This session only uses the eligible reviewed capture for the selected session. Last 3 reviewed sessions looks backwards from the chosen anchor and selects up to three eligible reviewed Session Captures. Later sessions are outside that anchored window.',
-        'A completed appointment alone does not establish that reviewed capture material is available. A window may contain only one or two eligible sources. Check the displayed evidence dates rather than assuming that selecting three guarantees three sources.'
+        'Session summary uses one selected encounter. It can use a reviewed capture or a linked original transcript, with a Zoom summary as fallback. The source preview identifies which material will be used; imported material is not described as a reviewed capture.',
+        'Review of recent sessions requires at least two reviewed Session Captures. Last 3 reviewed sessions looks backwards from Review ends at, the selected anchor. Choose reviewed sessions allows an explicit selection of two to six encounters including that end session. Later sessions are excluded. A completed appointment or imported transcript alone does not count as a reviewed capture.',
+        'Check the source dates actually displayed. Two available captures do not become three. Current accepted Care is optional and is not a historical Care snapshot. Private reflections and supervision records are not fetched.'
       ] },
-      { heading: 'An anchored-window example', example: 'Fictional example: reviewed sessions exist on 2, 9, 16 and 23 September. A summary anchored to 16 September can use 2, 9 and 16 September. It does not include 23 September just because that is now the most recent appointment. The dates here illustrate the rule; the evidence window in your composer is the one to check.' },
+      { heading: 'An anchored-window example', example: 'Fictional example: reviewed sessions exist on 2, 9, 16 and 23 September. A review anchored to 16 September can use 2, 9 and 16 September. It does not include 23 September. Repeated discussion of one past event does not establish several separate occurrences.' },
       { heading: 'Generate, review, then choose the destination', steps: [
-        'Check the anchor, source dates and your additions, then Generate client summary. The result is editable draft wording, not an automatically saved document.',
-        'Review the text for accuracy, emphasis and suitability for the client. Permitted current Care context can inform it; private reflections and supervision material are not automatically brought into this workflow.',
-        'Use Save Draft to keep the document editable, or Finalise PDF when it is ready to become a finalised document. Finalising this document is not approving a Clinical Record.',
-        'When using Prepare email, review the email draft, attach the PDF yourself and send it through your email application. Preparing the email does not send or attach it automatically.'
+        'Check the source preview, audience and your additions, then generate. Inspecting sources does not use an AI allowance action; generation uses the existing allowance. In this composer, generated text remains unsaved until you save it.',
+        'Check accuracy, interpretation and suitability for the chosen audience. Sources used in this draft provides provenance links, not a guarantee that every interpretation is correct. The original AI claim map is not rewritten when you edit the prose.',
+        'Regeneration asks before replacing text. Restore previous version recovers earlier wording and its source metadata; up to five prior drafts are retained when saved.',
+        'Use Save Draft to keep editing, or Finalise PDF to create a read-only document. Neither generation nor saving changes Care or approves a Clinical Record. Prepare email is available only for a finalised client-facing document: attach its PDF yourself and review before sending.'
       ] },
       { heading: 'If no eligible source is listed', paragraphs: [
-        'Do not assume that a transcript or completed appointment automatically qualifies as reviewed Session Capture material. Check the selected session and the evidence message. Contact product support when the expected reviewed source is still unavailable; avoid generating from the wrong session simply to obtain text.'
+        'For a recent-session review, review the relevant Session Captures first or use Session summary for a single encounter. Deleted transcripts are excluded. The picker covers the most recent 100 sessions plus an explicitly opened older encounter; check its coverage warning. Do not select the wrong encounter just to obtain text.'
       ] }
     ], related: ['session-material', 'practice-map']
   },

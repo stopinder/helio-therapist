@@ -9,7 +9,12 @@ import {
   validateClientSessionSummaryResponse 
 } from '../_lib/ai-client-session-summary.js';
 
+// New preparation requests share the same source and generation service as
+// the Client Workspace composer. Keep the legacy route for older open tabs.
+import { handlePreparedDocument } from '../_lib/prepare-document-handler.js';
+
 export default async function handler(req, res) {
+  if (req.body?.preparation === true) return handlePreparedDocument(req, res);
   res.setHeader('Cache-Control', 'no-store');
   if (req.method !== 'POST') {
     res.setHeader('Allow', 'POST');
@@ -27,7 +32,7 @@ export default async function handler(req, res) {
     // 1. Verify ownership and existence
     const { data: session, error: sessionError } = await supabase
       .from('sessions')
-      .select('id, client_id, user_id, clients(id, user_id, display_name)')
+      .select('id, client_id, user_id, occurred_at, clients(id, user_id, display_name)')
       .eq('id', sessionId)
       .eq('client_id', clientId)
       .eq('user_id', user.id)
@@ -129,7 +134,7 @@ Return JSON only with exactly two fields:
   Every claim text must appear verbatim within its section.
   sourceIds must contain only "${transcript.id}".`;
 
-    const userInput = `Generate a long client-facing session summary based on the provided Zoom material for the session on ${new Date().toLocaleDateString()}.`;
+    const userInput = `Generate a client-facing session summary based on the provided Zoom material. Actual encounter timestamp: ${session.occurred_at || 'not recorded; do not invent a date'}. The document preparation date is not the encounter date.`;
 
     const { completion, model } = await runTextAI({
       feature: AI_FEATURES.CLIENT_SESSION_SUMMARY,
