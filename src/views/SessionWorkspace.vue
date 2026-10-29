@@ -70,6 +70,7 @@
                       <option value="general">General</option>
                       <option value="integrative">Integrative</option>
                       <option value="gentle_cbt">CBT</option>
+                      <option value="internal_family_systems">Internal Family Systems (IFS)</option>
                       <option value="transactional_analysis">Transactional Analysis</option>
                     </select>
                   </label>
@@ -402,7 +403,7 @@ async function loadTranscript(){if(!session.value?.id||!session.value?.clientId)
 
 const summaryGeneration = computed(() => summaryDocument.value?.content?.summaryGeneration || null);
 function summaryApproachLabel(lens) {
-  return ({ general: 'General', integrative: 'Integrative', gentle_cbt: 'CBT', transactional_analysis: 'Transactional Analysis' })[lens] || 'Integrative';
+  return ({ general: 'General', integrative: 'Integrative', gentle_cbt: 'CBT', internal_family_systems: 'Internal Family Systems (IFS)', transactional_analysis: 'Transactional Analysis' })[lens] || 'Integrative';
 }
 function summaryWindowLabel(window) {
   return window === 'recent' ? 'Recent sessions' : 'This session';
