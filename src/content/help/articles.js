@@ -121,8 +121,8 @@ export const HELP_ARTICLES = [
   {
     id: 'client-summary', category: 'Sessions',
     title: 'Create a client summary across one session, recent sessions or the full available history',
-    summary: 'The selected anchor sets the end of the evidence window. Choose one session, the last 3, the last 5 or the entire available history up to that anchor.'
-    keywords: ['last 3 sessions', 'last three sessions', 'last 5 sessions', 'last five sessions', 'entire history', 'reviewed history', 'continuity', 'anchor', 'evidence window', 'create session summary', 'pdf', 'finalise', 'email'],
+    summary: 'The selected anchor sets the end of the evidence window. Choose one session, the last 3, the last 5 or the entire available history up to that anchor.',
+    keywords: ['last 3 sessions', 'last three sessions', 'last 5 sessions', 'last five sessions', 'entire history', 'available history', 'continuity', 'anchor', 'evidence window', 'create session summary', 'pdf', 'finalise', 'email'],
     sections: [
       { heading: 'Use this to connect recent work for the client', paragraphs: [
         'Open the client document composer using Create session summary in the client Documents area, or choose the session-summary document type in Create Document. This is not the same as opening the regular summary for one session.',
