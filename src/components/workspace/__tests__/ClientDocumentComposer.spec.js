@@ -113,13 +113,13 @@ describe('ClientDocumentComposer', () => {
     await editor.setValue('Previous summary text')
     await flushPromises()
 
-    const generateBtn = wrapper.findAll('button').find(b => b.text().includes('Generate client summary'))
+    const generateBtn = wrapper.findAll('button').find(b => /generate client summary/i.test(b.text()))
     await generateBtn.trigger('click')
     await flushPromises()
 
     expect(wrapper.find('[data-testid="summary-generation-placeholder"]').exists()).toBe(true)
     expect(wrapper.text()).toContain('Generating a new Internal Family Systems (IFS) summary')
-    expect(wrapper.text()).toContain('Your previous summary is being held safely until the new draft is ready.')
+    expect(wrapper.text()).toContain('Your current summary is being kept unchanged until the new draft is ready.')
     expect(wrapper.find('[data-testid="rich-document-editor-stub"]').exists()).toBe(false)
 
     rejectGeneration(new Error('AI failed'))
@@ -144,7 +144,7 @@ describe('ClientDocumentComposer', () => {
     await editor.setValue('Original Text')
     await flushPromises()
     
-    const generateBtn = wrapper.findAll('button').find(b => b.text().includes('Generate client summary'))
+    const generateBtn = wrapper.findAll('button').find(b => /generate client summary/i.test(b.text()))
     await generateBtn.trigger('click')
     await flushPromises()
 
