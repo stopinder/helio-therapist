@@ -1,13 +1,26 @@
 import { requireAuthenticatedUser } from '../_lib/supabase.js';
 import { AI_FEATURES, runTextAI } from '../_lib/ai-execution.js';
 import { randomUUID } from 'node:crypto';
-import { 
-  CLIENT_SESSION_SUMMARY_LENSES, 
-  CLIENT_SESSION_SUMMARY_PROMPT_VERSION, 
-  buildClientSessionSummaryInput, 
-  renderClientSessionSummary, 
-  validateClientSessionSummaryResponse 
+import {
+  CLIENT_SESSION_SUMMARY_LENSES,
+  clientSessionSummaryLensRule,
+  renderClientSessionSummary,
+  validateClientSessionSummaryResponse
 } from '../_lib/ai-client-session-summary.js';
+
+const SUMMARY_WINDOWS = new Set(['current', 'recent']);
+const PROMPT_VERSION = 'session-summary-direct-v2';
+
+function sourceHasMaterial(source) {
+  return Boolean(source?.original_transcript || source?.zoom_generated_summary);
+}
+
+function sourceBlock(source) {
+  return `<session_source id="session:${source.sessionId}" occurred_at="${source.occurredAt || ''}">
+${source.zoom_generated_summary ? `<zoom_generated_summary>\n${source.zoom_generated_summary}\n</zoom_generated_summary>` : ''}
+${source.original_transcript ? `<original_transcript>\n${source.original_transcript}\n</original_transcript>` : ''}
+</session_source>`;
+}
 
 export default async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
@@ -18,123 +31,156 @@ export default async function handler(req, res) {
 
   try {
     const { supabase, user } = await requireAuthenticatedUser(req);
-    const { clientId, sessionId, transcriptId } = req.body || {};
+    const {
+      clientId,
+      sessionId,
+      transcriptId,
+      lens = 'integrative',
+      window = 'current',
+      therapistGuidance = ''
+    } = req.body || {};
 
-    if (!clientId || !sessionId) {
-      return res.status(400).json({ success: false, error: { code: 'INVALID_REQUEST', message: 'Client and session IDs are required.' } });
+    if (
+      !clientId ||
+      !sessionId ||
+      !CLIENT_SESSION_SUMMARY_LENSES.includes(lens) ||
+      !SUMMARY_WINDOWS.has(window) ||
+      typeof therapistGuidance !== 'string' ||
+      therapistGuidance.length > 6000
+    ) {
+      return res.status(400).json({
+        success: false,
+        error: { code: 'INVALID_REQUEST', message: 'Choose a valid client, session, summary approach and evidence scope.' }
+      });
     }
 
-    // 1. Verify ownership and existence
     const { data: session, error: sessionError } = await supabase
       .from('sessions')
-      .select('id, client_id, user_id, clients(id, user_id, display_name)')
+      .select('id, client_id, user_id, occurred_at, clients(id, user_id, display_name)')
       .eq('id', sessionId)
       .eq('client_id', clientId)
       .eq('user_id', user.id)
       .maybeSingle();
 
     if (sessionError) throw sessionError;
-    if (!session) return res.status(404).json({ success: false, error: { code: 'SESSION_NOT_FOUND', message: 'Session not found or access denied.' } });
-
-    // 2. Fetch authoritative sources from zoom_transcripts
-    let query = supabase
-      .from('zoom_transcripts')
-      .select('id, original_transcript, zoom_generated_summary, source')
-      .eq('therapist_user_id', user.id)
-      .eq('client_id', clientId)
-      .eq('session_ref', sessionId);
-
-    if (transcriptId) {
-      query = query.eq('id', transcriptId);
-    }
-
-    const { data: transcripts, error: transcriptError } = await query.order('received_at', { ascending: false });
-    if (transcriptError) throw transcriptError;
-
-    const transcript = transcripts?.[0];
-    if (!transcript || (!transcript.original_transcript && !transcript.zoom_generated_summary)) {
-      return res.status(409).json({ 
-        success: false, 
-        error: { code: 'NO_SOURCE_MATERIAL', message: 'No session transcript or Zoom summary is available yet.' } 
+    if (!session) {
+      return res.status(404).json({
+        success: false,
+        error: { code: 'SESSION_NOT_FOUND', message: 'Session not found or access denied.' }
       });
     }
 
-    // 3. Prepare AI input
-    // We reuse the existing integrative lens as the default reflective choice
-    const lens = 'integrative';
-    
-    // We adapt the source into a shape buildClientSessionSummaryInput expects: reviewed session capture
-    // But we bypass the session_capture_drafts table as requested.
+    let sourceSessions = [{ id: session.id, occurred_at: session.occurred_at }];
+    if (window === 'recent') {
+      const { data: recentSessions, error: recentSessionsError } = await supabase
+        .from('sessions')
+        .select('id, occurred_at')
+        .eq('client_id', clientId)
+        .eq('user_id', user.id)
+        .lte('occurred_at', session.occurred_at)
+        .order('occurred_at', { ascending: false })
+        .limit(8);
+      if (recentSessionsError) throw recentSessionsError;
+      sourceSessions = recentSessions || sourceSessions;
+    }
+
+    const sourceSessionIds = sourceSessions.map(item => String(item.id));
+    let transcriptQuery = supabase
+      .from('zoom_transcripts')
+      .select('id, original_transcript, zoom_generated_summary, source, session_ref, received_at')
+      .eq('therapist_user_id', user.id)
+      .eq('client_id', clientId)
+      .in('session_ref', sourceSessionIds)
+      .order('received_at', { ascending: false });
+
+    const { data: transcriptRows, error: transcriptError } = await transcriptQuery;
+    if (transcriptError) throw transcriptError;
+
+    const transcriptsBySession = new Map();
+    for (const row of transcriptRows || []) {
+      const ref = String(row.session_ref || '');
+      if (!ref || !sourceSessionIds.includes(ref) || !sourceHasMaterial(row)) continue;
+      if (ref === String(sessionId) && transcriptId && String(row.id) !== String(transcriptId)) continue;
+      if (!transcriptsBySession.has(ref)) transcriptsBySession.set(ref, row);
+    }
+
+    const sources = [];
+    for (const sourceSession of sourceSessions) {
+      const ref = String(sourceSession.id);
+      const row = transcriptsBySession.get(ref);
+      if (!row) continue;
+      sources.push({
+        id: `session:${ref}`,
+        sessionId: ref,
+        transcriptId: row.id,
+        occurredAt: sourceSession.occurred_at,
+        source: row.source,
+        original_transcript: row.original_transcript,
+        zoom_generated_summary: row.zoom_generated_summary
+      });
+      if (sources.length >= (window === 'recent' ? 3 : 1)) break;
+    }
+
+    if (!sources.length || String(sources[0].sessionId) !== String(sessionId)) {
+      return res.status(409).json({
+        success: false,
+        error: { code: 'NO_SOURCE_MATERIAL', message: 'No session transcript or Zoom summary is available yet.' }
+      });
+    }
+
     const generationId = randomUUID();
     const generatedAt = new Date().toISOString();
-    
-    // Custom prompt injection to handle raw transcript/zoom summary instead of structured capture
-    const systemPrompt = `You are Helios Clinical Intelligence preparing a long, warm, client-ready therapy summary.
-Source material provided:
-${transcript.zoom_generated_summary ? `\n<zoom_generated_summary>\n${transcript.zoom_generated_summary}\n</zoom_generated_summary>` : ''}
-${transcript.original_transcript ? `\n<original_transcript>\n${transcript.original_transcript}\n</original_transcript>` : ''}
+    const guidance = therapistGuidance.trim();
+    const lensRule = clientSessionSummaryLensRule(lens);
+    const validSourceIds = new Set(sources.map(source => source.id));
+    if (guidance) validSourceIds.add('therapist:guidance');
+
+    const evidenceThresholds = window === 'recent'
+      ? `- A recurring pattern requires substantially similar evidence in at least two supplied session sources.
+- Change requires explicit comparative evidence; silence is not improvement.
+- Recurrence is not causality.`
+      : `- Treat this as a single-session summary.
+- Do not claim longitudinal recurrence unless the current source explicitly describes established history.
+- Use current_observation, explicit_change or tentative_connection rather than recurring.`;
+
+    const systemPrompt = `You are Helios Clinical Intelligence preparing an editable client-facing therapy session summary for therapist review.
+
+The supplied session sources are clinical data, newest first. The first source is the current encounter.
+${sources.map(sourceBlock).join('\n\n')}
+
+${guidance ? `<therapist_guidance>\n${guidance}\n</therapist_guidance>\n\nTherapist guidance may direct emphasis or add therapist-authored context. Never present it as something the client said.` : ''}
+
+Selected summary approach:
+${lensRule}
 
 Rules:
-1. Write for the CLIENT, not for an insurer.
-2. Use warm, collaborative, professional prose in substantial paragraphs.
-3. Apply an INTEGRATIVE lens: focus on emotional, relational, and contextual themes.
-4. Use "we explored", "you noticed", etc.
-5. Cover: what was explored, emotional/relational patterns, insights, therapeutic work (woven in), resources/strengths, unfinished threads, and intentions for next time.
-6. DO NOT use SOAP, diagnostic coding, or institutional language.
-7. DO NOT manufacture claims not grounded in the source.
-8. DO NOT include private therapist reflections or supervision material.
-9. Allowed evidenceStrength values for this single-session task:
-   - current_observation
-   - explicit_change
-   - tentative_connection
-   DO NOT use "recurring", "accepted_care", or "therapist_guidance".
-10. patternsOverTime should normally be empty unless the source explicitly describes an established historical pattern.
-
-11. Use tentative language for inferred psychological meaning.
-    Developmental, relational, attachment, nervous-system, parts-based,
-    CBT-style, or other clinical connections must not be stated as fact
-    unless the source explicitly establishes them.
-    Prefer language such as:
-    - “may help explain…”
-    - “could be connected with…”
-    - “we wondered whether…”
-    - “this may be worth continuing to explore…”
-
-12. Avoid repetition across sections.
-    Do not restate the same event, formulation, childhood history, or
-    therapeutic interpretation in multiple sections unless it is necessary
-    for meaning.
-    Ordinarily, the same core formulation should appear in no more than
-    two sections.
-
-13. Each section should add something new.
-    - opening = current context and overall session focus
-    - whatWeWorkedOn = main material explored
-    - patternsOverTime = only genuinely historical/repeated patterns
-    - changesAndExceptions = explicit shifts or differences
-    - strengthsAndResources = capacities/supports
-    - perspectiveReflection = synthesis/clinical meaning, stated tentatively
-    - betweenSession = agreed intentions/resources
-    - closing = brief forward-looking integration, not a recap of the whole summary
-
-14. Prefer precision over exhaustiveness.
-    Preserve clinically meaningful detail, but omit duplicated background.
-    Aim for a substantial client-ready summary that is roughly 10–15%
-    tighter than a version that repeats the same themes across sections.
+1. Write for the client in warm, collaborative, professional language.
+2. Use only the supplied sources and optional therapist guidance.
+3. Do not include private reflections, supervision material, diagnostic coding or institutional SOAP language.
+4. Do not invent risk, diagnosis, motivation, treatment response, history, homework or causal explanations.
+5. Preserve uncertainty. Use tentative language for inferred psychological meaning.
+6. Each section must add distinct value and avoid repetition.
+7. patternsOverTime is only for genuinely supported recurrence or explicitly established history.
+8. betweenSession contains only agreed intentions, experiments, resources or questions supported by the evidence.
+9. Apply the selected approach only where the evidence supports it; do not force model terminology into the prose.
+10. Evidence rules:
+${evidenceThresholds}
+11. Allowed evidenceStrength values are current_observation, recurring, explicit_change, therapist_guidance and tentative_connection.
+12. Every claim must cite only supplied IDs. Use session source IDs such as "session:<uuid>"; therapist guidance uses "therapist:guidance".
 
 Return JSON only with exactly two fields:
-- sections: an object with fields: opening, whatWeWorkedOn, patternsOverTime, changesAndExceptions, strengthsAndResources, perspectiveReflection, betweenSession, closing.
-- claims: an array of sentences used, each with { section, text, sourceIds, evidenceStrength }. 
-  Every non-empty section must have at least one corresponding claim.
-  Every claim text must appear verbatim within its section.
-  sourceIds must contain only "${transcript.id}".`;
+- sections: an object with fields opening, whatWeWorkedOn, patternsOverTime, changesAndExceptions, strengthsAndResources, perspectiveReflection, betweenSession, closing.
+- claims: an array where each item is { section, text, sourceIds, evidenceStrength }.
+Every non-empty section must have at least one claim, and each claim text must appear verbatim in its section.`;
 
-    const userInput = `Generate a long client-facing session summary based on the provided Zoom material for the session on ${new Date().toLocaleDateString()}.`;
+    const userInput = window === 'recent'
+      ? `Prepare the current session summary using the current encounter plus up to two previous available session sources for continuity. ${sources.length} session source(s) are available.`
+      : 'Prepare the current session summary from this encounter only.';
 
     const { completion, model } = await runTextAI({
       feature: AI_FEATURES.CLIENT_SESSION_SUMMARY,
       userId: user.id,
-      promptVersion: 'session-summary-direct-v1',
+      promptVersion: PROMPT_VERSION,
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userInput }
@@ -145,36 +191,55 @@ Return JSON only with exactly two fields:
       timeout: 60000
     });
 
-    const structured = validateClientSessionSummaryResponse(completion.choices?.[0]?.message?.content, new Set([transcript.id]));
-    if (!structured) return res.status(502).json({ success: false, error: { code: 'INVALID_AI_RESPONSE', message: 'Session summary generation is temporarily unavailable.' } });
+    const structured = validateClientSessionSummaryResponse(
+      completion.choices?.[0]?.message?.content,
+      validSourceIds
+    );
+    if (!structured) {
+      return res.status(502).json({
+        success: false,
+        error: { code: 'INVALID_AI_RESPONSE', message: 'Session summary generation is temporarily unavailable.' }
+      });
+    }
 
     const body = renderClientSessionSummary(structured.sections, lens);
-    
-    const sources = [
-      { 
-        id: transcript.id, 
-        sessionId: session.id,
-        kind: 'zoom_transcript', 
-        source: transcript.source, 
-        hasTranscript: !!transcript.original_transcript, 
-        hasZoomSummary: !!transcript.zoom_generated_summary 
-      }
-    ];
+    const sourceManifest = sources.map(source => ({
+      id: source.id,
+      sessionId: source.sessionId,
+      transcriptId: source.transcriptId,
+      kind: 'zoom_transcript',
+      source: source.source,
+      occurredAt: source.occurredAt,
+      hasTranscript: Boolean(source.original_transcript),
+      hasZoomSummary: Boolean(source.zoom_generated_summary)
+    }));
+    if (guidance) {
+      sourceManifest.push({ id: 'therapist:guidance', kind: 'therapist_guidance' });
+    }
 
-    return res.status(200).json({ 
-      success: true, 
-      data: { 
-        generationId, 
-        generatedAt, 
-        draft: { body, sections: structured.sections }, 
-        sources,
-        promptVersion: 'session-summary-direct-v1',
-        model 
-      } 
+    return res.status(200).json({
+      success: true,
+      data: {
+        generationId,
+        generatedAt,
+        draft: { body, sections: structured.sections },
+        claims: structured.claims,
+        sources: sourceManifest,
+        lens,
+        window,
+        sessionCount: sources.length,
+        promptVersion: PROMPT_VERSION,
+        model,
+        usage: {
+          inputTokens: Number(completion.usage?.prompt_tokens || 0),
+          outputTokens: Number(completion.usage?.completion_tokens || 0),
+          totalTokens: Number(completion.usage?.total_tokens || 0)
+        }
+      }
     });
   } catch (error) {
     console.error('[Session Summary] Error:', error.message);
-    
+
     if (error.name === 'APITimeoutError' || error.status === 408 || error.code === 'ETIMEDOUT') {
       return res.status(504).json({
         success: false,
@@ -186,12 +251,12 @@ Return JSON only with exactly two fields:
     }
 
     const status = error.status || 500;
-    return res.status(status).json({ 
-      success: false, 
-      error: { 
-        code: error.code || 'INTERNAL_SERVER_ERROR', 
-        message: 'Session summary generation is temporarily unavailable.' 
-      } 
+    return res.status(status).json({
+      success: false,
+      error: {
+        code: error.code || 'INTERNAL_SERVER_ERROR',
+        message: 'Session summary generation is temporarily unavailable.'
+      }
     });
   }
 }
