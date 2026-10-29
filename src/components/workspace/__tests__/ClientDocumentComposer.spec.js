@@ -138,7 +138,7 @@ it('offers last five and entire history and auto-fills editable period dates fro
     })
     await flushPromises()
 
-    const continuity = wrapper.findAll('select').find(select => select.text().includes('Last 5 reviewed sessions'))
+    const continuity = wrapper.findAll('select').find(select => select.text().includes('Last 5 sessions'))
     expect(continuity).toBeTruthy()
     expect(continuity.text()).toContain('Entire history')
 
