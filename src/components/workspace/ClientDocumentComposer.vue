@@ -36,10 +36,10 @@
             <div class="flex flex-col lg:flex-row lg:items-end justify-between gap-4"><div><p class="type-overline text-action-link">Helios Clinical Intelligence</p><h3 id="clinical-intelligence-heading" class="text-h3 font-semibold text-ink mt-1">Prepare a useful client summary</h3><p class="text-body-sm text-ink-secondary mt-1 max-w-2xl">Generate an editable draft from reviewed Session Captures and current therapist-accepted Care context. Internal clinical notes, risk material and private reflections are not included automatically.</p></div><button type="button" class="button-primary shrink-0" :disabled="generatingSummary" @click="generateSummary">{{ generatingSummary ? 'Generating…' : 'Generate client summary' }}</button></div>
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-4">
               <label><span class="text-caption font-semibold">Perspective</span><select v-model="summaryLens" class="mt-1 w-full p-2.5 border border-border rounded-control bg-surface"><option value="general">General</option><option value="integrative">Integrative</option><option value="gentle_cbt">CBT</option><option value="internal_family_systems">Internal Family Systems (IFS)</option><option value="transactional_analysis">Transactional Analysis</option></select></label>
-              <label><span class="text-caption font-semibold">Continuity</span><select v-model="summaryWindow" class="mt-1 w-full p-2.5 border border-border rounded-control bg-surface" @change="syncPeriodFromEvidence"><option value="current">This session only</option><option value="last_three">Last 3 reviewed sessions</option><option value="last_five">Last 5 reviewed sessions</option><option value="history">Entire history</option></select></label>
+              <label><span class="text-caption font-semibold">Continuity</span><select v-model="summaryWindow" class="mt-1 w-full p-2.5 border border-border rounded-control bg-surface" @change="syncPeriodAfterSelectionChange"><option value="current">This session only</option><option value="last_three">Last 3 reviewed sessions</option><option value="last_five">Last 5 reviewed sessions</option><option value="history">Entire history</option></select></label>
               <label>
                 <span class="text-caption font-semibold">Summary anchored to</span>
-                <select v-model="anchorSessionId" class="mt-1 w-full p-2.5 border border-border rounded-control bg-surface" :disabled="!availableSummarySessions.length || loadingEvidence" @change="syncPeriodFromEvidence">
+                <select v-model="anchorSessionId" class="mt-1 w-full p-2.5 border border-border rounded-control bg-surface" :disabled="!availableSummarySessions.length || loadingEvidence" @change="syncPeriodAfterSelectionChange">
                   <option v-if="loadingEvidence" value="">Loading reviewed sessions…</option>
                   <option v-else-if="evidenceError" value="">Error loading sessions</option>
                   <option v-else-if="!availableSummarySessions.length" value="">No reviewed sessions found</option>
@@ -69,7 +69,7 @@
 <script setup>
 import HelpLink from '../help/HelpLink.vue'
 import RichDocumentEditor from '../documents/RichDocumentEditor.vue'
-import { computed, onMounted, reactive, ref } from 'vue'
+import { computed, nextTick, onMounted, reactive, ref } from 'vue'
 import { createClientDocumentDraft, downloadClientDocument, finaliseClientDocument, generateClientSessionSummary, listClientSummaryEvidence, listDocumentSourceSessions, saveClientDocumentDraft } from '../../lib/clientDocuments.js'
 import { loadDocumentProfile, profileDisplay } from '../../lib/documentProfile.js'
 const SESSION_SUMMARY_TEMPLATE = `Where things are now\n\nWhat we have been working on\n\nPatterns across our recent work\n\nWhat has shifted — and what has been different\n\nStrengths and resources\n\nMaking sense of what we have noticed\n\nIdeas to carry forward\n\nClosing reflection`
@@ -106,6 +106,10 @@ function syncPeriodFromEvidence() {
   if (!isSessionSummary.value || !evidenceWindow.value.length) return
   form.periodStart = dateInputValue(evidenceWindow.value.at(-1)?.occurredAt)
   form.periodEnd = dateInputValue(evidenceWindow.value[0]?.occurredAt)
+}
+async function syncPeriodAfterSelectionChange() {
+  await nextTick()
+  syncPeriodFromEvidence()
 }
 function changes() { const clinicalIntelligence=isSessionSummary.value?{generation:summaryGeneration.value,claims:summaryClaims.value,sources:summarySources.value,history:previousSummaryVersions.value.slice(-5),lastGeneratedBody:lastGeneratedBody.value}:undefined; return { title: form.title, documentType: form.documentType, recipient: form.recipient, purpose: form.purpose, periodStart: form.periodStart || null, periodEnd: form.periodEnd || null, content: { body: form.body, richContent: form.richContent,...(clinicalIntelligence?{clinicalIntelligence}:{}) }, sourceManifest: isSessionSummary.value ? [...summarySources.value,{kind:'ai_generation',...(summaryGeneration.value||{})}] : selectedSources.value.map(s => ({ kind: 'session', id: s.id, version: s.version, occurredAt: s.occurredAt })) } }
 function snapshot() { return JSON.stringify(changes()) }
