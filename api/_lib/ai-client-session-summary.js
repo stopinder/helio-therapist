@@ -1,4 +1,4 @@
-export const CLIENT_SESSION_SUMMARY_PROMPT_VERSION = 'client-session-summary-v5';
+export const CLIENT_SESSION_SUMMARY_PROMPT_VERSION = 'client-session-summary-v6';
 export const CLIENT_SESSION_SUMMARY_LENSES = Object.freeze(['general', 'integrative', 'gentle_cbt', 'internal_family_systems', 'transactional_analysis']);
 export const CLIENT_SESSION_SUMMARY_FIELDS = Object.freeze(['opening','whatWeWorkedOn','patternsOverTime','changesAndExceptions','strengthsAndResources','perspectiveReflection','betweenSession','closing']);
 
@@ -7,7 +7,7 @@ const CLIENT_SAFE_CARE_KINDS = new Set(['current_focus','shared_understanding','
 const EVIDENCE_STRENGTHS = new Set(['current_observation','recurring','explicit_change','accepted_care','therapist_guidance','tentative_connection']);
 
 const sharedRules = `You are Helios Clinical Intelligence preparing an editable client-facing therapy summary for therapist review.
-Use only the supplied reviewed Session Captures, current clinician-accepted Care context, and therapist-authored guidance. Up to three reviewed sessions may be supplied, newest first.
+Use only the supplied reviewed Session Captures, current clinician-accepted Care context, and therapist-authored guidance. One or more reviewed sessions may be supplied, newest first. When a long history is supplied, prioritise clinically meaningful recurrence, change, exceptions, resources and unfinished threads rather than trying to mention every session.
 Write in clear, warm, collaborative language that a client can understand. Be substantial when evidence supports it, but never pad sparse material.
 
 Reason in two stages.
@@ -66,11 +66,14 @@ export function selectClinicalIntelligenceSources(captures = [], { anchorSession
   const anchor = anchorSessionId ? ordered.find(item => (item.sessionId||item.session_id)===anchorSessionId) : ordered[0];
   if(!anchor)return [];
   const anchorDate=clinicalDate(anchor);
-  return ordered.filter(item => String(clinicalDate(item))<=String(anchorDate)).slice(0,Math.max(1,Math.min(100,limit)));
+  const eligible = ordered.filter(item => String(clinicalDate(item))<=String(anchorDate));
+  if(limit === null || limit === 'all' || limit === Infinity) return eligible;
+  const count = Number.isFinite(Number(limit)) ? Math.max(1, Math.floor(Number(limit))) : 3;
+  return eligible.slice(0, count);
 }
 
 export function buildClinicalIntelligenceEvidenceMap({ captures = [], careItems = [], therapistGuidance = '' } = {}) {
-  const reviewedSessions = captures.slice(0, 3).map((capture, index) => ({
+  const reviewedSessions = captures.map((capture, index) => ({
     id: `session:${capture.sessionId || capture.session_id}`,
     sourceType: 'reviewed_session_capture',
     position: index === 0 ? 'current' : `previous_${index}`,

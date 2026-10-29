@@ -58,7 +58,7 @@ test('Regression: api/ai/client-session-summary.js does not select session_captu
   const content = await fs.readFile(new URL('../api/ai/client-session-summary.js', import.meta.url), 'utf8');
   
   // The query should NOT contain "id," or ",id" or "id)" in the select call for session_capture_drafts
-  const captureQueryMatch = content.match(/\.from\(['"]session_capture_drafts['"]\)\.select\(['"]([^'"]+)['"]\)/);
+  const captureQueryMatch = content.match(/\.from\(['"]session_capture_drafts['"]\)\s*\.select\(['"]([^'"]+)['"]\)/);
   assert.ok(captureQueryMatch, 'Should find session_capture_drafts select call');
   
   const selectedColumns = captureQueryMatch[1];
@@ -150,4 +150,35 @@ test('Shared client summary lenses include IFS and Transactional Analysis with m
   }, 'internal_family_systems');
 
   assert.match(ifsBody, /An Internal Family Systems perspective/);
+});
+
+
+test('Clinical Intelligence supports five-session and entire-history source selection without a three-session cap', async () => {
+  const { selectClinicalIntelligenceSources, buildClinicalIntelligenceEvidenceMap } = await import('../api/_lib/ai-client-session-summary.js');
+  const captures = Array.from({ length: 7 }, (_, index) => {
+    const day = String(29 - index).padStart(2, '0');
+    return {
+      session_id: `s${index + 1}`,
+      reviewed_at: `2026-10-${day}T12:00:00Z`,
+      sessions: { occurred_at: `2026-10-${day}T10:00:00Z` },
+      content: { sessionThemes: `Session ${index + 1}` }
+    };
+  });
+
+  const five = selectClinicalIntelligenceSources(captures, { anchorSessionId: 's1', limit: 5 });
+  assert.equal(five.length, 5);
+
+  const history = selectClinicalIntelligenceSources(captures, { anchorSessionId: 's1', limit: null });
+  assert.equal(history.length, 7);
+
+  const evidenceMap = buildClinicalIntelligenceEvidenceMap({
+    captures: history.map(row => ({
+      sessionId: row.session_id,
+      occurredAt: row.sessions.occurred_at,
+      reviewedAt: row.reviewed_at,
+      content: row.content
+    }))
+  });
+  assert.equal(evidenceMap.reviewedSessions.length, 7);
+  assert.equal(evidenceMap.reviewedSessions[6].position, 'previous_6');
 });

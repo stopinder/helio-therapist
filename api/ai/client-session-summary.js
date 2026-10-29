@@ -9,21 +9,35 @@ export default async function handler(req, res) {
   try {
     const { supabase, user } = await requireAuthenticatedUser(req);
     const { clientId, lens='general', window='last_three', therapistGuidance='', anchorSessionId=null, preview=false } = req.body || {};
-    if (!clientId || typeof clientId !== 'string' || !/^[0-9a-f-]{36}$/i.test(clientId) || (anchorSessionId!==null&&(typeof anchorSessionId!=='string'||!/^[0-9a-f-]{36}$/i.test(anchorSessionId))) || typeof preview!=='boolean' || !CLIENT_SESSION_SUMMARY_LENSES.includes(lens) || !['current','last_three'].includes(window) || typeof therapistGuidance !== 'string' || therapistGuidance.length > 6000) {
+    if (!clientId || typeof clientId !== 'string' || !/^[0-9a-f-]{36}$/i.test(clientId) || (anchorSessionId!==null&&(typeof anchorSessionId!=='string'||!/^[0-9a-f-]{36}$/i.test(anchorSessionId))) || typeof preview!=='boolean' || !CLIENT_SESSION_SUMMARY_LENSES.includes(lens) || !['current','last_three','last_five','history'].includes(window) || typeof therapistGuidance !== 'string' || therapistGuidance.length > 6000) {
       return res.status(400).json({ success:false, error:{ code:'INVALID_REQUEST', message:'Choose a valid client, lens and summary window.' } });
     }
     const { data: ownedClient, error: clientError } = await supabase.from('clients').select('id').eq('id', clientId).eq('user_id', user.id).maybeSingle();
     if (clientError) throw clientError;
     if (!ownedClient) return res.status(404).json({ success:false, error:{ code:'CLIENT_NOT_FOUND', message:'Client not found or access denied.' } });
 
-    const captureLimit = window === 'current' ? 1 : 3;
-    const { data: captures, error: captureError } = await supabase.from('session_capture_drafts').select('session_id,content,reviewed_at,sessions!inner(id,occurred_at,user_id,client_id)').eq('client_id', clientId).eq('user_id', user.id).eq('status', 'reviewed').not('reviewed_at', 'is', null).order('reviewed_at', { ascending:false }).limit(100);
-    if (captureError) throw captureError;
-    const selectedRows=selectClinicalIntelligenceSources(captures||[],{anchorSessionId,limit:captureLimit});
+    const captureLimit = window === 'current' ? 1 : window === 'last_three' ? 3 : window === 'last_five' ? 5 : null;
+    const captures = [];
+    const pageSize = 200;
+    for (let from = 0; ; from += pageSize) {
+      const { data: page, error: captureError } = await supabase
+        .from('session_capture_drafts')
+        .select('session_id,content,reviewed_at,sessions!inner(id,occurred_at,user_id,client_id)')
+        .eq('client_id', clientId)
+        .eq('user_id', user.id)
+        .eq('status', 'reviewed')
+        .not('reviewed_at', 'is', null)
+        .order('reviewed_at', { ascending:false })
+        .range(from, from + pageSize - 1);
+      if (captureError) throw captureError;
+      captures.push(...(page || []));
+      if (!page || page.length < pageSize) break;
+    }
+    const selectedRows=selectClinicalIntelligenceSources(captures,{anchorSessionId,limit:captureLimit});
     if(anchorSessionId&&!selectedRows.some(row=>row.session_id===anchorSessionId))return res.status(409).json({success:false,error:{code:'ANCHOR_SESSION_NOT_REVIEWED',message:'Choose a reviewed Session Capture for this client.'}});
     const selectedCaptures = selectedRows.map(row => ({ sessionId:row.session_id, occurredAt:row.sessions?.occurred_at, reviewedAt:row.reviewed_at, content:row.content || {} }));
     if (!selectedCaptures.length) return res.status(409).json({ success:false, error:{ code:'NO_REVIEWED_SESSION_CAPTURE', message:'Review a Session Capture before generating a client summary.' } });
-    if(preview){const availableSessions=selectClinicalIntelligenceSources(captures||[],{limit:100}).map(row=>({sessionId:row.session_id,occurredAt:row.sessions?.occurred_at,reviewedAt:row.reviewed_at}));return res.status(200).json({success:true,data:{availableSessions}});}
+    if(preview){const availableSessions=selectClinicalIntelligenceSources(captures,{limit:null}).map(row=>({sessionId:row.session_id,occurredAt:row.sessions?.occurred_at,reviewedAt:row.reviewed_at}));return res.status(200).json({success:true,data:{availableSessions}});}
 
     const { data: careItems, error: careError } = await supabase.from('client_care_items').select('id,kind,body,status,origin,provenance_session_id').eq('client_id', clientId).eq('therapist_id', user.id).eq('status', 'current').order('updated_at', { ascending:false }).limit(30);
     if (careError) throw careError;
@@ -34,7 +48,7 @@ export default async function handler(req, res) {
     const { completion, model } = await runTextAI({
       feature:AI_FEATURES.CLIENT_SESSION_SUMMARY, userId:user.id, promptVersion:CLIENT_SESSION_SUMMARY_PROMPT_VERSION,
       messages:[{role:'system',content:clientSessionSummarySystemPrompt(lens)},{role:'user',content:buildClientSessionSummaryInput({lens,window,captures:selectedCaptures,careItems:careItems||[],therapistGuidance})}],
-      responseFormat:{type:'json_object'}, temperature:0.2, maxTokens:2600
+      responseFormat:{type:'json_object'}, temperature:0.2, maxTokens:2600, timeout:60000
     });
     const structured = validateClientSessionSummaryResponse(completion.choices?.[0]?.message?.content,validSourceIds);
     if (!structured) return res.status(502).json({ success:false, error:{ code:'INVALID_AI_RESPONSE', message:'Client summary generation is temporarily unavailable.' } });
