@@ -68,7 +68,7 @@ test('search, categories, deep links and unknown article are usable', async ({ p
   await expect(page.getByLabel('Search Help', { exact: true })).toHaveValue('where does my reflection go?')
   await page.getByLabel('Search Help', { exact: true }).fill('last 3 sessions')
   await page.locator('.help-browser ul button').first().click()
-  await expect(page.getByRole('heading', { name: /three/i }).first()).toBeVisible()
+  await expect(page.getByRole('heading', { name: /How the window is chosen/i })).toBeVisible()
   // HelpBrowser selects locally before vue-router finishes updating the URL.
   // Wait for the deep link to settle before reloading, otherwise CI may reload /help.
   await expect(page).toHaveURL(/\/help\/client-summary$/)
