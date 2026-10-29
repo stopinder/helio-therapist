@@ -58,7 +58,7 @@ test('Regression: api/ai/client-session-summary.js does not select session_captu
   const content = await fs.readFile(new URL('../api/ai/client-session-summary.js', import.meta.url), 'utf8');
   
   // The query should NOT contain "id," or ",id" or "id)" in the select call for session_capture_drafts
-  const captureQueryMatch = content.match(/\.from\(['"]session_capture_drafts['"]\)\.select\(['"]([^'"]+)['"]\)/);
+  const captureQueryMatch = content.match(/\.from\(['"]session_capture_drafts['"]\)\s*\.select\(['"]([^'"]+)['"]\)/);
   assert.ok(captureQueryMatch, 'Should find session_capture_drafts select call');
   
   const selectedColumns = captureQueryMatch[1];
