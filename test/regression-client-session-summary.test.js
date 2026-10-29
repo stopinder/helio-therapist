@@ -109,7 +109,7 @@ test('Client Session Summary Logic: Source ID contract', async () => {
 });
 
 
-test('Shared client summary lenses include Transactional Analysis and render a matching heading', async () => {
+test('Shared client summary lenses include IFS and Transactional Analysis with matching headings', async () => {
   const {
     CLIENT_SESSION_SUMMARY_LENSES,
     clientSessionSummaryLensRule,
@@ -118,8 +118,11 @@ test('Shared client summary lenses include Transactional Analysis and render a m
 
   assert.deepEqual(
     CLIENT_SESSION_SUMMARY_LENSES,
-    ['general', 'integrative', 'gentle_cbt', 'transactional_analysis']
+    ['general', 'integrative', 'gentle_cbt', 'internal_family_systems', 'transactional_analysis']
   );
+  assert.match(clientSessionSummaryLensRule('internal_family_systems'), /Internal Family Systems \(IFS\) lens/);
+  assert.match(clientSessionSummaryLensRule('internal_family_systems'), /protective intentions/);
+  assert.match(clientSessionSummaryLensRule('internal_family_systems'), /Do not infer an exile/);
   assert.match(clientSessionSummaryLensRule('transactional_analysis'), /Transactional Analysis lens/);
 
   const body = renderClientSessionSummary({
@@ -134,4 +137,17 @@ test('Shared client summary lenses include Transactional Analysis and render a m
   }, 'transactional_analysis');
 
   assert.match(body, /A Transactional Analysis perspective/);
+
+  const ifsBody = renderClientSessionSummary({
+    opening: '',
+    whatWeWorkedOn: '',
+    patternsOverTime: '',
+    changesAndExceptions: '',
+    strengthsAndResources: '',
+    perspectiveReflection: 'A supported IFS perspective.',
+    betweenSession: '',
+    closing: ''
+  }, 'internal_family_systems');
+
+  assert.match(ifsBody, /An Internal Family Systems perspective/);
 });
