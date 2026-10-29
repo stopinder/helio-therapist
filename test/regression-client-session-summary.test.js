@@ -107,3 +107,31 @@ test('Client Session Summary Logic: Source ID contract', async () => {
   const evidenceMap = buildClinicalIntelligenceEvidenceMap({ captures: selectedCaptures, careItems: [], therapistGuidance: '' });
   assert.ok(evidenceMap.reviewedSessions.some(s => s.id === 'session:s1'), 'Source ID should be session:<sessionId>');
 });
+
+
+test('Shared client summary lenses include Transactional Analysis and render a matching heading', async () => {
+  const {
+    CLIENT_SESSION_SUMMARY_LENSES,
+    clientSessionSummaryLensRule,
+    renderClientSessionSummary
+  } = await import('../api/_lib/ai-client-session-summary.js');
+
+  assert.deepEqual(
+    CLIENT_SESSION_SUMMARY_LENSES,
+    ['general', 'integrative', 'gentle_cbt', 'transactional_analysis']
+  );
+  assert.match(clientSessionSummaryLensRule('transactional_analysis'), /Transactional Analysis lens/);
+
+  const body = renderClientSessionSummary({
+    opening: '',
+    whatWeWorkedOn: '',
+    patternsOverTime: '',
+    changesAndExceptions: '',
+    strengthsAndResources: '',
+    perspectiveReflection: 'A supported perspective.',
+    betweenSession: '',
+    closing: ''
+  }, 'transactional_analysis');
+
+  assert.match(body, /A Transactional Analysis perspective/);
+});
