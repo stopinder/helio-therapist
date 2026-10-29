@@ -101,10 +101,21 @@ export default async function handler(req, res) {
     const { completion, model } = await runTextAI({
       feature:AI_FEATURES.CLIENT_SESSION_SUMMARY, userId:user.id, promptVersion:CLIENT_SESSION_SUMMARY_PROMPT_VERSION,
       messages:[{role:'system',content:clientSessionSummarySystemPrompt(lens)},{role:'user',content:buildClientSessionSummaryInput({lens,window,captures:selectedCaptures,careItems:careItems||[],therapistGuidance})}],
-      responseFormat:{type:'json_object'}, temperature:0.2, maxTokens:2600, timeout:60000
+      responseFormat:{type:'json_object'}, temperature:0.2, maxTokens:8000, timeout:60000
     });
+    const finishReason = completion.choices?.[0]?.finish_reason || null;
     const structured = validateClientSessionSummaryResponse(completion.choices?.[0]?.message?.content,validSourceIds);
-    if (!structured) return res.status(502).json({ success:false, error:{ code:'INVALID_AI_RESPONSE', message:'Client summary generation is temporarily unavailable.' } });
+    if (!structured) {
+      const truncated = finishReason === 'length';
+      console.warn(`[Client Session Summary] Structured response rejected (finish_reason=${finishReason || 'unknown'}, output_tokens=${Number(completion.usage?.completion_tokens || 0)})`);
+      return res.status(502).json({
+        success:false,
+        error:{
+          code:truncated?'AI_RESPONSE_TRUNCATED':'INVALID_AI_RESPONSE',
+          message:truncated?'The generated summary was too long to complete. Please try again.':'Client summary generation is temporarily unavailable.'
+        }
+      });
+    }
     const body = renderClientSessionSummary(structured.sections, lens);
     if (body.length < 120) return res.status(502).json({ success:false, error:{ code:'INVALID_AI_RESPONSE', message:'Client summary generation is temporarily unavailable.' } });
     const sources=[...evidenceMap.reviewedSessions.map(item=>({id:item.id,kind:item.sourceType==='transcript_backed_session_summary'?'session_summary':'session_capture',sessionId:item.sessionId,occurredAt:item.occurredAt,reviewedAt:item.reviewedAt,documentId:item.sourceDocumentId||undefined,status:item.sourceStatus||undefined})),...evidenceMap.currentAcceptedCareContext.map(item=>({id:item.id,kind:'accepted_care',careKind:item.kind})),...(evidenceMap.therapistAuthoredContext.content?[{id:'therapist:guidance',kind:'therapist_guidance'}]:[])];
