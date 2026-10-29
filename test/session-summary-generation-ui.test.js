@@ -3,8 +3,22 @@ import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 
 const source = await readFile(new URL('../src/views/SessionWorkspace.vue', import.meta.url), 'utf8')
+const apiSource = await readFile(new URL('../api/ai/session-summary.js', import.meta.url), 'utf8')
+const clientsSource = await readFile(new URL('../src/lib/clients.js', import.meta.url), 'utf8')
+const migration = await readFile(new URL('../supabase/migrations/20261029120000_add_client_summary_preference.sql', import.meta.url), 'utf8')
 
-test('SessionWorkspace shows Generate summary button when appropriate', () => {
+test('SessionWorkspace presents inline summary customization before first generation', () => {
+  assert.match(source, /data-testid="session-summary-options"/)
+  assert.match(source, /Prepare session summary/)
+  assert.match(source, /Summary approach/)
+  assert.match(source, /General/)
+  assert.match(source, /Integrative/)
+  assert.match(source, />CBT</)
+  assert.match(source, /Transactional Analysis/)
+  assert.match(source, /Evidence/)
+  assert.match(source, /This session/)
+  assert.match(source, /Recent sessions/)
+  assert.match(source, /Add emphasis or instruction/)
   assert.match(source, /Generate summary/i)
   assert.match(source, /v-if="transcript"/i)
 })
@@ -21,11 +35,27 @@ test('SessionWorkspace offers Regenerate only for non-finalised summary content'
   assert.equal(isVisible({ content: { body: '' }, status: 'draft' }), false)
   assert.equal(isVisible(null), false)
 
-  // The handler must also reject completed documents, even if invoked directly.
   const guard = source.match(/async function generateSummary\(\)\s*\{\s*if\s*\(([^\n]+)\)\s*return;/)?.[1]
   assert.ok(guard, 'Generation must retain its early-return guard')
   const blocksGeneration = new Function('session', 'isGenerating', 'summaryDocument', `return Boolean(${guard})`)
   assert.equal(blocksGeneration({ value: { id: 'session-1' } }, { value: false }, { value: { status: 'completed' } }), true)
+})
+
+test('SessionWorkspace sends the chosen approach, evidence scope and therapist guidance to AI', () => {
+  assert.match(source, /lens:\s*summaryLens\.value/)
+  assert.match(source, /window:\s*summaryWindow\.value/)
+  assert.match(source, /therapistGuidance:\s*therapistGuidance\.value/)
+  assert.match(source, /summaryGeneration:\s*generation/)
+  assert.match(source, /showSummaryOptions\.value = false/)
+})
+
+test('Session summary approach is remembered per client', () => {
+  assert.match(source, /updateClientSummaryPreference/)
+  assert.match(source, /clientData\.preferred_summary_lens/)
+  assert.match(clientsSource, /preferred_summary_lens/)
+  assert.match(clientsSource, /updateClientSummaryPreference/)
+  assert.match(migration, /preferred_summary_lens text not null default 'integrative'/)
+  assert.match(migration, /transactional_analysis/)
 })
 
 test('SessionWorkspace handles generation state', () => {
@@ -34,8 +64,21 @@ test('SessionWorkspace handles generation state', () => {
   assert.match(source, /isGenerating/i)
 })
 
-test('Session summary section includes source provenance', () => {
-  assert.match(source, /Generated from Zoom summary \+ transcript/i)
+test('Session summary section includes selected-generation provenance', () => {
+  assert.match(source, /generatedSummaryLabel/)
+  assert.match(source, /Generated from transcript/)
+  assert.match(source, /summaryApproachLabel/)
+  assert.match(source, /summaryWindowLabel/)
+})
+
+test('Session summary API supports current or recent transcript-backed evidence', () => {
+  assert.match(apiSource, /SUMMARY_WINDOWS = new Set\(\['current', 'recent'\]\)/)
+  assert.match(apiSource, /CLIENT_SESSION_SUMMARY_LENSES\.includes\(lens\)/)
+  assert.match(apiSource, /clientSessionSummaryLensRule\(lens\)/)
+  assert.match(apiSource, /window === 'recent'/)
+  assert.match(apiSource, /sources\.length >= \(window === 'recent' \? 3 : 1\)/)
+  assert.match(apiSource, /therapist_guidance/)
+  assert.match(apiSource, /promptVersion: PROMPT_VERSION/)
 })
 
 test('SessionWorkspace calls generateSessionSummary helper', () => {

@@ -1,5 +1,5 @@
 export const CLIENT_SESSION_SUMMARY_PROMPT_VERSION = 'client-session-summary-v5';
-export const CLIENT_SESSION_SUMMARY_LENSES = Object.freeze(['general', 'gentle_cbt', 'integrative']);
+export const CLIENT_SESSION_SUMMARY_LENSES = Object.freeze(['general', 'integrative', 'gentle_cbt', 'transactional_analysis']);
 export const CLIENT_SESSION_SUMMARY_FIELDS = Object.freeze(['opening','whatWeWorkedOn','patternsOverTime','changesAndExceptions','strengthsAndResources','perspectiveReflection','betweenSession','closing']);
 
 const COMPARISON_TASKS = Object.freeze(['recurrence', 'change', 'stability', 'exceptions', 'resources', 'unfinished_threads', 'possible_connections']);
@@ -48,10 +48,12 @@ Return JSON only with exactly two fields:
 const lensRules = {
   general: `General lens: remain model-neutral. Focus on supported themes, changes, stable threads, resources, next steps and useful connections. Do not impose CBT terminology.`,
   gentle_cbt: `Gentle CBT lens: where supported, map situation or trigger / antecedent -> thoughts, emotions and body responses -> behaviour or coping response -> short-term consequence and longer-term consequence. Notice repeated maintenance cycles, interruptions or exceptions to a cycle, experiments, coping responses and changes over time. Explicitly look for what interrupts the usual sequence and what the client learns from trying something different. Never manufacture a complete CBT sequence when evidence is missing, and never force CBT language into client-facing prose when ordinary language is clearer.`,
-  integrative: `Integrative lens: do not force a single model. Focus on explicitly supported emotional, relational, behavioural and contextual themes, shifts in understanding, unfinished threads, resources and alternative possible meanings. Preserve ambiguity where more than one meaning remains plausible.`
+  integrative: `Integrative lens: do not force a single model. Focus on explicitly supported emotional, relational, behavioural and contextual themes, shifts in understanding, unfinished threads, resources and alternative possible meanings. Preserve ambiguity where more than one meaning remains plausible.`,
+  transactional_analysis: `Transactional Analysis lens: where supported, notice patterns in interpersonal exchanges, shifts between Parent, Adult and Child positions, repeated expectations in relationships, and opportunities for clearer Adult-to-Adult communication. Use TA language only when it helps explain the evidence and avoid assigning fixed states or motives.`
 };
 
-export function clientSessionSummarySystemPrompt(lens = 'general') { return `${sharedRules}\n\n${lensRules[lens] || lensRules.general}`; }
+export function clientSessionSummaryLensRule(lens = 'general') { return lensRules[lens] || lensRules.general; }
+export function clientSessionSummarySystemPrompt(lens = 'general') { return `${sharedRules}\n\n${clientSessionSummaryLensRule(lens)}`; }
 
 function clinicalDate(capture) { return capture?.occurredAt || capture?.occurred_at || capture?.sessions?.occurred_at || ''; }
 export function selectClinicalIntelligenceSources(captures = [], { anchorSessionId = null, limit = 3 } = {}) {
@@ -172,7 +174,7 @@ export function validateClientSessionSummaryResponse(value, validSourceIds = nul
 
 export function renderClientSessionSummary(sections, lens='general') {
   if(!sections)return '';
-  const perspectiveHeading=lens==='gentle_cbt'?'A gentle CBT perspective':lens==='integrative'?'An integrative perspective':'Making sense of what we have noticed';
+  const perspectiveHeading=lens==='gentle_cbt'?'A gentle CBT perspective':lens==='integrative'?'An integrative perspective':lens==='transactional_analysis'?'A Transactional Analysis perspective':'Making sense of what we have noticed';
   const blocks=[
     ['Where things are now',sections.opening],
     ['What we have been working on',sections.whatWeWorkedOn],

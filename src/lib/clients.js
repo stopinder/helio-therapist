@@ -1,7 +1,7 @@
 import { supabase } from './supabase.js'
 import { withSessionRecovery } from './api.js'
 
-const clientSelect = 'id, user_id, display_name, preferred_name, date_of_birth, phone, email, address, gp_details, emergency_contact, notes, reference, current_focus, archived, archived_at, created_at, updated_at'
+const clientSelect = 'id, user_id, display_name, preferred_name, date_of_birth, phone, email, address, gp_details, emergency_contact, notes, reference, current_focus, preferred_summary_lens, archived, archived_at, created_at, updated_at'
 
 export async function getClient({ clientId }) {
   if (!supabase) throw new Error('Supabase is not configured')
@@ -60,6 +60,19 @@ export async function updateClientFocus({ clientId, note }) {
     updated_at: new Date().toISOString()
   }).eq('id', clientId).eq('user_id', user.id).select(clientSelect).single())
   if (error) throw new Error(error.message || 'Failed to update current focus')
+  return { ...data, name: data.display_name, note: data.current_focus }
+}
+
+export async function updateClientSummaryPreference({ clientId, lens }) {
+  if (!supabase) throw new Error('Supabase is not configured')
+  const allowed = new Set(['general', 'integrative', 'gentle_cbt', 'transactional_analysis'])
+  if (!allowed.has(lens)) throw new Error('Choose a valid summary approach')
+  const user = await requireUser('update a client summary preference')
+  const { data, error } = await withSessionRecovery(() => supabase.from('clients').update({
+    preferred_summary_lens: lens,
+    updated_at: new Date().toISOString()
+  }).eq('id', clientId).eq('user_id', user.id).select(clientSelect).single())
+  if (error) throw new Error(error.message || 'Failed to save summary approach')
   return { ...data, name: data.display_name, note: data.current_focus }
 }
 
