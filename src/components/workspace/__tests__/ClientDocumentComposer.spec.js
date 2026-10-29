@@ -120,7 +120,9 @@ describe('ClientDocumentComposer', () => {
 })
 
 
-  it('offers last five and entire history and auto-fills editable period dates from the evidence window', async () => {
+const historyMockClient = { id: 'c1', display_name: 'Jane Doe' }
+
+it('offers last five and entire history and auto-fills editable period dates from the evidence window', async () => {
     clientDocs.listClientSummaryEvidence.mockResolvedValueOnce([
       { sessionId: 's1', occurredAt: '2026-10-29T10:00:00Z', reviewedAt: '2026-10-29T12:00:00Z' },
       { sessionId: 's2', occurredAt: '2026-10-22T10:00:00Z', reviewedAt: '2026-10-22T12:00:00Z' },
@@ -131,7 +133,7 @@ describe('ClientDocumentComposer', () => {
     ])
 
     const wrapper = mount(ClientDocumentComposer, {
-      props: { client: mockClient, initialDocumentType: 'session_summary' },
+      props: { client: historyMockClient, initialDocumentType: 'session_summary' },
       global: { stubs: { teleport: true, RichDocumentEditor: RichDocumentEditorStub } }
     })
     await flushPromises()
