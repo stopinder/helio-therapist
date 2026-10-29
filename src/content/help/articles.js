@@ -120,17 +120,18 @@ export const HELP_ARTICLES = [
   },
   {
     id: 'client-summary', category: 'Sessions',
-    title: 'Create a client summary using the last three reviewed sessions',
-    summary: 'The selected anchor sets the end of the evidence window. Last 3 reviewed sessions means up to three eligible reviewed captures, not the latest three appointments.',
-    keywords: ['last 3 sessions', 'last three sessions', 'three reviewed sessions', 'continuity', 'anchor', 'evidence window', 'create session summary', 'pdf', 'finalise', 'email'],
+    title: 'Create a client summary across one session, recent sessions or the full reviewed history',
+    summary: 'The selected anchor sets the end of the evidence window. Choose one reviewed session, the last 3, the last 5 or the entire reviewed history up to that anchor.',
+    keywords: ['last 3 sessions', 'last three sessions', 'last 5 sessions', 'last five sessions', 'entire history', 'reviewed history', 'continuity', 'anchor', 'evidence window', 'create session summary', 'pdf', 'finalise', 'email'],
     sections: [
       { heading: 'Use this to connect recent work for the client', paragraphs: [
         'Open the client document composer using Create session summary in the client Documents area, or choose the session-summary document type in Create Document. This is not the same as opening the regular summary for one session.',
         'Choose Perspective for the framing and Continuity for the source window. Summary anchored to identifies the reviewed session the document is centred on. Evidence window shows the dates actually included. Therapist additions lets you supply context, corrections or emphasis.'
       ] },
       { heading: 'How the window is chosen', paragraphs: [
-        'This session only uses the eligible reviewed capture for the selected session. Last 3 reviewed sessions looks backwards from the chosen anchor and selects up to three eligible reviewed Session Captures. Later sessions are outside that anchored window.',
-        'A completed appointment alone does not establish that reviewed capture material is available. A window may contain only one or two eligible sources. Check the displayed evidence dates rather than assuming that selecting three guarantees three sources.'
+        'This session only uses the eligible reviewed capture for the selected session. Last 3 and Last 5 look backwards from the chosen anchor and select up to that many eligible reviewed Session Captures. Entire history uses all eligible reviewed Session Captures up to the selected anchor. Later sessions remain outside that anchored window.',
+        'A completed appointment alone does not establish that reviewed capture material is available. A selected window can therefore contain fewer sources than its label suggests. Check the displayed evidence dates before generating.',
+        'For session-summary documents, From and To are optional document dates. Helios auto-fills them from the selected evidence window: the same date for one session, or earliest-to-anchor for a multi-session window. You can edit or clear either date without changing which Session Captures are used.'
       ] },
       { heading: 'An anchored-window example', example: 'Fictional example: reviewed sessions exist on 2, 9, 16 and 23 September. A summary anchored to 16 September can use 2, 9 and 16 September. It does not include 23 September just because that is now the most recent appointment. The dates here illustrate the rule; the evidence window in your composer is the one to check.' },
       { heading: 'Generate, review, then choose the destination', steps: [
