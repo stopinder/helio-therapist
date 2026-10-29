@@ -15,7 +15,7 @@ const openai=new OpenAI({apiKey:process.env.OPENAI_API_KEY,timeout:30000});
 const results=[];
 for(const testCase of cases){
   const validSourceIds=new Set([...testCase.captures.map(item=>`session:${item.sessionId}`),...testCase.careItems.map((item,index)=>`care:${item.id||`${item.kind}:${item.provenance_session_id||'current'}`}`),...(testCase.therapistGuidance?['therapist:guidance']:[])]);
-  const completion=await openai.chat.completions.create({model,messages:[{role:'system',content:clientSessionSummarySystemPrompt(testCase.lens)},{role:'user',content:buildClientSessionSummaryInput(testCase)}],response_format:{type:'json_object'},temperature:0.2,max_tokens:2600});
+  const completion=await openai.chat.completions.create({model,messages:[{role:'system',content:clientSessionSummarySystemPrompt(testCase.lens)},{role:'user',content:buildClientSessionSummaryInput(testCase)}],response_format:{type:'json_object'},temperature:0.2,max_tokens:8000});
   const structured=validateClientSessionSummaryResponse(completion.choices?.[0]?.message?.content,validSourceIds);
   if(!structured)throw new Error(`${testCase.id}: model returned invalid or ungrounded structured output`);
   const output=renderClientSessionSummary(structured.sections,testCase.lens);

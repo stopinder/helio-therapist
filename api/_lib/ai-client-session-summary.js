@@ -1,4 +1,4 @@
-export const CLIENT_SESSION_SUMMARY_PROMPT_VERSION = 'client-session-summary-v7';
+export const CLIENT_SESSION_SUMMARY_PROMPT_VERSION = 'client-session-summary-v8';
 export const CLIENT_SESSION_SUMMARY_LENSES = Object.freeze(['general', 'integrative', 'gentle_cbt', 'internal_family_systems', 'transactional_analysis']);
 export const CLIENT_SESSION_SUMMARY_FIELDS = Object.freeze(['opening','whatWeWorkedOn','patternsOverTime','changesAndExceptions','strengthsAndResources','perspectiveReflection','betweenSession','closing']);
 
@@ -28,7 +28,7 @@ Current accepted Care context is therapist-reviewed working context, not verbati
 Do not infer diagnoses, risk, intent, motivation, treatment response, trauma history, or clinical conclusions that are not explicitly supported.
 Do not include safeguarding or risk material, therapist-only hypotheses, private reflections, or supervision content in this client-facing output.
 If only one session source is supplied, do not claim a longitudinal pattern. Describe tentative connections as tentative.
-Prefer specific supported observations, sequence, change, exception and continuity over generic therapeutic language. Avoid generic encouragement that could apply to any client.
+Prefer specific supported observations, sequence, change, exception and continuity over generic therapeutic language. Avoid generic encouragement that could apply to any client. Keep the summary focused rather than exhaustive: each non-empty section should usually be one concise paragraph, and the complete JSON response including claims must finish comfortably within the available output budget.
 
 Give each client-facing section a distinct job:
 - opening: orient the client to the current session and the most important current context. Do not use it to summarise every theme.

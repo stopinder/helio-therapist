@@ -122,7 +122,7 @@ export const HELP_ARTICLES = [
     id: 'client-summary', category: 'Sessions',
     title: 'Create a client summary across one session, recent sessions or the full available history',
     summary: 'The selected anchor sets the end of the evidence window. Choose one session, the last 3, the last 5 or the entire available history up to that anchor.',
-    keywords: ['last 3 sessions', 'last three sessions', 'last 5 sessions', 'last five sessions', 'entire history', 'available history', 'continuity', 'anchor', 'evidence window', 'create session summary', 'pdf', 'finalise', 'email'],
+    keywords: ['last 3 sessions', 'last three sessions', 'last 5 sessions', 'last five sessions', 'entire history', 'available history', 'continuity', 'anchor', 'evidence window', 'create session summary', 'regenerate summary', 'generation failed', 'pdf', 'finalise', 'email'],
     sections: [
       { heading: 'Use this to connect recent work for the client', paragraphs: [
         'Open the client document composer using Create session summary in the client Documents area, or choose the session-summary document type in Create Document. This is not the same as opening the regular summary for one session.',
@@ -135,7 +135,8 @@ export const HELP_ARTICLES = [
       ] },
       { heading: 'An anchored-window example', example: 'Fictional example: available session sources exist on 2, 9, 16 and 23 September. A summary anchored to 16 September can use 2, 9 and 16 September. It does not include 23 September just because that is now the most recent appointment. The dates here illustrate the rule; the evidence window in your composer is the one to check.' },
       { heading: 'Generate, review, then choose the destination', steps: [
-        'Check the anchor, source dates and your additions, then Generate client summary. The result is editable draft wording, not an automatically saved document.',
+        'Check the anchor, source dates and your additions, then Generate client summary. If a summary already exists, the action is Regenerate client summary. The result is editable draft wording, not an automatically saved document.',
+        'During regeneration the existing summary is temporarily hidden from the editor while Helios prepares the replacement, but its text is kept unchanged until a valid new draft is ready. If generation fails, the previous summary returns unchanged and the failure message says that no replacement occurred.',
         'Review the text for accuracy, emphasis and suitability for the client. Permitted current Care context can inform it; private reflections and supervision material are not automatically brought into this workflow.',
         'Use Save Draft to keep the document editable, or Finalise PDF when it is ready to become a finalised document. Finalising this document is not approving a Clinical Record.',
         'When using Prepare email, review the email draft, attach the PDF yourself and send it through your email application. Preparing the email does not send or attach it automatically.'

@@ -95,6 +95,41 @@ describe('ClientDocumentComposer', () => {
     expect(buttons.some(b => b.text().includes('Generate client summary'))).toBe(true)
   })
 
+  it('hides the previous summary while a replacement is generating and restores it on failure', async () => {
+    let rejectGeneration
+    clientDocs.generateClientSessionSummary.mockImplementationOnce(() => new Promise((resolve, reject) => {
+      rejectGeneration = reject
+    }))
+
+    const wrapper = mount(ClientDocumentComposer, {
+      props: { client: mockClient, initialDocumentType: 'session_summary' },
+      global: { stubs: { teleport: true, RichDocumentEditor: RichDocumentEditorStub } }
+    })
+    await flushPromises()
+
+    const perspective = wrapper.findAll('select').find(select => select.text().includes('Internal Family Systems (IFS)'))
+    await perspective.setValue('internal_family_systems')
+    const editor = wrapper.find('[data-testid="rich-document-editor-stub"]')
+    await editor.setValue('Previous summary text')
+    await flushPromises()
+
+    const generateBtn = wrapper.findAll('button').find(b => /generate client summary/i.test(b.text()))
+    await generateBtn.trigger('click')
+    await flushPromises()
+
+    expect(wrapper.find('[data-testid="summary-generation-placeholder"]').exists()).toBe(true)
+    expect(wrapper.text()).toContain('Generating a new Internal Family Systems (IFS) summary')
+    expect(wrapper.text()).toContain('Your current summary is being kept unchanged until the new draft is ready.')
+    expect(wrapper.find('[data-testid="rich-document-editor-stub"]').exists()).toBe(false)
+
+    rejectGeneration(new Error('AI failed'))
+    await flushPromises()
+
+    expect(wrapper.find('[data-testid="summary-generation-placeholder"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="rich-document-editor-stub"]').element.value).toBe('Previous summary text')
+    expect(wrapper.text()).toContain('Generation failed — previous summary unchanged. AI failed')
+  })
+
   it('preserves text on generation failure', async () => {
     clientDocs.generateClientSessionSummary.mockRejectedValue(new Error('AI failed'))
     
@@ -109,13 +144,13 @@ describe('ClientDocumentComposer', () => {
     await editor.setValue('Original Text')
     await flushPromises()
     
-    const generateBtn = wrapper.findAll('button').find(b => b.text().includes('Generate client summary'))
+    const generateBtn = wrapper.findAll('button').find(b => /generate client summary/i.test(b.text()))
     await generateBtn.trigger('click')
     await flushPromises()
 
     expect(clientDocs.generateClientSessionSummary).toHaveBeenCalledTimes(1)
-    expect(wrapper.text()).toContain('AI failed')
-    expect(editor.element.value).toBe('Original Text')
+    expect(wrapper.text()).toContain('Generation failed — previous summary unchanged. AI failed')
+    expect(wrapper.find('[data-testid="rich-document-editor-stub"]').element.value).toBe('Original Text')
   })
 })
 
