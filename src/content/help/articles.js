@@ -105,7 +105,7 @@ export const HELP_ARTICLES = [
       { heading: 'How the regular session summary is saved', paragraphs: [
         'On the Session Summary tab, choose the Summary approach before generating. General, Integrative, CBT, Internal Family Systems (IFS) and Transactional Analysis change the clinical perspective Helios applies; the last approach you choose is remembered for that client. Evidence defaults to This session, while Recent sessions can include the current encounter plus up to two previous transcript-backed sessions. Optional emphasis or instruction is used for that generation only.',
         'Successful Generate summary creates or updates an editable draft in that client\'s Documents. After generation the chosen approach and evidence scope are shown beside the summary; Change reopens the compact options without leaving Clinical Workspace. Open in Client Documents takes you to the saved document. Edits in this session screen are saved after a short pause; a save error means you should not assume the latest wording was retained.',
-        'The separate client document composer remains a different workflow for a polished client-facing document. Generate client summary puts draft text into the composer, and you then choose Save Draft or Finalise PDF. Always use the saving behaviour of the screen you are actually working in.'
+        'The separate client document composer remains a different workflow for a polished client-facing document. Generate client summary puts draft text into the composer, and you then choose Save Draft or Finalise PDF. For continuity, this composer prefers reviewed Session Captures but can also use existing transcript-backed session summaries when older sessions have no capture. Always use the saving behaviour of the screen you are actually working in.'
       ] },
       { heading: 'Preparing a formal Clinical Record', steps: [
         'Open Clinical Record for the relevant session and check what source material is available. An availability indicator tells you that material exists; it is not a checkbox selecting it for inclusion.',
@@ -120,20 +120,20 @@ export const HELP_ARTICLES = [
   },
   {
     id: 'client-summary', category: 'Sessions',
-    title: 'Create a client summary across one session, recent sessions or the full reviewed history',
-    summary: 'The selected anchor sets the end of the evidence window. Choose one reviewed session, the last 3, the last 5 or the entire reviewed history up to that anchor.',
+    title: 'Create a client summary across one session, recent sessions or the full available history',
+    summary: 'The selected anchor sets the end of the evidence window. Choose one session, the last 3, the last 5 or the entire available history up to that anchor.'
     keywords: ['last 3 sessions', 'last three sessions', 'last 5 sessions', 'last five sessions', 'entire history', 'reviewed history', 'continuity', 'anchor', 'evidence window', 'create session summary', 'pdf', 'finalise', 'email'],
     sections: [
       { heading: 'Use this to connect recent work for the client', paragraphs: [
         'Open the client document composer using Create session summary in the client Documents area, or choose the session-summary document type in Create Document. This is not the same as opening the regular summary for one session.',
-        'Choose Perspective for the framing and Continuity for the source window. Summary anchored to identifies the reviewed session the document is centred on. Evidence window shows the dates actually included. Therapist additions lets you supply context, corrections or emphasis.'
+        'Choose Perspective for the framing and Continuity for the source window. Summary anchored to identifies the available session source the document is centred on. Evidence window shows the dates actually included. Therapist additions lets you supply context, corrections or emphasis.'
       ] },
       { heading: 'How the window is chosen', paragraphs: [
-        'This session only uses the eligible reviewed capture for the selected session. Last 3 and Last 5 look backwards from the chosen anchor and select up to that many eligible reviewed Session Captures. Entire history uses all eligible reviewed Session Captures up to the selected anchor. Later sessions remain outside that anchored window.',
-        'A completed appointment alone does not establish that reviewed capture material is available. A selected window can therefore contain fewer sources than its label suggests. Check the displayed evidence dates before generating.',
-        'For session-summary documents, From and To are optional document dates. Helios auto-fills them from the selected evidence window: the same date for one session, or earliest-to-anchor for a multi-session window. You can edit or clear either date without changing which Session Captures are used.'
+        'For each session, Helios prefers a reviewed Session Capture when one exists. If no reviewed capture exists, an existing transcript-backed session summary already stored in the workspace can be used as the session source instead. This session uses one source; Last 3 and Last 5 look backwards from the chosen anchor; Entire history uses all available session sources up to that anchor. Later sessions remain outside the anchored window.',
+        'Transcript-backed summary fallback exists so older work does not need artificial retrospective Session Capture review. The previous summary is treated as compressed secondary evidence rather than verbatim client speech. Check the displayed evidence dates and Evidence used list before finalising.',
+        'For session-summary documents, From and To are optional document dates. Helios auto-fills them from the selected evidence window: the same date for one session, or earliest-to-anchor for a multi-session window. You can edit or clear either date without changing which session sources are used.'
       ] },
-      { heading: 'An anchored-window example', example: 'Fictional example: reviewed sessions exist on 2, 9, 16 and 23 September. A summary anchored to 16 September can use 2, 9 and 16 September. It does not include 23 September just because that is now the most recent appointment. The dates here illustrate the rule; the evidence window in your composer is the one to check.' },
+      { heading: 'An anchored-window example', example: 'Fictional example: available session sources exist on 2, 9, 16 and 23 September. A summary anchored to 16 September can use 2, 9 and 16 September. It does not include 23 September just because that is now the most recent appointment. The dates here illustrate the rule; the evidence window in your composer is the one to check.' },
       { heading: 'Generate, review, then choose the destination', steps: [
         'Check the anchor, source dates and your additions, then Generate client summary. The result is editable draft wording, not an automatically saved document.',
         'Review the text for accuracy, emphasis and suitability for the client. Permitted current Care context can inform it; private reflections and supervision material are not automatically brought into this workflow.',
@@ -141,7 +141,7 @@ export const HELP_ARTICLES = [
         'When using Prepare email, review the email draft, attach the PDF yourself and send it through your email application. Preparing the email does not send or attach it automatically.'
       ] },
       { heading: 'If no eligible source is listed', paragraphs: [
-        'Do not assume that a transcript or completed appointment automatically qualifies as reviewed Session Capture material. Check the selected session and the evidence message. Contact product support when the expected reviewed source is still unavailable; avoid generating from the wrong session simply to obtain text.'
+        'Helios needs either a reviewed Session Capture or an existing transcript-backed session summary for a session to appear in this composer. If a transcript-backed session summary already exists, it should be available without another Session Capture review. Check the selected client and source session when an expected item is missing.'
       ] }
     ], related: ['session-material', 'practice-map']
   },
@@ -189,7 +189,7 @@ export const HELP_ARTICLES = [
         'The current reflective workspace loads up to 100 recent reflections. The Map is therefore not an unlimited analysis of every entry you have ever made. Its counts describe that loaded material.'
       ] },
       { heading: 'Not the same as last-three-session continuity', paragraphs: [
-        'The client-summary Continuity selector chooses reviewed session sources for a client-facing draft. Practice Map organises your own reflective material across time. They use different inputs and have different purposes. Do not expect changing the client-summary window to change the Practice Map.'
+        'The client-summary Continuity selector chooses available session sources for a client-facing draft. Practice Map organises your own reflective material across time. They use different inputs and have different purposes. Do not expect changing the client-summary window to change the Practice Map.'
       ] }
     ], related: ['private-reflection', 'client-summary', 'supervision-pack']
   },
