@@ -36,10 +36,10 @@
             <div class="flex flex-col lg:flex-row lg:items-end justify-between gap-4"><div><p class="type-overline text-action-link">Helios Clinical Intelligence</p><h3 id="clinical-intelligence-heading" class="text-h3 font-semibold text-ink mt-1">Prepare a useful client summary</h3><p class="text-body-sm text-ink-secondary mt-1 max-w-2xl">Generate an editable draft from reviewed Session Captures and current therapist-accepted Care context. Internal clinical notes, risk material and private reflections are not included automatically.</p></div><button type="button" class="button-primary shrink-0" :disabled="generatingSummary" @click="generateSummary">{{ generatingSummary ? 'Generating…' : 'Generate client summary' }}</button></div>
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-4">
               <label><span class="text-caption font-semibold">Perspective</span><select v-model="summaryLens" class="mt-1 w-full p-2.5 border border-border rounded-control bg-surface"><option value="general">General</option><option value="integrative">Integrative</option><option value="gentle_cbt">CBT</option><option value="internal_family_systems">Internal Family Systems (IFS)</option><option value="transactional_analysis">Transactional Analysis</option></select></label>
-              <label><span class="text-caption font-semibold">Continuity</span><select :value="summaryWindow" class="mt-1 w-full p-2.5 border border-border rounded-control bg-surface" @change="handleSummaryWindowChange"><option value="current">This session only</option><option value="last_three">Last 3 reviewed sessions</option><option value="last_five">Last 5 reviewed sessions</option><option value="history">Entire history</option></select></label>
+              <label><span class="text-caption font-semibold">Continuity</span><select v-model="summaryWindow" class="mt-1 w-full p-2.5 border border-border rounded-control bg-surface"><option value="current">This session only</option><option value="last_three">Last 3 reviewed sessions</option><option value="last_five">Last 5 reviewed sessions</option><option value="history">Entire history</option></select></label>
               <label>
                 <span class="text-caption font-semibold">Summary anchored to</span>
-                <select :value="anchorSessionId || ''" class="mt-1 w-full p-2.5 border border-border rounded-control bg-surface" :disabled="!availableSummarySessions.length || loadingEvidence" @change="handleAnchorSessionChange">
+                <select v-model="anchorSessionId" class="mt-1 w-full p-2.5 border border-border rounded-control bg-surface" :disabled="!availableSummarySessions.length || loadingEvidence">
                   <option v-if="loadingEvidence" value="">Loading reviewed sessions…</option>
                   <option v-else-if="evidenceError" value="">Error loading sessions</option>
                   <option v-else-if="!availableSummarySessions.length" value="">No reviewed sessions found</option>
@@ -69,7 +69,7 @@
 <script setup>
 import HelpLink from '../help/HelpLink.vue'
 import RichDocumentEditor from '../documents/RichDocumentEditor.vue'
-import { computed, onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { createClientDocumentDraft, downloadClientDocument, finaliseClientDocument, generateClientSessionSummary, listClientSummaryEvidence, listDocumentSourceSessions, saveClientDocumentDraft } from '../../lib/clientDocuments.js'
 import { loadDocumentProfile, profileDisplay } from '../../lib/documentProfile.js'
 const SESSION_SUMMARY_TEMPLATE = `Where things are now\n\nWhat we have been working on\n\nPatterns across our recent work\n\nWhat has shifted — and what has been different\n\nStrengths and resources\n\nMaking sense of what we have noticed\n\nIdeas to carry forward\n\nClosing reflection`
@@ -79,7 +79,7 @@ const SOURCE_PAGE_SIZE = 8
 const initialType = props.document?.documentType || props.initialDocumentType || 'other'
 const isSessionSummary = computed(() => form.documentType === 'session_summary')
 const loading = ref(true), saving = ref(false), action = ref(''), error = ref(''), saveMessage = ref(props.document ? 'Saved' : 'Not saved yet'), sources = ref([]), selectedSourceIds = ref([]), addedSourceIds = ref([]), expandedSourceId = ref(null), sourceQuery = ref(''), visibleSourceCount = ref(SOURCE_PAGE_SIZE), currentDocument = ref(props.document), baseline = ref(''), profile = ref({}), sourcePanelOpen = ref(false)
-const generatingSummary = ref(false), loadingEvidence = ref(false), evidenceError = ref(''), summaryLens = ref(props.document?.content?.clinicalIntelligence?.generation?.lens || 'general'), summaryWindow = ref(props.document?.content?.clinicalIntelligence?.generation?.window || 'last_three'), therapistGuidance = ref(''), summaryGenerationMessage = ref(''), summaryGenerationError = ref(false), summarySources = ref(props.document?.content?.clinicalIntelligence?.sources || []), summaryClaims = ref(props.document?.content?.clinicalIntelligence?.claims || []), summaryGeneration = ref(props.document?.content?.clinicalIntelligence?.generation || null), previousSummaryVersions = ref(props.document?.content?.clinicalIntelligence?.history || []), lastGeneratedBody = ref(props.document?.content?.clinicalIntelligence?.lastGeneratedBody || ''), availableSummarySessions = ref([]), anchorSessionId = ref(null)
+const generatingSummary = ref(false), loadingEvidence = ref(false), evidenceError = ref(''), summaryLens = ref(props.document?.content?.clinicalIntelligence?.generation?.lens || 'general'), summaryWindow = ref(props.document?.content?.clinicalIntelligence?.generation?.window || 'last_three'), therapistGuidance = ref(''), summaryGenerationMessage = ref(''), summaryGenerationError = ref(false), summarySources = ref(props.document?.content?.clinicalIntelligence?.sources || []), summaryClaims = ref(props.document?.content?.clinicalIntelligence?.claims || []), summaryGeneration = ref(props.document?.content?.clinicalIntelligence?.generation || null), previousSummaryVersions = ref(props.document?.content?.clinicalIntelligence?.history || []), lastGeneratedBody = ref(props.document?.content?.clinicalIntelligence?.lastGeneratedBody || ''), availableSummarySessions = ref([]), anchorSessionId = ref(null), evidenceDateAutofillArmed = ref(false)
 const form = reactive({ title: props.document?.title || (initialType === 'session_summary' ? 'Session summary' : ''), documentType: initialType, recipient: props.document?.recipient || '', purpose: props.document?.purpose || (initialType === 'session_summary' ? 'A client-facing summary of the session' : ''), periodStart: props.document?.periodStart || '', periodEnd: props.document?.periodEnd || '', body: props.document?.content?.body || (initialType === 'session_summary' ? SESSION_SUMMARY_TEMPLATE : ''), richContent: props.document?.content?.richContent || null })
 const identity = computed(() => profileDisplay(profile.value)), finalised = computed(() => currentDocument.value?.status === 'completed')
 const mailtoLink = computed(() => {
@@ -107,14 +107,9 @@ function syncPeriodFromEvidence() {
   form.periodStart = dateInputValue(evidenceWindow.value.at(-1)?.occurredAt)
   form.periodEnd = dateInputValue(evidenceWindow.value[0]?.occurredAt)
 }
-function handleSummaryWindowChange(event) {
-  summaryWindow.value = event?.target?.value || summaryWindow.value
-  syncPeriodFromEvidence()
-}
-function handleAnchorSessionChange(event) {
-  anchorSessionId.value = event?.target?.value || null
-  syncPeriodFromEvidence()
-}
+watch([summaryWindow, anchorSessionId], () => {
+  if (evidenceDateAutofillArmed.value) syncPeriodFromEvidence()
+})
 function changes() { const clinicalIntelligence=isSessionSummary.value?{generation:summaryGeneration.value,claims:summaryClaims.value,sources:summarySources.value,history:previousSummaryVersions.value.slice(-5),lastGeneratedBody:lastGeneratedBody.value}:undefined; return { title: form.title, documentType: form.documentType, recipient: form.recipient, purpose: form.purpose, periodStart: form.periodStart || null, periodEnd: form.periodEnd || null, content: { body: form.body, richContent: form.richContent,...(clinicalIntelligence?{clinicalIntelligence}:{}) }, sourceManifest: isSessionSummary.value ? [...summarySources.value,{kind:'ai_generation',...(summaryGeneration.value||{})}] : selectedSources.value.map(s => ({ kind: 'session', id: s.id, version: s.version, occurredAt: s.occurredAt })) } }
 function snapshot() { return JSON.stringify(changes()) }
 const dirty = computed(() => !finalised.value && baseline.value !== snapshot())
@@ -148,6 +143,7 @@ async function loadWorkspace() {
         }
       } finally {
         loadingEvidence.value = false
+        evidenceDateAutofillArmed.value = true
       }
     }
     baseline.value = snapshot()
