@@ -6,6 +6,7 @@ const source = await readFile(new URL('../src/views/SessionWorkspace.vue', impor
 const apiSource = await readFile(new URL('../api/ai/session-summary.js', import.meta.url), 'utf8')
 const clientsSource = await readFile(new URL('../src/lib/clients.js', import.meta.url), 'utf8')
 const migration = await readFile(new URL('../supabase/migrations/20261029120000_add_client_summary_preference.sql', import.meta.url), 'utf8')
+const ifsMigration = await readFile(new URL('../supabase/migrations/20261029114239_allow_ifs_summary_preference.sql', import.meta.url), 'utf8')
 
 test('SessionWorkspace presents inline summary customization before first generation', () => {
   assert.match(source, /data-testid="session-summary-options"/)
@@ -14,6 +15,7 @@ test('SessionWorkspace presents inline summary customization before first genera
   assert.match(source, /General/)
   assert.match(source, /Integrative/)
   assert.match(source, />CBT</)
+  assert.match(source, /Internal Family Systems \(IFS\)/)
   assert.match(source, /Transactional Analysis/)
   assert.match(source, /Evidence/)
   assert.match(source, /This session/)
@@ -56,6 +58,7 @@ test('Session summary approach is remembered per client', () => {
   assert.match(clientsSource, /updateClientSummaryPreference/)
   assert.match(migration, /preferred_summary_lens text not null default 'integrative'/)
   assert.match(migration, /transactional_analysis/)
+  assert.match(ifsMigration, /internal_family_systems/)
 })
 
 test('SessionWorkspace handles generation state', () => {

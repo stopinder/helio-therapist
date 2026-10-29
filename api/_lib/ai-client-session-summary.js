@@ -1,5 +1,5 @@
 export const CLIENT_SESSION_SUMMARY_PROMPT_VERSION = 'client-session-summary-v5';
-export const CLIENT_SESSION_SUMMARY_LENSES = Object.freeze(['general', 'integrative', 'gentle_cbt', 'transactional_analysis']);
+export const CLIENT_SESSION_SUMMARY_LENSES = Object.freeze(['general', 'integrative', 'gentle_cbt', 'internal_family_systems', 'transactional_analysis']);
 export const CLIENT_SESSION_SUMMARY_FIELDS = Object.freeze(['opening','whatWeWorkedOn','patternsOverTime','changesAndExceptions','strengthsAndResources','perspectiveReflection','betweenSession','closing']);
 
 const COMPARISON_TASKS = Object.freeze(['recurrence', 'change', 'stability', 'exceptions', 'resources', 'unfinished_threads', 'possible_connections']);
@@ -49,6 +49,7 @@ const lensRules = {
   general: `General lens: remain model-neutral. Focus on supported themes, changes, stable threads, resources, next steps and useful connections. Do not impose CBT terminology.`,
   gentle_cbt: `Gentle CBT lens: where supported, map situation or trigger / antecedent -> thoughts, emotions and body responses -> behaviour or coping response -> short-term consequence and longer-term consequence. Notice repeated maintenance cycles, interruptions or exceptions to a cycle, experiments, coping responses and changes over time. Explicitly look for what interrupts the usual sequence and what the client learns from trying something different. Never manufacture a complete CBT sequence when evidence is missing, and never force CBT language into client-facing prose when ordinary language is clearer.`,
   integrative: `Integrative lens: do not force a single model. Focus on explicitly supported emotional, relational, behavioural and contextual themes, shifts in understanding, unfinished threads, resources and alternative possible meanings. Preserve ambiguity where more than one meaning remains plausible.`,
+  internal_family_systems: `Internal Family Systems (IFS) lens: where supported, notice the client's own descriptions of parts or inner positions, protective intentions, blending and unblending, polarisation between parts, burdens that are explicitly named, and moments of greater curiosity, compassion, calm, clarity, confidence, courage, creativity or connectedness. Prefer the client's own language for parts. Treat parts as a therapeutic way of organising experience rather than literal entities. Do not infer an exile, protector role, trauma history, burden, Self state, or childhood origin unless the source supports it. Do not present a part's intention as fact when it has not been explored; use tentative language such as “this part may be trying to…” or “we wondered whether…”.`,
   transactional_analysis: `Transactional Analysis lens: where supported, notice patterns in interpersonal exchanges, shifts between Parent, Adult and Child positions, repeated expectations in relationships, and opportunities for clearer Adult-to-Adult communication. Use TA language only when it helps explain the evidence and avoid assigning fixed states or motives.`
 };
 
@@ -174,7 +175,7 @@ export function validateClientSessionSummaryResponse(value, validSourceIds = nul
 
 export function renderClientSessionSummary(sections, lens='general') {
   if(!sections)return '';
-  const perspectiveHeading=lens==='gentle_cbt'?'A gentle CBT perspective':lens==='integrative'?'An integrative perspective':lens==='transactional_analysis'?'A Transactional Analysis perspective':'Making sense of what we have noticed';
+  const perspectiveHeading=lens==='gentle_cbt'?'A gentle CBT perspective':lens==='integrative'?'An integrative perspective':lens==='internal_family_systems'?'An Internal Family Systems perspective':lens==='transactional_analysis'?'A Transactional Analysis perspective':'Making sense of what we have noticed';
   const blocks=[
     ['Where things are now',sections.opening],
     ['What we have been working on',sections.whatWeWorkedOn],

@@ -65,7 +65,7 @@ export async function updateClientFocus({ clientId, note }) {
 
 export async function updateClientSummaryPreference({ clientId, lens }) {
   if (!supabase) throw new Error('Supabase is not configured')
-  const allowed = new Set(['general', 'integrative', 'gentle_cbt', 'transactional_analysis'])
+  const allowed = new Set(['general', 'integrative', 'gentle_cbt', 'internal_family_systems', 'transactional_analysis'])
   if (!allowed.has(lens)) throw new Error('Choose a valid summary approach')
   const user = await requireUser('update a client summary preference')
   const { data, error } = await withSessionRecovery(() => supabase.from('clients').update({
