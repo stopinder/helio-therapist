@@ -1,4 +1,7 @@
 alter table public.clients
+  add column if not exists preferred_summary_lens text not null default 'integrative';
+
+alter table public.clients
   drop constraint if exists clients_preferred_summary_lens_check;
 
 alter table public.clients
