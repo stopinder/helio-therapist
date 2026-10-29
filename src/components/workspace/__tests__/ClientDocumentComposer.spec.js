@@ -118,3 +118,44 @@ describe('ClientDocumentComposer', () => {
     expect(editor.element.value).toBe('Original Text')
   })
 })
+
+
+  it('offers last five and entire history and auto-fills editable period dates from the evidence window', async () => {
+    clientDocs.listClientSummaryEvidence.mockResolvedValueOnce([
+      { sessionId: 's1', occurredAt: '2026-10-29T10:00:00Z', reviewedAt: '2026-10-29T12:00:00Z' },
+      { sessionId: 's2', occurredAt: '2026-10-22T10:00:00Z', reviewedAt: '2026-10-22T12:00:00Z' },
+      { sessionId: 's3', occurredAt: '2026-10-15T10:00:00Z', reviewedAt: '2026-10-15T12:00:00Z' },
+      { sessionId: 's4', occurredAt: '2026-10-08T10:00:00Z', reviewedAt: '2026-10-08T12:00:00Z' },
+      { sessionId: 's5', occurredAt: '2026-10-01T10:00:00Z', reviewedAt: '2026-10-01T12:00:00Z' },
+      { sessionId: 's6', occurredAt: '2026-09-24T10:00:00Z', reviewedAt: '2026-09-24T12:00:00Z' }
+    ])
+
+    const wrapper = mount(ClientDocumentComposer, {
+      props: { client: mockClient, initialDocumentType: 'session_summary' },
+      global: { stubs: { teleport: true, RichDocumentEditor: RichDocumentEditorStub } }
+    })
+    await flushPromises()
+
+    const continuity = wrapper.findAll('select').find(select => select.text().includes('Last 5 reviewed sessions'))
+    expect(continuity).toBeTruthy()
+    expect(continuity.text()).toContain('Entire history')
+
+    const dates = wrapper.findAll('input[type="date"]')
+    expect(dates).toHaveLength(2)
+    expect(dates[0].element.value).toBe('2026-10-15')
+    expect(dates[1].element.value).toBe('2026-10-29')
+
+    await continuity.setValue('last_five')
+    await flushPromises()
+    expect(dates[0].element.value).toBe('2026-10-01')
+    expect(dates[1].element.value).toBe('2026-10-29')
+
+    await continuity.setValue('history')
+    await flushPromises()
+    expect(dates[0].element.value).toBe('2026-09-24')
+    expect(dates[1].element.value).toBe('2026-10-29')
+
+    await dates[0].setValue('2026-10-03')
+    expect(dates[0].element.value).toBe('2026-10-03')
+    expect(wrapper.text()).toContain('Auto-filled from the selected evidence window. You can edit or clear either date.')
+  })
