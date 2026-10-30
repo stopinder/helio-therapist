@@ -4,6 +4,7 @@ import { randomUUID } from 'node:crypto';
 import {
   CLIENT_SESSION_SUMMARY_LENSES,
   clientSessionSummaryLensRule,
+  normalizeClientSessionSummaryResponse,
   renderClientSessionSummary,
   validateClientSessionSummaryResponse
 } from '../_lib/ai-client-session-summary.js';
@@ -192,7 +193,7 @@ Every non-empty section must have at least one claim, and each claim text must a
     });
 
     const structured = validateClientSessionSummaryResponse(
-      completion.choices?.[0]?.message?.content,
+      normalizeClientSessionSummaryResponse(completion.choices?.[0]?.message?.content),
       validSourceIds
     );
     if (!structured) {
