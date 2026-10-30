@@ -115,11 +115,15 @@
                   <p class="type-body-medium">Preparing session summary…</p>
                   <p class="text-body-sm">This may take a few minutes. Please keep this page open.</p>
                 </div>
-                <div v-else-if="generationError" class="py-12 px-6 text-center bg-state-danger-surface rounded-panel border border-state-danger/20 shadow-sm">
+                <div v-else-if="generationError && !summaryDocument" class="py-12 px-6 text-center bg-state-danger-surface rounded-panel border border-state-danger/20 shadow-sm">
                   <p class="text-state-danger text-body-sm mb-4">{{ generationError }}</p>
                   <button @click="generateSummary" class="button-primary py-stack-xs px-inline-md text-body-sm">Retry</button>
                 </div>
                 <template v-else-if="summaryDocument">
+                  <div v-if="generationError" class="mb-4 py-4 px-5 text-center bg-state-danger-surface rounded-panel border border-state-danger/20 shadow-sm" role="alert">
+                    <p class="text-state-danger text-body-sm">Generation failed — previous summary unchanged. {{ generationError }}</p>
+                    <button @click="generateSummary" class="button-primary mt-3 py-stack-xs px-inline-md text-body-sm">Retry</button>
+                  </div>
                   <SessionSummaryDocument v-if="!isEditingSummary" :body="summaryDocument.content.body" :clientName="client?.name" :date="workspaceSession.date" />
                   <div v-else class="bg-surface rounded-panel border border-border p-6 shadow-sm animate-expandIn">
                     <textarea v-model="summaryDocument.content.body" class="w-full min-h-[30rem] p-6 border border-border rounded-control bg-surface-subtle type-body-long focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-all resize-y" placeholder="No session summary yet." @input="handleSummaryInput"></textarea>
