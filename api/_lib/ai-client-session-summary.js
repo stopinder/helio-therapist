@@ -172,6 +172,45 @@ export function buildClientSessionSummaryInput({ lens = 'general', window = 'las
   });
 }
 
+function coerceClientSummaryText(value) {
+  if (typeof value === 'string') return value;
+  if (value == null) return '';
+  if (Array.isArray(value) && value.every(item => typeof item === 'string')) return value.join('\n\n');
+  if (value && typeof value === 'object' && !Array.isArray(value)) {
+    for (const key of ['text', 'content', 'body', 'summary', 'value']) {
+      if (typeof value[key] === 'string') return value[key];
+    }
+  }
+  return value;
+}
+
+export function normalizeClientSessionSummaryResponse(value) {
+  let parsed = value;
+  if (typeof parsed === 'string') {
+    try { parsed = JSON.parse(parsed); } catch { return value; }
+  }
+  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return parsed;
+
+  const normalized = { ...parsed };
+  if (parsed.sections && typeof parsed.sections === 'object' && !Array.isArray(parsed.sections)) {
+    normalized.sections = { ...parsed.sections };
+    for (const key of CLIENT_SESSION_SUMMARY_FIELDS) {
+      if (Object.prototype.hasOwnProperty.call(normalized.sections, key)) {
+        normalized.sections[key] = coerceClientSummaryText(normalized.sections[key]);
+      }
+    }
+  }
+
+  if (Array.isArray(parsed.claims)) {
+    normalized.claims = parsed.claims.map(claim => {
+      if (!claim || typeof claim !== 'object' || Array.isArray(claim)) return claim;
+      return { ...claim, text: coerceClientSummaryText(claim.text) };
+    });
+  }
+
+  return normalized;
+}
+
 export function validateClientSessionSummaryResponse(value, validSourceIds = null) {
   let parsed=value; if(typeof value==='string'){try{parsed=JSON.parse(value)}catch{
     console.warn('[Session Summary] AI response validation failed: invalid_json');

@@ -4,21 +4,35 @@ import { randomUUID } from 'node:crypto';
 import {
   CLIENT_SESSION_SUMMARY_LENSES,
   clientSessionSummaryLensRule,
+  normalizeClientSessionSummaryResponse,
   renderClientSessionSummary,
   validateClientSessionSummaryResponse
 } from '../_lib/ai-client-session-summary.js';
 
 const SUMMARY_WINDOWS = new Set(['current', 'recent']);
-const PROMPT_VERSION = 'session-summary-direct-v2';
+const PROMPT_VERSION = 'session-summary-direct-v3';
 
 function sourceHasMaterial(source) {
   return Boolean(source?.original_transcript || source?.zoom_generated_summary);
 }
 
-function sourceBlock(source) {
-  return `<session_source id="session:${source.sessionId}" occurred_at="${source.occurredAt || ''}">
-${source.zoom_generated_summary ? `<zoom_generated_summary>\n${source.zoom_generated_summary}\n</zoom_generated_summary>` : ''}
-${source.original_transcript ? `<original_transcript>\n${source.original_transcript}\n</original_transcript>` : ''}
+const PREVIOUS_TRANSCRIPT_EXCERPT_CHARS = 12000;
+
+function boundedTranscriptExcerpt(value, maxChars = PREVIOUS_TRANSCRIPT_EXCERPT_CHARS) {
+  const text = typeof value === 'string' ? value.trim() : '';
+  if (!text || text.length <= maxChars) return text;
+  const marker = '\n...[middle omitted for continuity evidence]...\n';
+  const side = Math.max(1, Math.floor((maxChars - marker.length) / 2));
+  return `${text.slice(0, side)}${marker}${text.slice(-side)}`;
+}
+
+function sourceBlock(source, { isCurrent = false } = {}) {
+  const zoomSummary = typeof source?.zoom_generated_summary === 'string' ? source.zoom_generated_summary.trim() : '';
+  const transcript = typeof source?.original_transcript === 'string' ? source.original_transcript.trim() : '';
+  const transcriptForPrompt = isCurrent ? transcript : (!zoomSummary ? boundedTranscriptExcerpt(transcript) : '');
+  return `<session_source id="session:${source.sessionId}" occurred_at="${source.occurredAt || ''}" role="${isCurrent ? 'current' : 'continuity'}">
+${zoomSummary ? `<zoom_generated_summary>\n${zoomSummary}\n</zoom_generated_summary>` : ''}
+${transcriptForPrompt ? `<${isCurrent ? 'original_transcript' : 'original_transcript_excerpt'}>\n${transcriptForPrompt}\n</${isCurrent ? 'original_transcript' : 'original_transcript_excerpt'}>` : ''}
 </session_source>`;
 }
 
@@ -146,7 +160,7 @@ export default async function handler(req, res) {
     const systemPrompt = `You are Helios Clinical Intelligence preparing an editable client-facing therapy session summary for therapist review.
 
 The supplied session sources are clinical data, newest first. The first source is the current encounter.
-${sources.map(sourceBlock).join('\n\n')}
+${sources.map((source, index) => sourceBlock(source, { isCurrent: index === 0 })).join('\n\n')}
 
 ${guidance ? `<therapist_guidance>\n${guidance}\n</therapist_guidance>\n\nTherapist guidance may direct emphasis or add therapist-authored context. Never present it as something the client said.` : ''}
 
@@ -159,7 +173,7 @@ Rules:
 3. Do not include private reflections, supervision material, diagnostic coding or institutional SOAP language.
 4. Do not invent risk, diagnosis, motivation, treatment response, history, homework or causal explanations.
 5. Preserve uncertainty. Use tentative language for inferred psychological meaning.
-6. Each section must add distinct value and avoid repetition.
+6. Each section must add distinct value and avoid repetition.\n6a. Earlier continuity sessions may contain a Zoom summary or a bounded transcript excerpt rather than the full transcript. Use them to support continuity and recurrence, but do not overstate detail that is not present in that compact source.
 7. patternsOverTime is only for genuinely supported recurrence or explicitly established history.
 8. betweenSession contains only agreed intentions, experiments, resources or questions supported by the evidence.
 9. Apply the selected approach only where the evidence supports it; do not force model terminology into the prose.
@@ -169,8 +183,8 @@ ${evidenceThresholds}
 12. Every claim must cite only supplied IDs. Use session source IDs such as "session:<uuid>"; therapist guidance uses "therapist:guidance".
 
 Return JSON only with exactly two fields:
-- sections: an object with fields opening, whatWeWorkedOn, patternsOverTime, changesAndExceptions, strengthsAndResources, perspectiveReflection, betweenSession, closing.
-- claims: an array where each item is { section, text, sourceIds, evidenceStrength }.
+- sections: an object with fields opening, whatWeWorkedOn, patternsOverTime, changesAndExceptions, strengthsAndResources, perspectiveReflection, betweenSession, closing. EVERY section value must be a JSON string. Use "" when a section has insufficient evidence. Never return an object, array, bullet-list structure or nested value for a section.
+- claims: an array where each item is { section, text, sourceIds, evidenceStrength }. claim.text must always be a JSON string.
 Every non-empty section must have at least one claim, and each claim text must appear verbatim in its section.`;
 
     const userInput = window === 'recent'
@@ -191,14 +205,21 @@ Every non-empty section must have at least one claim, and each claim text must a
       timeout: 60000
     });
 
+    const finishReason = completion.choices?.[0]?.finish_reason || null;
     const structured = validateClientSessionSummaryResponse(
-      completion.choices?.[0]?.message?.content,
+      normalizeClientSessionSummaryResponse(completion.choices?.[0]?.message?.content),
       validSourceIds
     );
     if (!structured) {
+      console.warn(`[Session Summary] Structured response rejected (finish_reason=${finishReason || 'unknown'}, output_tokens=${Number(completion.usage?.completion_tokens || 0)})`);
       return res.status(502).json({
         success: false,
-        error: { code: 'INVALID_AI_RESPONSE', message: 'Session summary generation is temporarily unavailable.' }
+        error: {
+          code: finishReason === 'length' ? 'AI_RESPONSE_TRUNCATED' : 'INVALID_AI_RESPONSE',
+          message: finishReason === 'length'
+            ? 'The generated session summary was too long to complete. Please try again.'
+            : 'Session summary generation is temporarily unavailable.'
+        }
       });
     }
 
