@@ -1,7 +1,7 @@
 import { requireAuthenticatedUser } from '../_lib/supabase.js';
 import { AI_FEATURES, runTextAI } from '../_lib/ai-execution.js';
 import { randomUUID } from 'node:crypto';
-import { CLIENT_SESSION_SUMMARY_LENSES, CLIENT_SESSION_SUMMARY_PROMPT_VERSION, buildClientSessionSummaryInput, buildClinicalIntelligenceEvidenceMap, buildClinicalIntelligenceSessionCandidates, clientSessionSummarySystemPrompt, renderClientSessionSummary, selectClinicalIntelligenceSources, validateClientSessionSummaryResponse } from '../_lib/ai-client-session-summary.js';
+import { CLIENT_SESSION_SUMMARY_LENSES, CLIENT_SESSION_SUMMARY_PROMPT_VERSION, buildClientSessionSummaryInput, buildClinicalIntelligenceEvidenceMap, buildClinicalIntelligenceSessionCandidates, clientSessionSummarySystemPrompt, normalizeClientSessionSummaryResponse, renderClientSessionSummary, selectClinicalIntelligenceSources, validateClientSessionSummaryResponse } from '../_lib/ai-client-session-summary.js';
 
 export default async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
@@ -104,7 +104,7 @@ export default async function handler(req, res) {
       responseFormat:{type:'json_object'}, temperature:0.2, maxTokens:8000, timeout:60000
     });
     const finishReason = completion.choices?.[0]?.finish_reason || null;
-    const structured = validateClientSessionSummaryResponse(completion.choices?.[0]?.message?.content,validSourceIds);
+    const structured = validateClientSessionSummaryResponse(normalizeClientSessionSummaryResponse(completion.choices?.[0]?.message?.content),validSourceIds);
     if (!structured) {
       const truncated = finishReason === 'length';
       console.warn(`[Client Session Summary] Structured response rejected (finish_reason=${finishReason || 'unknown'}, output_tokens=${Number(completion.usage?.completion_tokens || 0)})`);
