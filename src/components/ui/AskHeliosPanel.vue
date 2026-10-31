@@ -264,12 +264,13 @@ const tabs = [
 
 const {
   isPanelOpen, isExpanded, panelWidth, mode, messages, conversations,
-  activeConversationId, clients, selectedClientId, clinicalContext,
+  activeConversationId, clients, selectedClientId, clinicalContext: askClinicalContext,
   closePanel, setWidth, toggleExpand, addMessage, clearConversation,
   selectConversation, deleteConversation, fetchConversations,
   setMode, assignConversationId, setSelectedClient, setClinicalContext, clearClinicalContext, patchMessage,
   isRestoring, restoreError, ensureConversationReady, retryRestore, getContextVersion, isContextCurrent
 } = useAskHelios()
+const clinicalContext = askClinicalContext || ref(null)
 const currentTab = computed(() => tabs.find(t => t.id === mode.value) || tabs[0])
 const welcomeHeading = computed(() => clinicalContext.value && mode.value === 'workspace' ? 'Think with the selected clinical context' : currentTab.value.heading)
 const welcomeDescription = computed(() => clinicalContext.value && mode.value === 'workspace'
