@@ -4,10 +4,12 @@ import { readFile } from 'node:fs/promises'
 
 const transcriptInboxSource = await readFile(new URL('../src/components/TranscriptInbox.vue', import.meta.url), 'utf8')
 
-test('Transcript Inbox does not render conversation excerpts in the list', async () => {
-  // The transcriptPreview function and its usage in the template should be gone
-  assert.strictEqual(transcriptInboxSource.includes('transcriptPreview'), false, 'transcriptPreview should be removed')
-  assert.strictEqual(transcriptInboxSource.includes('class="transcript-preview"'), false, 'transcript-preview class usage should be removed')
+test('Transcript Inbox previews are explicit and loaded on demand rather than included in the initial list payload', async () => {
+  assert.match(transcriptInboxSource, /function transcriptPreview\(transcript\)/)
+  assert.match(transcriptInboxSource, /Preview loads on demand/)
+  assert.match(transcriptInboxSource, /@click="toggleExpand\(transcript\.id, \$event\)"/)
+  assert.match(transcriptInboxSource, /fetchTranscriptDetail/)
+  assert.match(transcriptInboxSource, /inline-transcript-preview/)
 })
 
 test('Transcript Inbox still provides access to the full transcript', async () => {
