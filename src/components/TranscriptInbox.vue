@@ -278,6 +278,7 @@ function replaceTranscriptInList(transcript) {
   const index = transcripts.value.findIndex(item => item.id === transcript.id);
   if (index >= 0) transcripts.value[index] = transcript;
   if (selected.value?.id === transcript.id) selected.value = transcript;
+  initialiseAssignmentDraft(transcript);
 }
 function replaceTranscript(transcript){replaceTranscriptInList(transcript)}
 function toggleExpand(id, event) {
@@ -286,6 +287,7 @@ function toggleExpand(id, event) {
   else expandedRows.value.add(id);
 }
 function openTranscript(transcript){
+  detailReturnId.value=transcript.id;
   selected.value=transcript;
   selectedClientId.value=transcript.clientId||'';
   selectedLens.value=transcript.requestedLens||'';
@@ -293,10 +295,42 @@ function openTranscript(transcript){
   errorMessage.value='';
   successMessage.value='';
   showRaw.value=false;
-  window.scrollTo({ top: 0, behavior: 'smooth' });
 }
-async function load(){loading.value=true;errorMessage.value='';try{const response=await authenticatedFetch('/api/zoom/transcripts');const data=await response.json().catch(()=>({}));if(!response.ok)throw new Error(data.error||'Unable to load transcripts.');transcripts.value=data.transcripts||[]}catch(error){errorMessage.value=error.message||'Unable to load transcripts.'}finally{loading.value=false}}
+function closeTranscript(){
+  const returnId=detailReturnId.value;
+  selected.value=null;
+  detailReturnId.value=null;
+  requestAnimationFrame(()=>document.querySelector(`[data-transcript-id="${returnId}"]`)?.scrollIntoView({block:'center'}));
+}
+async function load(){loading.value=true;errorMessage.value='';try{const response=await authenticatedFetch('/api/zoom/transcripts');const data=await response.json().catch(()=>({}));if(!response.ok)throw new Error(data.error||'Unable to load transcripts.');transcripts.value=data.transcripts||[];for(const transcript of transcripts.value)initialiseAssignmentDraft(transcript)}catch(error){errorMessage.value=error.message||'Unable to load transcripts.'}finally{loading.value=false}}
 async function patchTranscript(body,fallbackMessage){saving.value=true;errorMessage.value='';successMessage.value='';try{const response=await authenticatedFetch('/api/zoom/transcripts',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:selected.value.id,expectedUpdatedAt:selected.value.updatedAt,...body})});const data=await response.json().catch(()=>({}));if(!response.ok)throw new Error(data.error||fallbackMessage);if(body.restoreAttention && !isRestoredTranscript(data?.transcript,selected.value.id))throw new Error(fallbackMessage);replaceTranscript(data.transcript);return data.transcript}catch(error){errorMessage.value=error.message||fallbackMessage;return null}finally{saving.value=false}}
+async function assignFromInbox(transcript){
+  const clientId=assignmentDrafts.value[transcript.id];
+  if(!clientId||assignmentSavingId.value)return;
+  assignmentSavingId.value=transcript.id;
+  errorMessage.value='';
+  successMessage.value='';
+  try{
+    const response=await authenticatedFetch('/api/zoom/transcripts',{
+      method:'PATCH',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({id:transcript.id,expectedUpdatedAt:transcript.updatedAt,clientId,clearAttention:true})
+    });
+    const data=await response.json().catch(()=>({}));
+    if(!response.ok)throw new Error(data.error||'Unable to assign this transcript.');
+    replaceTranscript(data.transcript);
+    successMessage.value=`Assigned to ${clientName(data.transcript.clientId)}. The transcript is ready in Clinical Workspace.`;
+  }catch(error){
+    errorMessage.value=error.message||'Unable to assign this transcript.';
+  }finally{
+    assignmentSavingId.value=null;
+  }
+}
+async function openLinkedSessionFromRow(transcript){
+  if(!transcript?.clientId||!transcript?.sessionRef)return;
+  await router.push({name:'SessionWorkspace',params:{clientId:transcript.clientId,sessionId:transcript.sessionRef}});
+}
+
 async function saveAssignment(){const transcript=await patchTranscript({clientId:selectedClientId.value,clearAttention:true},'Unable to save the client assignment.');if(transcript){editingClient.value=false;successMessage.value=`Assigned to ${clientName(transcript.clientId)} and ready in Clinical Workspace.`}}
 async function saveReviewChoices(){const transcript=await patchTranscript({requestedLens:selectedLens.value||null,sourceRetention:sourceRetention.value,reviewChoicesSaved:true},'Unable to save review choices.');if(transcript){editingChoices.value=false;successMessage.value='Review choices saved. No analysis has started.'}}
 async function deleteTranscript(){if(!selected.value)return;if(!window.confirm('Delete this unassigned transcript? This permanently removes the imported source from Helios.'))return;saving.value=true;errorMessage.value='';successMessage.value='';try{const response=await authenticatedFetch('/api/zoom/transcripts',{method:'DELETE',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:selected.value.id})});if(!response.ok){const data=await response.json().catch(()=>({}));throw new Error(data.error||'Unable to delete transcript.')}transcripts.value=transcripts.value.filter(item=>item.id!==selected.value.id);selected.value=null;successMessage.value='Transcript deleted.'}catch(error){errorMessage.value=error.message||'Unable to delete transcript.'}finally{saving.value=false}}
