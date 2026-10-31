@@ -135,7 +135,7 @@ const props = defineProps({ clients: { type: Array, default: () => [] }, openTra
 const emit = defineEmits(['client-added'])
 const router = useRouter()
 const transcripts = ref([]), selected = ref(null), selectedClientId = ref(''), selectedLens = ref(''), sourceRetention = ref('keep_until_review')
-const editingClient = ref(false), editingChoices = ref(false), searchQuery = ref(''), filterMode = ref('attention'), showRaw = ref(false), expandedRows = ref(new Set())
+const editingClient = ref(false), editingChoices = ref(false), searchQuery = ref(''), filterMode = ref('attention'), showRaw = ref(false), expandedRows = ref(new Set()), assignmentDrafts = ref({}), assignmentSavingId = ref(null), detailReturnId = ref(null)
 const loading = ref(true), saving = ref(false), errorMessage = ref(''), successMessage = ref('')
 const showAddClient = ref(false), addingClient = ref(false), addClientError = ref('')
 const lastClearedBatch = ref([])
@@ -150,26 +150,58 @@ const isEligibleForDeletion = computed(() => {
     !selected.value.completedAt;
 });
 const filters = [{ id: 'attention', label: 'Needs attention' }, { id: 'history', label: 'History' }]
-const actionableCount = computed(() => transcripts.value.filter(item => !item.completedAt && !item.attentionClearedAt).length)
+const actionableCount = computed(() => transcripts.value.filter(item => needsAttention(item)).length)
 const matchingTranscripts = computed(() => {
   const query = searchQuery.value.trim().toLowerCase();
   return transcripts.value.filter(item => {
-    if (filterMode.value === 'attention' && (item.completedAt || item.attentionClearedAt)) return false;
-    if (filterMode.value === 'history' && !item.completedAt && !item.attentionClearedAt) return false;
+    if (filterMode.value === 'attention' && !needsAttention(item)) return false;
+    if (filterMode.value === 'history' && needsAttention(item)) return false;
     if (!query) return true;
-    return labelFor(item).toLowerCase().includes(query) || rowTitle(item).toLowerCase().includes(query) || clientName(item.clientId).toLowerCase().includes(query) || workflowState(item).label.toLowerCase().includes(query) || formatDate(item.receivedAt).toLowerCase().includes(query)
+    return [
+      labelFor(item), rowTitle(item), triageIdentity(item), clientName(item.clientId),
+      workflowState(item).label, formatDate(item.sourceOccurredAt || item.receivedAt),
+      item.sourceTitle, ...speakerClues(item)
+    ].some(value => String(value || '').toLowerCase().includes(query))
   }).sort((a,b)=>new Date(b.receivedAt||0)-new Date(a.receivedAt||0))
 })
 const visibleTranscripts = computed(() => filterMode.value === 'history' ? matchingTranscripts.value.slice(0, historyLimit.value) : matchingTranscripts.value)
 const hasMoreHistory = computed(() => filterMode.value === 'history' && visibleTranscripts.value.length < matchingTranscripts.value.length)
 function setFilter(id){ filterMode.value=id; historyLimit.value=historyPageSize }
-function formatDate(value){ return new Date(value).toLocaleString(undefined,{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}) }
+function formatDate(value){ const date=new Date(value);return Number.isNaN(date.getTime())?'Date unavailable':date.toLocaleString(undefined,{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}) }
 function labelFor(transcript){ return transcript.meetingId ? `Zoom meeting ${transcript.meetingId}` : 'Zoom transcript' }
+function clientName(clientId){ const client=props.clients.find(item=>item.id===clientId);return client?.name||client?.display_name||'' }
+function normaliseIdentity(value){ return String(value||'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim() }
+function suggestedClient(transcript){
+  if(transcript?.clientId || !transcript?.sourceTitle)return null;
+  const title=normaliseIdentity(transcript.sourceTitle);
+  if(!title)return null;
+  const exact=props.clients.filter(client=>normaliseIdentity(client.name||client.display_name)===title);
+  return exact.length===1?exact[0]:null;
+}
+function initialiseAssignmentDraft(transcript){
+  if(!transcript?.id || transcript.clientId)return;
+  if(Object.prototype.hasOwnProperty.call(assignmentDrafts.value,transcript.id))return;
+  assignmentDrafts.value={...assignmentDrafts.value,[transcript.id]:suggestedClient(transcript)?.id||''};
+}
+function isVerifiedMatch(transcript){ return Boolean(transcript?.clientId && transcript?.sessionRef && transcript.status!=='unassigned') }
+function needsAttention(transcript){ return !transcript?.completedAt && !transcript?.attentionClearedAt && !isVerifiedMatch(transcript) }
 function rowTitle(transcript){ return clientName(transcript.clientId) || transcript.sourceTitle || labelFor(transcript) }
-function workflowState(transcript){ if(!transcript?.clientId||transcript.status==='unassigned')return{id:'needs-client',label:'Needs client'};return{id:'assigned',label:'Assigned'} }
-function workflowTone(transcript){ return ({'needs-client':'warning','assigned':'success'})[workflowState(transcript).id] || 'neutral' }
-function primaryAction(transcript){ return workflowState(transcript).id === 'needs-client' ? 'Assign client' : 'View' }
-function clientName(clientId){ return props.clients.find(client=>client.id===clientId)?.name||'' }
+function triageIdentity(transcript){ return clientName(transcript.clientId) || suggestedClient(transcript)?.name || suggestedClient(transcript)?.display_name || (transcript.sourceTitle && normaliseIdentity(transcript.sourceTitle).split(' ').length<=3 ? transcript.sourceTitle : 'Unassigned transcript') }
+function workflowState(transcript){
+  if(isVerifiedMatch(transcript))return{id:'matched',label:'Matched'}
+  if(!transcript?.clientId||transcript.status==='unassigned')return{id:'needs-client',label:suggestedClient(transcript)?'Likely client':'Needs client'}
+  return{id:'assigned',label:'Assigned'}
+}
+function workflowTone(transcript){ return ({'needs-client':'warning','assigned':'success','matched':'success'})[workflowState(transcript).id] || 'neutral' }
+function speakerClues(transcript){
+  const speakers=Array.isArray(transcript?.structuredTranscript?.speakers)?transcript.structuredTranscript.speakers:[];
+  return [...new Set(speakers.map(item=>String(item?.display_name||'').trim()).filter(name=>name&&!/^unknown$/i.test(name)&&!/^speaker\s*\d+$/i.test(name)))].slice(0,4)
+}
+function transcriptPreview(transcript){
+  const text=String(transcript?.text||'').replace(/\b\d{1,2}:\d{2}(?::\d{2})?(?:\.\d+)?\b/g,' ').replace(/\s+/g,' ').trim();
+  if(!text)return 'No transcript preview is available.';
+  return text.length>340?`${text.slice(0,337)}…`:text
+}
 async function clearAllAttention() {
   if (saving.value || searchQuery.value || !matchingTranscripts.value.length) return;
   saving.value = true;
