@@ -138,9 +138,28 @@ export function useAskHelios() {
       if (data.conversation.id && data.conversation.id !== id) throw new Error('Conversation mismatch')
       activeConversationId.value = id
       mode.value = modeFromTitle(data.conversation.title)
-      messages.value = data.messages.map(m => ({
-        ...m, references: Array.isArray(m.citation_metadata) ? m.citation_metadata : []
-      }))
+      let restoredClinicalContext = null
+      messages.value = data.messages.map(m => {
+        const metadata = Array.isArray(m.citation_metadata) ? m.citation_metadata : []
+        const context = metadata.find(item => item?.kind === 'ask_helios_clinical_context')
+        if (context?.clientId) restoredClinicalContext = context
+        return {
+          ...m,
+          references: metadata.filter(item => item?.kind !== 'ask_helios_clinical_context')
+        }
+      })
+      if (mode.value === 'workspace' && restoredClinicalContext?.clientId) {
+        clinicalContext.value = {
+          clientId: restoredClinicalContext.clientId,
+          clientName: restoredClinicalContext.clientName || '',
+          anchorSessionId: restoredClinicalContext.anchorSessionId || null,
+          window: restoredClinicalContext.window || 'last_three',
+          lens: restoredClinicalContext.lens || 'integrative',
+          sourceCount: Number.isInteger(restoredClinicalContext.sourceCount) ? restoredClinicalContext.sourceCount : 0,
+          source: 'conversation_history'
+        }
+        selectedClientId.value = restoredClinicalContext.clientId
+      }
       rememberConversation(id)
       restoreTarget = null
       savePrefs()
