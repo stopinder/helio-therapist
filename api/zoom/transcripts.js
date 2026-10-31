@@ -186,6 +186,16 @@ export default async function handler(req, res) {
       if (markComplete !== undefined && typeof markComplete !== 'boolean') return res.status(400).json({ error: 'Completion state must be true or false.' });
       if (clearAttention !== undefined && typeof clearAttention !== 'boolean') return res.status(400).json({ error: 'Attention state must be true or false.' });
       if (sourceOccurredAt !== undefined && (typeof sourceOccurredAt !== 'string' || !Number.isFinite(Date.parse(sourceOccurredAt)))) return res.status(400).json({ error: 'Choose a valid encounter date.' });
+      if (sourceOccurredAt !== undefined && (
+        clientId !== undefined ||
+        sessionRef !== undefined ||
+        requestedLens !== undefined ||
+        sourceRetention !== undefined ||
+        reviewChoicesSaved !== undefined ||
+        markComplete !== undefined ||
+        restoreAttention !== undefined ||
+        clearAttention !== undefined
+      )) return res.status(400).json({ error: 'Update the encounter date before assigning or changing this transcript.' });
 
       const { data: existing, error: existingError } = await supabase.from('zoom_transcripts').select('id, status, client_id, session_ref, source_occurred_at, review_choices_saved_at, updated_at, completed_at, deleted_at').eq('id', id).eq('therapist_user_id', user.id).maybeSingle();
       if (existingError) throw existingError;
