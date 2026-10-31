@@ -341,5 +341,5 @@ export async function reconcileZoomMyNotes({ supabase, integration, therapistUse
     imported += 1;
   }
 
-  return { checked: checkedCount, imported, imports: newImports };
+  return { checked: checkedCount, imported, refreshed, imports: newImports };
 }
