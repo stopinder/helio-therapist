@@ -55,12 +55,7 @@ test('prefers structured Zoom items and preserves only truthful supplied speaker
 
 test('cleans legacy Unknown raw transcript lines and groups consecutive utterances', () => {
   const transcript = {
-    text: [
-      '[ ] Unknown: Hello?',
-      '[ ] Unknown: Caught you staring out the window.',
-      '[ ] Unknown: Just waiting patiently.',
-      '[00:00:05.000] Robert Ormiston: Well,'
-    ].join('\n')
+    text: '[ ] Unknown: Hello? [ ] Unknown: Caught you staring out the window. [ ] Unknown: Just waiting patiently. [00:00:05.000] Robert Ormiston: Well,'
   }
 
   const turns = conversationTurns(transcript)
