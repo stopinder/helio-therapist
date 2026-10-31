@@ -154,7 +154,7 @@ export default async function handler(req, res) {
     }
 
     if (req.method === 'PATCH') {
-      const { id, ids, action, restoreAttention, clearAttention, expectedUpdatedAt, clientId, sessionRef, requestedLens, sourceRetention, reviewChoicesSaved, markComplete } = req.body || {};
+      const { id, ids, action, restoreAttention, clearAttention, expectedUpdatedAt, clientId, sessionRef, requestedLens, sourceRetention, reviewChoicesSaved, markComplete, sourceOccurredAt } = req.body || {};
       const allowedLenses = new Set(['clinical_summary', 'draft_note', 'cbt']);
       const allowedRetention = new Set(['keep_until_review', 'delete_after_approved_output']);
 
@@ -185,12 +185,34 @@ export default async function handler(req, res) {
       if (reviewChoicesSaved !== undefined && typeof reviewChoicesSaved !== 'boolean') return res.status(400).json({ error: 'Review choice state must be true or false.' });
       if (markComplete !== undefined && typeof markComplete !== 'boolean') return res.status(400).json({ error: 'Completion state must be true or false.' });
       if (clearAttention !== undefined && typeof clearAttention !== 'boolean') return res.status(400).json({ error: 'Attention state must be true or false.' });
+      if (sourceOccurredAt !== undefined && (typeof sourceOccurredAt !== 'string' || !Number.isFinite(Date.parse(sourceOccurredAt)))) return res.status(400).json({ error: 'Choose a valid encounter date.' });
+      if (sourceOccurredAt !== undefined && (
+        clientId !== undefined ||
+        sessionRef !== undefined ||
+        requestedLens !== undefined ||
+        sourceRetention !== undefined ||
+        reviewChoicesSaved !== undefined ||
+        markComplete !== undefined ||
+        restoreAttention !== undefined ||
+        clearAttention !== undefined
+      )) return res.status(400).json({ error: 'Update the encounter date before assigning or changing this transcript.' });
 
-      const { data: existing, error: existingError } = await supabase.from('zoom_transcripts').select('id, client_id, session_ref, review_choices_saved_at, updated_at, completed_at, deleted_at').eq('id', id).eq('therapist_user_id', user.id).maybeSingle();
+      const { data: existing, error: existingError } = await supabase.from('zoom_transcripts').select('id, status, client_id, session_ref, source_occurred_at, review_choices_saved_at, updated_at, completed_at, deleted_at').eq('id', id).eq('therapist_user_id', user.id).maybeSingle();
       if (existingError) throw existingError;
       if (!existing) return res.status(404).json({ error: 'Transcript not found.' });
       if (!expectedUpdatedAt || typeof expectedUpdatedAt !== 'string') return res.status(400).json({ error: 'Reload this transcript before saving changes.' });
       if (existing.updated_at !== expectedUpdatedAt) return res.status(409).json({ error: 'This transcript changed in another tab or window. Reload it before saving so newer work is not overwritten.' });
+
+      if (sourceOccurredAt !== undefined && (
+        existing.status !== 'unassigned' ||
+        existing.client_id !== null ||
+        existing.session_ref !== null ||
+        existing.review_choices_saved_at !== null ||
+        existing.completed_at !== null ||
+        existing.deleted_at !== null
+      )) {
+        return res.status(409).json({ error: 'The encounter date can only be changed before this transcript is assigned or reviewed.' });
+      }
 
       if (restoreAttention === true && (existing.completed_at !== null || existing.deleted_at !== null)) {
         return res.status(409).json({ error: 'Completed or deleted transcripts cannot be returned to Needs attention.' });
@@ -209,6 +231,7 @@ export default async function handler(req, res) {
         sourceRetention === undefined &&
         reviewChoicesSaved === undefined &&
         markComplete === undefined &&
+        sourceOccurredAt === undefined &&
         restoreAttention !== true;
 
       if (assignmentOnly) {
@@ -262,6 +285,7 @@ export default async function handler(req, res) {
         }
       }
 
+      if (sourceOccurredAt !== undefined) update.source_occurred_at = new Date(sourceOccurredAt).toISOString();
       if (requestedLens !== undefined) update.requested_lens = requestedLens || null;
       if (sourceRetention !== undefined) update.source_retention = sourceRetention;
 

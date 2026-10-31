@@ -52,7 +52,7 @@
                   <strong class="triage-identity">{{ triageIdentity(transcript) }}</strong>
                   <p v-if="transcript.sourceTitle && transcript.sourceTitle !== triageIdentity(transcript)" class="triage-topic">{{ transcript.sourceTitle }}</p>
                   <div class="row-metadata">
-                    <span>{{ formatDate(transcript.sourceOccurredAt || transcript.receivedAt) }}</span>
+                    <span><CalendarDays class="workspace-icon-sm" aria-hidden="true" /> Encounter: {{ formatDate(transcript.sourceOccurredAt || transcript.receivedAt) }}</span>
                     <span v-if="transcript.meetingId">Meeting {{ transcript.meetingId }}</span>
                     <span v-if="speakerClues(transcript).length"><UsersRound class="workspace-icon-sm" aria-hidden="true" /> Named speakers: {{ speakerClues(transcript).join(', ') }}</span>
                   </div>
@@ -92,6 +92,33 @@
                 <div>
                   <p class="type-ui font-semibold text-ink">Place with client</p>
                   <p class="type-metadata text-ink-muted">Choose an existing client or add someone new.</p>
+                </div>
+              </div>
+              <div class="encounter-date-field">
+                <div class="encounter-date-heading">
+                  <div>
+                    <label :for="'encounter-date-' + transcript.id">Encounter date</label>
+                    <p>This date controls longitudinal ordering and becomes the session date when assigned.</p>
+                  </div>
+                  <span class="encounter-time">Time: {{ formatTime(transcript.sourceOccurredAt || transcript.receivedAt) }}</span>
+                </div>
+                <div class="encounter-date-controls">
+                  <input
+                    :id="'encounter-date-' + transcript.id"
+                    v-model="encounterDateDrafts[transcript.id]"
+                    class="control-field min-h-touch"
+                    type="date"
+                    :disabled="encounterDateSavingId === transcript.id || assignmentSavingId === transcript.id"
+                  />
+                  <button
+                    type="button"
+                    class="button-secondary compact-button"
+                    :disabled="encounterDateSavingId === transcript.id || assignmentSavingId === transcript.id || !encounterDateChanged(transcript)"
+                    @click="saveEncounterDate(transcript)"
+                  >
+                    <CalendarDays class="workspace-icon-sm" aria-hidden="true" />
+                    <span>{{ encounterDateSavingId === transcript.id ? 'Saving…' : 'Save date' }}</span>
+                  </button>
                 </div>
               </div>
               <div class="field-group">
@@ -197,12 +224,12 @@
           <div class="title-area">
             <p class="eyebrow">Transcript review</p>
             <h1>{{ labelFor(selected) }}</h1>
-            <p>{{ formatDate(selected.receivedAt) }} · original Zoom transcript</p>
+            <p>Encounter: {{ formatDate(selected.sourceOccurredAt || selected.receivedAt) }} · imported {{ formatDate(selected.receivedAt) }}</p>
           </div>
         </div>
       </header>
       <p v-if="errorMessage" class="notice error" role="alert">{{ errorMessage }}</p><p v-else-if="successMessage" class="notice success" role="status">{{ successMessage }}</p>
-      <section class="workflow-section client-section"><template v-if="!selected.clientId || editingClient"><div><p class="eyebrow">Client</p><h2>Client</h2><p>Select the client this original Zoom transcript belongs to. Helio will not guess.</p></div><div class="assignment-controls"><div class="flex items-center gap-2"><label for="client-select" class="sr-only">Client</label><select id="client-select" v-model="selectedClientId" class="flex-1"><option value="" disabled>Select a client…</option><option v-for="client in clients" :key="client.id" :value="client.id">{{ client.name }}</option></select><button type="button" class="secondary whitespace-nowrap" @click="openAddClientForSelected">Add client</button></div><div class="assignment-actions"><button v-if="selected.clientId" class="secondary" :disabled="saving" @click="editingClient = false">Cancel</button><button class="primary" :disabled="saving || !selectedClientId || selectedClientId === selected.clientId" @click="saveAssignment">{{ saving ? 'Saving…' : selected.clientId ? 'Change client' : 'Assign client' }}</button></div></div></template><template v-else><div><p class="eyebrow">Client</p><h2>{{ clientName(selected.clientId) }}</h2><p>Assigned client</p></div><button class="secondary" @click="editingClient = true">Change</button></template></section>
+      <section class="workflow-section client-section"><template v-if="!selected.clientId || editingClient"><div><p class="eyebrow">Client</p><h2>Client</h2><p>Select the client this original Zoom transcript belongs to. Helio will not guess.</p></div><div class="assignment-controls"><div v-if="!selected.clientId" class="encounter-date-field detail-encounter-date"><div class="encounter-date-heading"><div><label for="selected-encounter-date">Encounter date</label><p>This date controls longitudinal ordering and becomes the session date when assigned.</p></div><span class="encounter-time">Time: {{ formatTime(selected.sourceOccurredAt || selected.receivedAt) }}</span></div><div class="encounter-date-controls"><input id="selected-encounter-date" v-model="encounterDateDrafts[selected.id]" class="control-field min-h-touch" type="date" :disabled="encounterDateSavingId === selected.id || saving" /><button type="button" class="button-secondary compact-button" :disabled="encounterDateSavingId === selected.id || saving || !encounterDateChanged(selected)" @click="saveEncounterDate(selected)"><CalendarDays class="workspace-icon-sm" aria-hidden="true" /><span>{{ encounterDateSavingId === selected.id ? 'Saving…' : 'Save date' }}</span></button></div></div><div class="flex items-center gap-2"><label for="client-select" class="sr-only">Client</label><select id="client-select" v-model="selectedClientId" class="flex-1"><option value="" disabled>Select a client…</option><option v-for="client in clients" :key="client.id" :value="client.id">{{ client.name }}</option></select><button type="button" class="secondary whitespace-nowrap" @click="openAddClientForSelected">Add client</button></div><div class="assignment-actions"><button v-if="selected.clientId" class="secondary" :disabled="saving" @click="editingClient = false">Cancel</button><button class="primary" :disabled="saving || !selectedClientId || selectedClientId === selected.clientId" @click="saveAssignment">{{ saving ? 'Saving…' : selected.clientId ? 'Change client' : 'Assign client' }}</button></div></div></template><template v-else><div><p class="eyebrow">Client</p><h2>{{ clientName(selected.clientId) }}</h2><p>Assigned client</p></div><button class="secondary" @click="editingClient = true">Change</button></template></section>
       <section v-if="selected.clientId && !editingClient" class="ready-card">
         <div>
           <p class="eyebrow">Assigned</p>
@@ -292,7 +319,7 @@
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { Archive, ArrowLeft, Check, CheckCircle2, ChevronDown, ChevronUp, Eye, FileText, Inbox, Search, Trash2, UserPlus, UserRound, UsersRound } from '@lucide/vue'
+import { Archive, ArrowLeft, CalendarDays, Check, CheckCircle2, ChevronDown, ChevronUp, Eye, FileText, Inbox, Search, Trash2, UserPlus, UserRound, UsersRound } from '@lucide/vue'
 import { authenticatedFetch } from '../lib/api.js'
 import { createClient } from '../lib/clients.js'
 import { conversationPreview, conversationTurns, searchConversationTurns, transcriptSpeakerSummary } from '../lib/transcriptPresentation.js'
@@ -302,7 +329,7 @@ const props = defineProps({ clients: { type: Array, default: () => [] }, openTra
 const emit = defineEmits(['client-added'])
 const router = useRouter()
 const transcripts = ref([]), selected = ref(null), selectedClientId = ref(''), selectedLens = ref(''), sourceRetention = ref('keep_until_review'), transcriptSearch = ref('')
-const editingClient = ref(false), editingChoices = ref(false), searchQuery = ref(''), filterMode = ref('attention'), showRaw = ref(false), expandedRows = ref(new Set()), expandedNoteIds = ref(new Set()), expandedPreviewIds = ref(new Set()), assignmentDrafts = ref({}), assignmentSavingId = ref(null), rowActionSavingId = ref(null), rowActionSavingMode = ref(''), detailReturnId = ref(null)
+const editingClient = ref(false), editingChoices = ref(false), searchQuery = ref(''), filterMode = ref('attention'), showRaw = ref(false), expandedRows = ref(new Set()), expandedNoteIds = ref(new Set()), expandedPreviewIds = ref(new Set()), assignmentDrafts = ref({}), encounterDateDrafts = ref({}), assignmentSavingId = ref(null), encounterDateSavingId = ref(null), rowActionSavingId = ref(null), rowActionSavingMode = ref(''), detailReturnId = ref(null)
 const loading = ref(true), saving = ref(false), errorMessage = ref(''), successMessage = ref('')
 const showAddClient = ref(false), addingClient = ref(false), addClientError = ref(''), addClientTranscriptId = ref(null), addClientInitialName = ref('')
 const lastClearedBatch = ref([])
@@ -339,6 +366,23 @@ const visibleTranscripts = computed(() => filterMode.value === 'history' ? match
 const hasMoreHistory = computed(() => filterMode.value === 'history' && visibleTranscripts.value.length < matchingTranscripts.value.length)
 function setFilter(id){ filterMode.value=id; historyLimit.value=historyPageSize }
 function formatDate(value){ const date=new Date(value);return Number.isNaN(date.getTime())?'Date unavailable':date.toLocaleString(undefined,{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}) }
+function formatTime(value){ const date=new Date(value);return Number.isNaN(date.getTime())?'Unavailable':date.toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'}) }
+function localDateInput(value){
+  const date=new Date(value)
+  if(Number.isNaN(date.getTime()))return''
+  const year=date.getFullYear()
+  const month=String(date.getMonth()+1).padStart(2,'0')
+  const day=String(date.getDate()).padStart(2,'0')
+  return `${year}-${month}-${day}`
+}
+function encounterDateIso(transcript,dateValue){
+  const current=new Date(transcript?.sourceOccurredAt||transcript?.receivedAt||Date.now())
+  const parts=String(dateValue||'').split('-').map(Number)
+  if(parts.length!==3||parts.some(part=>!Number.isFinite(part)))return null
+  if(Number.isNaN(current.getTime()))return null
+  current.setFullYear(parts[0],parts[1]-1,parts[2])
+  return Number.isNaN(current.getTime())?null:current.toISOString()
+}
 function labelFor(transcript){ return transcript.meetingId ? `Zoom meeting ${transcript.meetingId}` : 'Zoom transcript' }
 function clientName(clientId){ const client=props.clients.find(item=>item.id===clientId);return client?.name||client?.display_name||'' }
 function normaliseIdentity(value){ return String(value||'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim() }
@@ -351,8 +395,16 @@ function suggestedClient(transcript){
 }
 function initialiseAssignmentDraft(transcript){
   if(!transcript?.id || transcript.clientId)return;
-  if(Object.prototype.hasOwnProperty.call(assignmentDrafts.value,transcript.id))return;
-  assignmentDrafts.value={...assignmentDrafts.value,[transcript.id]:suggestedClient(transcript)?.id||''};
+  if(!Object.prototype.hasOwnProperty.call(assignmentDrafts.value,transcript.id)){
+    assignmentDrafts.value={...assignmentDrafts.value,[transcript.id]:suggestedClient(transcript)?.id||''};
+  }
+  if(!Object.prototype.hasOwnProperty.call(encounterDateDrafts.value,transcript.id)){
+    encounterDateDrafts.value={...encounterDateDrafts.value,[transcript.id]:localDateInput(transcript.sourceOccurredAt||transcript.receivedAt)};
+  }
+}
+function encounterDateChanged(transcript){
+  if(!transcript?.id)return false
+  return encounterDateDrafts.value[transcript.id]!==localDateInput(transcript.sourceOccurredAt||transcript.receivedAt)
 }
 function isVerifiedMatch(transcript){ return Boolean(transcript?.clientId && transcript?.sessionRef && transcript.status!=='unassigned') }
 function needsAttention(transcript){ return !transcript?.completedAt && !transcript?.attentionClearedAt && !isVerifiedMatch(transcript) }
@@ -537,7 +589,11 @@ function replaceTranscriptInList(transcript) {
   const index = transcripts.value.findIndex(item => item.id === transcript.id);
   if (index >= 0) transcripts.value[index] = transcript;
   if (selected.value?.id === transcript.id) selected.value = transcript;
+  const draft = encounterDateDrafts.value[transcript.id]
   initialiseAssignmentDraft(transcript);
+  if (!draft || !encounterDateChanged(transcript)) {
+    encounterDateDrafts.value={...encounterDateDrafts.value,[transcript.id]:localDateInput(transcript.sourceOccurredAt||transcript.receivedAt)}
+  }
 }
 function replaceTranscript(transcript){replaceTranscriptInList(transcript)}
 async function fetchTranscriptDetail(transcript){
@@ -583,6 +639,35 @@ function closeTranscript(){
 }
 async function load(){loading.value=true;errorMessage.value='';try{const response=await authenticatedFetch('/api/zoom/transcripts');const data=await response.json().catch(()=>({}));if(!response.ok)throw new Error(data.error||'Unable to load transcripts.');transcripts.value=data.transcripts||[];for(const transcript of transcripts.value)initialiseAssignmentDraft(transcript)}catch(error){errorMessage.value=error.message||'Unable to load transcripts.'}finally{loading.value=false}}
 async function patchTranscript(body,fallbackMessage){saving.value=true;errorMessage.value='';successMessage.value='';try{const response=await authenticatedFetch('/api/zoom/transcripts',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:selected.value.id,expectedUpdatedAt:selected.value.updatedAt,...body})});const data=await response.json().catch(()=>({}));if(!response.ok)throw new Error(data.error||fallbackMessage);if(body.restoreAttention && !isRestoredTranscript(data?.transcript,selected.value.id))throw new Error(fallbackMessage);replaceTranscript(data.transcript);return data.transcript}catch(error){errorMessage.value=error.message||fallbackMessage;return null}finally{saving.value=false}}
+async function saveEncounterDate(transcript,{quiet=false}={}){
+  if(!transcript?.id||encounterDateSavingId.value)return transcript
+  if(!encounterDateChanged(transcript))return transcript
+  const sourceOccurredAt=encounterDateIso(transcript,encounterDateDrafts.value[transcript.id])
+  if(!sourceOccurredAt){
+    errorMessage.value='Choose a valid encounter date.'
+    return null
+  }
+  encounterDateSavingId.value=transcript.id
+  if(!quiet){errorMessage.value='';successMessage.value=''}
+  try{
+    const response=await authenticatedFetch('/api/zoom/transcripts',{
+      method:'PATCH',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({id:transcript.id,expectedUpdatedAt:transcript.updatedAt,sourceOccurredAt})
+    })
+    const data=await response.json().catch(()=>({}))
+    if(!response.ok||!data.transcript)throw new Error(data.error||'Unable to update the encounter date.')
+    replaceTranscriptInList(data.transcript)
+    encounterDateDrafts.value={...encounterDateDrafts.value,[transcript.id]:localDateInput(data.transcript.sourceOccurredAt)}
+    if(!quiet)successMessage.value='Encounter date updated.'
+    return data.transcript
+  }catch(error){
+    errorMessage.value=error.message||'Unable to update the encounter date.'
+    return null
+  }finally{
+    encounterDateSavingId.value=null
+  }
+}
 async function assignTranscriptToClient(transcript,clientId,clientLabel=''){
   if(!transcript?.id||!clientId||assignmentSavingId.value)return null;
   assignmentSavingId.value=transcript.id;
@@ -610,7 +695,12 @@ async function assignTranscriptToClient(transcript,clientId,clientLabel=''){
 async function assignFromInbox(transcript){
   const clientId=assignmentDrafts.value[transcript.id];
   if(!clientId)return;
-  await assignTranscriptToClient(transcript,clientId);
+  let current=transcript
+  if(encounterDateChanged(transcript)){
+    current=await saveEncounterDate(transcript,{quiet:true})
+    if(!current)return
+  }
+  await assignTranscriptToClient(current,clientId);
 }
 async function openLinkedSessionFromRow(transcript){
   if(!transcript?.clientId||!transcript?.sessionRef)return;
@@ -678,7 +768,15 @@ async function deleteTranscriptRecord(transcript,{closeDetail=false}={}){
 }
 async function deleteFromInbox(transcript){return deleteTranscriptRecord(transcript)}
 
-async function saveAssignment(){const transcript=await patchTranscript({clientId:selectedClientId.value,clearAttention:true},'Unable to save the client assignment.');if(transcript){editingClient.value=false;successMessage.value=`Assigned to ${clientName(transcript.clientId)} and ready in Clinical Workspace.`}}
+async function saveAssignment(){
+  if(!selected.value||!selectedClientId.value)return
+  if(encounterDateChanged(selected.value)){
+    const dated=await saveEncounterDate(selected.value,{quiet:true})
+    if(!dated)return
+  }
+  const transcript=await patchTranscript({clientId:selectedClientId.value,clearAttention:true},'Unable to save the client assignment.')
+  if(transcript){editingClient.value=false;successMessage.value=`Assigned to ${clientName(transcript.clientId)} and ready in Clinical Workspace.`}
+}
 async function saveReviewChoices(){const transcript=await patchTranscript({requestedLens:selectedLens.value||null,sourceRetention:sourceRetention.value,reviewChoicesSaved:true},'Unable to save review choices.');if(transcript){editingChoices.value=false;successMessage.value='Review choices saved. No analysis has started.'}}
 async function deleteTranscript(){if(!selected.value)return;await deleteTranscriptRecord(selected.value,{closeDetail:true})}
 async function handleAddClient(payload) {
@@ -707,12 +805,21 @@ async function handleAddClient(payload) {
       errorMessage.value = 'Client added, but the transcript is no longer available.';
       return;
     }
-    const assigned = await assignTranscriptToClient(transcript, newClient.id, newClient.name || newClient.display_name);
+    let current = transcript;
+    if (encounterDateChanged(transcript)) {
+      current = await saveEncounterDate(transcript, { quiet: true });
+      if (!current) return;
+    }
+    const assigned = await assignTranscriptToClient(current, newClient.id, newClient.name || newClient.display_name);
     if (assigned) successMessage.value = `Added ${newClient.name || newClient.display_name} and assigned the transcript.`;
     return;
   }
 
   selectedClientId.value = newClient.id;
+  if (selected.value && encounterDateChanged(selected.value)) {
+    const dated = await saveEncounterDate(selected.value, { quiet: true });
+    if (!dated) return;
+  }
   const assigned = await patchTranscript({clientId:newClient.id,clearAttention:true},'Client added, but the transcript could not be assigned.');
   if (assigned) {
     editingClient.value=false;
@@ -831,8 +938,14 @@ watch(()=>props.openTranscriptId,openQueuedTranscript);watch(searchQuery,()=>{hi
 }
 .assignment-intro { display:flex; align-items:flex-start; gap:.6rem; margin-bottom:.8rem; }
 .assignment-icon { display:inline-flex; width:2rem; height:2rem; align-items:center; justify-content:center; border-radius:var(--radius-control); background:var(--state-selected); color:var(--accent); flex-shrink:0; }
+.encounter-date-field { display:flex; min-width:0; flex-direction:column; gap:.45rem; margin-bottom:.85rem; padding-bottom:.85rem; border-bottom:1px solid var(--border-muted); }
+.encounter-date-heading { display:flex; align-items:flex-end; justify-content:space-between; gap:var(--space-inline-md); }
+.encounter-date-heading label,.field-group label { color:var(--text-secondary); font-size:var(--type-ui-size); font-weight:600; }
+.encounter-date-heading p { margin:.18rem 0 0; color:var(--text-muted); font-size:var(--type-metadata-size); line-height:1.4; }
+.encounter-time { color:var(--text-muted); font-size:var(--type-metadata-size); white-space:nowrap; }
+.encounter-date-controls { display:grid; grid-template-columns:minmax(0,14rem) max-content; gap:.5rem; align-items:center; }
+.encounter-date-controls .control-field { width:100%; }
 .field-group { display:flex; min-width:0; flex-direction:column; gap:.4rem; }
-.field-group label { color:var(--text-secondary); font-size:var(--type-ui-size); font-weight:600; }
 .inline-client-picker {
   display:grid;
   grid-template-columns:minmax(0,1fr) max-content max-content;
@@ -991,6 +1104,9 @@ watch(()=>props.openTranscriptId,openQueuedTranscript);watch(searchQuery,()=>{hi
   .row-header { gap:.7rem; }
   .status-indicator { align-self:flex-start; }
   .inline-client-picker { grid-template-columns:1fr; }
+  .encounter-date-heading { align-items:flex-start; flex-direction:column; }
+  .encounter-date-controls { grid-template-columns:1fr; }
+  .encounter-date-controls .button-secondary { width:100%; justify-content:center; }
   .add-client-inline,.assign-inline { width:100%; justify-content:center; }
   .triage-actions { align-items:flex-start; flex-direction:column; }
   .record-actions { width:100%; padding-top:.35rem; border-top:1px solid var(--border-muted); }
