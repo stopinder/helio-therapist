@@ -53,7 +53,8 @@ function rawTurns(text) {
   const raw = String(text || '').replace(/\r/g, '').trim()
   if (!raw) return []
 
-  const lines = raw.split(/\n+/).map(line => line.trim()).filter(Boolean)
+  const normalized = raw.replace(/\s+(?=\[\s*[^\]]*\]\s*[^:\n]{1,80}:)/g, '\n')
+  const lines = normalized.split(/\n+/).map(line => line.trim()).filter(Boolean)
   const parsed = []
 
   for (let index = 0; index < lines.length; index += 1) {
