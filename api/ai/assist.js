@@ -30,6 +30,18 @@ function safeClinicalHistory(value) {
     .map(item => ({ role: item.role, content: item.content.slice(0, 220) }));
 }
 
+function deidentifyClinicalQuestion(query, clientName) {
+  const text = String(query || '').trim();
+  const name = String(clientName || '').trim();
+  if (!name) return text;
+  const escaped = name.replace(/[.*+?^$()|[\]\\{}]/g, '\\function safeClinicalHistory(value) {
+  return (Array.isArray(value) ? value : []).slice(-4)
+    .filter(item => item && ['user', 'assistant'].includes(item.role) && typeof item.content === 'string')
+    .map(item => ({ role: item.role, content: item.content.slice(0, 220) }));
+}');
+  return text.replace(new RegExp(escaped, 'gi'), 'this clinical presentation');
+}
+
 async function saveConversation(db, userId, mode, query, answer, references, existingId, clinicalContext = null) {
   let id = existingId || null;
   if (id) {
@@ -139,9 +151,7 @@ export default async function handler(req, res) {
         }
         answer = renderAskHeliosClinicalAnswer(structured);
         references = context.references;
-        const deidentifiedQuery = context.client.displayName
-          ? query.split(context.client.displayName).join('this clinical presentation')
-          : query;
+        const deidentifiedQuery = deidentifyClinicalQuestion(query, context.client.displayName);
         clinicalResponseContext = {
           clientId: context.client.id,
           clientName: context.client.displayName,
