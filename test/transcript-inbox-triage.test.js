@@ -91,9 +91,6 @@ test('Transcript Inbox can add a missing client directly from an unassigned row'
 })
 
 test('Add Client modal is available in both inbox and full transcript views', () => {
-  const modalIndex = inbox.lastIndexOf('<AddClientModal')
-  const selectedTemplateEnd = inbox.lastIndexOf('</template>')
-  assert.ok(modalIndex > selectedTemplateEnd)
-  assert.match(inbox, /:initial-name="addClientInitialName"/)
+  assert.match(inbox, /<\/template>\s*<AddClientModal[\s\S]*?:initial-name="addClientInitialName"/)
   assert.match(inbox, /@close="closeAddClient"/)
 })
