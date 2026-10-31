@@ -2,6 +2,7 @@ import { requireAuthenticatedUser, getSupabaseUserClient } from '../_lib/supabas
 import { AI_FEATURES, runTextAI } from '../_lib/ai-execution.js';
 import { answerWorkspaceQuestion } from '../_lib/ask-helios-workspace.js';
 import { loadOwnedWorkspaceContext } from '../_lib/ask-helios-context.js';
+import { ASK_HELIOS_CLINICAL_LENSES, ASK_HELIOS_CLINICAL_PROMPT_VERSION, ASK_HELIOS_CLINICAL_WINDOWS, askHeliosClinicalResponseFormat, askHeliosClinicalSystemPrompt, buildAskHeliosClinicalInput, loadAskHeliosClinicalContext, renderAskHeliosClinicalAnswer } from '../_lib/ask-helios-clinical.js';
 
 const MODES = Object.freeze({ workspace: 'Workspace', reflect: 'Reflect' });
 const REFLECT_PROMPT_VERSION = 'ask-helios-reflect/1.0.0';
@@ -62,6 +63,7 @@ export default async function handler(req, res) {
     const mode = req.body?.mode;
     const query = typeof req.body?.query === 'string' ? req.body.query.trim() : '';
     const clientId = req.body?.clientId || null;
+    const clinicalContext = req.body?.clinicalContext && typeof req.body.clinicalContext === 'object' ? req.body.clinicalContext : null;
     const conversationId = typeof req.body?.conversationId === 'string' ? req.body.conversationId : null;
     if (!Object.hasOwn(MODES, mode) || !query || query.length > 1200) {
       return res.status(400).json({
@@ -85,15 +87,63 @@ export default async function handler(req, res) {
       priorWorkspaceContext = await loadOwnedWorkspaceContext(db, user.id, conversationId);
     }
     let answer, references = [], proposedAction = null, documentSearch = null;
+    let clinicalResponseContext = null;
     if (mode === 'workspace') {
-      const result = await answerWorkspaceQuestion({
-        supabase: db, userId: user.id, query, clientId,
-        documentSearch: priorWorkspaceContext
-      });
-      answer = result.answer;
-      references = result.references;
-      proposedAction = result.proposedAction;
-      documentSearch = result.documentSearch || null;
+      if (clinicalContext) {
+        const clinicalClientId = typeof clinicalContext.clientId === 'string' ? clinicalContext.clientId : '';
+        const anchorSessionId = typeof clinicalContext.anchorSessionId === 'string' ? clinicalContext.anchorSessionId : null;
+        const window = ASK_HELIOS_CLINICAL_WINDOWS.includes(clinicalContext.window) ? clinicalContext.window : 'last_three';
+        const lens = ASK_HELIOS_CLINICAL_LENSES.includes(clinicalContext.lens) ? clinicalContext.lens : 'integrative';
+        if (!clinicalClientId || (clientId && clientId !== clinicalClientId)) {
+          return res.status(400).json({ success:false, error:{ message:'Reopen Ask Helios from the client or session you want to discuss.' } });
+        }
+        const context = await loadAskHeliosClinicalContext({
+          supabase: db, userId: user.id, clientId: clinicalClientId, anchorSessionId, window
+        });
+        const { completion } = await runTextAI({
+          feature: AI_FEATURES.ASK_HELIOS_RESEARCH,
+          userId: user.id,
+          promptVersion: ASK_HELIOS_CLINICAL_PROMPT_VERSION,
+          messages: [
+            { role:'system', content: askHeliosClinicalSystemPrompt(lens) },
+            ...safeHistory(req.body?.history),
+            { role:'user', content: buildAskHeliosClinicalInput({ query, lens, context }) }
+          ],
+          responseFormat: askHeliosClinicalResponseFormat(),
+          temperature: 0.25,
+          maxTokens: 1800,
+          timeout: 60000
+        });
+        let structured;
+        try { structured = JSON.parse(completion.choices?.[0]?.message?.content || '{}'); }
+        catch { structured = null; }
+        if (!structured?.recordedContext || !structured?.clinicalInterpretation) {
+          const failure = new Error('Clinical reasoning did not return a usable answer.'); failure.status = 502; throw failure;
+        }
+        answer = renderAskHeliosClinicalAnswer(structured);
+        references = context.references;
+        const deidentifiedQuery = context.client.displayName
+          ? query.split(context.client.displayName).join('this clinical presentation')
+          : query;
+        clinicalResponseContext = {
+          clientId: context.client.id,
+          clientName: context.client.displayName,
+          anchorSessionId: context.anchorSessionId,
+          window,
+          lens,
+          sourceCount: context.sourceCount,
+          researchHandoff: 'Find published research relevant to this therapist question: ' + deidentifiedQuery
+        };
+      } else {
+        const result = await answerWorkspaceQuestion({
+          supabase: db, userId: user.id, query, clientId,
+          documentSearch: priorWorkspaceContext
+        });
+        answer = result.answer;
+        references = result.references;
+        proposedAction = result.proposedAction;
+        documentSearch = result.documentSearch || null;
+      }
     } else {
       // The established Ask Helios quota feature covers all AI-generating Ask
       // Helios modes for now. The promptVersion distinguishes Reflect usage.
@@ -124,15 +174,17 @@ export default async function handler(req, res) {
     return res.status(200).json({
       success: true, mode, answer, references, conversationId: activeId,
       saved, proposedAction, documentSearch,
+      ...(clinicalResponseContext ? { clinicalContext: clinicalResponseContext } : {}),
       ...(saved ? {} : { warning: 'Answer displayed but conversation could not be saved. Copy anything you wish to keep.' })
     });
   } catch (error) {
-    const status = [400, 401, 404, 409, 413, 429, 503].includes(error.status) ? error.status : 500;
+    const status = [400, 401, 404, 409, 413, 429, 502, 503].includes(error.status) ? error.status : 500;
     console.error('[Ask Helios Assist] request failed', error.code || status);
     const message = error.code === 'DOCUMENT_CONTEXT_REQUIRED' ? error.message
       : status === 401 ? 'Please sign in again.'
       : status === 404 ? 'That client is not accessible in your workspace.'
       : status === 400 ? error.message
+      : status === 502 ? 'Ask Helios could not complete the clinical reasoning response.'
       : status === 503 ? 'Workspace information is temporarily unavailable.'
       : status === 413 || status === 429 ? 'The AI allowance or request limit has been reached.'
       : 'Ask Helios could not answer right now.';
