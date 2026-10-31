@@ -103,33 +103,39 @@ test.describe('Zoom My Notes transcript inbox', () => {
   });
 
   test('shows a My Notes transcript in the existing protected triage workflow', async ({ page }) => {
+    const fullTranscript = {
+      id: 'note-transcript-1',
+      noteId: 'note-123',
+      meetingId: '987654321',
+      sourceTitle: 'Emotional regulation follow-up',
+      structuredTranscript: {
+        speakers: [{ speaker_id: '1', display_name: 'Therapist' }],
+        items: [{ speaker_id: '1', start_time: '00:00:01.000', text: 'Welcome to the session.' }]
+      },
+      format: 'ZOOM_MY_NOTES',
+      text: '[00:00:01.000] Therapist: Welcome to the session.',
+      source: 'zoom_my_notes',
+      status: 'unassigned',
+      clientId: null,
+      sessionRef: null,
+      sourceOccurredAt: '2026-08-21T13:00:00.000Z',
+      receivedAt: '2026-08-21T14:00:00.000Z',
+      updatedAt: '2026-08-21T14:00:00.000Z',
+      requestedLens: null,
+      sourceRetention: 'keep_until_review',
+      reviewChoicesSavedAt: null,
+      completedAt: null,
+      attentionClearedAt: null
+    };
     await page.route('**/api/zoom/transcripts*', async route => {
+      const url = new URL(route.request().url());
+      const payload = url.searchParams.get('id')
+        ? { transcript: fullTranscript }
+        : { transcripts: [{ ...fullTranscript, structuredTranscript: null, text: null }] };
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify({
-          transcripts: [{
-            id: 'note-transcript-1',
-            noteId: 'note-123',
-            meetingId: '987654321',
-            structuredTranscript: {
-              speakers: [{ speaker_id: '1', display_name: 'Therapist' }],
-              items: [{ speaker_id: '1', start_time: '00:00:01.000', text: 'Welcome to the session.' }]
-            },
-            format: 'ZOOM_MY_NOTES',
-            text: '[00:00:01.000] Therapist: Welcome to the session.',
-            source: 'zoom_my_notes',
-            status: 'unassigned',
-            clientId: null,
-            sessionRef: null,
-            receivedAt: '2026-08-21T14:00:00.000Z',
-            updatedAt: '2026-08-21T14:00:00.000Z',
-            requestedLens: null,
-            sourceRetention: 'keep_until_review',
-            reviewChoicesSavedAt: null,
-            completedAt: null
-          }]
-        })
+        body: JSON.stringify(payload)
       });
     });
 
@@ -145,11 +151,16 @@ test.describe('Zoom My Notes transcript inbox', () => {
           page.getByRole('heading', { name: 'Transcript Inbox', exact: true })
       ).toBeVisible({ timeout: 15000 });
 
-    const row = page.getByRole('button', { name: /Meeting 987654321/ });
+    const row = page.locator('[data-transcript-id="note-transcript-1"]');
     await expect(row).toBeVisible();
     await expect(row).toContainText('Needs client');
+    await expect(row).toContainText('Meeting 987654321');
+    await expect(row.getByRole('combobox')).toBeVisible();
 
-    await row.click();
+    await row.getByRole('button', { name: 'Preview transcript' }).click();
+    await expect(row.getByText('[00:00:01.000] Therapist: Welcome to the session.')).toBeVisible();
+
+    await row.getByRole('button', { name: 'Open full transcript' }).click();
     await expect(page.getByRole('heading', { level: 1, name: 'Zoom meeting 987654321' })).toBeVisible();
     await expect(page.getByText('Helio will not guess.')).toBeVisible();
 
