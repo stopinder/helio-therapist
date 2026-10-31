@@ -63,5 +63,16 @@ test('transcripts workspace offers a manual Zoom Notes reconciliation action', (
   assert.match(viewSource, /Check Zoom Notes/);
   assert.match(viewSource, /authenticatedFetch\('\/api\/zoom\/reconcile-my-notes', \{ method: 'POST' \}\)/);
   assert.match(viewSource, /inboxKey\.value \+= 1/);
+  assert.match(viewSource, /checkZoomNotes\(\{ silent: true \}\)/);
   assert.match(viewSource, /No missing transcripts found\./);
+});
+
+
+test('reconciliation refreshes stored My Notes content and generated note text', () => {
+  const helperSource = fs.readFileSync(new URL('../api/_lib/zoom-my-notes-reconciliation.js', import.meta.url), 'utf8');
+  assert.match(helperSource, /generated_note_content/);
+  assert.match(helperSource, /zoom_generated_summary: zoomGeneratedSummary/);
+  assert.match(helperSource, /structured_transcript: structuredTranscript/);
+  assert.match(helperSource, /refreshed \+= 1/);
+  assert.match(helperSource, /return \{ checked: checkedCount, imported, refreshed, imports: newImports \}/);
 });
