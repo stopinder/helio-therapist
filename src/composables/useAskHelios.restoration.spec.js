@@ -194,6 +194,38 @@ describe('Ask Helios real pagination across browser-state reset', () => {
     expect(ask.messages.value).toHaveLength(0)
   })
 
+  it('restores clinical client scope from owned conversation metadata and keeps it out of visible references', async () => {
+    const { ask } = await boot()
+    const id = '20000000-0000-4000-8000-000000000001'
+    env.db.tables.ask_helios_conversations.push({
+      id, user_id: env.user, title: '[Workspace] What might I be missing?', updated_at: '2026-10-31T10:00:00Z'
+    })
+    env.db.tables.ask_helios_messages.push(
+      { id:'m1', conversation_id:id, user_id:env.user, role:'user', content:'What might I be missing?', created_at:'2026-10-31T10:00:01Z' },
+      { id:'m2', conversation_id:id, user_id:env.user, role:'assistant', content:'Recorded context...', created_at:'2026-10-31T10:00:02Z',
+        citation_metadata:[
+          { title:'30 Oct session', url:'/clients/cccccccc-cccc-4ccc-cccc-cccccccccccc/sessions/eeeeeeee-eeee-4eee-eeee-eeeeeeeeeeee', citation:'linked transcript' },
+          { kind:'ask_helios_clinical_context', clientId:'cccccccc-cccc-4ccc-cccc-cccccccccccc', clientName:'Client A',
+            anchorSessionId:'eeeeeeee-eeee-4eee-eeee-eeeeeeeeeeee', window:'last_five', lens:'internal_family_systems', sourceCount:5 }
+        ] }
+    )
+    expect(await ask.selectConversation(id)).toBe(true)
+    expect(ask.mode.value).toBe('workspace')
+    expect(ask.clinicalContext.value).toMatchObject({
+      clientId:'cccccccc-cccc-4ccc-cccc-cccccccccccc',
+      anchorSessionId:'eeeeeeee-eeee-4eee-eeee-eeeeeeeeeeee',
+      window:'last_five', lens:'internal_family_systems', sourceCount:5
+    })
+    expect(ask.selectedClientId.value).toBe('cccccccc-cccc-4ccc-cccc-cccccccccccc')
+    expect(ask.messages.value.at(-1).references).toEqual([
+      { title:'30 Oct session', url:'/clients/cccccccc-cccc-4ccc-cccc-cccccccccccc/sessions/eeeeeeee-eeee-4eee-eeee-eeeeeeeeeeee', citation:'linked transcript' }
+    ])
+    ask.clearConversation()
+    expect(ask.clinicalContext.value?.window).toBe('last_five')
+    ask.setMode('research')
+    expect(ask.clinicalContext.value).toBeNull()
+  })
+
   it('stores only the opaque conversation pointer, never messages or filters, in session storage', async () => {
     const { ask, api } = await boot()
     await send(ask, api, 'Find my consent forms')
