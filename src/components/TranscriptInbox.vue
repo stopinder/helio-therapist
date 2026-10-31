@@ -84,7 +84,27 @@
                 <span>{{ expandedNoteIds.has(transcript.id) ? 'Show less' : 'Show more' }}</span>
               </button>
             </section>
-            <p v-else class="triage-preview">{{ transcriptPreview(transcript) }}</p>
+            <section v-else class="conversation-snippet-card" aria-label="Conversation excerpt">
+              <template v-if="collapsedConversation(transcript).length">
+                <div class="conversation-snippet-heading">
+                  <p class="type-eyebrow text-accent">Conversation excerpt</p>
+                  <span class="type-metadata text-ink-muted">Readable source preview</span>
+                </div>
+                <div class="conversation-snippet-turns">
+                  <article v-for="(turn, index) in collapsedConversation(transcript)" :key="`${turn.key}-${turn.sourceIndex}-${index}`" class="conversation-snippet-turn">
+                    <div class="conversation-snippet-meta">
+                      <span class="turn-speaker" :class="{ unidentified: !turn.identified }">{{ turn.speaker }}</span>
+                      <time v-if="turn.time" class="turn-time">{{ turn.time }}</time>
+                    </div>
+                    <p>{{ compactTurnText(turn.text) }}</p>
+                  </article>
+                </div>
+              </template>
+              <div v-else class="conversation-snippet-empty">
+                <Eye class="workspace-icon-sm" aria-hidden="true" />
+                <span>Readable preview available on demand.</span>
+              </div>
+            </section>
 
             <div v-if="filterMode === 'attention' && !isVerifiedMatch(transcript)" class="inline-assignment">
               <div class="assignment-intro">
@@ -430,11 +450,12 @@ function toggleZoomNote(id){
   else next.add(id)
   expandedNoteIds.value=next
 }
-function transcriptPreview(transcript){
-  if(typeof transcript?.text!=='string')return 'No Zoom note excerpt is available. Open Preview only if you need the source transcript.';
-  const text=transcript.text.replace(/\b\d{1,2}:\d{2}(?::\d{2})?(?:\.\d+)?\b/g,' ').replace(/\s+/g,' ').trim();
-  if(!text)return 'No transcript preview is available.';
-  return text.length>340?`${text.slice(0,337)}…`:text
+function collapsedConversation(transcript){
+  return conversationPreview(transcript).turns.slice(0,2)
+}
+function compactTurnText(value){
+  const text=String(value||'').replace(/\s+/g,' ').trim()
+  return text.length>190?`${text.slice(0,187).trimEnd()}…`:text
 }
 function suggestedNewClientName(transcript){
   const title=String(transcript?.sourceTitle||'').trim();
@@ -818,7 +839,19 @@ watch(()=>props.openTranscriptId,openQueuedTranscript);watch(searchQuery,()=>{hi
 .zoom-note-bullet { display:grid; grid-template-columns:.8rem 1fr; gap:.2rem; }
 .zoom-note-bullet > span { color:var(--accent); font-weight:700; }
 .zoom-note-toggle { display:inline-flex; align-items:center; gap:.3rem; margin-top:.55rem; padding:.2rem 0; border:0; background:transparent; color:var(--action-link); font-size:var(--type-ui-size); font-weight:600; cursor:pointer; }
-.triage-preview { margin:0 0 0 3rem; padding:.75rem .9rem; border-radius:var(--radius-control); background:var(--surface-subtle); color:var(--text-muted); font-size:.8rem; line-height:1.45; }
+.conversation-snippet-card {
+  margin:0 0 0 3rem;
+  padding:.8rem .9rem;
+  border:1px solid var(--border-muted);
+  border-radius:var(--radius-control);
+  background:var(--surface-subtle);
+}
+.conversation-snippet-heading { display:flex; align-items:baseline; justify-content:space-between; gap:.75rem; margin-bottom:.55rem; }
+.conversation-snippet-turns { display:flex; flex-direction:column; gap:.5rem; }
+.conversation-snippet-turn { padding:.55rem .65rem; border-radius:calc(var(--radius-control) - .1rem); background:var(--surface-raised); }
+.conversation-snippet-meta { display:flex; align-items:baseline; justify-content:space-between; gap:.75rem; margin-bottom:.18rem; }
+.conversation-snippet-turn p { margin:0; color:var(--text-secondary); font-size:.82rem; line-height:1.5; }
+.conversation-snippet-empty { display:flex; align-items:center; gap:.45rem; color:var(--text-muted); font-size:var(--type-ui-size); }
 
 .inline-assignment {
   display:block;
@@ -980,7 +1013,7 @@ watch(()=>props.openTranscriptId,openQueuedTranscript);watch(searchQuery,()=>{hi
   .filters { width:100%; }
   .filters button { flex:1; }
   .clear-all { justify-self:start; }
-  .zoom-note-card,.inline-assignment,.matched-note,.triage-actions,.conversation-preview { margin-left:0; }
+  .zoom-note-card,.conversation-snippet-card,.inline-assignment,.matched-note,.triage-actions,.conversation-preview { margin-left:0; }
   .assignment-intro { align-self:start; }
   .inline-client-picker { grid-template-columns:minmax(0,1fr) max-content max-content; }
 }

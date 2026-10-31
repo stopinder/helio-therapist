@@ -55,7 +55,7 @@ test('Transcript Inbox surfaces structured Zoom note and speaker clues without o
   assert.match(inbox, /function zoomNoteBlocks\(value\)/)
   assert.match(inbox, /function visibleZoomNoteBlocks\(transcript\)/)
   assert.match(inbox, /function zoomNoteCanExpand\(transcript\)/)
-  assert.match(inbox, /No Zoom note excerpt is available/)
+  assert.match(inbox, /Readable preview available on demand\./)
 })
 
 
@@ -137,4 +137,14 @@ test('full transcript defaults to readable conversation with search and preserve
   assert.match(inbox, /Raw source/)
   assert.match(inbox, /Exact imported text retained for source fidelity/)
   assert.match(inbox, /<pre>\{\{ selected\.text \}\}<\/pre>/)
+})
+
+
+test('collapsed transcript cards never fall back to raw Unknown marker text after detail loads', () => {
+  assert.match(inbox, /class="conversation-snippet-card"/)
+  assert.match(inbox, /Conversation excerpt/)
+  assert.match(inbox, /collapsedConversation\(transcript\)/)
+  assert.match(inbox, /compactTurnText\(turn\.text\)/)
+  assert.doesNotMatch(inbox, /function transcriptPreview\(transcript\)/)
+  assert.doesNotMatch(inbox, /<p v-else class="triage-preview">/)
 })
