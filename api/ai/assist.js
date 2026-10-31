@@ -34,12 +34,17 @@ function deidentifyClinicalQuestion(query, clientName) {
   const text = String(query || '').trim();
   const name = String(clientName || '').trim();
   if (!name) return text;
-  const escaped = name.replace(/[.*+?^$()|[\]\\{}]/g, '\\function safeClinicalHistory(value) {
-  return (Array.isArray(value) ? value : []).slice(-4)
-    .filter(item => item && ['user', 'assistant'].includes(item.role) && typeof item.content === 'string')
-    .map(item => ({ role: item.role, content: item.content.slice(0, 220) }));
-}');
-  return text.replace(new RegExp(escaped, 'gi'), 'this clinical presentation');
+  const lowerText = text.toLowerCase();
+  const lowerName = name.toLowerCase();
+  let result = '';
+  let cursor = 0;
+  let index = lowerText.indexOf(lowerName, cursor);
+  while (index >= 0) {
+    result += text.slice(cursor, index) + 'this clinical presentation';
+    cursor = index + name.length;
+    index = lowerText.indexOf(lowerName, cursor);
+  }
+  return result + text.slice(cursor);
 }
 
 async function saveConversation(db, userId, mode, query, answer, references, existingId, clinicalContext = null) {
