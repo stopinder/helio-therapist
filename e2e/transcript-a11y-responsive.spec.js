@@ -115,7 +115,8 @@ test.describe('Transcript Workflow - A11y & Responsive', () => {
 
             await transcriptRow.getByRole('button', { name: 'Open full transcript' }).click();
             await expect(page.getByText('Transcript review')).toBeVisible();
-            await expect(page.getByRole('button', { name: /View original transcript/i })).toBeVisible();
+            await expect(page.getByRole('button', { name: /Raw source/i })).toBeVisible();
+            await expect(page.getByPlaceholder('Search this transcript')).toBeVisible();
             await expectNoHorizontalOverflow(page);
         });
     }
@@ -140,7 +141,7 @@ test.describe('Transcript Workflow - A11y & Responsive', () => {
         const backButton = page.getByRole('button', { name: /Transcript Inbox/i });
         await backButton.focus();
         await expect(backButton).toBeFocused();
-        const viewRawBtn = page.getByRole('button', { name: /View original transcript/i });
+        const viewRawBtn = page.getByRole('button', { name: /Raw source/i });
         await expect(viewRawBtn).toBeVisible();
         await viewRawBtn.focus();
         await expect(viewRawBtn).toBeFocused();

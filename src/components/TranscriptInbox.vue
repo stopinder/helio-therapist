@@ -146,7 +146,40 @@
                 </button>
               </div>
             </div>
-            <pre v-if="expandedRows.has(transcript.id)" class="inline-transcript-preview">{{ transcript.text }}</pre>
+            <section v-if="expandedRows.has(transcript.id)" class="conversation-preview" aria-label="Transcript preview">
+              <header class="conversation-preview-header">
+                <div>
+                  <p class="type-eyebrow text-accent">Transcript preview</p>
+                  <div class="identity-clues">
+                    <span v-if="transcript.sourceTitle">Zoom title: {{ transcript.sourceTitle }}</span>
+                    <span v-if="speakerSummary(transcript).identifiedSpeakers.length">Named speakers: {{ speakerSummary(transcript).identifiedSpeakers.join(', ') }}</span>
+                    <span>{{ speakerTrackLabel(speakerSummary(transcript)) }}</span>
+                    <span v-if="speakerSummary(transcript).hasUnidentified">Includes unidentified speaker</span>
+                  </div>
+                </div>
+                <span class="type-metadata text-ink-muted">{{ previewConversation(transcript).totalTurns }} readable turn{{ previewConversation(transcript).totalTurns === 1 ? '' : 's' }}</span>
+              </header>
+              <div v-if="previewConversation(transcript).turns.length" class="conversation-turns conversation-turns-preview">
+                <article v-for="(turn, index) in previewConversation(transcript).turns" :key="`${turn.key}-${turn.sourceIndex}-${index}`" class="conversation-turn">
+                  <header class="turn-header">
+                    <span class="turn-speaker" :class="{ unidentified: !turn.identified }">{{ turn.speaker }}</span>
+                    <time v-if="turn.time" class="turn-time">{{ turn.time }}</time>
+                  </header>
+                  <p>{{ turn.text }}</p>
+                </article>
+              </div>
+              <p v-else class="conversation-empty">No readable conversation turns could be extracted from this source.</p>
+              <footer v-if="previewConversation(transcript).totalTurns > 12" class="conversation-preview-footer">
+                <button type="button" class="zoom-note-toggle" :aria-expanded="expandedPreviewIds.has(transcript.id)" @click="togglePreviewDepth(transcript.id)">
+                  <ChevronUp v-if="expandedPreviewIds.has(transcript.id)" class="workspace-icon-sm" aria-hidden="true" />
+                  <ChevronDown v-else class="workspace-icon-sm" aria-hidden="true" />
+                  <span>{{ expandedPreviewIds.has(transcript.id) ? 'Show less' : 'Show more' }}</span>
+                </button>
+                <span v-if="expandedPreviewIds.has(transcript.id) && previewConversation(transcript).hasMore" class="type-metadata text-ink-muted">
+                  Showing the first {{ previewConversation(transcript).limit }} of {{ previewConversation(transcript).totalTurns }} turns. Open the full transcript for the rest.
+                </span>
+              </footer>
+            </section>
           </div>
         </article>
         <div v-if="hasMoreHistory" class="load-more-row"><button class="load-more" type="button" @click="historyLimit += historyPageSize">Load more</button></div>
@@ -182,7 +215,52 @@
           <button class="secondary" @click="closeTranscript">Back to inbox</button>
         </div>
       </section>
-      <section class="raw-transcript"><header><div><h2>Original transcript</h2><p>This is the original transcript imported from Zoom. Helio has not analysed or changed it.</p></div><div class="source-actions"><button class="secondary" :aria-expanded="showRaw" @click="showRaw = !showRaw">{{ showRaw ? 'Hide original transcript' : 'View original transcript' }}</button><button class="secondary download" @click="downloadRaw(selected)">Download .txt</button><button v-if="isEligibleForDeletion" class="secondary text-state-danger" :disabled="saving" @click="deleteTranscript">{{ saving ? 'Deleting…' : 'Delete transcript' }}</button></div></header><pre v-if="showRaw">{{ selected.text }}</pre></section>
+      <section class="readable-transcript">
+        <header class="readable-transcript-header">
+          <div>
+            <p class="type-eyebrow text-accent">Original source</p>
+            <h2>Transcript</h2>
+            <p>Readable view of the original Zoom transcript. Speaker names are shown only when Zoom supplied them; Helio has not analysed or re-attributed the conversation.</p>
+          </div>
+          <div class="source-actions">
+            <button class="secondary" :aria-expanded="showRaw" @click="showRaw = !showRaw">{{ showRaw ? 'Hide raw source' : 'Raw source' }}</button>
+            <button class="secondary download" @click="downloadRaw(selected)">Download .txt</button>
+            <button v-if="isEligibleForDeletion" class="secondary text-state-danger" :disabled="saving" @click="deleteTranscript">{{ saving ? 'Deleting…' : 'Delete transcript' }}</button>
+          </div>
+        </header>
+        <div class="transcript-reader">
+          <div class="transcript-reader-toolbar">
+            <label class="transcript-search">
+              <span class="sr-only">Search transcript</span>
+              <Search class="workspace-icon search-icon" aria-hidden="true" />
+              <input v-model="transcriptSearch" type="search" class="control-field min-h-touch" placeholder="Search this transcript" />
+            </label>
+            <div class="identity-clues full-identity-clues">
+              <span v-if="selectedSpeakerSummary.identifiedSpeakers.length">Named speakers: {{ selectedSpeakerSummary.identifiedSpeakers.join(', ') }}</span>
+              <span>{{ speakerTrackLabel(selectedSpeakerSummary) }}</span>
+              <span v-if="selectedSpeakerSummary.hasUnidentified">Includes unidentified speaker</span>
+            </div>
+          </div>
+          <div v-if="filteredSelectedConversationTurns.length" class="conversation-turns conversation-turns-full">
+            <article v-for="(turn, index) in filteredSelectedConversationTurns" :key="`${turn.key}-${turn.sourceIndex}-${index}`" class="conversation-turn">
+              <header class="turn-header">
+                <span class="turn-speaker" :class="{ unidentified: !turn.identified }">{{ turn.speaker }}</span>
+                <time v-if="turn.time" class="turn-time">{{ turn.time }}</time>
+              </header>
+              <p>{{ turn.text }}</p>
+            </article>
+          </div>
+          <div v-else class="conversation-empty">
+            {{ transcriptSearch ? 'No transcript turns match your search.' : 'No readable conversation turns could be extracted from this source.' }}
+          </div>
+        </div>
+        <div v-if="showRaw" class="raw-source-panel">
+          <div class="raw-source-heading">
+            <div><strong>Raw source</strong><p>Exact imported text retained for source fidelity.</p></div>
+          </div>
+          <pre>{{ selected.text }}</pre>
+        </div>
+      </section>
       <section v-if="selected.reviewChoicesSavedAt || editingChoices" class="review-choices"><div><p class="eyebrow">Review choices</p><h2>Review choices</h2><p>Choose what, if anything, should be requested later and how the original source should be retained. This does not start analysis.</p></div><label for="clinical-output">Requested output</label><select id="clinical-output" v-model="selectedLens"><option value="">No output requested</option><option value="clinical_summary">Clinical summary</option><option value="draft_note">Draft clinical note</option><option value="cbt">CBT reflection</option></select><fieldset><legend>Source retention</legend><label><input v-model="sourceRetention" type="radio" value="keep_until_review" /> Keep the original source until I review it</label><label><input v-model="sourceRetention" type="radio" value="delete_after_approved_output" /> Mark for deletion after I approve an output</label></fieldset><div class="assignment-actions"><button v-if="selected.reviewChoicesSavedAt" class="secondary" :disabled="saving" @click="editingChoices = false">Cancel</button><button class="primary save-choices" :disabled="saving" @click="saveReviewChoices">{{ saving ? 'Saving…' : selected.reviewChoicesSavedAt ? 'Update review choices' : 'Save review choices' }}</button></div></section>
       <section v-if="selected.completedAt || selected.attentionClearedAt" class="ready-card complete-card">
         <div v-if="selected.completedAt">
@@ -217,13 +295,14 @@ import { useRouter } from 'vue-router'
 import { Archive, ArrowLeft, Check, CheckCircle2, ChevronDown, ChevronUp, Eye, FileText, Inbox, Search, Trash2, UserPlus, UserRound, UsersRound } from '@lucide/vue'
 import { authenticatedFetch } from '../lib/api.js'
 import { createClient } from '../lib/clients.js'
+import { conversationPreview, conversationTurns, searchConversationTurns, transcriptSpeakerSummary } from '../lib/transcriptPresentation.js'
 import AddClientModal from './sidebar/AddClientModal.vue'
 import StatusIndicator from './ui/StatusIndicator.vue'
 const props = defineProps({ clients: { type: Array, default: () => [] }, openTranscriptId: { type: [String, Number], default: null } })
 const emit = defineEmits(['client-added'])
 const router = useRouter()
-const transcripts = ref([]), selected = ref(null), selectedClientId = ref(''), selectedLens = ref(''), sourceRetention = ref('keep_until_review')
-const editingClient = ref(false), editingChoices = ref(false), searchQuery = ref(''), filterMode = ref('attention'), showRaw = ref(false), expandedRows = ref(new Set()), expandedNoteIds = ref(new Set()), assignmentDrafts = ref({}), assignmentSavingId = ref(null), rowActionSavingId = ref(null), rowActionSavingMode = ref(''), detailReturnId = ref(null)
+const transcripts = ref([]), selected = ref(null), selectedClientId = ref(''), selectedLens = ref(''), sourceRetention = ref('keep_until_review'), transcriptSearch = ref('')
+const editingClient = ref(false), editingChoices = ref(false), searchQuery = ref(''), filterMode = ref('attention'), showRaw = ref(false), expandedRows = ref(new Set()), expandedNoteIds = ref(new Set()), expandedPreviewIds = ref(new Set()), assignmentDrafts = ref({}), assignmentSavingId = ref(null), rowActionSavingId = ref(null), rowActionSavingMode = ref(''), detailReturnId = ref(null)
 const loading = ref(true), saving = ref(false), errorMessage = ref(''), successMessage = ref('')
 const showAddClient = ref(false), addingClient = ref(false), addClientError = ref(''), addClientTranscriptId = ref(null), addClientInitialName = ref('')
 const lastClearedBatch = ref([])
@@ -238,6 +317,9 @@ function canDeleteTranscript(transcript) {
     !transcript.completedAt);
 }
 const isEligibleForDeletion = computed(() => canDeleteTranscript(selected.value));
+const selectedConversationTurns = computed(() => conversationTurns(selected.value));
+const selectedSpeakerSummary = computed(() => transcriptSpeakerSummary(selected.value));
+const filteredSelectedConversationTurns = computed(() => searchConversationTurns(selectedConversationTurns.value, transcriptSearch.value));
 const filters = [{ id: 'attention', label: 'Needs attention' }, { id: 'history', label: 'History' }]
 const actionableCount = computed(() => transcripts.value.filter(item => needsAttention(item)).length)
 const matchingTranscripts = computed(() => {
@@ -285,6 +367,21 @@ function workflowTone(transcript){ return ({'needs-client':'warning','assigned':
 function speakerClues(transcript){
   const speakers=Array.isArray(transcript?.structuredTranscript?.speakers)?transcript.structuredTranscript.speakers:[];
   return [...new Set(speakers.map(item=>String(item?.display_name||'').trim()).filter(name=>name&&!/^unknown$/i.test(name)&&!/^speaker\s*\d+$/i.test(name)))].slice(0,4)
+}
+function speakerSummary(transcript){ return transcriptSpeakerSummary(transcript) }
+function speakerTrackLabel(summary){
+  const count=Number(summary?.speakerCount||0)
+  return `${count} speaker track${count===1?'':'s'}`
+}
+function previewConversation(transcript){
+  return conversationPreview(transcript,{expanded:expandedPreviewIds.value.has(transcript?.id)})
+}
+function togglePreviewDepth(id){
+  if(!id)return
+  const next=new Set(expandedPreviewIds.value)
+  if(next.has(id))next.delete(id)
+  else next.add(id)
+  expandedPreviewIds.value=next
 }
 function cleanZoomNoteText(value){
   return String(value||'')
@@ -475,11 +572,13 @@ async function openTranscript(transcript){
   errorMessage.value='';
   successMessage.value='';
   showRaw.value=false;
+  transcriptSearch.value='';
 }
 function closeTranscript(){
   const returnId=detailReturnId.value;
   selected.value=null;
   detailReturnId.value=null;
+  transcriptSearch.value='';
   requestAnimationFrame(()=>document.querySelector(`[data-transcript-id="${returnId}"]`)?.scrollIntoView({block:'center'}));
 }
 async function load(){loading.value=true;errorMessage.value='';try{const response=await authenticatedFetch('/api/zoom/transcripts');const data=await response.json().catch(()=>({}));if(!response.ok)throw new Error(data.error||'Unable to load transcripts.');transcripts.value=data.transcripts||[];for(const transcript of transcripts.value)initialiseAssignmentDraft(transcript)}catch(error){errorMessage.value=error.message||'Unable to load transcripts.'}finally{loading.value=false}}
@@ -798,7 +897,30 @@ watch(()=>props.openTranscriptId,openQueuedTranscript);watch(searchQuery,()=>{hi
 .quiet-action:disabled { background:transparent; }
 .danger-action { color:var(--state-danger); }
 .danger-action:hover:not(:disabled) { background:var(--state-danger-surface); color:var(--state-danger); }
-.inline-transcript-preview { max-height:18rem; overflow:auto; margin:.1rem 0 0 3rem; padding:1rem; border-radius:var(--radius-control); background:var(--surface-muted); border:1px solid var(--border-muted); color:var(--text-secondary); white-space:pre-wrap; font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:.75rem; line-height:1.55; }
+.conversation-preview {
+  margin:.1rem 0 0 3rem;
+  padding:1rem;
+  border:1px solid var(--border-muted);
+  border-radius:var(--radius-control);
+  background:var(--surface-muted);
+}
+.conversation-preview-header { display:flex; align-items:flex-start; justify-content:space-between; gap:var(--space-inline-md); margin-bottom:.75rem; }
+.identity-clues { display:flex; flex-wrap:wrap; align-items:center; gap:.3rem .65rem; margin-top:.3rem; color:var(--text-muted); font-size:var(--type-metadata-size); line-height:var(--type-metadata-line); }
+.identity-clues > span { display:inline-flex; align-items:center; gap:.25rem; }
+.identity-clues > span + span::before { content:'·'; margin-right:.35rem; color:var(--border-strong); }
+.conversation-turns { border:1px solid var(--border-muted); border-radius:var(--radius-control); overflow:hidden; background:var(--surface-raised); }
+.conversation-turn { padding:.7rem .85rem .8rem; border-bottom:1px solid var(--border-muted); }
+.conversation-turn:last-child { border-bottom:0; }
+.turn-header { display:flex; align-items:baseline; justify-content:space-between; gap:.75rem; margin-bottom:.22rem; }
+.turn-speaker { color:var(--accent); font-size:var(--type-ui-size); font-weight:650; }
+.turn-speaker.unidentified { color:var(--text-muted); font-style:italic; font-weight:550; }
+.turn-time { color:var(--text-subtle); font-size:var(--type-metadata-size); font-variant-numeric:tabular-nums; }
+.conversation-turn p { margin:0; color:var(--text-secondary); font-size:.84rem; line-height:1.55; }
+.conversation-turns-preview { max-height:27rem; overflow:auto; }
+.conversation-preview-footer { display:flex; flex-wrap:wrap; align-items:center; gap:.75rem; margin-top:.65rem; }
+.conversation-empty { margin:0; padding:1rem; border:1px dashed var(--border); border-radius:var(--radius-control); color:var(--text-muted); font-size:var(--type-ui-size); text-align:center; }
+.conversation-turns-full { max-height:48rem; overflow:auto; }
+
 
 .empty-card { padding:var(--space-stack-2xl); text-align:center; border:1px solid var(--border-muted); border-radius:var(--radius-panel); background:var(--surface-raised); color:var(--text-muted); }
 .empty-card h2 { margin:0 0 .4rem; color:var(--text-primary); font-size:var(--type-subsection-size); }
@@ -813,7 +935,7 @@ watch(()=>props.openTranscriptId,openQueuedTranscript);watch(searchQuery,()=>{hi
 .title-area h1 { margin:.2rem 0; font-size:var(--type-page-title-size); line-height:var(--type-page-title-line); font-weight:600; letter-spacing:var(--type-page-title-tracking); }
 .title-area p { color:var(--text-muted); }
 
-.workflow-section,.raw-transcript,.review-choices,.ready-card {
+.workflow-section,.readable-transcript,.review-choices,.ready-card {
   margin-bottom:var(--space-stack-xl);
   border:1px solid var(--border-muted);
   border-radius:var(--radius-panel);
@@ -832,10 +954,22 @@ watch(()=>props.openTranscriptId,openQueuedTranscript);watch(searchQuery,()=>{hi
 
 .ready-card { padding:1.35rem 1.5rem; display:flex; justify-content:space-between; align-items:center; border-color:rgb(71 112 91 / .2); background:var(--state-success-surface); }
 .complete-card { border-color:var(--border-muted); background:var(--surface-subtle); }
-.raw-transcript { overflow:hidden; }
-.raw-transcript header { padding:1.2rem 1.5rem; background:var(--surface-subtle); border-bottom:1px solid var(--border-muted); display:flex; justify-content:space-between; align-items:flex-start; gap:var(--space-inline-lg); }
-.raw-transcript pre { max-height:400px; overflow-y:auto; margin:0; padding:1.5rem; background:var(--surface-elevated); color:var(--text-secondary); font-family:ui-monospace,SFMono-Regular,Menlo,monospace; white-space:pre-wrap; font-size:.8rem; line-height:1.6; }
+.readable-transcript { overflow:hidden; }
+.readable-transcript-header { padding:1.2rem 1.5rem; background:var(--surface-subtle); border-bottom:1px solid var(--border-muted); display:flex; justify-content:space-between; align-items:flex-start; gap:var(--space-inline-lg); }
+.readable-transcript-header h2 { margin:.2rem 0; font-size:var(--type-subsection-size); }
+.readable-transcript-header p { max-width:42rem; color:var(--text-muted); font-size:var(--type-ui-size); line-height:1.5; }
 .source-actions { display:flex; gap:.5rem; flex-wrap:wrap; justify-content:flex-end; }
+.transcript-reader { padding:1rem 1.5rem 1.4rem; background:var(--surface-elevated); }
+.transcript-reader-toolbar { display:flex; align-items:center; justify-content:space-between; gap:var(--space-inline-lg); margin-bottom:1rem; }
+.transcript-search { position:relative; display:block; flex:1; max-width:24rem; }
+.transcript-search .control-field { padding-left:2.55rem; }
+.transcript-search .search-icon { position:absolute; left:.85rem; top:50%; z-index:1; transform:translateY(-50%); color:var(--accent); pointer-events:none; }
+.full-identity-clues { justify-content:flex-end; }
+.raw-source-panel { border-top:1px solid var(--border-muted); background:var(--surface-muted); }
+.raw-source-heading { padding:.9rem 1.5rem .65rem; color:var(--text-secondary); }
+.raw-source-heading strong { color:var(--text-primary); font-size:var(--type-ui-size); }
+.raw-source-heading p { margin:.15rem 0 0; color:var(--text-muted); font-size:var(--type-metadata-size); }
+.raw-source-panel pre { max-height:400px; overflow-y:auto; margin:0; padding:1rem 1.5rem 1.5rem; color:var(--text-secondary); font-family:ui-monospace,SFMono-Regular,Menlo,monospace; white-space:pre-wrap; font-size:.76rem; line-height:1.6; }
 .review-choices { padding:1.5rem; }
 .review-choices select { width:100%; margin:.45rem 0 1.25rem; }
 .review-choices fieldset { border:0; padding:0; margin:0 0 1.25rem; display:flex; flex-direction:column; gap:.7rem; }
@@ -846,13 +980,13 @@ watch(()=>props.openTranscriptId,openQueuedTranscript);watch(searchQuery,()=>{hi
   .filters { width:100%; }
   .filters button { flex:1; }
   .clear-all { justify-self:start; }
-  .zoom-note-card,.inline-assignment,.matched-note,.triage-actions,.inline-transcript-preview { margin-left:0; }
+  .zoom-note-card,.inline-assignment,.matched-note,.triage-actions,.conversation-preview { margin-left:0; }
   .assignment-intro { align-self:start; }
   .inline-client-picker { grid-template-columns:minmax(0,1fr) max-content max-content; }
 }
 @media (max-width: 640px) {
   .transcript-inbox { padding:1rem; }
-  .inbox-page-header,.row-header,.workflow-section,.ready-card,.raw-transcript header { flex-direction:column; align-items:stretch; }
+  .inbox-page-header,.row-header,.workflow-section,.ready-card,.readable-transcript-header { flex-direction:column; align-items:stretch; }
   .header-icon { display:none; }
   .row-header { gap:.7rem; }
   .status-indicator { align-self:flex-start; }
@@ -863,5 +997,9 @@ watch(()=>props.openTranscriptId,openQueuedTranscript);watch(searchQuery,()=>{hi
   .workflow-section { padding:1.2rem; }
   .assignment-controls { width:100%; }
   .source-actions { justify-content:flex-start; }
+  .transcript-reader { padding:1rem; }
+  .transcript-reader-toolbar,.conversation-preview-header { align-items:stretch; flex-direction:column; }
+  .transcript-search { max-width:none; width:100%; }
+  .full-identity-clues { justify-content:flex-start; }
 }
 </style>

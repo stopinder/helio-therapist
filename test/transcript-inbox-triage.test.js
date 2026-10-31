@@ -118,3 +118,23 @@ test('Transcript Inbox client assignment controls cannot overflow the assignment
   assert.match(inbox, /\.inline-client-picker > \* \{ min-width:0; \}/)
   assert.match(inbox, /\.add-client-inline,\.assign-inline \{[\s\S]*min-width:max-content;/)
 })
+
+
+test('Transcript Inbox renders readable conversation turns instead of raw source text in preview', () => {
+  assert.match(inbox, /class="conversation-preview"/)
+  assert.match(inbox, /Transcript preview/)
+  assert.match(inbox, /speakerTrackLabel\(speakerSummary\(transcript\)\)/)
+  assert.match(inbox, /Includes unidentified speaker/)
+  assert.match(inbox, /previewConversation\(transcript\)/)
+  assert.match(inbox, /togglePreviewDepth\(transcript\.id\)/)
+  assert.doesNotMatch(inbox, /<pre v-if="expandedRows\.has\(transcript\.id\)"/)
+})
+
+test('full transcript defaults to readable conversation with search and preserves raw source', () => {
+  assert.match(inbox, /Search this transcript/)
+  assert.match(inbox, /filteredSelectedConversationTurns/)
+  assert.match(inbox, /Readable view of the original Zoom transcript/)
+  assert.match(inbox, /Raw source/)
+  assert.match(inbox, /Exact imported text retained for source fidelity/)
+  assert.match(inbox, /<pre>\{\{ selected\.text \}\}<\/pre>/)
+})
