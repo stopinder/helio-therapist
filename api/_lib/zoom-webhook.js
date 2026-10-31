@@ -76,7 +76,8 @@ export function schedulerAppointmentEvent(body) {
 }
 
 export function myNotesEvent(body) {
-  if (String(body?.event || '') !== 'my_notes.note_generated') return null
+  const eventType = String(body?.event || '')
+  if (!['my_notes.note_generated', 'my_notes.transcript_generated', 'my_notes.note_completed'].includes(eventType)) return null
   const object = body?.payload?.object || {}
   return {
     noteId: object.note_id ? String(object.note_id) : null,
@@ -139,7 +140,7 @@ export function safeZoomWebhookPayload(body) {
   const noteEvent = myNotesEvent(body)
   if (noteEvent) {
     return {
-      event: 'my_notes.note_generated',
+      event: String(body?.event || 'my_notes.note_generated'),
       event_ts: body?.event_ts || null,
       payload: {
         account_id: noteEvent.accountId,
