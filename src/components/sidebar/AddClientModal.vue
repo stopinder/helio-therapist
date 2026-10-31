@@ -47,10 +47,14 @@
 <script setup>
 import { nextTick, onMounted, ref } from 'vue'
 
-defineProps({ submitting: { type: Boolean, default: false }, error: { type: String, default: '' } })
+const props = defineProps({
+  submitting: { type: Boolean, default: false },
+  error: { type: String, default: '' },
+  initialName: { type: String, default: '' }
+})
 const emit = defineEmits(['close', 'submit'])
 const nameInput = ref(null)
-const name = ref('')
+const name = ref(props.initialName)
 const email = ref('')
 const note = ref('')
 
