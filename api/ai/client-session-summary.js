@@ -1,7 +1,7 @@
 import { requireAuthenticatedUser } from '../_lib/supabase.js';
 import { AI_FEATURES, runTextAI } from '../_lib/ai-execution.js';
 import { randomUUID } from 'node:crypto';
-import { CLIENT_SESSION_SUMMARY_LENSES, CLIENT_SESSION_SUMMARY_PROMPT_VERSION, buildClientSessionSummaryInput, buildClinicalIntelligenceEvidenceMap, buildClinicalIntelligenceSessionCandidates, clientSessionSummarySystemPrompt, normalizeClientSessionSummaryResponse, renderClientSessionSummary, selectClinicalIntelligenceSources, validateClientSessionSummaryResponse } from '../_lib/ai-client-session-summary.js';
+import { CLIENT_SESSION_SUMMARY_LENSES, CLIENT_SESSION_SUMMARY_PROMPT_VERSION, buildClientSessionSummaryInput, buildClinicalIntelligenceEvidenceMap, buildClinicalIntelligenceSessionCandidates, clientSessionSummaryResponseFormat, clientSessionSummarySystemPrompt, normalizeClientSessionSummaryResponse, renderClientSessionSummary, selectClinicalIntelligenceSources, validateClientSessionSummaryResponse } from '../_lib/ai-client-session-summary.js';
 
 export default async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
@@ -101,7 +101,7 @@ export default async function handler(req, res) {
     const { completion, model } = await runTextAI({
       feature:AI_FEATURES.CLIENT_SESSION_SUMMARY, userId:user.id, promptVersion:CLIENT_SESSION_SUMMARY_PROMPT_VERSION,
       messages:[{role:'system',content:clientSessionSummarySystemPrompt(lens)},{role:'user',content:buildClientSessionSummaryInput({lens,window,captures:selectedCaptures,careItems:careItems||[],therapistGuidance})}],
-      responseFormat:{type:'json_object'}, temperature:0.2, maxTokens:8000, timeout:60000
+      responseFormat:clientSessionSummaryResponseFormat(validSourceIds), temperature:0.2, maxTokens:8000, timeout:60000
     });
     const finishReason = completion.choices?.[0]?.finish_reason || null;
     const structured = validateClientSessionSummaryResponse(normalizeClientSessionSummaryResponse(completion.choices?.[0]?.message?.content),validSourceIds);
