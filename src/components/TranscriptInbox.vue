@@ -44,10 +44,13 @@
             <div v-if="filterMode === 'attention' && !isVerifiedMatch(transcript)" class="inline-assignment">
               <div class="field-group">
                 <label :for="'client-' + transcript.id">Client</label>
-                <select :id="'client-' + transcript.id" v-model="assignmentDrafts[transcript.id]">
-                  <option value="">Select client…</option>
-                  <option v-for="client in clients" :key="client.id" :value="client.id">{{ client.name || client.display_name }}</option>
-                </select>
+                <div class="inline-client-picker">
+                  <select :id="'client-' + transcript.id" v-model="assignmentDrafts[transcript.id]">
+                    <option value="">Select client…</option>
+                    <option v-for="client in clients" :key="client.id" :value="client.id">{{ client.name || client.display_name }}</option>
+                  </select>
+                  <button type="button" class="secondary add-client-inline" :disabled="addingClient" @click="openAddClientForTranscript(transcript)">Add client</button>
+                </div>
                 <span v-if="suggestedClient(transcript)" class="suggestion-note">Suggested from an exact Zoom title match — confirm before assigning.</span>
               </div>
               <button
@@ -100,7 +103,7 @@
         </div>
       </header>
       <p v-if="errorMessage" class="notice error" role="alert">{{ errorMessage }}</p><p v-else-if="successMessage" class="notice success" role="status">{{ successMessage }}</p>
-      <section class="workflow-section client-section"><template v-if="!selected.clientId || editingClient"><div><p class="eyebrow">Client</p><h2>Client</h2><p>Select the client this original Zoom transcript belongs to. Helio will not guess.</p></div><div class="assignment-controls"><div class="flex items-center gap-2"><label for="client-select" class="sr-only">Client</label><select id="client-select" v-model="selectedClientId" class="flex-1"><option value="" disabled>Select a client…</option><option v-for="client in clients" :key="client.id" :value="client.id">{{ client.name }}</option></select><button type="button" class="secondary whitespace-nowrap" @click="showAddClient = true">Add new client</button></div><div class="assignment-actions"><button v-if="selected.clientId" class="secondary" :disabled="saving" @click="editingClient = false">Cancel</button><button class="primary" :disabled="saving || !selectedClientId || selectedClientId === selected.clientId" @click="saveAssignment">{{ saving ? 'Saving…' : selected.clientId ? 'Change client' : 'Assign client' }}</button></div></div></template><template v-else><div><p class="eyebrow">Client</p><h2>{{ clientName(selected.clientId) }}</h2><p>Assigned client</p></div><button class="secondary" @click="editingClient = true">Change</button></template></section>
+      <section class="workflow-section client-section"><template v-if="!selected.clientId || editingClient"><div><p class="eyebrow">Client</p><h2>Client</h2><p>Select the client this original Zoom transcript belongs to. Helio will not guess.</p></div><div class="assignment-controls"><div class="flex items-center gap-2"><label for="client-select" class="sr-only">Client</label><select id="client-select" v-model="selectedClientId" class="flex-1"><option value="" disabled>Select a client…</option><option v-for="client in clients" :key="client.id" :value="client.id">{{ client.name }}</option></select><button type="button" class="secondary whitespace-nowrap" @click="openAddClientForSelected">Add client</button></div><div class="assignment-actions"><button v-if="selected.clientId" class="secondary" :disabled="saving" @click="editingClient = false">Cancel</button><button class="primary" :disabled="saving || !selectedClientId || selectedClientId === selected.clientId" @click="saveAssignment">{{ saving ? 'Saving…' : selected.clientId ? 'Change client' : 'Assign client' }}</button></div></div></template><template v-else><div><p class="eyebrow">Client</p><h2>{{ clientName(selected.clientId) }}</h2><p>Assigned client</p></div><button class="secondary" @click="editingClient = true">Change</button></template></section>
       <section v-if="selected.clientId && !editingClient" class="ready-card">
         <div>
           <p class="eyebrow">Assigned</p>
@@ -131,8 +134,15 @@
           <button v-if="selected.clientId && selected.sessionRef" class="secondary" @click="openLinkedSession">View session</button>
         </div>
       </section>
-      <AddClientModal v-if="showAddClient" :submitting="addingClient" :error="addClientError" @close="showAddClient = false" @submit="handleAddClient" />
     </template>
+    <AddClientModal
+      v-if="showAddClient"
+      :submitting="addingClient"
+      :error="addClientError"
+      :initial-name="addClientInitialName"
+      @close="closeAddClient"
+      @submit="handleAddClient"
+    />
   </section>
 </template>
 <script setup>
@@ -148,7 +158,7 @@ const router = useRouter()
 const transcripts = ref([]), selected = ref(null), selectedClientId = ref(''), selectedLens = ref(''), sourceRetention = ref('keep_until_review')
 const editingClient = ref(false), editingChoices = ref(false), searchQuery = ref(''), filterMode = ref('attention'), showRaw = ref(false), expandedRows = ref(new Set()), assignmentDrafts = ref({}), assignmentSavingId = ref(null), rowActionSavingId = ref(null), rowActionSavingMode = ref(''), detailReturnId = ref(null)
 const loading = ref(true), saving = ref(false), errorMessage = ref(''), successMessage = ref('')
-const showAddClient = ref(false), addingClient = ref(false), addClientError = ref('')
+const showAddClient = ref(false), addingClient = ref(false), addClientError = ref(''), addClientTranscriptId = ref(null), addClientInitialName = ref('')
 const lastClearedBatch = ref([])
 const historyPageSize = 20
 const historyLimit = ref(historyPageSize)
@@ -218,6 +228,31 @@ function transcriptPreview(transcript){
   const text=transcript.text.replace(/\b\d{1,2}:\d{2}(?::\d{2})?(?:\.\d+)?\b/g,' ').replace(/\s+/g,' ').trim();
   if(!text)return 'No transcript preview is available.';
   return text.length>340?`${text.slice(0,337)}…`:text
+}
+function suggestedNewClientName(transcript){
+  const title=String(transcript?.sourceTitle||'').trim();
+  if(!title)return '';
+  const words=title.split(/\s+/).filter(Boolean);
+  return words.length<=3?title:'';
+}
+function openAddClientForTranscript(transcript){
+  addClientTranscriptId.value=transcript?.id||null;
+  addClientInitialName.value=suggestedNewClientName(transcript);
+  addClientError.value='';
+  showAddClient.value=true;
+}
+function openAddClientForSelected(){
+  addClientTranscriptId.value=null;
+  addClientInitialName.value=suggestedNewClientName(selected.value);
+  addClientError.value='';
+  showAddClient.value=true;
+}
+function closeAddClient(){
+  if(addingClient.value)return;
+  showAddClient.value=false;
+  addClientTranscriptId.value=null;
+  addClientInitialName.value='';
+  addClientError.value='';
 }
 async function clearAllAttention() {
   if (saving.value || searchQuery.value || !matchingTranscripts.value.length) return;
@@ -339,9 +374,8 @@ function closeTranscript(){
 }
 async function load(){loading.value=true;errorMessage.value='';try{const response=await authenticatedFetch('/api/zoom/transcripts');const data=await response.json().catch(()=>({}));if(!response.ok)throw new Error(data.error||'Unable to load transcripts.');transcripts.value=data.transcripts||[];for(const transcript of transcripts.value)initialiseAssignmentDraft(transcript)}catch(error){errorMessage.value=error.message||'Unable to load transcripts.'}finally{loading.value=false}}
 async function patchTranscript(body,fallbackMessage){saving.value=true;errorMessage.value='';successMessage.value='';try{const response=await authenticatedFetch('/api/zoom/transcripts',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:selected.value.id,expectedUpdatedAt:selected.value.updatedAt,...body})});const data=await response.json().catch(()=>({}));if(!response.ok)throw new Error(data.error||fallbackMessage);if(body.restoreAttention && !isRestoredTranscript(data?.transcript,selected.value.id))throw new Error(fallbackMessage);replaceTranscript(data.transcript);return data.transcript}catch(error){errorMessage.value=error.message||fallbackMessage;return null}finally{saving.value=false}}
-async function assignFromInbox(transcript){
-  const clientId=assignmentDrafts.value[transcript.id];
-  if(!clientId||assignmentSavingId.value)return;
+async function assignTranscriptToClient(transcript,clientId,clientLabel=''){
+  if(!transcript?.id||!clientId||assignmentSavingId.value)return null;
   assignmentSavingId.value=transcript.id;
   errorMessage.value='';
   successMessage.value='';
@@ -352,14 +386,22 @@ async function assignFromInbox(transcript){
       body:JSON.stringify({id:transcript.id,expectedUpdatedAt:transcript.updatedAt,clientId,clearAttention:true})
     });
     const data=await response.json().catch(()=>({}));
-    if(!response.ok)throw new Error(data.error||'Unable to assign this transcript.');
+    if(!response.ok||!data.transcript)throw new Error(data.error||'Unable to assign this transcript.');
     replaceTranscript(data.transcript);
-    successMessage.value=`Assigned to ${clientName(data.transcript.clientId)}. The transcript is ready in Clinical Workspace.`;
+    const label=clientLabel||clientName(data.transcript.clientId)||'the new client';
+    successMessage.value=`Assigned to ${label}. The transcript is ready in Clinical Workspace.`;
+    return data.transcript;
   }catch(error){
     errorMessage.value=error.message||'Unable to assign this transcript.';
+    return null;
   }finally{
     assignmentSavingId.value=null;
   }
+}
+async function assignFromInbox(transcript){
+  const clientId=assignmentDrafts.value[transcript.id];
+  if(!clientId)return;
+  await assignTranscriptToClient(transcript,clientId);
 }
 async function openLinkedSessionFromRow(transcript){
   if(!transcript?.clientId||!transcript?.sessionRef)return;
@@ -434,11 +476,28 @@ async function handleAddClient(payload) {
   addingClient.value = true;
   addClientError.value = '';
   try {
+    const targetTranscriptId = addClientTranscriptId.value;
     const newClient = await createClient(payload);
     emit('client-added', newClient);
-    selectedClientId.value = newClient.id;
+
+    if (targetTranscriptId) {
+      const transcript = transcripts.value.find(item => item.id === targetTranscriptId);
+      if (!transcript) throw new Error('The transcript is no longer available. The client was added successfully.');
+      assignmentDrafts.value = { ...assignmentDrafts.value, [targetTranscriptId]: newClient.id };
+      const assigned = await assignTranscriptToClient(transcript, newClient.id, newClient.name || newClient.display_name);
+      if (!assigned) throw new Error(errorMessage.value || 'Client added, but the transcript could not be assigned.');
+    } else {
+      selectedClientId.value = newClient.id;
+      const assigned = await patchTranscript({clientId:newClient.id,clearAttention:true},'Client added, but the transcript could not be assigned.');
+      if (assigned) {
+        editingClient.value=false;
+        successMessage.value=`Added ${newClient.name || newClient.display_name} and assigned the transcript.`;
+      }
+    }
+
     showAddClient.value = false;
-    await saveAssignment();
+    addClientTranscriptId.value = null;
+    addClientInitialName.value = '';
   } catch (err) {
     addClientError.value = err.message || 'Failed to create client.';
   } finally {
@@ -488,6 +547,8 @@ watch(()=>props.openTranscriptId,openQueuedTranscript);watch(searchQuery,()=>{hi
 .triage-preview { margin: 0.15rem 0 0; color: var(--helio-gray-600); font-size: 0.8125rem; line-height: 1.45; }
 .inline-assignment { display: grid; grid-template-columns: minmax(0,1fr) auto; align-items: end; gap: 0.75rem; margin-top: 0.35rem; padding-top: 0.75rem; border-top: 1px solid var(--helio-gray-100); }
 .inline-assignment select { width: 100%; }
+.inline-client-picker { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 0.5rem; align-items: center; }
+.add-client-inline { white-space: nowrap; }
 .suggestion-note { color: var(--helio-gray-500); font-size: 0.75rem; }
 .matched-note { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; margin-top: 0.35rem; padding: 0.75rem; border-radius: 10px; background: var(--helio-state-success-bg, #f0fdf4); color: var(--helio-gray-700); font-size: 0.8125rem; }
 .triage-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.25rem; }
@@ -521,6 +582,7 @@ watch(()=>props.openTranscriptId,openQueuedTranscript);watch(searchQuery,()=>{hi
   .assignment-controls { width: 100%; }
   .ready-card { flex-direction: column; gap: 1.5rem; align-items: flex-start; }
   .inline-assignment { grid-template-columns: 1fr; }
+  .inline-client-picker { grid-template-columns: 1fr; }
   .matched-note { align-items: flex-start; flex-direction: column; }
   .raw-transcript header { flex-direction: column; gap: 1rem; padding: 1.5rem; }
   .source-actions { justify-content: flex-start; }
