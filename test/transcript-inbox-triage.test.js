@@ -49,10 +49,12 @@ test('full transcript detail returns to the same inbox row instead of browser-hi
 })
 
 
-test('Transcript Inbox surfaces Zoom note and speaker clues without opening Preview', () => {
+test('Transcript Inbox surfaces structured Zoom note and speaker clues without opening Preview', () => {
   assert.match(inbox, /Named speakers:/)
-  assert.match(inbox, /<strong>Zoom note:<\/strong>/)
-  assert.match(inbox, /function notePreview\(value\)/)
+  assert.match(inbox, /class="zoom-note-card"/)
+  assert.match(inbox, /function zoomNoteBlocks\(value\)/)
+  assert.match(inbox, /function visibleZoomNoteBlocks\(transcript\)/)
+  assert.match(inbox, /function zoomNoteCanExpand\(transcript\)/)
   assert.match(inbox, /No Zoom note excerpt is available/)
 })
 
@@ -93,4 +95,17 @@ test('Transcript Inbox can add a missing client directly from an unassigned row'
 test('Add Client modal is available in both inbox and full transcript views', () => {
   assert.match(inbox, /<\/template>\s*<AddClientModal[\s\S]*?:initial-name="addClientInitialName"/)
   assert.match(inbox, /@close="closeAddClient"/)
+})
+
+
+test('Transcript Inbox visual refinement uses the Helios semantic hierarchy without changing triage actions', () => {
+  assert.match(inbox, /class="icon-surface icon-surface-accent header-icon"/)
+  assert.match(inbox, /class="button-primary assign-inline"/)
+  assert.match(inbox, /class="button-secondary add-client-inline"/)
+  assert.match(inbox, /class="quiet-action danger-action"/)
+  assert.match(inbox, /var\(--accent\)/)
+  assert.match(inbox, /var\(--surface-reflection\)/)
+  assert.match(inbox, /max-width: 1040px/)
+  assert.match(inbox, />Preview transcript</)
+  assert.match(inbox, />Open full transcript</)
 })
