@@ -245,7 +245,7 @@ export async function reconcileZoomMyNotes({ supabase, integration, therapistUse
   }
 
   const notes = [...notesById.values()];
-  if (!notes.length) return { checked: checkedCount, imported: 0 };
+  if (!notes.length) return { checked: checkedCount, imported: 0, refreshed: 0 };
 
   const noteIds = notes.map((note) => note.noteId);
   const { data: existingRows, error: existingError } = await supabase
@@ -259,6 +259,7 @@ export async function reconcileZoomMyNotes({ supabase, integration, therapistUse
   const existingIds = new Set(existingRecords.keys());
 
   let imported = 0;
+  let refreshed = 0;
   const newImports = [];
   for (const note of notes) {
     const existingRecord = existingRecords.get(note.noteId);
@@ -292,6 +293,7 @@ export async function reconcileZoomMyNotes({ supabase, integration, therapistUse
         .eq('therapist_user_id', therapistUserId)
         .eq('zoom_note_id', note.noteId);
       if (updateError) throw updateError;
+      refreshed += 1;
       continue;
     }
 
