@@ -6,7 +6,7 @@ const transcriptInboxSource = await readFile(new URL('../src/components/Transcri
 
 test('Transcript Inbox previews are explicit and loaded on demand rather than included in the initial list payload', async () => {
   assert.match(transcriptInboxSource, /function transcriptPreview\(transcript\)/)
-  assert.match(transcriptInboxSource, /Preview loads on demand/)
+  assert.match(transcriptInboxSource, /No Zoom note excerpt is available/)
   assert.match(transcriptInboxSource, /@click="toggleExpand\(transcript\.id, \$event\)"/)
   assert.match(transcriptInboxSource, /fetchTranscriptDetail/)
   assert.match(transcriptInboxSource, /inline-transcript-preview/)
