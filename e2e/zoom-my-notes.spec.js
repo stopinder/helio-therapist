@@ -112,6 +112,7 @@ test.describe('Zoom My Notes transcript inbox', () => {
         speakers: [{ speaker_id: '1', display_name: 'Therapist' }],
         items: [{ speaker_id: '1', start_time: '00:00:01.000', text: 'Welcome to the session.' }]
       },
+      zoomGeneratedSummary: 'The client described increased anxiety before work and discussed a plan to slow down and notice triggers.',
       format: 'ZOOM_MY_NOTES',
       text: '[00:00:01.000] Therapist: Welcome to the session.',
       source: 'zoom_my_notes',
@@ -131,7 +132,7 @@ test.describe('Zoom My Notes transcript inbox', () => {
       const url = new URL(route.request().url());
       const payload = url.searchParams.get('id')
         ? { transcript: fullTranscript }
-        : { transcripts: [{ ...fullTranscript, structuredTranscript: null, text: null }] };
+        : { transcripts: [{ ...fullTranscript, structuredTranscript: { speakers: fullTranscript.structuredTranscript.speakers }, text: null }] };
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -156,6 +157,9 @@ test.describe('Zoom My Notes transcript inbox', () => {
     await expect(row).toContainText('Needs client');
     await expect(row).toContainText('Meeting 987654321');
     await expect(row.getByRole('combobox')).toBeVisible();
+    await expect(row).toContainText('Named speakers: Therapist');
+    await expect(row).toContainText('Zoom note:');
+    await expect(row).toContainText('increased anxiety before work');
 
     await row.getByRole('button', { name: 'Preview transcript' }).click();
     await expect(row.getByText('[00:00:01.000] Therapist: Welcome to the session.')).toBeVisible();

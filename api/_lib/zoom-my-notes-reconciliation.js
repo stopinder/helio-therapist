@@ -245,7 +245,7 @@ export async function reconcileZoomMyNotes({ supabase, integration, therapistUse
   }
 
   const notes = [...notesById.values()];
-  if (!notes.length) return { checked: checkedCount, imported: 0 };
+  if (!notes.length) return { checked: checkedCount, imported: 0, refreshed: 0 };
 
   const noteIds = notes.map((note) => note.noteId);
   const { data: existingRows, error: existingError } = await supabase
@@ -259,6 +259,7 @@ export async function reconcileZoomMyNotes({ supabase, integration, therapistUse
   const existingIds = new Set(existingRecords.keys());
 
   let imported = 0;
+  let refreshed = 0;
   const newImports = [];
   for (const note of notes) {
     const existingRecord = existingRecords.get(note.noteId);
@@ -270,22 +271,32 @@ export async function reconcileZoomMyNotes({ supabase, integration, therapistUse
     );
 
     const sourceTitle = (content?.note_name ? String(content.note_name).trim() : null) || note.title || null;
+    const structuredTranscript = content?.transcript;
+    const originalTranscript = canonicaliseMyNotesTranscript(structuredTranscript);
+    const zoomGeneratedSummary = typeof content?.generated_note_content === 'string'
+      ? content.generated_note_content.trim() || null
+      : null;
 
     if (existingIds.has(note.noteId)) {
       const { error: updateError } = await supabase
         .from('zoom_transcripts')
         .update({
           source_title: sourceTitle,
-          ...(note.createdTime ? { source_occurred_at: note.createdTime } : {})
+          ...(note.createdTime ? { source_occurred_at: note.createdTime } : {}),
+          ...(originalTranscript ? {
+            original_transcript: originalTranscript,
+            structured_transcript: structuredTranscript
+          } : {}),
+          zoom_generated_summary: zoomGeneratedSummary,
+          updated_at: new Date().toISOString()
         })
         .eq('therapist_user_id', therapistUserId)
         .eq('zoom_note_id', note.noteId);
       if (updateError) throw updateError;
+      refreshed += 1;
       continue;
     }
 
-    const structuredTranscript = content?.transcript;
-    const originalTranscript = canonicaliseMyNotesTranscript(structuredTranscript);
     if (!originalTranscript) continue;
 
     const meetingId = note.meetingId || (content?.meeting_id ? String(content.meeting_id) : null);
@@ -306,6 +317,7 @@ export async function reconcileZoomMyNotes({ supabase, integration, therapistUse
         original_format: 'JSON',
         original_transcript: originalTranscript,
         structured_transcript: structuredTranscript,
+        zoom_generated_summary: zoomGeneratedSummary,
         source: 'zoom_my_notes',
         source_title: sourceTitle,
         source_occurred_at: createdTime || now,
@@ -329,5 +341,5 @@ export async function reconcileZoomMyNotes({ supabase, integration, therapistUse
     imported += 1;
   }
 
-  return { checked: checkedCount, imported, imports: newImports };
+  return { checked: checkedCount, imported, refreshed, imports: newImports };
 }

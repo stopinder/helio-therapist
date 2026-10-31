@@ -33,7 +33,9 @@ test('verified session-linked transcripts bypass Needs attention and can open Cl
 test('Transcript Inbox list is lightweight and loads full transcript detail only on demand', () => {
   const listFields = api.match(/const transcriptListFields = '([^']+)'/)?.[1] || ''
   assert.ok(listFields)
-  assert.doesNotMatch(listFields, /original_transcript|structured_transcript/)
+  assert.doesNotMatch(listFields, /original_transcript/)
+  assert.match(listFields, /speaker_clues:structured_transcript->speakers/)
+  assert.match(listFields, /zoom_generated_summary/)
   assert.match(api, /if \(id\) \{[\s\S]*select\(transcriptFields\)/)
   assert.match(inbox, /\/api\/zoom\/transcripts\?id=/)
   assert.match(inbox, /fetchTranscriptDetail/)
@@ -44,4 +46,12 @@ test('full transcript detail returns to the same inbox row instead of browser-hi
   assert.match(inbox, /detailReturnId/)
   assert.match(inbox, /data-transcript-id/)
   assert.match(inbox, /scrollIntoView\(\{block:'center'\}\)/)
+})
+
+
+test('Transcript Inbox surfaces Zoom note and speaker clues without opening Preview', () => {
+  assert.match(inbox, /Named speakers:/)
+  assert.match(inbox, /<strong>Zoom note:<\/strong>/)
+  assert.match(inbox, /function notePreview\(value\)/)
+  assert.match(inbox, /No Zoom note excerpt is available/)
 })

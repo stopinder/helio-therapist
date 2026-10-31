@@ -102,6 +102,9 @@ async function processMyNotesEvent(supabase, intakeEventId, noteEvent) {
   const noteContent = await contentResponse.json();
   const structuredTranscript = noteContent?.transcript;
   const originalTranscript = canonicaliseMyNotesTranscript(structuredTranscript);
+  const zoomGeneratedSummary = typeof noteContent?.generated_note_content === 'string'
+    ? noteContent.generated_note_content.trim() || null
+    : null;
   if (!originalTranscript) { await updateEvent(supabase, intakeEventId, { processing_status: 'failed', processing_error: 'Zoom My Notes content did not contain transcript items' }); return; }
   let sessionLink = noteEvent.meetingId ? await findVerifiedSessionLink(supabase, integration.user_id, noteEvent.meetingId) : null;
   if (!sessionLink) sessionLink = await findUniqueAwaitingSession(supabase, integration.user_id, noteEvent.createdTime);
@@ -115,7 +118,7 @@ async function processMyNotesEvent(supabase, intakeEventId, noteEvent) {
     return;
   }
 
-  const { error: transcriptError } = await supabase.from('zoom_transcripts').upsert({ therapist_user_id: integration.user_id, zoom_note_id: noteEvent.noteId, zoom_meeting_id: noteEvent.meetingId, zoom_meeting_uuid: null, zoom_recording_file_id: null, original_format: 'JSON', original_transcript: originalTranscript, structured_transcript: structuredTranscript, source: 'zoom_my_notes', source_title: sourceTitle, source_occurred_at: noteEvent.createdTime || now, client_id: sessionLink?.client_id || null, session_ref: sessionLink?.session_ref || null, status: sessionLink ? 'ready' : 'unassigned', updated_at: now }, { onConflict: 'therapist_user_id,zoom_note_id' });
+  const { error: transcriptError } = await supabase.from('zoom_transcripts').upsert({ therapist_user_id: integration.user_id, zoom_note_id: noteEvent.noteId, zoom_meeting_id: noteEvent.meetingId, zoom_meeting_uuid: null, zoom_recording_file_id: null, original_format: 'JSON', original_transcript: originalTranscript, structured_transcript: structuredTranscript, zoom_generated_summary: zoomGeneratedSummary, source: 'zoom_my_notes', source_title: sourceTitle, source_occurred_at: noteEvent.createdTime || now, client_id: sessionLink?.client_id || null, session_ref: sessionLink?.session_ref || null, status: sessionLink ? 'ready' : 'unassigned', updated_at: now }, { onConflict: 'therapist_user_id,zoom_note_id' });
   if (transcriptError) throw transcriptError;
   if (sessionLink) {
     await markSessionTranscriptReceived(supabase, integration.user_id, sessionLink);
