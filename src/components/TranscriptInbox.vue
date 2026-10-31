@@ -11,12 +11,12 @@
         <div class="filters" role="group" aria-label="Transcript views">
           <button v-for="filter in filters" :key="filter.id" type="button" class="min-h-touch type-ui" :class="{ active: filterMode === filter.id }" :aria-pressed="filterMode === filter.id" @click="setFilter(filter.id)">{{ filter.label }}<template v-if="filter.id === 'attention'"> · {{ actionableCount }}</template></button>
         </div>
-        <button v-if="filterMode === 'attention' && matchingTranscripts.length" class="secondary clear-all" :disabled="saving || !!searchQuery" :title="searchQuery ? 'Clear your search to clear all attention items.' : ''" @click="clearAllAttention">{{ saving ? 'Clearing…' : 'Clear all' }}</button>
+        <button v-if="filterMode === 'attention' && matchingTranscripts.length" class="secondary clear-all" :disabled="saving || !!searchQuery" :title="searchQuery ? 'Clear your search to archive all attention items.' : 'Archive every item currently in Needs attention.'" @click="clearAllAttention">{{ saving ? 'Archiving…' : 'Archive all' }}</button>
       </div>
 
       <p v-if="errorMessage" class="notice error" role="alert">{{ errorMessage }}</p><p v-else-if="successMessage" class="notice success" role="status">{{ successMessage }}</p>
       <button v-if="lastClearedBatch.length" class="undo-link" :disabled="saving" @click="undoClearAttention">Undo</button>
-      <p v-if="filterMode === 'history'">Transcripts cleared from the inbox or with completed inbox setup. Clearing does not mark work as complete.</p>
+      <p v-if="filterMode === 'history'">Archived transcripts and transcripts with completed inbox setup. Archiving preserves the transcript and removes it from Needs attention.</p>
       <div v-if="loading" class="empty-card compact">Loading transcripts…</div>
       <div v-else-if="!errorMessage && !transcripts.length" class="empty-card compact"><h2>Inbox up to date</h2><p>New Zoom transcripts will appear here when they need review.</p></div>
       <div v-else-if="visibleTranscripts.length" class="inbox-list">
@@ -33,7 +33,7 @@
                 <p v-if="transcript.sourceTitle && transcript.sourceTitle !== triageIdentity(transcript)" class="triage-topic">{{ transcript.sourceTitle }}</p>
               </div>
               <StatusIndicator :tone="filterMode === 'history' ? (transcript.completedAt || (!transcript.attentionClearedAt && isVerifiedMatch(transcript)) ? 'success' : 'neutral') : workflowTone(transcript)">
-                {{ filterMode === 'history' ? (transcript.completedAt ? 'Inbox setup complete' : transcript.attentionClearedAt ? 'Cleared from inbox' : isVerifiedMatch(transcript) ? 'Matched automatically' : 'History') : workflowState(transcript).label }}
+                {{ filterMode === 'history' ? (transcript.completedAt ? 'Inbox setup complete' : transcript.attentionClearedAt ? 'Archived' : isVerifiedMatch(transcript) ? 'Matched automatically' : 'History') : workflowState(transcript).label }}
               </StatusIndicator>
             </div>
             <small>{{ formatDate(transcript.sourceOccurredAt || transcript.receivedAt) }}<template v-if="transcript.meetingId"> · Meeting {{ transcript.meetingId }}</template></small>
@@ -64,6 +64,14 @@
             </div>
 
             <div class="triage-actions">
+              <template v-if="filterMode === 'attention'">
+                <button type="button" class="secondary" :disabled="rowActionSavingId === transcript.id" @click="archiveFromInbox(transcript)">
+                  {{ rowActionSavingId === transcript.id && rowActionSavingMode === 'archive' ? 'Archiving…' : 'Archive' }}
+                </button>
+                <button v-if="canDeleteTranscript(transcript)" type="button" class="secondary text-state-danger" :disabled="rowActionSavingId === transcript.id" @click="deleteFromInbox(transcript)">
+                  {{ rowActionSavingId === transcript.id && rowActionSavingMode === 'delete' ? 'Deleting…' : 'Delete' }}
+                </button>
+              </template>
               <button type="button" class="secondary" :aria-expanded="expandedRows.has(transcript.id)" @click="toggleExpand(transcript.id, $event)">
                 {{ expandedRows.has(transcript.id) ? 'Hide preview' : 'Preview transcript' }}
               </button>
@@ -115,8 +123,8 @@
         </div>
         <div v-else>
           <p class="eyebrow">Cleared from inbox</p>
-          <h2>Transcript cleared from inbox</h2>
-          <p>This transcript was cleared from the Needs attention queue. Clearing does not mark its inbox setup as complete.</p>
+          <h2>Transcript archived</h2>
+          <p>This transcript is archived and no longer appears in Needs attention. The original source is preserved.</p>
         </div>
         <div class="assignment-actions">
           <button v-if="selected.attentionClearedAt && !selected.completedAt" class="primary" :disabled="saving" @click="restoreToAttention">Return to Needs attention</button>
@@ -138,20 +146,21 @@ const props = defineProps({ clients: { type: Array, default: () => [] }, openTra
 const emit = defineEmits(['client-added'])
 const router = useRouter()
 const transcripts = ref([]), selected = ref(null), selectedClientId = ref(''), selectedLens = ref(''), sourceRetention = ref('keep_until_review')
-const editingClient = ref(false), editingChoices = ref(false), searchQuery = ref(''), filterMode = ref('attention'), showRaw = ref(false), expandedRows = ref(new Set()), assignmentDrafts = ref({}), assignmentSavingId = ref(null), detailReturnId = ref(null)
+const editingClient = ref(false), editingChoices = ref(false), searchQuery = ref(''), filterMode = ref('attention'), showRaw = ref(false), expandedRows = ref(new Set()), assignmentDrafts = ref({}), assignmentSavingId = ref(null), rowActionSavingId = ref(null), rowActionSavingMode = ref(''), detailReturnId = ref(null)
 const loading = ref(true), saving = ref(false), errorMessage = ref(''), successMessage = ref('')
 const showAddClient = ref(false), addingClient = ref(false), addClientError = ref('')
 const lastClearedBatch = ref([])
 const historyPageSize = 20
 const historyLimit = ref(historyPageSize)
-const isEligibleForDeletion = computed(() => {
-  if (!selected.value) return false;
-  return selected.value.status === 'unassigned' &&
-    !selected.value.clientId &&
-    !selected.value.sessionRef &&
-    !selected.value.reviewChoicesSavedAt &&
-    !selected.value.completedAt;
-});
+function canDeleteTranscript(transcript) {
+  return Boolean(transcript &&
+    transcript.status === 'unassigned' &&
+    !transcript.clientId &&
+    !transcript.sessionRef &&
+    !transcript.reviewChoicesSavedAt &&
+    !transcript.completedAt);
+}
+const isEligibleForDeletion = computed(() => canDeleteTranscript(selected.value));
 const filters = [{ id: 'attention', label: 'Needs attention' }, { id: 'history', label: 'History' }]
 const actionableCount = computed(() => transcripts.value.filter(item => needsAttention(item)).length)
 const matchingTranscripts = computed(() => {
@@ -230,7 +239,7 @@ async function clearAllAttention() {
     const cleared = data.transcripts || [];
     cleared.forEach(replaceTranscriptInList);
     lastClearedBatch.value = cleared;
-    successMessage.value = `${cleared.length} item${cleared.length === 1 ? '' : 's'} cleared from Needs attention.`;
+    successMessage.value = `${cleared.length} item${cleared.length === 1 ? '' : 's'} archived.`;
   } catch (error) {
     errorMessage.value = error.message || 'Unable to clear transcripts.';
   } finally {
@@ -269,7 +278,7 @@ async function undoClearAttention() {
     if (lastClearedBatch.value.length) {
       errorMessage.value = 'Unable to undo some items. Retry Undo for the remaining items.';
     } else {
-      successMessage.value = 'Clearing undone.';
+      successMessage.value = 'Archive undone.';
     }
   } finally {
     saving.value = false;
@@ -356,10 +365,71 @@ async function openLinkedSessionFromRow(transcript){
   if(!transcript?.clientId||!transcript?.sessionRef)return;
   await router.push({name:'SessionWorkspace',params:{clientId:transcript.clientId,sessionId:transcript.sessionRef}});
 }
+function removeExpandedRow(id){
+  if(!expandedRows.value.has(id))return;
+  const next=new Set(expandedRows.value);
+  next.delete(id);
+  expandedRows.value=next;
+}
+async function archiveFromInbox(transcript){
+  if(!transcript?.id||rowActionSavingId.value)return;
+  rowActionSavingId.value=transcript.id;
+  rowActionSavingMode.value='archive';
+  errorMessage.value='';
+  successMessage.value='';
+  try{
+    const response=await authenticatedFetch('/api/zoom/transcripts',{
+      method:'PATCH',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({id:transcript.id,expectedUpdatedAt:transcript.updatedAt,clearAttention:true})
+    });
+    const data=await response.json().catch(()=>({}));
+    if(!response.ok||!data.transcript)throw new Error(data.error||'Unable to archive this transcript.');
+    replaceTranscriptInList(data.transcript);
+    removeExpandedRow(transcript.id);
+    successMessage.value='Transcript archived. Restore it any time from History.';
+  }catch(error){
+    errorMessage.value=error.message||'Unable to archive this transcript.';
+  }finally{
+    rowActionSavingId.value=null;
+    rowActionSavingMode.value='';
+  }
+}
+async function deleteTranscriptRecord(transcript,{closeDetail=false}={}){
+  if(!canDeleteTranscript(transcript)||rowActionSavingId.value)return false;
+  if(!window.confirm('Delete this unassigned transcript permanently? This removes the imported source from Helios and cannot be undone.'))return false;
+  rowActionSavingId.value=transcript.id;
+  rowActionSavingMode.value='delete';
+  errorMessage.value='';
+  successMessage.value='';
+  try{
+    const response=await authenticatedFetch('/api/zoom/transcripts',{
+      method:'DELETE',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({id:transcript.id})
+    });
+    if(!response.ok){
+      const data=await response.json().catch(()=>({}));
+      throw new Error(data.error||'Unable to delete transcript.');
+    }
+    transcripts.value=transcripts.value.filter(item=>item.id!==transcript.id);
+    removeExpandedRow(transcript.id);
+    if(closeDetail&&selected.value?.id===transcript.id)selected.value=null;
+    successMessage.value='Transcript deleted.';
+    return true;
+  }catch(error){
+    errorMessage.value=error.message||'Unable to delete transcript.';
+    return false;
+  }finally{
+    rowActionSavingId.value=null;
+    rowActionSavingMode.value='';
+  }
+}
+async function deleteFromInbox(transcript){return deleteTranscriptRecord(transcript)}
 
 async function saveAssignment(){const transcript=await patchTranscript({clientId:selectedClientId.value,clearAttention:true},'Unable to save the client assignment.');if(transcript){editingClient.value=false;successMessage.value=`Assigned to ${clientName(transcript.clientId)} and ready in Clinical Workspace.`}}
 async function saveReviewChoices(){const transcript=await patchTranscript({requestedLens:selectedLens.value||null,sourceRetention:sourceRetention.value,reviewChoicesSaved:true},'Unable to save review choices.');if(transcript){editingChoices.value=false;successMessage.value='Review choices saved. No analysis has started.'}}
-async function deleteTranscript(){if(!selected.value)return;if(!window.confirm('Delete this unassigned transcript? This permanently removes the imported source from Helios.'))return;saving.value=true;errorMessage.value='';successMessage.value='';try{const response=await authenticatedFetch('/api/zoom/transcripts',{method:'DELETE',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:selected.value.id})});if(!response.ok){const data=await response.json().catch(()=>({}));throw new Error(data.error||'Unable to delete transcript.')}transcripts.value=transcripts.value.filter(item=>item.id!==selected.value.id);selected.value=null;successMessage.value='Transcript deleted.'}catch(error){errorMessage.value=error.message||'Unable to delete transcript.'}finally{saving.value=false}}
+async function deleteTranscript(){if(!selected.value)return;await deleteTranscriptRecord(selected.value,{closeDetail:true})}
 async function handleAddClient(payload) {
   addingClient.value = true;
   addClientError.value = '';
