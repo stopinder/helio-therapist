@@ -1,10 +1,11 @@
-export const CLIENT_SESSION_SUMMARY_PROMPT_VERSION = 'client-session-summary-v8';
+export const CLIENT_SESSION_SUMMARY_PROMPT_VERSION = 'client-session-summary-v9';
 export const CLIENT_SESSION_SUMMARY_LENSES = Object.freeze(['general', 'integrative', 'gentle_cbt', 'internal_family_systems', 'transactional_analysis']);
 export const CLIENT_SESSION_SUMMARY_FIELDS = Object.freeze(['opening','whatWeWorkedOn','patternsOverTime','changesAndExceptions','strengthsAndResources','perspectiveReflection','betweenSession','closing']);
 
 const COMPARISON_TASKS = Object.freeze(['recurrence', 'change', 'stability', 'exceptions', 'resources', 'unfinished_threads', 'possible_connections']);
 const CLIENT_SAFE_CARE_KINDS = new Set(['current_focus','shared_understanding','trying','change_noticed','learning','themes','interventions','outcomes']);
-const EVIDENCE_STRENGTHS = new Set(['current_observation','recurring','explicit_change','accepted_care','therapist_guidance','tentative_connection']);
+export const CLIENT_SESSION_SUMMARY_EVIDENCE_STRENGTHS = Object.freeze(['current_observation','recurring','explicit_change','accepted_care','therapist_guidance','tentative_connection']);
+const EVIDENCE_STRENGTHS = new Set(CLIENT_SESSION_SUMMARY_EVIDENCE_STRENGTHS);
 
 const sharedRules = `You are Helios Clinical Intelligence preparing an editable client-facing therapy summary for therapist review.
 Use only the supplied session evidence, current clinician-accepted Care context, and therapist-authored guidance. Session evidence may be either a reviewed Session Capture or an existing transcript-backed client session summary already stored in the workspace. One or more session sources may be supplied, newest first. When a long history is supplied, prioritise clinically meaningful recurrence, change, exceptions, resources and unfinished threads rather than trying to mention every session.
@@ -56,6 +57,57 @@ const lensRules = {
 
 export function clientSessionSummaryLensRule(lens = 'general') { return lensRules[lens] || lensRules.general; }
 export function clientSessionSummarySystemPrompt(lens = 'general') { return `${sharedRules}\n\n${clientSessionSummaryLensRule(lens)}`; }
+
+export function clientSessionSummaryResponseFormat(validSourceIds = []) {
+  const sourceIds = [...new Set(
+    [...validSourceIds]
+      .filter(id => typeof id === 'string' && id.trim())
+      .map(id => id.trim())
+  )];
+  if (!sourceIds.length) throw new Error('Client session summary schema requires at least one valid source ID');
+
+  const sectionProperties = Object.fromEntries(
+    CLIENT_SESSION_SUMMARY_FIELDS.map(field => [field, { type: 'string' }])
+  );
+
+  return {
+    type: 'json_schema',
+    json_schema: {
+      name: 'helios_client_session_summary',
+      strict: true,
+      schema: {
+        type: 'object',
+        properties: {
+          sections: {
+            type: 'object',
+            properties: sectionProperties,
+            required: [...CLIENT_SESSION_SUMMARY_FIELDS],
+            additionalProperties: false
+          },
+          claims: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                section: { type: 'string', enum: [...CLIENT_SESSION_SUMMARY_FIELDS] },
+                text: { type: 'string' },
+                sourceIds: {
+                  type: 'array',
+                  items: { type: 'string', enum: sourceIds }
+                },
+                evidenceStrength: { type: 'string', enum: [...CLIENT_SESSION_SUMMARY_EVIDENCE_STRENGTHS] }
+              },
+              required: ['section', 'text', 'sourceIds', 'evidenceStrength'],
+              additionalProperties: false
+            }
+          }
+        },
+        required: ['sections', 'claims'],
+        additionalProperties: false
+      }
+    }
+  };
+}
 
 function clinicalDate(capture) { return capture?.occurredAt || capture?.occurred_at || capture?.sessions?.occurred_at || ''; }
 export function selectClinicalIntelligenceSources(captures = [], { anchorSessionId = null, limit = 3 } = {}) {

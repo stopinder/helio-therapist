@@ -4,13 +4,14 @@ import { randomUUID } from 'node:crypto';
 import {
   CLIENT_SESSION_SUMMARY_LENSES,
   clientSessionSummaryLensRule,
+  clientSessionSummaryResponseFormat,
   normalizeClientSessionSummaryResponse,
   renderClientSessionSummary,
   validateClientSessionSummaryResponse
 } from '../_lib/ai-client-session-summary.js';
 
 const SUMMARY_WINDOWS = new Set(['current', 'recent']);
-const PROMPT_VERSION = 'session-summary-direct-v3';
+const PROMPT_VERSION = 'session-summary-direct-v4';
 
 function sourceHasMaterial(source) {
   return Boolean(source?.original_transcript || source?.zoom_generated_summary);
@@ -199,7 +200,7 @@ Every non-empty section must have at least one claim, and each claim text must a
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userInput }
       ],
-      responseFormat: { type: 'json_object' },
+      responseFormat: clientSessionSummaryResponseFormat(validSourceIds),
       temperature: 0.3,
       maxTokens: 6000,
       timeout: 60000

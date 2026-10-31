@@ -1,7 +1,7 @@
 import OpenAI from 'openai';
 import { CLINICAL_INTELLIGENCE_CASES } from '../test/fixtures/clinical-intelligence-evaluation.js';
 import { scoreClinicalIntelligenceOutput } from '../test/support/clinical-intelligence-evaluator.js';
-import { CLIENT_SESSION_SUMMARY_PROMPT_VERSION, buildClientSessionSummaryInput, clientSessionSummarySystemPrompt, renderClientSessionSummary, validateClientSessionSummaryResponse } from '../api/_lib/ai-client-session-summary.js';
+import { CLIENT_SESSION_SUMMARY_PROMPT_VERSION, buildClientSessionSummaryInput, clientSessionSummaryResponseFormat, clientSessionSummarySystemPrompt, normalizeClientSessionSummaryResponse, renderClientSessionSummary, validateClientSessionSummaryResponse } from '../api/_lib/ai-client-session-summary.js';
 
 const args=new Set(process.argv.slice(2));
 const valueAfter=name=>{const index=process.argv.indexOf(name);return index>=0?process.argv[index+1]:null};
@@ -15,8 +15,8 @@ const openai=new OpenAI({apiKey:process.env.OPENAI_API_KEY,timeout:30000});
 const results=[];
 for(const testCase of cases){
   const validSourceIds=new Set([...testCase.captures.map(item=>`session:${item.sessionId}`),...testCase.careItems.map((item,index)=>`care:${item.id||`${item.kind}:${item.provenance_session_id||'current'}`}`),...(testCase.therapistGuidance?['therapist:guidance']:[])]);
-  const completion=await openai.chat.completions.create({model,messages:[{role:'system',content:clientSessionSummarySystemPrompt(testCase.lens)},{role:'user',content:buildClientSessionSummaryInput(testCase)}],response_format:{type:'json_object'},temperature:0.2,max_tokens:8000});
-  const structured=validateClientSessionSummaryResponse(completion.choices?.[0]?.message?.content,validSourceIds);
+  const completion=await openai.chat.completions.create({model,messages:[{role:'system',content:clientSessionSummarySystemPrompt(testCase.lens)},{role:'user',content:buildClientSessionSummaryInput(testCase)}],response_format:clientSessionSummaryResponseFormat(validSourceIds),temperature:0.2,max_tokens:8000});
+  const structured=validateClientSessionSummaryResponse(normalizeClientSessionSummaryResponse(completion.choices?.[0]?.message?.content),validSourceIds);
   if(!structured)throw new Error(`${testCase.id}: model returned invalid or ungrounded structured output`);
   const output=renderClientSessionSummary(structured.sections,testCase.lens);
   const score=scoreClinicalIntelligenceOutput(testCase,output);
