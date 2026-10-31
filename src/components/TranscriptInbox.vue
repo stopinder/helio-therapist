@@ -224,7 +224,7 @@
           <div class="title-area">
             <p class="eyebrow">Transcript review</p>
             <h1>{{ labelFor(selected) }}</h1>
-            <p>{{ formatDate(selected.receivedAt) }} · original Zoom transcript</p>
+            <p>Encounter: {{ formatDate(selected.sourceOccurredAt || selected.receivedAt) }} · imported {{ formatDate(selected.receivedAt) }}</p>
           </div>
         </div>
       </header>
