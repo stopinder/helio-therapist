@@ -24,7 +24,7 @@ function safeHistory(value) {
     .map(item => ({ role: item.role, content: item.content.slice(0, 450) }));
 }
 
-async function saveConversation(db, userId, mode, query, answer, references, existingId) {
+async function saveConversation(db, userId, mode, query, answer, references, existingId, clinicalContext = null) {
   let id = existingId || null;
   if (id) {
     const { data, error } = await db.from('ask_helios_conversations')
@@ -44,9 +44,20 @@ async function saveConversation(db, userId, mode, query, answer, references, exi
     if (error || !data) throw new Error('Unable to start conversation');
     id = data.id;
   }
+  const assistantMetadata = clinicalContext
+    ? [...references, {
+        kind: 'ask_helios_clinical_context',
+        clientId: clinicalContext.clientId,
+        clientName: clinicalContext.clientName,
+        anchorSessionId: clinicalContext.anchorSessionId,
+        window: clinicalContext.window,
+        lens: clinicalContext.lens,
+        sourceCount: clinicalContext.sourceCount
+      }]
+    : references;
   const { error } = await db.from('ask_helios_messages').insert([
     { conversation_id: id, user_id: userId, role: 'user', content: query },
-    { conversation_id: id, user_id: userId, role: 'assistant', content: answer, citation_metadata: references }
+    { conversation_id: id, user_id: userId, role: 'assistant', content: answer, citation_metadata: assistantMetadata }
   ]);
   if (error) throw new Error('Unable to save conversation messages');
   return id;
@@ -166,7 +177,7 @@ export default async function handler(req, res) {
 
     let saved = true, activeId = conversationId;
     try {
-      activeId = await saveConversation(db, user.id, mode, query, answer, references, conversationId);
+      activeId = await saveConversation(db, user.id, mode, query, answer, references, conversationId, clinicalResponseContext);
     } catch (error) {
       saved = false;
       console.error('[Ask Helios Assist] persistence unavailable', error.message);
