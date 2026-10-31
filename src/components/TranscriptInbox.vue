@@ -198,7 +198,8 @@ function speakerClues(transcript){
   return [...new Set(speakers.map(item=>String(item?.display_name||'').trim()).filter(name=>name&&!/^unknown$/i.test(name)&&!/^speaker\s*\d+$/i.test(name)))].slice(0,4)
 }
 function transcriptPreview(transcript){
-  const text=String(transcript?.text||'').replace(/\b\d{1,2}:\d{2}(?::\d{2})?(?:\.\d+)?\b/g,' ').replace(/\s+/g,' ').trim();
+  if(typeof transcript?.text!=='string')return 'Preview loads on demand — you can still assign the client here.';
+  const text=transcript.text.replace(/\b\d{1,2}:\d{2}(?::\d{2})?(?:\.\d+)?\b/g,' ').replace(/\s+/g,' ').trim();
   if(!text)return 'No transcript preview is available.';
   return text.length>340?`${text.slice(0,337)}…`:text
 }
@@ -281,17 +282,35 @@ function replaceTranscriptInList(transcript) {
   initialiseAssignmentDraft(transcript);
 }
 function replaceTranscript(transcript){replaceTranscriptInList(transcript)}
-function toggleExpand(id, event) {
-  event.stopPropagation();
-  if (expandedRows.value.has(id)) expandedRows.value.delete(id);
-  else expandedRows.value.add(id);
+async function fetchTranscriptDetail(transcript){
+  if(!transcript?.id)return null;
+  if(typeof transcript.text==='string')return transcript;
+  try{
+    const response=await authenticatedFetch('/api/zoom/transcripts?id='+encodeURIComponent(transcript.id));
+    const data=await response.json().catch(()=>({}));
+    if(!response.ok||!data.transcript)throw new Error(data.error||'Unable to load this transcript.');
+    replaceTranscriptInList(data.transcript);
+    return data.transcript;
+  }catch(error){
+    errorMessage.value=error.message||'Unable to load this transcript.';
+    return null;
+  }
 }
-function openTranscript(transcript){
-  detailReturnId.value=transcript.id;
-  selected.value=transcript;
-  selectedClientId.value=transcript.clientId||'';
-  selectedLens.value=transcript.requestedLens||'';
-  sourceRetention.value=transcript.sourceRetention||'keep_until_review';
+async function toggleExpand(id, event) {
+  event.stopPropagation();
+  if (expandedRows.value.has(id)) { expandedRows.value.delete(id); return; }
+  const transcript=transcripts.value.find(item=>item.id===id);
+  const detailed=await fetchTranscriptDetail(transcript);
+  if(detailed)expandedRows.value.add(id);
+}
+async function openTranscript(transcript){
+  const detailed=await fetchTranscriptDetail(transcript);
+  if(!detailed)return;
+  detailReturnId.value=detailed.id;
+  selected.value=detailed;
+  selectedClientId.value=detailed.clientId||'';
+  selectedLens.value=detailed.requestedLens||'';
+  sourceRetention.value=detailed.sourceRetention||'keep_until_review';
   errorMessage.value='';
   successMessage.value='';
   showRaw.value=false;
@@ -352,7 +371,7 @@ async function handleAddClient(payload) {
 async function openClientTranscripts(){if(!selected.value?.clientId)return;await router.push({name:'ClientWorkspace',params:{clientId:selected.value.clientId},query:{tab:'Transcripts'}})}
 async function openLinkedSession(){if(!selected.value?.sessionRef)return;if(selected.value.reviewChoicesSavedAt&&!selected.value.completedAt){const completed=await patchTranscript({markComplete:true},'Unable to complete transcript triage.');if(!completed)return}await router.push({name:'SessionWorkspace',params:{clientId:selected.value.clientId,sessionId:selected.value.sessionRef}})}
 function downloadRaw(transcript){const blob=new Blob([transcript.text],{type:'text/plain;charset=utf-8'});const link=document.createElement('a');link.href=URL.createObjectURL(blob);link.download=`helio-zoom-transcript-${transcript.meetingId||transcript.id}.txt`;link.click();URL.revokeObjectURL(link.href)}
-async function openQueuedTranscript(id){if(!id)return;if(!transcripts.value.length)await load();const transcript=transcripts.value.find(item=>String(item.id)===String(id));if(transcript)openTranscript(transcript)}
+async function openQueuedTranscript(id){if(!id)return;if(!transcripts.value.length)await load();const transcript=transcripts.value.find(item=>String(item.id)===String(id));if(transcript)await openTranscript(transcript)}
 watch(()=>props.openTranscriptId,openQueuedTranscript);watch(searchQuery,()=>{historyLimit.value=historyPageSize});onMounted(async()=>{await load();openQueuedTranscript(props.openTranscriptId)})
 </script>
 <style scoped>
