@@ -1,4 +1,4 @@
-export const CLIENT_SESSION_SUMMARY_PROMPT_VERSION = 'client-session-summary-v8';
+export const CLIENT_SESSION_SUMMARY_PROMPT_VERSION = 'client-session-summary-v9';
 export const CLIENT_SESSION_SUMMARY_LENSES = Object.freeze(['general', 'integrative', 'gentle_cbt', 'internal_family_systems', 'transactional_analysis']);
 export const CLIENT_SESSION_SUMMARY_FIELDS = Object.freeze(['opening','whatWeWorkedOn','patternsOverTime','changesAndExceptions','strengthsAndResources','perspectiveReflection','betweenSession','closing']);
 
