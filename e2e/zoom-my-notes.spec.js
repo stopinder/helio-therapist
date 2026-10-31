@@ -158,17 +158,22 @@ test.describe('Zoom My Notes transcript inbox', () => {
     await expect(row).toContainText('Meeting 987654321');
     await expect(row.getByRole('combobox')).toBeVisible();
     await expect(row).toContainText('Named speakers: Therapist');
-    await expect(row).toContainText('Zoom note:');
+    await expect(row).toContainText('Zoom note');
     await expect(row).toContainText('increased anxiety before work');
 
     await row.getByRole('button', { name: 'Preview transcript' }).click();
-    await expect(row.getByText('[00:00:01.000] Therapist: Welcome to the session.')).toBeVisible();
+    await expect(row.getByText('Transcript preview')).toBeVisible();
+    await expect(row.getByText('Therapist', { exact: true })).toBeVisible();
+    await expect(row.getByText('Welcome to the session.')).toBeVisible();
+    await expect(row.getByText('0:01')).toBeVisible();
 
     await row.getByRole('button', { name: 'Open full transcript' }).click();
     await expect(page.getByRole('heading', { level: 1, name: 'Zoom meeting 987654321' })).toBeVisible();
     await expect(page.getByText('Helio will not guess.')).toBeVisible();
 
-    await page.getByRole('button', { name: 'View original transcript' }).click();
+    await expect(page.getByPlaceholder('Search this transcript')).toBeVisible();
+    await expect(page.getByText('Welcome to the session.')).toBeVisible();
+    await page.getByRole('button', { name: 'Raw source' }).click();
     await expect(page.getByText('[00:00:01.000] Therapist: Welcome to the session.')).toBeVisible();
   });
 });
