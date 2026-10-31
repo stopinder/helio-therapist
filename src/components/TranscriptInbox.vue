@@ -20,21 +20,55 @@
       <div v-if="loading" class="empty-card compact">Loading transcripts…</div>
       <div v-else-if="!errorMessage && !transcripts.length" class="empty-card compact"><h2>Inbox up to date</h2><p>New Zoom transcripts will appear here when they need review.</p></div>
       <div v-else-if="visibleTranscripts.length" class="inbox-list">
-        <button v-for="transcript in visibleTranscripts" :key="transcript.id" class="transcript-row" @click="openTranscript(transcript)">
-          <span class="row-main">
-            <span class="row-header">
-              <strong>{{ rowTitle(transcript) }}</strong>
-              <button class="chevron" type="button" :aria-expanded="expandedRows.has(transcript.id)" @click="toggleExpand(transcript.id, $event)">
-                <span class="sr-only">{{ expandedRows.has(transcript.id) ? 'Collapse' : 'Expand' }}</span>
-                <span aria-hidden="true">{{ expandedRows.has(transcript.id) ? '▾' : '▸' }}</span>
+        <article
+          v-for="transcript in visibleTranscripts"
+          :key="transcript.id"
+          class="transcript-row triage-row"
+          :data-transcript-id="transcript.id"
+        >
+          <div class="row-main">
+            <div class="row-header">
+              <div class="min-w-0">
+                <strong class="triage-identity">{{ triageIdentity(transcript) }}</strong>
+                <p v-if="transcript.sourceTitle && transcript.sourceTitle !== triageIdentity(transcript)" class="triage-topic">{{ transcript.sourceTitle }}</p>
+              </div>
+              <StatusIndicator :tone="workflowTone(transcript)">{{ workflowState(transcript).label }}</StatusIndicator>
+            </div>
+            <small>{{ formatDate(transcript.sourceOccurredAt || transcript.receivedAt) }}<template v-if="transcript.meetingId"> · Meeting {{ transcript.meetingId }}</template></small>
+            <p v-if="speakerClues(transcript).length" class="triage-clue">Named speakers: {{ speakerClues(transcript).join(', ') }}</p>
+            <p class="triage-preview">{{ transcriptPreview(transcript) }}</p>
+
+            <div v-if="filterMode === 'attention' && !isVerifiedMatch(transcript)" class="inline-assignment">
+              <div class="field-group">
+                <label :for="'client-' + transcript.id">Client</label>
+                <select :id="'client-' + transcript.id" v-model="assignmentDrafts[transcript.id]">
+                  <option value="">Select client…</option>
+                  <option v-for="client in clients" :key="client.id" :value="client.id">{{ client.name || client.display_name }}</option>
+                </select>
+                <span v-if="suggestedClient(transcript)" class="suggestion-note">Suggested from an exact Zoom title match — confirm before assigning.</span>
+              </div>
+              <button
+                type="button"
+                class="primary"
+                :disabled="assignmentSavingId === transcript.id || !assignmentDrafts[transcript.id]"
+                @click="assignFromInbox(transcript)"
+              >{{ assignmentSavingId === transcript.id ? 'Assigning…' : 'Assign' }}</button>
+            </div>
+
+            <div v-else-if="isVerifiedMatch(transcript)" class="matched-note">
+              <span>Verified Zoom/session match · {{ clientName(transcript.clientId) }}</span>
+              <button type="button" class="secondary" @click="openLinkedSessionFromRow(transcript)">Open Clinical Workspace</button>
+            </div>
+
+            <div class="triage-actions">
+              <button type="button" class="secondary" :aria-expanded="expandedRows.has(transcript.id)" @click="toggleExpand(transcript.id, $event)">
+                {{ expandedRows.has(transcript.id) ? 'Hide preview' : 'Preview transcript' }}
               </button>
-            </span>
-            <small>{{ formatDate(transcript.receivedAt) }}<template v-if="transcript.meetingId"> · Meeting {{ transcript.meetingId }}</template></small>
-          </span>
-          <StatusIndicator v-if="filterMode === 'attention'" :tone="workflowTone(transcript)">{{ workflowState(transcript).label }}</StatusIndicator>
-          <StatusIndicator v-else :tone="transcript.completedAt ? 'success' : 'neutral'">{{ transcript.completedAt ? 'Inbox setup complete' : 'Cleared from inbox' }}</StatusIndicator>
-          <span v-if="expandedRows.has(transcript.id)" class="open">{{ filterMode === 'history' ? 'View' : primaryAction(transcript) }} <span aria-hidden="true">›</span></span>
-        </button>
+              <button type="button" class="secondary" @click="openTranscript(transcript)">Open full transcript</button>
+            </div>
+            <pre v-if="expandedRows.has(transcript.id)" class="inline-transcript-preview">{{ transcript.text }}</pre>
+          </div>
+        </article>
         <div v-if="hasMoreHistory" class="load-more-row"><button class="load-more" type="button" @click="historyLimit += historyPageSize">Load more</button></div>
       </div>
       <div v-else class="empty-card compact">
@@ -46,7 +80,7 @@
     <template v-else>
       <header class="review-header">
         <div class="header-main">
-          <button class="back" @click="selected = null">‹ Transcript Inbox</button>
+          <button class="back" @click="closeTranscript">‹ Transcript Inbox</button>
           <div class="title-area">
             <p class="eyebrow">Transcript review</p>
             <h1>{{ labelFor(selected) }}</h1>
@@ -65,7 +99,7 @@
         <div class="assignment-actions">
           <button v-if="selected.sessionRef" class="primary" @click="openLinkedSession">Open Clinical Workspace</button>
           <button class="secondary" @click="openClientTranscripts">Client transcripts</button>
-          <button class="secondary" @click="selected = null">Back to inbox</button>
+          <button class="secondary" @click="closeTranscript">Back to inbox</button>
         </div>
       </section>
       <section class="raw-transcript"><header><div><h2>Original transcript</h2><p>This is the original transcript imported from Zoom. Helio has not analysed or changed it.</p></div><div class="source-actions"><button class="secondary" :aria-expanded="showRaw" @click="showRaw = !showRaw">{{ showRaw ? 'Hide original transcript' : 'View original transcript' }}</button><button class="secondary download" @click="downloadRaw(selected)">Download .txt</button><button v-if="isEligibleForDeletion" class="secondary text-state-danger" :disabled="saving" @click="deleteTranscript">{{ saving ? 'Deleting…' : 'Delete transcript' }}</button></div></header><pre v-if="showRaw">{{ selected.text }}</pre></section>
