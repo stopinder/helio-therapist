@@ -43,12 +43,51 @@ test.describe('Transcript Workflow - A11y & Responsive', () => {
         await page.route('**/rest/v1/therapist_reminders*', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([]) }));
         await page.route('**/api/google/status', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ connected: true }) }));
         await page.route('**/api/billing/status*', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ hasWorkspaceAccess: true, subscription: { status: 'trialing' } }) }));
+        const transcriptDetail = {
+            id: 'trans-1',
+            meetingId: '123456789',
+            sourceTitle: 'Mock session',
+            receivedAt: new Date().toISOString(),
+            sourceOccurredAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            status: 'unassigned',
+            clientId: null,
+            sessionRef: null,
+            requestedLens: null,
+            sourceRetention: 'keep_until_review',
+            reviewChoicesSavedAt: null,
+            completedAt: null,
+            attentionClearedAt: null,
+            structuredTranscript: {
+                speakers: [{ id: '1', display_name: 'Therapist' }]
+            },
+            text: 'Mock transcript text content for testing review.'
+        };
         await page.route('**/api/zoom/transcripts*', async route => {
             if (route.request().method() === 'GET') {
-                return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ transcripts: [{ id: 'trans-1', meetingId: '123456789', receivedAt: new Date().toISOString(), status: 'unassigned', clientId: null, sessionRef: null, text: 'Mock transcript text content for testing review.' }] }) });
+                const url = new URL(route.request().url());
+                const payload = url.searchParams.get('id')
+                    ? { transcript: transcriptDetail }
+                    : { transcripts: [{ ...transcriptDetail, structuredTranscript: null, text: null }] };
+                return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(payload) });
             }
             const body = route.request().postDataJSON();
-            return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ transcript: { id: 'trans-1', meetingId: '123456789', receivedAt: new Date().toISOString(), status: body.clientId ? 'assigned' : 'unassigned', clientId: body.clientId || null, sessionRef: body.sessionRef || null, requestedLens: body.requestedLens || null, sourceRetention: body.sourceRetention || 'keep_until_review', reviewChoicesSavedAt: body.reviewChoicesSaved ? new Date().toISOString() : null, text: 'Mock transcript text content for testing review.' } }) });
+            return route.fulfill({
+                status: 200,
+                contentType: 'application/json',
+                body: JSON.stringify({
+                    transcript: {
+                        ...transcriptDetail,
+                        status: body.clientId ? 'assigned' : 'unassigned',
+                        clientId: body.clientId || null,
+                        sessionRef: body.clientId ? 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb' : null,
+                        requestedLens: body.requestedLens || null,
+                        sourceRetention: body.sourceRetention || 'keep_until_review',
+                        reviewChoicesSavedAt: body.reviewChoicesSaved ? new Date().toISOString() : null,
+                        attentionClearedAt: body.clearAttention ? new Date().toISOString() : null
+                    }
+                })
+            });
         });
     });
 
@@ -65,14 +104,18 @@ test.describe('Transcript Workflow - A11y & Responsive', () => {
             await expect(page.getByRole('heading', { level: 1, name: 'Transcript Inbox' })).toBeVisible();
             const searchInput = page.getByPlaceholder('Search transcripts');
             await expect(searchInput).toBeVisible();
-            const transcriptRow = page.getByRole('button', { name: /Meeting 123456789/ });
+            const transcriptRow = page.locator('[data-transcript-id="trans-1"]');
             await expect(transcriptRow).toBeVisible();
-            await transcriptRow.click();
-            await expect(page.getByText('Transcript review')).toBeVisible();
-            const clientSelect = page.getByLabel('Client');
+            await expect(transcriptRow).toContainText('Meeting 123456789');
+            await expect(transcriptRow).toContainText('Needs client');
+            const clientSelect = transcriptRow.getByRole('combobox');
             await expect(clientSelect).toBeVisible();
             await clientSelect.selectOption({ label: 'John Doe' });
-            await expect(page.getByRole('button', { name: /Assign client/i })).toBeEnabled();
+            await expect(transcriptRow.getByRole('button', { name: 'Assign' })).toBeEnabled();
+
+            await transcriptRow.getByRole('button', { name: 'Open full transcript' }).click();
+            await expect(page.getByText('Transcript review')).toBeVisible();
+            await expect(page.getByRole('button', { name: /View original transcript/i })).toBeVisible();
             await expectNoHorizontalOverflow(page);
         });
     }
@@ -81,19 +124,27 @@ test.describe('Transcript Workflow - A11y & Responsive', () => {
         await page.goto('/transcripts', { waitUntil: 'domcontentloaded' });
         await ensureWorkspaceLoaded(page);
         const searchInput = page.getByPlaceholder('Search transcripts');
-        const transcriptRow = page.getByRole('button', { name: /Meeting 123456789/ });
+        const transcriptRow = page.locator('[data-transcript-id="trans-1"]');
+        const clientSelect = transcriptRow.getByRole('combobox');
+        const openButton = transcriptRow.getByRole('button', { name: 'Open full transcript' });
+
         await searchInput.focus();
         await expect(searchInput).toBeFocused();
-        await transcriptRow.focus();
-        await expect(transcriptRow).toBeFocused();
+        await clientSelect.focus();
+        await expect(clientSelect).toBeFocused();
+        await openButton.focus();
+        await expect(openButton).toBeFocused();
         await page.keyboard.press('Enter');
+
         await expect(page.getByText('Transcript review')).toBeVisible();
         const backButton = page.getByRole('button', { name: /Transcript Inbox/i });
         await backButton.focus();
         await expect(backButton).toBeFocused();
         const viewRawBtn = page.getByRole('button', { name: /View original transcript/i });
         await expect(viewRawBtn).toBeVisible();
-        await viewRawBtn.click();
+        await viewRawBtn.focus();
+        await expect(viewRawBtn).toBeFocused();
+        await page.keyboard.press('Enter');
         await expect(page.locator('pre')).toBeVisible();
     });
 
