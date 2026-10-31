@@ -255,7 +255,9 @@ export function useAskHelios() {
       ...clinicalContext.value,
       ...(windows.has(changes.window) ? { window: changes.window } : {}),
       ...(lenses.has(changes.lens) ? { lens: changes.lens } : {}),
-      ...(typeof changes.anchorSessionId === 'string' && UUID.test(changes.anchorSessionId) ? { anchorSessionId: changes.anchorSessionId } : {})
+      ...(typeof changes.anchorSessionId === 'string' && UUID.test(changes.anchorSessionId) ? { anchorSessionId: changes.anchorSessionId } : {}),
+      ...(Number.isInteger(changes.sourceCount) && changes.sourceCount >= 0 ? { sourceCount: changes.sourceCount } : {}),
+      ...(typeof changes.clientName === 'string' && changes.clientName.trim() ? { clientName: changes.clientName.slice(0, 120) } : {})
     }
   }
   function clearClinicalContext() { clinicalContext.value = null }
