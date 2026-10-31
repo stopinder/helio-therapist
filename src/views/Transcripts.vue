@@ -92,15 +92,20 @@ function goBack() {
 
 function togglePasteImport() { showPasteImport.value = !showPasteImport.value; importError.value = ''; importSuccess.value = '' }
 
-async function checkZoomNotes() {
-  checkingZoom.value = true; importError.value = ''; importSuccess.value = ''
+async function checkZoomNotes({ silent = false } = {}) {
+  checkingZoom.value = true
+  if (!silent) { importError.value = ''; importSuccess.value = '' }
   try {
     const response = await authenticatedFetch('/api/zoom/reconcile-my-notes', { method: 'POST' })
     const data = await response.json().catch(() => ({}))
     if (!response.ok) throw new Error(data.error || 'Unable to check Zoom Notes.')
-    if (data.imported > 0) { inboxKey.value += 1; importSuccess.value = `${data.imported} ${data.imported === 1 ? 'transcript' : 'transcripts'} imported from Zoom.` }
-    else importSuccess.value = 'Zoom Notes checked. No missing transcripts found.'
-  } catch (err) { importError.value = err.message || 'Unable to check Zoom Notes.' }
+    if ((data.imported || 0) > 0 || (data.refreshed || 0) > 0) inboxKey.value += 1
+    if (!silent) {
+      if (data.imported > 0) importSuccess.value = `${data.imported} ${data.imported === 1 ? 'transcript' : 'transcripts'} imported from Zoom.`
+      else if (data.refreshed > 0) importSuccess.value = `${data.refreshed} existing Zoom ${data.refreshed === 1 ? 'note was' : 'notes were'} refreshed.`
+      else importSuccess.value = 'Zoom Notes checked. No missing transcripts found.'
+    }
+  } catch (err) { if (!silent) importError.value = err.message || 'Unable to check Zoom Notes.' }
   finally { checkingZoom.value = false }
 }
 
@@ -131,5 +136,8 @@ async function importTranscriptFile(event) {
   const text = await file.text(); await submitTranscriptImport(file.name, text)
 }
 
-onMounted(() => { load() })
+onMounted(async () => {
+  await load()
+  await checkZoomNotes({ silent: true })
+})
 </script>
