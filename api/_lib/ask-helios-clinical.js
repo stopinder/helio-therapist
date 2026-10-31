@@ -4,7 +4,7 @@ export const ASK_HELIOS_CLINICAL_PROMPT_VERSION = 'ask-helios-clinical/1.0.0';
 export const ASK_HELIOS_CLINICAL_WINDOWS = Object.freeze(['current','last_three','last_five','history']);
 export const ASK_HELIOS_CLINICAL_LENSES = Object.freeze(['general','integrative','gentle_cbt','internal_family_systems','transactional_analysis']);
 
-const MAX_CONTEXT_CHARS = 5000;
+const MAX_CONTEXT_CHARS = 2800;
 const SAFE_CARE_KINDS = new Set(['current_focus','shared_understanding','trying','change_noticed','learning','themes','interventions','outcomes']);
 
 function clean(value, max = 1000) {
@@ -139,11 +139,11 @@ export async function loadAskHeliosClinicalContext({ supabase, userId, clientId,
     };
   });
 
-  const care = (careItems.data || []).filter(item => item?.body && SAFE_CARE_KINDS.has(item.kind)).slice(0, 8)
-    .map(item => ({ id: `care:${item.id}`, kind: item.kind, content: clean(item.body, 450) }));
+  const care = (careItems.data || []).filter(item => item?.body && SAFE_CARE_KINDS.has(item.kind)).slice(0, 4)
+    .map(item => ({ id: `care:${item.id}`, kind: item.kind, content: clean(item.body, 250) }));
 
   return {
-    client: { id: client.id, displayName: client.display_name || 'Client', currentFocus: clean(client.current_focus, 500), preferredLens: client.preferred_summary_lens || 'integrative' },
+    client: { id: client.id, displayName: client.display_name || 'Client', currentFocus: clean(client.current_focus, 300), preferredLens: client.preferred_summary_lens || 'integrative' },
     anchorSessionId: String(anchor.id),
     window,
     sourceCount: sources.length,
