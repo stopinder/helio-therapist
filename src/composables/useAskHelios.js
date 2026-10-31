@@ -12,6 +12,7 @@ const conversations = ref([])
 const activeConversationId = ref(null)
 const clients = ref([])
 const selectedClientId = ref(null)
+const clinicalContext = ref(null)
 const isRestoring = ref(false)
 const restoreError = ref('')
 const STORAGE_KEY = 'helios-ask-prefs'
@@ -53,11 +54,12 @@ function rememberedConversation() {
     return typeof id === 'string' && UUID.test(id) ? id : null
   } catch { return null }
 }
-function resetConversation({ forget = true } = {}) {
+function resetConversation({ forget = true, keepClinicalContext = false } = {}) {
   stateVersion++ // invalidates all in-flight responses for the previous task
   if (forget) rememberConversation(null)
   activeConversationId.value = null
   selectedClientId.value = null
+  if (!keepClinicalContext) clinicalContext.value = null
   messages.value = []
   restoreTarget = null
   restoreError.value = ''
@@ -126,6 +128,7 @@ export function useAskHelios() {
     activeConversationId.value = null
     messages.value = []
     selectedClientId.value = null
+    clinicalContext.value = null
     try {
       const resp = await authenticatedFetch('/api/ai/conversations?id=' + encodeURIComponent(id))
       if (!resp.ok) throw new Error('History unavailable')
@@ -240,15 +243,52 @@ export function useAskHelios() {
   function assignConversationId(id) {
     if (typeof id === 'string' && id) { activeConversationId.value = id; rememberConversation(id) }
   }
-  function setSelectedClient(id) { selectedClientId.value = clients.value.some(c => c.id === id) ? id : null }
+  function setSelectedClient(id) {
+    selectedClientId.value = clients.value.some(c => c.id === id) ? id : null
+    if (clinicalContext.value && clinicalContext.value.clientId !== selectedClientId.value) clinicalContext.value = null
+  }
+  function setClinicalContext(changes = {}) {
+    if (!clinicalContext.value) return
+    const windows = new Set(['current', 'last_three', 'last_five', 'history'])
+    const lenses = new Set(['general', 'integrative', 'gentle_cbt', 'internal_family_systems', 'transactional_analysis'])
+    clinicalContext.value = {
+      ...clinicalContext.value,
+      ...(windows.has(changes.window) ? { window: changes.window } : {}),
+      ...(lenses.has(changes.lens) ? { lens: changes.lens } : {}),
+      ...(typeof changes.anchorSessionId === 'string' && UUID.test(changes.anchorSessionId) ? { anchorSessionId: changes.anchorSessionId } : {})
+    }
+  }
+  function clearClinicalContext() { clinicalContext.value = null }
+  async function openClinicalContext(context = {}) {
+    const clientId = typeof context.clientId === 'string' && UUID.test(context.clientId) ? context.clientId : null
+    const anchorSessionId = typeof context.anchorSessionId === 'string' && UUID.test(context.anchorSessionId) ? context.anchorSessionId : null
+    if (!clientId) return false
+    const windows = new Set(['current', 'last_three', 'last_five', 'history'])
+    const lenses = new Set(['general', 'integrative', 'gentle_cbt', 'internal_family_systems', 'transactional_analysis'])
+    mode.value = 'workspace'
+    resetConversation()
+    clinicalContext.value = {
+      clientId,
+      clientName: typeof context.clientName === 'string' ? context.clientName.slice(0, 120) : '',
+      anchorSessionId,
+      window: windows.has(context.window) ? context.window : (anchorSessionId ? 'current' : 'last_three'),
+      lens: lenses.has(context.lens) ? context.lens : 'integrative',
+      source: typeof context.source === 'string' ? context.source.slice(0, 40) : 'workspace'
+    }
+    selectedClientId.value = clientId
+    isPanelOpen.value = true
+    savePrefs()
+    await Promise.all([loadClients(), fetchConversations()])
+    return true
+  }
 
   return {
     isPanelOpen: readonly(isPanelOpen), isExpanded: readonly(isExpanded), panelWidth: readonly(panelWidth),
     mode: readonly(mode), messages: readonly(messages), conversations: readonly(conversations),
-    activeConversationId: readonly(activeConversationId), clients: readonly(clients), selectedClientId: readonly(selectedClientId),
+    activeConversationId: readonly(activeConversationId), clients: readonly(clients), selectedClientId: readonly(selectedClientId), clinicalContext: readonly(clinicalContext),
     isRestoring: readonly(isRestoring), restoreError: readonly(restoreError),
     togglePanel, openPanel, closePanel, setWidth, toggleExpand, addMessage, assignConversationId, patchMessage,
-    setMode, setSelectedClient, clearConversation, fetchConversations, selectConversation, deleteConversation, loadClients,
+    setMode, setSelectedClient, setClinicalContext, clearClinicalContext, openClinicalContext, clearConversation, fetchConversations, selectConversation, deleteConversation, loadClients,
     ensureConversationReady, retryRestore: () => ensureConversationReady({ retry: true }),
     getContextVersion: () => stateVersion, isContextCurrent: version => version === stateVersion
   }
