@@ -2,19 +2,21 @@ import { createHash } from 'node:crypto';
 import { getSupabaseUserClient, requireAuthenticatedUser } from '../_lib/supabase.js';
 
 const transcriptFields = 'id, zoom_meeting_id, zoom_meeting_uuid, zoom_note_id, source_title, structured_transcript, zoom_generated_summary, original_format, original_transcript, source, status, client_id, session_ref, source_occurred_at, received_at, updated_at, requested_lens, source_retention, review_choices_saved_at, completed_at, attention_cleared_at';
-const transcriptListFields = 'id, zoom_meeting_id, zoom_meeting_uuid, zoom_note_id, source_title, structured_transcript->speakers, zoom_generated_summary, original_format, source, status, client_id, session_ref, source_occurred_at, received_at, updated_at, requested_lens, source_retention, review_choices_saved_at, completed_at, attention_cleared_at';
+const transcriptListFields = 'id, zoom_meeting_id, zoom_meeting_uuid, zoom_note_id, source_title, speaker_clues:structured_transcript->speakers, zoom_generated_summary, original_format, source, status, client_id, session_ref, source_occurred_at, received_at, updated_at, requested_lens, source_retention, review_choices_saved_at, completed_at, attention_cleared_at';
 const MAX_MANUAL_TRANSCRIPT_BYTES = 2 * 1024 * 1024;
 const MANUAL_SOURCE = 'zoom_manual';
 
-function serialiseTranscript(row) {
+function serialiseTranscript(row, { list = false } = {}) {
+  const zoomGeneratedSummary = typeof row.zoom_generated_summary === 'string' ? row.zoom_generated_summary.trim() : '';
+  const speakerClues = Array.isArray(row.speaker_clues) ? row.speaker_clues : null;
   return {
     id: row.id,
     meetingId: row.zoom_meeting_id,
     meetingUuid: row.zoom_meeting_uuid,
     noteId: row.zoom_note_id,
     sourceTitle: row.source_title,
-    structuredTranscript: row.structured_transcript,
-    zoomGeneratedSummary: typeof row.zoom_generated_summary === 'string' ? row.zoom_generated_summary : null,
+    structuredTranscript: row.structured_transcript || (speakerClues ? { speakers: speakerClues } : null),
+    zoomGeneratedSummary: zoomGeneratedSummary ? (list && zoomGeneratedSummary.length > 600 ? `${zoomGeneratedSummary.slice(0, 597)}…` : zoomGeneratedSummary) : null,
     format: row.original_format,
     text: typeof row.original_transcript === 'string' ? row.original_transcript : null,
     source: row.source,
@@ -84,7 +86,7 @@ export default async function handler(req, res) {
       if (hasSessionFilter) query = query.eq('session_ref', sessionRef).eq('client_id', clientId);
       const { data, error } = await query.order('received_at', { ascending: false });
       if (error) throw error;
-      return res.status(200).json({ transcripts: (data || []).map(serialiseTranscript) });
+      return res.status(200).json({ transcripts: (data || []).map((row) => serialiseTranscript(row, { list: !hasSessionFilter })) });
     }
 
     if (req.method === 'DELETE') {
