@@ -4,7 +4,7 @@ export const ASK_HELIOS_CLINICAL_PROMPT_VERSION = 'ask-helios-clinical/1.0.0';
 export const ASK_HELIOS_CLINICAL_WINDOWS = Object.freeze(['current','last_three','last_five','history']);
 export const ASK_HELIOS_CLINICAL_LENSES = Object.freeze(['general','integrative','gentle_cbt','internal_family_systems','transactional_analysis']);
 
-const MAX_CONTEXT_CHARS = 7000;
+const MAX_CONTEXT_CHARS = 5000;
 const SAFE_CARE_KINDS = new Set(['current_focus','shared_understanding','trying','change_noticed','learning','themes','interventions','outcomes']);
 
 function clean(value, max = 1000) {
