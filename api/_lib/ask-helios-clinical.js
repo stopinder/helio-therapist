@@ -27,9 +27,12 @@ function summarySessionId(document, transcriptSessionById) {
 }
 function compactSourceText(text, maxChars) {
   const value = String(text || '').trim();
-  if (!value || value.length <= maxChars) return value;
+  const limit = Math.max(0, Math.floor(Number(maxChars) || 0));
+  if (!value || limit === 0) return '';
+  if (value.length <= limit) return value;
   const marker = '\n…[source compacted]…\n';
-  const side = Math.max(1, Math.floor((maxChars - marker.length) / 2));
+  if (limit <= marker.length + 2) return value.slice(0, limit);
+  const side = Math.max(1, Math.floor((limit - marker.length) / 2));
   return value.slice(0, side) + marker + value.slice(-side);
 }
 async function paged(queryFactory, pageSize = 200) {
@@ -103,7 +106,7 @@ export async function loadAskHeliosClinicalContext({ supabase, userId, clientId,
 
   const priorCount = Math.max(0, selectedSessions.length - 1);
   const anchorBudget = selectedSessions.length === 1 ? MAX_CONTEXT_CHARS : Math.min(3200, Math.floor(MAX_CONTEXT_CHARS * 0.46));
-  const priorBudget = priorCount ? Math.max(280, Math.floor((MAX_CONTEXT_CHARS - anchorBudget) / priorCount)) : 0;
+  const priorBudget = priorCount ? Math.max(0, Math.floor((MAX_CONTEXT_CHARS - anchorBudget) / priorCount)) : 0;
 
   const sources = selectedSessions.map((session, index) => {
     const sessionId = String(session.id);
