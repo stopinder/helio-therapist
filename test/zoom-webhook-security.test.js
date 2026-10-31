@@ -80,3 +80,10 @@ test('maps Scheduler cancellation and reschedule lifecycle states', () => {
   assert.equal(schedulerAppointmentEvent({ event: 'scheduler.scheduled_event_canceled', payload: { object: { tracking: { utm_content: 'token' }, scheduled_event: { event_id: 'event' } } } }).status, 'cancelled')
   assert.equal(schedulerAppointmentEvent({ event: 'scheduler.scheduled_event_created', payload: { object: { rescheduled: true, tracking: { utm_content: 'token' }, scheduled_event: { event_id: 'event' } } } }).status, 'rescheduled')
 })
+
+
+test('accepts completed My Notes lifecycle events for content refresh', () => {
+  const base = { payload: { account_id: 'account', operator_id: 'operator', object: { note_id: 'note-1', meeting_id: '123' } } }
+  assert.equal(myNotesEvent({ event: 'my_notes.transcript_generated', ...base })?.noteId, 'note-1')
+  assert.equal(myNotesEvent({ event: 'my_notes.note_completed', ...base })?.noteId, 'note-1')
+})
