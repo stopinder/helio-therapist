@@ -78,3 +78,22 @@ test('inline archive and delete do not load transcript detail first', () => {
   assert.doesNotMatch(archiveSource, /fetchTranscriptDetail|openTranscript/)
   assert.doesNotMatch(deleteSource, /fetchTranscriptDetail|openTranscript/)
 })
+
+
+test('Transcript Inbox can add a missing client directly from an unassigned row', () => {
+  assert.match(inbox, /@click="openAddClientForTranscript\(transcript\)"/)
+  assert.match(inbox, />Add client<\/button>/)
+  assert.match(inbox, /addClientTranscriptId/)
+  assert.match(inbox, /suggestedNewClientName\(transcript\)/)
+  assert.match(inbox, /assignmentDrafts\.value = \{ \.\.\.assignmentDrafts\.value, \[targetTranscriptId\]: newClient\.id \}/)
+  assert.match(inbox, /assignTranscriptToClient\(transcript, newClient\.id/)
+  assert.match(inbox, /Added .* and assigned the transcript/)
+})
+
+test('Add Client modal is available in both inbox and full transcript views', () => {
+  const modalIndex = inbox.lastIndexOf('<AddClientModal')
+  const selectedTemplateEnd = inbox.lastIndexOf('</template>')
+  assert.ok(modalIndex > selectedTemplateEnd)
+  assert.match(inbox, /:initial-name="addClientInitialName"/)
+  assert.match(inbox, /@close="closeAddClient"/)
+})
