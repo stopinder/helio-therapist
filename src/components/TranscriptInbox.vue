@@ -54,7 +54,7 @@
                   <div class="row-metadata">
                     <span>{{ formatDate(transcript.sourceOccurredAt || transcript.receivedAt) }}</span>
                     <span v-if="transcript.meetingId">Meeting {{ transcript.meetingId }}</span>
-                    <span v-if="speakerClues(transcript).length"><UsersRound class="workspace-icon-sm" aria-hidden="true" /> {{ speakerClues(transcript).join(', ') }}</span>
+                    <span v-if="speakerClues(transcript).length"><UsersRound class="workspace-icon-sm" aria-hidden="true" /> Named speakers: {{ speakerClues(transcript).join(', ') }}</span>
                   </div>
                 </div>
               </div>
