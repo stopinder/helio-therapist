@@ -55,3 +55,26 @@ test('Transcript Inbox surfaces Zoom note and speaker clues without opening Prev
   assert.match(inbox, /function notePreview\(value\)/)
   assert.match(inbox, /No Zoom note excerpt is available/)
 })
+
+
+test('Transcript Inbox supports archive and protected delete directly from the row', () => {
+  assert.match(inbox, /@click="archiveFromInbox\(transcript\)"/)
+  assert.match(inbox, /@click="deleteFromInbox\(transcript\)"/)
+  assert.match(inbox, /canDeleteTranscript\(transcript\)/)
+  assert.match(inbox, /expectedUpdatedAt:transcript\.updatedAt,clearAttention:true/)
+  assert.match(inbox, /method:'DELETE'/)
+  assert.match(inbox, /cannot be undone/)
+  assert.match(inbox, /Transcript archived\. Restore it any time from History\./)
+  assert.match(inbox, /attentionClearedAt \? 'Archived'/)
+  assert.match(inbox, /Archive all/)
+})
+
+test('inline archive and delete do not load transcript detail first', () => {
+  const archiveStart = inbox.indexOf('async function archiveFromInbox')
+  const deleteStart = inbox.indexOf('async function deleteTranscriptRecord')
+  const archiveSource = inbox.slice(archiveStart, deleteStart)
+  const deleteSource = inbox.slice(deleteStart, inbox.indexOf('async function deleteFromInbox', deleteStart))
+  assert.ok(archiveStart > -1 && deleteStart > -1)
+  assert.doesNotMatch(archiveSource, /fetchTranscriptDetail|openTranscript/)
+  assert.doesNotMatch(deleteSource, /fetchTranscriptDetail|openTranscript/)
+})
