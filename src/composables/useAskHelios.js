@@ -206,7 +206,7 @@ export function useAskHelios() {
   }
 
   async function selectConversation(id) {
-    if (!id) { resetConversation(); return true }
+    if (!id) { clearConversation(); return true }
     // Prevent a submit while the selected account/history is still loading.
     isRestoring.value = true
     try { await establishIdentity() } catch {
@@ -229,7 +229,11 @@ export function useAskHelios() {
     } catch { /* Keep history until deletion is confirmed by the API. */ }
   }
 
-  function clearConversation() { resetConversation() }
+  function clearConversation() {
+    const context = clinicalContext.value ? { ...clinicalContext.value } : null
+    resetConversation({ keepClinicalContext: Boolean(context) })
+    if (context) selectedClientId.value = context.clientId
+  }
   function setMode(next) {
     if (!ASK_HELIOS_MODES.includes(next) || next === mode.value) return
     mode.value = next
