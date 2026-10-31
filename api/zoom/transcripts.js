@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto';
 import { getSupabaseUserClient, requireAuthenticatedUser } from '../_lib/supabase.js';
 
 const transcriptFields = 'id, zoom_meeting_id, zoom_meeting_uuid, zoom_note_id, source_title, structured_transcript, original_format, original_transcript, source, status, client_id, session_ref, source_occurred_at, received_at, updated_at, requested_lens, source_retention, review_choices_saved_at, completed_at, attention_cleared_at';
+const transcriptListFields = 'id, zoom_meeting_id, zoom_meeting_uuid, zoom_note_id, source_title, original_format, source, status, client_id, session_ref, source_occurred_at, received_at, updated_at, requested_lens, source_retention, review_choices_saved_at, completed_at, attention_cleared_at';
 const MAX_MANUAL_TRANSCRIPT_BYTES = 2 * 1024 * 1024;
 const MANUAL_SOURCE = 'zoom_manual';
 
@@ -14,7 +15,7 @@ function serialiseTranscript(row) {
     sourceTitle: row.source_title,
     structuredTranscript: row.structured_transcript,
     format: row.original_format,
-    text: row.original_transcript,
+    text: typeof row.original_transcript === 'string' ? row.original_transcript : null,
     source: row.source,
     status: row.status,
     clientId: row.client_id,
@@ -60,13 +61,25 @@ export default async function handler(req, res) {
     const { supabase, user } = await requireAuthenticatedUser(req);
 
     if (req.method === 'GET') {
-      const { sessionRef, clientId } = req.query || {};
+      const { sessionRef, clientId, id } = req.query || {};
       const hasSessionFilter = sessionRef !== undefined || clientId !== undefined;
       if (hasSessionFilter && (typeof sessionRef !== 'string' || !sessionRef.trim() || typeof clientId !== 'string' || !clientId.trim())) {
         return res.status(400).json({ error: 'Session and client ids are required together.' });
       }
+      if (id !== undefined && (typeof id !== 'string' || !id.trim())) {
+        return res.status(400).json({ error: 'Transcript id is required.' });
+      }
 
-      let query = supabase.from('zoom_transcripts').select(transcriptFields).eq('therapist_user_id', user.id).is('deleted_at', null);
+      if (id) {
+        const { data, error } = await supabase.from('zoom_transcripts').select(transcriptFields)
+          .eq('therapist_user_id', user.id).eq('id', id).is('deleted_at', null).maybeSingle();
+        if (error) throw error;
+        if (!data) return res.status(404).json({ error: 'Transcript not found.' });
+        return res.status(200).json({ transcript: serialiseTranscript(data) });
+      }
+
+      const fields = hasSessionFilter ? transcriptFields : transcriptListFields;
+      let query = supabase.from('zoom_transcripts').select(fields).eq('therapist_user_id', user.id).is('deleted_at', null);
       if (hasSessionFilter) query = query.eq('session_ref', sessionRef).eq('client_id', clientId);
       const { data, error } = await query.order('received_at', { ascending: false });
       if (error) throw error;

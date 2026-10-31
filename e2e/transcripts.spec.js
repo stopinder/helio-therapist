@@ -177,8 +177,12 @@ test.describe('Transcripts Workspace', () => {
 
     await expect(page.getByText('Zoom imports')).toBeVisible();
     // Use the current UI accessible name pattern
-    await expect(page.getByRole('button', { name: /Meeting 123456789/ })).toBeVisible();
-    await expect(page.getByText('Needs client')).toBeVisible();
+    const row = page.locator('[data-transcript-id="trans-1"]');
+    await expect(row).toBeVisible();
+    await expect(row).toContainText('Meeting 123456789');
+    await expect(row).toContainText('Needs client');
+    await expect(row.getByRole('combobox')).toBeVisible();
+    await expect(row.getByRole('button', { name: 'Open full transcript' })).toBeVisible();
   });
 
   test('should show empty state when no transcripts exist', async ({ page }) => {
@@ -244,30 +248,37 @@ test.describe('Transcripts Workspace', () => {
     });
 
     // Mock transcripts API
+    const transcript = {
+      id: 'trans-1',
+      meetingId: '123456789',
+      receivedAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      status: 'unassigned',
+      clientId: null,
+      sessionRef: null,
+      sourceRetention: 'keep_until_review',
+      reviewChoicesSavedAt: null,
+      completedAt: null,
+      attentionClearedAt: null,
+      text: 'Mock transcript text'
+    };
     await page.route('**/api/zoom/transcripts*', async (route) => {
+      const url = new URL(route.request().url());
+      const payload = url.searchParams.get('id')
+        ? { transcript }
+        : { transcripts: [{ ...transcript, text: null }] };
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify({
-          transcripts: [
-            {
-              id: 'trans-1',
-              meetingId: '123456789',
-              receivedAt: new Date().toISOString(),
-              status: 'unassigned',
-              clientId: null,
-              text: 'Mock transcript text',
-              updatedAt: new Date().toISOString()
-            }
-          ]
-        })
+        body: JSON.stringify(payload)
       });
     });
 
     await ensureWorkspaceLoaded(page);
     
-    // Click on the transcript to open it
-    await page.getByRole('button', { name: /Meeting 123456789/ }).click();
+    // Open the full transcript explicitly from the triage row.
+    const row = page.locator('[data-transcript-id="trans-1"]');
+    await row.getByRole('button', { name: 'Open full transcript' }).click();
     
     // Verify that the transcript review view is shown
     await expect(page.getByText('Transcript review')).toBeVisible();
@@ -356,7 +367,11 @@ test.describe('Transcripts Workspace', () => {
       
       await page.route('**/api/zoom/transcripts*', async (route) => {
         if (route.request().method() === 'GET') {
-          await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ transcripts: [clearedTranscript] }) });
+          const url = new URL(route.request().url());
+          const payload = url.searchParams.get('id')
+            ? { transcript: clearedTranscript }
+            : { transcripts: [{ ...clearedTranscript, text: null }] };
+          await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(payload) });
         } else if (route.request().method() === 'PATCH' && route.request().postDataJSON().restoreAttention) {
           const restored = { ...clearedTranscript, attentionClearedAt: null, updatedAt: new Date().toISOString() };
           await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ transcript: restored }) });
@@ -369,7 +384,8 @@ test.describe('Transcripts Workspace', () => {
       await page.getByRole('button', { name: 'History' }).click();
       
       // Open the cleared transcript
-      await page.getByRole('button', { name: /Meeting 101/ }).click();
+      const clearedRow = page.locator('[data-transcript-id="trans-1"]');
+      await clearedRow.getByRole('button', { name: 'Open full transcript' }).click();
       await expect(page.getByText('Transcript cleared from inbox')).toBeVisible();
       
       // Restore

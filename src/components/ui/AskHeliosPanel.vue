@@ -41,6 +41,39 @@
 
       <div v-if="modeNotice" role="status" class="border-b border-border-muted bg-accent/10 px-4 py-2 text-xs text-ink-secondary">{{ modeNotice }}</div>
 
+      <div v-if="mode === 'workspace' && clinicalContext && !showHistory" class="border-b border-border-muted bg-surface-subtle px-4 py-3" data-testid="ask-helios-clinical-context">
+        <div class="flex items-start justify-between gap-3">
+          <div>
+            <p class="text-[10px] font-bold uppercase tracking-wider text-accent">Clinical context</p>
+            <p class="mt-1 text-sm font-semibold text-ink">{{ clinicalContext.clientName || 'Selected client' }}</p>
+            <p class="mt-1 text-[11px] text-ink-muted">{{ clinicalContext.sourceCount ? clinicalContext.sourceCount + ' session source' + (clinicalContext.sourceCount === 1 ? '' : 's') + ' currently available' : 'Sources are checked when you ask a question.' }}</p>
+          </div>
+          <button type="button" class="text-[11px] font-medium text-ink-muted hover:text-ink" :disabled="isLoading" @click="clearClinicalContext">Clear</button>
+        </div>
+        <div class="mt-3 grid grid-cols-2 gap-2">
+          <label class="text-[11px] text-ink-secondary">
+            Perspective
+            <select :value="clinicalContext.lens" class="mt-1 w-full rounded-control border border-border-muted bg-surface px-2 py-1.5 text-xs text-ink" :disabled="isLoading" @change="setClinicalContext({ lens: $event.target.value })">
+              <option value="general">General</option>
+              <option value="integrative">Integrative</option>
+              <option value="gentle_cbt">CBT</option>
+              <option value="internal_family_systems">Internal Family Systems (IFS)</option>
+              <option value="transactional_analysis">Transactional Analysis</option>
+            </select>
+          </label>
+          <label class="text-[11px] text-ink-secondary">
+            Evidence
+            <select :value="clinicalContext.window" class="mt-1 w-full rounded-control border border-border-muted bg-surface px-2 py-1.5 text-xs text-ink" :disabled="isLoading" @change="setClinicalContext({ window: $event.target.value })">
+              <option value="current">This session</option>
+              <option value="last_three">Last 3</option>
+              <option value="last_five">Last 5</option>
+              <option value="history">Entire history</option>
+            </select>
+          </label>
+        </div>
+        <p class="mt-2 text-[10px] text-ink-muted">Only the selected client/session evidence is sent for this clinical question. Ask Helios does not write to the clinical record.</p>
+      </div>
+
       <div v-if="isRestoring" role="status" class="border-b border-border-muted px-4 py-2 text-xs text-ink-secondary">Restoring your saved conversation...</div>
       <div v-if="restoreError" role="alert" class="border-b border-border-muted px-4 py-3 text-xs text-state-danger">
         <p>{{ restoreError }}</p>
@@ -75,10 +108,10 @@
       <div v-else ref="scrollContainer" class="min-h-0 flex-1 overflow-y-auto p-4 space-y-4" aria-live="polite">
         <div v-if="messages.length === 0" class="flex h-full flex-col items-center justify-center text-center p-5">
           <div class="mb-4 rounded-full bg-accent/10 p-4"><Sparkles class="h-8 w-8 text-accent" /></div>
-          <h3 class="type-body-large font-semibold text-ink">{{ currentTab.heading }}</h3>
-          <p class="mt-2 text-sm text-ink-muted max-w-xs">{{ currentTab.description }}</p>
+          <h3 class="type-body-large font-semibold text-ink">{{ welcomeHeading }}</h3>
+          <p class="mt-2 text-sm text-ink-muted max-w-xs">{{ welcomeDescription }}</p>
           <div class="mt-5 grid w-full gap-2">
-            <button v-for="example in currentTab.examples" :key="example" type="button"
+            <button v-for="example in currentExamples" :key="example" type="button"
               class="rounded-control border border-border-muted bg-surface-subtle p-2 text-xs text-left text-ink-secondary hover:border-accent"
               @click="input = example">{{ example }}</button>
           </div>
@@ -107,6 +140,12 @@
               </ul>
             </div>
             <p v-if="msg.warning" class="mt-2 text-xs text-state-danger">{{ msg.warning }}</p>
+            <div v-if="mode === 'workspace' && msg.researchHandoff" class="mt-3 border-t border-border-muted pt-2">
+              <button type="button" class="rounded-control border border-border-muted px-3 py-2 text-xs font-medium text-accent" :disabled="isLoading" @click="beginResearchHandoff(msg.researchHandoff)">
+                Check research evidence
+              </button>
+              <p class="mt-1 text-[10px] text-ink-muted">Switches to Research with your question only; client records are not carried across.</p>
+            </div>
             <div v-if="mode === 'workspace' && msg.documentSearch?.hasMore" class="mt-3 border-t border-border-muted pt-2">
               <button type="button" class="rounded-control border border-border-muted px-3 py-2 text-xs font-medium text-accent"
                 :disabled="isLoading" @click="sendMessage('Show more documents')">Show next {{ Math.min(8, Math.max(0, msg.documentSearch.total - msg.documentSearch.shown)) }} documents</button>
@@ -160,7 +199,7 @@
       </div>
 
       <footer class="shrink-0 border-t border-border-muted p-3">
-        <div v-if="mode === 'workspace'" class="mb-2">
+        <div v-if="mode === 'workspace' && !clinicalContext" class="mb-2">
           <label for="ask-helios-client" class="mb-1 block text-[11px] font-medium text-ink-secondary">
             Client for session preparation (optional)
           </label>
@@ -174,13 +213,13 @@
         <form class="relative flex items-end gap-2" @submit.prevent="sendMessage">
           <textarea v-model="input" rows="2" maxlength="1200"
             class="block w-full resize-none rounded-control border border-border-muted bg-surface px-3 py-2 text-sm text-ink placeholder:text-ink-subtle focus:border-accent focus:ring-1 focus:ring-accent"
-            :placeholder="currentTab.placeholder" :disabled="isLoading || isRestoring || !!restoreError" @keydown.enter.exact.prevent="sendMessage"></textarea>
+            :placeholder="composerPlaceholder" :disabled="isLoading || isRestoring || !!restoreError" @keydown.enter.exact.prevent="sendMessage"></textarea>
           <button type="submit" title="Send to Ask Helios"
             class="flex h-9 w-9 shrink-0 items-center justify-center rounded-control bg-action-primary text-on-action shadow-sm hover:bg-action-primary-hover disabled:opacity-50"
             :disabled="!input.trim() || isLoading || isRestoring || !!restoreError"><Send class="h-4 w-4" /></button>
         </form>
         <div class="mt-2 flex justify-between items-center px-1">
-          <span class="text-[10px] text-ink-subtle">{{ currentTab.footer }}</span>
+          <span class="text-[10px] text-ink-subtle">{{ footerText }}</span>
           <button v-if="messages.length" type="button"
             class="text-[10px] text-ink-muted hover:text-state-danger" :disabled="isLoading"
             @click="clearConversation">New chat</button>
@@ -225,13 +264,25 @@ const tabs = [
 
 const {
   isPanelOpen, isExpanded, panelWidth, mode, messages, conversations,
-  activeConversationId, clients, selectedClientId,
+  activeConversationId, clients, selectedClientId, clinicalContext: askClinicalContext,
   closePanel, setWidth, toggleExpand, addMessage, clearConversation,
   selectConversation, deleteConversation, fetchConversations,
-  setMode, assignConversationId, setSelectedClient, patchMessage,
+  setMode, assignConversationId, setSelectedClient, setClinicalContext, clearClinicalContext, patchMessage,
   isRestoring, restoreError, ensureConversationReady, retryRestore, getContextVersion, isContextCurrent
 } = useAskHelios()
+const clinicalContext = askClinicalContext || ref(null)
 const currentTab = computed(() => tabs.find(t => t.id === mode.value) || tabs[0])
+const welcomeHeading = computed(() => clinicalContext.value && mode.value === 'workspace' ? 'Think with the selected clinical context' : currentTab.value.heading)
+const welcomeDescription = computed(() => clinicalContext.value && mode.value === 'workspace'
+  ? 'Ask what seems to be happening, what may be changing, what alternative explanations fit, or what deserves attention next.'
+  : currentTab.value.description)
+const currentExamples = computed(() => clinicalContext.value && mode.value === 'workspace'
+  ? ['Help me understand what seems to be happening here.', 'What pattern is emerging across these sessions?', 'What might I be missing?', 'What should I explore next session?']
+  : currentTab.value.examples)
+const composerPlaceholder = computed(() => clinicalContext.value && mode.value === 'workspace' ? 'What would you like to understand about this work?' : currentTab.value.placeholder)
+const footerText = computed(() => clinicalContext.value && mode.value === 'workspace'
+  ? 'Selected clinical evidence · Therapist remains responsible'
+  : currentTab.value.footer)
 const input = ref('')
 const isLoading = ref(false)
 const isSavingAction = ref(false)
@@ -244,6 +295,12 @@ function changeMode(next) {
   modeNotice.value = ''
   showHistory.value = false
   input.value = ''
+}
+function beginResearchHandoff(query) {
+  setMode('research')
+  showHistory.value = false
+  modeNotice.value = 'Switched to Research. Only the de-identified question is carried across; client records stay in Workspace.'
+  input.value = String(query || '').slice(0, 1200)
 }
 function startResizing(e) {
   e.preventDefault()
@@ -364,7 +421,8 @@ async function sendMessage(override = null) {
       body: JSON.stringify({
         mode: sentMode, query: text, conversationId: existingId, history,
         clientId: sentMode === 'workspace' ? selectedClientId.value : null,
-        // The server reconstructs trusted Workspace context from the saved transcript.
+        clinicalContext: sentMode === 'workspace' ? clinicalContext.value : null,
+        // The server revalidates any selected client/session scope against the signed-in therapist.
       })
     })
     const data = await resp.json()
@@ -376,8 +434,10 @@ async function sendMessage(override = null) {
     addMessage({
       role: 'assistant', content: data.answer, references: data.references || [],
       proposedAction: data.proposedAction || null, warning: data.warning,
-      documentSearch: data.documentSearch || null
+      documentSearch: data.documentSearch || null,
+      researchHandoff: data.clinicalContext?.researchHandoff || null
     })
+    if (data.clinicalContext && clinicalContext.value) setClinicalContext(data.clinicalContext)
     if (data.saved !== false && data.conversationId) {
       assignConversationId(data.conversationId)
       fetchConversations()

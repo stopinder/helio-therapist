@@ -114,7 +114,7 @@ test('individual restoration rejects malformed response data', async () => {
 const template = source.match(/<template>([\s\S]*?)<script setup>/)[1].replace(/<\/template>\s*$/, '')
 const render = new Function('Vue', compile(template, { mode: 'function' }).code)(Vue)
 async function html(overrides) {
-  const bindings = `${names}, expandedRows, editingClient, editingChoices, showRaw, filters, matchingTranscripts, visibleTranscripts, hasMoreHistory, actionableCount, historyLimit, historyPageSize, rowTitle, formatDate, workflowTone, workflowState, primaryAction, labelFor, clientName, selectedClientId, selectedLens, sourceRetention, showAddClient, addingClient, addClientError, isEligibleForDeletion`
+  const bindings = `${names}, expandedRows, assignmentDrafts, assignmentSavingId, detailReturnId, editingClient, editingChoices, showRaw, filters, matchingTranscripts, visibleTranscripts, hasMoreHistory, actionableCount, historyLimit, historyPageSize, rowTitle, formatDate, workflowTone, workflowState, labelFor, clientName, selectedClientId, selectedLens, sourceRetention, showAddClient, addingClient, addClientError, isEligibleForDeletion`
   const state = new Function('ref', 'computed', 'onMounted', 'watch', 'useRouter', 'authenticatedFetch', 'defineProps', 'defineEmits', `${script}\nreturn {${bindings}, clients: props.clients, ${[...script.matchAll(/^(?:async )?function (\w+)/gm)].map(m => m[1]).join(',')}}`)(Vue.ref, Vue.computed, () => {}, () => {}, () => ({}), () => {}, () => ({ clients: [] }), () => () => {})
   for (const [key, value] of Object.entries(overrides)) state[key].value = value
   state.loading.value = false

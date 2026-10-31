@@ -13,6 +13,7 @@ describe('AskHeliosPanel', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     ask = useAskHelios()
+    ask.clearClinicalContext()
     ask.setMode('research')
     ask.clearConversation()
     if (!ask.isPanelOpen.value) ask.togglePanel()
@@ -245,6 +246,64 @@ describe('AskHeliosPanel', () => {
       body: 'I noticed impatience and want to explore it in supervision.',
       confirmed: true
     })
+  })
+
+  it('shows explicit client, perspective and evidence controls for clinical context', async () => {
+    const clientId = 'cccccccc-cccc-4ccc-cccc-cccccccccccc'
+    const sessionId = 'eeeeeeee-eeee-4eee-eeee-eeeeeeeeeeee'
+    await ask.openClinicalContext({
+      clientId, clientName: 'Client A', anchorSessionId: sessionId,
+      window: 'last_five', lens: 'internal_family_systems', source: 'session_workspace'
+    })
+    const w = mount(AskHeliosPanel)
+    expect(ask.mode.value).toBe('workspace')
+    expect(w.find('[data-testid="ask-helios-clinical-context"]').exists()).toBe(true)
+    expect(w.text()).toContain('Client A')
+    expect(w.text()).toContain('Internal Family Systems (IFS)')
+    expect(w.text()).toContain('Entire history')
+    expect(w.text()).toContain('Ask Helios does not write to the clinical record')
+    expect(w.text()).not.toContain('Client for session preparation')
+  })
+
+  it('sends selected clinical scope to Workspace and offers a de-identified Research handoff', async () => {
+    const clientId = 'cccccccc-cccc-4ccc-cccc-cccccccccccc'
+    const sessionId = 'eeeeeeee-eeee-4eee-eeee-eeeeeeeeeeee'
+    api.authenticatedFetch.mockImplementation(async url => {
+      if (url === '/api/ai/assist') return ok({
+        mode:'workspace',
+        answer:'Recorded context\nA pattern is recorded.\n\nClinical interpretation\nOne possibility is...',
+        references:[{ title:'30 Oct 2026 session', url:'/clients/' + clientId + '/sessions/' + sessionId, citation:'linked transcript' }],
+        clinicalContext:{
+          clientId, clientName:'Client A', anchorSessionId:sessionId, window:'last_five',
+          lens:'internal_family_systems', sourceCount:5,
+          researchHandoff:'Find published research relevant to this therapist question: What mechanisms might explain this pattern?'
+        }
+      })
+      if (url === '/api/ai/workspace-clients') return ok({ clients:[{ id:clientId, display_name:'Client A' }] })
+      return ok({ conversations:[] })
+    })
+    await ask.openClinicalContext({
+      clientId, clientName:'Client A', anchorSessionId:sessionId,
+      window:'last_five', lens:'internal_family_systems'
+    })
+    const w = mount(AskHeliosPanel)
+    await w.find('textarea').setValue('What might I be missing?')
+    await w.find('form').trigger('submit')
+    await vi.waitFor(() => expect(w.text()).toContain('Check research evidence'))
+    const assist = api.authenticatedFetch.mock.calls.find(call => call[0] === '/api/ai/assist')
+    const body = JSON.parse(assist[1].body)
+    expect(body.mode).toBe('workspace')
+    expect(body.clientId).toBe(clientId)
+    expect(body.clinicalContext).toMatchObject({
+      clientId, anchorSessionId:sessionId, window:'last_five', lens:'internal_family_systems'
+    })
+    expect(ask.clinicalContext.value.sourceCount).toBe(5)
+    const research = w.findAll('button').find(button => button.text() === 'Check research evidence')
+    await research.trigger('click')
+    expect(ask.mode.value).toBe('research')
+    expect(ask.clinicalContext.value).toBe(null)
+    expect(w.find('textarea').element.value).toContain('published research')
+    expect(w.text()).toContain('client records stay in Workspace')
   })
 
   it('supports panel expansion', async () => {

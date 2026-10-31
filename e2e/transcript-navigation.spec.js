@@ -82,9 +82,13 @@ test.describe('Transcript to Session Navigation', () => {
       completedAt: null
     };
 
-    await page.route('**/api/zoom/transcripts', async (route) => {
+    await page.route('**/api/zoom/transcripts*', async (route) => {
       if (route.request().method() === 'GET') {
-        await route.fulfill({ status: 200, body: JSON.stringify({ transcripts: [transcript] }) });
+        const url = new URL(route.request().url());
+        const payload = url.searchParams.get('id')
+          ? { transcript }
+          : { transcripts: [{ ...transcript, text: null, structuredTranscript: null }] };
+        await route.fulfill({ status: 200, body: JSON.stringify(payload) });
       } else if (route.request().method() === 'PATCH') {
         const body = route.request().postDataJSON();
         expect(body.markComplete).toBe(true);
@@ -98,7 +102,8 @@ test.describe('Transcript to Session Navigation', () => {
     });
 
     await login(page);
-    await page.getByRole('button', { name: /Meeting 999/ }).click();
+    const row = page.locator('[data-transcript-id="trans-1"]');
+    await row.getByRole('button', { name: 'Open full transcript' }).click();
     
     // "Open session" should be visible for "review-saved" state
     const openBtn = page.getByRole('button', { name: 'Open session' });
@@ -122,9 +127,13 @@ test.describe('Transcript to Session Navigation', () => {
     };
 
     let patchCalled = false;
-    await page.route('**/api/zoom/transcripts', async (route) => {
+    await page.route('**/api/zoom/transcripts*', async (route) => {
       if (route.request().method() === 'GET') {
-        await route.fulfill({ status: 200, body: JSON.stringify({ transcripts: [transcript] }) });
+        const url = new URL(route.request().url());
+        const payload = url.searchParams.get('id')
+          ? { transcript }
+          : { transcripts: [{ ...transcript, text: null, structuredTranscript: null }] };
+        await route.fulfill({ status: 200, body: JSON.stringify(payload) });
       } else if (route.request().method() === 'PATCH') {
         patchCalled = true;
         await route.fulfill({ status: 200, body: JSON.stringify({ transcript }) });
@@ -133,7 +142,8 @@ test.describe('Transcript to Session Navigation', () => {
 
     await login(page);
     await page.getByRole('button', { name: 'History' }).click();
-    await page.getByRole('button', { name: /Meeting 888/ }).click();
+    const row = page.locator('[data-transcript-id="trans-2"]');
+    await row.getByRole('button', { name: 'Open full transcript' }).click();
     
     const viewBtn = page.getByRole('button', { name: 'View session' });
     await expect(viewBtn).toBeVisible();
@@ -155,9 +165,13 @@ test.describe('Transcript to Session Navigation', () => {
       completedAt: null
     };
 
-    await page.route('**/api/zoom/transcripts', async (route) => {
+    await page.route('**/api/zoom/transcripts*', async (route) => {
       if (route.request().method() === 'GET') {
-        await route.fulfill({ status: 200, body: JSON.stringify({ transcripts: [transcript] }) });
+        const url = new URL(route.request().url());
+        const payload = url.searchParams.get('id')
+          ? { transcript }
+          : { transcripts: [{ ...transcript, text: null, structuredTranscript: null }] };
+        await route.fulfill({ status: 200, body: JSON.stringify(payload) });
       } else if (route.request().method() === 'PATCH') {
         await route.fulfill({ 
           status: 500, 
@@ -167,7 +181,8 @@ test.describe('Transcript to Session Navigation', () => {
     });
 
     await login(page);
-    await page.getByRole('button', { name: /Meeting 777/ }).click();
+    const row = page.locator('[data-transcript-id="trans-3"]');
+    await row.getByRole('button', { name: 'Open full transcript' }).click();
     
     await page.getByRole('button', { name: 'Open session' }).click();
 

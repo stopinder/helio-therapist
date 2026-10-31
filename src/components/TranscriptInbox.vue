@@ -20,21 +20,57 @@
       <div v-if="loading" class="empty-card compact">Loading transcripts…</div>
       <div v-else-if="!errorMessage && !transcripts.length" class="empty-card compact"><h2>Inbox up to date</h2><p>New Zoom transcripts will appear here when they need review.</p></div>
       <div v-else-if="visibleTranscripts.length" class="inbox-list">
-        <button v-for="transcript in visibleTranscripts" :key="transcript.id" class="transcript-row" @click="openTranscript(transcript)">
-          <span class="row-main">
-            <span class="row-header">
-              <strong>{{ rowTitle(transcript) }}</strong>
-              <button class="chevron" type="button" :aria-expanded="expandedRows.has(transcript.id)" @click="toggleExpand(transcript.id, $event)">
-                <span class="sr-only">{{ expandedRows.has(transcript.id) ? 'Collapse' : 'Expand' }}</span>
-                <span aria-hidden="true">{{ expandedRows.has(transcript.id) ? '▾' : '▸' }}</span>
+        <article
+          v-for="transcript in visibleTranscripts"
+          :key="transcript.id"
+          class="transcript-row triage-row"
+          :data-transcript-id="transcript.id"
+        >
+          <div class="row-main">
+            <div class="row-header">
+              <div class="min-w-0">
+                <strong class="triage-identity">{{ triageIdentity(transcript) }}</strong>
+                <p v-if="transcript.sourceTitle && transcript.sourceTitle !== triageIdentity(transcript)" class="triage-topic">{{ transcript.sourceTitle }}</p>
+              </div>
+              <StatusIndicator :tone="filterMode === 'history' ? (transcript.completedAt || (!transcript.attentionClearedAt && isVerifiedMatch(transcript)) ? 'success' : 'neutral') : workflowTone(transcript)">
+                {{ filterMode === 'history' ? (transcript.completedAt ? 'Inbox setup complete' : transcript.attentionClearedAt ? 'Cleared from inbox' : isVerifiedMatch(transcript) ? 'Matched automatically' : 'History') : workflowState(transcript).label }}
+              </StatusIndicator>
+            </div>
+            <small>{{ formatDate(transcript.sourceOccurredAt || transcript.receivedAt) }}<template v-if="transcript.meetingId"> · Meeting {{ transcript.meetingId }}</template></small>
+            <p v-if="speakerClues(transcript).length" class="triage-clue">Named speakers: {{ speakerClues(transcript).join(', ') }}</p>
+            <p class="triage-preview">{{ transcriptPreview(transcript) }}</p>
+
+            <div v-if="filterMode === 'attention' && !isVerifiedMatch(transcript)" class="inline-assignment">
+              <div class="field-group">
+                <label :for="'client-' + transcript.id">Client</label>
+                <select :id="'client-' + transcript.id" v-model="assignmentDrafts[transcript.id]">
+                  <option value="">Select client…</option>
+                  <option v-for="client in clients" :key="client.id" :value="client.id">{{ client.name || client.display_name }}</option>
+                </select>
+                <span v-if="suggestedClient(transcript)" class="suggestion-note">Suggested from an exact Zoom title match — confirm before assigning.</span>
+              </div>
+              <button
+                type="button"
+                class="primary"
+                :disabled="assignmentSavingId === transcript.id || !assignmentDrafts[transcript.id]"
+                @click="assignFromInbox(transcript)"
+              >{{ assignmentSavingId === transcript.id ? 'Assigning…' : 'Assign' }}</button>
+            </div>
+
+            <div v-else-if="isVerifiedMatch(transcript)" class="matched-note">
+              <span>Verified Zoom/session match · {{ clientName(transcript.clientId) }}</span>
+              <button type="button" class="secondary" @click="openLinkedSessionFromRow(transcript)">Open Clinical Workspace</button>
+            </div>
+
+            <div class="triage-actions">
+              <button type="button" class="secondary" :aria-expanded="expandedRows.has(transcript.id)" @click="toggleExpand(transcript.id, $event)">
+                {{ expandedRows.has(transcript.id) ? 'Hide preview' : 'Preview transcript' }}
               </button>
-            </span>
-            <small>{{ formatDate(transcript.receivedAt) }}<template v-if="transcript.meetingId"> · Meeting {{ transcript.meetingId }}</template></small>
-          </span>
-          <StatusIndicator v-if="filterMode === 'attention'" :tone="workflowTone(transcript)">{{ workflowState(transcript).label }}</StatusIndicator>
-          <StatusIndicator v-else :tone="transcript.completedAt ? 'success' : 'neutral'">{{ transcript.completedAt ? 'Inbox setup complete' : 'Cleared from inbox' }}</StatusIndicator>
-          <span v-if="expandedRows.has(transcript.id)" class="open">{{ filterMode === 'history' ? 'View' : primaryAction(transcript) }} <span aria-hidden="true">›</span></span>
-        </button>
+              <button type="button" class="secondary" @click="openTranscript(transcript)">Open full transcript</button>
+            </div>
+            <pre v-if="expandedRows.has(transcript.id)" class="inline-transcript-preview">{{ transcript.text }}</pre>
+          </div>
+        </article>
         <div v-if="hasMoreHistory" class="load-more-row"><button class="load-more" type="button" @click="historyLimit += historyPageSize">Load more</button></div>
       </div>
       <div v-else class="empty-card compact">
@@ -46,7 +82,7 @@
     <template v-else>
       <header class="review-header">
         <div class="header-main">
-          <button class="back" @click="selected = null">‹ Transcript Inbox</button>
+          <button class="back" @click="closeTranscript">‹ Transcript Inbox</button>
           <div class="title-area">
             <p class="eyebrow">Transcript review</p>
             <h1>{{ labelFor(selected) }}</h1>
@@ -65,7 +101,7 @@
         <div class="assignment-actions">
           <button v-if="selected.sessionRef" class="primary" @click="openLinkedSession">Open Clinical Workspace</button>
           <button class="secondary" @click="openClientTranscripts">Client transcripts</button>
-          <button class="secondary" @click="selected = null">Back to inbox</button>
+          <button class="secondary" @click="closeTranscript">Back to inbox</button>
         </div>
       </section>
       <section class="raw-transcript"><header><div><h2>Original transcript</h2><p>This is the original transcript imported from Zoom. Helio has not analysed or changed it.</p></div><div class="source-actions"><button class="secondary" :aria-expanded="showRaw" @click="showRaw = !showRaw">{{ showRaw ? 'Hide original transcript' : 'View original transcript' }}</button><button class="secondary download" @click="downloadRaw(selected)">Download .txt</button><button v-if="isEligibleForDeletion" class="secondary text-state-danger" :disabled="saving" @click="deleteTranscript">{{ saving ? 'Deleting…' : 'Delete transcript' }}</button></div></header><pre v-if="showRaw">{{ selected.text }}</pre></section>
@@ -101,7 +137,7 @@ const props = defineProps({ clients: { type: Array, default: () => [] }, openTra
 const emit = defineEmits(['client-added'])
 const router = useRouter()
 const transcripts = ref([]), selected = ref(null), selectedClientId = ref(''), selectedLens = ref(''), sourceRetention = ref('keep_until_review')
-const editingClient = ref(false), editingChoices = ref(false), searchQuery = ref(''), filterMode = ref('attention'), showRaw = ref(false), expandedRows = ref(new Set())
+const editingClient = ref(false), editingChoices = ref(false), searchQuery = ref(''), filterMode = ref('attention'), showRaw = ref(false), expandedRows = ref(new Set()), assignmentDrafts = ref({}), assignmentSavingId = ref(null), detailReturnId = ref(null)
 const loading = ref(true), saving = ref(false), errorMessage = ref(''), successMessage = ref('')
 const showAddClient = ref(false), addingClient = ref(false), addClientError = ref('')
 const lastClearedBatch = ref([])
@@ -116,26 +152,59 @@ const isEligibleForDeletion = computed(() => {
     !selected.value.completedAt;
 });
 const filters = [{ id: 'attention', label: 'Needs attention' }, { id: 'history', label: 'History' }]
-const actionableCount = computed(() => transcripts.value.filter(item => !item.completedAt && !item.attentionClearedAt).length)
+const actionableCount = computed(() => transcripts.value.filter(item => needsAttention(item)).length)
 const matchingTranscripts = computed(() => {
   const query = searchQuery.value.trim().toLowerCase();
   return transcripts.value.filter(item => {
-    if (filterMode.value === 'attention' && (item.completedAt || item.attentionClearedAt)) return false;
-    if (filterMode.value === 'history' && !item.completedAt && !item.attentionClearedAt) return false;
+    if (filterMode.value === 'attention' && !needsAttention(item)) return false;
+    if (filterMode.value === 'history' && needsAttention(item)) return false;
     if (!query) return true;
-    return labelFor(item).toLowerCase().includes(query) || rowTitle(item).toLowerCase().includes(query) || clientName(item.clientId).toLowerCase().includes(query) || workflowState(item).label.toLowerCase().includes(query) || formatDate(item.receivedAt).toLowerCase().includes(query)
+    return [
+      labelFor(item), rowTitle(item), triageIdentity(item), clientName(item.clientId),
+      workflowState(item).label, formatDate(item.sourceOccurredAt || item.receivedAt),
+      item.sourceTitle, ...speakerClues(item)
+    ].some(value => String(value || '').toLowerCase().includes(query))
   }).sort((a,b)=>new Date(b.receivedAt||0)-new Date(a.receivedAt||0))
 })
 const visibleTranscripts = computed(() => filterMode.value === 'history' ? matchingTranscripts.value.slice(0, historyLimit.value) : matchingTranscripts.value)
 const hasMoreHistory = computed(() => filterMode.value === 'history' && visibleTranscripts.value.length < matchingTranscripts.value.length)
 function setFilter(id){ filterMode.value=id; historyLimit.value=historyPageSize }
-function formatDate(value){ return new Date(value).toLocaleString(undefined,{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}) }
+function formatDate(value){ const date=new Date(value);return Number.isNaN(date.getTime())?'Date unavailable':date.toLocaleString(undefined,{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}) }
 function labelFor(transcript){ return transcript.meetingId ? `Zoom meeting ${transcript.meetingId}` : 'Zoom transcript' }
+function clientName(clientId){ const client=props.clients.find(item=>item.id===clientId);return client?.name||client?.display_name||'' }
+function normaliseIdentity(value){ return String(value||'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim() }
+function suggestedClient(transcript){
+  if(transcript?.clientId || !transcript?.sourceTitle)return null;
+  const title=normaliseIdentity(transcript.sourceTitle);
+  if(!title)return null;
+  const exact=props.clients.filter(client=>normaliseIdentity(client.name||client.display_name)===title);
+  return exact.length===1?exact[0]:null;
+}
+function initialiseAssignmentDraft(transcript){
+  if(!transcript?.id || transcript.clientId)return;
+  if(Object.prototype.hasOwnProperty.call(assignmentDrafts.value,transcript.id))return;
+  assignmentDrafts.value={...assignmentDrafts.value,[transcript.id]:suggestedClient(transcript)?.id||''};
+}
+function isVerifiedMatch(transcript){ return Boolean(transcript?.clientId && transcript?.sessionRef && transcript.status!=='unassigned') }
+function needsAttention(transcript){ return !transcript?.completedAt && !transcript?.attentionClearedAt && !isVerifiedMatch(transcript) }
 function rowTitle(transcript){ return clientName(transcript.clientId) || transcript.sourceTitle || labelFor(transcript) }
-function workflowState(transcript){ if(!transcript?.clientId||transcript.status==='unassigned')return{id:'needs-client',label:'Needs client'};return{id:'assigned',label:'Assigned'} }
-function workflowTone(transcript){ return ({'needs-client':'warning','assigned':'success'})[workflowState(transcript).id] || 'neutral' }
-function primaryAction(transcript){ return workflowState(transcript).id === 'needs-client' ? 'Assign client' : 'View' }
-function clientName(clientId){ return props.clients.find(client=>client.id===clientId)?.name||'' }
+function triageIdentity(transcript){ return clientName(transcript.clientId) || suggestedClient(transcript)?.name || suggestedClient(transcript)?.display_name || (transcript.sourceTitle && normaliseIdentity(transcript.sourceTitle).split(' ').length<=3 ? transcript.sourceTitle : 'Unassigned transcript') }
+function workflowState(transcript){
+  if(isVerifiedMatch(transcript))return{id:'matched',label:'Matched'}
+  if(!transcript?.clientId||transcript.status==='unassigned')return{id:'needs-client',label:suggestedClient(transcript)?'Likely client':'Needs client'}
+  return{id:'assigned',label:'Assigned'}
+}
+function workflowTone(transcript){ return ({'needs-client':'warning','assigned':'success','matched':'success'})[workflowState(transcript).id] || 'neutral' }
+function speakerClues(transcript){
+  const speakers=Array.isArray(transcript?.structuredTranscript?.speakers)?transcript.structuredTranscript.speakers:[];
+  return [...new Set(speakers.map(item=>String(item?.display_name||'').trim()).filter(name=>name&&!/^unknown$/i.test(name)&&!/^speaker\s*\d+$/i.test(name)))].slice(0,4)
+}
+function transcriptPreview(transcript){
+  if(typeof transcript?.text!=='string')return 'Preview loads on demand — you can still assign the client here.';
+  const text=transcript.text.replace(/\b\d{1,2}:\d{2}(?::\d{2})?(?:\.\d+)?\b/g,' ').replace(/\s+/g,' ').trim();
+  if(!text)return 'No transcript preview is available.';
+  return text.length>340?`${text.slice(0,337)}…`:text
+}
 async function clearAllAttention() {
   if (saving.value || searchQuery.value || !matchingTranscripts.value.length) return;
   saving.value = true;
@@ -212,25 +281,77 @@ function replaceTranscriptInList(transcript) {
   const index = transcripts.value.findIndex(item => item.id === transcript.id);
   if (index >= 0) transcripts.value[index] = transcript;
   if (selected.value?.id === transcript.id) selected.value = transcript;
+  initialiseAssignmentDraft(transcript);
 }
 function replaceTranscript(transcript){replaceTranscriptInList(transcript)}
-function toggleExpand(id, event) {
-  event.stopPropagation();
-  if (expandedRows.value.has(id)) expandedRows.value.delete(id);
-  else expandedRows.value.add(id);
+async function fetchTranscriptDetail(transcript){
+  if(!transcript?.id)return null;
+  if(typeof transcript.text==='string')return transcript;
+  try{
+    const response=await authenticatedFetch('/api/zoom/transcripts?id='+encodeURIComponent(transcript.id));
+    const data=await response.json().catch(()=>({}));
+    if(!response.ok||!data.transcript)throw new Error(data.error||'Unable to load this transcript.');
+    replaceTranscriptInList(data.transcript);
+    return data.transcript;
+  }catch(error){
+    errorMessage.value=error.message||'Unable to load this transcript.';
+    return null;
+  }
 }
-function openTranscript(transcript){
-  selected.value=transcript;
-  selectedClientId.value=transcript.clientId||'';
-  selectedLens.value=transcript.requestedLens||'';
-  sourceRetention.value=transcript.sourceRetention||'keep_until_review';
+async function toggleExpand(id, event) {
+  event.stopPropagation();
+  if (expandedRows.value.has(id)) { expandedRows.value.delete(id); return; }
+  const transcript=transcripts.value.find(item=>item.id===id);
+  const detailed=await fetchTranscriptDetail(transcript);
+  if(detailed)expandedRows.value.add(id);
+}
+async function openTranscript(transcript){
+  const detailed=await fetchTranscriptDetail(transcript);
+  if(!detailed)return;
+  detailReturnId.value=detailed.id;
+  selected.value=detailed;
+  selectedClientId.value=detailed.clientId||'';
+  selectedLens.value=detailed.requestedLens||'';
+  sourceRetention.value=detailed.sourceRetention||'keep_until_review';
   errorMessage.value='';
   successMessage.value='';
   showRaw.value=false;
-  window.scrollTo({ top: 0, behavior: 'smooth' });
 }
-async function load(){loading.value=true;errorMessage.value='';try{const response=await authenticatedFetch('/api/zoom/transcripts');const data=await response.json().catch(()=>({}));if(!response.ok)throw new Error(data.error||'Unable to load transcripts.');transcripts.value=data.transcripts||[]}catch(error){errorMessage.value=error.message||'Unable to load transcripts.'}finally{loading.value=false}}
+function closeTranscript(){
+  const returnId=detailReturnId.value;
+  selected.value=null;
+  detailReturnId.value=null;
+  requestAnimationFrame(()=>document.querySelector(`[data-transcript-id="${returnId}"]`)?.scrollIntoView({block:'center'}));
+}
+async function load(){loading.value=true;errorMessage.value='';try{const response=await authenticatedFetch('/api/zoom/transcripts');const data=await response.json().catch(()=>({}));if(!response.ok)throw new Error(data.error||'Unable to load transcripts.');transcripts.value=data.transcripts||[];for(const transcript of transcripts.value)initialiseAssignmentDraft(transcript)}catch(error){errorMessage.value=error.message||'Unable to load transcripts.'}finally{loading.value=false}}
 async function patchTranscript(body,fallbackMessage){saving.value=true;errorMessage.value='';successMessage.value='';try{const response=await authenticatedFetch('/api/zoom/transcripts',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:selected.value.id,expectedUpdatedAt:selected.value.updatedAt,...body})});const data=await response.json().catch(()=>({}));if(!response.ok)throw new Error(data.error||fallbackMessage);if(body.restoreAttention && !isRestoredTranscript(data?.transcript,selected.value.id))throw new Error(fallbackMessage);replaceTranscript(data.transcript);return data.transcript}catch(error){errorMessage.value=error.message||fallbackMessage;return null}finally{saving.value=false}}
+async function assignFromInbox(transcript){
+  const clientId=assignmentDrafts.value[transcript.id];
+  if(!clientId||assignmentSavingId.value)return;
+  assignmentSavingId.value=transcript.id;
+  errorMessage.value='';
+  successMessage.value='';
+  try{
+    const response=await authenticatedFetch('/api/zoom/transcripts',{
+      method:'PATCH',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({id:transcript.id,expectedUpdatedAt:transcript.updatedAt,clientId,clearAttention:true})
+    });
+    const data=await response.json().catch(()=>({}));
+    if(!response.ok)throw new Error(data.error||'Unable to assign this transcript.');
+    replaceTranscript(data.transcript);
+    successMessage.value=`Assigned to ${clientName(data.transcript.clientId)}. The transcript is ready in Clinical Workspace.`;
+  }catch(error){
+    errorMessage.value=error.message||'Unable to assign this transcript.';
+  }finally{
+    assignmentSavingId.value=null;
+  }
+}
+async function openLinkedSessionFromRow(transcript){
+  if(!transcript?.clientId||!transcript?.sessionRef)return;
+  await router.push({name:'SessionWorkspace',params:{clientId:transcript.clientId,sessionId:transcript.sessionRef}});
+}
+
 async function saveAssignment(){const transcript=await patchTranscript({clientId:selectedClientId.value,clearAttention:true},'Unable to save the client assignment.');if(transcript){editingClient.value=false;successMessage.value=`Assigned to ${clientName(transcript.clientId)} and ready in Clinical Workspace.`}}
 async function saveReviewChoices(){const transcript=await patchTranscript({requestedLens:selectedLens.value||null,sourceRetention:sourceRetention.value,reviewChoicesSaved:true},'Unable to save review choices.');if(transcript){editingChoices.value=false;successMessage.value='Review choices saved. No analysis has started.'}}
 async function deleteTranscript(){if(!selected.value)return;if(!window.confirm('Delete this unassigned transcript? This permanently removes the imported source from Helios.'))return;saving.value=true;errorMessage.value='';successMessage.value='';try{const response=await authenticatedFetch('/api/zoom/transcripts',{method:'DELETE',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:selected.value.id})});if(!response.ok){const data=await response.json().catch(()=>({}));throw new Error(data.error||'Unable to delete transcript.')}transcripts.value=transcripts.value.filter(item=>item.id!==selected.value.id);selected.value=null;successMessage.value='Transcript deleted.'}catch(error){errorMessage.value=error.message||'Unable to delete transcript.'}finally{saving.value=false}}
@@ -252,7 +373,7 @@ async function handleAddClient(payload) {
 async function openClientTranscripts(){if(!selected.value?.clientId)return;await router.push({name:'ClientWorkspace',params:{clientId:selected.value.clientId},query:{tab:'Transcripts'}})}
 async function openLinkedSession(){if(!selected.value?.sessionRef)return;if(selected.value.reviewChoicesSavedAt&&!selected.value.completedAt){const completed=await patchTranscript({markComplete:true},'Unable to complete transcript triage.');if(!completed)return}await router.push({name:'SessionWorkspace',params:{clientId:selected.value.clientId,sessionId:selected.value.sessionRef}})}
 function downloadRaw(transcript){const blob=new Blob([transcript.text],{type:'text/plain;charset=utf-8'});const link=document.createElement('a');link.href=URL.createObjectURL(blob);link.download=`helio-zoom-transcript-${transcript.meetingId||transcript.id}.txt`;link.click();URL.revokeObjectURL(link.href)}
-async function openQueuedTranscript(id){if(!id)return;if(!transcripts.value.length)await load();const transcript=transcripts.value.find(item=>String(item.id)===String(id));if(transcript)openTranscript(transcript)}
+async function openQueuedTranscript(id){if(!id)return;if(!transcripts.value.length)await load();const transcript=transcripts.value.find(item=>String(item.id)===String(id));if(transcript)await openTranscript(transcript)}
 watch(()=>props.openTranscriptId,openQueuedTranscript);watch(searchQuery,()=>{historyLimit.value=historyPageSize});onMounted(async()=>{await load();openQueuedTranscript(props.openTranscriptId)})
 </script>
 <style scoped>
@@ -282,6 +403,21 @@ watch(()=>props.openTranscriptId,openQueuedTranscript);watch(searchQuery,()=>{hi
 .chevron { background: none; border: none; padding: 0.25rem; color: var(--helio-gray-400); cursor: pointer; font-size: 1.125rem; }
 .transcript-row .open { color: var(--helio-action-primary); font-weight: 600; font-size: 0.875rem; margin-left: 1rem; }
 
+.triage-row { display: block; cursor: default; padding: 1rem 1.25rem; }
+.triage-row:hover { transform: none; box-shadow: 0 2px 5px rgba(0,0,0,0.04); }
+.triage-row .row-main { width: 100%; gap: 0.5rem; }
+.triage-row .row-header { justify-content: space-between; align-items: flex-start; gap: 1rem; }
+.triage-identity { display: block; font-size: 1rem; color: var(--helio-gray-900); }
+.triage-topic { margin: 0.15rem 0 0; color: var(--helio-gray-600); font-size: 0.875rem; line-height: 1.35; }
+.triage-clue { margin: 0.25rem 0 0; color: var(--helio-gray-700); font-size: 0.8125rem; }
+.triage-preview { margin: 0.15rem 0 0; color: var(--helio-gray-600); font-size: 0.8125rem; line-height: 1.45; }
+.inline-assignment { display: grid; grid-template-columns: minmax(0,1fr) auto; align-items: end; gap: 0.75rem; margin-top: 0.35rem; padding-top: 0.75rem; border-top: 1px solid var(--helio-gray-100); }
+.inline-assignment select { width: 100%; }
+.suggestion-note { color: var(--helio-gray-500); font-size: 0.75rem; }
+.matched-note { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; margin-top: 0.35rem; padding: 0.75rem; border-radius: 10px; background: var(--helio-state-success-bg, #f0fdf4); color: var(--helio-gray-700); font-size: 0.8125rem; }
+.triage-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.25rem; }
+.inline-transcript-preview { max-height: 18rem; overflow: auto; margin: 0.25rem 0 0; padding: 1rem; border-radius: 10px; background: var(--helio-gray-50); border: 1px solid var(--helio-gray-200); white-space: pre-wrap; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.75rem; line-height: 1.5; }
+
 .review-header { margin-bottom: 2rem; }
 .header-main { display: flex; flex-direction: column; gap: 1.5rem; }
 .back { background: none; border: none; color: var(--helio-action-primary); font-weight: 600; cursor: pointer; padding: 0; text-align: left; width: fit-content; }
@@ -309,6 +445,8 @@ watch(()=>props.openTranscriptId,openQueuedTranscript);watch(searchQuery,()=>{hi
   .workflow-section { flex-direction: column; gap: 1.5rem; padding: 1.5rem; }
   .assignment-controls { width: 100%; }
   .ready-card { flex-direction: column; gap: 1.5rem; align-items: flex-start; }
+  .inline-assignment { grid-template-columns: 1fr; }
+  .matched-note { align-items: flex-start; flex-direction: column; }
   .raw-transcript header { flex-direction: column; gap: 1rem; padding: 1.5rem; }
   .source-actions { justify-content: flex-start; }
 }

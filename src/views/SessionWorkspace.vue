@@ -47,6 +47,7 @@
                     <button v-if="!isEditingSummary" @click="isEditingSummary = true" class="text-body-sm font-medium text-action-link hover:underline">Edit</button>
                     <button v-else @click="isEditingSummary = false" class="text-body-sm font-medium text-action-link hover:underline">Done reading</button>
                   </template>
+                  <button v-if="transcript" type="button" @click="askHeliosAboutSession" class="button-secondary !min-h-0 py-1.5 px-3 text-body-sm shadow-sm">Ask Helios</button>
                   <button v-if="summaryDocument?.content?.body && summaryDocument.status !== 'completed'" @click="generateSummary" :disabled="isGenerating" class="text-body-sm font-medium text-ink-muted hover:text-ink disabled:opacity-50">Regenerate</button>
                   <RouterLink v-if="summaryDocument?.id" :to="{ name: 'ClientWorkspace', params: { clientId: session.clientId }, query: { document: summaryDocument.id } }" class="button-secondary !min-h-0 py-1.5 px-3 text-body-sm shadow-sm">Open in Client Documents</RouterLink>
                   <button @click="copySummary" :disabled="!summaryDocument?.content?.body" class="button-secondary !min-h-0 py-1.5 px-3 text-body-sm shadow-sm">Copy summary</button>
@@ -210,9 +211,11 @@ import ReflectionTab from '../components/workspace/ReflectionTab.vue';
 import SessionSummaryDocument from '../components/workspace/SessionSummaryDocument.vue';
 import ClinicalSummaryTab from '../components/workspace/ClinicalSummaryTab.vue';
 import CompletedClinicalRecord from '../components/workspace/CompletedClinicalRecord.vue';
+import { useAskHelios } from '../composables/useAskHelios.js';
 
 const route = useRoute();
 const router = useRouter();
+const { openClinicalContext } = useAskHelios();
 const session = ref(null), client = ref(null), loading = ref(true), error = ref(''), transcript = ref(null), transcriptLoading = ref(false), transcriptError = ref(''), therapistName = ref('');
 const summaryDocument = ref(null);
 const activeView = ref('summary');
@@ -237,6 +240,17 @@ let saveTimer = null;
 function handleSessionUpdate(updatedSession) {
   session.value = updatedSession;
   activeView.value = 'clinical';
+}
+function askHeliosAboutSession() {
+  if (!session.value?.clientId || !session.value?.id) return;
+  void openClinicalContext({
+    clientId: String(session.value.clientId),
+    clientName: client.value?.display_name || client.value?.name || '',
+    anchorSessionId: String(session.value.id),
+    window: summaryWindow.value === 'recent' ? 'last_three' : 'current',
+    lens: summaryLens.value,
+    source: 'session_workspace'
+  });
 }
 
 async function generateSummary() {

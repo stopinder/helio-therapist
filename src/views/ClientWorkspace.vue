@@ -12,7 +12,13 @@
           </div>
 
           <section aria-labelledby="before-next-heading" class="space-y-stack-lg">
-            <div class="flex flex-wrap items-center justify-between gap-3"><h2 id="before-next-heading" class="text-h2 font-semibold text-ink">Before next session</h2><HelpLink topic="client-workspace" label="How the Client Workspace works" /></div>
+            <div class="flex flex-wrap items-center justify-between gap-3">
+              <h2 id="before-next-heading" class="text-h2 font-semibold text-ink">Before next session</h2>
+              <div class="flex flex-wrap items-center gap-2">
+                <button type="button" class="button-secondary" :disabled="!recentSessions.length" @click="askHeliosAboutClient">Ask Helios about this client</button>
+                <HelpLink topic="client-workspace" label="How the Client Workspace works" />
+              </div>
+            </div>
             <ClinicalAttentionPanel :client="client" @updated="client = $event" />
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-stack-lg">
               <div class="lg:col-span-2 space-y-stack-lg">
@@ -102,8 +108,10 @@ import CurrentCareFocus from '../components/workspace/CurrentCareFocus.vue';
 import ClientFollowUps from '../components/workspace/ClientFollowUps.vue';
 import TimelineItem from '../components/workspace/TimelineItem.vue';
 import ClientDetails from './ClientDetails.vue';
+import { useAskHelios } from '../composables/useAskHelios.js';
 
 const route=useRoute(),router=useRouter();
+const { openClinicalContext } = useAskHelios();
 const client=ref(null),loading=ref(true),error=ref('');
 const timelineEvents=ref([]),timelineLoading=ref(false);
 const documents=ref([]),documentsLoading=ref(false),documentsError=ref(''),documentComposerOpen=ref(false),editingDocument=ref(null),newDocumentType=ref('other');
@@ -127,6 +135,18 @@ async function refreshDocuments(){if(!route.params.clientId)return;documentsLoad
 async function loadSessions(){sessionsLoading.value=true;try{sessions.value=await listSessions({clientId:route.params.clientId})}finally{sessionsLoading.value=false}}
 async function loadAppointments(){appointmentsLoading.value=true;try{appointments.value=await listClientAppointments({clientId:route.params.clientId})}finally{appointmentsLoading.value=false}}
 async function loadTherapist(){therapistLabel.value=await getCurrentTherapistLabel()}
+function askHeliosAboutClient(){
+  const anchor=recentSessions.value[0];
+  if(!client.value?.id||!anchor?.id)return;
+  void openClinicalContext({
+    clientId:String(client.value.id),
+    clientName:client.value.display_name||client.value.name||'',
+    anchorSessionId:String(anchor.id),
+    window:'last_three',
+    lens:client.value.preferred_summary_lens||'integrative',
+    source:'client_workspace'
+  });
+}
 function openSessionWorkspace(session){if(!session?.id||!client.value?.id)return;router.push({name:'SessionWorkspace',params:{clientId:client.value.id,sessionId:session.id}})}
 function viewTranscript(session){if(!session?.id||!client.value?.id)return;router.push({name:'SessionWorkspace',params:{clientId:client.value.id,sessionId:session.id},query:{view:'transcript'}})}
 function humanReadableState(session){if(session.status==='source_ready')return'Transcript ready for summary.';if(session.status==='in_progress')return'Clinical workspace is open.';if(session.workflowStatus==='needs_review'||session.workflowStatus==='drafts_awaiting_review')return'Review is waiting.';return session.completedAt?'Completed.':'Recorded.'}
