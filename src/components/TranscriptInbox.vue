@@ -475,33 +475,39 @@ async function deleteTranscript(){if(!selected.value)return;await deleteTranscri
 async function handleAddClient(payload) {
   addingClient.value = true;
   addClientError.value = '';
+  const targetTranscriptId = addClientTranscriptId.value;
+  let newClient;
   try {
-    const targetTranscriptId = addClientTranscriptId.value;
-    const newClient = await createClient(payload);
-    emit('client-added', newClient);
-
-    if (targetTranscriptId) {
-      const transcript = transcripts.value.find(item => item.id === targetTranscriptId);
-      if (!transcript) throw new Error('The transcript is no longer available. The client was added successfully.');
-      assignmentDrafts.value = { ...assignmentDrafts.value, [targetTranscriptId]: newClient.id };
-      const assigned = await assignTranscriptToClient(transcript, newClient.id, newClient.name || newClient.display_name);
-      if (!assigned) throw new Error(errorMessage.value || 'Client added, but the transcript could not be assigned.');
-    } else {
-      selectedClientId.value = newClient.id;
-      const assigned = await patchTranscript({clientId:newClient.id,clearAttention:true},'Client added, but the transcript could not be assigned.');
-      if (assigned) {
-        editingClient.value=false;
-        successMessage.value=`Added ${newClient.name || newClient.display_name} and assigned the transcript.`;
-      }
-    }
-
-    showAddClient.value = false;
-    addClientTranscriptId.value = null;
-    addClientInitialName.value = '';
+    newClient = await createClient(payload);
   } catch (err) {
     addClientError.value = err.message || 'Failed to create client.';
-  } finally {
     addingClient.value = false;
+    return;
+  }
+
+  emit('client-added', newClient);
+  showAddClient.value = false;
+  addClientTranscriptId.value = null;
+  addClientInitialName.value = '';
+  addingClient.value = false;
+
+  if (targetTranscriptId) {
+    assignmentDrafts.value = { ...assignmentDrafts.value, [targetTranscriptId]: newClient.id };
+    const transcript = transcripts.value.find(item => item.id === targetTranscriptId);
+    if (!transcript) {
+      errorMessage.value = 'Client added, but the transcript is no longer available.';
+      return;
+    }
+    const assigned = await assignTranscriptToClient(transcript, newClient.id, newClient.name || newClient.display_name);
+    if (assigned) successMessage.value = `Added ${newClient.name || newClient.display_name} and assigned the transcript.`;
+    return;
+  }
+
+  selectedClientId.value = newClient.id;
+  const assigned = await patchTranscript({clientId:newClient.id,clearAttention:true},'Client added, but the transcript could not be assigned.');
+  if (assigned) {
+    editingClient.value=false;
+    successMessage.value=`Added ${newClient.name || newClient.display_name} and assigned the transcript.`;
   }
 }
 async function openClientTranscripts(){if(!selected.value?.clientId)return;await router.push({name:'ClientWorkspace',params:{clientId:selected.value.clientId},query:{tab:'Transcripts'}})}
