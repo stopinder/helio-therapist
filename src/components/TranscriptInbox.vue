@@ -1,17 +1,35 @@
 <template>
   <section class="transcript-inbox">
     <template v-if="!selected">
-      <header class="page-header">
-        <div><p class="eyebrow">Zoom imports</p><h1>Transcript Inbox</h1><p>Review incoming source material, then decide what needs to happen next. Nothing is analysed automatically.</p></div>
+      <header class="page-header inbox-page-header">
+        <div class="header-orientation">
+          <span class="icon-surface icon-surface-accent header-icon" aria-hidden="true"><Inbox class="workspace-icon-lg" /></span>
+          <div>
+            <p class="type-eyebrow text-accent">Zoom imports</p>
+            <h1 class="type-page-title text-ink">Transcript Inbox</h1>
+            <p class="type-body text-ink-muted header-supporting">Identify the session, place it with the right client, or clear it from the queue. Nothing is analysed automatically.</p>
+          </div>
+        </div>
         <span v-if="errorMessage" class="type-metadata text-state-danger" role="status">Inbox unavailable</span>
       </header>
 
       <div v-if="transcripts.length" class="queue-controls">
-        <label class="inbox-search"><span class="sr-only">Search transcripts</span><input v-model="searchQuery" class="control-field min-h-touch" type="search" placeholder="Search transcripts" /></label>
+        <label class="inbox-search">
+          <span class="sr-only">Search transcripts</span>
+          <span class="search-control">
+            <Search class="workspace-icon search-icon" aria-hidden="true" />
+            <input v-model="searchQuery" class="control-field min-h-touch" type="search" placeholder="Search transcripts" />
+          </span>
+        </label>
         <div class="filters" role="group" aria-label="Transcript views">
-          <button v-for="filter in filters" :key="filter.id" type="button" class="min-h-touch type-ui" :class="{ active: filterMode === filter.id }" :aria-pressed="filterMode === filter.id" @click="setFilter(filter.id)">{{ filter.label }}<template v-if="filter.id === 'attention'"> · {{ actionableCount }}</template></button>
+          <button v-for="filter in filters" :key="filter.id" type="button" class="min-h-touch type-ui" :class="{ active: filterMode === filter.id }" :aria-pressed="filterMode === filter.id" @click="setFilter(filter.id)">
+            {{ filter.label }}<template v-if="filter.id === 'attention'"> · {{ actionableCount }}</template>
+          </button>
         </div>
-        <button v-if="filterMode === 'attention' && matchingTranscripts.length" class="secondary clear-all" :disabled="saving || !!searchQuery" :title="searchQuery ? 'Clear your search to archive all attention items.' : 'Archive every item currently in Needs attention.'" @click="clearAllAttention">{{ saving ? 'Archiving…' : 'Archive all' }}</button>
+        <button v-if="filterMode === 'attention' && matchingTranscripts.length" class="button-secondary clear-all compact-button" :disabled="saving || !!searchQuery" :title="searchQuery ? 'Clear your search to archive all attention items.' : 'Archive every item currently in Needs attention.'" @click="clearAllAttention">
+          <Archive class="workspace-icon-sm" aria-hidden="true" />
+          <span>{{ saving ? 'Archiving…' : 'Archive all' }}</span>
+        </button>
       </div>
 
       <p v-if="errorMessage" class="notice error" role="alert">{{ errorMessage }}</p><p v-else-if="successMessage" class="notice success" role="status">{{ successMessage }}</p>
@@ -28,57 +46,105 @@
         >
           <div class="row-main">
             <div class="row-header">
-              <div class="min-w-0">
-                <strong class="triage-identity">{{ triageIdentity(transcript) }}</strong>
-                <p v-if="transcript.sourceTitle && transcript.sourceTitle !== triageIdentity(transcript)" class="triage-topic">{{ transcript.sourceTitle }}</p>
+              <div class="identity-block min-w-0">
+                <span class="identity-icon icon-surface icon-surface-accent" aria-hidden="true"><UserRound class="workspace-icon" /></span>
+                <div class="min-w-0">
+                  <strong class="triage-identity">{{ triageIdentity(transcript) }}</strong>
+                  <p v-if="transcript.sourceTitle && transcript.sourceTitle !== triageIdentity(transcript)" class="triage-topic">{{ transcript.sourceTitle }}</p>
+                  <div class="row-metadata">
+                    <span>{{ formatDate(transcript.sourceOccurredAt || transcript.receivedAt) }}</span>
+                    <span v-if="transcript.meetingId">Meeting {{ transcript.meetingId }}</span>
+                    <span v-if="speakerClues(transcript).length"><UsersRound class="workspace-icon-sm" aria-hidden="true" /> {{ speakerClues(transcript).join(', ') }}</span>
+                  </div>
+                </div>
               </div>
-              <StatusIndicator :tone="filterMode === 'history' ? (transcript.completedAt || (!transcript.attentionClearedAt && isVerifiedMatch(transcript)) ? 'success' : 'neutral') : workflowTone(transcript)">
+              <StatusIndicator class="status-indicator" :tone="filterMode === 'history' ? (transcript.completedAt || (!transcript.attentionClearedAt && isVerifiedMatch(transcript)) ? 'success' : 'neutral') : workflowTone(transcript)">
                 {{ filterMode === 'history' ? (transcript.completedAt ? 'Inbox setup complete' : transcript.attentionClearedAt ? 'Archived' : isVerifiedMatch(transcript) ? 'Matched automatically' : 'History') : workflowState(transcript).label }}
               </StatusIndicator>
             </div>
-            <small>{{ formatDate(transcript.sourceOccurredAt || transcript.receivedAt) }}<template v-if="transcript.meetingId"> · Meeting {{ transcript.meetingId }}</template></small>
-            <p v-if="speakerClues(transcript).length" class="triage-clue">Named speakers: {{ speakerClues(transcript).join(', ') }}</p>
-            <p v-if="transcript.zoomGeneratedSummary" class="triage-preview"><strong>Zoom note:</strong> {{ notePreview(transcript.zoomGeneratedSummary) }}</p>
+
+            <section v-if="transcript.zoomGeneratedSummary" class="zoom-note-card" aria-label="Zoom note">
+              <div class="zoom-note-header">
+                <span class="zoom-note-icon" aria-hidden="true"><FileText class="workspace-icon" /></span>
+                <div>
+                  <p class="type-eyebrow text-accent">Zoom note</p>
+                  <p class="type-metadata text-ink-muted">Imported session context</p>
+                </div>
+              </div>
+              <div class="zoom-note-content">
+                <template v-for="(block, index) in visibleZoomNoteBlocks(transcript)" :key="index">
+                  <h3 v-if="block.type === 'heading'" class="zoom-note-heading">{{ block.text }}</h3>
+                  <div v-else-if="block.type === 'bullet'" class="zoom-note-bullet"><span aria-hidden="true">•</span><p>{{ block.text }}</p></div>
+                  <p v-else class="zoom-note-paragraph">{{ block.text }}</p>
+                </template>
+              </div>
+              <button v-if="zoomNoteCanExpand(transcript)" type="button" class="zoom-note-toggle" :aria-expanded="expandedNoteIds.has(transcript.id)" @click="toggleZoomNote(transcript.id)">
+                <ChevronUp v-if="expandedNoteIds.has(transcript.id)" class="workspace-icon-sm" aria-hidden="true" />
+                <ChevronDown v-else class="workspace-icon-sm" aria-hidden="true" />
+                <span>{{ expandedNoteIds.has(transcript.id) ? 'Show less' : 'Show more' }}</span>
+              </button>
+            </section>
             <p v-else class="triage-preview">{{ transcriptPreview(transcript) }}</p>
 
             <div v-if="filterMode === 'attention' && !isVerifiedMatch(transcript)" class="inline-assignment">
+              <div class="assignment-intro">
+                <span class="assignment-icon" aria-hidden="true"><UserPlus class="workspace-icon" /></span>
+                <div>
+                  <p class="type-ui font-semibold text-ink">Place with client</p>
+                  <p class="type-metadata text-ink-muted">Choose an existing client or add someone new.</p>
+                </div>
+              </div>
               <div class="field-group">
                 <label :for="'client-' + transcript.id">Client</label>
                 <div class="inline-client-picker">
-                  <select :id="'client-' + transcript.id" v-model="assignmentDrafts[transcript.id]">
+                  <select :id="'client-' + transcript.id" v-model="assignmentDrafts[transcript.id]" class="control-field min-h-touch">
                     <option value="">Select client…</option>
                     <option v-for="client in clients" :key="client.id" :value="client.id">{{ client.name || client.display_name }}</option>
                   </select>
-                  <button type="button" class="secondary add-client-inline" :disabled="addingClient" @click="openAddClientForTranscript(transcript)">Add client</button>
+                  <button type="button" class="button-secondary add-client-inline" :disabled="addingClient" @click="openAddClientForTranscript(transcript)">
+                    <UserPlus class="workspace-icon-sm" aria-hidden="true" />
+                    <span>Add client</span>
+                  </button>
+                  <button
+                    type="button"
+                    class="button-primary assign-inline"
+                    :disabled="assignmentSavingId === transcript.id || !assignmentDrafts[transcript.id]"
+                    @click="assignFromInbox(transcript)"
+                  >
+                    <Check class="workspace-icon-sm" aria-hidden="true" />
+                    <span>{{ assignmentSavingId === transcript.id ? 'Assigning…' : 'Assign' }}</span>
+                  </button>
                 </div>
                 <span v-if="suggestedClient(transcript)" class="suggestion-note">Suggested from an exact Zoom title match — confirm before assigning.</span>
               </div>
-              <button
-                type="button"
-                class="primary"
-                :disabled="assignmentSavingId === transcript.id || !assignmentDrafts[transcript.id]"
-                @click="assignFromInbox(transcript)"
-              >{{ assignmentSavingId === transcript.id ? 'Assigning…' : 'Assign' }}</button>
             </div>
 
             <div v-else-if="isVerifiedMatch(transcript)" class="matched-note">
-              <span>Verified Zoom/session match · {{ clientName(transcript.clientId) }}</span>
-              <button type="button" class="secondary" @click="openLinkedSessionFromRow(transcript)">Open Clinical Workspace</button>
+              <span class="matched-copy"><CheckCircle2 class="workspace-icon" aria-hidden="true" /> Verified Zoom/session match · {{ clientName(transcript.clientId) }}</span>
+              <button type="button" class="button-secondary compact-button" @click="openLinkedSessionFromRow(transcript)">Open Clinical Workspace</button>
             </div>
 
             <div class="triage-actions">
-              <template v-if="filterMode === 'attention'">
-                <button type="button" class="secondary" :disabled="rowActionSavingId === transcript.id" @click="archiveFromInbox(transcript)">
-                  {{ rowActionSavingId === transcript.id && rowActionSavingMode === 'archive' ? 'Archiving…' : 'Archive' }}
+              <div class="utility-actions">
+                <button type="button" class="quiet-action" :aria-expanded="expandedRows.has(transcript.id)" @click="toggleExpand(transcript.id, $event)">
+                  <Eye class="workspace-icon-sm" aria-hidden="true" />
+                  <span>{{ expandedRows.has(transcript.id) ? 'Hide preview' : 'Preview transcript' }}</span>
                 </button>
-                <button v-if="canDeleteTranscript(transcript)" type="button" class="secondary text-state-danger" :disabled="rowActionSavingId === transcript.id" @click="deleteFromInbox(transcript)">
-                  {{ rowActionSavingId === transcript.id && rowActionSavingMode === 'delete' ? 'Deleting…' : 'Delete' }}
+                <button type="button" class="quiet-action" @click="openTranscript(transcript)">
+                  <FileText class="workspace-icon-sm" aria-hidden="true" />
+                  <span>Open full transcript</span>
                 </button>
-              </template>
-              <button type="button" class="secondary" :aria-expanded="expandedRows.has(transcript.id)" @click="toggleExpand(transcript.id, $event)">
-                {{ expandedRows.has(transcript.id) ? 'Hide preview' : 'Preview transcript' }}
-              </button>
-              <button type="button" class="secondary" @click="openTranscript(transcript)">Open full transcript</button>
+              </div>
+              <div v-if="filterMode === 'attention'" class="record-actions">
+                <button type="button" class="quiet-action" :disabled="rowActionSavingId === transcript.id" @click="archiveFromInbox(transcript)">
+                  <Archive class="workspace-icon-sm" aria-hidden="true" />
+                  <span>{{ rowActionSavingId === transcript.id && rowActionSavingMode === 'archive' ? 'Archiving…' : 'Archive' }}</span>
+                </button>
+                <button v-if="canDeleteTranscript(transcript)" type="button" class="quiet-action danger-action" :disabled="rowActionSavingId === transcript.id" @click="deleteFromInbox(transcript)">
+                  <Trash2 class="workspace-icon-sm" aria-hidden="true" />
+                  <span>{{ rowActionSavingId === transcript.id && rowActionSavingMode === 'delete' ? 'Deleting…' : 'Delete' }}</span>
+                </button>
+              </div>
             </div>
             <pre v-if="expandedRows.has(transcript.id)" class="inline-transcript-preview">{{ transcript.text }}</pre>
           </div>
@@ -94,7 +160,7 @@
     <template v-else>
       <header class="review-header">
         <div class="header-main">
-          <button class="back" @click="closeTranscript">‹ Transcript Inbox</button>
+          <button class="back" @click="closeTranscript"><ArrowLeft class="workspace-icon-sm" aria-hidden="true" /> Transcript Inbox</button>
           <div class="title-area">
             <p class="eyebrow">Transcript review</p>
             <h1>{{ labelFor(selected) }}</h1>
@@ -148,6 +214,7 @@
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
+import { Archive, ArrowLeft, Check, CheckCircle2, ChevronDown, ChevronUp, Eye, FileText, Inbox, Search, Trash2, UserPlus, UserRound, UsersRound } from '@lucide/vue'
 import { authenticatedFetch } from '../lib/api.js'
 import { createClient } from '../lib/clients.js'
 import AddClientModal from './sidebar/AddClientModal.vue'
@@ -156,7 +223,7 @@ const props = defineProps({ clients: { type: Array, default: () => [] }, openTra
 const emit = defineEmits(['client-added'])
 const router = useRouter()
 const transcripts = ref([]), selected = ref(null), selectedClientId = ref(''), selectedLens = ref(''), sourceRetention = ref('keep_until_review')
-const editingClient = ref(false), editingChoices = ref(false), searchQuery = ref(''), filterMode = ref('attention'), showRaw = ref(false), expandedRows = ref(new Set()), assignmentDrafts = ref({}), assignmentSavingId = ref(null), rowActionSavingId = ref(null), rowActionSavingMode = ref(''), detailReturnId = ref(null)
+const editingClient = ref(false), editingChoices = ref(false), searchQuery = ref(''), filterMode = ref('attention'), showRaw = ref(false), expandedRows = ref(new Set()), expandedNoteIds = ref(new Set()), assignmentDrafts = ref({}), assignmentSavingId = ref(null), rowActionSavingId = ref(null), rowActionSavingMode = ref(''), detailReturnId = ref(null)
 const loading = ref(true), saving = ref(false), errorMessage = ref(''), successMessage = ref('')
 const showAddClient = ref(false), addingClient = ref(false), addClientError = ref(''), addClientTranscriptId = ref(null), addClientInitialName = ref('')
 const lastClearedBatch = ref([])
@@ -219,9 +286,52 @@ function speakerClues(transcript){
   const speakers=Array.isArray(transcript?.structuredTranscript?.speakers)?transcript.structuredTranscript.speakers:[];
   return [...new Set(speakers.map(item=>String(item?.display_name||'').trim()).filter(name=>name&&!/^unknown$/i.test(name)&&!/^speaker\s*\d+$/i.test(name)))].slice(0,4)
 }
-function notePreview(value){
-  const text=String(value||'').replace(/\s+/g,' ').trim();
-  return text.length>420?`${text.slice(0,417)}…`:text
+function cleanZoomNoteText(value){
+  return String(value||'')
+    .replace(/\*\*(.*?)\*\*/g,'$1')
+    .replace(/__(.*?)__/g,'$1')
+    .replace(/\[(.*?)\]\([^)]+\)/g,'$1')
+    .replace(/`([^`]+)`/g,'$1')
+    .replace(/\s+/g,' ')
+    .trim()
+}
+function zoomNoteBlocks(value){
+  const normalized=String(value||'')
+    .replace(/\r/g,'')
+    .replace(/\s+(?=##\s+)/g,'\n')
+    .trim()
+  if(!normalized)return[]
+  return normalized
+    .split(/\n+/)
+    .map(line=>line.trim())
+    .filter(Boolean)
+    .map(line=>{
+      if(/^#{1,3}\s+/.test(line))return{type:'heading',text:cleanZoomNoteText(line.replace(/^#{1,3}\s+/,''))}
+      if(/^[-*]\s+/.test(line))return{type:'bullet',text:cleanZoomNoteText(line.replace(/^[-*]\s+/,''))}
+      return{type:'paragraph',text:cleanZoomNoteText(line)}
+    })
+    .filter(block=>block.text)
+}
+function compactNoteBlock(block){
+  if(block.type==='heading')return block
+  const limit=block.type==='bullet'?260:340
+  return block.text.length>limit?{...block,text:`${block.text.slice(0,limit-1).trimEnd()}…`}:block
+}
+function visibleZoomNoteBlocks(transcript){
+  const blocks=zoomNoteBlocks(transcript?.zoomGeneratedSummary)
+  if(expandedNoteIds.value.has(transcript?.id))return blocks
+  return blocks.slice(0,4).map(compactNoteBlock)
+}
+function zoomNoteCanExpand(transcript){
+  const blocks=zoomNoteBlocks(transcript?.zoomGeneratedSummary)
+  return blocks.length>4||blocks.some(block=>block.type!=='heading'&&block.text.length>(block.type==='bullet'?260:340))
+}
+function toggleZoomNote(id){
+  if(!id)return
+  const next=new Set(expandedNoteIds.value)
+  if(next.has(id))next.delete(id)
+  else next.add(id)
+  expandedNoteIds.value=next
 }
 function transcriptPreview(transcript){
   if(typeof transcript?.text!=='string')return 'No Zoom note excerpt is available. Open Preview only if you need the source transcript.';
@@ -517,80 +627,228 @@ async function openQueuedTranscript(id){if(!id)return;if(!transcripts.value.leng
 watch(()=>props.openTranscriptId,openQueuedTranscript);watch(searchQuery,()=>{historyLimit.value=historyPageSize});onMounted(async()=>{await load();openQueuedTranscript(props.openTranscriptId)})
 </script>
 <style scoped>
-.transcript-inbox { max-width: 680px; margin: 0 auto; padding: 2rem 1.5rem; }
+.transcript-inbox {
+  max-width: 1040px;
+  margin: 0 auto;
+  padding: var(--space-page);
+  color: var(--text-primary);
+}
+.inbox-page-header {
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:var(--space-inline-lg);
+  margin:0 0 var(--space-stack-xl);
+}
+.header-orientation { display:flex; align-items:flex-start; gap:var(--space-inline-md); }
+.header-icon { width:2.75rem; height:2.75rem; margin-top:.15rem; }
+.header-supporting { max-width:46rem; margin-top:.45rem; }
 
-.workflow-section { margin-bottom: 2rem; padding: 2rem; background: white; border: 1px solid var(--helio-gray-200); border-radius: 12px; display: flex; justify-content: space-between; align-items: flex-start; gap: 2rem; }
-.workflow-section > div { flex: 1; }
-.workflow-section h2 { margin: 0.5rem 0; font-size: 1.25rem; }
-.assignment-controls { flex: 1.5; display: flex; flex-direction: column; gap: 1rem; }
-.assignment-actions { display: flex; gap: 0.75rem; align-items: center; margin-top: 0.5rem; }
+.queue-controls {
+  display:grid;
+  grid-template-columns:minmax(240px,1fr) auto auto;
+  gap:var(--space-inline-md);
+  align-items:center;
+  margin:0 0 var(--space-stack-lg);
+  padding:var(--space-stack-sm);
+  border:1px solid var(--border-muted);
+  border-radius:var(--radius-panel);
+  background:var(--surface-muted);
+}
+.inbox-search { min-width:0; }
+.search-control { position:relative; display:block; }
+.search-control .control-field { padding-left:2.55rem; background:var(--surface-elevated); }
+.search-icon { position:absolute; left:.85rem; top:50%; z-index:1; transform:translateY(-50%); color:var(--accent); pointer-events:none; }
+.filters { display:inline-flex; min-height:var(--control-target); padding:.2rem; border:1px solid var(--border); border-radius:var(--radius-control); background:var(--surface-raised); }
+.filters button { border:0; background:transparent; color:var(--text-secondary); cursor:pointer; padding:.55rem .8rem; border-radius:calc(var(--radius-control) - .18rem); transition:background-color var(--motion-standard) var(--motion-ease),color var(--motion-standard) var(--motion-ease); }
+.filters button:hover { background:var(--state-hover); }
+.filters button.active { background:var(--state-selected); color:var(--accent); font-weight:600; }
+.compact-button { min-height:2.45rem; padding:.45rem .75rem; }
+.clear-all { white-space:nowrap; }
 
-.field-group { display: flex; flex-direction: column; gap: 0.5rem; }
-.field-group label { font-size: 0.875rem; font-weight: 500; color: var(--helio-gray-700); }
+.notice { margin:0 0 var(--space-stack-md); padding:.75rem 1rem; border-radius:var(--radius-control); border:1px solid var(--border); background:var(--surface-raised); }
+.notice.error { border-color:rgb(154 79 71 / .25); background:var(--state-danger-surface); color:var(--state-danger); }
+.notice.success { border-color:rgb(71 112 91 / .25); background:var(--state-success-surface); color:var(--state-success); }
+.undo-link { background:none; border:0; color:var(--action-link); font-weight:600; cursor:pointer; padding:.35rem 0; margin-bottom:var(--space-stack-md); }
 
-.queue-controls { display: flex; gap: 1rem; margin: 2rem 0; align-items: center; }
-.inbox-search { flex: 1; }
-.filters { display: flex; gap: 0.5rem; }
-.filters button { border: none; background: none; color: var(--helio-gray-600); cursor: pointer; padding: 0.5rem 0.75rem; border-radius: 20px; transition: all 0.2s; }
-.filters button.active { background: var(--helio-gray-100); color: var(--helio-gray-900); font-weight: 600; }
-.clear-all { margin-left: auto; }
+.inbox-list {
+  display:flex;
+  flex-direction:column;
+  gap:var(--space-stack-md);
+}
+.transcript-row {
+  position:relative;
+  background:var(--surface-raised);
+  border:1px solid var(--border-muted);
+  border-radius:var(--radius-panel);
+  overflow:hidden;
+  transition:border-color var(--motion-standard) var(--motion-ease),background-color var(--motion-standard) var(--motion-ease),box-shadow var(--motion-standard) var(--motion-ease);
+}
+.transcript-row::before {
+  content:'';
+  position:absolute;
+  inset:0 auto 0 0;
+  width:3px;
+  background:var(--accent);
+  opacity:.8;
+}
+.transcript-row:hover { border-color:var(--border-strong); background:var(--surface-elevated); }
+.row-main { display:flex; flex-direction:column; gap:var(--space-stack-md); padding:1.25rem 1.35rem 1.1rem 1.5rem; }
+.row-header { display:flex; justify-content:space-between; align-items:flex-start; gap:var(--space-inline-lg); }
+.identity-block { display:flex; align-items:flex-start; gap:.75rem; }
+.identity-icon { width:2.25rem; height:2.25rem; border-radius:var(--radius-pill); flex-shrink:0; }
+.triage-identity { display:block; color:var(--text-primary); font-size:1.05rem; line-height:1.35; font-weight:650; letter-spacing:-.01em; text-transform:none; }
+.triage-topic { margin:.12rem 0 0; color:var(--text-secondary); font-size:.82rem; line-height:1.4; }
+.row-metadata { display:flex; flex-wrap:wrap; align-items:center; gap:.35rem .7rem; margin-top:.45rem; color:var(--text-muted); font-size:var(--type-metadata-size); line-height:var(--type-metadata-line); }
+.row-metadata > span { display:inline-flex; align-items:center; gap:.3rem; }
+.row-metadata > span + span::before { content:'·'; margin-right:.35rem; color:var(--border-strong); }
+.status-indicator { flex-shrink:0; margin-top:.2rem; }
 
-.inbox-list { display: flex; flex-direction: column; gap: 0.5rem; }
-.transcript-row { display: flex; justify-content: space-between; align-items: center; padding: 1.25rem; background: white; border: 1px solid var(--helio-gray-200); border-radius: 12px; cursor: pointer; text-align: left; transition: all 0.2s; }
-.transcript-row:hover { border-color: var(--helio-action-primary); transform: translateY(-1px); box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
-.row-main { display: flex; flex-direction: column; gap: 0.25rem; flex: 1; }
-.row-header { display: flex; align-items: center; gap: 0.5rem; }
-.chevron { background: none; border: none; padding: 0.25rem; color: var(--helio-gray-400); cursor: pointer; font-size: 1.125rem; }
-.transcript-row .open { color: var(--helio-action-primary); font-weight: 600; font-size: 0.875rem; margin-left: 1rem; }
+.zoom-note-card {
+  margin-left:3rem;
+  border:1px solid var(--border-reflection);
+  border-radius:var(--radius-control);
+  background:var(--surface-reflection);
+  padding:.85rem 1rem;
+}
+.zoom-note-header { display:flex; align-items:center; gap:.65rem; margin-bottom:.65rem; }
+.zoom-note-icon { display:inline-flex; width:1.9rem; height:1.9rem; align-items:center; justify-content:center; border:1px solid var(--border-reflection); border-radius:var(--radius-control); background:var(--surface-raised); color:var(--accent); }
+.zoom-note-content { display:flex; flex-direction:column; gap:.32rem; color:var(--text-secondary); }
+.zoom-note-heading { margin:.28rem 0 .08rem; color:var(--text-primary); font-size:.82rem; line-height:1.3; font-weight:650; }
+.zoom-note-paragraph,.zoom-note-bullet p { margin:0; font-size:.82rem; line-height:1.55; }
+.zoom-note-bullet { display:grid; grid-template-columns:.8rem 1fr; gap:.2rem; }
+.zoom-note-bullet > span { color:var(--accent); font-weight:700; }
+.zoom-note-toggle { display:inline-flex; align-items:center; gap:.3rem; margin-top:.55rem; padding:.2rem 0; border:0; background:transparent; color:var(--action-link); font-size:var(--type-ui-size); font-weight:600; cursor:pointer; }
+.triage-preview { margin:0 0 0 3rem; padding:.75rem .9rem; border-radius:var(--radius-control); background:var(--surface-subtle); color:var(--text-muted); font-size:.8rem; line-height:1.45; }
 
-.triage-row { display: block; cursor: default; padding: 1rem 1.25rem; }
-.triage-row:hover { transform: none; box-shadow: 0 2px 5px rgba(0,0,0,0.04); }
-.triage-row .row-main { width: 100%; gap: 0.5rem; }
-.triage-row .row-header { justify-content: space-between; align-items: flex-start; gap: 1rem; }
-.triage-identity { display: block; font-size: 1rem; color: var(--helio-gray-900); }
-.triage-topic { margin: 0.15rem 0 0; color: var(--helio-gray-600); font-size: 0.875rem; line-height: 1.35; }
-.triage-clue { margin: 0.25rem 0 0; color: var(--helio-gray-700); font-size: 0.8125rem; }
-.triage-preview { margin: 0.15rem 0 0; color: var(--helio-gray-600); font-size: 0.8125rem; line-height: 1.45; }
-.inline-assignment { display: grid; grid-template-columns: minmax(0,1fr) auto; align-items: end; gap: 0.75rem; margin-top: 0.35rem; padding-top: 0.75rem; border-top: 1px solid var(--helio-gray-100); }
-.inline-assignment select { width: 100%; }
-.inline-client-picker { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 0.5rem; align-items: center; }
-.add-client-inline { white-space: nowrap; }
-.suggestion-note { color: var(--helio-gray-500); font-size: 0.75rem; }
-.matched-note { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; margin-top: 0.35rem; padding: 0.75rem; border-radius: 10px; background: var(--helio-state-success-bg, #f0fdf4); color: var(--helio-gray-700); font-size: 0.8125rem; }
-.triage-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.25rem; }
-.inline-transcript-preview { max-height: 18rem; overflow: auto; margin: 0.25rem 0 0; padding: 1rem; border-radius: 10px; background: var(--helio-gray-50); border: 1px solid var(--helio-gray-200); white-space: pre-wrap; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.75rem; line-height: 1.5; }
+.inline-assignment {
+  display:grid;
+  grid-template-columns:14rem minmax(0,1fr);
+  align-items:end;
+  gap:var(--space-inline-lg);
+  margin-left:3rem;
+  padding:1rem;
+  border:1px solid var(--border-muted);
+  border-radius:var(--radius-control);
+  background:var(--surface-subtle);
+}
+.assignment-intro { display:flex; align-items:flex-start; gap:.6rem; align-self:center; }
+.assignment-icon { display:inline-flex; width:2rem; height:2rem; align-items:center; justify-content:center; border-radius:var(--radius-control); background:var(--state-selected); color:var(--accent); flex-shrink:0; }
+.field-group { display:flex; flex-direction:column; gap:.4rem; }
+.field-group label { color:var(--text-secondary); font-size:var(--type-ui-size); font-weight:600; }
+.inline-client-picker { display:grid; grid-template-columns:minmax(0,1fr) auto auto; gap:.5rem; align-items:center; }
+.inline-client-picker .control-field { padding-top:.55rem; padding-bottom:.55rem; }
+.add-client-inline { white-space:nowrap; color:var(--accent); border-color:rgb(29 84 109 / .28); }
+.assign-inline { min-width:6.3rem; white-space:nowrap; }
+.suggestion-note { color:var(--text-muted); font-size:var(--type-metadata-size); }
 
-.review-header { margin-bottom: 2rem; }
-.header-main { display: flex; flex-direction: column; gap: 1.5rem; }
-.back { background: none; border: none; color: var(--helio-action-primary); font-weight: 600; cursor: pointer; padding: 0; text-align: left; width: fit-content; }
-.title-area h1 { margin: 0.25rem 0; }
+.matched-note {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:.75rem;
+  margin-left:3rem;
+  padding:.75rem .9rem;
+  border:1px solid rgb(71 112 91 / .22);
+  border-radius:var(--radius-control);
+  background:var(--state-success-surface);
+  color:var(--text-secondary);
+}
+.matched-copy { display:inline-flex; align-items:center; gap:.45rem; color:var(--state-success); font-size:var(--type-ui-size); font-weight:600; }
 
-.ready-card { background: var(--helio-state-success-bg, #f0fdf4); border: 1px solid var(--helio-state-success, #22c55e); padding: 2rem; border-radius: 12px; margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center; }
-.complete-card { background: var(--helio-gray-50); border-color: var(--helio-gray-200); }
+.triage-actions {
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:var(--space-inline-md);
+  margin-left:3rem;
+  padding-top:.7rem;
+  border-top:1px solid var(--border-muted);
+}
+.utility-actions,.record-actions { display:flex; flex-wrap:wrap; align-items:center; gap:.25rem; }
+.quiet-action {
+  display:inline-flex;
+  min-height:2.35rem;
+  align-items:center;
+  gap:.35rem;
+  padding:.4rem .55rem;
+  border:0;
+  border-radius:var(--radius-control);
+  background:transparent;
+  color:var(--text-muted);
+  font-size:var(--type-ui-size);
+  font-weight:500;
+  cursor:pointer;
+  transition:background-color var(--motion-fast) var(--motion-ease),color var(--motion-fast) var(--motion-ease);
+}
+.quiet-action:hover:not(:disabled) { background:var(--state-hover); color:var(--text-primary); }
+.quiet-action:disabled { background:transparent; }
+.danger-action { color:var(--state-danger); }
+.danger-action:hover:not(:disabled) { background:var(--state-danger-surface); color:var(--state-danger); }
+.inline-transcript-preview { max-height:18rem; overflow:auto; margin:.1rem 0 0 3rem; padding:1rem; border-radius:var(--radius-control); background:var(--surface-muted); border:1px solid var(--border-muted); color:var(--text-secondary); white-space:pre-wrap; font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:.75rem; line-height:1.55; }
 
-.raw-transcript { margin: 2rem 0; border: 1px solid var(--helio-gray-200); border-radius: 12px; overflow: hidden; }
-.raw-transcript header { padding: 1.5rem 2rem; background: var(--helio-gray-50); border-bottom: 1px solid var(--helio-gray-200); display: flex; justify-content: space-between; align-items: flex-start; gap: 2rem; }
-.raw-transcript pre { padding: 2rem; background: white; margin: 0; font-family: monospace; white-space: pre-wrap; font-size: 0.875rem; line-height: 1.6; max-height: 400px; overflow-y: auto; }
-.source-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; justify-content: flex-end; }
+.empty-card { padding:var(--space-stack-2xl); text-align:center; border:1px solid var(--border-muted); border-radius:var(--radius-panel); background:var(--surface-raised); color:var(--text-muted); }
+.empty-card h2 { margin:0 0 .4rem; color:var(--text-primary); font-size:var(--type-subsection-size); }
+.load-more-row { display:flex; justify-content:center; padding:var(--space-stack-lg); }
+.load-more { min-height:var(--control-target); padding:.5rem 1.25rem; border:1px solid var(--border); border-radius:var(--radius-pill); background:var(--surface-raised); color:var(--text-secondary); cursor:pointer; }
+.load-more:hover { border-color:var(--border-strong); background:var(--state-hover); }
 
-.review-choices { margin-top: 2rem; padding: 2rem; background: white; border: 1px solid var(--helio-gray-200); border-radius: 12px; }
-.review-choices select { width: 100%; margin: 0.5rem 0 1.5rem; }
-.review-choices fieldset { border: none; padding: 0; margin: 0 0 1.5rem; display: flex; flex-direction: column; gap: 0.75rem; }
-.review-choices fieldset label { display: flex; align-items: center; gap: 0.75rem; font-weight: normal; cursor: pointer; }
+.review-header { margin-bottom:var(--space-stack-xl); }
+.header-main { display:flex; flex-direction:column; gap:var(--space-stack-lg); }
+.back { display:inline-flex; align-items:center; gap:.35rem; width:fit-content; padding:.35rem 0; border:0; background:transparent; color:var(--action-link); font-size:var(--type-ui-size); font-weight:600; cursor:pointer; }
+.title-area .eyebrow,.workflow-section .eyebrow,.ready-card .eyebrow { color:var(--accent); }
+.title-area h1 { margin:.2rem 0; font-size:var(--type-page-title-size); line-height:var(--type-page-title-line); font-weight:600; letter-spacing:var(--type-page-title-tracking); }
+.title-area p { color:var(--text-muted); }
 
-.undo-link { background: none; border: none; color: var(--helio-action-primary); font-weight: 600; cursor: pointer; padding: 0.5rem 0; margin-bottom: 1rem; display: block; }
-.load-more-row { display: flex; justify-content: center; padding: 1rem; }
-.load-more { background: none; border: 1px solid var(--helio-gray-200); padding: 0.5rem 1.5rem; border-radius: 20px; color: var(--helio-gray-600); cursor: pointer; transition: all 0.2s; }
-.load-more:hover { border-color: var(--helio-gray-400); color: var(--helio-gray-900); }
+.workflow-section,.raw-transcript,.review-choices,.ready-card {
+  margin-bottom:var(--space-stack-xl);
+  border:1px solid var(--border-muted);
+  border-radius:var(--radius-panel);
+  background:var(--surface-raised);
+}
+.workflow-section { padding:1.5rem; display:flex; justify-content:space-between; align-items:flex-start; gap:var(--space-inline-lg); }
+.workflow-section > div { flex:1; }
+.workflow-section h2,.ready-card h2 { margin:.35rem 0; font-size:var(--type-subsection-size); }
+.assignment-controls { flex:1.5; display:flex; flex-direction:column; gap:var(--space-stack-md); }
+.assignment-controls select,.review-choices select { min-height:var(--control-target); border:1px solid var(--border); border-radius:var(--radius-control); background:var(--surface-elevated); padding:.55rem .75rem; color:var(--text-primary); }
+.assignment-actions { display:flex; gap:.65rem; align-items:center; flex-wrap:wrap; margin-top:.4rem; }
+.primary { min-height:var(--control-target); padding:.55rem .9rem; border:1px solid rgb(0 0 0 / .1); border-radius:var(--radius-control); background:var(--accent); color:var(--text-on-action); font-size:var(--type-ui-size); font-weight:600; cursor:pointer; }
+.primary:hover:not(:disabled) { background:var(--accent-hover); }
+.secondary { min-height:var(--control-target); padding:.55rem .8rem; border:1px solid var(--border); border-radius:var(--radius-control); background:var(--surface-raised); color:var(--text-secondary); font-size:var(--type-ui-size); font-weight:500; cursor:pointer; }
+.secondary:hover:not(:disabled) { background:var(--state-hover); border-color:var(--border-strong); }
 
+.ready-card { padding:1.35rem 1.5rem; display:flex; justify-content:space-between; align-items:center; border-color:rgb(71 112 91 / .2); background:var(--state-success-surface); }
+.complete-card { border-color:var(--border-muted); background:var(--surface-subtle); }
+.raw-transcript { overflow:hidden; }
+.raw-transcript header { padding:1.2rem 1.5rem; background:var(--surface-subtle); border-bottom:1px solid var(--border-muted); display:flex; justify-content:space-between; align-items:flex-start; gap:var(--space-inline-lg); }
+.raw-transcript pre { max-height:400px; overflow-y:auto; margin:0; padding:1.5rem; background:var(--surface-elevated); color:var(--text-secondary); font-family:ui-monospace,SFMono-Regular,Menlo,monospace; white-space:pre-wrap; font-size:.8rem; line-height:1.6; }
+.source-actions { display:flex; gap:.5rem; flex-wrap:wrap; justify-content:flex-end; }
+.review-choices { padding:1.5rem; }
+.review-choices select { width:100%; margin:.45rem 0 1.25rem; }
+.review-choices fieldset { border:0; padding:0; margin:0 0 1.25rem; display:flex; flex-direction:column; gap:.7rem; }
+.review-choices fieldset label { display:flex; align-items:center; gap:.7rem; cursor:pointer; }
+
+@media (max-width: 820px) {
+  .queue-controls { grid-template-columns:1fr; }
+  .filters { width:100%; }
+  .filters button { flex:1; }
+  .clear-all { justify-self:start; }
+  .zoom-note-card,.inline-assignment,.matched-note,.triage-actions,.inline-transcript-preview { margin-left:0; }
+  .inline-assignment { grid-template-columns:1fr; }
+  .assignment-intro { align-self:start; }
+  .inline-client-picker { grid-template-columns:1fr auto auto; }
+}
 @media (max-width: 640px) {
-  .workflow-section { flex-direction: column; gap: 1.5rem; padding: 1.5rem; }
-  .assignment-controls { width: 100%; }
-  .ready-card { flex-direction: column; gap: 1.5rem; align-items: flex-start; }
-  .inline-assignment { grid-template-columns: 1fr; }
-  .inline-client-picker { grid-template-columns: 1fr; }
-  .matched-note { align-items: flex-start; flex-direction: column; }
-  .raw-transcript header { flex-direction: column; gap: 1rem; padding: 1.5rem; }
-  .source-actions { justify-content: flex-start; }
+  .transcript-inbox { padding:1rem; }
+  .inbox-page-header,.row-header,.workflow-section,.ready-card,.raw-transcript header { flex-direction:column; align-items:stretch; }
+  .header-icon { display:none; }
+  .row-header { gap:.7rem; }
+  .status-indicator { align-self:flex-start; }
+  .inline-client-picker { grid-template-columns:1fr; }
+  .triage-actions { align-items:flex-start; flex-direction:column; }
+  .record-actions { width:100%; padding-top:.35rem; border-top:1px solid var(--border-muted); }
+  .workflow-section { padding:1.2rem; }
+  .assignment-controls { width:100%; }
+  .source-actions { justify-content:flex-start; }
 }
 </style>
