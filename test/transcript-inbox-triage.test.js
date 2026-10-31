@@ -109,3 +109,12 @@ test('Transcript Inbox visual refinement uses the Helios semantic hierarchy with
   assert.match(inbox, />Preview transcript</)
   assert.match(inbox, />Open full transcript</)
 })
+
+
+test('Transcript Inbox client assignment controls cannot overflow the assignment panel', () => {
+  assert.match(inbox, /\.inline-assignment \{[\s\S]*display:block;[\s\S]*overflow:hidden;/)
+  assert.match(inbox, /\.field-group \{[\s\S]*min-width:0;/)
+  assert.match(inbox, /grid-template-columns:minmax\(0,1fr\) max-content max-content/)
+  assert.match(inbox, /\.inline-client-picker > \* \{ min-width:0; \}/)
+  assert.match(inbox, /\.add-client-inline,\.assign-inline \{[\s\S]*min-width:max-content;/)
+})
