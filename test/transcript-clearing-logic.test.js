@@ -29,7 +29,8 @@ test('TranscriptInbox has restoration logic for individual items', () => {
   assert.match(inboxSource, /Return to Needs attention/)
 })
 
-test('TranscriptInbox filtering includes cleared items in history', () => {
-  assert.match(inboxSource, /if \(filterMode\.value === 'attention' && \(item\.completedAt \|\| item\.attentionClearedAt\)\) return false/)
-  assert.match(inboxSource, /if \(filterMode\.value === 'history' && !item\.completedAt && !item\.attentionClearedAt\) return false/)
+test('TranscriptInbox filtering includes cleared, completed and verified-matched items in history', () => {
+  assert.match(inboxSource, /if \(filterMode\.value === 'attention' && !needsAttention\(item\)\) return false/)
+  assert.match(inboxSource, /if \(filterMode\.value === 'history' && needsAttention\(item\)\) return false/)
+  assert.match(inboxSource, /function needsAttention\(transcript\).*?!isVerifiedMatch\(transcript\)/s)
 })
