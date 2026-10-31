@@ -9,12 +9,15 @@ test('Transcript Inbox previews are explicit and loaded on demand rather than in
   assert.match(transcriptInboxSource, /No Zoom note excerpt is available/)
   assert.match(transcriptInboxSource, /@click="toggleExpand\(transcript\.id, \$event\)"/)
   assert.match(transcriptInboxSource, /fetchTranscriptDetail/)
-  assert.match(transcriptInboxSource, /inline-transcript-preview/)
+  assert.match(transcriptInboxSource, /class="conversation-preview"/)
+  assert.match(transcriptInboxSource, /previewConversation\(transcript\)/)
+  assert.match(transcriptInboxSource, /turn\.identified/)
 })
 
-test('Transcript Inbox still provides access to the full transcript', async () => {
-  // "View original transcript" and the raw text display must remain
-  assert.match(transcriptInboxSource, /View original transcript/, 'Should still have View original transcript action')
-  assert.match(transcriptInboxSource, /selected\.text/, 'Should still render the full transcript text')
+test('Transcript Inbox provides a readable full transcript while preserving exact raw source access', async () => {
+  assert.match(transcriptInboxSource, /Readable view of the original Zoom transcript/)
+  assert.match(transcriptInboxSource, /Search this transcript/)
+  assert.match(transcriptInboxSource, /Raw source/)
+  assert.match(transcriptInboxSource, /selected\.text/, 'Should still render the exact raw transcript text')
   assert.match(transcriptInboxSource, /Download \.txt/, 'Should still have download action')
 })
