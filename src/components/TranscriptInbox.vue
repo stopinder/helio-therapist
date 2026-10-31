@@ -32,8 +32,8 @@
                 <strong class="triage-identity">{{ triageIdentity(transcript) }}</strong>
                 <p v-if="transcript.sourceTitle && transcript.sourceTitle !== triageIdentity(transcript)" class="triage-topic">{{ transcript.sourceTitle }}</p>
               </div>
-              <StatusIndicator :tone="filterMode === 'history' ? (transcript.completedAt || isVerifiedMatch(transcript) ? 'success' : 'neutral') : workflowTone(transcript)">
-                {{ filterMode === 'history' ? (transcript.completedAt ? 'Inbox setup complete' : isVerifiedMatch(transcript) ? 'Matched automatically' : 'Cleared from inbox') : workflowState(transcript).label }}
+              <StatusIndicator :tone="filterMode === 'history' ? (transcript.completedAt || (!transcript.attentionClearedAt && isVerifiedMatch(transcript)) ? 'success' : 'neutral') : workflowTone(transcript)">
+                {{ filterMode === 'history' ? (transcript.completedAt ? 'Inbox setup complete' : transcript.attentionClearedAt ? 'Cleared from inbox' : isVerifiedMatch(transcript) ? 'Matched automatically' : 'History') : workflowState(transcript).label }}
               </StatusIndicator>
             </div>
             <small>{{ formatDate(transcript.sourceOccurredAt || transcript.receivedAt) }}<template v-if="transcript.meetingId"> · Meeting {{ transcript.meetingId }}</template></small>
