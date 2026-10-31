@@ -229,7 +229,7 @@
         </div>
       </header>
       <p v-if="errorMessage" class="notice error" role="alert">{{ errorMessage }}</p><p v-else-if="successMessage" class="notice success" role="status">{{ successMessage }}</p>
-      <section class="workflow-section client-section"><template v-if="!selected.clientId || editingClient"><div><p class="eyebrow">Client</p><h2>Client</h2><p>Select the client this original Zoom transcript belongs to. Helio will not guess.</p></div><div class="assignment-controls"><div class="flex items-center gap-2"><label for="client-select" class="sr-only">Client</label><select id="client-select" v-model="selectedClientId" class="flex-1"><option value="" disabled>Select a client…</option><option v-for="client in clients" :key="client.id" :value="client.id">{{ client.name }}</option></select><button type="button" class="secondary whitespace-nowrap" @click="openAddClientForSelected">Add client</button></div><div class="assignment-actions"><button v-if="selected.clientId" class="secondary" :disabled="saving" @click="editingClient = false">Cancel</button><button class="primary" :disabled="saving || !selectedClientId || selectedClientId === selected.clientId" @click="saveAssignment">{{ saving ? 'Saving…' : selected.clientId ? 'Change client' : 'Assign client' }}</button></div></div></template><template v-else><div><p class="eyebrow">Client</p><h2>{{ clientName(selected.clientId) }}</h2><p>Assigned client</p></div><button class="secondary" @click="editingClient = true">Change</button></template></section>
+      <section class="workflow-section client-section"><template v-if="!selected.clientId || editingClient"><div><p class="eyebrow">Client</p><h2>Client</h2><p>Select the client this original Zoom transcript belongs to. Helio will not guess.</p></div><div class="assignment-controls"><div v-if="!selected.clientId" class="encounter-date-field detail-encounter-date"><div class="encounter-date-heading"><div><label for="selected-encounter-date">Encounter date</label><p>This date controls longitudinal ordering and becomes the session date when assigned.</p></div><span class="encounter-time">Time: {{ formatTime(selected.sourceOccurredAt || selected.receivedAt) }}</span></div><div class="encounter-date-controls"><input id="selected-encounter-date" v-model="encounterDateDrafts[selected.id]" class="control-field min-h-touch" type="date" :disabled="encounterDateSavingId === selected.id || saving" /><button type="button" class="button-secondary compact-button" :disabled="encounterDateSavingId === selected.id || saving || !encounterDateChanged(selected)" @click="saveEncounterDate(selected)"><CalendarDays class="workspace-icon-sm" aria-hidden="true" /><span>{{ encounterDateSavingId === selected.id ? 'Saving…' : 'Save date' }}</span></button></div></div><div class="flex items-center gap-2"><label for="client-select" class="sr-only">Client</label><select id="client-select" v-model="selectedClientId" class="flex-1"><option value="" disabled>Select a client…</option><option v-for="client in clients" :key="client.id" :value="client.id">{{ client.name }}</option></select><button type="button" class="secondary whitespace-nowrap" @click="openAddClientForSelected">Add client</button></div><div class="assignment-actions"><button v-if="selected.clientId" class="secondary" :disabled="saving" @click="editingClient = false">Cancel</button><button class="primary" :disabled="saving || !selectedClientId || selectedClientId === selected.clientId" @click="saveAssignment">{{ saving ? 'Saving…' : selected.clientId ? 'Change client' : 'Assign client' }}</button></div></div></template><template v-else><div><p class="eyebrow">Client</p><h2>{{ clientName(selected.clientId) }}</h2><p>Assigned client</p></div><button class="secondary" @click="editingClient = true">Change</button></template></section>
       <section v-if="selected.clientId && !editingClient" class="ready-card">
         <div>
           <p class="eyebrow">Assigned</p>
@@ -768,7 +768,15 @@ async function deleteTranscriptRecord(transcript,{closeDetail=false}={}){
 }
 async function deleteFromInbox(transcript){return deleteTranscriptRecord(transcript)}
 
-async function saveAssignment(){const transcript=await patchTranscript({clientId:selectedClientId.value,clearAttention:true},'Unable to save the client assignment.');if(transcript){editingClient.value=false;successMessage.value=`Assigned to ${clientName(transcript.clientId)} and ready in Clinical Workspace.`}}
+async function saveAssignment(){
+  if(!selected.value||!selectedClientId.value)return
+  if(encounterDateChanged(selected.value)){
+    const dated=await saveEncounterDate(selected.value,{quiet:true})
+    if(!dated)return
+  }
+  const transcript=await patchTranscript({clientId:selectedClientId.value,clearAttention:true},'Unable to save the client assignment.')
+  if(transcript){editingClient.value=false;successMessage.value=`Assigned to ${clientName(transcript.clientId)} and ready in Clinical Workspace.`}
+}
 async function saveReviewChoices(){const transcript=await patchTranscript({requestedLens:selectedLens.value||null,sourceRetention:sourceRetention.value,reviewChoicesSaved:true},'Unable to save review choices.');if(transcript){editingChoices.value=false;successMessage.value='Review choices saved. No analysis has started.'}}
 async function deleteTranscript(){if(!selected.value)return;await deleteTranscriptRecord(selected.value,{closeDetail:true})}
 async function handleAddClient(payload) {
@@ -797,12 +805,21 @@ async function handleAddClient(payload) {
       errorMessage.value = 'Client added, but the transcript is no longer available.';
       return;
     }
-    const assigned = await assignTranscriptToClient(transcript, newClient.id, newClient.name || newClient.display_name);
+    let current = transcript;
+    if (encounterDateChanged(transcript)) {
+      current = await saveEncounterDate(transcript, { quiet: true });
+      if (!current) return;
+    }
+    const assigned = await assignTranscriptToClient(current, newClient.id, newClient.name || newClient.display_name);
     if (assigned) successMessage.value = `Added ${newClient.name || newClient.display_name} and assigned the transcript.`;
     return;
   }
 
   selectedClientId.value = newClient.id;
+  if (selected.value && encounterDateChanged(selected.value)) {
+    const dated = await saveEncounterDate(selected.value, { quiet: true });
+    if (!dated) return;
+  }
   const assigned = await patchTranscript({clientId:newClient.id,clearAttention:true},'Client added, but the transcript could not be assigned.');
   if (assigned) {
     editingClient.value=false;
