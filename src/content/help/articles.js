@@ -18,6 +18,7 @@ export const HELP_ARTICLES = [
         'To revisit a past meeting, find it in Recent sessions and choose Open summary. Use that dated entry rather than starting a new session.',
         'To enter the current session workflow, use Clinical Workspace. Helios may resume an existing session or create one when needed; this is not always a read-only action.',
         'To prepare a document for this client, use Create Document. The composer is separate from the session screen, and opening it does not save a document.',
+        'Choose Ask Helios about this client when you want therapist-facing clinical thinking across selected session evidence. Ask Helios opens with this client already selected, uses the most recent session as the anchor and starts with Last 3; you can change the evidence window and perspective before asking.',
         'To prepare reflective material for supervision, use the deliberate supervision-selection workflow. Selecting material is not emailing it to someone.'
       ] },
       { heading: 'When a client is archived', paragraphs: [
@@ -93,13 +94,38 @@ export const HELP_ARTICLES = [
     ], related: ['care-suggestions', 'private-reflection']
   },
   {
+    id: 'transcript-inbox', category: 'Sessions',
+    title: 'Assign incoming transcripts without losing your place',
+    summary: 'Use Transcript Inbox as a triage queue: identify the likely source, assign the client on the row and move to the next item without opening every transcript.',
+    keywords: ['transcript inbox', 'assign transcript', 'needs attention', 'zoom notes', 'unassigned transcript', 'speaker', 'preview transcript', 'matched automatically'],
+    sections: [
+      { heading: 'Use the inbox for triage, not transcript reading', paragraphs: [
+        'Each Needs attention row shows the available identity clues and Zoom title before you open the full source. Helios may show named speaker clues when Zoom supplied useful names. Generic labels such as Unknown or Speaker 1 are not treated as client identity.',
+        'When a Zoom meeting is already linked to a verified Helios session, the transcript is treated as matched and does not require a second client-assignment step.'
+      ] },
+      { heading: 'Assign from the row', steps: [
+        'Check the date, Zoom title and any available identity clues.',
+        'Choose the client in the row and select Assign. An exact Zoom-title/client-name match may be preselected as a suggestion, but Helios does not silently assign it.',
+        'After assignment, Helios creates or retains the transcript-backed encounter and removes that item from Needs attention. Continue with the next row instead of opening and closing a separate assignment screen.',
+        'Use Open Clinical Workspace when you want to work on the matched session.'
+      ] },
+      { heading: 'Preview only when you need more evidence', paragraphs: [
+        'The inbox deliberately loads lightweight rows first rather than downloading every full transcript. Preview transcript loads that one source on demand; Open full transcript opens the complete review view.',
+        'Returning from the full transcript takes you back to the same inbox item rather than relying on browser Back. This is intended for genuinely ambiguous imports, not the normal assignment path.'
+      ] },
+      { heading: 'What Helios will not guess', paragraphs: [
+        'Zoom speaker metadata is often incomplete. Helios does not use fuzzy AI matching to decide which client a transcript belongs to. Verified session links are trusted; exact deterministic title matches can be suggested for confirmation; otherwise you choose the client.'
+      ] }
+    ], related: ['session-material', 'client-workspace']
+  },
+  {
     id: 'session-material', category: 'Sessions',
     title: 'Understand summaries, source material and Clinical Records',
     summary: 'A transcript, working summary, client document and approved Clinical Record do different jobs. Generating one does not automatically create the others.',
     keywords: ['session summary', 'clinical record', 'notes', 'transcript', 'approve', 'amendment', 'session capture', 'save'],
     sections: [
       { heading: 'Choose by purpose, not by a similar name', paragraphs: [
-        'The session screen has Session Summary and Clinical Record as its main tabs. View transcript opens the available source transcript; Therapist reflection opens your private reflective area. These expandable areas are not extra approved records.',
+        'The session screen has Session Summary and Clinical Record as its main tabs. View transcript opens the available source transcript; Therapist reflection opens your private reflective area. Ask Helios opens a separate therapist-facing thinking space using the session/client context you explicitly select. None of these areas automatically becomes an approved record.',
         'The regular session-bound summary concerns that meeting. The client-facing document composer is a separate workflow with document details, an evidence window and its own save/finalise actions. Do not assume that text generated on one screen is already saved or approved on the other.'
       ] },
       { heading: 'How the regular session summary is saved', paragraphs: [
@@ -113,10 +139,15 @@ export const HELP_ARTICLES = [
         'Review and edit the draft, save it and follow the ready-for-review and explicit approval steps. Preparing or generating draft text does not approve it.',
         'Use the amendment workflow for a correction after approval rather than expecting to overwrite the approved record.'
       ] },
+      { heading: 'Use Ask Helios for clinical thinking, not record authoring', paragraphs: [
+        'From a Session Workspace, Ask Helios inherits that client and session as the anchor. From a Client Workspace, Ask Helios starts with the latest session and Last 3. The Clinical context card shows the client, Perspective and Evidence window; change This session, Last 3, Last 5 or Entire history deliberately.',
+        'Clinical answers separate recorded context, interpretation, alternative possibilities, what may deserve attention and questions for consideration. The selected perspective — including IFS, CBT, Integrative or Transactional Analysis — is a thinking lens rather than a diagnosis or conclusion.',
+        'Check research evidence switches into Research with a de-identified version of your question. Client records and session evidence are not carried into the Research request.'
+      ] },
       { heading: 'Where private reflection belongs', paragraphs: [
-        'Private Therapist Reflection remains separate. Its existence may be shown as source availability, but the reflection is not automatically copied into the client summary or formal record. Keep the purpose of each destination in mind when deciding what to write.'
+        'Private Therapist Reflection remains separate. Its existence may be shown as source availability, but the reflection is not automatically copied into the client summary, Ask Helios answer or formal record. Keep the purpose of each destination in mind when deciding what to write.'
       ] }
-    ], related: ['client-summary', 'private-reflection', 'client-workspace']
+    ], related: ['client-summary', 'transcript-inbox', 'private-reflection', 'client-workspace']
   },
   {
     id: 'client-summary', category: 'Sessions',
