@@ -11,7 +11,7 @@ test('Transcript Inbox previews are explicit and loaded on demand rather than in
   assert.match(transcriptInboxSource, /fetchTranscriptDetail/)
   assert.match(transcriptInboxSource, /class="conversation-preview"/)
   assert.match(transcriptInboxSource, /previewConversation\(transcript\)/)
-  assert.match(transcriptInboxSource, /Unidentified speaker/)
+  assert.match(transcriptInboxSource, /turn\.identified/)
 })
 
 test('Transcript Inbox provides a readable full transcript while preserving exact raw source access', async () => {
