@@ -38,7 +38,8 @@
             </div>
             <small>{{ formatDate(transcript.sourceOccurredAt || transcript.receivedAt) }}<template v-if="transcript.meetingId"> · Meeting {{ transcript.meetingId }}</template></small>
             <p v-if="speakerClues(transcript).length" class="triage-clue">Named speakers: {{ speakerClues(transcript).join(', ') }}</p>
-            <p class="triage-preview">{{ transcriptPreview(transcript) }}</p>
+            <p v-if="transcript.zoomGeneratedSummary" class="triage-preview"><strong>Zoom note:</strong> {{ notePreview(transcript.zoomGeneratedSummary) }}</p>
+            <p v-else class="triage-preview">{{ transcriptPreview(transcript) }}</p>
 
             <div v-if="filterMode === 'attention' && !isVerifiedMatch(transcript)" class="inline-assignment">
               <div class="field-group">
@@ -199,8 +200,12 @@ function speakerClues(transcript){
   const speakers=Array.isArray(transcript?.structuredTranscript?.speakers)?transcript.structuredTranscript.speakers:[];
   return [...new Set(speakers.map(item=>String(item?.display_name||'').trim()).filter(name=>name&&!/^unknown$/i.test(name)&&!/^speaker\s*\d+$/i.test(name)))].slice(0,4)
 }
+function notePreview(value){
+  const text=String(value||'').replace(/\s+/g,' ').trim();
+  return text.length>420?`${text.slice(0,417)}…`:text
+}
 function transcriptPreview(transcript){
-  if(typeof transcript?.text!=='string')return 'Preview loads on demand — you can still assign the client here.';
+  if(typeof transcript?.text!=='string')return 'No Zoom note excerpt is available. Open Preview only if you need the source transcript.';
   const text=transcript.text.replace(/\b\d{1,2}:\d{2}(?::\d{2})?(?:\.\d+)?\b/g,' ').replace(/\s+/g,' ').trim();
   if(!text)return 'No transcript preview is available.';
   return text.length>340?`${text.slice(0,337)}…`:text
