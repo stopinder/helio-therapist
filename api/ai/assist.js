@@ -24,6 +24,12 @@ function safeHistory(value) {
     .map(item => ({ role: item.role, content: item.content.slice(0, 450) }));
 }
 
+function safeClinicalHistory(value) {
+  return (Array.isArray(value) ? value : []).slice(-4)
+    .filter(item => item && ['user', 'assistant'].includes(item.role) && typeof item.content === 'string')
+    .map(item => ({ role: item.role, content: item.content.slice(0, 220) }));
+}
+
 async function saveConversation(db, userId, mode, query, answer, references, existingId, clinicalContext = null) {
   let id = existingId || null;
   if (id) {
@@ -117,7 +123,7 @@ export default async function handler(req, res) {
           promptVersion: ASK_HELIOS_CLINICAL_PROMPT_VERSION,
           messages: [
             { role:'system', content: askHeliosClinicalSystemPrompt(lens) },
-            ...safeHistory(req.body?.history),
+            ...safeClinicalHistory(req.body?.history),
             { role:'user', content: buildAskHeliosClinicalInput({ query, lens, context }) }
           ],
           responseFormat: askHeliosClinicalResponseFormat(),
