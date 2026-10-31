@@ -25,26 +25,36 @@ function safeHistory(value) {
 }
 
 function safeClinicalHistory(value) {
-  return (Array.isArray(value) ? value : []).slice(-4)
+  return (Array.isArray(value) ? value : []).slice(-3)
     .filter(item => item && ['user', 'assistant'].includes(item.role) && typeof item.content === 'string')
-    .map(item => ({ role: item.role, content: item.content.slice(0, 220) }));
+    .map(item => ({ role: item.role, content: item.content.slice(0, 180) }));
+}
+
+function replaceCaseInsensitive(text, needle, replacement) {
+  const source = String(text || '');
+  const match = String(needle || '').trim();
+  if (!match) return source;
+  const lowerSource = source.toLowerCase();
+  const lowerMatch = match.toLowerCase();
+  let result = '';
+  let cursor = 0;
+  let index = lowerSource.indexOf(lowerMatch, cursor);
+  while (index >= 0) {
+    result += source.slice(cursor, index) + replacement;
+    cursor = index + match.length;
+    index = lowerSource.indexOf(lowerMatch, cursor);
+  }
+  return result + source.slice(cursor);
 }
 
 function deidentifyClinicalQuestion(query, clientName) {
-  const text = String(query || '').trim();
+  let result = String(query || '').trim();
   const name = String(clientName || '').trim();
-  if (!name) return text;
-  const lowerText = text.toLowerCase();
-  const lowerName = name.toLowerCase();
-  let result = '';
-  let cursor = 0;
-  let index = lowerText.indexOf(lowerName, cursor);
-  while (index >= 0) {
-    result += text.slice(cursor, index) + 'this clinical presentation';
-    cursor = index + name.length;
-    index = lowerText.indexOf(lowerName, cursor);
-  }
-  return result + text.slice(cursor);
+  if (!name) return result;
+  result = replaceCaseInsensitive(result, name, 'this clinical presentation');
+  const tokens = [...new Set(name.split(/[^A-Za-z0-9'-]+/).filter(token => token.length >= 3))];
+  for (const token of tokens) result = replaceCaseInsensitive(result, token, 'the client');
+  return result.replace(/\s+/g, ' ').trim();
 }
 
 async function saveConversation(db, userId, mode, query, answer, references, existingId, clinicalContext = null) {
