@@ -183,6 +183,36 @@
           </div>
         </div>
       </div>
+
+      <div class="section-container reflect-depth">
+        <div class="reflect-depth-heading">
+          <p class="section-eyebrow">THERAPIST STANCE + GROWTH</p>
+          <h3>See how you tend to work — then let the questions <em>evolve with the work.</em></h3>
+          <p>Reflect separates a structured snapshot of your therapeutic stance from the longer-term patterns in your own reflection history. One gives you a point-in-time view; the other keeps the inquiry moving.</p>
+        </div>
+
+        <div class="reflect-depth-grid">
+          <article class="reflect-depth-card stance">
+            <span class="reflect-depth-index">01 · THERAPIST STANCE</span>
+            <h4>“What kind of therapist are you?”</h4>
+            <p>Fifteen hypothetical practice situations ask for your usual first response. Helios looks across those choices for familiar approaches, tensions and questions worth taking into supervision.</p>
+            <p>You can read a question-based reflection immediately, or request an optional AI-written integrative reflection. Nothing is added to your reflection library unless you choose to save it.</p>
+            <div class="reflect-depth-tags" aria-label="Therapist Stance boundaries">
+              <span>15 situations</span>
+              <span>Private until saved</span>
+              <span>Not a competence score</span>
+            </div>
+          </article>
+
+          <article class="reflect-depth-card growth">
+            <span class="reflect-depth-index">02 · GROWTH</span>
+            <h4>Your reflection history changes the next questions.</h4>
+            <p>Growth looks across your saved direct practice reflections for recurring themes and mapped inner positions. Stance questionnaire records are deliberately excluded from that analysis.</p>
+            <p>When a thread repeats, Helios turns it into a specific learning or supervision question. Once there are at least four dated reflections, it also compares the earlier and more recent halves of your history to show where your attention has shifted.</p>
+            <p class="reflect-depth-note">The 15 Stance situations themselves stay stable. What adapts is the inquiry Helios raises from your ongoing reflection history — without deciding that a pattern is good, bad, improvement or deterioration.</p>
+          </article>
+        </div>
+      </div>
     </section>
 
     <section id="capture" class="capture-section">
@@ -457,16 +487,16 @@ const supportingTools = [
 .reflect-section { padding: var(--section-space-tight) 0 var(--section-space); background: #f2f2ed; border-top: 1px solid rgba(59,78,70,.06); }
 .reflect-layout { display: grid; grid-template-columns: minmax(0,1.05fr) minmax(390px,.95fr); gap: 60px; align-items: start; }
 .reflect-product { padding-top: 10px; }
-.reflect-frame { padding: 28px; border: 1px solid #d8ddd7; border-radius: 22px; background: #fbfaf6; box-shadow: 0 26px 60px rgba(42,56,51,.07); }
+.reflect-frame { padding: 28px; border: 1.5px solid #bcc7be; border-radius: 22px; background: #edf1ec; box-shadow: 0 22px 48px rgba(42,56,51,.065); }
 .reflect-topline { display: flex; align-items: flex-end; justify-content: space-between; gap: 30px; padding-bottom: 22px; border-bottom: 1px solid #dde0db; }
 .reflect-topline h3 { margin-top: 5px; font-family: Georgia, serif; font-size: 34px; font-weight: 400; }
 .reflect-topline p { max-width: 320px; text-align: right; color: #68756f; font-family: Georgia, serif; font-size: 13px; line-height: 1.55; }
 .reflect-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 18px; }
-.reflect-cards article { min-height: 140px; display: flex; flex-direction: column; justify-content: space-between; padding: 17px; border: 1px solid #dde0db; border-radius: 14px; background: #fff; }
+.reflect-cards article { min-height: 140px; display: flex; flex-direction: column; justify-content: space-between; padding: 17px; border: 1.5px solid #c2ccc4; border-radius: 14px; background: #e4eae4; }
 .reflect-cards article > span { color: #9b745a; font-family: Georgia, serif; font-size: 13px; }
 .reflect-cards h4 { font-family: Georgia, serif; font-size: 21px; font-weight: 400; }
 .reflect-cards p { margin-top: 5px; color: #78837e; font-size: 10px; line-height: 1.5; }
-.reflect-discovery { margin-top: 12px; padding: 19px; border-radius: 14px; background: #eef0eb; }
+.reflect-discovery { margin-top: 12px; padding: 19px; border: 1px solid #c4cec6; border-radius: 14px; background: #dce5dd; }
 .reflect-discovery h4 { margin-top: 6px; font-family: Georgia, serif; font-size: 21px; font-weight: 400; }
 .reflect-discovery p { margin-top: 6px; color: #65726c; font-size: 10px; line-height: 1.6; }
 .reflect-copy h2 { max-width: 600px; margin-top: 13px; font-size: clamp(48px, 4.35vw, 64px); line-height: 1.04; }
@@ -475,6 +505,22 @@ const supportingTools = [
 .reflect-points > div { display: grid; grid-template-columns: 150px 1fr; gap: 18px; padding-top: 13px; border-top: 1px solid #dedfd9; }
 .reflect-points strong { font-family: Georgia, serif; font-size: 15px; font-weight: 400; }
 .reflect-points span { color: #75807b; font-size: 11px; line-height: 1.6; }
+
+.reflect-depth { margin-top: 44px; }
+.reflect-depth-heading { display: grid; grid-template-columns: minmax(0,.9fr) minmax(320px,1.1fr); column-gap: 56px; row-gap: 12px; align-items: end; padding-top: 34px; border-top: 1px solid #c5cec7; }
+.reflect-depth-heading .section-eyebrow { grid-column: 1 / -1; }
+.reflect-depth-heading h3 { max-width: 700px; font-family: Georgia, "Times New Roman", serif; font-size: clamp(38px, 3.5vw, 52px); line-height: 1.05; font-weight: 400; letter-spacing: -.035em; }
+.reflect-depth-heading h3 em { color: #98745b; font-weight: 400; }
+.reflect-depth-heading > p:last-child { max-width: 560px; color: #61706a; font-size: 13px; line-height: 1.72; padding-bottom: 4px; }
+.reflect-depth-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 26px; }
+.reflect-depth-card { min-height: 330px; padding: 26px; border: 1.5px solid #b9c5bc; border-radius: 20px; background: #e3e9e3; }
+.reflect-depth-card.growth { background: #d5dfd7; border-color: #abb9ae; }
+.reflect-depth-index { display: block; color: #8e6d57; font-size: 9px; line-height: 1.4; font-weight: 800; letter-spacing: .15em; }
+.reflect-depth-card h4 { margin-top: 18px; max-width: 520px; font-family: Georgia, "Times New Roman", serif; font-size: 29px; line-height: 1.12; font-weight: 400; letter-spacing: -.025em; }
+.reflect-depth-card > p { margin-top: 13px; max-width: 60ch; color: #5c6a64; font-size: 12px; line-height: 1.7; }
+.reflect-depth-tags { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 20px; }
+.reflect-depth-tags span { padding: 6px 9px; border: 1px solid #bdc8bf; border-radius: 999px; background: #edf0ec; color: #5d6b65; font-size: 9px; font-weight: 700; }
+.reflect-depth-note { margin-top: 18px !important; padding-top: 16px; border-top: 1px solid #b7c3ba; color: #465a51 !important; font-weight: 600; }
 
 .capture-section { padding: var(--section-space) 0; background: #ece9e1; border-top: 1px solid rgba(59,78,70,.06); }
 .capture-layout { display: grid; grid-template-columns: minmax(350px,.88fr) minmax(0,1.12fr); gap: 52px; align-items: start; }
@@ -493,14 +539,14 @@ const supportingTools = [
 .section-heading.compact h2 { max-width: 680px; }
 .tools-section .split-heading > p { color: #5f6d67; }
 .tool-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
-.tool-card { min-height: 190px; padding: 22px; border: 1px solid #cfd6cf; border-radius: 18px; background: #eef0eb; box-shadow: 0 10px 28px rgba(35,55,49,.035); }
+.tool-card { min-height: 190px; padding: 22px; border: 1.5px solid #b6c2b8; border-radius: 18px; background: #dfe6df; box-shadow: 0 8px 22px rgba(35,55,49,.045); }
 .tool-card svg { color: #41665a; }
 .tool-card h3 { margin-top: 25px; font-family: Georgia, serif; font-size: 25px; font-weight: 400; }
 .tool-card p { margin-top: 8px; max-width: 33ch; color: #62706a; font-size: 11px; line-height: 1.6; }
-.documents-band { margin-top: 42px; display: grid; grid-template-columns: minmax(280px,.65fr) minmax(0,1.35fr); gap: 40px; align-items: start; padding: 30px; border: 1px solid #cbd3cc; border-radius: 20px; background: #d9e0da; }
+.documents-band { margin-top: 42px; display: grid; grid-template-columns: minmax(280px,.65fr) minmax(0,1.35fr); gap: 40px; align-items: start; padding: 30px; border: 1.5px solid #b4c0b6; border-radius: 20px; background: #ccd6ce; }
 .documents-band-copy h3 { margin-top: 14px; max-width: 520px; font-family: Georgia, serif; font-size: clamp(36px,3.4vw,50px); line-height: 1.06; font-weight: 400; letter-spacing: -.035em; }
 .documents-band-copy > p:last-child { margin-top: 15px; max-width: 430px; color: #5f6d67; font-size: 12px; line-height: 1.68; }
-.documents-showcase { min-width: 0; box-shadow: 0 24px 48px rgba(34,57,53,.09); border: 8px solid #cfd7d1; border-radius: 10px; overflow: hidden; background: #cfd7d1; }
+.documents-showcase { min-width: 0; box-shadow: 0 20px 42px rgba(34,57,53,.09); border: 8px solid #bfcac1; border-radius: 10px; overflow: hidden; background: #bfcac1; }
 .documents-screenshot { display: block; width: 100%; height: auto; aspect-ratio: 1594/1000; object-fit: cover; object-position: center top; border: 1px solid #cdd5d0; border-radius: 5px; }
 
 .trust-section { padding: var(--section-space) 0; background: #213f46; color: #f8f4ea; }
@@ -556,6 +602,9 @@ const supportingTools = [
   .account-nav { margin-left: auto; }
   .workspace-section, .ask-section, .reflect-section, .capture-section, .tools-section, .trust-section { padding-top: 50px; padding-bottom: 52px; }
   .ask-layout, .reflect-layout, .capture-layout, .trust-layout { grid-template-columns: 1fr; gap: 32px; }
+  .reflect-depth-heading, .reflect-depth-grid { grid-template-columns: 1fr; }
+  .reflect-depth-heading { gap: 14px; }
+  .reflect-depth-heading > p:last-child { max-width: 700px; }
   .ask-product, .reflect-product { padding-top: 0; }
   .transcript-showcase { margin-top: 0; }
   .section-heading h2, .ask-copy h2, .reflect-copy h2, .capture-copy h2, .trust-layout h2 { font-size: clamp(44px, 6vw, 58px); }
@@ -603,6 +652,11 @@ const supportingTools = [
   .reflect-cards { grid-template-columns: 1fr; }
   .reflect-cards article { min-height: 120px; }
   .reflect-points > div { grid-template-columns: 1fr; gap: 4px; }
+  .reflect-depth { margin-top: 34px; }
+  .reflect-depth-heading { padding-top: 28px; }
+  .reflect-depth-heading h3 { font-size: clamp(34px, 9vw, 46px); }
+  .reflect-depth-card { min-height: 0; padding: 20px; border-radius: 16px; }
+  .reflect-depth-card h4 { font-size: 25px; }
   .transcript-showcase { padding: 5px; border-radius: 18px; }
   .transcript-screenshot { width: 124%; max-width: none; transform: translateX(-9.5%); aspect-ratio: 900/730; object-position: center top; }
   .tool-grid { grid-template-columns: 1fr; }
