@@ -67,6 +67,17 @@ describe('Landing Page Direction', () => {
     assert.match(landingSource, /Dictation is available across plans subject to fair use/)
   })
 
+
+  test('uses a consistent section rhythm instead of stacked dead space', () => {
+    assert.match(landingSource, /--section-space: clamp\(52px, 5vw, 68px\)/)
+    assert.match(landingSource, /--section-space-tight: clamp\(42px, 4vw, 54px\)/)
+    assert.match(landingSource, /ask-layout[^}]*align-items: start/)
+    assert.match(landingSource, /reflect-layout[^}]*align-items: start/)
+    assert.match(landingSource, /capture-layout[^}]*align-items: start/)
+    assert.match(landingSource, /reflect-section[^}]*background: #f2f2ed/)
+    assert.match(landingSource, /tools-section[^}]*background: #f4f3ee/)
+  })
+
   test('header and footer retain account, legal and support routes', () => {
     for (const route of ['sign-in', 'get-started', 'privacy', 'ai-data', 'terms', 'cookies', 'support']) {
       assert.ok(landingSource.includes(`to="/${route}"`), `Landing must retain /${route}`)
