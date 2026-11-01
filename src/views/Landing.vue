@@ -23,6 +23,9 @@
     </header>
 
     <section class="hero-section" aria-label="Welcome to Helios">
+      <img :src="openingImage" alt="Sunlit workspace looking out over a distant horizon" class="hero-background" fetchpriority="high" />
+      <div class="hero-overlay hero-overlay-side" aria-hidden="true" />
+      <div class="hero-overlay hero-overlay-bottom" aria-hidden="true" />
       <div class="landing-container hero-layout">
         <div class="hero-copy">
           <p class="eyebrow eyebrow-light">Helios · Clinical workspace for therapists</p>
@@ -33,73 +36,34 @@
             <a href="#workspace" class="button button-ghost">See how Helios works ↓</a>
           </div>
         </div>
-
-        <div class="hero-product" aria-label="Client workspace illustration">
-          <div class="product-bar">
-            <span>CLIENT WORKSPACE</span>
-            <span class="pill dark">Next 09:00</span>
-          </div>
-          <div class="hero-client-card">
-            <h2>J&nbsp;&nbsp;Jen</h2>
-            <span class="mini-label">Current focus</span>
-            <p>Emotional regulation, relational patterns and what feels most alive before the next session.</p>
-            <div class="hairline" />
-            <div class="pill-row">
-              <span class="pill">Last 3 sessions</span>
-              <span class="pill">Ask Helios</span>
-            </div>
-          </div>
-          <div class="hero-thread-card">
-            <span class="mini-label">Before next session</span>
-            <p>Aims, follow-ups and recent work stay close enough to be useful — without rebuilding the whole case every time.</p>
-          </div>
-        </div>
       </div>
     </section>
 
     <section id="workspace" class="workspace-section">
-      <div class="landing-container">
-        <div class="split-heading">
-          <div>
-            <p class="eyebrow">The clinical workspace</p>
-            <h2>The work has a thread. Helios keeps hold of it.</h2>
-          </div>
-          <p>Start with the client, move into the session, and return to the wider direction of the work without rebuilding context each time.</p>
+      <div class="landing-container workspace-intro">
+        <div>
+          <p class="eyebrow">The clinical workspace</p>
+          <h2>Start with the client. Keep the whole thread in view.</h2>
         </div>
+        <p>Helios brings the useful parts of the work back together around the client — what matters now, what happened recently and what needs carrying forward.</p>
+      </div>
 
-        <div class="workspace-frame" aria-label="Clinical workspace illustration">
-          <aside class="workspace-sidebar" aria-hidden="true">
-            <span>Today</span>
-            <strong>Clients</strong>
-            <span>Calendar</span>
-            <span>Documents</span>
-            <span>Transcript Inbox</span>
-            <span>Reflect</span>
-          </aside>
-          <div class="workspace-main">
-            <h3>Jen</h3>
-            <div class="workspace-summary-grid">
-              <article>
-                <span class="mini-label">Current focus</span>
-                <strong>Relational safety and regulation</strong>
-              </article>
-              <article>
-                <span class="mini-label">Aims</span>
-                <strong>Stay with the emerging pattern</strong>
-              </article>
-              <article>
-                <span class="mini-label">Recent work</span>
-                <strong>Three sessions connected</strong>
-              </article>
-            </div>
-          </div>
+      <div class="landing-container workspace-proof">
+        <div class="workspace-screen">
+          <img
+            :src="clientWorkspace"
+            alt="Helios Client Workspace showing current focus, aims, recent work and clinical actions"
+            class="workspace-screenshot"
+          />
         </div>
 
         <div class="clinical-thread" aria-label="Clinical workflow stages">
           <article v-for="stage in clinicalStages" :key="stage.number">
             <span class="stage-number">{{ stage.number }}</span>
-            <h3>{{ stage.title }}</h3>
-            <p>{{ stage.body }}</p>
+            <div>
+              <h3>{{ stage.title }}</h3>
+              <p>{{ stage.body }}</p>
+            </div>
           </article>
         </div>
       </div>
@@ -313,6 +277,9 @@
 </template>
 
 <script setup>
+import openingImage from '../assets/helios-opening-light.webp'
+import clientWorkspace from '../assets/client-workspace-section.png'
+
 const clinicalStages = [
   { number: '01', title: 'Before the session', body: 'Current focus, aims, follow-ups and recent work stay close enough to be useful.' },
   { number: '02', title: 'During and after', body: 'Bring in transcript material and shape the session record deliberately.' },
@@ -474,41 +441,75 @@ const trustPrinciples = [
 }
 
 .hero-section {
-  padding: 86px 0;
-  background: var(--landing-deep);
+  position: relative;
+  min-height: min(720px, 82vh);
+  display: flex;
+  align-items: flex-start;
+  overflow: hidden;
+  background: #efe8dc;
   color: var(--landing-cream);
 }
 
+.hero-background,
+.hero-overlay {
+  position: absolute;
+  inset: 0;
+}
+
+.hero-background {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: brightness(1.04) saturate(.84) contrast(.98);
+}
+
+.hero-overlay {
+  pointer-events: none;
+}
+
+.hero-overlay-side {
+  background: linear-gradient(90deg, rgba(18,45,54,.82) 0%, rgba(18,45,54,.56) 39%, rgba(18,45,54,.14) 68%, transparent 87%);
+}
+
+.hero-overlay-bottom {
+  background: linear-gradient(0deg, rgba(20,48,56,.3), transparent 54%);
+}
+
 .hero-layout {
-  display: grid;
-  grid-template-columns: minmax(0, 610px) minmax(0, 580px);
-  gap: 58px;
-  align-items: center;
+  position: relative;
+  z-index: 2;
+  width: min(1248px, calc(100% - 64px));
+  padding-top: 92px;
+  padding-bottom: 84px;
+}
+
+.hero-copy {
+  max-width: 760px;
 }
 
 .hero-copy h1,
-.split-heading h2,
+.workspace-intro h2,
 .ask-copy h2,
 .reflect-copy h2,
 .capture-copy h2,
 .trust-heading h2 {
   font-family: var(--font-editorial);
   font-weight: 500;
-  letter-spacing: -.035em;
+  letter-spacing: -.04em;
 }
 
 .hero-copy h1 {
-  max-width: 600px;
-  margin: 18px 0 0;
-  font-size: clamp(58px, 5vw, 72px);
-  line-height: 1.03;
+  max-width: 760px;
+  margin: 20px 0 0;
+  font-size: clamp(54px, 5.7vw, 82px);
+  line-height: 1.01;
 }
 
 .hero-lede {
-  max-width: 560px;
-  margin-top: 18px;
-  color: #c8d2ce;
-  font-size: 17px;
+  max-width: 650px;
+  margin-top: 24px;
+  color: rgba(248,244,234,.96);
+  font-size: 18px;
   line-height: 1.65;
 }
 
@@ -526,7 +527,7 @@ const trustPrinciples = [
 }
 
 .eyebrow-light {
-  color: #e1b07d;
+  color: #e7b877;
 }
 
 .mini-label {
@@ -537,7 +538,7 @@ const trustPrinciples = [
 .hero-actions {
   display: flex;
   gap: 10px;
-  margin-top: 24px;
+  margin-top: 28px;
 }
 
 .button {
@@ -558,33 +559,9 @@ const trustPrinciples = [
 }
 
 .button-ghost {
-  border: 1px solid #6f8582;
+  border: 1px solid rgba(246,242,232,.62);
+  background: rgba(18,45,54,.14);
   color: var(--landing-cream);
-}
-
-.hero-product {
-  min-height: 500px;
-  padding: 18px;
-  border: 1.2px solid #57706c;
-  border-radius: 24px;
-  background: #24454d;
-}
-
-.product-bar,
-.ask-panel-top,
-.transcript-head,
-.reflect-environment-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-}
-
-.product-bar {
-  color: #e1b07d;
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: .12em;
 }
 
 .pill,
@@ -601,11 +578,6 @@ const trustPrinciples = [
   line-height: 1.1;
 }
 
-.pill.dark {
-  background: #26464e;
-  color: #dce5e0;
-}
-
 .pill-row {
   display: flex;
   flex-wrap: wrap;
@@ -618,156 +590,69 @@ const trustPrinciples = [
   background: #bcc6bf;
 }
 
-.hero-client-card,
-.hero-thread-card {
-  margin-top: 14px;
-  border-radius: 16px;
-}
-
-.hero-client-card {
-  padding: 20px;
-  background: #eef1ec;
-}
-
-.hero-client-card h2 {
-  margin: 0 0 12px;
-  font-family: var(--font-editorial);
-  font-size: 28px;
-  font-weight: 500;
-}
-
-.hero-client-card > p {
-  max-width: 470px;
-  margin: 8px 0 14px;
-  color: var(--landing-muted);
-  font-size: 15px;
-  line-height: 1.55;
-}
-
-.hero-client-card .pill-row {
-  margin-top: 14px;
-}
-
-.hero-thread-card {
-  padding: 16px 18px;
-  background: #d7e0d9;
-}
-
-.hero-thread-card p {
-  max-width: 470px;
-  margin-top: 8px;
-  color: var(--landing-ink);
-  font-size: 13px;
-  line-height: 1.55;
-}
-
 .workspace-section {
-  padding: 64px 0 70px;
+  padding: 58px 0 68px;
   background: #e7e9e3;
 }
 
-.split-heading {
+.workspace-intro {
   display: grid;
-  grid-template-columns: minmax(0, 730px) minmax(300px, 400px);
+  grid-template-columns: minmax(0, 760px) minmax(300px, 390px);
   gap: 72px;
   align-items: end;
   justify-content: space-between;
 }
 
-.split-heading h2 {
-  max-width: 720px;
+.workspace-intro h2 {
+  max-width: 760px;
   margin-top: 12px;
   font-size: clamp(46px, 4vw, 56px);
   line-height: 1.03;
 }
 
-.split-heading > p {
+.workspace-intro > p {
   color: var(--landing-muted);
   font-size: 14px;
   line-height: 1.65;
 }
 
-.workspace-frame {
-  display: grid;
-  grid-template-columns: 180px 1fr;
-  min-height: 420px;
-  margin-top: 34px;
+.workspace-proof {
+  margin-top: 30px;
+}
+
+.workspace-screen {
+  position: relative;
+  overflow: hidden;
   padding: 10px;
-  border: 1.2px solid #b0bbb2;
+  border: 1.3px solid #aab7ad;
   border-radius: 18px;
-  background: #d6ddd6;
+  background: #cfd8d0;
+  box-shadow: 0 20px 46px rgba(32,51,44,.08);
 }
 
-.workspace-sidebar,
-.workspace-main {
-  min-height: 398px;
-}
-
-.workspace-sidebar {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-  padding: 24px 18px;
-  border: 1.4px solid #91a096;
-  border-right: 0;
-  border-radius: 10px 0 0 10px;
-  background: #f0f2ee;
-  color: var(--landing-muted-2);
-  font-size: 11px;
-  font-weight: 600;
-}
-
-.workspace-sidebar strong {
-  color: var(--landing-ink);
-}
-
-.workspace-main {
-  padding: 28px 30px;
-  border: 1.4px solid #91a096;
-  border-left: 0;
-  border-radius: 0 10px 10px 0;
-  background: #f4f3ee;
-}
-
-.workspace-main > h3 {
-  font-family: var(--font-editorial);
-  font-size: 34px;
-  font-weight: 500;
-}
-
-.workspace-summary-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
-  margin-top: 18px;
-}
-
-.workspace-summary-grid article {
-  min-height: 92px;
-  padding: 15px;
-  border: 1.1px solid #c0cbc2;
-  border-radius: 12px;
-  background: #e5eae5;
-}
-
-.workspace-summary-grid strong {
+.workspace-screenshot {
   display: block;
-  margin-top: 7px;
-  font-family: var(--font-editorial);
-  font-size: 17px;
-  font-weight: 500;
-  line-height: 1.2;
+  width: 100%;
+  height: auto;
+  border: 1px solid #b7c3ba;
+  border-radius: 10px;
+  background: #f4f3ee;
 }
 
 .clinical-thread {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  margin-top: 28px;
+  margin-top: 20px;
+  border-top: 1px solid #b4beb6;
+  border-bottom: 1px solid #b4beb6;
 }
 
 .clinical-thread article {
-  min-height: 120px;
-  padding: 4px 26px;
+  display: grid;
+  grid-template-columns: 34px 1fr;
+  gap: 14px;
+  min-height: 108px;
+  padding: 19px 24px;
 }
 
 .clinical-thread article:first-child {
@@ -775,7 +660,7 @@ const trustPrinciples = [
 }
 
 .clinical-thread article + article {
-  border-left: 1px solid #bac4bc;
+  border-left: 1px solid #b4beb6;
 }
 
 .stage-number {
@@ -787,9 +672,9 @@ const trustPrinciples = [
 .clinical-thread h3,
 .ask-mode-list h3,
 .capture-steps h3 {
-  margin-top: 8px;
+  margin-top: 0;
   font-family: var(--font-editorial);
-  font-size: 22px;
+  font-size: 21px;
   font-weight: 500;
   line-height: 1.15;
 }
@@ -797,9 +682,9 @@ const trustPrinciples = [
 .clinical-thread p,
 .ask-mode-list p,
 .capture-steps p {
-  margin-top: 8px;
+  margin-top: 5px;
   color: var(--landing-muted);
-  font-size: 12px;
+  font-size: 11px;
   line-height: 1.55;
 }
 
@@ -1377,7 +1262,6 @@ const trustPrinciples = [
     display: none;
   }
 
-  .hero-layout,
   .ask-layout,
   .reflect-layout,
   .capture-layout {
@@ -1400,16 +1284,17 @@ const trustPrinciples = [
     max-width: 760px;
   }
 
-  .split-heading {
+  .split-heading,
+  .workspace-intro {
     grid-template-columns: 1fr;
     gap: 18px;
   }
 
-  .split-heading > p {
+  .split-heading > p,
+  .workspace-intro > p {
     max-width: 620px;
   }
 
-  .workspace-summary-grid,
   .tool-clusters {
     grid-template-columns: 1fr;
   }
@@ -1460,7 +1345,6 @@ const trustPrinciples = [
     font-size: 11px;
   }
 
-  .hero-section,
   .workspace-section,
   .ask-section,
   .reflect-section,
@@ -1469,6 +1353,16 @@ const trustPrinciples = [
   .trust-section {
     padding-top: 46px;
     padding-bottom: 50px;
+  }
+
+  .hero-section {
+    min-height: 650px;
+  }
+
+  .hero-layout {
+    width: calc(100% - 36px);
+    padding-top: 72px;
+    padding-bottom: 68px;
   }
 
   .hero-copy h1 {
@@ -1487,16 +1381,6 @@ const trustPrinciples = [
     width: 100%;
   }
 
-  .hero-product {
-    min-height: 0;
-    padding: 14px;
-    border-radius: 18px;
-  }
-
-  .hero-client-card .pill-row {
-    display: none;
-  }
-
   .split-heading h2,
   .ask-copy h2,
   .reflect-copy h2,
@@ -1506,22 +1390,6 @@ const trustPrinciples = [
     font-size: clamp(40px, 11vw, 50px);
   }
 
-  .workspace-frame {
-    grid-template-columns: 1fr;
-    min-height: 0;
-  }
-
-  .workspace-sidebar {
-    display: none;
-  }
-
-  .workspace-main {
-    min-height: 300px;
-    border-left: 1.4px solid #91a096;
-    border-radius: 10px;
-  }
-
-  .workspace-summary-grid,
   .clinical-thread {
     grid-template-columns: 1fr;
   }
@@ -1531,7 +1399,7 @@ const trustPrinciples = [
   }
 
   .clinical-thread article + article {
-    border-top: 1px solid #bac4bc;
+    border-top: 1px solid #b4beb6;
     border-left: 0;
   }
 
