@@ -17,7 +17,7 @@ export function sampleCaptureDraftForTranscript(transcript, { sampleVerified = f
   const noteId = String(transcript?.zoom_note_id || '');
   if (!sampleVerified || !isSampleTranscriptRow(transcript)) return null;
 
-  if (noteId === 'SAMPLE-NOTE-DANIEL-INBOX') {
+  if (noteId.startsWith('SAMPLE-NOTE-DANIEL')) {
     return {
       presentingConcerns: 'Daniel described anxiety and self-consciousness before social situations, with a tendency to predict rejection and leave interactions early when discomfort rises.',
       sessionThemes: 'The conversation focused on noticing predictions before social contact, distinguishing anxiety from evidence, and choosing a manageable next step rather than avoiding the situation entirely.',
