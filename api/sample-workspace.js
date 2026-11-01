@@ -49,11 +49,17 @@ async function ensureBaseWorkspace({ service, userClient, userId }) {
   if (!(clients || []).length) {
     const { error: seedError } = await userClient.rpc('create_sample_workspace');
     if (seedError) throw seedError;
-  } else if ((clients || []).some(client => !String(client.reference || '').startsWith('SAMPLE-'))) {
-    const err = new Error('Sample practice can only be added to an empty workspace.');
-    err.status = 409;
-    err.code = 'SAMPLE_WORKSPACE_NOT_EMPTY';
-    throw err;
+    const { data: marked, error: markError } = await service.rpc('mark_sample_workspace_clients', { p_user_id: userId });
+    if (markError || Number(marked || 0) < 4) throw markError || new Error('Sample client markers could not be created.');
+  } else {
+    const { data: verified, error: verifyError } = await service.rpc('is_sample_workspace', { p_user_id: userId });
+    if (verifyError) throw verifyError;
+    if (!verified) {
+      const err = new Error('Sample practice can only be added to an empty workspace.');
+      err.status = 409;
+      err.code = 'SAMPLE_WORKSPACE_NOT_EMPTY';
+      throw err;
+    }
   }
 
   const { data: sampleClients, error: sampleError } = await service
