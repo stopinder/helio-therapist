@@ -28,7 +28,7 @@
           <div class="rounded-panel border border-state-success/20 bg-state-success-surface px-4 py-4">
             <p class="text-body-sm font-semibold text-ink">Saved to Reflect</p>
             <p class="mt-1 text-caption leading-5 text-ink-muted">This is a captured thought, not a finished reflection. You can leave it here or develop it now.</p>
-            <p v-if="savedReflection.clients?.display_name" class="mt-2 text-caption text-ink-secondary">Linked to {{ savedReflection.clients.display_name }}<span v-if="savedReflection.session_ref"> · current session</span></p>
+            <p v-if="linkContext && context?.clientId" class="mt-2 text-caption text-ink-secondary">Linked to {{ context.clientName || 'current client' }}<span v-if="context.sessionId"> · current session</span></p>
           </div>
           <div class="mt-3 flex justify-end gap-2">
             <button type="button" class="button-secondary" @click="$emit('close')">Done</button>
