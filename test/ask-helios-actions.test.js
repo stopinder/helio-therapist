@@ -18,3 +18,44 @@ test('Only allowlisted reminder and private professional reflection actions', ()
   assert.equal(validateHeliosAction({ type: 'save_private_reflection', body: 'a'.repeat(4001), confirmed: true }), null);
   assert.equal(validateHeliosAction({ type: 'save_private_reflection', body: 'too short', confirmed: true }), null);
 });
+
+
+test('Structured Ask Helios reflection requires explicit therapist confirmation and a saved source conversation', () => {
+  const base = {
+    type: 'save_private_reflection_draft',
+    sourceConversationId: 'aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa',
+    reflection: {
+      stoodOut: 'I noticed myself rushing to offer a solution.',
+      emotionalResponse: 'I felt urgency and a pull to reduce the discomfort.'
+    },
+    reflectiveMap: {
+      innerPosition: 'Wanting to rescue',
+      trigger: 'The client becoming distressed'
+    },
+    theme: 'Rescuing'
+  };
+  assert.equal(validateHeliosAction(base), null);
+  const action = validateHeliosAction({ ...base, confirmed: true });
+  assert.ok(action);
+  assert.equal(action.type, 'save_private_reflection_draft');
+  assert.equal(action.body, 'I noticed myself rushing to offer a solution.\n\nI felt urgency and a pull to reduce the discomfort.');
+  assert.equal(action.reflectiveMap.innerPosition, 'Wanting to rescue');
+  assert.equal(action.theme, 'Rescuing');
+});
+
+test('Structured reflection action rejects mapping-only or unowned-looking payloads at validation boundary', () => {
+  assert.equal(validateHeliosAction({
+    type: 'save_private_reflection_draft',
+    confirmed: true,
+    sourceConversationId: 'not-a-uuid',
+    reflection: { stoodOut: 'A real reflection' },
+    reflectiveMap: {}
+  }), null);
+  assert.equal(validateHeliosAction({
+    type: 'save_private_reflection_draft',
+    confirmed: true,
+    sourceConversationId: 'aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa',
+    reflection: {},
+    reflectiveMap: { innerPosition: 'Rescuer' }
+  }), null);
+});
