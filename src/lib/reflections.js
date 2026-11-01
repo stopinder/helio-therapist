@@ -51,7 +51,7 @@ export function normalizeWorkspaceReflection(content) {
     Object.keys(EMPTY_WORKSPACE_REFLECTION).map(key => [key, typeof source[key] === 'string' ? source[key] : ''])
   );
   if (source.reflectiveMap) normalized.reflectiveMap = normalizeReflectiveMap(source.reflectiveMap);
-  if (source.captureSource === 'quick_capture') normalized.captureSource = 'quick_capture';
+  if (['quick_capture','ask_helios'].includes(source.captureSource)) normalized.captureSource = source.captureSource;
   return normalized;
 }
 
