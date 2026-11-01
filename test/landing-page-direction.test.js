@@ -75,7 +75,9 @@ describe('Landing Page Direction', () => {
     assert.match(landingSource, /reflect-layout[^}]*align-items: start/)
     assert.match(landingSource, /capture-layout[^}]*align-items: start/)
     assert.match(landingSource, /reflect-section[^}]*background: #f2f2ed/)
-    assert.match(landingSource, /tools-section[^}]*background: #f4f3ee/)
+    assert.match(landingSource, /tools-section[^}]*background: #e4e8e2/)
+    assert.match(landingSource, /tool-card[^}]*background: #eef0eb/)
+    assert.match(landingSource, /documents-band[^}]*background: #d9e0da/)
   })
 
   test('header and footer retain account, legal and support routes', () => {
