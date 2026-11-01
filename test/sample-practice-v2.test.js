@@ -74,7 +74,11 @@ test('sample practice is created through an authenticated server boundary and is
   assert.match(sampleApi, /getSupabaseUserClient/)
   assert.match(sampleApi, /rpc\('is_sample_workspace'/)
   assert.match(sampleApi, /rpc\('mark_sample_workspace_clients'/)
-  assert.match(sampleApi, /onConflict: 'therapist_user_id,zoom_note_id'/)
+  assert.match(sampleApi, /async function ensureTranscript/)
+  assert.match(sampleApi, /if \(existing\) return existing/)
+  assert.match(sampleApi, /error\?\.code === '23505'/)
+  assert.match(sampleApi, /if \(!existingCapture\)/)
+  assert.doesNotMatch(sampleApi, /\.upsert\(row/)
   assert.match(sampleApi, /SAMPLE-NOTE-DANIEL-INBOX/)
   assert.match(sampleApi, /SAMPLE-NOTE-ALEX-001/)
   assert.match(sampleApi, /SAMPLE-NOTE-ALEX-003/)
@@ -128,4 +132,12 @@ test('sample clients are internally marked and excluded from the real-client quo
   assert.match(quotaMigration, /not exists \([\s\S]*from private\.sample_clients as sample[\s\S]*sample\.client_id = c\.id/)
   assert.match(quotaMigration, /Internally marked synthetic clients never consume the commercial quota/)
   assert.doesNotMatch(quotaMigration, /reference like 'SAMPLE-%'/i)
+})
+
+
+test('re-running Sample Practice seeding preserves therapist assignment and capture edits', () => {
+  assert.match(sampleApi, /\.eq\('zoom_note_id', row\.zoom_note_id\)[\s\S]*\.maybeSingle\(\)/)
+  assert.match(sampleApi, /if \(existing\) return existing/)
+  assert.match(sampleApi, /\.from\('session_capture_drafts'\)[\s\S]*\.eq\('session_id', session\.id\)[\s\S]*\.maybeSingle\(\)/)
+  assert.match(sampleApi, /if \(!existingCapture\)/)
 })
