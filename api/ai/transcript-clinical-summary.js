@@ -1,5 +1,6 @@
 import { requireAuthenticatedUser } from '../_lib/supabase.js';
 import { AI_FEATURES, runTextAI } from '../_lib/ai-execution.js';
+import { sampleCaptureDraftForTranscript } from '../_lib/sample-practice.js';
 import {
   applySpeakerIdentities,
   buildClinicalSummaryInput,
@@ -40,7 +41,7 @@ export default async function handler(req, res) {
 
     const { data: transcript, error: transcriptError } = await supabase
       .from('zoom_transcripts')
-      .select('id, original_transcript, requested_lens, client_id, session_ref, review_choices_saved_at')
+      .select('id, original_transcript, requested_lens, client_id, session_ref, review_choices_saved_at, source, zoom_note_id')
       .eq('id', transcriptId)
       .eq('therapist_user_id', user.id)
       .maybeSingle();
@@ -62,6 +63,25 @@ export default async function handler(req, res) {
     if (session.status === 'completed') {
       return res.status(409).json({ success: false, error: { code: 'CLINICAL_RECORD_ALREADY_APPROVED', message: 'This session already has an approved Clinical Record.' } });
     }
+
+    const sampleDraft = sampleCaptureDraftForTranscript(transcript);
+    if (sampleDraft) {
+      const draft = { ...sampleDraft };
+      if (therapistGuidance.trim()) {
+        draft.sessionThemes = [draft.sessionThemes, `Therapist guidance for this synthetic review: ${therapistGuidance.trim().slice(0, 240)}`].filter(Boolean).join(' ');
+      }
+      for (const key of dismissedFields) if (Object.hasOwn(draft, key)) draft[key] = '';
+      return res.status(200).json({
+        success: true,
+        data: {
+          draft,
+          promptVersion: 'sample-practice-session-capture-v1',
+          sample: true,
+          aiAllowanceUsed: false
+        }
+      });
+    }
+
     const promptTranscript = applySpeakerIdentities(transcript.original_transcript, speakerIdentities);
     const chunks = splitClinicalSummaryTranscript(promptTranscript);
     const partialDrafts = [];
