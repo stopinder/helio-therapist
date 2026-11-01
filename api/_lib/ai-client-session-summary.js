@@ -1,4 +1,4 @@
-export const CLIENT_SESSION_SUMMARY_PROMPT_VERSION = 'client-session-summary-v9';
+export const CLIENT_SESSION_SUMMARY_PROMPT_VERSION = 'client-session-summary-v10';
 export const CLIENT_SESSION_SUMMARY_LENSES = Object.freeze(['general', 'integrative', 'gentle_cbt', 'internal_family_systems', 'transactional_analysis']);
 export const CLIENT_SESSION_SUMMARY_FIELDS = Object.freeze(['opening','whatWeWorkedOn','patternsOverTime','changesAndExceptions','strengthsAndResources','perspectiveReflection','betweenSession','closing']);
 
@@ -18,7 +18,8 @@ Stage 2 — draft the client-facing sections only after the evidence map is comp
 
 Use these evidence thresholds:
 - A point supported only in the current session is a current observation, not a longitudinal pattern.
-- Describe something as recurring only when substantially similar evidence appears in two or more session sources.
+- Describe something as recurring only when substantially similar evidence appears in two or more supplied session sources.
+- If one supplied session itself reports that something has happened repeatedly over time, you may describe that reported history, but its evidenceStrength must remain current_observation. Reserve recurring for cross-session support from at least two supplied session source IDs.
 - A possible connection must stay tentative unless the client or therapist explicitly established it.
 - Recurrence is not causality. Never turn repetition into a causal claim.
 - Absence of a topic in a later session is not evidence of improvement.
@@ -300,15 +301,22 @@ export function validateClientSessionSummaryResponse(value, validSourceIds = nul
       console.warn('[Session Summary] AI response validation failed: invalid_source_id');
       return null;
     }
-    if(claim.evidenceStrength==='recurring'&&sourceIds.filter(id=>id.startsWith('session:')).length<2) {
-      console.warn('[Session Summary] AI response validation failed: invalid_evidence_strength (recurring requires 2 sessions)');
-      return null;
+    let evidenceStrength=claim.evidenceStrength;
+    const sessionSourceCount=sourceIds.filter(id=>id.startsWith('session:')).length;
+    if(evidenceStrength==='recurring'&&sessionSourceCount<2) {
+      if(sessionSourceCount===1) {
+        console.warn('[Session Summary] AI response evidence strength repaired: recurring -> current_observation (single session source)');
+        evidenceStrength='current_observation';
+      } else {
+        console.warn('[Session Summary] AI response validation failed: invalid_evidence_strength (recurring requires session evidence)');
+        return null;
+      }
     }
     if(!sections[claim.section].toLocaleLowerCase().includes(claim.text.trim().toLocaleLowerCase())) {
       console.warn('[Session Summary] AI response validation failed: claim_not_present_in_section');
       return null;
     }
-    claims.push({section:claim.section,text:claim.text.trim().slice(0,2000),sourceIds,evidenceStrength:claim.evidenceStrength});
+    claims.push({section:claim.section,text:claim.text.trim().slice(0,2000),sourceIds,evidenceStrength});
   }
   for(const key of CLIENT_SESSION_SUMMARY_FIELDS)if(sections[key]&&!claims.some(claim=>claim.section===key)) {
     console.warn(`[Session Summary] AI response validation failed: missing_claim_for_nonempty_section (${key})`);
