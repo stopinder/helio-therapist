@@ -23,7 +23,7 @@
             </div>
             <div class="mt-stack-lg grid grid-cols-2 gap-inline-sm sm:grid-cols-5">
               <button type="button" class="button-secondary justify-center" @click="scrollToSection('care')">Aims & objectives</button>
-              <button type="button" class="button-secondary justify-center" @click="scrollToSection('care')">Care plan</button>
+              <button type="button" class="button-secondary justify-center" @click="scrollToSection('care')">Therapy Focus</button>
               <button type="button" class="button-secondary justify-center" :disabled="!recentSessions.length" @click="openSessionWorkspace(recentSessions[0])">Session Capture</button>
               <button type="button" class="button-secondary justify-center" @click="openSampleTranscript">Transcript</button>
               <button type="button" class="button-secondary justify-center" @click="openSampleSummary">Summary</button>
@@ -56,7 +56,7 @@
                   <p v-else class="text-body-sm text-ink-muted pb-stack-md">No upcoming appointment is recorded.</p>
                 </div>
                 <div class="bg-surface-elevated border border-border-muted rounded-panel p-inline-lg">
-                  <h3 class="text-h3 font-semibold text-ink mb-stack-md pt-stack-md">Care Team</h3>
+                  <h3 class="text-h3 font-semibold text-ink mb-stack-md pt-stack-md">Support network</h3>
                   <p class="text-body-sm text-ink-muted pb-stack-md">Primary therapist: {{ therapistLabel }}</p>
                 </div>
               </div>
@@ -145,8 +145,8 @@ const sampleTranscriptSession=computed(()=>sessions.value.find(session=>session.
 const sampleGuide=computed(()=>{
   const reference=String(client.value?.reference||'');
   if(reference==='SAMPLE-001')return{title:'Alex: follow the work across several sessions',description:'This example is designed to show longitudinal Clinical Intelligence: repeated patterns, change over time, transcript-backed Session Captures and a multi-session summary.'};
-  if(reference==='SAMPLE-002')return{title:'Priya: see a concise adjustment and bereavement example',description:'This example shows how Care and session material can stay tentative, supportive and grounded without turning a normal grief response into a diagnosis.'};
-  if(reference==='SAMPLE-003')return{title:'Daniel: inspect one complete piece of clinical work',description:'Daniel is the end-to-end worked example: aims and objectives, an active Care plan, a linked transcript, reviewed Session Capture and a therapist-facing summary.'};
+  if(reference==='SAMPLE-002')return{title:'Priya: see a concise adjustment and bereavement example',description:'This example shows how Therapy Focus and session material can stay tentative, supportive and grounded without turning a normal grief response into a diagnosis.'};
+  if(reference==='SAMPLE-003')return{title:'Daniel: inspect one complete piece of clinical work',description:'Daniel is the end-to-end worked example: aims and objectives, an active Therapy Focus, a linked transcript, reviewed Session Capture and a therapist-facing summary.'};
   return{title:'Maya: see how completed work remains available',description:'This archived example shows how historical clinical material remains readable without presenting an active workload.'};
 });
 const nextAppointment=computed(()=>nextClientAppointment(appointments.value));
