@@ -23,7 +23,31 @@
         <CaptureEditor v-model="reminderBody" placeholder="What do you need to remember?" :saving="savingReminder" :save-label="savingReminder?'Saving…':'Save'" dictation-label="reminder" @save="saveReminder" />
       </template>
 
-      <CaptureEditor v-else v-model="reflectionBody" :rows="6" :max-length="20000" placeholder="Capture what came to you…" :saving="savingReflection" :save-label="savingReflection?'Saving…':'Save reflection'" dictation-label="reflection" @save="saveReflection" />
+      <template v-else>
+        <div v-if="savedReflection" class="px-4 py-4">
+          <div class="rounded-panel border border-state-success/20 bg-state-success-surface px-4 py-4">
+            <p class="text-body-sm font-semibold text-ink">Saved to Reflect</p>
+            <p class="mt-1 text-caption leading-5 text-ink-muted">This is a captured thought, not a finished reflection. You can leave it here or develop it now.</p>
+            <p v-if="linkContext && context?.clientId" class="mt-2 text-caption text-ink-secondary">Linked to {{ context.clientName || 'current client' }}<span v-if="context.sessionId"> · current session</span></p>
+          </div>
+          <div class="mt-3 flex justify-end gap-2">
+            <button type="button" class="button-secondary" @click="$emit('close')">Done</button>
+            <button type="button" class="button-primary" @click="$emit('continue-reflection', savedReflection)">Develop reflection</button>
+          </div>
+        </div>
+        <template v-else>
+          <div v-if="context?.clientId" class="border-b border-border-muted px-4 py-3">
+            <label class="flex items-start gap-3">
+              <input v-model="linkContext" type="checkbox" class="mt-0.5 h-4 w-4 rounded border-border text-action-primary focus:ring-state-focus-ring" />
+              <span>
+                <span class="block type-ui font-medium text-ink">Link to {{ context.clientName || 'current client' }}<span v-if="context.sessionId"> · current session</span></span>
+                <span class="mt-0.5 block type-metadata text-ink-muted">Optional. Leave unticked for a therapist-only reflection.</span>
+              </span>
+            </label>
+          </div>
+          <CaptureEditor v-model="reflectionBody" :rows="6" :max-length="20000" placeholder="Catch the thought before you lose it…" :saving="savingReflection" :save-label="savingReflection?'Saving…':'Save to Reflect'" dictation-label="reflection" @save="saveReflection" />
+        </template>
+      </template>
       <p v-if="error" class="px-4 pb-3 type-metadata text-state-danger" role="alert">{{ error }}</p>
     </section>
   </div>
@@ -36,12 +60,33 @@ import { authenticatedFetch } from '../../lib/api.js'
 import { createQuickReflection } from '../../lib/reflections.js'
 import { createTherapistReminder, setTherapistReminderCompleted } from '../../lib/therapistReminders.js'
 
-defineProps({ reminders: { type: Array, default: () => [] } })
-const emit=defineEmits(['close','saved','changed','reflection-saved'])
-const mode=ref('reminder'),reminderBody=ref(''),reflectionBody=ref(''),savingReminder=ref(false),savingReflection=ref(false),completingId=ref(null),error=ref('')
+const props=defineProps({
+  reminders: { type: Array, default: () => [] },
+  context: { type: Object, default: null },
+  initialMode: { type: String, default: 'reminder' }
+})
+const emit=defineEmits(['close','saved','changed','reflection-saved','continue-reflection'])
+const mode=ref(props.initialMode==='reflection'?'reflection':'reminder'),reminderBody=ref(''),reflectionBody=ref(''),savingReminder=ref(false),savingReflection=ref(false),completingId=ref(null),error=ref(''),savedReflection=ref(null),linkContext=ref(false)
 
 async function saveReminder(){if(!reminderBody.value.trim()||savingReminder.value)return;savingReminder.value=true;error.value='';try{const reminder=await createTherapistReminder({body:reminderBody.value});window.dispatchEvent(new CustomEvent('helios-reminders-changed'));emit('saved',reminder);emit('close')}catch{error.value='Could not save this reminder. Please try again.'}finally{savingReminder.value=false}}
-async function saveReflection(){if(!reflectionBody.value.trim()||savingReflection.value)return;savingReflection.value=true;error.value='';try{const reflection=await createQuickReflection({body:reflectionBody.value});window.dispatchEvent(new CustomEvent('helios-reflections-changed'));emit('reflection-saved',reflection);emit('close')}catch{error.value='Could not save this reflection. Please try again.'}finally{savingReflection.value=false}}
+async function saveReflection(){
+  if(!reflectionBody.value.trim()||savingReflection.value)return
+  savingReflection.value=true
+  error.value=''
+  try{
+    const reflection=await createQuickReflection({
+      body:reflectionBody.value,
+      clientId:linkContext.value?props.context?.clientId||null:null,
+      sessionId:linkContext.value?props.context?.sessionId||null:null
+    })
+    savedReflection.value=reflection
+    reflectionBody.value=''
+    window.dispatchEvent(new CustomEvent('helios-reflections-changed',{detail:{reflectionId:reflection.id}}))
+    emit('reflection-saved',reflection)
+  }catch{
+    error.value='Could not save this reflection. Please try again.'
+  }finally{savingReflection.value=false}
+}
 async function complete(reminder){if(!reminder?.id||completingId.value)return;completingId.value=reminder.id;error.value='';try{await setTherapistReminderCompleted({id:reminder.id,completed:true});window.dispatchEvent(new CustomEvent('helios-reminders-changed'));emit('changed')}catch{error.value='Could not complete this reminder. Please try again.'}finally{completingId.value=null}}
 
 const CaptureEditor=defineComponent({

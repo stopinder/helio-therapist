@@ -17,16 +17,17 @@ test('reflection editor exposes an explicit save then AI handoff', () => {
 
 test('professional development resolves only the saved reflection id before opening AI', () => {
   assert.match(layout, /route\.query\.aiReflection/)
-  assert.match(layout, /reflections\.value\.find\(item => item\.id === requestedReflectionId\)/)
+  assert.match(layout, /reflections\.value\.find\(item => item\.id === requestedAIReflectionId\)/)
   assert.match(layout, /handleOpenAIReflection\(reflection\)/)
   assert.match(layout, /aiReflection: undefined/)
 })
 
-test('AI reflection API remains reflection-id only and RLS-backed', () => {
-  assert.match(reflectApi, /bodyKeys\.length !== 1 \|\| bodyKeys\[0\] !== 'reflectionId'/)
+test('AI reflection API remains owned-reflection scoped while allowing reviewed draft text', () => {
+  assert.match(reflectApi, /allowedKeys = new Set\(\['reflectionId','draftBody','draftTheme'\]\)/)
   assert.match(reflectApi, /getSupabaseUserClient\(req\)/)
   assert.match(reflectApi, /\.from\('private_reflections'\)/)
-  assert.doesNotMatch(reflectApi, /reflectionText/)
+  assert.match(reflectApi, /typeof draftBody === 'string' \? draftBody : reflection\.body/)
+  assert.match(reflectApi, /buildReflectionInput\(\{ \.\.\.reflection, body: reflectionBody, theme: reflectionTheme \}, clientContext\)/)
 })
 
 test('dictation remains transient server-side and returns text only', () => {

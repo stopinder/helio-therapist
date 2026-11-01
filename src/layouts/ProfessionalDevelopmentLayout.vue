@@ -23,6 +23,7 @@
             @open-ai-reflection="handleOpenAIReflection"
             @go-to-session="handleGoToSession"
             @edit-reflection="handleEditReflection"
+            @develop-reflection="handleDevelopReflection"
             @delete-reflection="handleDeleteReflection"
           />
         </transition>
@@ -40,6 +41,13 @@
       @go-to-session="handleGoToSession"
     />
 
+    <QuickReflectionDevelopmentModal
+      v-if="developingReflection"
+      :reflection="developingReflection"
+      @close="closeDevelopReflection"
+      @saved="handleDevelopedReflection"
+    />
+
     <ReflectionEditModal
       v-if="editingReflection"
       :reflection="editingReflection"
@@ -52,11 +60,12 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, provide } from 'vue';
+import { ref, computed, onMounted, onUnmounted, provide, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { deletePrivateReflection, getAllPrivateReflections, setReflectionSupervisionSelection, updatePrivateReflectionBody } from '../lib/reflections.js';
 import PrivateReflectionModal from '../components/professional-development/PrivateReflectionModal.vue';
 import ReflectionEditModal from '../components/professional-development/ReflectionEditModal.vue';
+import QuickReflectionDevelopmentModal from '../components/professional-development/QuickReflectionDevelopmentModal.vue';
 
 const route = useRoute();
 const router = useRouter();
@@ -66,6 +75,7 @@ const actionLoading = ref(null);
 const actionError = ref('');
 const selectedReflection = ref(null);
 const editingReflection = ref(null);
+const developingReflection = ref(null);
 const initialAIMode = ref(false);
 
 const isChildPage = computed(() => route.path !== '/supervision');
@@ -88,12 +98,18 @@ async function loadData() {
   try {
     const data = await getAllPrivateReflections({ limit: 100 });
     reflections.value = data;
-    const requestedReflectionId = typeof route.query.aiReflection === 'string' ? route.query.aiReflection : '';
-    if (requestedReflectionId) {
-      const reflection = reflections.value.find(item => item.id === requestedReflectionId);
+    const requestedAIReflectionId = typeof route.query.aiReflection === 'string' ? route.query.aiReflection : '';
+    if (requestedAIReflectionId) {
+      const reflection = reflections.value.find(item => item.id === requestedAIReflectionId);
       if (reflection) handleOpenAIReflection(reflection);
       else console.warn('[AI Reflection] Saved reflection handoff could not be resolved.');
       await router.replace({ path: route.path, query: { ...route.query, aiReflection: undefined } });
+    }
+    const requestedDevelopReflectionId = typeof route.query.developReflection === 'string' ? route.query.developReflection : '';
+    if (requestedDevelopReflectionId) {
+      const reflection = reflections.value.find(item => item.id === requestedDevelopReflectionId);
+      if (reflection) developingReflection.value = reflection;
+      else console.warn('[Quick Capture] Captured thought handoff could not be resolved.');
     }
   } catch (err) {
     console.error('Failed to load reflections', err);
@@ -124,8 +140,26 @@ function replaceReflection(updated) {
   if (editingReflection.value?.id === updated.id) editingReflection.value = { ...editingReflection.value, ...updated };
 }
 
+function handleDevelopReflection(reflection) {
+  actionError.value = '';
+  developingReflection.value = reflection;
+}
+function closeDevelopReflection() {
+  developingReflection.value = null;
+  if (route.query.developReflection) {
+    router.replace({ path: route.path, query: { ...route.query, developReflection: undefined } });
+  }
+}
+function handleDevelopedReflection(updated) {
+  replaceReflection(updated);
+  closeDevelopReflection();
+}
 function handleEditReflection(reflection) {
   actionError.value = '';
+  if (reflection.workspace_content?.captureSource === 'quick_capture' && reflection.workspace_content?.quickCaptureState === 'captured') {
+    handleDevelopReflection(reflection);
+    return;
+  }
   if (reflection.workspace_content?.captureSource === 'practice_reflection') {
     router.push('/supervision/practice-reflection');
     return;
@@ -179,7 +213,21 @@ function closeReflectionModal() { selectedReflection.value = null; initialAIMode
 function closeEditModal() { editingReflection.value = null; actionError.value = ''; }
 function handleGoToSession(reflection) { if (reflection.client_id && reflection.session_ref) router.push(`/clients/${reflection.client_id}/sessions/${reflection.session_ref}`); }
 
-onMounted(loadData);
+const handleReflectionsChanged = () => loadData();
+watch(() => route.query.developReflection, async value => {
+  if (typeof value !== 'string' || !value) return;
+  let reflection = reflections.value.find(item => item.id === value);
+  if (!reflection) {
+    await loadData();
+    reflection = reflections.value.find(item => item.id === value);
+  }
+  if (reflection) developingReflection.value = reflection;
+});
+onMounted(() => {
+  window.addEventListener('helios-reflections-changed', handleReflectionsChanged);
+  loadData();
+});
+onUnmounted(() => window.removeEventListener('helios-reflections-changed', handleReflectionsChanged));
 provide('reflections', reflections);
 provide('loadData', loadData);
 </script>

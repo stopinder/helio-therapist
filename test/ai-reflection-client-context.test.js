@@ -1,10 +1,10 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
-import { buildReflectionInput, AI_REFLECTION_PROMPT_VERSION } from '../api/_lib/ai-reflection.js'
+import { buildReflectionInput, AI_REFLECTION_PROMPT_VERSION, aiReflectionSystemPrompt, validateAIReflectionResponse } from '../api/_lib/ai-reflection.js'
 
 test('reflection prompt version changes when bounded client context is introduced', () => {
-  assert.equal(AI_REFLECTION_PROMPT_VERSION, 'ai-reflection-v2')
+  assert.equal(AI_REFLECTION_PROMPT_VERSION, 'ai-reflection-v3')
 })
 
 test('reflection input includes only the assembled bounded client context', () => {
@@ -33,4 +33,28 @@ test('reflection endpoint loads context only through the owned client context lo
   assert.match(endpoint, /reflection\.client_id\s*\?\s*await loadOwnedClientAIContext\(supabase, \{ clientId: reflection\.client_id, userId: user\.id \}\)/)
   assert.doesNotMatch(endpoint, /from\('transcripts'\)/)
   assert.doesNotMatch(endpoint, /from\('sessions'\)/)
+})
+
+
+test('reflection AI may suggest mapping only from therapist-authored reflection material', () => {
+  assert.match(aiReflectionSystemPrompt, /mapping must be based ONLY on the therapist-authored reflection text/i)
+  assert.match(aiReflectionSystemPrompt, /never on client context/i)
+  const result = validateAIReflectionResponse({
+    reflective_questions: [],
+    possible_themes: [],
+    alternative_perspectives: [],
+    ethical_considerations: [],
+    learning_points: [],
+    reflective_map: {
+      innerPosition: 'Wanting to organise',
+      protectiveIntention: 'Reduce uncertainty',
+      trigger: 'A long silence',
+      impact: 'I sped up',
+      spaceCreated: '',
+      supervisionQuestion: 'What happens when I wait?'
+    },
+    limitations: 'Tentative only.'
+  })
+  assert.equal(result.reflective_map.innerPosition, 'Wanting to organise')
+  assert.equal(result.reflective_map.spaceCreated, '')
 })

@@ -59,9 +59,12 @@
     <GlobalQuickCapture
       v-if="showQuickCapture"
       :reminders="openReminders"
+      :context="quickCaptureContext"
+      :initial-mode="quickCaptureInitialMode"
       @close="showQuickCapture=false"
       @saved="refreshReminders"
       @changed="refreshReminders"
+      @continue-reflection="continueReflection"
     />
     <AskHeliosPanel />
     <HelpPanel />
@@ -79,6 +82,7 @@ import { listScheduledAppointments } from '../lib/appointments.js'
 import { nextTimedAppointment } from '../lib/nextAppointment.js'
 import { createOrResumeSession } from '../lib/sessions.js'
 import { listTherapistReminders } from '../lib/therapistReminders.js'
+import { getClient } from '../lib/clients.js'
 import AppHeader from '../components/shell/AppHeader.vue'
 import AppSidebar from '../components/shell/AppSidebar.vue'
 import GlobalQuickCapture from '../components/reminders/GlobalQuickCapture.vue'
@@ -91,11 +95,13 @@ const { isPanelOpen, panelWidth, isExpanded } = useAskHelios()
 const { closeHelp } = useHelp()
 const route = useRoute()
 watch(() => route.fullPath, closeHelp)
+watch(() => route.params.clientId, refreshQuickCaptureContext, { immediate:true })
 const router = useRouter()
 const isMobileMenuOpen = ref(false)
 const accountIdentity = ref({ name: 'Signed in', subtitle: '', initials: '·', practiceName: '', practiceLogoUrl: '' })
 const showQuickCapture = ref(false)
 const reminders = ref([])
+const quickCaptureClientName = ref('')
 const now = ref(new Date())
 const appointments = ref([])
 const googleEvents = ref([])
@@ -108,6 +114,19 @@ const fullHeightWorkspacePaths = new Set(['/calendar', '/transcripts'])
 const isFullHeightWorkspace = computed(() => fullHeightWorkspacePaths.has(route.path))
 const openReminders = computed(() => reminders.value.filter(item => !item.completedAt))
 const outstandingReminderCount = computed(() => openReminders.value.length)
+const quickCaptureContext = computed(() => {
+  const clientId = typeof route.params.clientId === 'string' ? route.params.clientId : ''
+  if (!clientId) return null
+  const sessionId = typeof route.params.sessionId === 'string' ? route.params.sessionId : ''
+  return {
+    clientId,
+    sessionId: sessionId || null,
+    clientName: quickCaptureClientName.value || ''
+  }
+})
+const quickCaptureInitialMode = computed(() =>
+  route.path.startsWith('/supervision') || Boolean(route.params.clientId) ? 'reflection' : 'reminder'
+)
 const nextAppointment = computed(() => nextTimedAppointment({
   appointments: appointments.value,
   googleEvents: googleEvents.value,
@@ -160,6 +179,26 @@ async function refreshReminders() {
   } catch (error) {
     console.warn('[AppShell] Reminders unavailable', error)
   }
+}
+
+async function refreshQuickCaptureContext() {
+  const clientId = typeof route.params.clientId === 'string' ? route.params.clientId : ''
+  if (!clientId) {
+    quickCaptureClientName.value = ''
+    return
+  }
+  try {
+    const current = await getClient({ clientId })
+    quickCaptureClientName.value = current?.display_name || current?.name || ''
+  } catch {
+    quickCaptureClientName.value = ''
+  }
+}
+
+async function continueReflection(reflection) {
+  if (!reflection?.id) return
+  showQuickCapture.value = false
+  await router.push({ path:'/supervision/reflections', query:{ developReflection:String(reflection.id) } })
 }
 
 async function loadUpcomingGoogleEvents() {
