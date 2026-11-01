@@ -7,96 +7,97 @@ describe('Landing Page Direction', () => {
   const landingPath = path.join(process.cwd(), 'src', 'views', 'Landing.vue')
   const landingSource = fs.readFileSync(landingPath, 'utf8')
 
-  test('positions Helios as a clinical workspace rather than a generic practice manager', () => {
+  test('restores the light photographic splash while keeping the clinical-workspace positioning', () => {
     assert.match(landingSource, /Keep the thread of the work together\./)
     assert.match(landingSource, /Clients, sessions, clinical thinking, documents, reflection and research/)
-    assert.match(landingSource, /A CLINICAL WORKSPACE, NOT ANOTHER ADMIN SYSTEM/)
+    assert.match(landingSource, /Helios · Clinical workspace for therapists/)
+    assert.match(landingSource, /helios-opening-light\.webp/)
+    assert.match(landingSource, /class="hero-background"/)
+    assert.match(landingSource, /hero-overlay-side/)
     assert.doesNotMatch(landingSource, /A place for your whole practice\./)
   })
 
-  test('makes the clinical thread the primary product story', () => {
+  test('makes section two a concise product-proof continuation rather than another synthetic hero', () => {
     assert.match(landingSource, /id="workspace"/)
-    assert.match(landingSource, /The work has a thread\. <em>Helios keeps hold of it\.<\/em>/)
+    assert.match(landingSource, /Start with the client\. Keep the whole thread in view\./)
+    assert.match(landingSource, /client-workspace-section\.png/)
+    assert.match(landingSource, /class="workspace-screenshot"/)
     for (const label of ['Before the session', 'During and after', 'Carry it forward']) {
       assert.ok(landingSource.includes(label), `Missing clinical-thread stage: ${label}`)
     }
-    assert.match(landingSource, /client-workspace-section\.png/)
+    assert.doesNotMatch(landingSource, /workspace-summary-grid/)
+    assert.doesNotMatch(landingSource, /workspace-sidebar/)
   })
 
-  test('gives Ask Helios a first-class section with three deliberate modes', () => {
+  test('gives Ask Helios its approved dark two-column treatment', () => {
     assert.match(landingSource, /id="ask-helios"/)
-    assert.match(landingSource, /One assistant\. <em>Three deliberate ways to think\.<\/em>/)
+    assert.match(landingSource, /One assistant\. Three deliberate ways to think\./)
     for (const mode of ['Workspace', 'Research', 'Reflect']) {
-      assert.ok(landingSource.includes(`<h3>${mode}</h3>`) || landingSource.includes(`>${mode}<`), `Missing Ask Helios mode: ${mode}`)
+      assert.ok(landingSource.includes(`title: '${mode}'`), `Missing Ask Helios mode: ${mode}`)
     }
     assert.match(landingSource, /not a supervisor, autonomous clinician or clinical-record author/)
+    assert.match(landingSource, /ask-panel/)
   })
 
-  test('presents Reflect as a private therapist workspace rather than a minor CPD feature', () => {
+  test('presents Reflect, Therapist Stance and Growth as one coherent system', () => {
     assert.match(landingSource, /id="reflect"/)
-    assert.match(landingSource, /A room inside Helios <em>for the therapist, not the record\.<\/em>/)
-    for (const label of ['Reflections', 'Therapist Stance', 'Map', 'Growth', 'Practice Map', 'Supervision selection']) {
-      assert.ok(landingSource.includes(label), `Missing Reflect concept: ${label}`)
+    assert.match(landingSource, /A room inside Helios for the therapist, not the record\./)
+    for (const label of ['Reflections', 'Practice Map', 'Therapist Stance', 'Growth']) {
+      assert.ok(landingSource.includes(`title: '${label}'`), `Missing Reflect concept: ${label}`)
     }
-    assert.doesNotMatch(landingSource, /CPD & reflection/)
-  })
-
-  test('explains Therapeutic Stance and adaptive Growth accurately', () => {
-    assert.match(landingSource, /THERAPIST STANCE \+ GROWTH/)
     assert.match(landingSource, /“What kind of therapist are you\?”/)
-    assert.match(landingSource, /Fifteen hypothetical practice situations/)
-    assert.match(landingSource, /Your reflection history changes the next questions\./)
-    assert.match(landingSource, /Stance questionnaire records are deliberately excluded from that analysis/)
-    assert.match(landingSource, /at least four dated reflections/)
-    assert.match(landingSource, /The 15 Stance situations themselves stay stable/)
-    assert.match(landingSource, /without deciding that a pattern is good, bad, improvement or deterioration/)
+    assert.match(landingSource, /Fifteen practice situations/)
+    assert.match(landingSource, /The reflection history changes the next questions\./)
+    assert.match(landingSource, /The 15 Stance situations stay stable/)
+    assert.match(landingSource, /Growth follows saved direct-practice reflections rather than the Stance questionnaire itself/)
   })
 
-  test('describes Transcript Inbox and Session Capture as a deliberate workflow', () => {
+  test('describes Transcript Inbox and Session Capture as one workflow', () => {
     assert.match(landingSource, /id="capture"/)
-    assert.match(landingSource, /From transcript to something <em>clinically useful\.<\/em>/)
+    assert.match(landingSource, /From transcript to something clinically useful\./)
     assert.match(landingSource, /Assign without losing your place/)
     assert.match(landingSource, /Shape the output deliberately/)
-    assert.match(landingSource, /No audio or video is imported/)
-    assert.match(landingSource, /transcript-inbox-section\.webp/)
+    assert.match(landingSource, /Transcript Inbox is a triage queue/)
+    assert.match(landingSource, /transcript-panel/)
   })
 
-  test('keeps ordinary tools in a supporting layer', () => {
+  test('uses the approved clustered supporting-tools layout without page-wide ledger rows', () => {
     assert.match(landingSource, /id="tools"/)
-    assert.match(landingSource, /The practical tools stay <em>in their place\.<\/em>/)
-    for (const label of ['Calendar', 'Documents', 'Dictation', 'Supervision', 'Zoom', 'Integrations']) {
-      assert.ok(landingSource.includes(`title: '${label}'`), `Missing supporting tool: ${label}`)
+    assert.match(landingSource, /The practical tools stay in their place\./)
+    for (const group of ['Practice', 'Capture', 'Connect']) {
+      assert.ok(landingSource.includes(`label: '${group}'`), `Missing tool cluster: ${group}`)
     }
+    for (const tool of ['Calendar', 'Documents', 'Dictation', 'Zoom', 'Supervision', 'Integrations']) {
+      assert.ok(landingSource.includes(`title: '${tool}'`), `Missing supporting tool: ${tool}`)
+    }
+    assert.match(landingSource, /grid-template-columns: repeat\(3, 1fr\)/)
+    assert.doesNotMatch(landingSource, /tool-grid/)
+    assert.doesNotMatch(landingSource, /documents-band/)
   })
 
-  test('retains therapist-control and pricing boundaries', () => {
-    assert.match(landingSource, /THERAPIST-CONTROLLED BY DESIGN/)
+  test('matches the approved tonal system and panel definition', () => {
+    assert.match(landingSource, /--landing-deep: #17323b/)
+    assert.match(landingSource, /--landing-sage: #d7dfd7/)
+    assert.match(landingSource, /--landing-warm: #e7e0d5/)
+    assert.match(landingSource, /tool-cluster\.practice[^}]*border: 1\.25px solid #87998b/)
+    assert.match(landingSource, /tool-cluster\.capture[^}]*background: #c6d0c8/)
+    assert.match(landingSource, /tool-cluster\.connect[^}]*background: #afbdb2/)
+    assert.match(landingSource, /reflect-environment[^}]*border: 1\.5px solid #8fa194/)
+    assert.match(landingSource, /ask-panel[^}]*border: 1\.5px solid #617a74/)
+  })
+
+  test('retains therapist-control and current pricing boundaries', () => {
+    assert.match(landingSource, /Therapist-controlled by design/)
     assert.match(landingSource, /Nothing silently becomes a Clinical Record/)
     assert.match(landingSource, /Research stays separate from client context/)
-    assert.match(landingSource, /Free: five active clients and up to five short text-AI actions monthly/)
-    assert.match(landingSource, /Professional: £29\/month or £290\/year/)
+    assert.match(landingSource, /Reflection stays therapist-owned/)
+    assert.match(landingSource, /Free: five active clients and five short text-AI actions monthly, with no payment card required/)
+    assert.match(landingSource, /Professional is optional at £29\/month or £290\/year paid upfront/)
     assert.match(landingSource, /Dictation is available across plans subject to fair use/)
   })
 
-
-  test('uses a consistent section rhythm instead of stacked dead space', () => {
-    assert.match(landingSource, /--section-space: clamp\(52px, 5vw, 68px\)/)
-    assert.match(landingSource, /--section-space-tight: clamp\(42px, 4vw, 54px\)/)
-    assert.match(landingSource, /ask-layout[^}]*align-items: start/)
-    assert.match(landingSource, /reflect-layout[^}]*align-items: start/)
-    assert.match(landingSource, /capture-layout[^}]*align-items: start/)
-    assert.match(landingSource, /reflect-section[^}]*background: #f2f2ed/)
-    assert.match(landingSource, /tools-section[^}]*background: #e4e8e2/)
-    assert.match(landingSource, /tool-card[^}]*border: 1\.5px solid #b6c2b8/)
-    assert.match(landingSource, /tool-card[^}]*background: #dfe6df/)
-    assert.match(landingSource, /documents-band[^}]*border: 1\.5px solid #b4c0b6/)
-    assert.match(landingSource, /documents-band[^}]*background: #ccd6ce/)
-    assert.match(landingSource, /reflect-frame[^}]*border: 1\.5px solid #bcc7be/)
-    assert.match(landingSource, /reflect-cards article[^}]*background: #e4eae4/)
-  })
-
   test('header and footer retain account, legal and support routes', () => {
-    for (const route of ['sign-in', 'get-started', 'privacy', 'ai-data', 'terms', 'cookies', 'support']) {
+    for (const route of ['sign-in', 'get-started', 'privacy', 'ai-data', 'cookies', 'terms', 'support']) {
       assert.ok(landingSource.includes(`to="/${route}"`), `Landing must retain /${route}`)
     }
   })
