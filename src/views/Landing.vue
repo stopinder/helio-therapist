@@ -195,7 +195,7 @@
         <div class="capture-copy">
           <p class="eyebrow">Session material</p>
           <h2>From transcript to something clinically useful.</h2>
-          <p class="capture-lede">Transcript Inbox is a triage queue, not another place to read everything. Identify the likely source, assign the client, preview only when needed, then move into the clinical workflow.</p>
+          <p class="capture-lede">When you use Zoom, give the note a clear name before the session so it arrives in Helios recognisably titled. In Transcript Inbox you explicitly place it with the client, then shape the output deliberately before anything becomes part of the record.</p>
 
           <div class="capture-steps">
             <article v-for="step in captureSteps" :key="step.number">
@@ -206,20 +206,71 @@
               </div>
             </article>
           </div>
+
+          <p class="capture-boundary">The workflow keeps speed and judgement separate: Helios can help organise and draft, but you remain responsible for the clinical interpretation and what is ultimately recorded.</p>
         </div>
 
-        <div class="transcript-panel" aria-label="Transcript Inbox illustration">
-          <div class="transcript-head">
-            <h3>Transcript Inbox</h3>
-            <span class="pill">4 unassigned</span>
-          </div>
-          <article v-for="item in transcriptRows" :key="item.title">
+        <div class="session-workspace" aria-label="Transcript Inbox and Session Capture illustration">
+          <div class="session-workspace-top">
             <div>
-              <h4>{{ item.title }}</h4>
-              <span class="pill">{{ item.client }}</span>
+              <span class="mini-label">Transcript Inbox</span>
+              <h3>Recognise the note. Then place it with the client.</h3>
             </div>
-            <p>{{ item.meta }} · Preview only if needed</p>
-          </article>
+            <span class="pill">Named in Zoom</span>
+          </div>
+
+          <div class="transcript-queue">
+            <article v-for="item in transcriptRows" :key="item.title" :class="{ active: item.active, fallback: item.fallback }">
+              <div class="transcript-row-main">
+                <div>
+                  <h4>{{ item.title }}</h4>
+                  <p>{{ item.meta }}</p>
+                </div>
+                <span :class="['pill', item.active ? 'assigned' : '']">{{ item.client }}</span>
+              </div>
+              <div v-if="item.active" class="transcript-row-actions">
+                <span>Explicitly assigned to Jen</span>
+                <span>Open in Session Capture →</span>
+              </div>
+              <div v-if="item.fallback" class="transcript-fallback">
+                <strong>Fallback only</strong>
+                <span>If a note arrives with a generic title, use the preview or supplied context to identify it. Helios does not guess the client.</span>
+              </div>
+            </article>
+          </div>
+
+          <div class="session-capture-card">
+            <div class="session-capture-head">
+              <div>
+                <span class="mini-label">Session Capture</span>
+                <h3>Shape the draft before it goes anywhere.</h3>
+              </div>
+              <span class="capture-status">Editable draft</span>
+            </div>
+
+            <div class="capture-choice-grid">
+              <div>
+                <span class="capture-choice-label">Summary approach</span>
+                <strong>Integrative</strong>
+                <span>Choose the lens that fits the work.</span>
+              </div>
+              <div>
+                <span class="capture-choice-label">Continuity window</span>
+                <strong>Recent 3 sessions</strong>
+                <span>Keep the current thread in view.</span>
+              </div>
+            </div>
+
+            <div class="capture-draft-preview">
+              <span class="mini-label">Draft preview</span>
+              <p>The recent work continues to centre on relational safety and regulation, with a clearer pattern emerging around responsibility and reassurance...</p>
+            </div>
+
+            <div class="capture-record-boundary">
+              <span>Nothing silently becomes a Clinical Record.</span>
+              <strong>You review, edit and approve what belongs there.</strong>
+            </div>
+          </div>
         </div>
       </div>
     </section>
@@ -326,15 +377,15 @@ const reflectFeatures = [
 ]
 
 const captureSteps = [
-  { number: '01', title: 'Bring the material in', body: 'Zoom transcript text, pasted text or transcript files enter one queue.' },
-  { number: '02', title: 'Assign without losing your place', body: 'Use identity clues and assign from the row rather than opening every transcript.' },
+  { number: '01', title: 'Name it before the session', body: 'Give the Zoom note a clear client/session name before capture so it arrives recognisably titled in Helios.' },
+  { number: '02', title: 'Place it with the client', body: 'Choose the client explicitly from the inbox. If a note arrives with a generic title, preview and source context are a fallback — Helios does not guess.' },
   { number: '03', title: 'Shape the output deliberately', body: 'Choose the summary approach, review editable drafts and keep Clinical Record approval explicit.' },
 ]
 
 const transcriptRows = [
-  { title: 'Emotional regulation and HRT cessation', client: 'Likely Jen', meta: 'Today · 10:02' },
-  { title: 'Repair after conflict', client: 'Likely Hannah + Simon', meta: 'Yesterday · 15:30' },
-  { title: 'Returning to work after injury', client: 'Likely Alex', meta: '28 Oct · 12:10' },
+  { title: 'Jen · 1 Nov · 10:00', client: 'Assign to Jen', meta: 'Zoom note name · Today · 10:02', active: true, fallback: false },
+  { title: 'Hannah + Simon · 31 Oct · 15:30', client: 'Assign client', meta: 'Zoom note name · Yesterday · 15:30', active: false, fallback: false },
+  { title: 'My Notes · 28 Oct · 12:10', client: 'Identify & assign', meta: 'Generic Zoom title · preview available', active: false, fallback: true },
 ]
 
 const toolClusters = [
@@ -1093,41 +1144,49 @@ const trustPrinciples = [
 }
 
 .capture-section {
-  padding: 64px 0 70px;
-  background: var(--landing-warm);
+  padding: 58px 0 64px;
+  background: #e6dfd4;
 }
 
 .capture-layout {
   display: grid;
-  grid-template-columns: minmax(0, 470px) minmax(0, 720px);
-  gap: 58px;
+  grid-template-columns: minmax(0, .78fr) minmax(650px, 1.22fr);
+  gap: 52px;
   align-items: start;
 }
 
+.capture-copy {
+  padding-top: 4px;
+}
+
 .capture-copy h2 {
-  max-width: 460px;
+  max-width: 500px;
   margin-top: 14px;
-  font-size: clamp(46px, 3.9vw, 54px);
-  line-height: 1.03;
+  font-size: clamp(46px, 4vw, 58px);
+  line-height: 1.02;
 }
 
 .capture-lede {
-  max-width: 450px;
-  margin-top: 16px;
+  max-width: 500px;
+  margin-top: 18px;
   color: var(--landing-muted);
   font-size: 14px;
-  line-height: 1.65;
+  line-height: 1.7;
 }
 
 .capture-steps {
-  margin-top: 12px;
+  display: grid;
+  gap: 0;
+  margin-top: 24px;
+  border-top: 1px solid #b7aa9b;
 }
 
 .capture-steps article {
   display: grid;
-  grid-template-columns: 30px 1fr;
+  grid-template-columns: 34px 1fr;
   gap: 14px;
-  padding: 10px 0;
+  padding: 14px 0;
+  border-bottom: 1px solid #b7aa9b;
 }
 
 .capture-steps h3 {
@@ -1136,52 +1195,225 @@ const trustPrinciples = [
 }
 
 .capture-steps p {
-  margin-top: 4px;
-  font-size: 10px;
+  margin-top: 5px;
+  color: #655f57;
+  font-size: 11px;
+  line-height: 1.55;
 }
 
-.transcript-panel {
-  min-height: 500px;
+.capture-boundary {
+  max-width: 500px;
+  margin-top: 18px;
+  color: #6f685f;
+  font-size: 11px;
+  line-height: 1.6;
+}
+
+.session-workspace {
   padding: 18px;
-  border: 1.4px solid #a79a8b;
+  border: 1.4px solid #a89a8a;
   border-radius: 20px;
-  background: #eeeae2;
+  background: #eee9e1;
+  box-shadow: 0 18px 40px rgba(57,47,38,.07);
 }
 
-.transcript-head h3 {
-  font-family: var(--font-editorial);
-  font-size: 28px;
-  font-weight: 500;
-}
-
-.transcript-panel article {
-  min-height: 105px;
-  margin-top: 12px;
-  padding: 14px 15px;
-  border: 1.1px solid #c8bfb4;
-  border-radius: 12px;
-  background: #f4f0e9;
-}
-
-.transcript-panel article > div {
+.session-workspace-top,
+.session-capture-head,
+.transcript-row-main,
+.capture-record-boundary {
   display: flex;
-  align-items: flex-start;
   justify-content: space-between;
-  gap: 14px;
+  gap: 16px;
 }
 
-.transcript-panel h4 {
+.session-workspace-top,
+.session-capture-head {
+  align-items: flex-start;
+}
+
+.session-workspace-top h3,
+.session-capture-head h3 {
+  max-width: 480px;
+  margin-top: 8px;
   font-family: var(--font-editorial);
-  font-size: 17px;
+  font-weight: 500;
+  line-height: 1.1;
+}
+
+.session-workspace-top h3 {
+  font-size: 23px;
+}
+
+.session-capture-head h3 {
+  font-size: 22px;
+}
+
+.transcript-queue {
+  display: grid;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.transcript-queue article {
+  padding: 13px 14px;
+  border: 1px solid #c7bcaf;
+  border-radius: 12px;
+  background: #f6f2ea;
+}
+
+.transcript-queue article.active {
+  border-color: #9eac9f;
+  background: #e5ebe4;
+}
+
+.transcript-queue article.fallback {
+  border-style: dashed;
+  background: #f0ece4;
+}
+
+.transcript-row-main {
+  align-items: flex-start;
+}
+
+.transcript-row-main h4 {
+  font-family: var(--font-editorial);
+  font-size: 16px;
   font-weight: 500;
   line-height: 1.15;
 }
 
-.transcript-panel article > p {
-  margin-top: 7px;
-  color: var(--landing-muted-2);
+.transcript-row-main p {
+  margin-top: 5px;
+  color: #7b746c;
   font-size: 9px;
   line-height: 1.4;
+}
+
+.pill.assigned {
+  border: 1px solid #a9b6ab;
+  background: #d9e3da;
+  color: #4d6156;
+}
+
+.transcript-row-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid #c5d0c6;
+  color: #53655b;
+  font-size: 9px;
+  font-weight: 600;
+}
+
+.transcript-fallback {
+  display: grid;
+  gap: 4px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid #cbbfaf;
+  color: #70675d;
+  font-size: 9px;
+  line-height: 1.45;
+}
+
+.transcript-fallback strong {
+  color: #9a7358;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+}
+
+.session-capture-card {
+  margin-top: 12px;
+  padding: 17px;
+  border: 1px solid #a8b5aa;
+  border-radius: 15px;
+  background: #d8e1d9;
+}
+
+.capture-status {
+  display: inline-flex;
+  align-items: center;
+  min-height: 25px;
+  padding: 6px 9px;
+  border: 1px solid #9dad9f;
+  border-radius: 999px;
+  background: #ecf1eb;
+  color: #53655b;
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.capture-choice-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.capture-choice-grid > div {
+  min-height: 92px;
+  padding: 13px;
+  border: 1px solid #b6c2b8;
+  border-radius: 11px;
+  background: #eef2ed;
+}
+
+.capture-choice-label {
+  display: block;
+  color: #748078;
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.capture-choice-grid strong {
+  display: block;
+  margin-top: 7px;
+  font-family: var(--font-editorial);
+  font-size: 17px;
+  font-weight: 500;
+}
+
+.capture-choice-grid > div > span:last-child {
+  display: block;
+  margin-top: 4px;
+  color: #69766f;
+  font-size: 9px;
+  line-height: 1.45;
+}
+
+.capture-draft-preview {
+  margin-top: 10px;
+  padding: 13px 14px;
+  border: 1px solid #b3beb5;
+  border-radius: 11px;
+  background: #edf0ea;
+}
+
+.capture-draft-preview p {
+  margin-top: 7px;
+  color: #465a50;
+  font-family: var(--font-editorial);
+  font-size: 14px;
+  line-height: 1.48;
+}
+
+.capture-record-boundary {
+  align-items: center;
+  margin-top: 11px;
+  padding-top: 11px;
+  border-top: 1px solid #aab7ac;
+  color: #55675d;
+  font-size: 9px;
+}
+
+.capture-record-boundary strong {
+  max-width: 330px;
+  color: #324b3f;
+  text-align: right;
 }
 
 .tools-section {
@@ -1415,7 +1647,8 @@ const trustPrinciples = [
     gap: 38px;
   }
 
-  .reflect-workspace {
+  .reflect-workspace,
+  .session-workspace {
     max-width: 780px;
   }
 
@@ -1426,12 +1659,10 @@ const trustPrinciples = [
     max-width: 720px;
   }
 
-  .hero-product,
   .ask-panel,
-  .reflect-environment,
-  .transcript-panel {
+  .session-workspace {
     width: 100%;
-    max-width: 760px;
+    max-width: 780px;
   }
 
   .split-heading,
@@ -1576,13 +1807,26 @@ const trustPrinciples = [
     gap: 4px;
   }
 
-  .transcript-panel {
-    min-height: 0;
+  .session-workspace {
     padding: 14px;
   }
 
-  .transcript-panel article > div {
+  .capture-choice-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .session-workspace-top,
+  .session-capture-head,
+  .transcript-row-main,
+  .transcript-row-actions,
+  .capture-record-boundary {
+    align-items: flex-start;
     flex-direction: column;
+  }
+
+  .capture-record-boundary strong {
+    max-width: none;
+    text-align: left;
   }
 
   .tools-note {

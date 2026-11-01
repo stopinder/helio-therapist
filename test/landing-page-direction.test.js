@@ -55,13 +55,26 @@ describe('Landing Page Direction', () => {
     assert.doesNotMatch(landingSource, />02 · Growth</)
   })
 
-  test('describes Transcript Inbox and Session Capture as one workflow', () => {
+  test('presents named Zoom notes as the primary Session Material path with explicit assignment and a fallback', () => {
     assert.match(landingSource, /id="capture"/)
     assert.match(landingSource, /From transcript to something clinically useful\./)
-    assert.match(landingSource, /Assign without losing your place/)
-    assert.match(landingSource, /Shape the output deliberately/)
-    assert.match(landingSource, /Transcript Inbox is a triage queue/)
-    assert.match(landingSource, /transcript-panel/)
+    assert.match(landingSource, /Name it before the session/)
+    assert.match(landingSource, /Give the Zoom note a clear client\/session name before capture/)
+    assert.match(landingSource, /Place it with the client/)
+    assert.match(landingSource, /Helios does not guess/)
+    assert.match(landingSource, /Recognise the note\. Then place it with the client\./)
+    assert.match(landingSource, /Named in Zoom/)
+    assert.match(landingSource, /Explicitly assigned to Jen/)
+    assert.match(landingSource, /Fallback only/)
+    assert.match(landingSource, /If a note arrives with a generic title/)
+    assert.match(landingSource, /Open in Session Capture →/)
+    assert.match(landingSource, /Shape the draft before it goes anywhere\./)
+    assert.match(landingSource, /Summary approach/)
+    assert.match(landingSource, /Continuity window/)
+    assert.match(landingSource, /Editable draft/)
+    assert.match(landingSource, /Nothing silently becomes a Clinical Record\./)
+    assert.match(landingSource, /You review, edit and approve what belongs there\./)
+    assert.doesNotMatch(landingSource, /transcript-panel/)
   })
 
   test('uses the approved clustered supporting-tools layout without page-wide ledger rows', () => {
