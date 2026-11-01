@@ -28,7 +28,8 @@ for (const [query, expected] of [
   ['overtime', 'practice-map'],
   ['dictation', 'dictate'],
   ['MICROPHONE', 'dictate'],
-  ['reflect on care', 'care-suggestions'],
+  ['therapy focus', 'care-suggestions'],
+  ['review therapy focus', 'care-suggestions'],
   ['save accepted changes', 'care-suggestions'],
   ['therapeutic stance', 'therapeutic-stance'],
   ['refelction', 'private-reflection']
