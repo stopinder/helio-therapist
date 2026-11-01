@@ -182,12 +182,31 @@ const DANIEL_INBOX = {
   ]
 };
 
-async function upsertTranscript(service, row) {
+async function ensureTranscript(service, row) {
+  const { data: existing, error: existingError } = await service
+    .from('zoom_transcripts')
+    .select('id,zoom_note_id,client_id,session_ref,source')
+    .eq('therapist_user_id', row.therapist_user_id)
+    .eq('zoom_note_id', row.zoom_note_id)
+    .maybeSingle();
+  if (existingError) throw existingError;
+  if (existing) return existing;
+
   const { data, error } = await service
     .from('zoom_transcripts')
-    .upsert(row, { onConflict: 'therapist_user_id,zoom_note_id' })
+    .insert(row)
     .select('id,zoom_note_id,client_id,session_ref,source')
     .single();
+  if (error?.code === '23505') {
+    const { data: concurrent, error: retryError } = await service
+      .from('zoom_transcripts')
+      .select('id,zoom_note_id,client_id,session_ref,source')
+      .eq('therapist_user_id', row.therapist_user_id)
+      .eq('zoom_note_id', row.zoom_note_id)
+      .single();
+    if (retryError) throw retryError;
+    return concurrent;
+  }
   if (error) throw error;
   return data;
 }
@@ -198,7 +217,7 @@ async function ensureAlexTranscriptHistory({ service, userId, alex, sessions }) 
     const seed = ALEX_TRANSCRIPTS[index] || ALEX_TRANSCRIPTS[ALEX_TRANSCRIPTS.length - 1];
     const session = sessions[index];
     const structured = sampleStructuredTranscript({ therapist: 'Therapist', client: 'Alex Morgan — Sample', turns: seed.turns });
-    const transcript = await upsertTranscript(service, sampleTranscriptRow({
+    const transcript = await ensureTranscript(service, sampleTranscriptRow({
       userId,
       clientId: alex.id,
       sessionId: session.id,
@@ -216,33 +235,41 @@ async function ensureAlexTranscriptHistory({ service, userId, alex, sessions }) 
       { sampleVerified: true }
     );
     const now = new Date().toISOString();
-    const { error: captureError } = await service
+    const { data: existingCapture, error: captureReadError } = await service
       .from('session_capture_drafts')
-      .upsert({
-        session_id: session.id,
-        user_id: userId,
-        client_id: alex.id,
-        transcript_id: transcript.id,
-        speaker_identities: { Therapist: 'Therapist', 'Alex Morgan — Sample': 'Client' },
-        generated_content: capture,
-        content: capture,
-        evidence: { sample: true, source: 'sample_practice_2' },
-        therapist_guidance: '',
-        dismissed_fields: [],
-        previous_versions: [],
-        status: 'reviewed',
-        version: 1,
-        reviewed_at: now,
-        updated_at: now
-      }, { onConflict: 'session_id' });
-    if (captureError) throw captureError;
+      .select('session_id')
+      .eq('session_id', session.id)
+      .maybeSingle();
+    if (captureReadError) throw captureReadError;
+    if (!existingCapture) {
+      const { error: captureError } = await service
+        .from('session_capture_drafts')
+        .insert({
+          session_id: session.id,
+          user_id: userId,
+          client_id: alex.id,
+          transcript_id: transcript.id,
+          speaker_identities: { Therapist: 'Therapist', 'Alex Morgan — Sample': 'Client' },
+          generated_content: capture,
+          content: capture,
+          evidence: { sample: true, source: 'sample_practice_2' },
+          therapist_guidance: '',
+          dismissed_fields: [],
+          previous_versions: [],
+          status: 'reviewed',
+          version: 1,
+          reviewed_at: now,
+          updated_at: now
+        });
+      if (captureError?.code !== '23505' && captureError) throw captureError;
+    }
   }
   return transcripts;
 }
 
 async function ensureDanielInboxTranscript({ service, userId }) {
   const structured = sampleStructuredTranscript({ therapist: 'Therapist', client: 'Daniel Reed — Sample', turns: DANIEL_INBOX.turns });
-  return upsertTranscript(service, sampleTranscriptRow({
+  return ensureTranscript(service, sampleTranscriptRow({
     userId,
     noteId: DANIEL_INBOX.noteId,
     meetingId: DANIEL_INBOX.meetingId,
