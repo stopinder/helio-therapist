@@ -1,7 +1,7 @@
 // Reviewed product help, not generated answers. Keep implementation evidence in
 // docs/help-centre.md; never put private Notion links or client data in this bundle.
-export const HELP_REVIEW_DATE = '2026-09-27'
-export const HELP_CATEGORIES = ['Clients', 'Care', 'Sessions', 'Reflection']
+export const HELP_REVIEW_DATE = '2026-11-01'
+export const HELP_CATEGORIES = ['Clients', 'Therapy Focus', 'Sessions', 'Reflection']
 
 export const HELP_ARTICLES = [
   {
@@ -12,7 +12,7 @@ export const HELP_ARTICLES = [
     sections: [
       { heading: 'Start with the client, then choose the piece of work', paragraphs: [
         'Open a person from Clients when you need the overall context: what matters now, what you are working towards, practical follow-ups and previous sessions. This is different from opening a particular session to work on its summary or reflection.',
-        'Before next session is the preparation area. Recent sessions is a route back into a particular meeting. Supporting material holds the broader Care view, Timeline, Documents, Transcripts, Measures, Resources and Client Details. A timeline entry tells you what happened and when; it is not a fresh interpretation of the history.'
+        'Before next session is the preparation area. Recent sessions is a route back into a particular meeting. Supporting material holds the broader Therapy Focus view, Timeline, Documents, Transcripts, Measures, Resources and Client Details. A timeline entry tells you what happened and when; it is not a fresh interpretation of the history.'
       ] },
       { heading: 'Choose the right action', steps: [
         'To revisit a past meeting, find it in Recent sessions and choose Open summary. Use that dated entry rather than starting a new session.',
@@ -33,63 +33,63 @@ export const HELP_ARTICLES = [
     keywords: ['before next session', 'current focus', 'aims', 'objectives', 'follow ups', 'next appointment', 'reminder'],
     sections: [
       { heading: 'Use this before the next appointment', paragraphs: [
-        'You do not need to turn preparation into another full session note. Current focus is a short client-level reminder of what matters now. Aims and objectives are separate Care entries describing what the work is moving towards. Follow-ups are practical things to return to. The appointment area answers when the next recorded meeting is due.'
+        'You do not need to turn preparation into another full session note. Current focus is a short client-level reminder of what matters now. Aims and objectives are separate Therapy Focus entries describing what the work is moving towards. Follow-ups are practical things to return to. The appointment area answers when the next recorded meeting is due.'
       ] },
       { heading: 'A practical preparation sequence', steps: [
         'Read Current focus. When it needs updating, choose Edit, revise the note and Save current focus. That does not edit an aim or the previous session summary.',
-        'Review Aims and objectives. Use View Care when you need the broader working understanding rather than just this short list.',
+        'Review Aims and objectives. Use View Therapy Focus when you need the broader working understanding rather than just this short list.',
         'Check Follow-ups. Mark an item complete when it is done, or reopen it when further work is needed. Completing a follow-up is not deleting it or sending an email.',
         'Open the relevant dated summary in Recent sessions for detail. Return to the client view when you need to place that meeting in the wider context.'
       ] },
       { heading: 'Example: three entries, three jobs', example: 'Fictional example: Current focus might say "Return to how evenings have felt since the change at work." An aim might concern reducing the effect of work worry on home life. A follow-up might be "Prepare the agreed information sheet." Keeping them separate avoids burying a practical task inside clinical working material.' },
       { heading: 'What carries forward', paragraphs: [
-        'The client-level focus, Care entries and follow-ups have their own save or update actions. Merely opening an old summary does not update them. Choose the place that matches the purpose of what you want to retain.'
+        'The client-level focus, Therapy Focus entries and follow-ups have their own save or update actions. Merely opening an old summary does not update them. Choose the place that matches the purpose of what you want to retain.'
       ] }
     ], related: ['client-workspace', 'care-suggestions']
   },
   {
-    id: 'care-suggestions', category: 'Care',
-    title: 'Turn an observation into a reviewed Care change',
-    summary: 'Reflect on Care proposes changes to the ongoing working view. You compare the suggestion, accept or decline it, and save only what you choose.',
+    id: 'care-suggestions', category: 'Therapy Focus',
+    title: 'Turn an observation into a reviewed Therapy Focus change',
+    summary: 'Reflect on Therapy Focus proposes changes to the ongoing working view. You compare the suggestion, accept or decline it, and save only what you choose.',
     keywords: ['reflect on care', 'care plan', 'suggestions', 'accept', 'decline', 'save accepted changes', 'lens', 'gentle cbt', 'integrative'],
     sections: [
-      { heading: 'Why use Care rather than another session note?', paragraphs: [
-        'Care is a working view that can remain useful across meetings. Use it when your understanding, an aim, something being tried or what has been noticed needs updating. It is not a chronological transcript, and Reflect on Care is not the private Therapist Reflection area.',
+      { heading: 'Why use Therapy Focus rather than another session note?', paragraphs: [
+        'Therapy Focus is a working view that can remain useful across meetings. Use it when your understanding, an aim, something being tried or what has been noticed needs updating. It is not a chronological transcript, and Reflect on Therapy Focus is not the private Therapist Reflection area.',
         'The Lens selector changes the headings and framing. Gentle CBT uses Aims and objectives, Shared Understanding, Trying, Change Noticed and Learning. This selector is separate from Perspective in the client-summary composer.'
       ] },
       { heading: 'From your thought to a saved change', steps: [
-        'Open + Reflect on Care. Type your observation or use Dictate to speak your own text into the field. Review the wording before generating.',
-        'Choose a suggestion emphasis if useful, then Generate suggestions. This requests proposals; it does not change the saved Care view.',
+        'Open + Reflect on Therapy Focus. Type your observation or use Dictate to speak your own text into the field. Review the wording before generating.',
+        'Choose a suggestion emphasis if useful, then Generate suggestions. This requests proposals; it does not change the saved Therapy Focus view.',
         'Read the proposed wording, its source label and the reason given. For an update, compare it with Current understanding. "Clinical inference" is not a direct client statement.',
         'Choose Accept for a proposal you want to consider keeping, or Decline to leave it out. Acceptance stages the proposal and makes its wording editable.',
         'Review the accepted wording, then use the Save accepted changes button. Its label includes the number of accepted changes. This separate save makes the changes durable.'
       ] },
       { heading: 'Example: update the understanding, not the record', example: 'Fictional example: an existing aim concerns evenings disrupted by work worry. You note that a wind-down routine was possible on some evenings but not others. A proposal to explore those differences is something to review, not evidence that the routine caused improvement. You can soften, rewrite or decline it before saving.' },
       { heading: 'What changes and what does not', paragraphs: [
-        'A saved update moves the earlier Care item into history and adds the new wording. Current, Less relevant, Paused and Earlier are item states, not measures of clinical progress. Care changes do not automatically become an approved Clinical Record.',
+        'A saved update moves the earlier Therapy Focus item into history and adds the new wording. Current, Less relevant, Paused and Earlier are item states, not measures of clinical progress. Therapy Focus changes do not automatically become an approved Clinical Record.',
         'When a save fails, read the message and inspect the current view before retrying. Do not assume that generating or accepting a proposal has saved it.'
       ] }
     ], related: ['dictate', 'prepare-next-session', 'private-reflection']
   },
   {
-    id: 'dictate', category: 'Care',
+    id: 'dictate', category: 'Therapy Focus',
     title: 'Speak your own text into a field with Dictate',
     summary: 'Dictate is an alternative to typing. Speak a thought, stop recording, then review the words in the field before using them.',
     keywords: ['microphone', 'mic', 'voice', 'speech', 'dictation', 'recording', 'cannot type', 'transcribe', 'transcription'],
     sections: [
       { heading: 'What Dictate is for', paragraphs: [
-        'In Reflect on Care, Dictate lets you put your own thought into the input field by speaking. It does not import a therapy-session transcript, record the client session or ask AI to decide what you meant. The resulting text is working input for you to check.',
-        'Dictation controls are not present beside every field in Helios. This article describes the Dictate control where it is available, particularly in Reflect on Care.'
+        'In Reflect on Therapy Focus, Dictate lets you put your own thought into the input field by speaking. It does not import a therapy-session transcript, record the client session or ask AI to decide what you meant. The resulting text is working input for you to check.',
+        'Dictation controls are not present beside every field in Helios. This article describes the Dictate control where it is available, particularly in Reflect on Therapy Focus.'
       ] },
       { heading: 'Use the microphone instead of the keyboard', steps: [
         'Choose Dictate and allow microphone access when the browser asks.',
         'Speak the words you want to put in the field. Choose Stop recording when you have finished.',
-        'Wait for the text to appear. In Reflect on Care it is added to any existing thought, so check for duplication as well as recognition mistakes.',
+        'Wait for the text to appear. In Reflect on Therapy Focus it is added to any existing thought, so check for duplication as well as recognition mistakes.',
         'Edit the wording just as you would typed text. Choose Generate suggestions only when you are ready to use that input.'
       ] },
       { heading: 'If the microphone is unavailable', paragraphs: [
         'You can continue by typing. Check the browser permission for the Helios site and that the intended microphone is available. A blocked or failed recording is not confirmation that any words were saved.',
-        'Putting words in the field is separate from generating suggestions and from saving accepted Care changes. Use those actions deliberately after reviewing your input.'
+        'Putting words in the field is separate from generating suggestions and from saving accepted Therapy Focus changes. Use those actions deliberately after reviewing your input.'
       ] }
     ], related: ['care-suggestions', 'private-reflection']
   },
@@ -168,7 +168,7 @@ export const HELP_ARTICLES = [
       { heading: 'Generate, review, then choose the destination', steps: [
         'Check the anchor, source dates and your additions, then Generate client summary. If a summary already exists, the action is Regenerate client summary. The result is editable draft wording, not an automatically saved document.',
         'During regeneration the existing summary is temporarily hidden from the editor while Helios prepares the replacement, but its text is kept unchanged until a valid new draft is ready. If generation fails, the previous summary returns unchanged and the failure message says that no replacement occurred.',
-        'Review the text for accuracy, emphasis and suitability for the client. Permitted current Care context can inform it; private reflections and supervision material are not automatically brought into this workflow.',
+        'Review the text for accuracy, emphasis and suitability for the client. Permitted current Therapy Focus context can inform it; private reflections and supervision material are not automatically brought into this workflow.',
         'Use Save Draft to keep the document editable, or Finalise PDF when it is ready to become a finalised document. Finalising this document is not approving a Clinical Record.',
         'When using Prepare email, review the email draft, attach the PDF yourself and send it through your email application. Preparing the email does not send or attach it automatically.'
       ] },
@@ -233,7 +233,7 @@ export const HELP_ARTICLES = [
     sections: [
       { heading: 'Find the reflection first', paragraphs: [
         'Open Reflect, then Reflections. Search the saved entries or narrow them by a recorded theme. The theme filter is not a client filter. Use the entry actions to View Full Detail and check the client/session context where one is linked.',
-        'Use this when you want additional questions about an entry you have already made, rather than when you want to change the client Care plan. Reflect with AI and Reflect on Care are different workflows.'
+        'Use this when you want additional questions about an entry you have already made, rather than when you want to change the client Therapy Focus plan. Reflect with AI and Reflect on Therapy Focus are different workflows.'
       ] },
       { heading: 'Request prompts deliberately', steps: [
         'Choose Reflect with AI from the selected entry or its detail view.',
