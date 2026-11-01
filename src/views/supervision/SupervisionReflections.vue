@@ -149,6 +149,10 @@ function toggleMenu(id, event) {
   menuOpenFor.value = menuOpenFor.value === id ? null : id;
 }
 
+function formatDate(value) {
+  return value ? new Date(value).toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' }) : '';
+}
+
 function clearFilters() {
   searchQuery.value = '';
   selectedTheme.value = 'All';
