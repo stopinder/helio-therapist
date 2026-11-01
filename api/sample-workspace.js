@@ -199,7 +199,7 @@ const DANIEL_CARE_ITEMS = [
   { kind: 'current_focus', body: 'Build confidence in ordinary social situations without making the absence of anxiety the condition for taking part.' },
   { kind: 'current_focus', body: 'Reduce early withdrawal from manageable social contact and increase opportunities for corrective experience.' },
   { kind: 'shared_understanding', body: 'Daniel often predicts rejection before there is enough evidence, then leaves or avoids the situation; this reduces anxiety briefly but prevents the prediction being tested.' },
-  { kind: 'trying', body: 'Use a three-step confidence ladder for social situations and record the prediction, what actually happened, and the urge to leave.' },
+  { kind: 'trying', body: 'Use a three-step confidence ladder for social situations and record predictions versus outcomes.' },
   { kind: 'trying', body: 'Complete one brief coffee with a colleague and remain for the agreed twenty minutes unless there is a genuine reason to leave.' },
   { kind: 'change_noticed', body: 'Daniel is beginning to recognise anxious predictions as predictions rather than treating them as established facts.' },
   { kind: 'learning', body: 'Leaving early reduces discomfort quickly, but it also removes the chance to discover whether the feared rejection would actually occur.' }
