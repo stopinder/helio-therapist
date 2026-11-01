@@ -89,7 +89,7 @@ export async function createQuickReflection({ supabaseClient, body, clientId = n
 
 export function isCapturedThought(reflection) {
   return reflection?.workspace_content?.captureSource === 'quick_capture'
-    && reflection?.workspace_content?.quickCaptureState !== 'developed';
+    && reflection?.workspace_content?.quickCaptureState === 'captured';
 }
 
 export async function developQuickReflection({
