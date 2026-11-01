@@ -6,11 +6,12 @@ test('Therapy Focus hierarchy: Therapy Focus is primary and Reflection is collap
   const content = await readFile(new URL('../src/components/workspace/ClientCarePanel.vue', import.meta.url), 'utf8')
 
   assert.match(content, /data-testid="current-care-view"/, 'current-care-view exists')
-  assert.match(content, /showReview\s*=\s*ref\(false\)/, 'showReflection is false by default')
-  assert.match(content, /v-if="showReflection".*data-testid="therapy-focus-review-panel"/, 'therapy-focus-review-panel is conditional on showReflection')
+  assert.match(content, /showReview\s*=\s*ref\(false\)/, 'review panel is closed by default')
+  assert.match(content, /v-if="showReview".*data-testid="therapy-focus-review-panel"/, 'therapy-focus-review-panel is conditional on showReview')
   assert.match(content, /Review with Helios/, 'Review with Helios button exists')
-  assert.match(content, /@click="showReflection=!showReflection"/, 'History review action exists')
-  assert.match(content, /data-testid="therapy-focus-review-panel"/, 'Reflection panel has test id')
+  assert.match(content, /@click="openHistoryReview"/, 'History review action exists')
+  assert.match(content, /@click="openReflection"/, 'Therapist reflection action exists')
+  assert.match(content, /data-testid="therapy-focus-review-panel"/, 'Review panel has test id')
   assert.match(content, /v-if="suggestions\.length"/, 'Suggestions section exists')
   assert.match(content, /@click="saveAccepted"/, 'Save button exists')
   assert.match(content, /reviewSuggestion\(suggestion,'accepted'\)/, 'Accept advances the review flow')
@@ -22,7 +23,7 @@ test('Therapy Focus hierarchy: Therapy Focus is primary and Reflection is collap
   assert.match(content, /v-model="selectedLensId"/, 'Lens selector uses v-model')
 })
 
-test('Therapy Focus hierarchy: Reflection panel appears immediately below the header', async () => {
+test('Therapy Focus hierarchy: Review panel appears immediately below the header', async () => {
   const content = await readFile(new URL('../src/components/workspace/ClientCarePanel.vue', import.meta.url), 'utf8')
 
   const headerIndex = content.indexOf('<header')
@@ -31,6 +32,6 @@ test('Therapy Focus hierarchy: Reflection panel appears immediately below the he
   assert.ok(headerIndex !== -1, 'header not found')
   assert.ok(reflectionIndex !== -1, 'therapy-focus-review-panel not found')
   assert.ok(currentCareIndex !== -1, 'current-care-view not found')
-  assert.ok(headerIndex < reflectionIndex, 'Header should appear before Reflection panel')
-  assert.ok(reflectionIndex < currentCareIndex, 'Reflection panel should appear before Therapy Focus view')
+  assert.ok(headerIndex < reflectionIndex, 'Header should appear before Review panel')
+  assert.ok(reflectionIndex < currentCareIndex, 'Review panel should appear before Therapy Focus view')
 })
