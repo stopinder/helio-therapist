@@ -85,7 +85,7 @@ describe('Landing Page Direction', () => {
     assert.match(landingSource, /Nothing silently becomes a Clinical Record/)
     assert.match(landingSource, /Research stays separate from client context/)
     assert.match(landingSource, /Reflection stays therapist-owned/)
-    assert.match(landingSource, /Free: five active clients and five short text-AI actions monthly/)
+    assert.match(landingSource, /Free: five active clients and five short text-AI actions monthly, with no payment card required/)
     assert.match(landingSource, /Professional: £29\/month or £290\/year paid upfront/)
     assert.match(landingSource, /Dictation is available across plans subject to fair use/)
   })
