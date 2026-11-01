@@ -124,7 +124,7 @@ const isTimelineFocused = ref(false);
 
 const capturedThoughts = computed(() => props.reflections.filter(r =>
   r?.workspace_content?.captureSource === 'quick_capture'
-  && r?.workspace_content?.quickCaptureState !== 'developed'
+  && r?.workspace_content?.quickCaptureState === 'captured'
 ));
 const journalReflections = computed(() => props.reflections.filter(r => !capturedThoughts.value.some(captured => captured.id === r.id)));
 
