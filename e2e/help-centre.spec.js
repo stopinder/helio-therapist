@@ -88,6 +88,7 @@ test('grouped Help, deep links and unknown article are usable', async ({ page })
 test('Therapy Focus draft survives contextual Help navigation, keyboard dismissal and focus restoration', async ({ page }) => {
   const writes = await mockWorkspace(page)
   await page.goto('/clients/' + clientId)
+  await page.getByRole('button', { name: /Full Therapy Focus/ }).click()
   await page.getByRole('button', { name: '+ Add reflection', exact: true }).click()
   const field = page.getByPlaceholder('Type here, or use the microphone to dictate')
   await field.fill('Fictional unsaved Therapy Focus thought')
@@ -145,6 +146,7 @@ test('grouped Help fits desktop and mobile without duplicate retrieval controls'
 test('Help closes independently above a dirty document composer', async ({ page }) => {
   const writes = await mockWorkspace(page)
   await page.goto('/clients/' + clientId)
+  await page.getByRole('button', { name: /Documents, measures, resources & details/ }).click()
   await page.getByRole('button', { name: 'Create session summary', exact: true }).click()
   const composer = page.getByTestId('client-document-composer')
   await composer.getByPlaceholder('Document title').fill('Fictional unsaved document title')
