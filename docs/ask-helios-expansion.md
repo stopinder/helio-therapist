@@ -23,7 +23,7 @@ One Ask Helios assistant spans three deliberate contexts: **Workspace** (what ha
 2. No service-role database client reads practice data. Authentication and atomic quota reservation continue to use their existing trusted-server boundaries.
 3. No client data is automatically loaded by Reflect or Research. Session preparation requires a selected client ID owned by the therapist; its output is explicitly factual and not a diagnosis.
 4. External research comes from PubMed and Europe PMC. Research citations and workspace records are visually distinct.
-5. Writes happen only via `POST /api/ai/actions` after a deliberate browser approval. The server permits just `create_reminder` and `save_private_reflection` and always sets therapist ownership from the verified user token.
+5. Writes happen only via `POST /api/ai/actions` after deliberate browser approval. The server permits reminders, the legacy plain-text private-reflection action, and the structured `save_private_reflection_draft` handoff. The structured handoff must reference an owned saved Ask Helios conversation, stores only therapist-reviewed fields, and always sets therapist ownership from the verified user token.
 6. AI questions and Reflect history use input-length and history bounds. Quota checks run before OpenAI. The existing `ask_helios.research` budget feature is reused for Reflect until a separately migrated feature allowlist is implemented.
 
 ## Milestones after phase 1
@@ -66,3 +66,16 @@ One Ask Helios assistant spans three deliberate contexts: **Workspace** (what ha
 ## Acceptance evidence
 
 Local source on branch `feat/ask-helios-workspace-reflect`. Tests: `test/ask-helios-workspace.test.js`, `test/ask-helios-actions.test.js`, `src/components/ui/AskHeliosPanel.spec.js`, full `npm test`, full `npm run test:components` and `npm run build`. Hosted Vercel/GitHub checks and authenticated staging must also pass before any merge.
+
+
+## Ask Helios → Reflect bridge
+
+The reviewed reflection bridge is intentionally not an automatic mapping engine.
+
+- The draft endpoint reads only an owned saved Ask Helios Reflect or Workspace conversation.
+- The model may populate reflection/mapping fields only from first-person therapist material in user messages. Assistant text is context, not evidence about the therapist.
+- Client names, demographics, diagnoses and specific client facts are explicitly excluded from the draft prompt.
+- The therapist sees every proposed reflection and mapping field, may edit it, and must explicitly include it.
+- At least one therapist-reviewed reflection field is required before saving.
+- Saving writes a normal private reflection with `workspace_content.captureSource = "ask_helios"`; Practice Map sees only the mapping fields the therapist included.
+- The handoff never writes to a client Clinical Record or supervision report.
