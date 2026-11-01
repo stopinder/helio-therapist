@@ -153,7 +153,6 @@ async function save(){
       mapping,
       includedInSupervision:includedInSupervision.value
     })
-    window.dispatchEvent(new CustomEvent('helios-reflections-changed',{detail:{reflectionId:updated.id}}))
     emit('saved',updated)
   }catch(e){
     error.value=e.message||'This reflection could not be saved.'
