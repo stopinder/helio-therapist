@@ -16,28 +16,30 @@ test('validateClientSessionSummaryResponse diagnostics and constraints', async (
     closing: ''
   };
 
-  await t.test('rejects recurring evidence strength for single source', (t) => {
+  await t.test('repairs recurring evidence strength to current observation for one session source', (t) => {
     const data = {
       sections: { ...baseSections },
       claims: [{
         section: 'opening',
         text: 'This was a good session.',
-        sourceIds: ['transcript-123'],
+        sourceIds: ['session:11111111-1111-4111-8111-111111111111'],
         evidenceStrength: 'recurring'
       }]
     };
     
+    const sourceIds = new Set(['session:11111111-1111-4111-8111-111111111111']);
     let warningCalled = false;
     const originalWarn = console.warn;
     console.warn = (msg) => {
-      if (msg.includes('invalid_evidence_strength (recurring requires 2 sessions)')) warningCalled = true;
+      if (msg.includes('evidence strength repaired: recurring -> current_observation')) warningCalled = true;
     };
 
-    const result = validateClientSessionSummaryResponse(JSON.stringify(data), validSourceIds);
+    const result = validateClientSessionSummaryResponse(JSON.stringify(data), sourceIds);
     console.warn = originalWarn;
 
-    assert.strictEqual(result, null);
-    assert.strictEqual(warningCalled, true, 'Should log invalid_evidence_strength');
+    assert.ok(result);
+    assert.strictEqual(result.claims[0].evidenceStrength, 'current_observation');
+    assert.strictEqual(warningCalled, true, 'Should log the safe evidence-strength repair');
   });
 
   await t.test('rejects claim text not in section', (t) => {

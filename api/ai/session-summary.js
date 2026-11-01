@@ -11,7 +11,7 @@ import {
 } from '../_lib/ai-client-session-summary.js';
 
 const SUMMARY_WINDOWS = new Set(['current', 'recent']);
-const PROMPT_VERSION = 'session-summary-direct-v4';
+const PROMPT_VERSION = 'session-summary-direct-v5';
 
 function sourceHasMaterial(source) {
   return Boolean(source?.original_transcript || source?.zoom_generated_summary);
@@ -155,7 +155,8 @@ export default async function handler(req, res) {
 - Change requires explicit comparative evidence; silence is not improvement.
 - Recurrence is not causality.`
       : `- Treat this as a single-session summary.
-- Do not claim longitudinal recurrence unless the current source explicitly describes established history.
+- Do not claim cross-session longitudinal recurrence from one supplied session.
+- If the current transcript itself explicitly describes an established repeated history, you may describe that reported history, but use evidenceStrength=current_observation, never recurring.
 - Use current_observation, explicit_change or tentative_connection rather than recurring.`;
 
     const systemPrompt = `You are Helios Clinical Intelligence preparing an editable client-facing therapy session summary for therapist review.
@@ -180,7 +181,7 @@ Rules:
 9. Apply the selected approach only where the evidence supports it; do not force model terminology into the prose.
 10. Evidence rules:
 ${evidenceThresholds}
-11. Allowed evidenceStrength values are current_observation, recurring, explicit_change, therapist_guidance and tentative_connection.
+11. Allowed evidenceStrength values are current_observation, recurring, explicit_change, therapist_guidance and tentative_connection. Use recurring only when at least two supplied session IDs support the claim. A repeated pattern reported inside one session is still current_observation metadata.
 12. Every claim must cite only supplied IDs. Use session source IDs such as "session:<uuid>"; therapist guidance uses "therapist:guidance".
 
 Return JSON only with exactly two fields:
