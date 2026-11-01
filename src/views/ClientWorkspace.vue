@@ -11,6 +11,26 @@
             <strong class="text-ink">Archived client.</strong> Historical records remain available. Restore the client before opening Clinical Workspace, joining a meeting, or scheduling a new appointment.
           </div>
 
+          <section v-if="isSampleClient" class="rounded-panel border border-action-link/20 bg-state-selected px-inline-lg py-stack-lg" data-testid="sample-client-guide">
+            <div class="flex flex-col gap-stack-md lg:flex-row lg:items-start lg:justify-between">
+              <div class="max-w-3xl">
+                <p class="type-overline text-action-link">Worked sample · fictional data</p>
+                <h2 class="text-h2 font-semibold text-ink mt-1">{{ sampleGuide.title }}</h2>
+                <p class="text-body-sm text-ink-secondary mt-2">{{ sampleGuide.description }}</p>
+                <p v-if="sampleSummaryExcerpt" class="mt-stack-md text-body-sm leading-relaxed text-ink-secondary"><strong class="text-ink">Current summary:</strong> {{ sampleSummaryExcerpt }}</p>
+              </div>
+              <span class="shrink-0 rounded-pill border border-action-link/20 bg-surface px-inline-sm py-stack-xs text-caption font-semibold text-action-link">SAMPLE</span>
+            </div>
+            <div class="mt-stack-lg grid grid-cols-2 gap-inline-sm sm:grid-cols-5">
+              <button type="button" class="button-secondary justify-center" @click="scrollToSection('care')">Aims & objectives</button>
+              <button type="button" class="button-secondary justify-center" @click="scrollToSection('care')">Care plan</button>
+              <button type="button" class="button-secondary justify-center" :disabled="!recentSessions.length" @click="openSessionWorkspace(recentSessions[0])">Session Capture</button>
+              <button type="button" class="button-secondary justify-center" @click="openSampleTranscript">Transcript</button>
+              <button type="button" class="button-secondary justify-center" @click="openSampleSummary">Summary</button>
+            </div>
+            <p class="mt-stack-sm text-caption text-ink-muted">Everything in this sample client is synthetic. Use it to inspect the real Helios workflow without adding clinical data or using your Free AI allowance.</p>
+          </section>
+
           <section aria-labelledby="before-next-heading" class="space-y-stack-lg">
             <div class="flex flex-wrap items-center justify-between gap-3">
               <h2 id="before-next-heading" class="text-h2 font-semibold text-ink">Before next session</h2>
@@ -43,7 +63,7 @@
             </div>
           </section>
 
-          <section aria-labelledby="recent-sessions-heading" class="bg-surface-elevated border border-border-muted rounded-panel p-inline-lg">
+          <section id="section-sessions" aria-labelledby="recent-sessions-heading" class="bg-surface-elevated border border-border-muted rounded-panel p-inline-lg">
             <header class="flex items-center justify-between mb-stack-md pt-stack-md"><h2 id="recent-sessions-heading" class="text-h2 font-semibold text-ink">Recent sessions</h2></header>
             <div class="space-y-stack-md pb-stack-md">
               <p v-if="sessionsLoading" class="text-body-sm text-ink-muted">Loading sessions…</p>
@@ -74,8 +94,8 @@
                 <div v-else-if="timelineEvents.length === 0" class="py-stack-xl text-center"><p class="text-body-sm text-ink-subtle">No clinical events recorded for this client.</p></div>
                 <div v-else class="space-y-0"><TimelineItem v-for="(event, index) in timelineEvents" :key="event.id" :event-type="event.event_type" :date="formatDate(event.occurred_at)" :description="event.summary" :subject-type="event.subject_type" :subject-id="event.subject_id" :session-id="event.session_id" :is-last="index === timelineEvents.length - 1" /></div>
               </div>
-              <ClientDocumentsPanel :documents="documents" :loading="documentsLoading" :error="documentsError" :archived="client.archived" :focus-document-id="focusDocumentId" @create="newDocument" @edit="editDocument" @download="downloadDocument" />
-              <ClientTranscriptsPanel :client-id="String(route.params.clientId)" />
+              <div id="section-documents"><ClientDocumentsPanel :documents="documents" :loading="documentsLoading" :error="documentsError" :archived="client.archived" :focus-document-id="focusDocumentId" @create="newDocument" @edit="editDocument" @download="downloadDocument" /></div>
+              <div id="section-transcripts"><ClientTranscriptsPanel :client-id="String(route.params.clientId)" /></div>
               <ClientMeasuresPanel :client="client" />
               <ClientResourcesPanel :client="client" />
               <section id="section-details" class="bg-surface-elevated border border-border-muted rounded-panel p-inline-lg"><h3 class="text-h3 font-semibold text-ink mb-stack-lg pt-stack-md">Client Details</h3><ClientDetails :client="client" @updated="client = $event" /></section>
@@ -118,6 +138,17 @@ const documents=ref([]),documentsLoading=ref(false),documentsError=ref(''),docum
 const sessions=ref([]),sessionsLoading=ref(false),appointments=ref([]),appointmentsLoading=ref(false),therapistLabel=ref('Current therapist');
 const careRefreshKey=ref(0),selectedLensId=ref(DEFAULT_LENS_ID);
 const recentSessions=computed(()=>sessions.value.slice(0,4));
+const isSampleClient=computed(()=>/^SAMPLE-\d{3}$/.test(String(client.value?.reference||'')));
+const sampleSummaryDocument=computed(()=>documents.value.find(document=>document.documentType==='session_summary'||document.document_type==='session_summary')||null);
+const sampleSummaryExcerpt=computed(()=>String(sampleSummaryDocument.value?.content?.body||'').trim().slice(0,420));
+const sampleTranscriptSession=computed(()=>sessions.value.find(session=>session.hasTranscript)||null);
+const sampleGuide=computed(()=>{
+  const reference=String(client.value?.reference||'');
+  if(reference==='SAMPLE-001')return{title:'Alex: follow the work across several sessions',description:'This example is designed to show longitudinal Clinical Intelligence: repeated patterns, change over time, transcript-backed Session Captures and a multi-session summary.'};
+  if(reference==='SAMPLE-002')return{title:'Priya: see a concise adjustment and bereavement example',description:'This example shows how Care and session material can stay tentative, supportive and grounded without turning a normal grief response into a diagnosis.'};
+  if(reference==='SAMPLE-003')return{title:'Daniel: inspect one complete piece of clinical work',description:'Daniel is the end-to-end worked example: aims and objectives, an active Care plan, a linked transcript, reviewed Session Capture and a therapist-facing summary.'};
+  return{title:'Maya: see how completed work remains available',description:'This archived example shows how historical clinical material remains readable without presenting an active workload.'};
+});
 const nextAppointment=computed(()=>nextClientAppointment(appointments.value));
 const activeSession=computed(()=>sessions.value.find(s=>s.status==='in_progress')||null);
 const unresolvedSession=computed(()=>{
@@ -149,6 +180,8 @@ function askHeliosAboutClient(){
 }
 function openSessionWorkspace(session){if(!session?.id||!client.value?.id)return;router.push({name:'SessionWorkspace',params:{clientId:client.value.id,sessionId:session.id}})}
 function viewTranscript(session){if(!session?.id||!client.value?.id)return;router.push({name:'SessionWorkspace',params:{clientId:client.value.id,sessionId:session.id},query:{view:'transcript'}})}
+function openSampleTranscript(){if(sampleTranscriptSession.value){viewTranscript(sampleTranscriptSession.value);return}scrollToSection('transcripts')}
+function openSampleSummary(){if(sampleSummaryDocument.value&&!client.value?.archived){editDocument(sampleSummaryDocument.value);return}scrollToSection('documents')}
 function humanReadableState(session){if(session.status==='source_ready')return'Transcript ready for summary.';if(session.status==='in_progress')return'Clinical workspace is open.';if(session.workflowStatus==='needs_review'||session.workflowStatus==='drafts_awaiting_review')return'Review is waiting.';return session.completedAt?'Completed.':'Recorded.'}
 function scrollToSection(id){const el=document.getElementById(`section-${id}`);if(el)el.scrollIntoView({behavior:'smooth'})}
 async function openRequestedDocument(){const documentId=focusDocumentId.value;if(!documentId)return;const requested=documents.value.find(document=>document.id===documentId);if(!requested)return;if(client.value?.archived&&requested.status!=='completed'){await nextTick();scrollToSection('documents');return}editingDocument.value=requested;newDocumentType.value=requested.documentType||'other';documentComposerOpen.value=true}
