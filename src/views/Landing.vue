@@ -195,7 +195,7 @@
         <div class="capture-copy">
           <p class="eyebrow">Session material</p>
           <h2>From transcript to something clinically useful.</h2>
-          <p class="capture-lede">Transcript Inbox is a triage queue, not another place to read everything. Bring the material in, identify the likely client, then shape the output deliberately before anything becomes part of the record.</p>
+          <p class="capture-lede">When you use Zoom, give the note a clear name before the session so it arrives in Helios recognisably titled. In Transcript Inbox you explicitly place it with the client, then shape the output deliberately before anything becomes part of the record.</p>
 
           <div class="capture-steps">
             <article v-for="step in captureSteps" :key="step.number">
@@ -214,13 +214,13 @@
           <div class="session-workspace-top">
             <div>
               <span class="mini-label">Transcript Inbox</span>
-              <h3>Find the right client without opening everything.</h3>
+              <h3>Recognise the note. Then place it with the client.</h3>
             </div>
-            <span class="pill">4 unassigned</span>
+            <span class="pill">Named in Zoom</span>
           </div>
 
           <div class="transcript-queue">
-            <article v-for="item in transcriptRows" :key="item.title" :class="{ active: item.active }">
+            <article v-for="item in transcriptRows" :key="item.title" :class="{ active: item.active, fallback: item.fallback }">
               <div class="transcript-row-main">
                 <div>
                   <h4>{{ item.title }}</h4>
@@ -229,8 +229,12 @@
                 <span :class="['pill', item.active ? 'assigned' : '']">{{ item.client }}</span>
               </div>
               <div v-if="item.active" class="transcript-row-actions">
-                <span>Assigned to Jen</span>
+                <span>Explicitly assigned to Jen</span>
                 <span>Open in Session Capture →</span>
+              </div>
+              <div v-if="item.fallback" class="transcript-fallback">
+                <strong>Fallback only</strong>
+                <span>If a note arrives with a generic title, use the preview or supplied context to identify it. Helios does not guess the client.</span>
               </div>
             </article>
           </div>
@@ -373,15 +377,15 @@ const reflectFeatures = [
 ]
 
 const captureSteps = [
-  { number: '01', title: 'Bring the material in', body: 'Zoom transcript text, pasted text or transcript files enter one queue.' },
-  { number: '02', title: 'Assign without losing your place', body: 'Use identity clues and assign from the row rather than opening every transcript.' },
+  { number: '01', title: 'Name it before the session', body: 'Give the Zoom note a clear client/session name before capture so it arrives recognisably titled in Helios.' },
+  { number: '02', title: 'Place it with the client', body: 'Choose the client explicitly from the inbox. If a note arrives with a generic title, preview and source context are a fallback — Helios does not guess.' },
   { number: '03', title: 'Shape the output deliberately', body: 'Choose the summary approach, review editable drafts and keep Clinical Record approval explicit.' },
 ]
 
 const transcriptRows = [
-  { title: 'Emotional regulation and HRT cessation', client: 'Likely Jen', meta: 'Today · 10:02 · identity clues found', active: true },
-  { title: 'Repair after conflict', client: 'Likely Hannah + Simon', meta: 'Yesterday · 15:30 · preview only if needed', active: false },
-  { title: 'Returning to work after injury', client: 'Likely Alex', meta: '28 Oct · 12:10 · preview only if needed', active: false },
+  { title: 'Jen · 1 Nov · 10:00', client: 'Assign to Jen', meta: 'Zoom note name · Today · 10:02', active: true, fallback: false },
+  { title: 'Hannah + Simon · 31 Oct · 15:30', client: 'Assign client', meta: 'Zoom note name · Yesterday · 15:30', active: false, fallback: false },
+  { title: 'My Notes · 28 Oct · 12:10', client: 'Identify & assign', meta: 'Generic Zoom title · preview available', active: false, fallback: true },
 ]
 
 const toolClusters = [
@@ -1262,6 +1266,11 @@ const trustPrinciples = [
   background: #e5ebe4;
 }
 
+.transcript-queue article.fallback {
+  border-style: dashed;
+  background: #f0ece4;
+}
+
 .transcript-row-main {
   align-items: flex-start;
 }
@@ -1296,6 +1305,23 @@ const trustPrinciples = [
   color: #53655b;
   font-size: 9px;
   font-weight: 600;
+}
+
+.transcript-fallback {
+  display: grid;
+  gap: 4px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid #cbbfaf;
+  color: #70675d;
+  font-size: 9px;
+  line-height: 1.45;
+}
+
+.transcript-fallback strong {
+  color: #9a7358;
+  text-transform: uppercase;
+  letter-spacing: .08em;
 }
 
 .session-capture-card {
