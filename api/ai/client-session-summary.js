@@ -99,7 +99,17 @@ export default async function handler(req, res) {
     const evidenceMap=buildClinicalIntelligenceEvidenceMap({captures:selectedCaptures,careItems:careItems||[],therapistGuidance});
     const validSourceIds=new Set([...evidenceMap.reviewedSessions.map(item=>item.id),...evidenceMap.currentAcceptedCareContext.map(item=>item.id),...(evidenceMap.therapistAuthoredContext.content?[evidenceMap.therapistAuthoredContext.id]:[])]);
     const generationId=randomUUID(),generatedAt=new Date().toISOString();
-    const sampleSummary = buildSampleClientSummary({ reference: ownedClient.reference, lens, selectedCaptures });
+    const { data: verifiedSampleClient, error: sampleClientError } = await supabase.rpc('is_sample_client', {
+      p_user_id: user.id,
+      p_client_id: clientId
+    });
+    if (sampleClientError) throw sampleClientError;
+    const sampleSummary = buildSampleClientSummary({
+      reference: ownedClient.reference,
+      lens,
+      selectedCaptures,
+      sampleVerified: verifiedSampleClient === true
+    });
     if (sampleSummary) {
       const body = renderClientSessionSummary(sampleSummary.sections, lens);
       const sources=[
