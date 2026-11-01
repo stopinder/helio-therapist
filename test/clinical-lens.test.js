@@ -38,8 +38,8 @@ test('Clinical Lens: UI uses lens configuration', async () => {
   assert.match(carePanel, /availableLenses/)
   assert.match(carePanel, /sections=computed/)
   assert.match(carePanel, /v-for="l in availableLenses"/)
-  assert.match(careFocus, /lens\.sections\.current_focus\?\.label/)
-  assert.match(careFocus, /View Therapy Focus/)
+  assert.match(careFocus, /sectionTitle\(item\.kind\)/)
+  assert.match(careFocus, /Open full Therapy Focus/)
 })
 
 test('Clinical Lens: AI suggestions endpoint resolves lensId through the shared prompt builder', async () => {
