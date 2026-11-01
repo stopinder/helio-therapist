@@ -156,7 +156,7 @@ function handleDevelopedReflection(updated) {
 }
 function handleEditReflection(reflection) {
   actionError.value = '';
-  if (reflection.workspace_content?.captureSource === 'quick_capture' && reflection.workspace_content?.quickCaptureState !== 'developed') {
+  if (reflection.workspace_content?.captureSource === 'quick_capture' && reflection.workspace_content?.quickCaptureState === 'captured') {
     handleDevelopReflection(reflection);
     return;
   }
