@@ -55,13 +55,21 @@ describe('Landing Page Direction', () => {
     assert.doesNotMatch(landingSource, />02 · Growth</)
   })
 
-  test('describes Transcript Inbox and Session Capture as one workflow', () => {
+  test('presents Session Material as a vivid triage-to-draft workflow', () => {
     assert.match(landingSource, /id="capture"/)
     assert.match(landingSource, /From transcript to something clinically useful\./)
     assert.match(landingSource, /Assign without losing your place/)
     assert.match(landingSource, /Shape the output deliberately/)
     assert.match(landingSource, /Transcript Inbox is a triage queue/)
-    assert.match(landingSource, /transcript-panel/)
+    assert.match(landingSource, /Find the right client without opening everything\./)
+    assert.match(landingSource, /Open in Session Capture →/)
+    assert.match(landingSource, /Shape the draft before it goes anywhere\./)
+    assert.match(landingSource, /Summary approach/)
+    assert.match(landingSource, /Continuity window/)
+    assert.match(landingSource, /Editable draft/)
+    assert.match(landingSource, /Nothing silently becomes a Clinical Record\./)
+    assert.match(landingSource, /You review, edit and approve what belongs there\./)
+    assert.doesNotMatch(landingSource, /transcript-panel/)
   })
 
   test('uses the approved clustered supporting-tools layout without page-wide ledger rows', () => {
