@@ -142,3 +142,36 @@ export function canonicalSampleTranscript(structured) {
   const names = new Map((structured?.speakers || []).map(s => [String(s.speaker_id), s.display_name]));
   return (structured?.items || []).map(item => `[${item.start_time}] ${names.get(String(item.speaker_id)) || 'Unknown'}: ${item.text}`).join('\n');
 }
+
+
+export function buildSampleAskHeliosClinical({ reference, query = '', lens = 'integrative', context } = {}) {
+  if (!isSampleClientReference(reference) || !context?.sourceCount) return null;
+  const question = String(query || '').trim();
+  if (reference === 'SAMPLE-001') {
+    return {
+      recordedContext: 'Across the selected synthetic sessions, Alex repeatedly describes work-related anxiety spilling into the evening, especially through message checking and difficulty disengaging. Later sessions also record fewer checks when a stopping time is used, and the most recent sample session contains an exception in which Alex noticed the urge to check, paused, and allowed the anxiety to reduce without reopening messages.',
+      clinicalInterpretation: lens === 'gentle_cbt'
+        ? 'A CBT reading would treat checking as a plausible short-term uncertainty-reduction strategy that may also keep the work-anxiety cycle active. The later pause is clinically interesting because it provides direct counter-evidence to the assumption that checking is necessary for the anxiety to settle.'
+        : 'One plausible reading is that the central issue is becoming less about eliminating anxiety and more about Alex increasing choice at the point where anxiety normally drives checking. The repeated sequence is better supported than any deeper causal explanation.',
+      alternativePossibilities: 'The same pattern could also reflect workload, organisational culture, sleep disruption or a temporary period of elevated responsibility rather than a stable personal pattern. The sample evidence does not establish why high standards developed or whether they generalise beyond work.',
+      therapistAttention: 'It may be useful to notice the conditions around the successful pause: what Alex told himself, what he did instead of checking, and whether the team interaction changed the meaning of the urge. Avoid treating one successful exception as proof of sustained change.',
+      questionsForConsideration: [
+        'What was different immediately before Alex chose not to check?',
+        'How does Alex distinguish genuine work responsibility from anxiety-driven reassurance seeking?',
+        'Does the good-enough experiment change only behaviour, or also the meaning Alex gives to unfinished work?',
+        question ? `How does the therapist’s question — “${question.slice(0, 180)}” — fit with the recorded sequence without assuming a cause?` : 'What would count as evidence that the pattern is changing rather than simply absent on one evening?'
+      ].slice(0, 4)
+    };
+  }
+  return {
+    recordedContext: 'The selected material is synthetic sample content created to demonstrate Ask Helios with client/session context.',
+    clinicalInterpretation: 'A useful starting point is to separate the repeated observations in the sample from any explanation for why they occur. The available material supports cautious pattern recognition, not diagnosis or causal certainty.',
+    alternativePossibilities: 'Different situational, relational and behavioural explanations may fit the same observations. The sample intentionally leaves room for more than one interpretation.',
+    therapistAttention: 'Use the sample to notice how Ask Helios keeps recorded material separate from interpretation and offers questions rather than treating a formulation as established fact.',
+    questionsForConsideration: [
+      'Which observation is repeated across more than one source?',
+      'What evidence would challenge the leading interpretation?',
+      'What would be most useful to clarify in the next session?'
+    ]
+  };
+}
