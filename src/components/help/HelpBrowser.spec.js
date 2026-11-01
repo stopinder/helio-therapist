@@ -32,31 +32,45 @@ afterEach(() => {
 })
 
 describe('shared Help browser', () => {
-  it('finds an article by a normal question and keeps search/filter state on return', async () => {
+  it('presents reviewed Help as four grouped areas with no search or filter controls', () => {
     const wrapper = render(HelpBrowser)
-    await wrapper.get('input').setValue('where does my reflection go?')
-    expect(wrapper.text()).toContain('Follow a reflection from the session')
-    await wrapper.get('ul button').trigger('click')
+    expect(wrapper.findAll('input')).toHaveLength(0)
+    expect(wrapper.text()).not.toContain('Search Help')
+    expect(wrapper.text()).not.toContain('All topics')
+    for (const heading of ['Clients', 'Therapy Focus', 'Sessions', 'Reflection']) {
+      expect(wrapper.findAll('h2').some(node => node.text() === heading)).toBe(true)
+    }
+    expect(wrapper.findAll('[data-testid="help-topic-card"]')).toHaveLength(12)
+  })
+
+  it('opens an article from the grouped catalogue and returns to Help', async () => {
+    const wrapper = render(HelpBrowser)
+    const reflection = wrapper.findAll('[data-testid="help-topic-card"]')
+      .find(button => button.text().includes('Follow a reflection from the session into your Practice Map'))
+    expect(reflection).toBeTruthy()
+    await reflection.trigger('click')
     expect(wrapper.find('article').text()).toContain('One example from input to result')
     expect(wrapper.find('article').text()).toContain('Saving does not automatically')
-    await wrapper.findAll('button').find(button => button.text() === 'Back to results').trigger('click')
-    expect(wrapper.get('input').element.value).toBe('where does my reflection go?')
+    const back = wrapper.findAll('button').find(button => button.text() === 'Back to Help')
+    await back.trigger('click')
+    expect(wrapper.find('article').exists()).toBe(false)
+    expect(wrapper.findAll('[data-testid="help-topic-card"]')).toHaveLength(12)
   })
-  it('shows useful empty and invalid-article states without HTML injection', async () => {
+
+  it('shows an invalid-article state above the grouped catalogue without HTML injection', () => {
     const wrapper = render(HelpBrowser, { props: { articleId: 'unknown' } })
     expect(wrapper.text()).toContain('That help article is not available')
-    await wrapper.get('input').setValue('<img src=x onerror=alert(1)>')
     expect(wrapper.find('img').exists()).toBe(false)
-    expect(wrapper.text()).toContain('No matching help yet')
-    await wrapper.findAll('button').find(button => button.text() === 'Clear search and filters').trigger('click')
-    expect(wrapper.get('input').element.value).toBe('')
-    expect(wrapper.findAll('ul > li').length).toBeGreaterThanOrEqual(10)
+    expect(wrapper.findAll('input')).toHaveLength(0)
+    expect(wrapper.findAll('[data-testid="help-topic-card"]')).toHaveLength(12)
   })
+
   it('renders the same full article in page and contextual modes', () => {
     const full = render(HelpBrowser, { props: { articleId: 'care-suggestions' } })
     const compact = render(HelpBrowser, { props: { articleId: 'care-suggestions', compact: true } })
     expect(full.get('article').text()).toBe(compact.get('article').text())
-    expect(compact.findAll('input')[0].attributes('id')).not.toBe(full.get('input').attributes('id'))
+    expect(full.findAll('input')).toHaveLength(0)
+    expect(compact.findAll('input')).toHaveLength(0)
   })
 })
 
