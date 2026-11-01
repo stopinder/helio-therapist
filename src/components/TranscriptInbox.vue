@@ -49,7 +49,7 @@
               <div class="identity-block min-w-0">
                 <span class="identity-icon icon-surface icon-surface-accent" aria-hidden="true"><UserRound class="workspace-icon" /></span>
                 <div class="min-w-0">
-                  <strong class="triage-identity">{{ triageIdentity(transcript) }}</strong>
+                  <div class="triage-identity-line"><strong class="triage-identity">{{ triageIdentity(transcript) }}</strong><span v-if="isSampleTranscript(transcript)" class="sample-badge">Sample</span></div>
                   <p v-if="transcript.sourceTitle && transcript.sourceTitle !== triageIdentity(transcript)" class="triage-topic">{{ transcript.sourceTitle }}</p>
                   <div class="row-metadata">
                     <span><CalendarDays class="workspace-icon-sm" aria-hidden="true" /> Encounter: {{ formatDate(transcript.sourceOccurredAt || transcript.receivedAt) }}</span>
@@ -319,7 +319,7 @@
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { Archive, ArrowLeft, CalendarDays, Check, CheckCircle2, ChevronDown, ChevronUp, Eye, FileText, Inbox, Search, Trash2, UserPlus, UserRound, UsersRound } from '@lucide/vue'
+import { Archive, ArrowLeft, CalendarDays, Check, CheckCircle2, ChevronDown, ChevronUp, Eye, FileText, Inbox, Search, Sparkles, Trash2, UserPlus, UserRound, UsersRound } from '@lucide/vue'
 import { authenticatedFetch } from '../lib/api.js'
 import { createClient } from '../lib/clients.js'
 import { conversationPreview, conversationTurns, searchConversationTurns, transcriptSpeakerSummary } from '../lib/transcriptPresentation.js'
@@ -349,6 +349,7 @@ const selectedSpeakerSummary = computed(() => transcriptSpeakerSummary(selected.
 const filteredSelectedConversationTurns = computed(() => searchConversationTurns(selectedConversationTurns.value, transcriptSearch.value));
 const filters = [{ id: 'attention', label: 'Needs attention' }, { id: 'history', label: 'History' }]
 const actionableCount = computed(() => transcripts.value.filter(item => needsAttention(item)).length)
+const sampleTranscriptCount = computed(() => transcripts.value.filter(isSampleTranscript).length)
 const matchingTranscripts = computed(() => {
   const query = searchQuery.value.trim().toLowerCase();
   return transcripts.value.filter(item => {
@@ -383,7 +384,8 @@ function encounterDateIso(transcript,dateValue){
   current.setFullYear(parts[0],parts[1]-1,parts[2])
   return Number.isNaN(current.getTime())?null:current.toISOString()
 }
-function labelFor(transcript){ return transcript.meetingId ? `Zoom meeting ${transcript.meetingId}` : 'Zoom transcript' }
+function isSampleTranscript(transcript){ return transcript?.source==='sample_zoom_my_notes' && String(transcript?.noteId||'').startsWith('SAMPLE-NOTE-') }
+function labelFor(transcript){ return isSampleTranscript(transcript) ? 'Sample Zoom transcript' : (transcript.meetingId ? `Zoom meeting ${transcript.meetingId}` : 'Zoom transcript') }
 function clientName(clientId){ const client=props.clients.find(item=>item.id===clientId);return client?.name||client?.display_name||'' }
 function normaliseIdentity(value){ return String(value||'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim() }
 function suggestedClient(transcript){
@@ -875,6 +877,10 @@ watch(()=>props.openTranscriptId,openQueuedTranscript);watch(searchQuery,()=>{hi
 .notice { margin:0 0 var(--space-stack-md); padding:.75rem 1rem; border-radius:var(--radius-control); border:1px solid var(--border); background:var(--surface-raised); }
 .notice.error { border-color:rgb(154 79 71 / .25); background:var(--state-danger-surface); color:var(--state-danger); }
 .notice.success { border-color:rgb(71 112 91 / .25); background:var(--state-success-surface); color:var(--state-success); }
+.sample-practice-banner { display:flex; align-items:flex-start; gap:.75rem; margin:0 0 var(--space-stack-md); padding:.85rem 1rem; border:1px solid rgb(29 84 109 / .18); border-radius:var(--radius-control); background:var(--state-selected); }
+.sample-practice-icon { width:2rem; height:2rem; flex-shrink:0; }
+.triage-identity-line { display:flex; flex-wrap:wrap; align-items:center; gap:.45rem; }
+.sample-badge { display:inline-flex; align-items:center; min-height:1.35rem; padding:.12rem .45rem; border:1px solid rgb(29 84 109 / .2); border-radius:var(--radius-pill); background:var(--state-selected); color:var(--accent); font-size:.68rem; line-height:1; font-weight:700; letter-spacing:.04em; text-transform:uppercase; }
 .undo-link { background:none; border:0; color:var(--action-link); font-weight:600; cursor:pointer; padding:.35rem 0; margin-bottom:var(--space-stack-md); }
 
 .inbox-list {
