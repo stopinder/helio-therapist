@@ -41,7 +41,7 @@ export function buildTranscriptCbtCarePrompt({ transcript, currentCare = [], len
     throw error;
   }
   if (text.length > 60000) {
-    const error = new Error('The linked transcript is too long for the current CBT Care workflow.');
+    const error = new Error('The linked transcript is too long for the current CBT Therapy Focus workflow.');
     error.code = 'TRANSCRIPT_TOO_LONG';
     error.status = 422;
     throw error;
@@ -52,7 +52,7 @@ export function buildTranscriptCbtCarePrompt({ transcript, currentCare = [], len
     .map(item => `Therapy Focus item ${item.id} [${item.kind}]: ${String(item.body).slice(0, 1200)}`)
     .join('\n');
 
-  return `${lensConfig.aiFraming} Review one session transcript and generate 3-6 tentative Therapy Focus possibilities for a qualified therapist to review. Use only the transcript and current therapist-approved Therapy Focus supplied below. Do not diagnose. Do not infer risk, intent, history, beliefs, or treatment response beyond what the transcript supports. Clearly distinguish direct observations from clinical inference and possible next steps. Suggestions may ADD a new Therapy Focus item or UPDATE an existing one only when the transcript meaningfully changes, refines, contradicts, or supersedes it. Never update for cosmetic wording alone. Return JSON only: {"suggestions":[{"kind":"...","body":"...","basis":"session_transcript","epistemic":"observation|clinical_inference|possible_next_step","action":"add|update","targetItemId":null|string,"reason":"short explanation"}]}. Allowed kinds: ${lensConfig.allowedKinds.join(', ')}.\nCurrent clinician-approved Care:\n${careContext || 'none'}\n\n<session_transcript>\n${text}\n</session_transcript>`;
+  return `${lensConfig.aiFraming} Review one session transcript and generate 3-6 tentative Therapy Focus possibilities for a qualified therapist to review. Use only the transcript and current therapist-approved Therapy Focus supplied below. Do not diagnose. Do not infer risk, intent, history, beliefs, or treatment response beyond what the transcript supports. Clearly distinguish direct observations from clinical inference and possible next steps. Suggestions may ADD a new Therapy Focus item or UPDATE an existing one only when the transcript meaningfully changes, refines, contradicts, or supersedes it. Never update for cosmetic wording alone. Return JSON only: {"suggestions":[{"kind":"...","body":"...","basis":"session_transcript","epistemic":"observation|clinical_inference|possible_next_step","action":"add|update","targetItemId":null|string,"reason":"short explanation"}]}. Allowed kinds: ${lensConfig.allowedKinds.join(', ')}.\nCurrent therapist-approved Therapy Focus:\n${careContext || 'none'}\n\n<session_transcript>\n${text}\n</session_transcript>`;
 }
 
 export function validateCareSuggestions(raw, {
