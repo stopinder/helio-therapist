@@ -13,9 +13,9 @@ export function isSampleTranscriptRow(transcript) {
   );
 }
 
-export function sampleCaptureDraftForTranscript(transcript) {
+export function sampleCaptureDraftForTranscript(transcript, { sampleVerified = false } = {}) {
   const noteId = String(transcript?.zoom_note_id || '');
-  if (!isSampleTranscriptRow(transcript)) return null;
+  if (!sampleVerified || !isSampleTranscriptRow(transcript)) return null;
 
   if (noteId === 'SAMPLE-NOTE-DANIEL-INBOX') {
     return {
@@ -99,8 +99,8 @@ function danielSections(lens, count) {
   };
 }
 
-export function buildSampleClientSummary({ reference, lens = 'general', selectedCaptures = [] } = {}) {
-  if (!isSampleClientReference(reference) || !selectedCaptures.length) return null;
+export function buildSampleClientSummary({ reference, lens = 'general', selectedCaptures = [], sampleVerified = false } = {}) {
+  if (!sampleVerified || !isSampleClientReference(reference) || !selectedCaptures.length) return null;
   const count = selectedCaptures.length;
   const sections = reference === 'SAMPLE-001'
     ? alexSections(lens, count)
@@ -144,8 +144,8 @@ export function canonicalSampleTranscript(structured) {
 }
 
 
-export function buildSampleAskHeliosClinical({ reference, query = '', lens = 'integrative', context } = {}) {
-  if (!isSampleClientReference(reference) || !context?.sourceCount) return null;
+export function buildSampleAskHeliosClinical({ reference, query = '', lens = 'integrative', context, sampleVerified = false } = {}) {
+  if (!sampleVerified || !isSampleClientReference(reference) || !context?.sourceCount) return null;
   const question = String(query || '').trim();
   if (reference === 'SAMPLE-001') {
     return {
