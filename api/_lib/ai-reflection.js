@@ -1,4 +1,4 @@
-export const AI_REFLECTION_PROMPT_VERSION = 'ai-reflection-v2';
+export const AI_REFLECTION_PROMPT_VERSION = 'ai-reflection-v3';
 export const AI_REFLECTION_MINIMUM_CHARACTERS = 50;
 export const AI_REFLECTION_MAX_INPUT_CHARACTERS = 10000;
 
@@ -15,6 +15,7 @@ Core Rules:
 8. Avoid flattering, validating, or reassuring the therapist automatically.
 9. Use cautious, tentative language: "You might consider...", "One possibility...", "This could be worth discussing...", "Only you can determine whether this fits...".
 10. When bounded client context is provided, treat it only as background for reflective questions. Do not infer beyond it, quote it as a complete clinical record, or imply access to transcripts, private reflections, working notes, or draft sessions.
+11. Any suggested reflective mapping must be based ONLY on the therapist-authored reflection text, never on client context. If the therapist has not supplied enough first-person material for a mapping field, leave that field blank.
 
 Response Format:
 You must return structured JSON only with these fields:
@@ -23,6 +24,7 @@ You must return structured JSON only with these fields:
 - alternative_perspectives: (max 2) ways to look at the situation differently.
 - ethical_considerations: (max 2) neutral themes that may warrant ethical attention.
 - learning_points: (max 2) practical professional development opportunities.
+- reflective_map: an object with exactly these optional string fields: innerPosition, protectiveIntention, trigger, impact, spaceCreated, supervisionQuestion. Use empty strings for unsupported fields.
 - limitations: a brief statement about the limits of this AI-generated support.
 
 Concise responses are required. Nothing you produce replaces clinical judgement or supervision.`;
@@ -42,6 +44,14 @@ export function validateAIReflectionResponse(content) {
       alternative_perspectives: Array.isArray(data.alternative_perspectives) ? data.alternative_perspectives.slice(0, 2).map(p => trimAndLimit(p, 500)) : [],
       ethical_considerations: Array.isArray(data.ethical_considerations) ? data.ethical_considerations.slice(0, 2).map(e => trimAndLimit(e, 500)) : [],
       learning_points: Array.isArray(data.learning_points) ? data.learning_points.slice(0, 2).map(l => trimAndLimit(l, 500)) : [],
+      reflective_map: {
+        innerPosition: trimAndLimit(data.reflective_map?.innerPosition, 500),
+        protectiveIntention: trimAndLimit(data.reflective_map?.protectiveIntention, 700),
+        trigger: trimAndLimit(data.reflective_map?.trigger, 700),
+        impact: trimAndLimit(data.reflective_map?.impact, 700),
+        spaceCreated: trimAndLimit(data.reflective_map?.spaceCreated, 700),
+        supervisionQuestion: trimAndLimit(data.reflective_map?.supervisionQuestion, 700)
+      },
       limitations: trimAndLimit(data.limitations, 500)
     };
   } catch (e) {
