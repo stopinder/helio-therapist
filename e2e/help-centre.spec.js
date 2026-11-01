@@ -56,38 +56,39 @@ test('Help retains existing authentication guard', async ({ page }) => {
   await expect(page.getByLabel('Email address')).toBeVisible()
 })
 
-test('search, categories, deep links and unknown article are usable', async ({ page }) => {
+test('grouped Help, deep links and unknown article are usable', async ({ page }) => {
   const writes = await mockWorkspace(page)
   await page.goto('/help')
   await expect(page.getByRole('heading', { name: 'Help with Helios', exact: true })).toBeVisible()
-  await page.getByLabel('Search Help', { exact: true }).fill('where does my reflection go?')
-  await page.locator('.help-browser ul button').first().click()
+  await expect(page.getByLabel('Search Help', { exact: true })).toHaveCount(0)
+  for (const heading of ['Clients', 'Therapy Focus', 'Sessions', 'Reflection']) {
+    await expect(page.getByRole('heading', { name: heading, exact: true })).toBeVisible()
+  }
+
+  await page.getByRole('button', { name: /Follow a reflection from the session into your Practice Map/ }).click()
   await expect(page.getByRole('heading', { name: 'One example from input to result' })).toBeVisible()
   await expect(page).toHaveURL(/help\/private-reflection$/)
-  await page.getByRole('button', { name: 'Back to results', exact: true }).click()
-  await expect(page.getByLabel('Search Help', { exact: true })).toHaveValue('where does my reflection go?')
-  await page.getByLabel('Search Help', { exact: true }).fill('last 3 sessions')
-  await page.locator('.help-browser ul button').first().click()
+
+  await page.getByRole('button', { name: 'Back to Help', exact: true }).click()
+  await page.getByRole('button', { name: /Create a client summary across one session/ }).click()
   await expect(page.getByRole('heading', { name: /How the window is chosen/i })).toBeVisible()
-  // HelpBrowser selects locally before vue-router finishes updating the URL.
-  // Wait for the deep link to settle before reloading, otherwise CI may reload /help.
   await expect(page).toHaveURL(/\/help\/client-summary$/)
   await page.reload()
   await expect(page).toHaveURL(/\/help\/client-summary$/)
   await expect(page.locator('article')).toContainText('anchor')
+
   await page.goto('/help/not-an-article')
   await expect(page.getByText('That help article is not available.', { exact: false })).toBeVisible()
-  await page.getByLabel('Search Help', { exact: true }).fill('zzzz-no-topic')
-  await expect(page.getByRole('heading', { name: 'No matching help yet' })).toBeVisible()
-  await page.getByRole('button', { name: 'Clear search and filters' }).click()
-  await page.getByRole('button', { name: 'Therapy Focus', exact: true }).click()
-  await expect(page.locator('.help-browser ul > li')).toHaveCount(2)
+  await expect(page.locator('[data-testid="help-topic-card"]')).toHaveCount(12)
+  await page.getByRole('button', { name: /Turn an observation into a reviewed Therapy Focus change/ }).click()
+  await expect(page).toHaveURL(/\/help\/care-suggestions$/)
   expect(writes).toEqual([])
 })
 
-test('Therapy Focus draft survives panel search, keyboard dismissal and focus restoration', async ({ page }) => {
+test('Therapy Focus draft survives contextual Help navigation, keyboard dismissal and focus restoration', async ({ page }) => {
   const writes = await mockWorkspace(page)
   await page.goto('/clients/' + clientId)
+  await page.getByRole('button', { name: /Full Therapy Focus/ }).click()
   await page.getByRole('button', { name: '+ Add reflection', exact: true }).click()
   const field = page.getByPlaceholder('Type here, or use the microphone to dictate')
   await field.fill('Fictional unsaved Therapy Focus thought')
@@ -97,8 +98,7 @@ test('Therapy Focus draft survives panel search, keyboard dismissal and focus re
   const help = page.getByRole('dialog', { name: 'Help with Helios' })
   await expect(help).toBeVisible()
   await expect(help.getByRole('heading', { name: 'From your thought to a saved change' })).toBeVisible()
-  await help.getByLabel('Search Help', { exact: true }).fill('dictation')
-  await help.locator('ul button').first().click()
+  await help.getByRole('button', { name: 'Speak your own text into a field with Dictate', exact: true }).click()
   await expect(help.locator('article')).toContainText('alternative to typing')
   await page.keyboard.press('Tab')
   expect(await page.evaluate(() => Boolean(document.activeElement?.closest('dialog')))).toBe(true)
@@ -127,26 +127,26 @@ test('Reflection draft survives contextual Help on a narrow screen', async ({ pa
   expect(writes).toEqual([])
 })
 
-test('Help fits desktop and mobile and does not retain search queries', async ({ page }) => {
+test('grouped Help fits desktop and mobile without duplicate retrieval controls', async ({ page }) => {
   const writes = await mockWorkspace(page)
   await page.goto('/help')
   await expect(page.locator('.help-browser')).toBeVisible()
+  await expect(page.getByLabel('Search Help', { exact: true })).toHaveCount(0)
+  await expect(page.getByText('All topics', { exact: true })).toHaveCount(0)
   for (const size of [{ width: 1440, height: 900 }, { width: 390, height: 844 }]) {
     await page.setViewportSize(size)
-    await page.getByLabel('Search Help', { exact: true }).fill('over time')
-    expect(page.url()).not.toContain('over')
-    expect(await page.evaluate(() => Object.values(localStorage).some(value => value.includes('over time')))).toBe(false)
     expect(await page.locator('.help-browser').evaluate(element => element.scrollWidth <= element.clientWidth + 1)).toBe(true)
     await page.screenshot({ path: 'test-results/help/help-' + size.width + '.png', fullPage: true })
   }
   await page.reload()
-  await expect(page.getByLabel('Search Help', { exact: true })).toHaveValue('')
+  await expect(page.locator('[data-testid="help-topic-card"]')).toHaveCount(12)
   expect(writes).toEqual([])
 })
 
 test('Help closes independently above a dirty document composer', async ({ page }) => {
   const writes = await mockWorkspace(page)
   await page.goto('/clients/' + clientId)
+  await page.getByRole('button', { name: /Documents, measures, resources & details/ }).click()
   await page.getByRole('button', { name: 'Create session summary', exact: true }).click()
   const composer = page.getByTestId('client-document-composer')
   await composer.getByPlaceholder('Document title').fill('Fictional unsaved document title')

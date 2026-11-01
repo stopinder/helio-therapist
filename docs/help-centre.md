@@ -1,6 +1,6 @@
 # Helios Help Centre
 
-Status: implementation branch; not released to production. Content review: 27 September 2026.
+Status: production product guidance. Content review: 1 November 2026.
 
 ## Purpose
 
@@ -11,9 +11,9 @@ This replaces slide-deck production as the proposed source of product guidance. 
 - `/help` and `/help/:articleId` are authenticated application routes, subject to the existing authentication and billing gate. `/support` remains the public contact page. No auth or billing behaviour is changed.
 - One static article catalogue in `src/content/help/articles.js` powers the full Help page and contextual panel. The article IDs are stable deep-link identifiers.
 - Contextual links open a native modal side panel above the existing workspace. Closing returns focus to the trigger without routing away, remounting the clinical form or saving its contents. Opening the full guide from the panel uses a separate tab.
-- Search is local deterministic matching over reviewed Help articles only. It supports selected plain-language aliases, case/accent normalisation and word prefixes. It is not semantic AI search and does not promise arbitrary typo correction.
-- Search strings are held in component memory only: no URL query, local/session storage, analytics event, database, Notion query or model request. Help routes remain excluded by the existing telemetry allowlist.
-- Text is rendered using Vue interpolation and semantic elements, not unsanitised HTML. No clinical services are imported by the Help components or search library.
+- The full Help page is a small, browsable product manual grouped into the four reviewed areas: Clients, Therapy Focus, Sessions and Reflection. It deliberately has no separate search field, filter pills or result counts.
+- Ask Helios remains the single global conversational assistant. Help does not imitate it with a second question/search interface; Help provides reviewed product documentation and stable deep links.
+- Text is rendered using Vue interpolation and semantic elements, not unsanitised HTML. No clinical services are imported by the Help components. Help navigation state is not persisted in local/session storage or sent to a model.
 - No new package, schema, migration, API endpoint, paid service or runtime Notion synchronisation is introduced.
 
 ## Reviewed source basis
@@ -57,14 +57,8 @@ Component paths without a directory are under the corresponding `src/components/
 
 ## Maintenance
 
-Change the versioned article catalogue with the relevant feature PR. Run the catalogue/search tests, component interaction tests, build and focused browser checks. Review the article when the source workflow changes; update the review date only after review. Regenerate the editorial copy using `node scripts/export-help-content.mjs`, then update the linked Notion Help Centre and Product Map release state. Notion is a review record, not an unreviewed live content feed.
+Change the versioned article catalogue with the relevant feature PR. Run the catalogue/navigation tests, component interaction tests, build and focused browser checks. Review the article when the source workflow changes; update the review date only after review. Regenerate the editorial copy using `node scripts/export-help-content.mjs`, then update the linked Notion Help Centre and Product Map release state. Notion is a review record, not an unreviewed live content feed.
 
-## Verification for this branch
+## Release verification
 
-- Full Node test suite: 621 passing.
-- Full component suite: 65 passing after extending the icon mock and targeting Clear filters by its text rather than its styling. No assertions were removed.
-- Dedicated localhost browser suite: six passing, including unsaved Therapy Focus, Reflection and document-composer fields, Escape/focus return, authentication, deep links, search and responsive checks at 1440 and 390 pixels.
-- Production build and git diff whitespace check pass. Existing chunk-size/dynamic-import warnings remain.
-- `npm run test:help` runs the focused tests. The generic Playwright configuration excludes this spec because it requires its own isolated test server; the dedicated Help CI job runs it. No real user credentials or remote data are used.
-- Editorial record: https://app.notion.com/p/3e87404c23fc8111a953cfd61496fd0b
-- Preview review and production release are separate and not asserted by the local test results.
+For changes to Help, run the focused catalogue/component/browser suite with `npm run test:help`, the production build, and the Vercel preview for the exact release commit. The browser suite verifies authentication, grouped navigation, stable deep links, contextual Help preserving unsaved work, responsive layout and independent panel dismissal. No real user credentials or remote clinical data are used.
