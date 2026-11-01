@@ -9,7 +9,7 @@
         <Menu class="workspace-icon-lg" />
       </button>
 
-      <h2 class="truncate type-body-medium text-ink">{{ pageName }}</h2>
+      <h2 v-if="showPageName" class="truncate type-body-medium text-ink">{{ pageName }}</h2>
     </div>
 
     <div class="flex shrink-0 items-center gap-2">
@@ -102,11 +102,12 @@
 
 <script setup>
 import { CalendarDays, Menu, Plus, Sparkles } from '@lucide/vue'
+import { computed } from 'vue'
 import { useAskHelios } from '../../composables/useAskHelios.js'
 
 const { isPanelOpen, togglePanel } = useAskHelios()
 
-defineProps({
+const props = defineProps({
   pageName: { type: String, required: true },
   routePath: { type: String, required: true },
   now: { type: Date, required: true },
@@ -120,6 +121,8 @@ defineProps({
   outstandingReminderCount: { type: Number, default: 0 },
   quickCaptureOpen: Boolean
 })
+
+const showPageName = computed(() => !props.routePath.startsWith('/supervision'))
 
 defineEmits(['open-menu', 'toggle-quick-capture', 'join-next-appointment'])
 </script>
