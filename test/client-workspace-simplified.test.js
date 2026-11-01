@@ -9,14 +9,18 @@ test('ClientWorkspace does not render institutional tabs', async () => {
   assert.strictEqual(clientWorkspaceSource.includes("const tabs=['Overview'"), false, 'Tabs array should be removed')
 })
 
-test('ClientWorkspace presents therapist-first sections', async () => {
-  assert.match(clientWorkspaceSource, /Before next session/, 'Should have Before next session section')
-  assert.match(clientWorkspaceSource, /Recent sessions/, 'Should have Recent sessions section')
-  assert.match(clientWorkspaceSource, /Supporting material/, 'Should have Supporting material section')
+test('ClientWorkspace presents attention-first progressive disclosure', async () => {
+  assert.match(clientWorkspaceSource, />Now</, 'Should lead with Now')
+  assert.match(clientWorkspaceSource, /Full Therapy Focus/, 'Should expose the full Therapy Focus behind disclosure')
+  assert.match(clientWorkspaceSource, /Sessions & chronology/, 'Should group history together')
+  assert.match(clientWorkspaceSource, /Record & administration/, 'Should group administrative material together')
+  assert.doesNotMatch(clientWorkspaceSource, />Before next session</)
+  assert.doesNotMatch(clientWorkspaceSource, />Supporting material</)
+  assert.doesNotMatch(clientWorkspaceSource, /ClinicalAttentionPanel/)
 })
 
 test('ClientWorkspace uses human-readable session actions and states', async () => {
-  assert.match(clientWorkspaceSource, /Open summary/, 'Should have Open summary action')
+  assert.match(clientWorkspaceSource, /Open session/, 'Should have Open session action')
   assert.match(clientWorkspaceSource, /Transcript/, 'Should have Transcript action')
   
   // Institutional labels should be absent from the normal UI template
@@ -36,4 +40,22 @@ test('ClientWorkspace preserves access to underlying data', async () => {
   assert.match(clientWorkspaceSource, /ClientCarePanel/, 'Should still include ClientCarePanel')
   assert.match(clientWorkspaceSource, /ClientDocumentsPanel/, 'Should still include ClientDocumentsPanel')
   assert.match(clientWorkspaceSource, /ClientTranscriptsPanel/, 'Should still include ClientTranscriptsPanel')
+})
+
+
+test('ClientWorkspace defers secondary systems until requested', () => {
+  assert.match(clientWorkspaceSource, /v-if="therapyOpen"/)
+  assert.match(clientWorkspaceSource, /v-if="historyOpen"/)
+  assert.match(clientWorkspaceSource, /v-if="recordOpen"/)
+  assert.match(clientWorkspaceSource, /v-if="transcriptsOpen"/)
+  assert.match(clientWorkspaceSource, /v-if="measuresOpen"/)
+  assert.match(clientWorkspaceSource, /v-if="resourcesOpen"/)
+  assert.match(clientWorkspaceSource, /v-if="detailsOpen"/)
+})
+
+test('ClientWorkspace removes low-value duplicated overview cards', () => {
+  assert.doesNotMatch(clientWorkspaceSource, />Next Appointment</)
+  assert.doesNotMatch(clientWorkspaceSource, />Support network</)
+  assert.match(clientWorkspaceSource, /meaningfulTimelineEvents/)
+  assert.match(clientWorkspaceSource, /session completed/)
 })

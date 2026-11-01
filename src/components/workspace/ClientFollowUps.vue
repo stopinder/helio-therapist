@@ -16,14 +16,14 @@
         <p class="text-body-sm text-ink-muted">Loading follow-ups...</p>
       </div>
       
-      <div v-else-if="!openFollowUps.length" class="py-stack-md text-center border border-dashed border-border rounded-control">
-        <p class="text-body-sm text-ink-muted">No follow-ups recorded.</p>
-        <button 
+      <div v-else-if="!openFollowUps.length" class="flex items-center justify-between gap-inline-md border-y border-border-muted py-stack-sm">
+        <p class="text-body-sm text-ink-muted">No follow-ups waiting.</p>
+        <button
           @click="showCapture = true"
           type="button"
-          class="mt-2 text-action-link font-medium hover:underline text-body-sm"
+          class="shrink-0 text-body-sm font-medium text-action-link hover:underline"
         >
-          Quick capture
+          Add follow-up
         </button>
       </div>
       
