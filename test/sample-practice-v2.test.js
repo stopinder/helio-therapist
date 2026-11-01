@@ -171,7 +171,7 @@ test('existing sample workspaces receive the visible clinical story without over
   assert.match(visibleStoryMigration, /private\.sample_clients/)
   assert.match(visibleStoryMigration, /SAMPLE-NOTE-DANIEL-001/)
   assert.match(visibleStoryMigration, /Sample session summary — Daniel/)
-  assert.match(visibleStoryMigration, /Sample Therapy Focus — Daniel/)
+  assert.match(visibleStoryMigration, /Sample care plan — Daniel/)
   assert.match(visibleStoryMigration, /SAMPLE-NOTE-ALEX-INBOX-004/)
   assert.match(visibleStoryMigration, /where not exists/gi)
   assert.doesNotMatch(visibleStoryMigration, /update public\.client_care_items/i)
