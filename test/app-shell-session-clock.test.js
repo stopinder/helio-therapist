@@ -75,3 +75,9 @@ test('global controls use the same compact height', () => {
   const compactControls = header.match(/h-9/g) || []
   assert.ok(compactControls.length >= 3, 'Quick capture, Schedule and Join should all use h-9')
 })
+
+
+test('Reflect routes do not repeat page context in the global header', () => {
+  assert.match(header, /v-if="showPageName"/)
+  assert.match(header, /!props\.routePath\.startsWith\('\/supervision'\)/)
+})
