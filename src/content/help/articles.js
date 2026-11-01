@@ -188,6 +188,11 @@ export const HELP_ARTICLES = [
         'Writing about a response in the reflection text does not automatically create an Inner position label. You decide whether to map it and what to call it. This is not a parts assessment or a personality classification.'
       ] },
       { heading: 'One example from input to result', example: 'Fictional example: you write, "I noticed myself filling the silence with a plan." In optional mapping you name the Inner position "Wanting to organise", describe what seemed to bring it forward, and note that slowing down helped. After saving, the reflection can be reopened in Reflections. If another saved mapping uses the same label, Practice Map can group those entries together. It has not independently decided that you are an organising type.' },
+      { heading: 'From Quick Capture into Reflect', paragraphs: [
+        'Quick Capture is for catching a thought before it disappears, not for completing a full reflective exercise in the top bar. Choose Reflection, write or dictate the thought, then Save to Reflect. The saved item remains a Captured thought until you deliberately develop it.',
+        'If you open Quick Capture while you are inside a client or session, Helios offers an optional context link. It is unticked by default, so the reflection remains therapist-only unless you choose to connect it.',
+        'Open Reflect → Reflections to see Captured thoughts separately from developed reflections. Develop reflection lets you edit the thought, add an optional theme, map what was happening in you, ask Helios for tentative mapping suggestions, and optionally include it in the Supervision Pack. Practice Map sees only mapping you save.'
+      ] },
       { heading: 'From Ask Helios into Reflect', paragraphs: [
         'In Ask Helios Reflect mode, or a clinically scoped Workspace conversation, the latest answer can offer Send to Reflect. Helios prepares a provisional reflection plus optional mapping from therapist-authored first-person material in that saved conversation.',
         'Review every proposed field before saving. Untick or clear anything that does not fit, and check for identifying detail. Assistant suggestions and client material are not treated as evidence about your inner position. Mapping enters Practice Map only when you explicitly include the field and choose Save to Reflect.'
