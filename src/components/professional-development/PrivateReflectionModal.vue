@@ -18,6 +18,9 @@
             <span v-if="reflection.theme" class="px-2 py-0.5 bg-surface-subtle text-overline font-bold text-ink-secondary uppercase rounded-full border border-border">
               {{ reflection.theme }}
             </span>
+            <span v-if="reflection.workspace_content?.captureSource === 'quick_capture'" class="inline-flex items-center px-2 py-0.5 bg-surface-subtle text-overline font-bold text-ink-secondary uppercase rounded border border-border">
+              {{ reflection.workspace_content?.quickCaptureState === 'developed' ? 'Developed from Quick Capture' : 'Quick Capture' }}
+            </span>
             <span v-if="reflection.included_in_supervision" class="inline-flex items-center px-2 py-0.5 bg-state-success-surface text-overline font-bold text-state-success uppercase rounded border border-state-success/20">
               Supervision Pack
             </span>
@@ -247,6 +250,17 @@
             "{{ reflection.body || 'No content' }}"
           </p>
         </div>
+
+        <section v-if="reflectionMapEntries.length" class="mt-8 rounded-panel border border-border-muted bg-surface-subtle p-5">
+          <p class="type-eyebrow text-action-link">Reflective map</p>
+          <h3 class="mt-1 text-h3 font-semibold text-ink">What you chose to map</h3>
+          <div class="mt-4 grid gap-4 md:grid-cols-2">
+            <div v-for="entry in reflectionMapEntries" :key="entry.key">
+              <p class="text-caption font-semibold text-ink-muted">{{ entry.label }}</p>
+              <p class="mt-1 text-body-sm leading-6 text-ink-secondary">{{ entry.value }}</p>
+            </div>
+          </div>
+        </section>
       </div>
 
       <div class="p-6 border-t border-border-muted bg-surface flex flex-col gap-4">
@@ -411,6 +425,21 @@ const summaryGenerating = ref(false);
 const summarySaving = ref(false);
 const summaryError = ref('');
 const canSummariseReflection = computed(() => String(props.reflection?.body || '').trim().length >= 80);
+const mapLabels = {
+  innerPosition: 'Inner position',
+  protectiveIntention: 'Protective intention',
+  trigger: 'Trigger',
+  impact: 'Impact on the work',
+  spaceCreated: 'What created space',
+  supervisionQuestion: 'Question to carry forward'
+};
+const reflectionMapEntries = computed(() => {
+  const map = props.reflection?.workspace_content?.reflectiveMap;
+  if (!map || typeof map !== 'object' || Array.isArray(map)) return [];
+  return Object.entries(map)
+    .map(([key, value]) => ({ key, label: mapLabels[key] || key, value: String(value || '').trim() }))
+    .filter(entry => entry.value);
+});
 
 async function loadSupervisionSummary() {
   if (!supabase || !props.reflection?.id) return;
