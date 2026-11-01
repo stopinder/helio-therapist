@@ -24,9 +24,10 @@ test('Follow-ups UI components follow requirements', async () => {
   assert.ok(modal.includes("Save"))
   assert.ok(modal.includes("Cancel"))
   assert.ok(/import\s+\{.*transcribeAudio.*\}\s+from\s+'\.\.\/\.\.\/lib\/clientFollowUps\.js'/.test(modal))
-  assert.ok(panel.includes("No follow-ups recorded."))
+  assert.ok(panel.includes("No follow-ups waiting."))
   assert.match(panel, /<input\s+type="checkbox"/)
   assert.ok(panel.includes("Quick capture"))
+  assert.ok(panel.includes("Add follow-up"))
 })
 
 test('Follow-ups migration follows schema requirements', async () => {
