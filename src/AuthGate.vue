@@ -5,7 +5,7 @@
       <p class="mt-2 text-body text-ink-muted">Use at least 8 characters.</p>
       <form class="mt-6 space-y-4" @submit.prevent="updatePassword">
         <div class="relative">
-          <input id="recovery-password" v-model="newPassword" :type="showNewPassword ? 'text' : 'password'" name="recovery-password" required minlength="8" autocomplete="new-password" autocapitalize="none" spellcheck="false" aria-label="New password" class="min-h-12 w-full rounded-panel border border-border px-3 pr-16 text-ink caret-action-link outline-none focus:border-action-link focus:ring-2 focus:ring-state-selected" />
+          <input id="recovery-password" v-model="newPassword" :type="showNewPassword ? 'text' : 'password'" name="new-password" required minlength="8" autocomplete="new-password" autocapitalize="none" spellcheck="false" aria-label="New password" class="min-h-12 w-full rounded-panel border border-border px-3 pr-16 text-ink caret-action-link outline-none focus:border-action-link focus:ring-2 focus:ring-state-selected" />
           <button type="button" class="absolute inset-y-0 right-0 min-w-14 px-3 text-body font-medium text-action-link" @click="showNewPassword = !showNewPassword">{{ showNewPassword ? 'Hide' : 'Show' }}</button>
         </div>
         <button type="submit" :disabled="submitting" class="min-h-12 w-full rounded-panel bg-action-link px-4 font-medium text-on-action disabled:opacity-50">{{ submitting ? 'Saving…' : 'Save new password' }}</button>
@@ -70,13 +70,35 @@
 
         <label class="block">
           <span class="text-body font-medium text-ink-secondary">Email address</span>
-          <input v-model.trim="email" type="email" required autocomplete="email" class="mt-2 min-h-12 w-full rounded-panel border border-border bg-surface-elevated px-3 text-ink caret-action-link outline-none focus:border-action-link focus:ring-2 focus:ring-state-selected" />
+          <input
+            :id="mode === 'signin' ? 'account-email' : 'signup-email'"
+            v-model.trim="email"
+            type="email"
+            :name="mode === 'signin' ? 'username' : 'email'"
+            required
+            :autocomplete="mode === 'signin' ? 'username' : 'email'"
+            autocapitalize="none"
+            spellcheck="false"
+            inputmode="email"
+            class="mt-2 min-h-12 w-full rounded-panel border border-border bg-surface-elevated px-3 text-ink caret-action-link outline-none focus:border-action-link focus:ring-2 focus:ring-state-selected"
+          />
         </label>
 
         <label class="block">
           <span class="text-body font-medium text-ink-secondary">Password</span>
           <div class="relative mt-2">
-            <input id="account-password" v-model="password" :type="showPassword ? 'text' : 'password'" name="account-password" required minlength="8" :autocomplete="mode === 'signup' ? 'new-password' : 'current-password'" autocapitalize="none" spellcheck="false" class="min-h-12 w-full rounded-panel border border-border px-3 pr-16 text-ink caret-action-link outline-none focus:border-action-link focus:ring-2 focus:ring-state-selected" />
+            <input
+              :id="mode === 'signin' ? 'account-password' : 'signup-password'"
+              v-model="password"
+              :type="showPassword ? 'text' : 'password'"
+              :name="mode === 'signin' ? 'password' : 'new-password'"
+              required
+              minlength="8"
+              :autocomplete="mode === 'signup' ? 'new-password' : 'current-password'"
+              autocapitalize="none"
+              spellcheck="false"
+              class="min-h-12 w-full rounded-panel border border-border px-3 pr-16 text-ink caret-action-link outline-none focus:border-action-link focus:ring-2 focus:ring-state-selected"
+            />
             <button type="button" class="absolute inset-y-0 right-0 min-w-14 px-3 text-body font-medium text-action-link" @click="showPassword = !showPassword">{{ showPassword ? 'Hide' : 'Show' }}</button>
           </div>
           <span v-if="mode === 'signup'" class="mt-1 block text-caption text-ink-subtle">At least 8 characters</span>
