@@ -19,10 +19,11 @@ export default async function handler(req, res) {
   try {
     const { user } = await requireAuthenticatedUser(req);
     const bodyKeys = Object.keys(req.body || {});
-    if (bodyKeys.length !== 1 || bodyKeys[0] !== 'reflectionId') {
+    const allowedKeys = new Set(['reflectionId','draftBody','draftTheme']);
+    if (!bodyKeys.length || bodyKeys.some(key => !allowedKeys.has(key))) {
       return res.status(400).json({ success: false, error: { code: 'INVALID_REQUEST', message: 'Invalid request body' } });
     }
-    const { reflectionId } = req.body;
+    const { reflectionId, draftBody, draftTheme } = req.body;
     if (!reflectionId || typeof reflectionId !== 'string' || !/^[0-9a-f-]{36}$/i.test(reflectionId)) {
       return res.status(400).json({ success: false, error: { code: 'INVALID_REFLECTION_ID', message: 'Invalid reflection ID format' } });
     }
@@ -34,7 +35,8 @@ export default async function handler(req, res) {
       return res.status(404).json({ success: false, error: { code: 'REFLECTION_NOT_FOUND', message: 'Reflection not found or access denied' } });
     }
 
-    const reflectionBody = (reflection.body || '').trim();
+    const reflectionBody = (typeof draftBody === 'string' ? draftBody : reflection.body || '').trim();
+    const reflectionTheme = typeof draftTheme === 'string' ? draftTheme.trim().slice(0, 120) : reflection.theme;
     if (reflectionBody.length < AI_REFLECTION_MINIMUM_CHARACTERS) {
       return res.status(422).json({ success: false, error: { code: 'REFLECTION_TOO_SHORT', message: `Reflection is too short for AI support (minimum ${AI_REFLECTION_MINIMUM_CHARACTERS} characters).` } });
     }
@@ -52,7 +54,7 @@ export default async function handler(req, res) {
       promptVersion: AI_REFLECTION_PROMPT_VERSION,
       messages: [
         { role: 'system', content: aiReflectionSystemPrompt },
-        { role: 'user', content: buildReflectionInput(reflection, clientContext) }
+        { role: 'user', content: buildReflectionInput({ ...reflection, body: reflectionBody, theme: reflectionTheme }, clientContext) }
       ],
       responseFormat: { type: 'json_object' },
       temperature: 0.7,
