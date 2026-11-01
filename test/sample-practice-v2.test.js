@@ -177,3 +177,31 @@ test('existing sample workspaces receive the visible clinical story without over
   assert.doesNotMatch(visibleStoryMigration, /update public\.client_care_items/i)
   assert.doesNotMatch(visibleStoryMigration, /update public\.documents/i)
 })
+
+
+test('sample practice guide is compactable, dismissible and persistent', () => {
+  assert.match(clientsView, /helios\.samplePracticeGuide\.v1/)
+  assert.match(clientsView, /sampleGuideState==='expanded'/)
+  assert.match(clientsView, /sampleGuideState!=='hidden'/)
+  assert.match(clientsView, /Hide sample guide/)
+  assert.match(clientsView, />Collapse</)
+  assert.match(clientsView, />Open guide</)
+  assert.match(clientsView, /Show sample guide/)
+  assert.match(clientsView, /localStorage\.setItem\(SAMPLE_GUIDE_STORAGE_KEY,state\)/)
+})
+
+test('sample guide teaches Daniel inspection and Alex triage without stale copy', () => {
+  assert.match(clientsView, /Open Daniel Reed — Sample for a complete worked client/)
+  assert.match(clientsView, /unassigned Alex Morgan — Sample import/)
+  assert.match(clientsView, /Open Daniel worked example/)
+  assert.match(clientsView, /Practise transcript triage/)
+  assert.doesNotMatch(clientsView, /Start in Transcript Inbox with Daniel Reed — Sample/)
+  assert.doesNotMatch(clientsView, /Everything marked Sample is synthetic and removable/)
+})
+
+test('entering the sample workflow automatically collapses the onboarding guide', () => {
+  assert.match(clientsView, /function collapseSampleGuide\(\)/)
+  assert.match(clientsView, /function openSampleDaniel\(\)\{if\(!sampleDaniel\.value\)return;collapseSampleGuide\(\)/)
+  assert.match(clientsView, /function openSampleInbox\(\)\{collapseSampleGuide\(\)/)
+  assert.match(clientsView, /function openClient\(client\)\{if\(isSampleClient\(client\)\)collapseSampleGuide\(\)/)
+})
