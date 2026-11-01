@@ -283,7 +283,7 @@
           <div>
             <p class="eyebrow eyebrow-light">Simple pricing</p>
             <h3>Free forever. Professional when you need it.</h3>
-            <p>Free: five active clients and five short text-AI actions monthly. Professional: £29/month or £290/year paid upfront, with unlimited active clients. Dictation is available across plans subject to fair use.</p>
+            <p>Free: five active clients and five short text-AI actions monthly, with no payment card required. Professional is optional at £29/month or £290/year paid upfront, with unlimited active clients. Dictation is available across plans subject to fair use.</p>
           </div>
           <router-link to="/get-started" class="button button-light pricing-button">Start Free — no card required →</router-link>
         </div>
