@@ -66,3 +66,13 @@ test('CPD home surfaces discovery without assigning reflective homework', () => 
   assert.strictEqual(content.includes('useGreeting'), false)
   assert.strictEqual(content.includes('const discovery = computed'), true, 'Home should derive a discovery from real recorded recurrence')
 })
+
+
+test('Reflect home uses the core Helios surface system rather than a hard-coded warm palette', () => {
+  const content = readFileSync(join(process.cwd(), 'src/views/supervision/SupervisionHome.vue'), 'utf8')
+  assert.strictEqual(/#[0-9a-fA-F]{3,8}/.test(content), false, 'Reflect home should not contain hard-coded colour hex values')
+  assert.strictEqual(content.includes('surface-card'), true, 'Reflect home should use the shared Helios card surface')
+  assert.strictEqual(content.includes('bg-surface-muted'), true, 'Reflect home may use the shared muted surface for hierarchy')
+  assert.strictEqual(content.includes('type-page-title'), true, 'Reflect home should retain editorial Helios typography')
+  assert.strictEqual(content.includes('font-serif'), true, 'Reflect home should retain a reflective editorial accent')
+})
