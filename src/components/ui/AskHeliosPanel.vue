@@ -160,29 +160,14 @@
               </div>
             </div>
             <p v-if="msg.actionStatus" class="mt-2 text-xs text-ink-secondary">{{ msg.actionStatus }}</p>
-            <div v-if="mode === 'reflect' && msg.role === 'assistant' && !msg.reflectionSaved" class="mt-3 border-t border-border-muted pt-2">
-              <button v-if="typeof msg.reflectionDraft !== 'string'" type="button"
-                class="text-xs font-medium text-accent hover:underline" @click="beginReflectionDraft(index, msg)">
-                Save my reflection to CPD
+            <div v-if="msg.role === 'assistant' && canSendToReflect(index, msg)" class="mt-3 border-t border-border-muted pt-2">
+              <button type="button"
+                class="rounded-control border border-border-muted px-3 py-2 text-xs font-medium text-accent disabled:opacity-50"
+                :disabled="reflectionBridgeLoading || isLoading || !activeConversationId"
+                @click="beginReflectionBridge(index)">
+                {{ reflectionBridgeLoading && reflectionBridgeIndex===index ? 'Preparing reflection…' : 'Send to Reflect' }}
               </button>
-              <div v-else class="space-y-2">
-                <label :for="'ask-helios-reflection-' + index" class="block text-xs font-medium text-ink-secondary">
-                  Edit the text you want to save privately
-                </label>
-                <textarea :id="'ask-helios-reflection-' + index" :value="msg.reflectionDraft"
-                  @input="patchMessage(index, { reflectionDraft: $event.target.value })"
-                  maxlength="4000" rows="4"
-                  class="w-full rounded-control border border-border-muted bg-surface p-2 text-xs text-ink"></textarea>
-                <p class="text-[11px] text-ink-muted">Only your edited text will be saved to professional reflections; no AI answer or client record is saved.</p>
-                <div class="flex gap-2">
-                  <button type="button" class="rounded-control bg-action-primary px-3 py-2 text-xs text-on-action disabled:opacity-50"
-                    :disabled="isSavingAction || msg.reflectionDraft.trim().length < 10" @click="confirmReflection(index, msg)">
-                    Save private reflection
-                  </button>
-                  <button type="button" class="rounded-control border border-border-muted px-3 py-2 text-xs"
-                    :disabled="isSavingAction" @click="patchMessage(index, { reflectionDraft: null })">Cancel</button>
-                </div>
-              </div>
+              <p class="mt-1 text-[10px] text-ink-muted">Helios prepares a provisional reflection and optional map. Nothing is saved until you review and confirm it.</p>
             </div>
           </div>
           <span class="mt-1 px-1 text-[10px] text-ink-subtle">{{ msg.role === 'user' ? 'You' : 'Helios' }}</span>
@@ -227,6 +212,14 @@
       </footer>
     </div>
   </Transition>
+  <AskHeliosReflectionBridge
+    v-if="reflectionBridgeDraft"
+    :draft="reflectionBridgeDraft"
+    :saving="reflectionBridgeSaving"
+    :error="reflectionBridgeError"
+    @cancel="closeReflectionBridge"
+    @save="saveReflectionBridge"
+  />
 </template>
 
 <script setup>
@@ -236,6 +229,7 @@ import { useAskHelios } from '../../composables/useAskHelios.js'
 import { resolveAskHeliosMode } from '../../lib/askHeliosIntent.js'
 import { authenticatedFetch } from '../../lib/api.js'
 import NiceGuidanceAccess from './NiceGuidanceAccess.vue'
+import AskHeliosReflectionBridge from './AskHeliosReflectionBridge.vue'
 import { isNiceGuidanceRequest, researchReferenceHeading } from '../../lib/niceGuidance.js'
 
 const tabs = [
@@ -283,18 +277,35 @@ const composerPlaceholder = computed(() => clinicalContext.value && mode.value =
 const footerText = computed(() => clinicalContext.value && mode.value === 'workspace'
   ? 'Selected clinical evidence · Therapist remains responsible'
   : currentTab.value.footer)
+const latestAssistantIndex = computed(() => messages.value.findLastIndex(message => message.role === 'assistant'))
 const input = ref('')
 const isLoading = ref(false)
 const isSavingAction = ref(false)
+const reflectionBridgeDraft = ref(null)
+const reflectionBridgeIndex = ref(-1)
+const reflectionBridgeLoading = ref(false)
+const reflectionBridgeSaving = ref(false)
+const reflectionBridgeError = ref('')
 const scrollContainer = ref(null)
 const showHistory = ref(false)
 const modeNotice = ref('')
 
 function changeMode(next) {
+  closeReflectionBridge()
   setMode(next)
   modeNotice.value = ''
   showHistory.value = false
   input.value = ''
+}
+function canSendToReflect(index, msg) {
+  if (msg?.reflectionSaved || index !== latestAssistantIndex.value) return false
+  if (mode.value === 'reflect') return true
+  return mode.value === 'workspace' && Boolean(clinicalContext.value)
+}
+function closeReflectionBridge() {
+  reflectionBridgeDraft.value = null
+  reflectionBridgeIndex.value = -1
+  reflectionBridgeError.value = ''
 }
 function beginResearchHandoff(query) {
   setMode('research')
@@ -335,6 +346,7 @@ async function scrollToLatestAnswer() {
 // restoration and rendering finish, including a return from the history list.
 // Do not watch messages deeply: background metadata updates must not interrupt
 // someone deliberately scrolling up to read an earlier answer.
+watch(isPanelOpen, open => { if (!open) closeReflectionBridge() })
 watch(
   [isPanelOpen, showHistory, isRestoring, activeConversationId, restoreError],
   ([open, history, restoring, , error]) => {
@@ -361,24 +373,48 @@ async function confirmAction(index, msg) {
     patchMessage(index, { actionStatus: 'The reminder could not be saved. You may retry.' })
   } finally { isSavingAction.value = false }
 }
-function beginReflectionDraft(index, msg) {
-  const authored = [...messages.value.slice(0, index)].reverse().find(m => m.role === 'user')
-  patchMessage(index, { reflectionDraft: (authored?.content || '').slice(0, 4000) })
+async function beginReflectionBridge(index) {
+  if (reflectionBridgeLoading.value || !activeConversationId.value) return
+  reflectionBridgeLoading.value = true
+  reflectionBridgeIndex.value = index
+  reflectionBridgeError.value = ''
+  try {
+    const resp = await authenticatedFetch('/api/ai/reflection-draft', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ conversationId: activeConversationId.value })
+    })
+    const payload = await resp.json().catch(() => ({}))
+    if (!resp.ok || !payload?.data) throw new Error(payload?.error?.message || 'Helios could not prepare this reflection draft.')
+    reflectionBridgeDraft.value = payload.data
+  } catch (error) {
+    patchMessage(index, { actionStatus: error.message || 'Helios could not prepare this reflection draft.' })
+    reflectionBridgeIndex.value = -1
+  } finally { reflectionBridgeLoading.value = false }
 }
-async function confirmReflection(index, msg) {
-  const body = typeof msg.reflectionDraft === 'string' ? msg.reflectionDraft.trim() : ''
-  if (isSavingAction.value || body.length < 10 || body.length > 4000) return
-  isSavingAction.value = true
+async function saveReflectionBridge(reviewed) {
+  if (reflectionBridgeSaving.value || !reflectionBridgeDraft.value) return
+  reflectionBridgeSaving.value = true
+  reflectionBridgeError.value = ''
   try {
     const resp = await authenticatedFetch('/api/ai/actions', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ type: 'save_private_reflection', body, confirmed: true })
+      body: JSON.stringify({
+        type: 'save_private_reflection_draft',
+        ...reviewed,
+        confirmed: true
+      })
     })
-    if (!resp.ok) throw new Error('Unable to save private reflection')
-    patchMessage(index, { reflectionDraft: null, reflectionSaved: true, actionStatus: 'Saved to your private professional reflections.' })
-  } catch {
-    patchMessage(index, { actionStatus: 'Unable to save reflection. Review the text and retry.' })
-  } finally { isSavingAction.value = false }
+    const payload = await resp.json().catch(() => ({}))
+    if (!resp.ok) throw new Error(typeof payload?.error === 'string' ? payload.error : 'Unable to save reflection')
+    const index = reflectionBridgeIndex.value
+    if (index >= 0) patchMessage(index, {
+      reflectionSaved: true,
+      actionStatus: 'Saved to Reflect. Included mapping can now contribute to Practice Map.'
+    })
+    closeReflectionBridge()
+  } catch (error) {
+    reflectionBridgeError.value = error.message || 'Unable to save reflection. Review the fields and retry.'
+  } finally { reflectionBridgeSaving.value = false }
 }
 async function sendMessage(override = null) {
   // Vue passes an event object for submit handlers; only a deliberate string
