@@ -224,28 +224,62 @@ describe('AskHeliosPanel', () => {
     expect(JSON.parse(call[1].body)).toEqual({ type: 'create_reminder', body: 'review my notes', confirmed: true })
   })
 
-  it('Reflect saves only deliberately edited therapist text as private CPD', async () => {
+  it('Reflect prepares a reviewed reflection map and saves only after explicit confirmation', async () => {
+    const conversationId = 'aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa'
     api.authenticatedFetch.mockImplementation(async url => {
-      if (url === '/api/ai/assist') return ok({ answer: 'What was happening for you?', mode: 'reflect' })
-      if (url === '/api/ai/actions') return ok({ action: 'save_private_reflection' })
+      if (url === '/api/ai/assist') return ok({ answer: 'What was happening for you?', mode: 'reflect', conversationId })
+      if (url === '/api/ai/reflection-draft') return ok({
+        data: {
+          conversationId,
+          promptVersion: 'ask-helios-reflection-draft-v1',
+          theme: 'Urgency',
+          reflection: {
+            stoodOut: 'I noticed myself rushing to solve the problem.',
+            emotionalResponse: 'I felt impatient and urgent.',
+            countertransference: '',
+            uncertainties: 'I am unsure what made the silence hard to tolerate.',
+            supervisionQuestions: 'What happens in me when I cannot quickly reduce distress?',
+            nextSession: ''
+          },
+          reflectiveMap: {
+            innerPosition: 'Wanting to rescue',
+            protectiveIntention: 'Trying to reduce discomfort quickly',
+            trigger: 'The other person becoming distressed',
+            impact: 'I sped the conversation up and offered solutions',
+            spaceCreated: '',
+            supervisionQuestion: 'What would help me stay curious when distress rises?'
+          },
+          limitations: 'No clear evidence about what created more space.'
+        }
+      })
+      if (url === '/api/ai/actions') return ok({ action: 'save_private_reflection_draft' })
       return ok({ conversations: [] })
     })
     const w = mount(AskHeliosPanel)
     await w.findAll('[role="tab"]')[2].trigger('click')
-    await w.find('textarea').setValue('I felt impatient during that discussion')
+    await w.find('textarea').setValue('I felt impatient and noticed myself rushing to solve it.')
     await w.find('form').trigger('submit')
-    await vi.waitFor(() => expect(w.text()).toContain('Save my reflection to CPD'))
+    await vi.waitFor(() => expect(w.text()).toContain('Send to Reflect'))
     expect(api.authenticatedFetch.mock.calls.filter(c => c[0] === '/api/ai/actions')).toHaveLength(0)
-    await w.findAll('button').find(b => b.text() === 'Save my reflection to CPD').trigger('click')
-    await w.find('textarea[id^="ask-helios-reflection-"]').setValue('I noticed impatience and want to explore it in supervision.')
-    await w.findAll('button').find(b => b.text() === 'Save private reflection').trigger('click')
-    await vi.waitFor(() => expect(w.text()).toContain('Saved to your private professional reflections'))
+
+    await w.findAll('button').find(b => b.text() === 'Send to Reflect').trigger('click')
+    await vi.waitFor(() => expect(w.text()).toContain('Review before saving'))
+    expect(w.text()).toContain('Wanting to rescue')
+    expect(api.authenticatedFetch.mock.calls.filter(c => c[0] === '/api/ai/actions')).toHaveLength(0)
+
+    await w.find('#ask-reflection-stoodOut').setValue('I noticed myself moving too quickly to solve the problem.')
+    await w.findAll('button').find(b => b.text() === 'Save to Reflect').trigger('click')
+    await vi.waitFor(() => expect(w.text()).toContain('Saved to Reflect'))
     const action = api.authenticatedFetch.mock.calls.find(c => c[0] === '/api/ai/actions')
-    expect(JSON.parse(action[1].body)).toEqual({
-      type: 'save_private_reflection',
-      body: 'I noticed impatience and want to explore it in supervision.',
-      confirmed: true
+    const body = JSON.parse(action[1].body)
+    expect(body).toMatchObject({
+      type: 'save_private_reflection_draft',
+      sourceConversationId: conversationId,
+      confirmed: true,
+      theme: 'Urgency'
     })
+    expect(body.reflection.stoodOut).toBe('I noticed myself moving too quickly to solve the problem.')
+    expect(body.reflectiveMap.innerPosition).toBe('Wanting to rescue')
   })
 
   it('shows explicit client, perspective and evidence controls for clinical context', async () => {
@@ -325,3 +359,18 @@ describe('AskHeliosPanel', () => {
     expect(api.authenticatedFetch.mock.calls.some(c => c[0] === '/api/ai/actions')).toBe(false)
   })
 })
+
+
+  it('does not offer Send to Reflect from general Workspace or Research answers', async () => {
+    api.authenticatedFetch.mockImplementation(async url => {
+      if (url === '/api/ai/assist') return ok({ answer:'Your next appointment is tomorrow.', mode:'workspace', conversationId:'bbbbbbbb-bbbb-4bbb-bbbb-bbbbbbbbbbbb' })
+      if (url === '/api/ai/research') return ok({ answer:'Published evidence.', conversationId:'cccccccc-cccc-4ccc-cccc-cccccccccccc' })
+      return ok({ conversations:[], clients:[] })
+    })
+    const w = mount(AskHeliosPanel)
+    await w.findAll('[role="tab"]')[0].trigger('click')
+    await w.find('textarea').setValue('What is on tomorrow?')
+    await w.find('form').trigger('submit')
+    await vi.waitFor(() => expect(w.text()).toContain('Your next appointment'))
+    expect(w.text()).not.toContain('Send to Reflect')
+  })
