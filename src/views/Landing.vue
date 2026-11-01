@@ -282,7 +282,7 @@ const documentsScreenshot = `data:image/webp;base64,${[documentsScreenshot1, doc
 const features = [
   { icon: CalendarDays, title: 'Calendar', detail: 'Google Calendar sync', blurb: 'See your week at a glance and keep appointments alongside the rest of your clinical work.' },
   { icon: Sparkles, title: 'Session capture', detail: 'AI-assisted notes', blurb: 'Capture the session, shape the notes and keep continuity without breaking your focus.' },
-  { icon: Users, title: 'Client records', detail: 'The full picture', blurb: 'Bring care direction, session context and relevant documents together around each client.' },
+  { icon: Users, title: 'Client records', detail: 'The full picture', blurb: 'Bring therapeutic direction, session context and relevant documents together around each client.' },
   { icon: FileText, title: 'Documents', detail: 'Templates & resources', blurb: 'Create, store and reuse agreements, resources and everyday practice materials in one place.' },
   { icon: RefreshCw, title: 'CPD & reflection', detail: 'Track your development', blurb: 'Capture reflections and carry useful learning forward into supervision and ongoing development.' },
   { icon: Link2, title: 'Integrations', detail: 'Zoom, Google and more', blurb: 'Bring the tools you already use into the same working flow, with more integrations to come.' },

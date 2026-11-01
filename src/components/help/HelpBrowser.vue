@@ -58,7 +58,7 @@
       </ul>
       <div v-else class="mt-4 rounded-panel border border-dashed border-border p-6">
         <h2 class="text-lg font-semibold text-ink">No matching help yet</h2>
-        <p class="mt-2 text-sm leading-6 text-ink-secondary">Try a feature name such as Care, Dictate, reflection or last three sessions, or clear the filters.</p>
+        <p class="mt-2 text-sm leading-6 text-ink-secondary">Try a feature name such as Therapy Focus, Dictate, reflection or last three sessions, or clear the filters.</p>
         <button type="button" class="mt-3 min-h-touch rounded-control text-sm font-semibold text-action-link hover:underline" @click="clearSearch">Clear search and filters</button>
       </div>
     </template>

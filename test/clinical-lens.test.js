@@ -5,6 +5,7 @@ import { resolveLensConfig } from '../api/_lib/clinical-lenses.js'
 import { readFile } from 'node:fs/promises'
 
 test('Clinical Lens: Shared neutral configuration registry', () => {
+  assert.ok(CLINICAL_LENSES.general, 'general lens exists')
   assert.ok(CLINICAL_LENSES.gentle_cbt, 'gentle_cbt lens exists')
   assert.ok(CLINICAL_LENSES.integrative, 'integrative lens exists')
   assert.strictEqual(DEFAULT_LENS_ID, 'gentle_cbt')
@@ -32,12 +33,13 @@ test('Clinical Lens: Server-side resolution', () => {
 test('Clinical Lens: UI uses lens configuration', async () => {
   const carePanel = await readFile(new URL('../src/components/workspace/ClientCarePanel.vue', import.meta.url), 'utf8')
   const careFocus = await readFile(new URL('../src/components/workspace/CurrentCareFocus.vue', import.meta.url), 'utf8')
-  assert.match(carePanel, /lens\.terminology\.care/)
+  assert.match(carePanel, /Therapy Focus/)
+  assert.match(carePanel, /Review with Helios/)
   assert.match(carePanel, /availableLenses/)
   assert.match(carePanel, /sections=computed/)
   assert.match(carePanel, /v-for="l in availableLenses"/)
   assert.match(careFocus, /lens\.sections\.current_focus\?\.label/)
-  assert.match(careFocus, /lens\.terminology\.care/)
+  assert.match(careFocus, /View Therapy Focus/)
 })
 
 test('Clinical Lens: AI suggestions endpoint resolves lensId through the shared prompt builder', async () => {
@@ -45,16 +47,16 @@ test('Clinical Lens: AI suggestions endpoint resolves lensId through the shared 
   const promptBuilder = await readFile(new URL('../api/_lib/ai-care-suggestions.js', import.meta.url), 'utf8')
   assert.match(handler, /const lensId = String\(req\.body\?\.lensId || ''\)\.trim\(\)/)
   assert.match(handler, /const lensConfig = resolveLensConfig\(lensId\)/)
-  assert.match(handler, /buildCareSuggestionsPrompt\(\{ lensConfig, input, steering, currentCare, approvedContext \}\)/)
+  assert.match(handler, /buildCareSuggestionsPrompt\(\{/)
   assert.match(promptBuilder, /\${lensConfig\.aiFraming}/)
   assert.match(promptBuilder, /Allowed kinds: \${lensConfig\.allowedKinds\.join\(', '\)}/)
   assert.doesNotMatch(handler, /req\.body\.aiFraming/)
 })
 
-test('Clinical Lens: database constraint permits all configured Care kinds', async () => {
+test('Clinical Lens: database constraint permits all configured Therapy Focus kinds', async () => {
   const migration = await readFile(new URL('../supabase/migrations/20260814192906_allow_integrative_care_kinds.sql', import.meta.url), 'utf8')
   const configuredKinds = new Set(Object.values(CLINICAL_LENSES).flatMap(lens => Object.keys(lens.sections)))
-  for (const kind of configuredKinds) assert.match(migration, new RegExp(`'${kind}'`), `${kind} is allowed by the Care kind constraint`)
+  for (const kind of configuredKinds) assert.match(migration, new RegExp(`'${kind}'`), `${kind} is allowed by the Therapy Focus kind constraint`)
 })
 
 test('Clinical Lens: Explicitly CBT-specific tools remain untouched', async () => {

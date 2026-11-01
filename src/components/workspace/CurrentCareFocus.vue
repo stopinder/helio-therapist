@@ -4,9 +4,9 @@
       <div>
         <h3 class="text-h3 font-semibold text-ink">{{ lens.sections.current_focus?.label || 'Aims and objectives' }}</h3>
       </div>
-      <button type="button" class="text-body-sm font-medium text-action-link hover:underline" @click="$emit('open-care')">View {{ lens.terminology.care }}</button>
+      <button type="button" class="text-body-sm font-medium text-action-link hover:underline" @click="$emit('open-care')">View Therapy Focus</button>
     </header>
-    <p v-if="loading" class="pb-stack-md text-body-sm text-ink-muted">Loading {{ lens.terminology.care }}…</p>
+    <p v-if="loading" class="pb-stack-md text-body-sm text-ink-muted">Loading Therapy Focus…</p>
     <div v-else-if="focusItems.length" class="divide-y divide-border pb-stack-sm">
       <p v-for="item in focusItems.slice(0,3)" :key="item.id" class="py-stack-sm text-body-sm leading-relaxed text-ink-secondary">{{ item.body }}</p>
     </div>

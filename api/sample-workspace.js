@@ -393,7 +393,7 @@ async function ensureDanielWorkedExample({ service, userId, daniel }) {
     summaryDocument = data;
   }
 
-  const planTitle = 'Sample care plan — Daniel';
+  const planTitle = 'Sample Therapy Focus — Daniel';
   const { data: existingPlan, error: planReadError } = await service
     .from('documents')
     .select('id')

@@ -20,7 +20,7 @@
                 </div>
                 <button type="button" class="inline-flex items-center gap-1 type-ui text-ink-muted hover:text-ink" @click="setSampleGuideState('hidden')"><X class="workspace-icon-sm" aria-hidden="true" /><span>Hide sample guide</span></button>
               </div>
-              <p class="mt-stack-sm max-w-4xl type-body text-ink-secondary">Open Daniel Reed — Sample for a complete worked client with aims, Care plan, transcript, reviewed Session Capture and summary. Or use Transcript Inbox to assign an unassigned Alex Morgan — Sample import, then explore Alex’s longitudinal history.</p>
+              <p class="mt-stack-sm max-w-4xl type-body text-ink-secondary">Open Daniel Reed — Sample for a complete worked client with aims, Therapy Focus, transcript, reviewed Session Capture and summary. Or use Transcript Inbox to assign an unassigned Alex Morgan — Sample import, then explore Alex’s longitudinal history.</p>
               <p class="mt-stack-xs type-metadata text-ink-muted">Sample AI demonstrations are deterministic and do not use your monthly AI allowance. Sample clients can be archived separately when you no longer need them.</p>
               <div class="mt-stack-md flex flex-wrap items-center gap-inline-sm">
                 <AppButton variant="primary" @click="openSampleDaniel"><UserRound class="workspace-icon" aria-hidden="true" /><span>Open Daniel worked example</span></AppButton>

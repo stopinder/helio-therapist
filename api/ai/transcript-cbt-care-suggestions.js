@@ -37,14 +37,14 @@ export default async function handler(req, res) {
     const { completion } = await runTextAI({ feature:AI_FEATURES.TRANSCRIPT_CBT_CARE_SUGGESTIONS, userId:user.id, promptVersion:TRANSCRIPT_CBT_CARE_PROMPT_VERSION, messages:[{role:'system',content:'Be concise, tentative, evidence-bound, clinically respectful, and preserve clinician agency. These are review suggestions, never a clinical record.'},{role:'user',content:prompt}], responseFormat:{type:'json_object'}, temperature:0.25, maxTokens:1400 });
     const validCareIds = new Set((currentCare || []).map(item => item.id));
     const suggestions = validateCareSuggestions(completion.choices?.[0]?.message?.content, { allowedKinds:lensConfig.allowedKinds, validCareIds, promptVersion:TRANSCRIPT_CBT_CARE_PROMPT_VERSION, defaultBasis:'session_transcript' });
-    if (!suggestions) return res.status(502).json({ success:false, error:{ code:'INVALID_AI_RESPONSE', message:'CBT Care suggestions are temporarily unavailable. Nothing has been saved.' } });
+    if (!suggestions) return res.status(502).json({ success:false, error:{ code:'INVALID_AI_RESPONSE', message:'CBT Therapy Focus suggestions are temporarily unavailable. Nothing has been saved.' } });
     return res.status(200).json({ success:true, data:{ suggestions, clientId:transcript.client_id, sessionId:transcript.session_ref, lensId:'gentle_cbt' } });
   } catch (error) {
     if (error.code === 'TRANSCRIPT_TOO_SHORT' || error.code === 'TRANSCRIPT_TOO_LONG') return res.status(error.status || 422).json({ success:false, error:{ code:error.code, message:error.message } });
-    if (error.name === 'OpenAIConnectionTimeoutError' || error.status === 504) return res.status(504).json({ success:false, error:{ code:'GATEWAY_TIMEOUT', message:'CBT Care suggestions are temporarily unavailable. Nothing has been saved.' } });
-    if (error.code === 'AI_PROVIDER_NOT_CONFIGURED') return res.status(503).json({ success:false, error:{ code:'SERVICE_UNAVAILABLE', message:'CBT Care suggestions are temporarily unavailable.' } });
-    console.error('[Transcript CBT Care] Error:', error.message);
+    if (error.name === 'OpenAIConnectionTimeoutError' || error.status === 504) return res.status(504).json({ success:false, error:{ code:'GATEWAY_TIMEOUT', message:'CBT Therapy Focus suggestions are temporarily unavailable. Nothing has been saved.' } });
+    if (error.code === 'AI_PROVIDER_NOT_CONFIGURED') return res.status(503).json({ success:false, error:{ code:'SERVICE_UNAVAILABLE', message:'CBT Therapy Focus suggestions are temporarily unavailable.' } });
+    console.error('[Transcript CBT Therapy Focus] Error:', error.message);
     const status=error.status || 500;
-    return res.status(status).json({ success:false, error:{ code:status===401?'UNAUTHORIZED':(error.code || 'INTERNAL_SERVER_ERROR'), message:status===401?'Please sign in again.':'CBT Care suggestions are temporarily unavailable. Nothing has been saved.' } });
+    return res.status(status).json({ success:false, error:{ code:status===401?'UNAUTHORIZED':(error.code || 'INTERNAL_SERVER_ERROR'), message:status===401?'Please sign in again.':'CBT Therapy Focus suggestions are temporarily unavailable. Nothing has been saved.' } });
   }
 }

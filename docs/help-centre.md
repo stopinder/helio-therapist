@@ -53,7 +53,7 @@ Component paths without a directory are under the corresponding `src/components/
 - The exact user entry/review path for all eligible Session Capture sources and any separate Over Time screen are still unresolved. The articles do not invent a route or a button to resolve that gap.
 - A native microphone control is not promised beside every field. Microphone recording, live clinical approval, amendments and external sending are not exercised for this change.
 - Saved practice-reflection snapshots are not evidence of a running longitudinal competence-assessment system.
-- The first release concentrates on Client, Care, Sessions and Reflection. Calendar, account and integration setup guides are future content work, not silently assumed complete.
+- The first release concentrates on Client, Therapy Focus, Sessions and Reflection. Calendar, account and integration setup guides are future content work, not silently assumed complete.
 
 ## Maintenance
 
@@ -63,7 +63,7 @@ Change the versioned article catalogue with the relevant feature PR. Run the cat
 
 - Full Node test suite: 621 passing.
 - Full component suite: 65 passing after extending the icon mock and targeting Clear filters by its text rather than its styling. No assertions were removed.
-- Dedicated localhost browser suite: six passing, including unsaved Care, Reflection and document-composer fields, Escape/focus return, authentication, deep links, search and responsive checks at 1440 and 390 pixels.
+- Dedicated localhost browser suite: six passing, including unsaved Therapy Focus, Reflection and document-composer fields, Escape/focus return, authentication, deep links, search and responsive checks at 1440 and 390 pixels.
 - Production build and git diff whitespace check pass. Existing chunk-size/dynamic-import warnings remain.
 - `npm run test:help` runs the focused tests. The generic Playwright configuration excludes this spec because it requires its own isolated test server; the dedicated Help CI job runs it. No real user credentials or remote data are used.
 - Editorial record: https://app.notion.com/p/3e87404c23fc8111a953cfd61496fd0b

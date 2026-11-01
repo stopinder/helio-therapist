@@ -70,14 +70,14 @@ describe('contextual Help leaves work in place', () => {
     expect(submit).not.toHaveBeenCalled()
     expect(useHelp().helpTopic.value).toBe('dictate')
   })
-  it('preserves unsaved Care text and does not run generation or persistence when Help opens', async () => {
+  it('preserves unsaved Therapy Focus text and does not run generation or persistence when Help opens', async () => {
     const host = defineComponent({ components: { ClientCarePanel, HelpPanel }, template: '<ClientCarePanel client-id="fictional-client" /><HelpPanel />' })
     const wrapper = render(host)
     await flushPromises()
-    await wrapper.findAll('button').find(button => button.text() === '+ Reflect on Care').trigger('click')
+    await wrapper.findAll('button').find(button => button.text() === '+ Add reflection').trigger('click')
     await wrapper.get('textarea').setValue('Unsaved fictional observation')
     const field = wrapper.get('textarea').element
-    await wrapper.get('[aria-label="How Care works"]').trigger('click')
+    await wrapper.get('[aria-label="How Therapy Focus works"]').trigger('click')
     await flushPromises()
     expect(useHelp().isHelpOpen.value).toBe(true)
     expect(document.querySelector('dialog').textContent).toContain('From your thought to a saved change')
