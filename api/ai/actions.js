@@ -13,8 +13,8 @@ function cleanFields(source, keys, max) {
 // A deliberate, human-confirmed write boundary. There are no model-supplied
 // arbitrary actions, external recipients, client mutations or auto-sends.
 export function validateHeliosAction({ type, body, confirmed, reflection, reflectiveMap, theme, sourceConversationId } = {}) {
-  if (confirmed !== true || typeof body !== 'string') return null;
-  const trimmed = body.trim();
+  if (confirmed !== true) return null;
+  const trimmed = typeof body === 'string' ? body.trim() : '';
   if (type === 'create_reminder' && trimmed.length >= 3 && trimmed.length <= 300) {
     return { type, body: trimmed };
   }
