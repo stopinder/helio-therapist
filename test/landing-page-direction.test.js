@@ -41,6 +41,17 @@ describe('Landing Page Direction', () => {
     assert.doesNotMatch(landingSource, /CPD & reflection/)
   })
 
+  test('explains Therapeutic Stance and adaptive Growth accurately', () => {
+    assert.match(landingSource, /THERAPIST STANCE \+ GROWTH/)
+    assert.match(landingSource, /“What kind of therapist are you\?”/)
+    assert.match(landingSource, /Fifteen hypothetical practice situations/)
+    assert.match(landingSource, /Your reflection history changes the next questions\./)
+    assert.match(landingSource, /Stance questionnaire records are deliberately excluded from that analysis/)
+    assert.match(landingSource, /at least four dated reflections/)
+    assert.match(landingSource, /The 15 Stance situations themselves stay stable/)
+    assert.match(landingSource, /without deciding that a pattern is good, bad, improvement or deterioration/)
+  })
+
   test('describes Transcript Inbox and Session Capture as a deliberate workflow', () => {
     assert.match(landingSource, /id="capture"/)
     assert.match(landingSource, /From transcript to something <em>clinically useful\.<\/em>/)
@@ -76,8 +87,12 @@ describe('Landing Page Direction', () => {
     assert.match(landingSource, /capture-layout[^}]*align-items: start/)
     assert.match(landingSource, /reflect-section[^}]*background: #f2f2ed/)
     assert.match(landingSource, /tools-section[^}]*background: #e4e8e2/)
-    assert.match(landingSource, /tool-card[^}]*background: #eef0eb/)
-    assert.match(landingSource, /documents-band[^}]*background: #d9e0da/)
+    assert.match(landingSource, /tool-card[^}]*border: 1\.5px solid #b6c2b8/)
+    assert.match(landingSource, /tool-card[^}]*background: #dfe6df/)
+    assert.match(landingSource, /documents-band[^}]*border: 1\.5px solid #b4c0b6/)
+    assert.match(landingSource, /documents-band[^}]*background: #ccd6ce/)
+    assert.match(landingSource, /reflect-frame[^}]*border: 1\.5px solid #bcc7be/)
+    assert.match(landingSource, /reflect-cards article[^}]*background: #e4eae4/)
   })
 
   test('header and footer retain account, legal and support routes', () => {
