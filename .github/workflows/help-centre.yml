@@ -21,7 +21,7 @@ jobs:
         run: npm ci --ignore-scripts --no-audit --no-fund
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
-      - name: Check reviewed content, search, panels and draft preservation
+      - name: Check reviewed content, grouped navigation, panels and draft preservation
         run: npm run test:help
       - name: Build application
         run: npm run build
