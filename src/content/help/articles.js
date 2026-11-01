@@ -188,6 +188,10 @@ export const HELP_ARTICLES = [
         'Writing about a response in the reflection text does not automatically create an Inner position label. You decide whether to map it and what to call it. This is not a parts assessment or a personality classification.'
       ] },
       { heading: 'One example from input to result', example: 'Fictional example: you write, "I noticed myself filling the silence with a plan." In optional mapping you name the Inner position "Wanting to organise", describe what seemed to bring it forward, and note that slowing down helped. After saving, the reflection can be reopened in Reflections. If another saved mapping uses the same label, Practice Map can group those entries together. It has not independently decided that you are an organising type.' },
+      { heading: 'From Ask Helios into Reflect', paragraphs: [
+        'In Ask Helios Reflect mode, or a clinically scoped Workspace conversation, the latest answer can offer Send to Reflect. Helios prepares a provisional reflection plus optional mapping from therapist-authored first-person material in that saved conversation.',
+        'Review every proposed field before saving. Untick or clear anything that does not fit, and check for identifying detail. Assistant suggestions and client material are not treated as evidence about your inner position. Mapping enters Practice Map only when you explicitly include the field and choose Save to Reflect.'
+      ] },
       { heading: 'Write, save and revisit', steps: [
         'Use the reflection prompts for the experience you want to retain. Questions can remain questions; you do not need to turn uncertainty into a conclusion.',
         'Optionally complete What was happening in you? Name the inner position, its possible purpose, trigger, effect, what created space and a question to carry forward.',
@@ -207,7 +211,7 @@ export const HELP_ARTICLES = [
     keywords: ['over time', 'overtime', 'continuity engine', 'recurrence', 'patterns', 'last 30 days', 'theme movement', 'map counts', 'repeated labels'],
     sections: [
       { heading: 'What the Map draws on', paragraphs: [
-        'Go to Reflect, then Map. Practice Map works from saved private reflections loaded into the reflective workspace. Inner-position groupings come from the optional mapping fields you completed. Theme movement comes from recorded themes. Helios does not silently invent an inner-position label by reading the prose.',
+        'Go to Reflect, then Map. Practice Map works from saved private reflections loaded into the reflective workspace. Inner-position groupings come from optional mapping fields you completed or explicitly accepted in the reviewed Ask Helios → Reflect handoff. Theme movement comes from recorded themes. Helios does not silently invent an inner-position label by reading the prose.',
         'Matching labels are grouped without treating capitalisation as a difference; different descriptions are not automatically merged. A count of two means that label appeared in two mapped reflections, not that the response was helpful or harmful twice.'
       ] },
       { heading: 'How to use it', steps: [
