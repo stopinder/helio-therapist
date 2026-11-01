@@ -64,7 +64,12 @@ export default async function handler(req, res) {
       return res.status(409).json({ success: false, error: { code: 'CLINICAL_RECORD_ALREADY_APPROVED', message: 'This session already has an approved Clinical Record.' } });
     }
 
-    const sampleDraft = sampleCaptureDraftForTranscript(transcript);
+    const { data: verifiedSampleClient, error: sampleClientError } = await supabase.rpc('is_sample_client', {
+      p_user_id: user.id,
+      p_client_id: transcript.client_id
+    });
+    if (sampleClientError) throw sampleClientError;
+    const sampleDraft = sampleCaptureDraftForTranscript(transcript, { sampleVerified: verifiedSampleClient === true });
     if (sampleDraft) {
       const draft = { ...sampleDraft };
       if (therapistGuidance.trim()) {
