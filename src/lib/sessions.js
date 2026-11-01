@@ -70,7 +70,18 @@ export async function listSessions({ clientId } = {}) {
   if (clientId) query = query.eq('client_id', clientId)
   const { data, error } = await query
   if (error) throw error
-  return (data || []).map(presentSession)
+  const sessions = (data || []).map(presentSession)
+  if (!clientId || !sessions.length) return sessions
+
+  const { data: transcriptRows, error: transcriptError } = await client
+    .from('zoom_transcripts')
+    .select('session_ref')
+    .eq('client_id', clientId)
+    .is('deleted_at', null)
+    .not('session_ref', 'is', null)
+  if (transcriptError) throw transcriptError
+  const transcriptSessionIds = new Set((transcriptRows || []).map(row => String(row.session_ref || '')).filter(Boolean))
+  return sessions.map(session => ({ ...session, hasTranscript: transcriptSessionIds.has(String(session.id)) }))
 }
 
 export async function getSession({ clientId, sessionId }) {

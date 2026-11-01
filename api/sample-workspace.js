@@ -166,9 +166,9 @@ const ALEX_TRANSCRIPTS = [
   }
 ];
 
-const DANIEL_INBOX = {
-  noteId: 'SAMPLE-NOTE-DANIEL-INBOX',
-  meetingId: 'sample-daniel-inbox',
+const DANIEL_WORKED = {
+  noteId: 'SAMPLE-NOTE-DANIEL-001',
+  meetingId: 'sample-daniel-001',
   title: 'Daniel Reed — Sample',
   zoomSummary: '## Key Outcomes\nDaniel described anticipatory anxiety before social situations and a tendency to leave early when he predicts rejection. The session moved toward a small behavioural experiment rather than trying to remove anxiety first.\n## Decisions & Agreements\n- Have a short coffee with a colleague.\n- Record the prediction beforehand and what actually happens.',
   turns: [
@@ -181,6 +181,29 @@ const DANIEL_INBOX = {
     { speaker: 'client', text: 'A coffee with someone from work. Twenty minutes, maybe.' }
   ]
 };
+
+const SAMPLE_INBOX = {
+  noteId: 'SAMPLE-NOTE-ALEX-INBOX-004',
+  meetingId: 'sample-alex-inbox-004',
+  title: 'Alex Morgan — Sample',
+  zoomSummary: '## Key Outcomes\nA new synthetic Zoom note is waiting to be matched to the existing Alex Morgan — Sample client.\n## Decisions & Agreements\n- Review the client clues and encounter date.\n- Assign the import from Transcript Inbox.',
+  turns: [
+    { speaker: 'client', text: 'I noticed the checking urge again after a late email, but I did not act on it straight away.' },
+    { speaker: 'therapist', text: 'What helped you create that gap this time?' },
+    { speaker: 'client', text: 'I remembered that the last time I waited, the urgency dropped by itself.' },
+    { speaker: 'therapist', text: 'That gives us another example to compare with the earlier sessions.' }
+  ]
+};
+
+const DANIEL_CARE_ITEMS = [
+  { kind: 'current_focus', body: 'Build confidence in ordinary social situations without making the absence of anxiety the condition for taking part.' },
+  { kind: 'current_focus', body: 'Reduce early withdrawal from manageable social contact and increase opportunities for corrective experience.' },
+  { kind: 'shared_understanding', body: 'Daniel often predicts rejection before there is enough evidence, then leaves or avoids the situation; this reduces anxiety briefly but prevents the prediction being tested.' },
+  { kind: 'trying', body: 'Use a three-step confidence ladder for social situations and record predictions versus outcomes.' },
+  { kind: 'trying', body: 'Complete one brief coffee with a colleague and remain for the agreed twenty minutes unless there is a genuine reason to leave.' },
+  { kind: 'change_noticed', body: 'Daniel is beginning to recognise anxious predictions as predictions rather than treating them as established facts.' },
+  { kind: 'learning', body: 'Leaving early reduces discomfort quickly, but it also removes the chance to discover whether the feared rejection would actually occur.' }
+];
 
 async function ensureTranscript(service, row) {
   const { data: existing, error: existingError } = await service
@@ -267,16 +290,153 @@ async function ensureAlexTranscriptHistory({ service, userId, alex, sessions }) 
   return transcripts;
 }
 
-async function ensureDanielInboxTranscript({ service, userId }) {
-  const structured = sampleStructuredTranscript({ therapist: 'Therapist', client: 'Daniel Reed — Sample', turns: DANIEL_INBOX.turns });
+async function ensureDanielWorkedExample({ service, userId, daniel }) {
+  const { data: session, error: sessionError } = await service
+    .from('sessions')
+    .select('id,occurred_at,status')
+    .eq('user_id', userId)
+    .eq('client_id', daniel.id)
+    .order('occurred_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (sessionError) throw sessionError;
+  if (!session) throw new Error('Daniel sample session is missing.');
+
+  const structured = sampleStructuredTranscript({ therapist: 'Therapist', client: 'Daniel Reed — Sample', turns: DANIEL_WORKED.turns });
+  const transcript = await ensureTranscript(service, sampleTranscriptRow({
+    userId,
+    clientId: daniel.id,
+    sessionId: session.id,
+    noteId: DANIEL_WORKED.noteId,
+    meetingId: DANIEL_WORKED.meetingId,
+    title: DANIEL_WORKED.title,
+    occurredAt: session.occurred_at,
+    structured,
+    zoomSummary: DANIEL_WORKED.zoomSummary
+  }));
+
+  const capture = sampleCaptureDraftForTranscript(
+    { ...transcript, zoom_note_id: DANIEL_WORKED.noteId, source: SAMPLE_TRANSCRIPT_SOURCE },
+    { sampleVerified: true }
+  );
+  const now = new Date().toISOString();
+  const { data: existingCapture, error: captureReadError } = await service
+    .from('session_capture_drafts')
+    .select('session_id')
+    .eq('session_id', session.id)
+    .maybeSingle();
+  if (captureReadError) throw captureReadError;
+  if (!existingCapture) {
+    const { error: captureError } = await service.from('session_capture_drafts').insert({
+      session_id: session.id,
+      user_id: userId,
+      client_id: daniel.id,
+      transcript_id: transcript.id,
+      speaker_identities: { Therapist: 'Therapist', 'Daniel Reed — Sample': 'Client' },
+      generated_content: capture,
+      content: capture,
+      evidence: { sample: true, source: 'sample_practice_visible_story' },
+      therapist_guidance: '',
+      dismissed_fields: [],
+      previous_versions: [],
+      status: 'reviewed',
+      version: 1,
+      reviewed_at: now,
+      updated_at: now
+    });
+    if (captureError?.code !== '23505' && captureError) throw captureError;
+  }
+
+  const { data: existingCare, error: careReadError } = await service
+    .from('client_care_items')
+    .select('kind,body,status')
+    .eq('therapist_id', userId)
+    .eq('client_id', daniel.id);
+  if (careReadError) throw careReadError;
+  const existingCareKeys = new Set((existingCare || []).map(item => `${item.kind}::${item.body}`));
+  const missingCare = DANIEL_CARE_ITEMS.filter(item => !existingCareKeys.has(`${item.kind}::${item.body}`))
+    .map(item => ({ therapist_id:userId, client_id:daniel.id, kind:item.kind, body:item.body, status:'current', origin:'clinician', provenance_session_id:session.id }));
+  if (missingCare.length) {
+    const { error: careInsertError } = await service.from('client_care_items').insert(missingCare);
+    if (careInsertError) throw careInsertError;
+  }
+
+  const summaryTitle = 'Sample session summary — Daniel';
+  const { data: existingSummary, error: summaryReadError } = await service
+    .from('documents')
+    .select('id')
+    .eq('user_id', userId)
+    .eq('client_id', daniel.id)
+    .eq('title', summaryTitle)
+    .maybeSingle();
+  if (summaryReadError) throw summaryReadError;
+  let summaryDocument = existingSummary;
+  if (!summaryDocument) {
+    const { data, error } = await service.from('documents').insert({
+      user_id:userId,
+      client_id:daniel.id,
+      client_ref:daniel.reference || String(daniel.id),
+      client_name:daniel.display_name,
+      title:summaryTitle,
+      document_type:'session_summary',
+      status:'draft',
+      purpose:'Worked sample of a transcript-backed session summary.',
+      recipient:'Therapist review',
+      content:{
+        body:'Daniel described anticipatory anxiety and self-consciousness before social situations, with a pattern of predicting rejection and leaving or avoiding contact early. The session focused on separating prediction from evidence and agreeing a manageable behavioural experiment: a brief coffee with a colleague, remaining for the agreed twenty minutes and recording the prediction versus what actually happened. Daniel recognised that leaving early reduces anxiety in the moment but prevents new learning. No risk or safeguarding concern is included in this synthetic example.',
+        sample:true,
+        sample_kind:'session_summary'
+      },
+      source_manifest:[{kind:'zoom_transcript',id:transcript.id,sessionId:session.id,occurredAt:session.occurred_at,sample:true}]
+    }).select('id').single();
+    if (error) throw error;
+    summaryDocument = data;
+  }
+
+  const planTitle = 'Sample care plan — Daniel';
+  const { data: existingPlan, error: planReadError } = await service
+    .from('documents')
+    .select('id')
+    .eq('user_id', userId)
+    .eq('client_id', daniel.id)
+    .eq('title', planTitle)
+    .maybeSingle();
+  if (planReadError) throw planReadError;
+  if (!existingPlan) {
+    const { error } = await service.from('documents').insert({
+      user_id:userId,
+      client_id:daniel.id,
+      client_ref:daniel.reference || String(daniel.id),
+      client_name:daniel.display_name,
+      title:planTitle,
+      document_type:'treatment_plan',
+      status:'draft',
+      purpose:'Show how aims, formulation and agreed next steps can be held together.',
+      recipient:'Clinical record',
+      content:{
+        body:'Aims and objectives\n• Build confidence in manageable social situations.\n• Reduce early withdrawal driven by anxious prediction.\n\nShared understanding\nDaniel often predicts rejection before enough evidence is available. Leaving early reduces discomfort quickly but also prevents the prediction being tested.\n\nCurrent plan\nUse a graded confidence ladder, complete one short coffee with a colleague, and record the prediction, outcome and urge to leave. Review the result collaboratively at the next session.',
+        goals:['Build confidence in manageable social situations','Reduce early withdrawal driven by anxious prediction','Increase opportunities for corrective learning'],
+        sample:true,
+        sample_kind:'care_plan'
+      },
+      source_manifest:[{kind:'session',id:session.id,sample:true}]
+    });
+    if (error) throw error;
+  }
+
+  return { transcript, session, summaryDocument };
+}
+
+async function ensureSampleInboxTranscript({ service, userId }) {
+  const structured = sampleStructuredTranscript({ therapist: 'Therapist', client: 'Alex Morgan — Sample', turns: SAMPLE_INBOX.turns });
   return ensureTranscript(service, sampleTranscriptRow({
     userId,
-    noteId: DANIEL_INBOX.noteId,
-    meetingId: DANIEL_INBOX.meetingId,
-    title: DANIEL_INBOX.title,
-    occurredAt: isoDaysAgo(2, 15),
+    noteId: SAMPLE_INBOX.noteId,
+    meetingId: SAMPLE_INBOX.meetingId,
+    title: SAMPLE_INBOX.title,
+    occurredAt: isoDaysAgo(0, 9),
     structured,
-    zoomSummary: DANIEL_INBOX.zoomSummary
+    zoomSummary: SAMPLE_INBOX.zoomSummary
   }));
 }
 
@@ -337,11 +497,13 @@ export default async function handler(req, res) {
     const userClient = getSupabaseUserClient(req);
     const clients = await ensureBaseWorkspace({ service, userClient, userId: user.id });
     const alex = clients.get('SAMPLE-001');
+    const daniel = clients.get('SAMPLE-003');
     const alexSessions = await ensureThirdAlexSession({ service, userClient, userId: user.id, alexId: alex.id });
     if (alexSessions.length < 3) throw Object.assign(new Error('Sample Alex history could not be prepared.'), { status: 500, code: 'SAMPLE_HISTORY_INCOMPLETE' });
 
     const alexTranscripts = await ensureAlexTranscriptHistory({ service, userId: user.id, alex, sessions: alexSessions });
-    const inboxTranscript = await ensureDanielInboxTranscript({ service, userId: user.id });
+    const danielWorked = await ensureDanielWorkedExample({ service, userId: user.id, daniel });
+    const inboxTranscript = await ensureSampleInboxTranscript({ service, userId: user.id });
     const sampleSummary = await ensureSampleSummaryDocument({ service, userId: user.id, alex, transcripts: alexTranscripts });
 
     return res.status(200).json({
@@ -350,7 +512,8 @@ export default async function handler(req, res) {
         clientsCreated: 4,
         transcriptInboxItems: 1,
         transcriptHistoryItems: alexTranscripts.length,
-        reviewedSessionCaptures: alexTranscripts.length,
+        reviewedSessionCaptures: alexTranscripts.length + 1,
+        danielWorkedExampleReady: Boolean(danielWorked?.transcript?.id),
         longitudinalSummaryReady: true,
         sampleSummaryDocumentId: sampleSummary.id,
         inboxTranscriptId: inboxTranscript.id,
