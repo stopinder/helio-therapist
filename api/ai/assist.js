@@ -2,6 +2,7 @@ import { requireAuthenticatedUser, getSupabaseUserClient } from '../_lib/supabas
 import { AI_FEATURES, runTextAI } from '../_lib/ai-execution.js';
 import { answerWorkspaceQuestion } from '../_lib/ask-helios-workspace.js';
 import { loadOwnedWorkspaceContext } from '../_lib/ask-helios-context.js';
+import { buildSampleAskHeliosClinical } from '../_lib/sample-practice.js';
 import { ASK_HELIOS_CLINICAL_LENSES, ASK_HELIOS_CLINICAL_PROMPT_VERSION, ASK_HELIOS_CLINICAL_WINDOWS, askHeliosClinicalResponseFormat, askHeliosClinicalSystemPrompt, buildAskHeliosClinicalInput, loadAskHeliosClinicalContext, renderAskHeliosClinicalAnswer } from '../_lib/ask-helios-clinical.js';
 
 const MODES = Object.freeze({ workspace: 'Workspace', reflect: 'Reflect' });
@@ -102,7 +103,7 @@ export default async function handler(req, res) {
     return res.status(405).json({ success: false, error: { message: 'Method not allowed' } });
   }
   try {
-    const { user } = await requireAuthenticatedUser(req);
+    const { supabase: service, user } = await requireAuthenticatedUser(req);
     const db = getSupabaseUserClient(req);
     const mode = req.body?.mode;
     const query = typeof req.body?.query === 'string' ? req.body.query.trim() : '';
@@ -144,23 +145,36 @@ export default async function handler(req, res) {
         const context = await loadAskHeliosClinicalContext({
           supabase: db, userId: user.id, clientId: clinicalClientId, anchorSessionId, window
         });
-        const { completion } = await runTextAI({
-          feature: AI_FEATURES.ASK_HELIOS_RESEARCH,
-          userId: user.id,
-          promptVersion: ASK_HELIOS_CLINICAL_PROMPT_VERSION,
-          messages: [
-            { role:'system', content: askHeliosClinicalSystemPrompt(lens) },
-            ...safeClinicalHistory(req.body?.history),
-            { role:'user', content: buildAskHeliosClinicalInput({ query, lens, context }) }
-          ],
-          responseFormat: askHeliosClinicalResponseFormat(),
-          temperature: 0.25,
-          maxTokens: 1800,
-          timeout: 60000
+        const { data: verifiedSampleClient, error: sampleClientError } = await service.rpc('is_sample_client', {
+          p_user_id: user.id,
+          p_client_id: clinicalClientId
         });
-        let structured;
-        try { structured = JSON.parse(completion.choices?.[0]?.message?.content || '{}'); }
-        catch { structured = null; }
+        if (sampleClientError) throw sampleClientError;
+        let structured = buildSampleAskHeliosClinical({
+          reference: context.client.reference,
+          query,
+          lens,
+          context,
+          sampleVerified: verifiedSampleClient === true
+        });
+        if (!structured) {
+          const { completion } = await runTextAI({
+            feature: AI_FEATURES.ASK_HELIOS_RESEARCH,
+            userId: user.id,
+            promptVersion: ASK_HELIOS_CLINICAL_PROMPT_VERSION,
+            messages: [
+              { role:'system', content: askHeliosClinicalSystemPrompt(lens) },
+              ...safeClinicalHistory(req.body?.history),
+              { role:'user', content: buildAskHeliosClinicalInput({ query, lens, context }) }
+            ],
+            responseFormat: askHeliosClinicalResponseFormat(),
+            temperature: 0.25,
+            maxTokens: 1800,
+            timeout: 60000
+          });
+          try { structured = JSON.parse(completion.choices?.[0]?.message?.content || '{}'); }
+          catch { structured = null; }
+        }
         if (!structured?.recordedContext || !structured?.clinicalInterpretation) {
           const failure = new Error('Clinical reasoning did not return a usable answer.'); failure.status = 502; throw failure;
         }
@@ -174,7 +188,8 @@ export default async function handler(req, res) {
           window,
           lens,
           sourceCount: context.sourceCount,
-          researchHandoff: 'Find published research relevant to this therapist question: ' + deidentifiedQuery
+          researchHandoff: 'Find published research relevant to this therapist question: ' + deidentifiedQuery,
+          sample: Boolean(context.client.reference && context.client.reference.startsWith('SAMPLE-'))
         };
       } else {
         const result = await answerWorkspaceQuestion({
@@ -216,7 +231,7 @@ export default async function handler(req, res) {
     return res.status(200).json({
       success: true, mode, answer, references, conversationId: activeId,
       saved, proposedAction, documentSearch,
-      ...(clinicalResponseContext ? { clinicalContext: clinicalResponseContext } : {}),
+      ...(clinicalResponseContext ? { clinicalContext: clinicalResponseContext, ...(clinicalResponseContext.sample ? { sample:true, aiAllowanceUsed:false } : {}) } : {}),
       ...(saved ? {} : { warning: 'Answer displayed but conversation could not be saved. Copy anything you wish to keep.' })
     });
   } catch (error) {

@@ -51,7 +51,7 @@ export async function loadAskHeliosClinicalContext({ supabase, userId, clientId,
     const error = new Error('Choose a supported clinical evidence window.'); error.status = 400; throw error;
   }
   const { data: client, error: clientError } = await supabase.from('clients')
-    .select('id,display_name,current_focus,preferred_summary_lens')
+    .select('id,display_name,reference,current_focus,preferred_summary_lens')
     .eq('id', clientId).eq('user_id', userId).maybeSingle();
   if (clientError) throw clientError;
   if (!client) { const error = new Error('Client not found in your workspace.'); error.status = 404; throw error; }
@@ -146,7 +146,7 @@ export async function loadAskHeliosClinicalContext({ supabase, userId, clientId,
     .map(item => ({ id: `care:${item.id}`, kind: item.kind, content: clean(item.body, 250) }));
 
   return {
-    client: { id: client.id, displayName: client.display_name || 'Client', currentFocus: clean(client.current_focus, 300), preferredLens: client.preferred_summary_lens || 'integrative' },
+    client: { id: client.id, displayName: client.display_name || 'Client', reference: client.reference || null, currentFocus: clean(client.current_focus, 300), preferredLens: client.preferred_summary_lens || 'integrative' },
     anchorSessionId: String(anchor.id),
     window,
     sourceCount: sources.length,

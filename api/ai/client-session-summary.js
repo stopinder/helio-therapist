@@ -1,6 +1,7 @@
 import { requireAuthenticatedUser } from '../_lib/supabase.js';
 import { AI_FEATURES, runTextAI } from '../_lib/ai-execution.js';
 import { randomUUID } from 'node:crypto';
+import { buildSampleClientSummary } from '../_lib/sample-practice.js';
 import { CLIENT_SESSION_SUMMARY_LENSES, CLIENT_SESSION_SUMMARY_PROMPT_VERSION, buildClientSessionSummaryInput, buildClinicalIntelligenceEvidenceMap, buildClinicalIntelligenceSessionCandidates, clientSessionSummaryResponseFormat, clientSessionSummarySystemPrompt, normalizeClientSessionSummaryResponse, renderClientSessionSummary, selectClinicalIntelligenceSources, validateClientSessionSummaryResponse } from '../_lib/ai-client-session-summary.js';
 
 export default async function handler(req, res) {
@@ -12,7 +13,7 @@ export default async function handler(req, res) {
     if (!clientId || typeof clientId !== 'string' || !/^[0-9a-f-]{36}$/i.test(clientId) || (anchorSessionId!==null&&(typeof anchorSessionId!=='string'||!/^[0-9a-f-]{36}$/i.test(anchorSessionId))) || typeof preview!=='boolean' || !CLIENT_SESSION_SUMMARY_LENSES.includes(lens) || !['current','last_three','last_five','history'].includes(window) || typeof therapistGuidance !== 'string' || therapistGuidance.length > 6000) {
       return res.status(400).json({ success:false, error:{ code:'INVALID_REQUEST', message:'Choose a valid client, lens and summary window.' } });
     }
-    const { data: ownedClient, error: clientError } = await supabase.from('clients').select('id').eq('id', clientId).eq('user_id', user.id).maybeSingle();
+    const { data: ownedClient, error: clientError } = await supabase.from('clients').select('id,reference').eq('id', clientId).eq('user_id', user.id).maybeSingle();
     if (clientError) throw clientError;
     if (!ownedClient) return res.status(404).json({ success:false, error:{ code:'CLIENT_NOT_FOUND', message:'Client not found or access denied.' } });
 
@@ -98,6 +99,43 @@ export default async function handler(req, res) {
     const evidenceMap=buildClinicalIntelligenceEvidenceMap({captures:selectedCaptures,careItems:careItems||[],therapistGuidance});
     const validSourceIds=new Set([...evidenceMap.reviewedSessions.map(item=>item.id),...evidenceMap.currentAcceptedCareContext.map(item=>item.id),...(evidenceMap.therapistAuthoredContext.content?[evidenceMap.therapistAuthoredContext.id]:[])]);
     const generationId=randomUUID(),generatedAt=new Date().toISOString();
+    const { data: verifiedSampleClient, error: sampleClientError } = await supabase.rpc('is_sample_client', {
+      p_user_id: user.id,
+      p_client_id: clientId
+    });
+    if (sampleClientError) throw sampleClientError;
+    const sampleSummary = buildSampleClientSummary({
+      reference: ownedClient.reference,
+      lens,
+      selectedCaptures,
+      sampleVerified: verifiedSampleClient === true
+    });
+    if (sampleSummary) {
+      const body = renderClientSessionSummary(sampleSummary.sections, lens);
+      const sources=[
+        ...evidenceMap.reviewedSessions.map(item=>({id:item.id,kind:item.sourceType==='transcript_backed_session_summary'?'session_summary':'session_capture',sessionId:item.sessionId,occurredAt:item.occurredAt,reviewedAt:item.reviewedAt,documentId:item.sourceDocumentId||undefined,status:item.sourceStatus||undefined})),
+        ...evidenceMap.currentAcceptedCareContext.map(item=>({id:item.id,kind:'accepted_care',careKind:item.kind})),
+        ...(evidenceMap.therapistAuthoredContext.content?[{id:'therapist:guidance',kind:'therapist_guidance'}]:[])
+      ];
+      return res.status(200).json({
+        success:true,
+        data:{
+          generationId,
+          generatedAt,
+          draft:{body,sections:sampleSummary.sections},
+          claims:sampleSummary.claims,
+          sources,
+          lens,
+          window,
+          sessionCount:selectedCaptures.length,
+          promptVersion:'sample-practice-client-summary-v1',
+          model:'deterministic-sample',
+          usage:{inputTokens:0,outputTokens:0,totalTokens:0},
+          sample:true,
+          aiAllowanceUsed:false
+        }
+      });
+    }
     const { completion, model } = await runTextAI({
       feature:AI_FEATURES.CLIENT_SESSION_SUMMARY, userId:user.id, promptVersion:CLIENT_SESSION_SUMMARY_PROMPT_VERSION,
       messages:[{role:'system',content:clientSessionSummarySystemPrompt(lens)},{role:'user',content:buildClientSessionSummaryInput({lens,window,captures:selectedCaptures,careItems:careItems||[],therapistGuidance})}],
