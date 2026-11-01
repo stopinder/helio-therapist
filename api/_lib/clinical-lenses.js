@@ -1,12 +1,17 @@
 const CLINICAL_LENSES = {
+  general: {
+    id: 'general',
+    aiFraming: 'You support a qualified psychotherapist maintaining a non-prescriptive Therapy Focus.',
+    allowedKinds: ['current_focus', 'shared_understanding', 'trying', 'change_noticed', 'learning']
+  },
   gentle_cbt: {
     id: 'gentle_cbt',
-    aiFraming: 'You support a qualified therapist maintaining a gentle CBT-informed Care view.',
+    aiFraming: 'You support a qualified therapist maintaining a gentle CBT-informed Therapy Focus.',
     allowedKinds: ['current_focus', 'shared_understanding', 'trying', 'change_noticed', 'learning']
   },
   integrative: {
     id: 'integrative',
-    aiFraming: 'You support a qualified therapist maintaining a flexible, integrative clinical view.',
+    aiFraming: 'You support a qualified therapist maintaining a flexible, integrative Therapy Focus.',
     allowedKinds: ['current_focus', 'narrative', 'themes', 'interventions', 'outcomes']
   }
 };
