@@ -33,25 +33,67 @@
         </div>
         <div v-else class="flex-1 min-h-0 overflow-auto"><div class="max-w-5xl mx-auto px-4 sm:px-8 py-5 space-y-5">
           <section v-if="isSessionSummary" class="rounded-panel border border-action-link/20 bg-surface-elevated p-4 sm:p-5" aria-labelledby="clinical-intelligence-heading">
-            <div class="flex flex-col lg:flex-row lg:items-end justify-between gap-4"><div><p class="type-overline text-action-link">Helios Clinical Intelligence</p><h3 id="clinical-intelligence-heading" class="text-h3 font-semibold text-ink mt-1">Prepare a useful client summary</h3><p class="text-body-sm text-ink-secondary mt-1 max-w-2xl">Generate an editable draft from the client’s available session material and current therapist-accepted Care context. Helios prefers reviewed Session Captures and can also use existing transcript-backed session summaries. Internal clinical notes, risk material and private reflections are not included automatically.</p></div><button type="button" class="button-primary shrink-0" :disabled="generatingSummary" @click="generateSummary">{{ generatingSummary ? 'Generating…' : (hasExistingSummary ? 'Regenerate client summary' : 'Generate client summary') }}</button></div>
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-4">
-              <label><span class="text-caption font-semibold">Perspective</span><select v-model="summaryLens" class="mt-1 w-full p-2.5 border border-border rounded-control bg-surface"><option value="general">General</option><option value="integrative">Integrative</option><option value="gentle_cbt">CBT</option><option value="internal_family_systems">Internal Family Systems (IFS)</option><option value="transactional_analysis">Transactional Analysis</option></select></label>
-              <label><span class="text-caption font-semibold">Continuity</span><select v-model="summaryWindow" class="mt-1 w-full p-2.5 border border-border rounded-control bg-surface"><option value="current">This session only</option><option value="last_three">Last 3 sessions</option><option value="last_five">Last 5 sessions</option><option value="history">Entire history</option></select></label>
-              <label>
-                <span class="text-caption font-semibold">Summary anchored to</span>
-                <select v-model="anchorSessionId" class="mt-1 w-full p-2.5 border border-border rounded-control bg-surface" :disabled="!availableSummarySessions.length || loadingEvidence">
-                  <option v-if="loadingEvidence" value="">Loading available sessions…</option>
-                  <option v-else-if="evidenceError" value="">Error loading sessions</option>
-                  <option v-else-if="!availableSummarySessions.length" value="">No available sessions found</option>
-                  <option v-for="session in availableSummarySessions" :key="session.sessionId" :value="session.sessionId">{{ formatDate(session.occurredAt) }}</option>
-                </select>
-              </label>
+            <div>
+              <p class="type-overline text-action-link">Helios Clinical Intelligence</p>
+              <h3 id="clinical-intelligence-heading" class="text-h3 font-semibold text-ink mt-1">Prepare a useful client summary</h3>
+              <p class="text-body-sm text-ink-secondary mt-1 max-w-3xl">Choose the clinical perspective and evidence scope first. Helios will then generate an editable client-facing draft from reviewed Session Captures, transcript-backed summaries and therapist-accepted Care context.</p>
             </div>
-            <p v-if="evidenceError" class="text-caption text-state-danger mt-2">{{ evidenceError }}</p>
-            <p v-if="evidenceWindow.length" class="text-caption text-ink-muted mt-2"><strong class="text-ink-secondary">Evidence window:</strong> {{ evidenceWindow.map(session=>formatDate(session.occurredAt)).join(' · ') }}</p>
-            <label class="block mt-3"><span class="text-caption font-semibold">Therapist additions</span><textarea v-model="therapistGuidance" rows="3" maxlength="6000" class="mt-1 w-full p-2.5 border border-border rounded-control bg-surface text-body-sm" placeholder="Optional: add an observation, correction, emphasis or context for Helios. This stays identified as therapist-authored guidance." /></label>
-            <p class="text-caption text-ink-muted mt-2">Helios treats this as therapist-authored guidance, not as something the client said.</p>
-            <p v-if="summaryGenerationMessage" class="text-caption mt-3" :class="summaryGenerationError ? 'text-state-danger' : 'text-ink-muted'">{{ summaryGenerationMessage }}</p>
+
+            <div class="mt-4 rounded-control border border-border-muted bg-surface-subtle p-4">
+              <div class="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <p class="text-body-sm font-semibold text-ink">Summary setup</p>
+                  <p class="text-caption text-ink-muted mt-0.5">Decide how Helios should read the available material before generating.</p>
+                </div>
+                <span v-if="evidenceWindow.length" class="rounded-pill border border-border-muted bg-surface px-2.5 py-1 text-caption text-ink-secondary">{{ evidenceWindow.length }} session source{{ evidenceWindow.length===1?'':'s' }}</span>
+              </div>
+
+              <div class="grid grid-cols-1 lg:grid-cols-3 gap-3 mt-4">
+                <label class="block">
+                  <span class="text-caption font-semibold">Perspective</span>
+                  <span class="block text-caption text-ink-muted mt-0.5">Clinical lens</span>
+                  <select v-model="summaryLens" class="mt-1.5 w-full p-2.5 border border-border rounded-control bg-surface"><option value="general">General</option><option value="integrative">Integrative</option><option value="gentle_cbt">CBT</option><option value="internal_family_systems">Internal Family Systems (IFS)</option><option value="transactional_analysis">Transactional Analysis</option></select>
+                </label>
+                <label class="block">
+                  <span class="text-caption font-semibold">Continuity</span>
+                  <span class="block text-caption text-ink-muted mt-0.5">How much recent history</span>
+                  <select v-model="summaryWindow" class="mt-1.5 w-full p-2.5 border border-border rounded-control bg-surface"><option value="current">This session only</option><option value="last_three">Last 3 sessions</option><option value="last_five">Last 5 sessions</option><option value="history">Entire history</option></select>
+                </label>
+                <label class="block">
+                  <span class="text-caption font-semibold">Anchor session</span>
+                  <span class="block text-caption text-ink-muted mt-0.5">Latest session to include</span>
+                  <select v-model="anchorSessionId" class="mt-1.5 w-full p-2.5 border border-border rounded-control bg-surface" :disabled="!availableSummarySessions.length || loadingEvidence">
+                    <option v-if="loadingEvidence" value="">Loading available sessions…</option>
+                    <option v-else-if="evidenceError" value="">Error loading sessions</option>
+                    <option v-else-if="!availableSummarySessions.length" value="">No available sessions found</option>
+                    <option v-for="session in availableSummarySessions" :key="session.sessionId" :value="session.sessionId">{{ formatDate(session.occurredAt) }}</option>
+                  </select>
+                </label>
+              </div>
+
+              <p v-if="evidenceError" class="text-caption text-state-danger mt-3">{{ evidenceError }}</p>
+              <div v-else-if="evidenceWindow.length" class="mt-3 flex flex-wrap items-center gap-2 rounded-control border border-border-muted bg-surface px-3 py-2">
+                <span class="text-caption font-semibold text-ink-secondary">Evidence selected</span>
+                <span class="text-caption text-ink-muted">{{ evidenceWindow.map(session=>formatDate(session.occurredAt)).join(' · ') }}</span>
+              </div>
+
+              <label class="block mt-4">
+                <span class="text-caption font-semibold">Therapist additions <span class="font-normal text-ink-muted">(optional)</span></span>
+                <span class="block text-caption text-ink-muted mt-0.5">Add a correction, observation or emphasis Helios should take into account.</span>
+                <textarea v-model="therapistGuidance" rows="3" maxlength="6000" class="mt-1.5 w-full p-2.5 border border-border rounded-control bg-surface text-body-sm" placeholder="Add therapist-authored context for this summary…" />
+              </label>
+              <p class="text-caption text-ink-muted mt-2">This remains explicitly therapist-authored and is never presented as something the client said.</p>
+
+              <div class="mt-4 pt-4 border-t border-border-muted flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <div class="min-w-0">
+                  <p class="text-caption font-semibold text-ink">{{ summaryLensLabel }} · {{ summaryWindowLabel }}</p>
+                  <p class="text-caption text-ink-muted mt-0.5">{{ evidenceWindow.length ? `${evidenceWindow.length} session source${evidenceWindow.length===1?'':'s'} selected` : 'Choose an available anchor session to generate.' }}</p>
+                  <p v-if="summaryGenerationMessage" class="text-caption mt-1" :class="summaryGenerationError ? 'text-state-danger' : 'text-ink-muted'">{{ summaryGenerationMessage }}</p>
+                </div>
+                <button type="button" class="button-primary w-full sm:w-auto sm:min-w-[15rem] justify-center shrink-0" :disabled="generatingSummary || loadingEvidence || !anchorSessionId || Boolean(evidenceError)" @click="generateSummary">{{ generatingSummary ? 'Generating…' : (hasExistingSummary ? 'Regenerate client summary' : 'Generate client summary') }}</button>
+              </div>
+            </div>
+
             <div v-if="summarySources.length" class="mt-4 rounded-control border border-border-muted bg-surface-subtle p-3"><div class="flex flex-wrap items-center justify-between gap-2"><p class="text-caption font-semibold text-ink">Evidence used</p><button v-if="previousSummaryVersions.length" type="button" class="text-caption font-semibold text-action-link" @click="restorePreviousSummary">Restore previous version</button></div><ul class="mt-2 space-y-1 text-caption text-ink-secondary"><li v-for="source in summarySources" :key="source.id">{{ sourceLabel(source) }}</li></ul><p class="mt-2 text-caption text-ink-muted">Provenance is stored with this draft. Review the wording against these sources before finalising.</p></div>
           </section>
           <section class="rounded-panel border border-border bg-surface-elevated p-4 sm:p-5" aria-labelledby="document-details-heading"><div class="flex flex-wrap items-center justify-between gap-3 mb-4"><div><h3 id="document-details-heading" class="text-body font-semibold text-ink">Document details</h3><p class="text-caption text-ink-muted mt-1">{{ isSessionSummary ? 'Write this for the client. Internal clinical notes are not included automatically.' : 'Keep the document generic or add clinical context when it is useful.' }}</p></div><span v-if="!isSessionSummary && selectedSourceIds.length" class="text-caption text-ink-muted">{{ selectedSourceIds.length }} clinical source{{ selectedSourceIds.length === 1 ? '' : 's' }} linked</span></div><div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3"><label class="block xl:col-span-2"><span class="text-caption font-semibold">Title</span><input v-model="form.title" class="mt-1 w-full p-2.5 border border-border rounded-control bg-surface" placeholder="Document title" /></label><label class="block"><span class="text-caption font-semibold">Document type</span><select v-model="form.documentType" :disabled="isSessionSummary" class="mt-1 w-full p-2.5 border border-border rounded-control bg-surface"><option value="other">General document</option><option value="session_summary">Session summary</option><option value="clinical_summary">Clinical summary</option><option value="progress_report">Progress report</option><option value="care_letter">Care letter</option></select></label><label class="block"><span class="text-caption font-semibold">Recipient</span><input v-model="form.recipient" class="mt-1 w-full p-2.5 border border-border rounded-control bg-surface" placeholder="Optional" /></label><label class="block md:col-span-2"><span class="text-caption font-semibold">Purpose</span><input v-model="form.purpose" class="mt-1 w-full p-2.5 border border-border rounded-control bg-surface" placeholder="Optional" /></label><div class="grid grid-cols-2 gap-2 md:col-span-2"><label><span class="text-caption font-semibold">From <span class="font-normal text-ink-muted">(optional)</span></span><input v-model="form.periodStart" type="date" class="mt-1 w-full p-2 border border-border rounded-control bg-surface" /></label><label><span class="text-caption font-semibold">To <span class="font-normal text-ink-muted">(optional)</span></span><input v-model="form.periodEnd" type="date" class="mt-1 w-full p-2 border border-border rounded-control bg-surface" /></label><p v-if="isSessionSummary && evidenceWindow.length" class="col-span-2 text-caption text-ink-muted">Auto-filled from the selected evidence window. You can edit or clear either date.</p></div></div><div v-if="error" class="mt-4 p-3 rounded-control bg-state-danger/10 text-state-danger text-body-sm">{{ error }}</div></section>
@@ -91,6 +133,7 @@ const form = reactive({ title: props.document?.title || (initialType === 'sessio
 const identity = computed(() => profileDisplay(profile.value)), finalised = computed(() => currentDocument.value?.status === 'completed')
 const hasExistingSummary = computed(() => isSessionSummary.value && Boolean(form.body.trim()) && form.body.trim() !== SESSION_SUMMARY_TEMPLATE.trim())
 const summaryLensLabel = computed(() => ({ general:'General', integrative:'Integrative', gentle_cbt:'CBT', internal_family_systems:'Internal Family Systems (IFS)', transactional_analysis:'Transactional Analysis' })[summaryLens.value] || 'General')
+const summaryWindowLabel = computed(() => ({ current:'This session', last_three:'Last 3 sessions', last_five:'Last 5 sessions', history:'Entire history' })[summaryWindow.value] || 'Selected sessions')
 const mailtoLink = computed(() => {
   if (!props.clientEmail) return ''
   const subject = encodeURIComponent('Session Summary')
