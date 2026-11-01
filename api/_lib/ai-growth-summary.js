@@ -87,6 +87,7 @@ function sourceType(reflection) {
   if (reflection?.workspace_content?.captureSource === 'practice_reflection') return 'questionnaire'
   if (reflection?.client_id || reflection?.session_ref) return 'session-linked practice reflection'
   if (reflection?.workspace_content?.captureSource === 'quick_capture') return 'therapist quick reflection'
+  if (reflection?.workspace_content?.captureSource === 'ask_helios') return 'therapist-reviewed Ask Helios reflection'
   return 'therapist reflection'
 }
 
