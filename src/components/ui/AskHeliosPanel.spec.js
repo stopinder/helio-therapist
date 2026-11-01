@@ -358,8 +358,6 @@ describe('AskHeliosPanel', () => {
     expect(ask.messages.value[1].content).toContain('I could not complete that request. Network error')
     expect(api.authenticatedFetch.mock.calls.some(c => c[0] === '/api/ai/actions')).toBe(false)
   })
-})
-
 
   it('does not offer Send to Reflect from general Workspace or Research answers', async () => {
     api.authenticatedFetch.mockImplementation(async url => {
@@ -374,3 +372,4 @@ describe('AskHeliosPanel', () => {
     await vi.waitFor(() => expect(w.text()).toContain('Your next appointment'))
     expect(w.text()).not.toContain('Send to Reflect')
   })
+})
