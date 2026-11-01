@@ -211,7 +211,10 @@ async function ensureAlexTranscriptHistory({ service, userId, alex, sessions }) 
     }));
     transcripts.push({ ...transcript, sessionId: session.id, occurredAt: session.occurred_at });
 
-    const capture = sampleCaptureDraftForTranscript({ ...transcript, zoom_note_id: seed.noteId, source: SAMPLE_TRANSCRIPT_SOURCE });
+    const capture = sampleCaptureDraftForTranscript(
+      { ...transcript, zoom_note_id: seed.noteId, source: SAMPLE_TRANSCRIPT_SOURCE },
+      { sampleVerified: true }
+    );
     const now = new Date().toISOString();
     const { error: captureError } = await service
       .from('session_capture_drafts')
