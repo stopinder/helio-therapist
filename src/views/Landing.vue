@@ -1633,12 +1633,10 @@ const trustPrinciples = [
     max-width: 720px;
   }
 
-  .hero-product,
   .ask-panel,
-  .reflect-environment,
-  .transcript-panel {
+  .session-workspace {
     width: 100%;
-    max-width: 760px;
+    max-width: 780px;
   }
 
   .split-heading,
