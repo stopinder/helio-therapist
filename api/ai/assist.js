@@ -103,7 +103,7 @@ export default async function handler(req, res) {
     return res.status(405).json({ success: false, error: { message: 'Method not allowed' } });
   }
   try {
-    const { user } = await requireAuthenticatedUser(req);
+    const { supabase: service, user } = await requireAuthenticatedUser(req);
     const db = getSupabaseUserClient(req);
     const mode = req.body?.mode;
     const query = typeof req.body?.query === 'string' ? req.body.query.trim() : '';
@@ -145,11 +145,17 @@ export default async function handler(req, res) {
         const context = await loadAskHeliosClinicalContext({
           supabase: db, userId: user.id, clientId: clinicalClientId, anchorSessionId, window
         });
+        const { data: verifiedSampleClient, error: sampleClientError } = await service.rpc('is_sample_client', {
+          p_user_id: user.id,
+          p_client_id: clinicalClientId
+        });
+        if (sampleClientError) throw sampleClientError;
         let structured = buildSampleAskHeliosClinical({
           reference: context.client.reference,
           query,
           lens,
-          context
+          context,
+          sampleVerified: verifiedSampleClient === true
         });
         if (!structured) {
           const { completion } = await runTextAI({
