@@ -39,17 +39,20 @@ describe('Landing Page Direction', () => {
     assert.match(landingSource, /ask-panel/)
   })
 
-  test('presents Reflect, Therapist Stance and Growth as one coherent system', () => {
+  test('presents Reflect as an information-rich workspace with Therapist Stance and Learning Edge', () => {
     assert.match(landingSource, /id="reflect"/)
-    assert.match(landingSource, /A room inside Helios for the therapist, not the record\./)
-    for (const label of ['Reflections', 'Practice Map', 'Therapist Stance', 'Growth']) {
+    assert.match(landingSource, /A space to think about the work — not document it\./)
+    for (const label of ['Reflections', 'Practice Map', 'Therapist Stance', 'Learning Edge']) {
       assert.ok(landingSource.includes(`title: '${label}'`), `Missing Reflect concept: ${label}`)
     }
-    assert.match(landingSource, /“What kind of therapist are you\?”/)
-    assert.match(landingSource, /Fifteen practice situations/)
-    assert.match(landingSource, /The reflection history changes the next questions\./)
-    assert.match(landingSource, /The 15 Stance situations stay stable/)
-    assert.match(landingSource, /Growth follows saved direct-practice reflections rather than the Stance questionnaire itself/)
+    assert.match(landingSource, /Latest reflection/)
+    assert.match(landingSource, /What stayed with you from this session\?/)
+    assert.match(landingSource, /What keeps returning\?/)
+    assert.match(landingSource, /How do you tend to meet the work\?/)
+    assert.match(landingSource, /The questions become more specific as your reflections accumulate\./)
+    assert.match(landingSource, /Learning Edge draws on recurring themes in your saved practice reflections/)
+    assert.match(landingSource, /It does not change the 15 Therapist Stance situations/)
+    assert.doesNotMatch(landingSource, />02 · Growth</)
   })
 
   test('describes Transcript Inbox and Session Capture as one workflow', () => {
@@ -82,7 +85,9 @@ describe('Landing Page Direction', () => {
     assert.match(landingSource, /tool-cluster\.practice[^}]*border: 1\.25px solid #87998b/)
     assert.match(landingSource, /tool-cluster\.capture[^}]*background: #c6d0c8/)
     assert.match(landingSource, /tool-cluster\.connect[^}]*background: #afbdb2/)
-    assert.match(landingSource, /reflect-environment[^}]*border: 1\.5px solid #8fa194/)
+    assert.match(landingSource, /reflect-workspace[^}]*border: 1\.4px solid #9cac9f/)
+    assert.match(landingSource, /latest-reflection[^}]*background: #f5f2ea/)
+    assert.match(landingSource, /learning-edge-card[^}]*background: #becbbf/)
     assert.match(landingSource, /ask-panel[^}]*border: 1\.5px solid #617a74/)
   })
 
