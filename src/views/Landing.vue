@@ -119,47 +119,73 @@
     </section>
 
     <section id="reflect" class="reflect-section">
-      <div class="landing-container">
-        <div class="reflect-layout">
-          <div class="reflect-copy">
-            <p class="eyebrow">Reflect</p>
-            <h2>A room inside Helios for the therapist, not the record.</h2>
-            <p>Capture what stayed with you, revisit it later, notice recurrence in Practice Map, and explore how your therapeutic stance and learning edge change over time.</p>
-          </div>
+      <div class="landing-container reflect-layout">
+        <div class="reflect-copy">
+          <p class="eyebrow">Reflect</p>
+          <h2>A space to think about the work — not document it.</h2>
+          <p class="reflect-lede">Reflect gives you somewhere to capture what stayed with you after a session, notice what keeps returning, and become more curious about how you work as a therapist.</p>
+          <p class="reflect-boundary">It stays separate from the clinical record. Nothing moves into client documentation unless you deliberately put it there.</p>
 
-          <div class="reflect-environment" aria-label="Reflect illustration">
-            <div class="reflect-environment-head">
-              <span class="mini-label">Your practice</span>
-              <strong>Reflect</strong>
-            </div>
-            <div class="hairline" />
-            <div class="reflect-rows">
-              <div v-for="row in reflectRows" :key="row.title">
-                <strong>{{ row.title }}</strong>
-                <span>{{ row.body }}</span>
-              </div>
-            </div>
+          <div class="reflect-feature-list">
+            <article v-for="item in reflectFeatures" :key="item.title">
+              <h3>{{ item.title }}</h3>
+              <p>{{ item.body }}</p>
+            </article>
           </div>
         </div>
 
-        <div class="stance-growth-grid">
-          <article class="stance-card">
-            <p class="eyebrow">01 · Therapist Stance</p>
-            <h3>“What kind of therapist are you?”</h3>
-            <p>Fifteen practice situations ask for your usual first response. Helios reflects back familiar approaches, useful tensions and questions worth taking into supervision.</p>
-            <div class="pill-row">
-              <span class="pill">15 situations</span>
-              <span class="pill">Private until saved</span>
-              <span class="pill">Not a competence score</span>
+        <div class="reflect-workspace" aria-label="Reflect workspace illustration">
+          <section class="latest-reflection">
+            <div class="reflect-workspace-label">
+              <span class="mini-label">Latest reflection</span>
+              <span class="reflect-meta">Private reflection · Saved today</span>
             </div>
-          </article>
+            <h3>What stayed with you from this session?</h3>
+            <blockquote>
+              I noticed how quickly I moved toward reassurance when the client became uncertain.
+              <br />
+              I’m wondering what I was trying to settle — for them or for me.
+            </blockquote>
+          </section>
 
-          <article class="growth-card">
-            <p class="eyebrow">02 · Growth</p>
-            <h3>The reflection history changes the next questions.</h3>
-            <p>Growth watches recurring themes and mapped inner positions across saved direct-practice reflections. When a thread repeats, Helios turns it into a more specific supervision or learning question.</p>
-            <p class="growth-note">The 15 Stance situations stay stable. Growth follows saved direct-practice reflections rather than the Stance questionnaire itself; what adapts is the inquiry raised from your ongoing reflection history.</p>
-          </article>
+          <div class="reflect-workspace-grid">
+            <section class="practice-map-card">
+              <span class="mini-label">Practice Map</span>
+              <h3>What keeps returning?</h3>
+              <div class="theme-chips" aria-label="Example recurring themes">
+                <span>Rescuing</span>
+                <span>Uncertainty</span>
+                <span>Responsibility</span>
+                <span>Holding back</span>
+              </div>
+              <p>Themes begin to surface as they recur across your reflections.</p>
+            </section>
+
+            <section class="stance-summary-card">
+              <span class="mini-label">Therapist Stance</span>
+              <h3>How do you tend to meet the work?</h3>
+              <p>A structured reflection across 15 common practice situations.</p>
+              <div class="stance-indicators">
+                <span>Relational</span>
+                <span>Exploratory</span>
+                <span>Active when needed</span>
+              </div>
+              <p class="stance-boundary">A snapshot for reflection, not a measure of competence.</p>
+            </section>
+          </div>
+
+          <section class="learning-edge-card">
+            <div class="learning-edge-head">
+              <span class="mini-label">Learning Edge</span>
+              <span>Questions shaped by your reflection history</span>
+            </div>
+            <h3>The questions become more specific as your reflections accumulate.</h3>
+            <div class="learning-edge-question">
+              <span>A question emerging from your recent reflections</span>
+              <p>You’ve returned several times to moments when you felt responsible for restoring calm. What happens in you when you allow uncertainty to remain in the room?</p>
+            </div>
+            <p class="learning-edge-note">Learning Edge draws on recurring themes in your saved practice reflections. It does not change the 15 Therapist Stance situations; it changes the inquiry around the work as your reflection history develops.</p>
+          </section>
         </div>
       </div>
     </section>
@@ -292,11 +318,11 @@ const askModes = [
   { number: '03', title: 'Reflect', body: 'Explore uncertainty, a difficult interaction or a professional question in a separate reflective space.' },
 ]
 
-const reflectRows = [
-  { title: 'Reflections', body: 'What has stayed with you.' },
-  { title: 'Practice Map', body: 'What is recurring or taking shape.' },
-  { title: 'Therapist Stance', body: 'How you tend to work, at this point in your practice.' },
-  { title: 'Growth', body: 'Questions grounded in your own reflection history.' },
+const reflectFeatures = [
+  { title: 'Reflections', body: 'Capture the thoughts, feelings, uncertainties or moments that stayed with you.' },
+  { title: 'Practice Map', body: 'As reflections accumulate, Helios helps recurring themes and inner positions become visible.' },
+  { title: 'Therapist Stance', body: 'Explore how you tend to respond to common clinical situations — not as a score, but as a way of seeing your habitual stance more clearly.' },
+  { title: 'Learning Edge', body: 'Your saved reflections inform the questions Helios raises next, helping you notice where your practice may be asking something more of you.' },
 ]
 
 const captureSteps = [
@@ -825,125 +851,245 @@ const trustPrinciples = [
 }
 
 .reflect-section {
-  padding: 64px 0 72px;
-  background: var(--landing-sage);
+  padding: 58px 0 64px;
+  background: #d5ddd5;
 }
 
 .reflect-layout {
   display: grid;
-  grid-template-columns: minmax(0, 500px) minmax(0, 690px);
-  gap: 58px;
+  grid-template-columns: minmax(0, .84fr) minmax(620px, 1.16fr);
+  gap: 52px;
   align-items: start;
 }
 
+.reflect-copy {
+  padding-top: 4px;
+}
+
 .reflect-copy h2 {
-  max-width: 490px;
+  max-width: 500px;
   margin-top: 14px;
-  font-size: clamp(48px, 4vw, 56px);
-  line-height: 1.03;
+  font-size: clamp(46px, 4vw, 58px);
+  line-height: 1.02;
 }
 
-.reflect-copy > p:last-child {
-  max-width: 480px;
-  margin-top: 16px;
+.reflect-lede,
+.reflect-boundary {
+  max-width: 500px;
   color: var(--landing-muted);
+  line-height: 1.7;
+}
+
+.reflect-lede {
+  margin-top: 18px;
   font-size: 14px;
-  line-height: 1.65;
 }
 
-.reflect-environment {
-  min-height: 430px;
-  padding: 24px;
-  border: 1.5px solid #8fa194;
-  border-radius: 20px;
-  background: #c2cec4;
+.reflect-boundary {
+  margin-top: 12px;
+  font-size: 12px;
 }
 
-.reflect-environment-head strong {
-  font-family: var(--font-editorial);
-  font-size: 28px;
-  font-weight: 500;
-}
-
-.reflect-environment > .hairline {
-  margin-top: 16px;
-  background: #a3b2a6;
-}
-
-.reflect-rows {
-  margin-top: 8px;
-}
-
-.reflect-rows > div {
+.reflect-feature-list {
   display: grid;
-  grid-template-columns: 210px 1fr;
-  gap: 22px;
-  align-items: center;
-  min-height: 54px;
+  gap: 0;
+  margin-top: 24px;
+  border-top: 1px solid #aebbb0;
 }
 
-.reflect-rows strong {
+.reflect-feature-list article {
+  padding: 14px 0;
+  border-bottom: 1px solid #aebbb0;
+}
+
+.reflect-feature-list h3 {
   font-family: var(--font-editorial);
-  font-size: 20px;
+  font-size: 19px;
   font-weight: 500;
+  line-height: 1.15;
 }
 
-.reflect-rows span {
-  color: var(--landing-muted);
+.reflect-feature-list p {
+  max-width: 470px;
+  margin-top: 5px;
+  color: #56665e;
   font-size: 11px;
-  text-align: right;
+  line-height: 1.55;
 }
 
-.stance-growth-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+.reflect-workspace {
+  padding: 18px;
+  border: 1.4px solid #9cac9f;
+  border-radius: 20px;
+  background: #ece9e1;
+  box-shadow: 0 18px 40px rgba(34,54,47,.07);
+}
+
+.latest-reflection,
+.practice-map-card,
+.stance-summary-card,
+.learning-edge-card {
+  border: 1px solid #bdc7bf;
+  border-radius: 15px;
+}
+
+.latest-reflection {
+  padding: 18px 20px;
+  background: #f5f2ea;
+}
+
+.reflect-workspace-label,
+.learning-edge-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   gap: 14px;
-  margin-top: 40px;
 }
 
-.stance-card,
-.growth-card {
-  min-height: 300px;
-  padding: 24px;
-  border-radius: 18px;
+.reflect-meta,
+.learning-edge-head > span:last-child {
+  color: #728078;
+  font-size: 9px;
 }
 
-.stance-card {
-  border: 1.4px solid #9cab9f;
-  background: #dde3dd;
-}
-
-.growth-card {
-  border: 1.4px solid #879a8c;
-  background: #bccabd;
-}
-
-.stance-card h3,
-.growth-card h3 {
-  max-width: 540px;
-  margin-top: 14px;
+.latest-reflection h3 {
+  margin-top: 12px;
   font-family: var(--font-editorial);
-  font-size: 29px;
+  font-size: 24px;
   font-weight: 500;
   line-height: 1.1;
 }
 
-.stance-card > p:not(.eyebrow),
-.growth-card > p:not(.eyebrow) {
-  max-width: 540px;
+.latest-reflection blockquote {
+  margin: 14px 0 0;
+  padding-left: 14px;
+  border-left: 2px solid #b48562;
+  color: #42564e;
+  font-family: var(--font-editorial);
+  font-size: 15px;
+  line-height: 1.55;
+}
+
+.reflect-workspace-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
   margin-top: 12px;
-  color: #4e6057;
-  font-size: 12px;
-  line-height: 1.65;
 }
 
-.stance-card .pill-row {
-  margin-top: 18px;
+.practice-map-card,
+.stance-summary-card {
+  min-height: 220px;
+  padding: 17px;
 }
 
-.growth-note {
+.practice-map-card {
+  background: #dfe7df;
+}
+
+.stance-summary-card {
+  background: #e7e2d8;
+}
+
+.practice-map-card h3,
+.stance-summary-card h3,
+.learning-edge-card h3 {
+  margin-top: 10px;
+  font-family: var(--font-editorial);
+  font-weight: 500;
+  line-height: 1.12;
+}
+
+.practice-map-card h3,
+.stance-summary-card h3 {
+  font-size: 20px;
+}
+
+.practice-map-card > p,
+.stance-summary-card > p {
+  margin-top: 10px;
+  color: #5e6c66;
+  font-size: 10px;
+  line-height: 1.55;
+}
+
+.theme-chips,
+.stance-indicators {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 14px;
+}
+
+.theme-chips span,
+.stance-indicators span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 25px;
+  padding: 6px 9px;
+  border-radius: 999px;
+  font-size: 9px;
   font-weight: 600;
-  color: #405249 !important;
+}
+
+.theme-chips span {
+  border: 1px solid #b3c0b6;
+  background: #eef2ed;
+  color: #526259;
+}
+
+.stance-indicators span {
+  border: 1px solid #c6b9a8;
+  background: #f2ece4;
+  color: #655b50;
+}
+
+.stance-boundary {
+  color: #766f66 !important;
+  font-style: italic;
+}
+
+.learning-edge-card {
+  margin-top: 12px;
+  padding: 18px 20px;
+  border-color: #879a8c;
+  background: #becbbf;
+}
+
+.learning-edge-card h3 {
+  max-width: 590px;
+  font-size: 24px;
+}
+
+.learning-edge-question {
+  margin-top: 14px;
+  padding: 14px 15px;
+  border: 1px solid #a0b0a3;
+  border-radius: 12px;
+  background: rgba(244,247,242,.58);
+}
+
+.learning-edge-question > span {
+  color: #6a786f;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+.learning-edge-question p {
+  margin-top: 7px;
+  color: #314a40;
+  font-family: var(--font-editorial);
+  font-size: 16px;
+  line-height: 1.45;
+}
+
+.learning-edge-note {
+  margin-top: 11px;
+  color: #4f6258;
+  font-size: 10px;
+  line-height: 1.55;
 }
 
 .capture-section {
@@ -1269,6 +1415,10 @@ const trustPrinciples = [
     gap: 38px;
   }
 
+  .reflect-workspace {
+    max-width: 780px;
+  }
+
   .hero-copy,
   .ask-copy,
   .reflect-copy,
@@ -1411,23 +1561,19 @@ const trustPrinciples = [
     max-width: none;
   }
 
-  .reflect-environment {
-    min-height: 0;
+  .reflect-workspace {
+    padding: 14px;
   }
 
-  .reflect-rows > div {
+  .reflect-workspace-grid {
     grid-template-columns: 1fr;
+  }
+
+  .reflect-workspace-label,
+  .learning-edge-head {
+    align-items: flex-start;
+    flex-direction: column;
     gap: 4px;
-    padding: 12px 0;
-  }
-
-  .reflect-rows span {
-    text-align: left;
-  }
-
-  .stance-card,
-  .growth-card {
-    min-height: 0;
   }
 
   .transcript-panel {
