@@ -14,6 +14,33 @@
       <router-link to="/supervision/practice-reflection" class="button-secondary inline-flex items-center mt-4">Reflect on your therapeutic stance</router-link>
     </header>
 
+    <section v-if="capturedThoughts.length" class="mb-8 rounded-[1.5rem] border border-border-reflection bg-surface-reflection px-5 py-5 md:px-6" aria-labelledby="captured-thoughts-heading">
+      <div class="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <p class="type-eyebrow text-action-link">Captured thoughts</p>
+          <h2 id="captured-thoughts-heading" class="mt-1 text-h2 font-semibold text-ink">Thoughts waiting to be developed</h2>
+          <p class="mt-1 text-body-sm text-ink-muted">Quick Capture keeps these lightweight. Develop only the ones worth carrying forward.</p>
+        </div>
+        <span class="rounded-pill border border-border-reflection bg-white/50 px-2.5 py-1 text-caption font-semibold text-ink-muted">{{ capturedThoughts.length }}</span>
+      </div>
+      <div class="mt-5 divide-y divide-border-reflection/50 border-y border-border-reflection/50">
+        <article v-for="reflection in capturedThoughts" :key="reflection.id" class="flex flex-col gap-3 py-4 md:flex-row md:items-center md:justify-between">
+          <div class="min-w-0">
+            <div class="flex flex-wrap items-center gap-2 text-caption text-ink-muted">
+              <span>{{ formatDate(reflection.created_at) }}</span>
+              <span v-if="reflection.clients?.display_name">· {{ reflection.clients.display_name }}</span>
+              <span v-if="reflection.session_ref">· session linked</span>
+            </div>
+            <p class="mt-2 line-clamp-2 text-body-sm leading-6 text-ink-secondary">{{ reflection.body }}</p>
+          </div>
+          <div class="flex shrink-0 items-center gap-2">
+            <button type="button" class="button-primary" @click="$emit('develop-reflection', reflection)">Develop reflection</button>
+            <button type="button" class="button-secondary" @click="$emit('delete-reflection', reflection)">Delete</button>
+          </div>
+        </article>
+      </div>
+    </section>
+
     <div class="bg-surface-elevated rounded-[2rem] border border-border-muted shadow-sm overflow-hidden min-h-[600px] flex flex-col transition-all duration-slow" :class="{ 'bg-surface-canvas shadow-none border-transparent': isTimelineFocused }">
       <div class="p-6 md:p-8 border-b border-border-muted flex flex-col md:flex-row md:justify-between md:items-center gap-6 bg-surface">
         <div class="flex flex-col md:flex-row items-center gap-4 w-full md:w-auto">
@@ -57,7 +84,7 @@
 
         <div v-else class="max-w-5xl mx-auto px-4 py-8">
           <ProfessionalDevelopmentTimeline
-            :reflections="filteredReflections"
+            :reflections="filteredJournalReflections"
             :menu-open-for="menuOpenFor"
             :has-more="false"
             @open-reflection="r => $emit('open-reflection', r)"
@@ -88,15 +115,21 @@ const props = defineProps({
   themes: { type: Array, default: () => [] }
 });
 
-defineEmits(['open-reflection', 'go-to-session', 'toggle-supervision', 'edit-reflection', 'delete-reflection']);
+defineEmits(['open-reflection', 'go-to-session', 'toggle-supervision', 'edit-reflection', 'develop-reflection', 'delete-reflection']);
 
 const searchQuery = ref('');
 const selectedTheme = ref('All');
 const menuOpenFor = ref(null);
 const isTimelineFocused = ref(false);
 
-const filteredReflections = computed(() => {
-  return props.reflections.filter(r => {
+const capturedThoughts = computed(() => props.reflections.filter(r =>
+  r?.workspace_content?.captureSource === 'quick_capture'
+  && r?.workspace_content?.quickCaptureState !== 'developed'
+));
+const journalReflections = computed(() => props.reflections.filter(r => !capturedThoughts.value.some(captured => captured.id === r.id)));
+
+const filteredJournalReflections = computed(() => {
+  return journalReflections.value.filter(r => {
     const matchesTheme = selectedTheme.value === 'All' || 
                          (selectedTheme.value === 'No theme' ? !r.theme : r.theme === selectedTheme.value);
     
