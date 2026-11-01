@@ -7,20 +7,26 @@ describe('Landing Page Direction', () => {
   const landingPath = path.join(process.cwd(), 'src', 'views', 'Landing.vue')
   const landingSource = fs.readFileSync(landingPath, 'utf8')
 
-  test('implements the approved clinical-workspace positioning', () => {
+  test('restores the light photographic splash while keeping the clinical-workspace positioning', () => {
     assert.match(landingSource, /Keep the thread of the work together\./)
     assert.match(landingSource, /Clients, sessions, clinical thinking, documents, reflection and research/)
     assert.match(landingSource, /Helios · Clinical workspace for therapists/)
+    assert.match(landingSource, /helios-opening-light\.webp/)
+    assert.match(landingSource, /class="hero-background"/)
+    assert.match(landingSource, /hero-overlay-side/)
     assert.doesNotMatch(landingSource, /A place for your whole practice\./)
   })
 
-  test('keeps the clinical thread as the first product story', () => {
+  test('makes section two a concise product-proof continuation rather than another synthetic hero', () => {
     assert.match(landingSource, /id="workspace"/)
-    assert.match(landingSource, /The work has a thread\. Helios keeps hold of it\./)
+    assert.match(landingSource, /Start with the client\. Keep the whole thread in view\./)
+    assert.match(landingSource, /client-workspace-section\.png/)
+    assert.match(landingSource, /class="workspace-screenshot"/)
     for (const label of ['Before the session', 'During and after', 'Carry it forward']) {
       assert.ok(landingSource.includes(label), `Missing clinical-thread stage: ${label}`)
     }
-    assert.match(landingSource, /workspace-summary-grid/)
+    assert.doesNotMatch(landingSource, /workspace-summary-grid/)
+    assert.doesNotMatch(landingSource, /workspace-sidebar/)
   })
 
   test('gives Ask Helios its approved dark two-column treatment', () => {
