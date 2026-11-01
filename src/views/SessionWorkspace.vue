@@ -150,14 +150,14 @@
             >
               <p class="text-caption font-medium uppercase tracking-wider text-action-link">Transcript triage request</p>
               <h3 class="mt-1 text-body font-semibold text-ink">CBT reflection requested</h3>
-              <p class="mt-2 text-body-sm text-ink-muted">This request was saved during transcript review. Nothing is generated or saved to Care until you choose to prepare suggestions and then review them.</p>
+              <p class="mt-2 text-body-sm text-ink-muted">This request was saved during transcript review. Nothing is generated or saved to Therapy Focus until you choose to prepare suggestions and then review them.</p>
               <button
                 type="button"
                 class="button-primary mt-4"
                 :disabled="preparingCbtCare"
                 @click="prepareCbtCareSuggestions"
               >
-                {{ preparingCbtCare ? 'Preparing…' : 'Prepare CBT Care suggestions' }}
+                {{ preparingCbtCare ? 'Preparing…' : 'Prepare CBT Therapy Focus suggestions' }}
               </button>
               <p v-if="cbtCareError" class="mt-2 text-body-sm text-state-danger" role="alert">{{ cbtCareError }}</p>
             </div>
@@ -340,10 +340,10 @@ async function prepareCbtCareSuggestions() {
     });
     const data = await response.json().catch(() => ({}));
     if (!response.ok) {
-      throw new Error(data?.error?.message || data?.error || 'CBT Care suggestions could not be prepared.');
+      throw new Error(data?.error?.message || data?.error || 'CBT Therapy Focus suggestions could not be prepared.');
     }
     const payload = data?.data;
-    if (!payload?.suggestions?.length) throw new Error('No CBT Care suggestions were returned.');
+    if (!payload?.suggestions?.length) throw new Error('No CBT Therapy Focus suggestions were returned.');
     sessionStorage.setItem(
       `helios-care-suggestions:${session.value.clientId}`,
       JSON.stringify({
@@ -355,10 +355,10 @@ async function prepareCbtCareSuggestions() {
     await router.push({
       name: 'ClientWorkspace',
       params: { clientId: session.value.clientId },
-      query: { tab: 'Care', source: 'session-cbt' }
+      query: { tab: 'Therapy Focus', source: 'session-cbt' }
     });
   } catch (err) {
-    cbtCareError.value = err?.message || 'CBT Care suggestions could not be prepared.';
+    cbtCareError.value = err?.message || 'CBT Therapy Focus suggestions could not be prepared.';
   } finally {
     preparingCbtCare.value = false;
   }
