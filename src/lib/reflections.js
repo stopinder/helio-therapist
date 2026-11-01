@@ -52,6 +52,7 @@ export function normalizeWorkspaceReflection(content) {
   );
   if (source.reflectiveMap) normalized.reflectiveMap = normalizeReflectiveMap(source.reflectiveMap);
   if (['quick_capture','ask_helios'].includes(source.captureSource)) normalized.captureSource = source.captureSource;
+  if (source.quickCaptureState === 'captured' || source.quickCaptureState === 'developed') normalized.quickCaptureState = source.quickCaptureState;
   return normalized;
 }
 
@@ -64,7 +65,7 @@ export function workspaceReflectionBody(content) {
     .join('\n\n');
 }
 
-export async function createQuickReflection({ supabaseClient, body }) {
+export async function createQuickReflection({ supabaseClient, body, clientId = null, sessionId = null }) {
   const client = await getClient(supabaseClient);
   const text = String(body || '').trim();
   if (!text) throw new Error('Write or dictate a reflection before saving');
@@ -73,10 +74,71 @@ export async function createQuickReflection({ supabaseClient, body }) {
   if (!user) throw new Error('Not authenticated');
   const { data, error } = await client
     .from('private_reflections')
-    .insert({ user_id: user.id, body: text, workspace_content: { captureSource: 'quick_capture' } })
+    .insert({
+      user_id: user.id,
+      body: text,
+      client_id: clientId || null,
+      session_ref: sessionId || null,
+      workspace_content: { captureSource: 'quick_capture', quickCaptureState: 'captured' }
+    })
     .select()
     .single();
   if (error) throw new Error(error.message || 'Could not save quick reflection');
+  return data;
+}
+
+export function isCapturedThought(reflection) {
+  return reflection?.workspace_content?.captureSource === 'quick_capture'
+    && reflection?.workspace_content?.quickCaptureState !== 'developed';
+}
+
+export async function developQuickReflection({
+  supabaseClient,
+  reflectionId,
+  body,
+  theme = '',
+  mapping = {},
+  includedInSupervision = false
+}) {
+  const client = await getClient(supabaseClient);
+  const text = String(body || '').trim();
+  if (!text) throw new Error('Write a reflection before saving');
+  if (text.length > 20000) throw new Error('Reflection is too long');
+  const { data: { user } } = await client.auth.getUser();
+  if (!user) throw new Error('Not authenticated');
+
+  const { data: existing, error: fetchError } = await client
+    .from('private_reflections')
+    .select('id, workspace_content')
+    .eq('id', reflectionId)
+    .eq('user_id', user.id)
+    .single();
+  if (fetchError || !existing) throw new Error('Could not load captured thought');
+
+  const workspaceContent = existing.workspace_content && typeof existing.workspace_content === 'object' && !Array.isArray(existing.workspace_content)
+    ? existing.workspace_content
+    : {};
+  const nextWorkspaceContent = {
+    ...workspaceContent,
+    captureSource: 'quick_capture',
+    quickCaptureState: 'developed',
+    reflectiveMap: normalizeReflectiveMap(mapping)
+  };
+
+  const { data, error } = await client
+    .from('private_reflections')
+    .update({
+      body: text,
+      theme: String(theme || '').trim(),
+      included_in_supervision: Boolean(includedInSupervision),
+      workspace_content: nextWorkspaceContent,
+      updated_at: new Date().toISOString()
+    })
+    .eq('id', reflectionId)
+    .eq('user_id', user.id)
+    .select('*, clients ( id, display_name )')
+    .single();
+  if (error || !data) throw new Error(error?.message || 'Could not develop this reflection');
   return data;
 }
 
