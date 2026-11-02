@@ -15,7 +15,7 @@
         </nav>
 
         <nav class="account-nav" aria-label="Primary navigation">
-          <a href="#pricing" class="pricing-nav-link">Pricing</a>
+          <a href="#pricing-cta" class="pricing-nav-link">Pricing</a>
           <router-link to="/sign-in" class="sign-in-link">Sign in</router-link>
           <router-link to="/get-started" class="header-cta">Create your workspace →</router-link>
         </nav>
@@ -1554,6 +1554,7 @@ const trustPrinciples = [
 }
 
 .pricing-cta {
+  scroll-margin-top: 24px;
   display: flex;
   align-items: center;
   justify-content: space-between;
