@@ -37,9 +37,9 @@ test('clinical reasoning response uses strict structured output', () => {
   const schema = format.json_schema.schema
   assert.equal(schema.additionalProperties, false)
   assert.deepEqual(schema.required, [
-    'recordedContext','clinicalInterpretation','alternativePossibilities','therapistAttention','questionsForConsideration'
+    'directAnswer','evidenceBasis','uncertaintyOrAlternative','usefulNextStep','questionsForConsideration'
   ])
-  assert.equal(schema.properties.questionsForConsideration.maxItems, 5)
+  assert.equal(schema.properties.questionsForConsideration.maxItems, 3)
 })
 
 test('clinical reasoning input carries only the selected evidence scope and therapist question', () => {
@@ -64,19 +64,27 @@ test('clinical reasoning input carries only the selected evidence scope and ther
   assert.equal(parsed.clientContext.currentFocus, 'Staying with conflict without withdrawing.')
 })
 
-test('clinical reasoning answer visibly separates record, inference, alternatives and questions', () => {
+test('clinical reasoning answer leads with the answer rather than a generic evidence template', () => {
   const answer = renderAskHeliosClinicalAnswer({
-    recordedContext:'A recurring withdrawal-pursuit sequence is recorded.',
-    clinicalInterpretation:'One possibility is reciprocal protection.',
-    alternativePossibilities:'Fatigue and situational stress may also account for part of the pattern.',
-    therapistAttention:'Notice what happens immediately before withdrawal.',
-    questionsForConsideration:['What signals the shift first?', 'What would disconfirm this interpretation?']
+    directAnswer:'The unresolved edge may be what rejection means to the client.',
+    evidenceBasis:'Withdrawal repeatedly follows a prediction of rejection.',
+    uncertaintyOrAlternative:'The record does not yet distinguish embarrassment from inadequacy.',
+    usefulNextStep:'Explore the meaning of the feared outcome.',
+    questionsForConsideration:['If it went badly, what would that seem to say about you?']
   })
-  assert.match(answer, /^Recorded context/m)
-  assert.match(answer, /Clinical interpretation/)
-  assert.match(answer, /Alternative possibilities/)
-  assert.match(answer, /What may deserve your attention/)
-  assert.match(answer, /What would disconfirm this interpretation/)
+  assert.match(answer, /^The unresolved edge may be what rejection means/)
+  assert.match(answer, /Why this fits the selected work/)
+  assert.match(answer, /What remains uncertain/)
+  assert.match(answer, /Useful next step/)
+  assert.doesNotMatch(answer, /^Recorded context/m)
+})
+
+test('clinical prompt explicitly prioritises therapist question fidelity over generic review', () => {
+  const prompt = askHeliosClinicalSystemPrompt('integrative')
+  assert.match(prompt, /Answer the therapist's actual question first/)
+  assert.match(prompt, /Do not substitute a generic clinical review/)
+  assert.match(prompt, /say exactly what is missing/)
+  assert.match(prompt, /caveats dominate/i)
 })
 
 test('Ask Helios clinical mode remains explicitly therapist-scoped and uses the existing metered Ask Helios feature', () => {
