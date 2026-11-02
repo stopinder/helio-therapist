@@ -299,7 +299,10 @@ export function useAskHelios() {
       ...(typeof changes.clientName === 'string' && changes.clientName.trim() ? { clientName: changes.clientName.slice(0, 120) } : {})
     }
   }
-  function clearClinicalContext() { clinicalContext.value = null }
+  function clearClinicalContext() {
+    clinicalContext.value = null
+    selectedClientId.value = null
+  }
   async function openClinicalContext(context = {}) {
     const clientId = typeof context.clientId === 'string' && UUID.test(context.clientId) ? context.clientId : null
     const anchorSessionId = typeof context.anchorSessionId === 'string' && UUID.test(context.anchorSessionId) ? context.anchorSessionId : null
