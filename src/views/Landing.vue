@@ -52,7 +52,7 @@
         <div class="workspace-screen">
           <img
             :src="clientWorkspace"
-            alt="Helios Client Workspace showing current focus, aims, recent work and clinical actions"
+            alt="Helios Client Workspace for a fictional sample client showing Therapy Focus, Session Capture, Transcript and Summary"
             class="workspace-screenshot"
           />
         </div>
@@ -355,7 +355,7 @@
 
 <script setup>
 import openingImage from '../assets/helios-opening-light.webp'
-import clientWorkspace from '../assets/client-workspace-section.png'
+import clientWorkspace from '../assets/client-workspace-final/index.js'
 
 const clinicalStages = [
   { number: '01', title: 'Before the session', body: 'Current focus, aims, follow-ups and recent work stay close enough to be useful.' },

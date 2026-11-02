@@ -20,7 +20,7 @@ describe('Landing Page Direction', () => {
   test('makes section two a concise product-proof continuation rather than another synthetic hero', () => {
     assert.match(landingSource, /id="workspace"/)
     assert.match(landingSource, /Start with the client\. Keep the whole thread in view\./)
-    assert.match(landingSource, /client-workspace-section\.png/)
+    assert.match(landingSource, /client-workspace-final\/index\.js/)
     assert.match(landingSource, /class="workspace-screenshot"/)
     for (const label of ['Before the session', 'During and after', 'Carry it forward']) {
       assert.ok(landingSource.includes(label), `Missing clinical-thread stage: ${label}`)
