@@ -8,7 +8,7 @@
         </router-link>
 
         <nav class="header-nav" aria-label="Landing page sections">
-          <a href="#pricing-cta">Pricing</a>
+          <a href="#pricing">Pricing</a>
           <a href="#workspace">Workspace</a>
           <a href="#ask-helios">Ask Helios</a>
           <a href="#reflect">Reflect</a>
