@@ -340,11 +340,69 @@ describe('AskHeliosPanel', () => {
     expect(w.text()).toContain('client records stay in Workspace')
   })
 
+  it('compresses clinical context and composer when expanded so the answer gets the vertical space', async () => {
+    const clientId = 'cccccccc-cccc-4ccc-cccc-cccccccccccc'
+    const sessionId = 'eeeeeeee-eeee-4eee-eeee-eeeeeeeeeeee'
+    await ask.openClinicalContext({
+      clientId, clientName: 'Edie', anchorSessionId: sessionId,
+      window: 'current', lens: 'integrative', source: 'session_workspace'
+    })
+    const w = mount(AskHeliosPanel)
+    await w.find('button[title="Expand to workspace"]').trigger('click')
+
+    const compact = w.find('[data-testid="ask-helios-clinical-context-compact"]')
+    expect(compact.exists()).toBe(true)
+    expect(compact.text()).toContain('Edie')
+    expect(compact.text()).toContain('Integrative')
+    expect(compact.text()).toContain('This session')
+    expect(w.findAll('[data-testid="ask-helios-clinical-context"] select')).toHaveLength(0)
+    expect(w.find('textarea').attributes('rows')).toBe('1')
+    expect(w.text()).not.toContain('Only the selected client/session evidence is sent')
+
+    await compact.findAll('button').find(button => button.text() === 'Edit').trigger('click')
+    expect(w.findAll('[data-testid="ask-helios-clinical-context"] select')).toHaveLength(2)
+    expect(w.text()).toContain('Ask Helios does not write to the clinical record')
+
+    await w.findAll('[data-testid="ask-helios-clinical-context"] button').find(button => button.text() === 'Done').trigger('click')
+    expect(w.find('[data-testid="ask-helios-clinical-context-compact"]').exists()).toBe(true)
+  })
+
+  it('focuses an assistant answer into a reading view and restores the expanded chat on exit', async () => {
+    const clientId = 'cccccccc-cccc-4ccc-cccc-cccccccccccc'
+    await ask.openClinicalContext({
+      clientId, clientName: 'Edie', anchorSessionId: 'eeeeeeee-eeee-4eee-eeee-eeeeeeeeeeee',
+      window: 'current', lens: 'integrative'
+    })
+    ask.addMessage({ role: 'user', content: 'What might I be missing?' })
+    ask.addMessage({ role: 'assistant', content: 'A longer clinical answer that should be easy to read without a letterbox.' })
+
+    const w = mount(AskHeliosPanel)
+    await w.find('button[title="Expand to workspace"]').trigger('click')
+    const focus = w.findAll('button').find(button => button.text() === 'Focus answer')
+    expect(focus).toBeTruthy()
+    await focus.trigger('click')
+
+    expect(w.text()).toContain('Answer focus')
+    expect(w.text()).toContain('A longer clinical answer that should be easy to read without a letterbox.')
+    expect(w.text()).not.toContain('What might I be missing?')
+    expect(w.find('[role="tablist"]').exists()).toBe(false)
+    expect(w.find('[data-testid="ask-helios-clinical-context"]').exists()).toBe(false)
+    expect(w.find('textarea').exists()).toBe(false)
+    expect(ask.isExpanded.value).toBe(true)
+
+    await w.find('button[title="Exit answer focus"]').trigger('click')
+    expect(w.find('[role="tablist"]').exists()).toBe(true)
+    expect(w.find('[data-testid="ask-helios-clinical-context-compact"]').exists()).toBe(true)
+    expect(w.find('textarea').exists()).toBe(true)
+    expect(ask.isExpanded.value).toBe(true)
+  })
+
   it('supports panel expansion', async () => {
     const w = mount(AskHeliosPanel)
     await w.find('button[title="Expand to workspace"]').trigger('click')
     expect(ask.isExpanded.value).toBe(true)
     expect(w.find('div.fixed').classes()).toContain('inset-x-0')
+    expect(w.find('textarea').attributes('rows')).toBe('1')
     await w.find('button[title="Restore size"]').trigger('click')
     expect(ask.isExpanded.value).toBe(false)
   })
