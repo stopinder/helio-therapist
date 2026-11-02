@@ -1,6 +1,6 @@
 import { clientSessionSummaryLensRule } from './ai-client-session-summary.js';
 
-export const ASK_HELIOS_CLINICAL_PROMPT_VERSION = 'ask-helios-clinical/1.0.0';
+export const ASK_HELIOS_CLINICAL_PROMPT_VERSION = 'ask-helios-clinical/2.0.0';
 export const ASK_HELIOS_CLINICAL_WINDOWS = Object.freeze(['current','last_three','last_five','history']);
 export const ASK_HELIOS_CLINICAL_LENSES = Object.freeze(['general','integrative','gentle_cbt','internal_family_systems','transactional_analysis']);
 
@@ -168,7 +168,9 @@ Separate what is recorded from what is inferred. Do not diagnose, invent trauma 
 The selected therapeutic perspective is a thinking lens, not a conclusion:
 ${clientSessionSummaryLensRule(lens)}
 
-Return practical clinical thinking for the therapist, not client-facing copy. Do not write or update the clinical record. Do not prescribe a treatment plan. Questions for consideration should be genuinely useful for the next session and should not assume your interpretation is correct.`;
+Answer the therapist's actual question first. Do not substitute a generic clinical review, safety explanation, or evidence-audit template for a direct answer. Use the selected evidence to make the answer specific: name the concrete pattern, tension, exception, missing meaning, or uncertainty that bears on the question. If the evidence cannot answer the question, say exactly what is missing and offer the most useful next question rather than filling space.
+
+Return practical clinical thinking for the therapist, not client-facing copy. Do not write or update the clinical record. Do not prescribe a treatment plan. Keep epistemic safeguards proportionate: distinguish evidence from inference inside the answer, but do not let caveats dominate a well-supported response. Questions for consideration should be genuinely useful for the next session and should not assume your interpretation is correct.`;
 }
 
 export function askHeliosClinicalResponseFormat() {
@@ -180,13 +182,13 @@ export function askHeliosClinicalResponseFormat() {
       schema: {
         type: 'object',
         properties: {
-          recordedContext: { type: 'string' },
-          clinicalInterpretation: { type: 'string' },
-          alternativePossibilities: { type: 'string' },
-          therapistAttention: { type: 'string' },
-          questionsForConsideration: { type: 'array', items: { type: 'string' }, maxItems: 5 }
+          directAnswer: { type: 'string' },
+          evidenceBasis: { type: 'string' },
+          uncertaintyOrAlternative: { type: 'string' },
+          usefulNextStep: { type: 'string' },
+          questionsForConsideration: { type: 'array', items: { type: 'string' }, maxItems: 3 }
         },
-        required: ['recordedContext','clinicalInterpretation','alternativePossibilities','therapistAttention','questionsForConsideration'],
+        required: ['directAnswer','evidenceBasis','uncertaintyOrAlternative','usefulNextStep','questionsForConsideration'],
         additionalProperties: false
       }
     }
@@ -195,7 +197,7 @@ export function askHeliosClinicalResponseFormat() {
 
 export function buildAskHeliosClinicalInput({ query, lens, context }) {
   return JSON.stringify({
-    task: 'Help the therapist think about the selected client/session evidence.',
+    task: 'Answer the therapist question directly from the selected client/session evidence. Prioritise the question over a generic case review.',
     therapistQuestion: String(query || '').trim(),
     selectedPerspective: lens,
     evidenceWindow: context.window,
@@ -215,21 +217,13 @@ export function buildAskHeliosClinicalInput({ query, lens, context }) {
 }
 
 export function renderAskHeliosClinicalAnswer(result) {
-  const questions = Array.isArray(result?.questionsForConsideration) ? result.questionsForConsideration.filter(Boolean) : [];
-  return [
-    'Recorded context',
-    String(result?.recordedContext || '').trim(),
-    '',
-    'Clinical interpretation',
-    String(result?.clinicalInterpretation || '').trim(),
-    '',
-    'Alternative possibilities',
-    String(result?.alternativePossibilities || '').trim(),
-    '',
-    'What may deserve your attention',
-    String(result?.therapistAttention || '').trim(),
-    '',
-    'Questions for consideration',
-    ...(questions.length ? questions.map(item => '• ' + String(item).trim()) : ['• No additional question was generated.'])
-  ].join('\n').trim();
+  const questions = Array.isArray(result?.questionsForConsideration) ? result.questionsForConsideration.filter(Boolean).slice(0, 3) : [];
+  const sections = [
+    String(result?.directAnswer || '').trim(),
+    result?.evidenceBasis ? 'Why this fits the selected work\n' + String(result.evidenceBasis).trim() : '',
+    result?.uncertaintyOrAlternative ? 'What remains uncertain\n' + String(result.uncertaintyOrAlternative).trim() : '',
+    result?.usefulNextStep ? 'Useful next step\n' + String(result.usefulNextStep).trim() : '',
+    questions.length ? 'Questions you could use\n' + questions.map(item => '• ' + String(item).trim()).join('\n') : ''
+  ].filter(Boolean);
+  return sections.join('\n\n').trim();
 }
