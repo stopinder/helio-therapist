@@ -56,7 +56,7 @@ test('Alex sample summary demonstrates evidence-based longitudinal recurrence', 
   assert.equal(recurring.sourceIds.length, 3)
 })
 
-test('sample Ask Helios keeps interpretation cautious and alternatives explicit', () => {
+test('sample Ask Helios answers the therapist question with specific evidence and uncertainty', () => {
   const result = buildSampleAskHeliosClinical({
     reference: 'SAMPLE-001',
     query: 'What may be maintaining this?',
@@ -64,10 +64,37 @@ test('sample Ask Helios keeps interpretation cautious and alternatives explicit'
     context: { sourceCount: 3 },
     sampleVerified: true
   })
-  assert.match(result.recordedContext, /selected synthetic sessions/)
-  assert.match(result.clinicalInterpretation, /plausible|CBT/i)
-  assert.match(result.alternativePossibilities, /could also/)
+  assert.match(result.directAnswer, /Alex|checking/i)
+  assert.match(result.evidenceBasis, /sessions|stopping time|pause/i)
+  assert.match(result.uncertaintyOrAlternative, /does not establish|could/i)
+  assert.match(result.usefulNextStep, /CBT|predicted/i)
   assert.ok(result.questionsForConsideration.length >= 3)
+})
+
+test('Daniel sample answers the unresolved-edge question instead of returning demonstration boilerplate', () => {
+  const result = buildSampleAskHeliosClinical({
+    reference: 'SAMPLE-002',
+    query: 'What feels most important for us to understand today that we haven’t quite understood yet?',
+    lens: 'integrative',
+    context: { sourceCount: 1 },
+    sampleVerified: true
+  })
+  assert.match(result.directAnswer, /what Daniel believes rejection would mean about him/i)
+  assert.match(result.evidenceBasis, /decides other people are not interested|excuse|leave/i)
+  assert.match(result.uncertaintyOrAlternative, /does not establish what Daniel fears rejection signifies/i)
+  assert.match(result.usefulNextStep, /what would that seem to say about you/i)
+  assert.doesNotMatch(JSON.stringify(result), /created to demonstrate Ask Helios|Use the sample to notice/i)
+})
+
+test('verified sample clients without a curated fixture fall through to normal clinical reasoning', () => {
+  const result = buildSampleAskHeliosClinical({
+    reference: 'SAMPLE-999',
+    query: 'What am I missing?',
+    lens: 'integrative',
+    context: { sourceCount: 2 },
+    sampleVerified: true
+  })
+  assert.equal(result, null)
 })
 
 test('sample practice is created through an authenticated server boundary and is retry-safe', () => {
