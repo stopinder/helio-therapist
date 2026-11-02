@@ -147,31 +147,44 @@ export function canonicalSampleTranscript(structured) {
 export function buildSampleAskHeliosClinical({ reference, query = '', lens = 'integrative', context, sampleVerified = false } = {}) {
   if (!sampleVerified || !isSampleClientReference(reference) || !context?.sourceCount) return null;
   const question = String(query || '').trim();
+  const questionLower = question.toLowerCase();
+  const asksUnresolved = /important|understand|missing|haven't|have not|unresolved|next|explore/.test(questionLower);
+
   if (reference === 'SAMPLE-001') {
     return {
-      recordedContext: 'Across the selected synthetic sessions, Alex repeatedly describes work-related anxiety spilling into the evening, especially through message checking and difficulty disengaging. Later sessions also record fewer checks when a stopping time is used, and the most recent sample session contains an exception in which Alex noticed the urge to check, paused, and allowed the anxiety to reduce without reopening messages.',
-      clinicalInterpretation: lens === 'gentle_cbt'
-        ? 'A CBT reading would treat checking as a plausible short-term uncertainty-reduction strategy that may also keep the work-anxiety cycle active. The later pause is clinically interesting because it provides direct counter-evidence to the assumption that checking is necessary for the anxiety to settle.'
-        : 'One plausible reading is that the central issue is becoming less about eliminating anxiety and more about Alex increasing choice at the point where anxiety normally drives checking. The repeated sequence is better supported than any deeper causal explanation.',
-      alternativePossibilities: 'The same pattern could also reflect workload, organisational culture, sleep disruption or a temporary period of elevated responsibility rather than a stable personal pattern. The sample evidence does not establish why high standards developed or whether they generalise beyond work.',
-      therapistAttention: 'It may be useful to notice the conditions around the successful pause: what Alex told himself, what he did instead of checking, and whether the team interaction changed the meaning of the urge. Avoid treating one successful exception as proof of sustained change.',
+      directAnswer: 'The strongest unresolved edge is what helps Alex create choice between the urge to check work messages and the act of checking. The selected sessions show the cycle clearly and also contain an exception: Alex noticed the urge, paused, and the anxiety reduced without reopening messages.',
+      evidenceBasis: 'Across the selected synthetic sessions, work-related anxiety repeatedly spills into evening checking. Later material records fewer checks with a stopping time, and the most recent session records a ten-minute pause after a difficult team exchange.',
+      uncertaintyOrAlternative: 'The material does not establish why the anxiety developed or whether it generalises beyond work. Workload, organisational culture, sleep disruption or temporary responsibility could also contribute.',
+      usefulNextStep: lens === 'gentle_cbt'
+        ? 'A CBT lens would examine what Alex predicted would happen if he did not check, then compare that prediction with the observed outcome during the successful pause.'
+        : 'Explore the successful pause in detail: what Alex noticed, what he feared would happen if he did not check, and what made waiting possible on that occasion.',
       questionsForConsideration: [
-        'What was different immediately before Alex chose not to check?',
-        'How does Alex distinguish genuine work responsibility from anxiety-driven reassurance seeking?',
-        'Does the good-enough experiment change only behaviour, or also the meaning Alex gives to unfinished work?',
-        question ? `How does the therapist’s question — “${question.slice(0, 180)}” — fit with the recorded sequence without assuming a cause?` : 'What would count as evidence that the pattern is changing rather than simply absent on one evening?'
-      ].slice(0, 4)
+        'What did Alex expect would happen if he did not check?',
+        'What was different immediately before the successful pause?',
+        'What would show that this is increasing choice rather than simply suppressing checking?'
+      ]
     };
   }
-  return {
-    recordedContext: 'The selected material is synthetic sample content created to demonstrate Ask Helios with client/session context.',
-    clinicalInterpretation: 'A useful starting point is to separate the repeated observations in the sample from any explanation for why they occur. The available material supports cautious pattern recognition, not diagnosis or causal certainty.',
-    alternativePossibilities: 'Different situational, relational and behavioural explanations may fit the same observations. The sample intentionally leaves room for more than one interpretation.',
-    therapistAttention: 'Use the sample to notice how Ask Helios keeps recorded material separate from interpretation and offers questions rather than treating a formulation as established fact.',
-    questionsForConsideration: [
-      'Which observation is repeated across more than one source?',
-      'What evidence would challenge the leading interpretation?',
-      'What would be most useful to clarify in the next session?'
-    ]
-  };
+
+  if (reference === 'SAMPLE-002') {
+    return {
+      directAnswer: asksUnresolved
+        ? 'The most important unresolved question may be what Daniel believes rejection would mean about him, rather than whether social situations make him anxious. The work already identifies the sequence—prediction of rejection, early withdrawal, immediate relief, and loss of an opportunity for new learning—but it has not yet clarified the personal meaning carried by the prediction.'
+        : 'The clearest working pattern is that Daniel predicts rejection before there is enough evidence, then avoids or leaves early. That reduces anxiety in the moment but also prevents the prediction from being tested.',
+      evidenceBasis: 'Daniel says he often decides other people are not interested before anything has really happened. He then makes an excuse, leaves, or does not attend. In the session he recognised that this means he mainly collects evidence that he escaped the situation. The agreed twenty-minute coffee is designed to let the prediction encounter actual evidence.',
+      uncertaintyOrAlternative: 'The selected material supports the avoidance-and-learning cycle, but it does not establish what Daniel fears rejection signifies. Embarrassment, criticism, inadequacy, being unwanted, or a more situational concern could fit; the record does not yet distinguish between them.',
+      usefulNextStep: 'Stay close to the meaning of the feared outcome rather than assuming a deeper formulation. A useful exploration would be: “If you stayed, and the interaction went badly, what would that seem to say about you?”',
+      questionsForConsideration: [
+        'What does Daniel imagine another person would notice or conclude about him?',
+        'What is the feared consequence of staying after he begins to feel self-conscious?',
+        'What evidence from the coffee experiment would genuinely surprise Daniel?'
+      ]
+    };
+  }
+
+  // Verified sample clients should never fall back to generic demonstration
+  // boilerplate. If a new sample lacks a curated reasoning fixture, return null
+  // so the normal evidence-grounded clinical reasoning path handles it.
+  return null;
 }
+
