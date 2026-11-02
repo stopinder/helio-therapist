@@ -8,7 +8,7 @@
         </router-link>
 
         <nav class="header-nav" aria-label="Landing page sections">
-          <a href="#pricing">Pricing</a>
+          <a href="#pricing-cta">Pricing</a>
           <a href="#workspace">Workspace</a>
           <a href="#ask-helios">Ask Helios</a>
           <a href="#reflect">Reflect</a>
@@ -304,7 +304,7 @@
       </div>
     </section>
 
-    <section class="trust-section">
+    <section id="pricing" class="trust-section">
       <div class="landing-container">
         <div class="split-heading trust-heading">
           <div>
@@ -321,7 +321,7 @@
           </article>
         </div>
 
-        <div id="pricing" class="pricing-cta">
+        <div id="pricing-cta" class="pricing-cta">
           <div>
             <p class="eyebrow eyebrow-light">Simple pricing</p>
             <h3>Free forever. Professional when you need it.</h3>
