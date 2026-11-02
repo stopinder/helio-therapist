@@ -105,12 +105,13 @@
           </div>
           <div class="ask-answer">
             <span class="mini-label">Helios</span>
-            <h3>What is recorded</h3>
-            <p>Recent sessions repeatedly return to the same area of concern, with some variation in how it is described.</p>
-            <h3>What may deserve attention</h3>
-            <p>It may be useful to distinguish what is recurring from what is new, and to keep alternative explanations open.</p>
+            <h3>A pattern worth noticing</h3>
+            <p>Across the last three sessions, uncertainty appears to be followed by reassurance-seeking, then frustration when reassurance does not fully settle things.</p>
+            <h3>What may be changing</h3>
+            <p>In the most recent session, the client stayed with the uncertainty for longer before seeking reassurance. That may be worth exploring rather than assuming the pattern is unchanged.</p>
             <div class="pill-row">
-              <span class="pill">Recorded context</span>
+              <span class="pill">3 sessions reviewed</span>
+              <span class="pill">Integrative lens</span>
               <span class="pill">Therapist remains responsible</span>
             </div>
           </div>
@@ -773,9 +774,9 @@ const trustPrinciples = [
 
 .ask-layout {
   display: grid;
-  grid-template-columns: minmax(0, 520px) minmax(0, 660px);
-  gap: 64px;
-  align-items: start;
+  grid-template-columns: minmax(0, 470px) minmax(0, 710px);
+  gap: 56px;
+  align-items: center;
 }
 
 .ask-copy h2 {
@@ -826,24 +827,24 @@ const trustPrinciples = [
 }
 
 .ask-panel {
-  min-height: 560px;
-  padding: 18px;
+  padding: 15px;
   border: 1.5px solid #617a74;
   border-radius: 20px;
   background: #e8ece7;
   color: var(--landing-ink);
+  box-shadow: 0 20px 48px rgba(7, 30, 37, .18);
 }
 
 .ask-panel-top {
-  min-height: 28px;
+  min-height: 22px;
 }
 
 .ask-tabs {
   display: flex;
-  gap: 7px;
-  margin-top: 12px;
-  padding: 8px;
-  border-radius: 12px;
+  gap: 5px;
+  margin-top: 9px;
+  padding: 6px;
+  border-radius: 11px;
   background: #e3e7e2;
 }
 
@@ -864,41 +865,43 @@ const trustPrinciples = [
 }
 
 .ask-query {
-  max-width: 500px;
-  margin-top: 12px;
-  padding: 14px 15px;
+  max-width: 560px;
+  margin-top: 10px;
+  padding: 11px 13px;
   background: #dce5de;
 }
 
 .ask-query p {
-  margin-top: 6px;
+  margin-top: 4px;
   font-size: 13px;
-  line-height: 1.5;
+  line-height: 1.45;
 }
 
 .ask-answer {
-  margin-top: 12px;
-  padding: 16px;
+  margin-top: 10px;
+  padding: 15px 16px 14px;
   border: 1.1px solid #b9c5bc;
   background: #f5f4ef;
 }
 
 .ask-answer h3 {
-  margin-top: 12px;
+  margin-top: 10px;
   font-family: var(--font-editorial);
-  font-size: 18px;
+  font-size: 19px;
   font-weight: 500;
+  line-height: 1.15;
 }
 
 .ask-answer > p {
+  max-width: 610px;
   margin-top: 5px;
   color: var(--landing-muted);
-  font-size: 11px;
+  font-size: 11.5px;
   line-height: 1.55;
 }
 
 .ask-answer .pill-row {
-  margin-top: 14px;
+  margin-top: 12px;
 }
 
 .reflect-section {
