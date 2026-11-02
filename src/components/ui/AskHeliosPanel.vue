@@ -5,15 +5,20 @@
       class="fixed bottom-0 right-0 z-40 flex flex-col border-l border-border bg-surface shadow-overlay transition-all duration-300 ease-in-out"
       :class="isExpanded ? 'inset-x-0 top-16 md:left-64' : 'top-16'"
       :style="!isExpanded ? { width: 'min(100vw, ' + panelWidth + 'px)' } : {}"
+      @keydown.esc="exitAnswerFocus"
     >
       <div v-if="!isExpanded" class="absolute inset-y-0 left-0 w-1 cursor-col-resize hover:bg-accent/30 active:bg-accent/50" @mousedown="startResizing"></div>
       <header class="flex h-12 shrink-0 items-center justify-between border-b border-border-muted bg-surface-subtle px-4">
-        <div class="flex items-center gap-2">
-          <Sparkles class="h-5 w-5 text-accent" />
+        <div class="flex min-w-0 items-center gap-2">
+          <Sparkles class="h-5 w-5 shrink-0 text-accent" />
           <h2 class="type-body-medium font-semibold text-ink">Ask Helios</h2>
+          <span v-if="isAnswerFocused" class="truncate text-[10px] font-medium uppercase tracking-wider text-ink-muted">Answer focus</span>
         </div>
         <div class="flex items-center gap-1">
-          <button type="button" class="rounded-control p-1.5 text-ink-secondary hover:bg-surface-muted"
+          <button v-if="isAnswerFocused" type="button"
+            class="rounded-control border border-border-muted px-2 py-1 text-[11px] font-medium text-ink-secondary hover:bg-surface-muted"
+            title="Exit answer focus" @click="exitAnswerFocus">Exit focus</button>
+          <button v-if="!isAnswerFocused" type="button" class="rounded-control p-1.5 text-ink-secondary hover:bg-surface-muted"
             :title="showHistory ? 'Back to chat' : 'Conversation history'" @click="showHistory = !showHistory">
             <History v-if="!showHistory" class="h-4 w-4" />
             <MessageSquare v-else class="h-4 w-4" />
@@ -29,49 +34,78 @@
         </div>
       </header>
 
-      <div class="grid grid-cols-3 gap-1 border-b border-border-muted p-2" role="tablist" aria-label="Ask Helios mode">
+      <div v-if="!isAnswerFocused" class="grid grid-cols-3 gap-1 border-b border-border-muted"
+        :class="isExpanded ? 'p-1' : 'p-2'" role="tablist" aria-label="Ask Helios mode">
         <button v-for="tab in tabs" :key="tab.id" type="button" role="tab"
-          class="rounded-control px-2 py-2 text-xs font-medium transition-colors"
-          :class="mode === tab.id ? 'bg-accent/10 text-accent border border-accent/20' : 'text-ink-secondary hover:bg-surface-muted'"
+          class="rounded-control px-2 text-xs font-medium transition-colors"
+          :class="[isExpanded ? 'py-1.5' : 'py-2', mode === tab.id ? 'bg-accent/10 text-accent border border-accent/20' : 'text-ink-secondary hover:bg-surface-muted']"
           :aria-selected="mode === tab.id" :disabled="isLoading"
           @click="changeMode(tab.id)">{{ tab.label }}</button>
       </div>
 
-      <NiceGuidanceAccess v-if="mode === 'research' && !showHistory" />
+      <NiceGuidanceAccess v-if="mode === 'research' && !showHistory && !isAnswerFocused" />
 
-      <div v-if="modeNotice" role="status" class="border-b border-border-muted bg-accent/10 px-4 py-2 text-xs text-ink-secondary">{{ modeNotice }}</div>
+      <div v-if="modeNotice && !isAnswerFocused" role="status" class="border-b border-border-muted bg-accent/10 px-4 py-2 text-xs text-ink-secondary">{{ modeNotice }}</div>
 
-      <div v-if="mode === 'workspace' && clinicalContext && !showHistory" class="border-b border-border-muted bg-surface-subtle px-4 py-3" data-testid="ask-helios-clinical-context">
-        <div class="flex items-start justify-between gap-3">
-          <div>
-            <p class="text-[10px] font-bold uppercase tracking-wider text-accent">Clinical context</p>
-            <p class="mt-1 text-sm font-semibold text-ink">{{ clinicalContext.clientName || 'Selected client' }}</p>
-            <p class="mt-1 text-[11px] text-ink-muted">{{ clinicalContext.sourceCount ? clinicalContext.sourceCount + ' session source' + (clinicalContext.sourceCount === 1 ? '' : 's') + ' currently available' : 'Sources are checked when you ask a question.' }}</p>
+      <div v-if="mode === 'workspace' && clinicalContext && !showHistory && !isAnswerFocused"
+        class="shrink-0 border-b border-border-muted bg-surface-subtle"
+        :class="isExpanded && !showExpandedContextDetails ? 'px-4 py-2' : 'px-4 py-3'"
+        data-testid="ask-helios-clinical-context">
+        <div v-if="isExpanded && !showExpandedContextDetails" class="flex items-center justify-between gap-3" data-testid="ask-helios-clinical-context-compact">
+          <div class="min-w-0 flex items-center gap-2 text-xs text-ink-secondary">
+            <span class="shrink-0 text-[10px] font-bold uppercase tracking-wider text-accent">Clinical context</span>
+            <span class="truncate font-semibold text-ink">{{ clinicalContext.clientName || 'Selected client' }}</span>
+            <span class="text-ink-subtle">·</span>
+            <span class="shrink-0">{{ clinicalLensLabel }}</span>
+            <span class="text-ink-subtle">·</span>
+            <span class="shrink-0">{{ clinicalWindowLabel }}</span>
+            <span v-if="clinicalContext.sourceCount" class="hidden shrink-0 text-ink-muted lg:inline">· {{ clinicalContext.sourceCount }} source{{ clinicalContext.sourceCount === 1 ? '' : 's' }}</span>
           </div>
-          <button type="button" class="text-[11px] font-medium text-ink-muted hover:text-ink" :disabled="isLoading" @click="clearClinicalContext">Clear</button>
+          <div class="flex shrink-0 items-center gap-3">
+            <button type="button" class="text-[11px] font-medium text-accent hover:underline"
+              @click="showExpandedContextDetails = true">Edit</button>
+            <button type="button" class="text-[11px] font-medium text-ink-muted hover:text-ink"
+              :disabled="isLoading" @click="clearClinicalContext">Clear</button>
+          </div>
         </div>
-        <div class="mt-3 grid grid-cols-2 gap-2">
-          <label class="text-[11px] text-ink-secondary">
-            Perspective
-            <select :value="clinicalContext.lens" class="mt-1 w-full rounded-control border border-border-muted bg-surface px-2 py-1.5 text-xs text-ink" :disabled="isLoading" @change="setClinicalContext({ lens: $event.target.value })">
-              <option value="general">General</option>
-              <option value="integrative">Integrative</option>
-              <option value="gentle_cbt">CBT</option>
-              <option value="internal_family_systems">Internal Family Systems (IFS)</option>
-              <option value="transactional_analysis">Transactional Analysis</option>
-            </select>
-          </label>
-          <label class="text-[11px] text-ink-secondary">
-            Evidence
-            <select :value="clinicalContext.window" class="mt-1 w-full rounded-control border border-border-muted bg-surface px-2 py-1.5 text-xs text-ink" :disabled="isLoading" @change="setClinicalContext({ window: $event.target.value })">
-              <option value="current">This session</option>
-              <option value="last_three">Last 3</option>
-              <option value="last_five">Last 5</option>
-              <option value="history">Entire history</option>
-            </select>
-          </label>
-        </div>
-        <p class="mt-2 text-[10px] text-ink-muted">Only the selected client/session evidence is sent for this clinical question. Ask Helios does not write to the clinical record.</p>
+
+        <template v-else>
+          <div class="flex items-start justify-between gap-3">
+            <div>
+              <p class="text-[10px] font-bold uppercase tracking-wider text-accent">Clinical context</p>
+              <p class="mt-1 text-sm font-semibold text-ink">{{ clinicalContext.clientName || 'Selected client' }}</p>
+              <p class="mt-1 text-[11px] text-ink-muted">{{ clinicalContext.sourceCount ? clinicalContext.sourceCount + ' session source' + (clinicalContext.sourceCount === 1 ? '' : 's') + ' currently available' : 'Sources are checked when you ask a question.' }}</p>
+            </div>
+            <div class="flex items-center gap-3">
+              <button v-if="isExpanded" type="button" class="text-[11px] font-medium text-accent hover:underline"
+                @click="showExpandedContextDetails = false">Done</button>
+              <button type="button" class="text-[11px] font-medium text-ink-muted hover:text-ink"
+                :disabled="isLoading" @click="clearClinicalContext">Clear</button>
+            </div>
+          </div>
+          <div class="mt-3 grid grid-cols-2 gap-2">
+            <label class="text-[11px] text-ink-secondary">
+              Perspective
+              <select :value="clinicalContext.lens" class="mt-1 w-full rounded-control border border-border-muted bg-surface px-2 py-1.5 text-xs text-ink" :disabled="isLoading" @change="setClinicalContext({ lens: $event.target.value })">
+                <option value="general">General</option>
+                <option value="integrative">Integrative</option>
+                <option value="gentle_cbt">CBT</option>
+                <option value="internal_family_systems">Internal Family Systems (IFS)</option>
+                <option value="transactional_analysis">Transactional Analysis</option>
+              </select>
+            </label>
+            <label class="text-[11px] text-ink-secondary">
+              Evidence
+              <select :value="clinicalContext.window" class="mt-1 w-full rounded-control border border-border-muted bg-surface px-2 py-1.5 text-xs text-ink" :disabled="isLoading" @change="setClinicalContext({ window: $event.target.value })">
+                <option value="current">This session</option>
+                <option value="last_three">Last 3</option>
+                <option value="last_five">Last 5</option>
+                <option value="history">Entire history</option>
+              </select>
+            </label>
+          </div>
+          <p class="mt-2 text-[10px] text-ink-muted">Only the selected client/session evidence is sent for this clinical question. Ask Helios does not write to the clinical record.</p>
+        </template>
       </div>
 
       <div v-if="isRestoring" role="status" class="border-b border-border-muted px-4 py-2 text-xs text-ink-secondary">Restoring your saved conversation...</div>
@@ -105,7 +139,8 @@
           @click="handleSelectConversation(null)">Start New Conversation</button>
       </div>
 
-      <div v-else ref="scrollContainer" class="min-h-0 flex-1 overflow-y-auto p-4 space-y-4" aria-live="polite">
+      <div v-else ref="scrollContainer" class="min-h-0 flex-1 overflow-y-auto space-y-4"
+        :class="isAnswerFocused ? 'p-5 md:p-8' : 'p-4'" aria-live="polite">
         <div v-if="messages.length === 0" class="flex h-full flex-col items-center justify-center text-center p-5">
           <div class="mb-4 rounded-full bg-accent/10 p-4"><Sparkles class="h-8 w-8 text-accent" /></div>
           <h3 class="type-body-large font-semibold text-ink">{{ welcomeHeading }}</h3>
@@ -116,12 +151,20 @@
               @click="input = example">{{ example }}</button>
           </div>
         </div>
-        <div v-for="(msg, index) in messages" :key="index" class="flex flex-col"
-          :data-ask-message-index="index" :class="msg.role === 'user' ? 'items-end' : 'items-start'">
-          <div class="max-w-[92%] rounded-2xl px-4 py-2.5 text-sm"
-            :class="msg.role === 'user'
-              ? 'bg-action-primary text-on-action rounded-tr-none'
-              : 'bg-surface-subtle text-ink rounded-tl-none border border-border-muted'">
+        <div v-for="(msg, index) in messages" v-show="!isAnswerFocused || index === focusAnswerIndex" :key="index"
+          class="flex flex-col" :data-ask-message-index="index"
+          :class="isAnswerFocused ? 'items-stretch' : (msg.role === 'user' ? 'items-end' : 'items-start')">
+          <button v-if="msg.role === 'assistant' && isExpanded && !isAnswerFocused" type="button"
+            class="mb-1 self-start rounded-control px-2 py-1 text-[10px] font-medium text-ink-muted hover:bg-surface-muted hover:text-ink"
+            title="Focus this answer" @click="focusAnswer(index)">Focus answer</button>
+          <div class="rounded-2xl px-4 py-2.5 text-sm"
+            :class="[
+              msg.role === 'user'
+                ? 'bg-action-primary text-on-action rounded-tr-none max-w-[92%]'
+                : 'bg-surface-subtle text-ink rounded-tl-none border border-border-muted',
+              msg.role === 'assistant' && isExpanded ? 'w-full max-w-5xl mx-auto' : '',
+              msg.role === 'assistant' && !isExpanded ? 'max-w-[92%]' : ''
+            ]">
             <div class="whitespace-pre-wrap">{{ msg.content }}</div>
             <div v-if="msg.references?.length" class="mt-3 pt-3 border-t border-border-muted/30">
               <h4 class="text-[10px] font-bold uppercase tracking-wider text-ink-muted mb-1.5">
@@ -172,7 +215,7 @@
           </div>
           <span class="mt-1 px-1 text-[10px] text-ink-subtle">{{ msg.role === 'user' ? 'You' : 'Helios' }}</span>
         </div>
-        <div v-if="isLoading" class="flex flex-col items-start">
+        <div v-if="isLoading && !isAnswerFocused" class="flex flex-col items-start">
           <div class="bg-surface-subtle text-ink rounded-2xl rounded-tl-none border border-border-muted px-4 py-2.5">
             <div class="flex gap-1">
               <span class="h-1.5 w-1.5 animate-bounce rounded-full bg-ink-muted"></span>
@@ -183,7 +226,7 @@
         </div>
       </div>
 
-      <footer class="shrink-0 border-t border-border-muted p-3">
+      <footer v-if="!isAnswerFocused" class="shrink-0 border-t border-border-muted" :class="isExpanded ? 'p-2' : 'p-3'">
         <div v-if="mode === 'workspace' && !clinicalContext" class="mb-2">
           <label for="ask-helios-client" class="mb-1 block text-[11px] font-medium text-ink-secondary">
             Client for session preparation (optional)
@@ -196,14 +239,15 @@
           </select>
         </div>
         <form class="relative flex items-end gap-2" @submit.prevent="sendMessage">
-          <textarea v-model="input" rows="2" maxlength="1200"
-            class="block w-full resize-none rounded-control border border-border-muted bg-surface px-3 py-2 text-sm text-ink placeholder:text-ink-subtle focus:border-accent focus:ring-1 focus:ring-accent"
+          <textarea v-model="input" :rows="isExpanded ? 1 : 2" maxlength="1200"
+            class="block w-full resize-none rounded-control border border-border-muted bg-surface px-3 text-sm text-ink placeholder:text-ink-subtle focus:border-accent focus:ring-1 focus:ring-accent"
+            :class="isExpanded ? 'py-1.5' : 'py-2'"
             :placeholder="composerPlaceholder" :disabled="isLoading || isRestoring || !!restoreError" @keydown.enter.exact.prevent="sendMessage"></textarea>
           <button type="submit" title="Send to Ask Helios"
             class="flex h-9 w-9 shrink-0 items-center justify-center rounded-control bg-action-primary text-on-action shadow-sm hover:bg-action-primary-hover disabled:opacity-50"
             :disabled="!input.trim() || isLoading || isRestoring || !!restoreError"><Send class="h-4 w-4" /></button>
         </form>
-        <div class="mt-2 flex justify-between items-center px-1">
+        <div v-if="!isExpanded" class="mt-2 flex justify-between items-center px-1">
           <span class="text-[10px] text-ink-subtle">{{ footerText }}</span>
           <button v-if="messages.length" type="button"
             class="text-[10px] text-ink-muted hover:text-state-danger" :disabled="isLoading"
@@ -277,6 +321,19 @@ const composerPlaceholder = computed(() => clinicalContext.value && mode.value =
 const footerText = computed(() => clinicalContext.value && mode.value === 'workspace'
   ? 'Selected clinical evidence · Therapist remains responsible'
   : currentTab.value.footer)
+const clinicalLensLabel = computed(() => ({
+  general: 'General',
+  integrative: 'Integrative',
+  gentle_cbt: 'CBT',
+  internal_family_systems: 'IFS',
+  transactional_analysis: 'TA'
+})[clinicalContext.value?.lens] || 'General')
+const clinicalWindowLabel = computed(() => ({
+  current: 'This session',
+  last_three: 'Last 3',
+  last_five: 'Last 5',
+  history: 'Entire history'
+})[clinicalContext.value?.window] || 'This session')
 const latestAssistantIndex = computed(() => messages.value.findLastIndex(message => message.role === 'assistant'))
 const input = ref('')
 const isLoading = ref(false)
@@ -289,9 +346,14 @@ const reflectionBridgeError = ref('')
 const scrollContainer = ref(null)
 const showHistory = ref(false)
 const modeNotice = ref('')
+const showExpandedContextDetails = ref(false)
+const focusAnswerIndex = ref(-1)
+const isAnswerFocused = computed(() => focusAnswerIndex.value >= 0)
 
 function changeMode(next) {
   closeReflectionBridge()
+  exitAnswerFocus()
+  showExpandedContextDetails.value = false
   setMode(next)
   modeNotice.value = ''
   showHistory.value = false
@@ -312,6 +374,17 @@ function beginResearchHandoff(query) {
   showHistory.value = false
   modeNotice.value = 'Switched to Research. Only the de-identified question is carried across; client records stay in Workspace.'
   input.value = String(query || '').slice(0, 1200)
+}
+function focusAnswer(index) {
+  if (messages.value[index]?.role !== 'assistant') return
+  if (!isExpanded.value) toggleExpand()
+  showHistory.value = false
+  showExpandedContextDetails.value = false
+  focusAnswerIndex.value = index
+  void scrollToMessageStart(index)
+}
+function exitAnswerFocus() {
+  focusAnswerIndex.value = -1
 }
 function startResizing(e) {
   e.preventDefault()
@@ -346,7 +419,21 @@ async function scrollToLatestAnswer() {
 // restoration and rendering finish, including a return from the history list.
 // Do not watch messages deeply: background metadata updates must not interrupt
 // someone deliberately scrolling up to read an earlier answer.
-watch(isPanelOpen, open => { if (!open) closeReflectionBridge() })
+watch(isPanelOpen, open => {
+  if (!open) {
+    closeReflectionBridge()
+    exitAnswerFocus()
+    showExpandedContextDetails.value = false
+  }
+})
+watch(isExpanded, expanded => {
+  if (!expanded) {
+    exitAnswerFocus()
+    showExpandedContextDetails.value = false
+  } else {
+    showExpandedContextDetails.value = false
+  }
+})
 watch(
   [isPanelOpen, showHistory, isRestoring, activeConversationId, restoreError],
   ([open, history, restoring, , error]) => {
