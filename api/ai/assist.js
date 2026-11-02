@@ -175,7 +175,7 @@ export default async function handler(req, res) {
           try { structured = JSON.parse(completion.choices?.[0]?.message?.content || '{}'); }
           catch { structured = null; }
         }
-        if (!structured?.recordedContext || !structured?.clinicalInterpretation) {
+        if (!structured?.directAnswer || !structured?.evidenceBasis) {
           const failure = new Error('Clinical reasoning did not return a usable answer.'); failure.status = 502; throw failure;
         }
         answer = renderAskHeliosClinicalAnswer(structured);
