@@ -18,9 +18,9 @@ describe('Landing Page Direction', () => {
   })
 
   test('prioritizes pricing in the primary navigation and lands directly on the pricing block', () => {
-    assert.match(landingSource, /<nav class="header-nav"[^>]*>\s*<a href="#pricing">Pricing<\/a>/)
-    assert.match(landingSource, /<div id="pricing" class="pricing-cta">/)
-    assert.doesNotMatch(landingSource, /<section id="pricing" class="trust-section">/)
+    assert.match(landingSource, /<nav class="header-nav"[^>]*>\s*<a href="#pricing-cta">Pricing<\/a>/)
+    assert.match(landingSource, /<section id="pricing" class="trust-section">/)
+    assert.match(landingSource, /<div id="pricing-cta" class="pricing-cta">/)
   })
 
   test('makes section two a concise product-proof continuation rather than another synthetic hero', () => {
