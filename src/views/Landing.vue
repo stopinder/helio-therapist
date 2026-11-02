@@ -8,14 +8,14 @@
         </router-link>
 
         <nav class="header-nav" aria-label="Landing page sections">
-          <a href="#pricing">Pricing</a>
           <a href="#workspace">Workspace</a>
           <a href="#ask-helios">Ask Helios</a>
           <a href="#reflect">Reflect</a>
           <a href="#capture">Session Capture</a>
         </nav>
 
-        <nav class="account-nav" aria-label="Account access">
+        <nav class="account-nav" aria-label="Primary navigation">
+          <a href="#pricing" class="pricing-nav-link">Pricing</a>
           <router-link to="/sign-in" class="sign-in-link">Sign in</router-link>
           <router-link to="/get-started" class="header-cta">Create your workspace →</router-link>
         </nav>
@@ -498,6 +498,7 @@ const trustPrinciples = [
 }
 
 .header-nav a,
+.pricing-nav-link,
 .sign-in-link {
   color: var(--landing-muted);
   font-size: 12px;
@@ -1720,13 +1721,19 @@ const trustPrinciples = [
     height: 20px;
   }
 
+  .account-nav {
+    gap: 14px;
+    margin-left: auto;
+  }
+
+  .pricing-nav-link,
   .sign-in-link {
-    display: none;
+    display: inline-flex;
+    white-space: nowrap;
   }
 
   .header-cta {
-    padding: 11px 13px;
-    font-size: 11px;
+    display: none;
   }
 
   .workspace-section,
