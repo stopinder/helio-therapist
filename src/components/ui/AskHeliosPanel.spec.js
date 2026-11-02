@@ -201,6 +201,42 @@ describe('AskHeliosPanel', () => {
     expect(ask.messages.value[1].references[0].title).toBe('Calendar')
   })
 
+  it('promotes a session-preparation client selection into one consistent clinical context', async () => {
+    const clientId = 'cccccccc-cccc-4ccc-cccc-cccccccccccc'
+    api.authenticatedFetch.mockImplementation(async url => {
+      if (url === '/api/ai/workspace-clients') return ok({
+        clients: [{ id: clientId, display_name: 'Alex Morgan' }]
+      })
+      return ok({ conversations: [] })
+    })
+    const w = mount(AskHeliosPanel)
+    await w.findAll('[role="tab"]')[0].trigger('click')
+    await vi.waitFor(() => expect(w.find('#ask-helios-client option[value="' + clientId + '"]').exists()).toBe(true))
+
+    await w.find('#ask-helios-client').setValue(clientId)
+
+    expect(ask.selectedClientId.value).toBe(clientId)
+    expect(ask.clinicalContext.value).toMatchObject({
+      clientId,
+      clientName: 'Alex Morgan',
+      window: 'last_three',
+      lens: 'integrative',
+      source: 'workspace_selector'
+    })
+    expect(w.find('#ask-helios-client').exists()).toBe(false)
+    expect(w.text()).toContain('Clinical context')
+    expect(w.text()).toContain('Alex Morgan')
+    expect(w.text()).toContain('Integrative')
+    expect(w.text()).toContain('Last 3')
+
+    await w.findAll('[data-testid="ask-helios-clinical-context"] button').find(button => button.text() === 'Clear').trigger('click')
+    expect(ask.clinicalContext.value).toBeNull()
+    expect(ask.selectedClientId.value).toBeNull()
+    expect(w.find('#ask-helios-client').exists()).toBe(true)
+    expect(w.find('#ask-helios-client').element.value).toBe('')
+    expect(w.text()).toContain('No client selected — general workspace')
+  })
+
   it('requires explicit approval before creating a reminder', async () => {
     api.authenticatedFetch.mockImplementation(async url => {
       if (url === '/api/ai/assist') return ok({
