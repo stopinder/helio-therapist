@@ -267,8 +267,24 @@ export function useAskHelios() {
     if (typeof id === 'string' && id) { activeConversationId.value = id; rememberConversation(id) }
   }
   function setSelectedClient(id) {
-    selectedClientId.value = clients.value.some(c => c.id === id) ? id : null
-    if (clinicalContext.value && clinicalContext.value.clientId !== selectedClientId.value) clinicalContext.value = null
+    const client = clients.value.find(c => c.id === id)
+    selectedClientId.value = client?.id || null
+    if (!client) {
+      clinicalContext.value = null
+      return
+    }
+    // A client chosen for session preparation is clinical scope, not a second
+    // looser client state. Keep the selector and clinical-context UI truthful
+    // by promoting the selection into the same structured context used when
+    // Ask Helios is opened from a Client Workspace.
+    clinicalContext.value = {
+      clientId: client.id,
+      clientName: client.display_name || '',
+      anchorSessionId: null,
+      window: 'last_three',
+      lens: 'integrative',
+      source: 'workspace_selector'
+    }
   }
   function setClinicalContext(changes = {}) {
     if (!clinicalContext.value) return
