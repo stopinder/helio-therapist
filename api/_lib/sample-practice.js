@@ -58,7 +58,7 @@ function alexSections(lens, count) {
     general: 'Across the available sessions, the useful thread is the relationship between work pressure, checking and Alex’s ability to disengage in the evening.',
     integrative: 'An integrative reading keeps both the practical checking cycle and the emotional meaning of high standards in view, without reducing the work to one model.',
     gentle_cbt: 'From a CBT perspective, the evidence supports a maintenance loop in which work-related worry prompts checking, checking briefly reduces uncertainty, and repeated checking makes it harder to disengage.',
-    internal_family_systems: 'From an IFS perspective, Alex’s language can be held as different inner positions around responsibility and stopping work; the sample does not establish fixed parts or origins.',
+    internal_family_systems: 'Different parts of Alex appear to be pulling in different directions around responsibility and stopping work: one stays alert to what still needs doing, while another recognises the need to disengage. The useful question is not which part is wrong, but what each is trying to make possible and whether Alex can notice both with a little more space and choice. This does not establish fixed parts, origins or a hidden cause.',
     transactional_analysis: 'From a Transactional Analysis perspective, the material suggests moments where demanding internal standards compete with a more flexible Adult assessment of what is actually required.'
   }[lens] || '';
   return {
