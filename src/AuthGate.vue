@@ -49,7 +49,10 @@
     </section>
   </main>
 
-  <AppShell v-else-if="session" data-testid="workspace-shell"><router-view /></AppShell>
+  <template v-else-if="session">
+    <AppShell data-testid="workspace-shell"><router-view /></AppShell>
+    <GlobalWhisperFallback />
+  </template>
 
   <main v-else data-testid="login-page" class="min-h-screen bg-surface-muted flex items-center justify-center px-4 py-8 sm:p-6">
     <section class="w-full max-w-md rounded-panel bg-surface-elevated border border-border-muted p-6 sm:p-8">
@@ -131,6 +134,7 @@
 import { onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import AppShell from './layouts/AppShell.vue'
+import GlobalWhisperFallback from './components/ui/GlobalWhisperFallback.vue'
 import { supabase } from './lib/supabase.js'
 
 const route = useRoute()
