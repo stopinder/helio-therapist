@@ -11,7 +11,7 @@
       <button type="button" aria-label="Numbered list" :class="{ active: editor?.isActive('orderedList') }" @click="editor?.chain().focus().toggleOrderedList().run()">1. List</button>
       <button type="button" aria-label="Block quote" :class="{ active: editor?.isActive('blockquote') }" @click="editor?.chain().focus().toggleBlockquote().run()">Quote</button>
       <span class="toolbar-divider"></span>
-      <button type="button" aria-label="Insert page break" @click="insertPageBreak">Page break</button>
+      <button type="button" aria-label="Insert page break" title="Start the following content on a new PDF page" @click="insertPageBreak">Page break</button>
       <span class="toolbar-spacer"></span>
       <span v-if="pageCount > 1" class="document-page-count">{{ pageCount }} pages</span>
       <button type="button" aria-label="Undo" :disabled="!editor?.can().undo()" @click="editor?.chain().focus().undo().run()">↶</button>
@@ -138,36 +138,36 @@ function recalculatePagination() {
   let capacity = Math.max(80 * MM_TO_PX, PAGE_HEIGHT_PX - PAGE_BOTTOM_PADDING_PX - rootOffset)
   let used = 0
 
-  for (const child of children) {
+  const moveToNextPage = child => {
+    const remaining = Math.max(0, capacity - used)
+    const spacer = remaining + PAGE_BOTTOM_PADDING_PX + PAGE_GAP_PX + PAGE_TOP_PADDING_PX
+    child.style.setProperty('--auto-page-spacer', `${spacer}px`)
+    child.classList.add('auto-page-break-before')
+    gaps.push({ page, top: pageStart + capacity + PAGE_BOTTOM_PADDING_PX })
+    page += 1
+    pageStart += capacity + PAGE_BOTTOM_PADDING_PX + PAGE_GAP_PX + PAGE_TOP_PADDING_PX
+    capacity = PAGE_HEIGHT_PX - PAGE_TOP_PADDING_PX - PAGE_BOTTOM_PADDING_PX
+    used = 0
+  }
+
+  for (let index = 0; index < children.length; index += 1) {
+    const child = children[index]
     const isManualBreak = child.matches('[data-page-break]')
     const blockHeight = child.getBoundingClientRect().height + verticalMargins(child)
 
     if (isManualBreak) {
-      const remaining = Math.max(0, capacity - used)
-      const spacer = remaining + PAGE_BOTTOM_PADDING_PX + PAGE_GAP_PX + PAGE_TOP_PADDING_PX
-      child.style.setProperty('--auto-page-spacer', `${spacer}px`)
-      child.classList.add('auto-page-break-before')
-      gaps.push({ page, top: pageStart + capacity + PAGE_BOTTOM_PADDING_PX })
-      page += 1
-      pageStart += capacity + PAGE_BOTTOM_PADDING_PX + PAGE_GAP_PX + PAGE_TOP_PADDING_PX
-      capacity = PAGE_HEIGHT_PX - PAGE_TOP_PADDING_PX - PAGE_BOTTOM_PADDING_PX
-      used = 0
+      moveToNextPage(child)
       continue
     }
 
-    if (used > 0 && used + blockHeight > capacity) {
-      const remaining = Math.max(0, capacity - used)
-      const spacer = remaining + PAGE_BOTTOM_PADDING_PX + PAGE_GAP_PX + PAGE_TOP_PADDING_PX
-      child.style.setProperty('--auto-page-spacer', `${spacer}px`)
-      child.classList.add('auto-page-break-before')
-      gaps.push({ page, top: pageStart + capacity + PAGE_BOTTOM_PADDING_PX })
-      page += 1
-      pageStart += capacity + PAGE_BOTTOM_PADDING_PX + PAGE_GAP_PX + PAGE_TOP_PADDING_PX
-      capacity = PAGE_HEIGHT_PX - PAGE_TOP_PADDING_PX - PAGE_BOTTOM_PADDING_PX
-      used = blockHeight
-    } else {
-      used += blockHeight
-    }
+    const nextChild = children[index + 1]
+    const keepWithNext = child.matches('h1,h2,h3') && nextChild && !nextChild.matches('[data-page-break]')
+      ? Math.min(nextChild.getBoundingClientRect().height + verticalMargins(nextChild), 64)
+      : 0
+    const requiredHeight = blockHeight + keepWithNext
+
+    if (used > 0 && used + requiredHeight > capacity) moveToNextPage(child)
+    used += blockHeight
   }
 
   pageGaps.value = gaps
@@ -246,7 +246,7 @@ onBeforeUnmount(() => {
 .toolbar-spacer{flex:1}
 .document-page-count{font-size:11px;font-weight:600;color:var(--ink-muted);padding:0 .25rem}
 .document-pagination-surface{position:relative}
-.document-editor-content{width:100%;position:relative;z-index:2}
+.document-editor-content{width:100%;position:relative;z-index:2;overflow:visible}
 .document-prosemirror{outline:0;font:400 10.5pt/1.4 'Noto Sans',Arial,sans-serif;color:#26343b;transition:min-height .12s ease}
 .document-prosemirror p{margin:0 0 .9em}
 .document-prosemirror h2{font-size:15pt;line-height:1.3;font-weight:700;color:#17242b;margin:1.4em 0 .55em}
@@ -259,7 +259,7 @@ onBeforeUnmount(() => {
 .document-prosemirror .document-page-break{position:relative;height:0;margin:0;border:0;background:transparent;break-after:page;page-break-after:always}
 .document-prosemirror .document-page-break span{display:none}
 .document-prosemirror:empty:before{content:attr(data-placeholder);color:#9aa5aa;pointer-events:none}
-.document-auto-page-gap{position:absolute;left:-19mm;right:-19mm;z-index:3;background:#e7ecee;border-top:1px solid #cfd8dc;border-bottom:1px solid #cfd8dc;box-shadow:inset 0 1px 0 rgba(255,255,255,.75),inset 0 -1px 0 rgba(255,255,255,.75);pointer-events:none}
+.document-auto-page-gap{position:absolute;left:-19mm;right:-19mm;z-index:1;background:#e7ecee;border-top:1px solid #cfd8dc;border-bottom:1px solid #cfd8dc;box-shadow:inset 0 1px 0 rgba(255,255,255,.75),inset 0 -1px 0 rgba(255,255,255,.75);pointer-events:none}
 .document-page-number,.document-next-page-number,.document-final-page-number{position:absolute;right:4px;font-size:9px;font-weight:600;letter-spacing:.02em;color:#8a979c}
 .document-page-number{top:-18px}
 .document-next-page-number{bottom:-18px}
