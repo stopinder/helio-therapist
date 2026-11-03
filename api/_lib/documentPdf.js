@@ -3,12 +3,49 @@ import PDFDocument from 'pdfkit';
 
 const FONT_REGULAR=new URL('../../node_modules/@fontsource/noto-sans/files/noto-sans-latin-400-normal.woff',import.meta.url);
 const FONT_BOLD=new URL('../../node_modules/@fontsource/noto-sans/files/noto-sans-latin-700-normal.woff',import.meta.url);
+const SUMMARY_HEADINGS=new Set([
+  'Where things are now',
+  'What we have been working on',
+  'Patterns across our recent work',
+  'What has shifted — and what has been different',
+  'Strengths and resources',
+  'Making sense of what we have noticed',
+  'A gentle CBT perspective',
+  'An integrative perspective',
+  'An Internal Family Systems perspective',
+  'Different parts of you in this work',
+  'A Transactional Analysis perspective',
+  'Ideas to carry forward',
+  'Closing reflection'
+]);
 
 function text(value){return String(value??'').replace(/\r\n?/g,'\n');}
 function formatDate(value){if(!value)return'';const date=new Date(`${value}T00:00:00Z`);return Number.isNaN(date.getTime())?text(value):new Intl.DateTimeFormat('en-GB',{day:'numeric',month:'long',year:'numeric',timeZone:'UTC'}).format(date);}
 function metadataLines(draft){const period=draft.period_start?`${formatDate(draft.period_start)}${draft.period_end?` – ${formatDate(draft.period_end)}`:''}`:'';return[[draft.client_name,'Client'],[draft.recipient,'Recipient'],[draft.purpose,'Purpose'],[period,'Period']].filter(([value])=>text(value).trim());}
 function isClientDocument(draft){return !draft.scope||draft.scope==='client';}
 function isSessionSummary(draft){return draft.document_type==='session_summary';}
+function pageBottom(pdf){return pdf.page.height-pdf.page.margins.bottom;}
+function pageCapacity(pdf){return pageBottom(pdf)-pdf.page.margins.top;}
+function ensureSpace(pdf,height){
+  const needed=Math.max(0,Number(height)||0);
+  if(pdf.y>pdf.page.margins.top+1&&pdf.y+needed>pageBottom(pdf))pdf.addPage();
+}
+function textHeight(pdf,value,options){return pdf.heightOfString(text(value),options);}
+function renderPlainHeading(pdf,value,pageWidth){
+  const options={width:pageWidth,lineGap:2};
+  pdf.font('NotoSansBold').fontSize(12).fillColor('#111827');
+  ensureSpace(pdf,textHeight(pdf,value,options)+24);
+  pdf.text(text(value),options);
+  pdf.moveDown(0.55);
+}
+function renderPlainParagraph(pdf,value,pageWidth){
+  const options={width:pageWidth,align:'left',lineGap:3};
+  pdf.font('NotoSans').fontSize(10.5).fillColor('#111827');
+  const height=textHeight(pdf,value,options);
+  if(height<=pageCapacity(pdf)-4)ensureSpace(pdf,height+10);
+  pdf.text(text(value),options);
+  pdf.moveDown(0.8);
+}
 
 function addBufferedFooters(pdf,draft){
   const range=pdf.bufferedPageRange();
@@ -44,13 +81,15 @@ function listItemText(node){
 }
 
 function renderRichNodes(pdf,nodes,pageWidth,{indent=0}={}){
-  for(const node of nodes||[]){
+  for(let nodeIndex=0;nodeIndex<(nodes||[]).length;nodeIndex+=1){
+    const node=nodes[nodeIndex];
     if(!node)continue;
     if(node.type==='pageBreak'){
-      pdf.addPage();
+      if(pdf.y>pdf.page.margins.top+2)pdf.addPage();
       continue;
     }
     if(node.type==='horizontalRule'){
+      ensureSpace(pdf,20);
       pdf.moveTo(pdf.x,pdf.y).lineTo(pdf.x+pageWidth-indent,pdf.y).lineWidth(0.7).strokeColor('#d1d5db').stroke();
       pdf.moveDown(0.8);
       continue;
@@ -59,24 +98,51 @@ function renderRichNodes(pdf,nodes,pageWidth,{indent=0}={}){
       const level=Number(node.attrs?.level||2);
       const size=level<=2?14:12;
       const value=inlineText(node).trim();
-      if(value)pdf.font('NotoSansBold').fontSize(size).fillColor('#111827').text(value,{width:pageWidth-indent,lineGap:2});
+      if(value){
+        const options={width:pageWidth-indent,lineGap:2};
+        pdf.font('NotoSansBold').fontSize(size).fillColor('#111827');
+        const headingHeight=textHeight(pdf,value,options);
+        const nextNode=(nodes||[])[nodeIndex+1];
+        let keepWithNext=18;
+        if(nextNode?.type==='paragraph'){
+          const nextValue=inlineText(nextNode).trim();
+          if(nextValue){
+            pdf.font('NotoSans').fontSize(10.5);
+            keepWithNext=Math.min(textHeight(pdf,nextValue,{width:pageWidth-indent,lineGap:2.5}),36);
+          }
+        }
+        pdf.font('NotoSansBold').fontSize(size).fillColor('#111827');
+        ensureSpace(pdf,headingHeight+keepWithNext+8);
+        pdf.text(value,options);
+      }
       pdf.moveDown(0.45);
       continue;
     }
     if(node.type==='paragraph'){
       const value=inlineText(node);
-      if(value.trim())pdf.font('NotoSans').fontSize(10.5).fillColor('#111827').text(value,{width:pageWidth-indent,align:'left',lineGap:2.5});
-      else pdf.moveDown(0.55);
+      if(value.trim()){
+        const options={width:pageWidth-indent,align:'left',lineGap:2.5};
+        pdf.font('NotoSans').fontSize(10.5).fillColor('#111827');
+        const height=textHeight(pdf,value,options);
+        if(height<=pageCapacity(pdf)-4)ensureSpace(pdf,height+8);
+        pdf.text(value,options);
+      }else{
+        pdf.moveDown(0.55);
+      }
       pdf.moveDown(0.35);
       continue;
     }
     if(node.type==='blockquote'){
       const value=(node.content||[]).map(inlineText).join('\n').trim();
       if(value){
+        const options={width:pageWidth-indent-12,lineGap:2.5};
+        pdf.font('NotoSans').fontSize(10.5);
+        const height=textHeight(pdf,value,options);
+        if(height<=pageCapacity(pdf)-4)ensureSpace(pdf,height+10);
         const x=pdf.x;
         const y=pdf.y;
-        pdf.save().strokeColor('#cfd8dc').lineWidth(2).moveTo(x,y).lineTo(x,y+36).stroke().restore();
-        pdf.font('NotoSans').fontSize(10.5).fillColor('#52616b').text(value,x+12,y,{width:pageWidth-indent-12,lineGap:2.5});
+        pdf.save().strokeColor('#cfd8dc').lineWidth(2).moveTo(x,y).lineTo(x,y+height).stroke().restore();
+        pdf.font('NotoSans').fontSize(10.5).fillColor('#52616b').text(value,x+12,y,options);
         pdf.moveDown(0.6);
       }
       continue;
@@ -87,7 +153,13 @@ function renderRichNodes(pdf,nodes,pageWidth,{indent=0}={}){
         if(item.type!=='listItem')continue;
         const value=listItemText(item);
         const prefix=node.type==='orderedList'?`${index}. `:'• ';
-        if(value)pdf.font('NotoSans').fontSize(10.5).fillColor('#111827').text(`${prefix}${value}`,{indent:12,width:pageWidth-indent-12,lineGap:2.5});
+        if(value){
+          const options={indent:12,width:pageWidth-indent-12,lineGap:2.5};
+          pdf.font('NotoSans').fontSize(10.5).fillColor('#111827');
+          const height=textHeight(pdf,`${prefix}${value}`,options);
+          if(height<=pageCapacity(pdf)-4)ensureSpace(pdf,height+6);
+          pdf.text(`${prefix}${value}`,options);
+        }
         pdf.moveDown(0.25);
         index+=1;
       }
@@ -106,9 +178,17 @@ function renderPlainBody(pdf,body,pageWidth){
   for(const paragraph of body.split(/\n{2,}/)){
     const normalized=paragraph.trim();
     if(!normalized)continue;
-    const isHeading=normalized.length<=90&&!normalized.includes('\n')&&/^(what we discussed|key understanding|agreed actions|what to carry forward|session\s|summary|background|progress|recommendations?|plan|assessment|clinical|purpose|outcome)/i.test(normalized);
-    pdf.font(isHeading?'NotoSansBold':'NotoSans').fontSize(isHeading?12:10.5).fillColor('#111827').text(normalized,{width:pageWidth,align:'left',lineGap:isHeading?2:3});
-    pdf.moveDown(isHeading?0.55:0.8);
+    const lines=normalized.split('\n');
+    const firstLine=lines[0].trim();
+    if(SUMMARY_HEADINGS.has(firstLine)&&lines.length>1){
+      renderPlainHeading(pdf,firstLine,pageWidth);
+      const remainder=lines.slice(1).join('\n').trim();
+      if(remainder)renderPlainParagraph(pdf,remainder,pageWidth);
+      continue;
+    }
+    const isHeading=normalized.length<=90&&!normalized.includes('\n')&&(/^(what we discussed|key understanding|agreed actions|what to carry forward|session\s|summary|background|progress|recommendations?|plan|assessment|clinical|purpose|outcome)/i.test(normalized)||SUMMARY_HEADINGS.has(normalized));
+    if(isHeading)renderPlainHeading(pdf,normalized,pageWidth);
+    else renderPlainParagraph(pdf,normalized,pageWidth);
   }
 }
 
