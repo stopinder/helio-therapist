@@ -1,0 +1,18 @@
+{
+  "name": "Helios — Therapist workspace",
+  "short_name": "Helios",
+  "description": "A calm clinical workspace for therapists.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#FBF7F2",
+  "theme_color": "#FBF7F2",
+  "icons": [
+    {
+      "src": "/brand/helios-mark.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
