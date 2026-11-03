@@ -300,7 +300,7 @@
               <div class="flex gap-3">
                 <button 
                   @click="approveAmendment"
-                  :disabled="!reviewConfirmed"
+                  :disabled="!reviewConfirmed || amendmentDictation.busy.value"
                   class="px-inline-lg py-3 bg-action-primary text-on-action text-body-sm font-bold rounded-control hover:bg-action-primary-hover transition-all disabled:opacity-50 shadow-sm"
                 >
                   Approve Amendment
@@ -318,31 +318,38 @@
           <div class="space-y-6">
             <div class="space-y-2">
               <label for="amendment-reason" class="text-body-sm font-bold text-ink uppercase tracking-wider">Amendment Reason</label>
-              <textarea
-                id="amendment-reason"
-                v-model="amendmentData.reason"
-                :disabled="status === 'amendment_ready_for_review'"
-                rows="2"
-                class="w-full p-3 rounded-control border border-border bg-surface-reflection focus:ring-2 focus:ring-state-reflection-focus outline-none transition-all text-body-sm text-ink"
-                placeholder="Reason for this amendment (e.g., factual correction, additional context)..."
-              ></textarea>
+              <div class="relative">
+                <textarea
+                  id="amendment-reason"
+                  v-model="amendmentData.reason"
+                  :disabled="status === 'amendment_ready_for_review' || amendmentDictation.busy.value"
+                  rows="2"
+                  class="w-full p-3 pr-12 rounded-control border border-border bg-surface-reflection focus:ring-2 focus:ring-state-reflection-focus outline-none transition-all text-body-sm text-ink"
+                  placeholder="Reason for this amendment (e.g., factual correction, additional context)..."
+                ></textarea>
+                <div v-if="status === 'amendment_draft'" class="absolute bottom-2 right-2"><WhisperMicButton :recording="amendmentDictationTarget === 'reason' && amendmentDictation.recording.value" :transcribing="amendmentDictationTarget === 'reason' && amendmentDictation.transcribing.value" :disabled="amendmentDictation.busy.value && amendmentDictationTarget !== 'reason'" label="Dictate amendment reason" @toggle="toggleAmendmentDictation('reason')" /></div>
+              </div>
             </div>
             <div class="space-y-2">
               <label for="amendment-content" class="text-body-sm font-bold text-ink uppercase tracking-wider">Amendment Content</label>
-              <textarea
-                id="amendment-content"
-                v-model="amendmentData.content"
-                :disabled="status === 'amendment_ready_for_review'"
-                rows="6"
-                class="w-full p-3 rounded-control border border-border bg-surface focus:ring-2 focus:ring-action-link outline-none transition-all text-body-sm text-ink"
-                placeholder="Enter the amendment content here..."
-              ></textarea>
+              <div class="relative">
+                <textarea
+                  id="amendment-content"
+                  v-model="amendmentData.content"
+                  :disabled="status === 'amendment_ready_for_review' || amendmentDictation.busy.value"
+                  rows="6"
+                  class="w-full p-3 pr-12 rounded-control border border-border bg-surface focus:ring-2 focus:ring-action-link outline-none transition-all text-body-sm text-ink"
+                  placeholder="Enter the amendment content here..."
+                ></textarea>
+                <div v-if="status === 'amendment_draft'" class="absolute bottom-2 right-2"><WhisperMicButton :recording="amendmentDictationTarget === 'content' && amendmentDictation.recording.value" :transcribing="amendmentDictationTarget === 'content' && amendmentDictation.transcribing.value" :disabled="amendmentDictation.busy.value && amendmentDictationTarget !== 'content'" label="Dictate amendment content" @toggle="toggleAmendmentDictation('content')" /></div>
+              </div>
             </div>
           </div>
 
           <div class="mt-8 pt-6 border-t border-border flex justify-end gap-3">
             <button 
               @click="saveDraft"
+              :disabled="amendmentDictation.busy.value"
               class="px-inline-lg py-stack-sm bg-surface-elevated border border-border text-body-sm font-medium text-ink rounded-control hover:bg-surface-subtle transition-colors"
             >
               Save Amendment Draft
@@ -350,6 +357,7 @@
             <button 
               v-if="status === 'amendment_draft'"
               @click="status = 'amendment_ready_for_review'"
+              :disabled="amendmentDictation.busy.value"
               class="px-inline-lg py-stack-sm bg-action-link text-on-action text-body-sm font-medium rounded-control hover:bg-action-link-hover transition-colors shadow-sm"
             >
               Mark Amendment Ready for Review
@@ -529,6 +537,20 @@ const amendmentData = reactive({
   reason: '',
   content: ''
 });
+const amendmentDictationTarget = ref('');
+const amendmentDictation = useWhisperDictation({
+  onText: (text, key) => {
+    if (!key || !(key in amendmentData)) return;
+    amendmentData[key] = appendDictation(amendmentData[key], text, '\n');
+  }
+});
+function toggleAmendmentDictation(key) {
+  if (!amendmentDictation.recording.value) {
+    amendmentDictationTarget.value = key;
+    amendmentDictation.resetError();
+  }
+  amendmentDictation.toggle(key);
+}
 
 // Snapshot storage
 const approvedRecord = reactive({
@@ -739,12 +761,14 @@ const confirmApproval = async () => {
 };
 
 const startAmendment = () => {
+  amendmentDictation.resetError();
   status.value = 'amendment_draft';
   reviewConfirmed.value = false;
   scrollAndFocus();
 };
 
 const approveAmendment = () => {
+  if (amendmentDictation.busy.value) return;
   approvedAmendment.timestamp = new Date().toLocaleString();
   approvedAmendment.reason = amendmentData.reason;
   approvedAmendment.content = amendmentData.content;
