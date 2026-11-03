@@ -12,7 +12,9 @@ const BUDGET_ERRORS = {
   FREE_AI_GLOBAL_LIMIT: [503, 'Free AI is temporarily at capacity. Your workspace remains available; Professional AI is unaffected.'],
   FREE_AI_INPUT_TOO_LARGE: [413, 'This request is too long for the Free AI allowance. Shorten the text or upgrade to Professional.'],
   AI_FEATURE_NOT_ALLOWED: [403, 'This AI feature is not included in your current allowance.'],
-  DICTATION_DAILY_LIMIT_EXCEEDED: [429, "You've reached today's free dictation allowance. Dictation will be available again tomorrow."],
+  DICTATION_FREE_MONTHLY_LIMIT_EXCEEDED: [429, "You've reached the Free plan's monthly dictation allowance. Dictation resets next month, or you can upgrade to Professional for a larger allowance."],
+  DICTATION_PROFESSIONAL_MONTHLY_LIMIT_EXCEEDED: [429, "You've reached this month's Professional dictation fair-use allowance. Dictation resets next month."],
+  DICTATION_FREE_GLOBAL_LIMIT: [503, 'Free dictation has reached this month\'s service allowance. You can continue typing, or upgrade to Professional for a larger dictation allowance.'],
   DICTATION_RATE_LIMIT_EXCEEDED: [429, 'Please wait a few minutes before starting another dictation.']
 };
 export function budgetError(code, status, message) {
@@ -59,11 +61,11 @@ export function isBudgetError(error) {
   return Boolean(error?.code && (error.code in BUDGET_ERRORS || error.code === 'AI_BUDGET_UNAVAILABLE'));
 }
 
-export async function checkDictationFairUse({ userId, durationSeconds, supabase = getSupabaseClient() }) {
+export async function reserveDictationUsage({ userId, durationSeconds, supabase = getSupabaseClient() }) {
   if (!userId) throw budgetError('AI_BUDGET_UNAVAILABLE', 503, 'AI allowance could not be checked.');
   let response;
   try {
-    response = await supabase.rpc('check_dictation_fair_use', {
+    response = await supabase.rpc('reserve_dictation_usage', {
       p_user_id: userId,
       p_duration_seconds: Math.ceil(durationSeconds)
     });
@@ -76,5 +78,18 @@ export async function checkDictationFairUse({ userId, durationSeconds, supabase 
     }
     throw budgetError('AI_BUDGET_UNAVAILABLE', 503, 'AI allowance could not be checked.');
   }
-  return true;
+  const data = response?.data;
+  if (!data || !['free','professional'].includes(data.plan) || !Number.isFinite(Number(data.secondsUsed)) || !Number.isFinite(Number(data.secondsLimit))) {
+    throw budgetError('AI_BUDGET_UNAVAILABLE', 503, 'AI allowance could not be checked.');
+  }
+  return {
+    plan: data.plan,
+    periodStart: data.periodStart,
+    secondsUsed: Number(data.secondsUsed),
+    secondsLimit: Number(data.secondsLimit),
+    secondsRemaining: Number(data.secondsRemaining || 0),
+    freePoolSecondsUsed: data.freePoolSecondsUsed == null ? null : Number(data.freePoolSecondsUsed),
+    freePoolSecondsLimit: data.freePoolSecondsLimit == null ? null : Number(data.freePoolSecondsLimit),
+    freePoolBudgetGbpPence: data.freePoolBudgetGbpPence == null ? null : Number(data.freePoolBudgetGbpPence)
+  };
 }
