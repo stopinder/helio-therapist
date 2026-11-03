@@ -12,11 +12,14 @@
       <button type="button" aria-label="Block quote" :class="{ active: editor?.isActive('blockquote') }" @click="editor?.chain().focus().toggleBlockquote().run()">Quote</button>
       <span class="toolbar-divider"></span>
       <button type="button" aria-label="Insert page break" title="Start the following content on a new PDF page" @click="insertPageBreak">Page break</button>
+      <span class="toolbar-divider"></span>
+      <WhisperMicButton :recording="dictation.recording.value" :transcribing="dictation.transcribing.value" label="Dictate into document" @toggle="toggleDictation" />
       <span class="toolbar-spacer"></span>
       <span v-if="pageCount > 1" class="document-page-count">{{ pageCount }} pages</span>
       <button type="button" aria-label="Undo" :disabled="!editor?.can().undo()" @click="editor?.chain().focus().undo().run()">↶</button>
       <button type="button" aria-label="Redo" :disabled="!editor?.can().redo()" @click="editor?.chain().focus().redo().run()">↷</button>
     </div>
+    <p v-if="dictation.error.value" class="document-dictation-error" role="alert">{{ dictation.error.value }}</p>
 
     <div class="document-pagination-surface">
       <EditorContent v-if="editor" :editor="editor" class="document-editor-content" />
@@ -42,6 +45,8 @@ import { nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { Editor, EditorContent } from '@tiptap/vue-3'
 import { Node } from '@tiptap/core'
 import StarterKit from '@tiptap/starter-kit'
+import { useWhisperDictation } from '../../composables/useWhisperDictation.js'
+import WhisperMicButton from '../ui/WhisperMicButton.vue'
 
 const props = defineProps({
   modelValue: { type: String, default: '' },
@@ -201,6 +206,19 @@ const editor = new Editor({
   }
 })
 
+const dictation = useWhisperDictation({
+  onText: (text, position) => {
+    const fallback = editor.state.selection.from
+    const requested = Number(position)
+    const safePosition = Math.max(1, Math.min(Number.isFinite(requested) ? requested : fallback, editor.state.doc.content.size))
+    editor.chain().focus().setTextSelection(safePosition).insertContent(text).run()
+  }
+})
+
+function toggleDictation() {
+  dictation.toggle(editor.state.selection.from)
+}
+
 function insertPageBreak() {
   editor.chain().focus().insertContent({ type: 'pageBreak' }).run()
   schedulePagination()
@@ -239,12 +257,14 @@ onBeforeUnmount(() => {
 .document-rich-editor{width:100%}
 .document-editor-toolbar{display:flex;align-items:center;gap:.35rem;flex-wrap:wrap;margin:0 0 1rem;padding:.55rem .65rem;border:1px solid var(--border-muted);border-radius:.7rem;background:var(--surface-subtle);position:sticky;top:0;z-index:6}
 .document-editor-toolbar button{min-height:34px;padding:.35rem .6rem;border:1px solid transparent;border-radius:.5rem;color:var(--ink-secondary);font-size:12px;font-weight:600;transition:background-color var(--motion-standard) var(--motion-ease),border-color var(--motion-standard) var(--motion-ease),color var(--motion-standard) var(--motion-ease)}
+.document-editor-toolbar .whisper-mic{min-height:32px;width:32px;padding:0;border-radius:9999px}
 .document-editor-toolbar button:hover:not(:disabled){background:var(--surface-muted);color:var(--ink)}
 .document-editor-toolbar button.active{background:var(--state-selected);border-color:var(--border-muted);color:var(--action-link)}
 .document-editor-toolbar button:disabled{opacity:.4;cursor:not-allowed}
 .toolbar-divider{width:1px;height:24px;background:var(--border-muted);margin:0 .15rem}
 .toolbar-spacer{flex:1}
 .document-page-count{font-size:11px;font-weight:600;color:var(--ink-muted);padding:0 .25rem}
+.document-dictation-error{margin:-.5rem 0 .75rem;font-size:11px;color:var(--state-danger)}
 .document-pagination-surface{position:relative}
 .document-editor-content{width:100%;position:relative;z-index:2;overflow:visible}
 .document-prosemirror{outline:0;font:400 10.5pt/1.4 'Noto Sans',Arial,sans-serif;color:#26343b;transition:min-height .12s ease}
