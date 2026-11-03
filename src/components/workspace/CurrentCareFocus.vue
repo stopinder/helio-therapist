@@ -11,18 +11,22 @@
 
     <div v-if="editingLegacyNote" class="mt-stack-md rounded-control border border-border-muted bg-surface-subtle p-inline-md py-stack-md">
       <label :for="`therapy-focus-note-${client.id}`" class="text-caption font-semibold text-ink-secondary">Working note</label>
-      <textarea
-        :id="`therapy-focus-note-${client.id}`"
-        v-model="legacyDraft"
-        rows="3"
-        class="mt-2 w-full rounded-control border border-border bg-surface px-inline-md py-stack-sm text-body-sm text-ink"
-        placeholder="What is most important to keep in view right now?"
-      ></textarea>
+      <div class="relative mt-2">
+        <textarea
+          :id="`therapy-focus-note-${client.id}`"
+          v-model="legacyDraft"
+          rows="3"
+          class="w-full rounded-control border border-border bg-surface px-inline-md py-stack-sm pr-12 text-body-sm text-ink"
+          placeholder="What is most important to keep in view right now?"
+          :disabled="focusDictation.busy.value"
+        ></textarea>
+        <div class="absolute bottom-2 right-2"><WhisperMicButton :recording="dictationTarget === 'legacy' && focusDictation.recording.value" :transcribing="dictationTarget === 'legacy' && focusDictation.transcribing.value" :disabled="savingLegacyNote || (focusDictation.busy.value && dictationTarget !== 'legacy')" label="Dictate working note" @toggle="toggleDictation('legacy')" /></div>
+      </div>
       <div class="mt-stack-sm flex justify-end gap-inline-sm">
         <button type="button" class="button-secondary" :disabled="savingLegacyNote" @click="cancelLegacyEdit">Cancel</button>
-        <button type="button" class="button-primary" :disabled="savingLegacyNote" @click="saveLegacyNote">{{ savingLegacyNote ? 'Saving…' : 'Save' }}</button>
+        <button type="button" class="button-primary" :disabled="savingLegacyNote || focusDictation.busy.value" @click="saveLegacyNote">{{ savingLegacyNote ? 'Saving…' : 'Save' }}</button>
       </div>
-      <p v-if="legacyError" class="mt-stack-sm text-body-sm text-state-danger">{{ legacyError }}</p>
+      <p v-if="legacyError || (dictationTarget === 'legacy' && focusDictation.error.value)" class="mt-stack-sm text-body-sm text-state-danger">{{ legacyError || focusDictation.error.value }}</p>
     </div>
 
     <div v-else-if="client.note" class="mt-stack-md rounded-control border border-border-muted bg-surface-subtle px-inline-md py-stack-md">
@@ -53,12 +57,15 @@
 
     <div v-if="addingAim" class="mt-stack-md rounded-control border border-border-muted bg-surface-subtle p-inline-md py-stack-md">
       <label :for="`therapy-aim-${client.id}`" class="text-caption font-semibold text-ink-secondary">Aim or objective</label>
-      <textarea :id="`therapy-aim-${client.id}`" v-model="aimDraft" rows="2" class="mt-2 w-full rounded-control border border-border bg-surface px-inline-md py-stack-sm text-body-sm text-ink" placeholder="What is the client hoping to work towards?"></textarea>
+      <div class="relative mt-2">
+        <textarea :id="`therapy-aim-${client.id}`" v-model="aimDraft" rows="2" class="w-full rounded-control border border-border bg-surface px-inline-md py-stack-sm pr-12 text-body-sm text-ink" placeholder="What is the client hoping to work towards?" :disabled="focusDictation.busy.value"></textarea>
+        <div class="absolute bottom-2 right-2"><WhisperMicButton :recording="dictationTarget === 'aim' && focusDictation.recording.value" :transcribing="dictationTarget === 'aim' && focusDictation.transcribing.value" :disabled="savingAim || (focusDictation.busy.value && dictationTarget !== 'aim')" label="Dictate aim or objective" @toggle="toggleDictation('aim')" /></div>
+      </div>
       <div class="mt-stack-sm flex justify-end gap-inline-sm">
         <button type="button" class="button-secondary" @click="cancelAim">Cancel</button>
-        <button type="button" class="button-primary" :disabled="savingAim || !aimDraft.trim()" @click="saveAim">{{ savingAim ? 'Saving…' : 'Save aim or objective' }}</button>
+        <button type="button" class="button-primary" :disabled="savingAim || !aimDraft.trim() || focusDictation.busy.value" @click="saveAim">{{ savingAim ? 'Saving…' : 'Save aim or objective' }}</button>
       </div>
-      <p v-if="aimError" class="mt-stack-sm text-body-sm text-state-danger">{{ aimError }}</p>
+      <p v-if="aimError || (dictationTarget === 'aim' && focusDictation.error.value)" class="mt-stack-sm text-body-sm text-state-danger">{{ aimError || focusDictation.error.value }}</p>
     </div>
   </section>
 </template>
@@ -68,6 +75,8 @@ import { computed, onMounted, ref, watch } from 'vue'
 import { createClientCareItem, listClientCareItems } from '../../lib/clientCare.js'
 import { updateClientFocus } from '../../lib/clients.js'
 import { getLens, DEFAULT_LENS_ID } from '../../lib/clinicalLenses.js'
+import { appendDictation, useWhisperDictation } from '../../composables/useWhisperDictation.js'
+import WhisperMicButton from '../ui/WhisperMicButton.vue'
 
 const props=defineProps({
   client:{type:Object,required:true},
@@ -85,6 +94,14 @@ const editingLegacyNote=ref(false)
 const legacyDraft=ref(props.client?.note || '')
 const savingLegacyNote=ref(false)
 const legacyError=ref('')
+const dictationTarget=ref('')
+const focusDictation=useWhisperDictation({
+  onText:(text,target)=>{
+    if(target==='legacy')legacyDraft.value=appendDictation(legacyDraft.value,text,'\n')
+    if(target==='aim')aimDraft.value=appendDictation(aimDraft.value,text,'\n')
+  }
+})
+function toggleDictation(target){if(!focusDictation.recording.value){dictationTarget.value=target;focusDictation.resetError()}focusDictation.toggle(target)}
 
 const lens=computed(()=>getLens(props.lensId))
 const currentItems=computed(()=>items.value.filter(item=>item.status==='current'))
