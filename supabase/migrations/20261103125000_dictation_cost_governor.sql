@@ -191,7 +191,7 @@ begin
     select 1
     from public.therapist_subscriptions s
     where s.therapist_id = p_user_id
-      and s.status in ('active','trialing')
+      and s.status = 'active'
   ) into v_is_professional;
 
   v_plan := case when v_is_professional then 'professional' else 'free' end;
@@ -345,7 +345,7 @@ select
   sum(d.daily_seconds_used)::integer,
   case when exists (
     select 1 from public.therapist_subscriptions s
-    where s.therapist_id = d.user_id and s.status in ('active','trialing')
+    where s.therapist_id = d.user_id and s.status = 'active'
   ) then 'professional' else 'free' end,
   now()
 from private.dictation_usage d
