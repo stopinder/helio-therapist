@@ -68,11 +68,11 @@
         </section>
         <nav class="session-tabs" aria-label="Session material"><button v-for="tab in sessionTabs" :key="tab.id" :class="{ active: sessionWorkspaceTab === tab.id }" @click="sessionWorkspaceTab = tab.id">{{ tab.label }}</button></nav>
         <section v-if="sessionWorkspaceTab === 'overview'" class="session-overview"><section v-if="selectedClient.note" class="session-context"><p class="eyebrow">Current focus</p><p>{{ selectedClient.note }}</p></section><section class="session-summary-card"><p class="eyebrow">Session overview</p><h3>{{ sessionStatusLabel(editingSession) }}</h3><p>{{ sessionOverviewCopy(editingSession) }}</p><button class="secondary" @click="sessionWorkspaceTab = 'clinical-note'">Open clinical note</button></section></section>
-        <section v-else-if="sessionWorkspaceTab === 'clinical-note'"><div class="note-label"><div><p class="eyebrow">Primary clinical record</p><label for="session-notes">Therapist-approved clinical note</label></div><button v-if="editingSession.status === 'in_progress'" class="dictate" :class="{ recording: isDictating }" :disabled="transcribing" @click="toggleDictation"><span class="record-dot" aria-hidden="true"></span>{{ isDictating ? 'Stop dictation' : transcribing ? 'Transcribing…' : 'Start dictation' }}</button></div><p class="note-guidance">Record the session in your own words. Review and save this note before relying on source material.</p><p v-if="editingSession.status === 'in_progress'" class="dictation-help" :class="{ recording: isDictating, error: dictationError }" role="status">{{ dictationMessage() }}</p><textarea id="session-notes" v-model="draftNotes" :disabled="editingSession.status !== 'in_progress'" placeholder="Record the session in your own words…"></textarea></section>
+        <section v-else-if="sessionWorkspaceTab === 'clinical-note'"><div class="note-label"><div><p class="eyebrow">Primary clinical record</p><label for="session-notes">Therapist-approved clinical note</label></div></div><p class="note-guidance">Record the session in your own words. Review and save this note before relying on source material.</p><div class="relative"><textarea id="session-notes" v-model="draftNotes" :disabled="editingSession.status !== 'in_progress' || dictation.transcribing.value" class="pr-12" placeholder="Record the session in your own words…"></textarea><div v-if="editingSession.status === 'in_progress'" class="absolute bottom-2 right-2"><WhisperMicButton :recording="dictation.recording.value" :transcribing="dictation.transcribing.value" :disabled="sessionSaving" label="Dictate clinical note" @toggle="dictation.toggle()" /></div></div><p v-if="dictation.error.value" class="session-error" role="alert">{{ dictation.error.value }}</p></section>
         <section v-else-if="sessionWorkspaceTab === 'transcript'" class="source-material"><p class="eyebrow">Source material</p><h3>Transcript</h3><p>A transcript preserves what was said. It is not the approved clinical record and is never added without your review.</p><p class="quiet-copy">No transcript is available for this session yet.</p><button class="secondary" @click="sessionWorkspaceTab = 'clinical-note'">Return to clinical note</button></section>
         <section v-else-if="sessionWorkspaceTab === 'resources-actions'"><div class="session-actions"><span>Resources and actions</span><button class="secondary" @click="openPicker">Send to client</button></div><p class="quiet-copy">Resources shared, agreed actions and follow-up tasks will appear here for this session.</p></section>
         <p v-if="sessionError" class="session-error" role="alert">{{ sessionError }}</p>
-        <footer><button class="secondary" :disabled="sessionSaving" @click="requestCloseEditor">Close</button><template v-if="editingSession.status === 'in_progress'"><button class="secondary" :disabled="sessionSaving || !notesDirty" @click="saveNotes">{{ sessionSaving ? 'Saving…' : 'Save notes' }}</button><button class="primary" :disabled="sessionSaving" @click="completeSession">{{ sessionSaving ? 'Completing…' : 'End session' }}</button></template></footer>
+        <footer><button class="secondary" :disabled="sessionSaving" @click="requestCloseEditor">Close</button><template v-if="editingSession.status === 'in_progress'"><button class="secondary" :disabled="sessionSaving || !notesDirty || dictation.busy.value" @click="saveNotes">{{ sessionSaving ? 'Saving…' : 'Save notes' }}</button><button class="primary" :disabled="sessionSaving || dictation.busy.value" @click="completeSession">{{ sessionSaving ? 'Completing…' : 'End session' }}</button></template></footer>
       </article>
     </div>
     <ResourcePicker v-if="pickerOpen" :client="selectedClient" @close="pickerOpen = false" @sent="handleResourceSent" />
@@ -89,6 +89,8 @@ import { assignmentCompletionUrl, timelineEventPresentation } from '../../lib/cl
 import { completeSessionRecord, createOrResumeSession, listSessions, migrateLegacySessions, saveSessionDraft } from '../../lib/sessions.js'
 import { videoProviderService } from '../../lib/videoProvider.js'
 import ResourcePicker from './ResourcePicker.vue'
+import WhisperMicButton from '../ui/WhisperMicButton.vue'
+import { appendDictation, useWhisperDictation } from '../../composables/useWhisperDictation.js'
 
 const props = defineProps({ selectedClient: { type: Object, default: null } })
 const emit = defineEmits(['update-focus'])
@@ -141,13 +143,8 @@ const completionLinks = ref([])
 const copyLabel = ref('Copy link')
 const deliverySending = ref(false)
 const deliveryMessage = ref('')
-const isDictating = ref(false)
-const transcribing = ref(false)
-const dictationError = ref('')
 const preparingFor = ref(null)
-let recorder = null
-let chunks = []
-let recordingStream = null
+const dictation = useWhisperDictation({ onText: text => { draftNotes.value = appendDictation(draftNotes.value, text, '\n\n') } })
 
 const sessions = computed(() => allSessions.value.filter(item => String(item.clientId) === String(props.selectedClient?.id)).sort((a, b) => new Date(b.startedAt) - new Date(a.startedAt)))
 const notesDirty = computed(() => Boolean(
@@ -313,7 +310,7 @@ async function completeSession() {
     sessionSaving.value = false
   }
 }
-function closeEditor() { stopRecording(); editingSession.value = null; draftNotes.value = ''; dictationError.value = '' }
+function closeEditor() { dictation.stop(); editingSession.value = null; draftNotes.value = ''; dictation.resetError() }
 function requestCloseEditor() {
   if (notesDirty.value && !window.confirm('Discard the unsaved changes to this session note?')) return
   closeEditor()
@@ -321,73 +318,7 @@ function requestCloseEditor() {
 function beginEditFocus() { draftFocus.value = props.selectedClient?.note || ''; editingFocus.value = true }
 function cancelFocusEdit() { editingFocus.value = false; draftFocus.value = '' }
 function saveFocus() { emit('update-focus', draftFocus.value.trim()); editingFocus.value = false }
-const recordingInterval = ref(null)
-const recordingSeconds = ref(0)
-const MAX_RECORDING_SECONDS = 120
 
-function stopRecording() {
-  if (recordingInterval.value) { clearInterval(recordingInterval.value); recordingInterval.value = null }
-  if (recorder?.state === 'recording') recorder.stop(); else recordingStream?.getTracks().forEach(track => track.stop())
-}
-function dictationMessage() {
-  if (dictationError.value) return dictationError.value;
-  if (isDictating.value) {
-    const remaining = MAX_RECORDING_SECONDS - recordingSeconds.value
-    if (remaining <= 30) return `Recording. ${remaining} seconds remaining before automatic stop.`
-    return 'Recording. Select Stop dictation when you have finished.';
-  }
-  if (transcribing.value) return 'Transcribing your recording. Audio is discarded immediately after this request.';
-  return 'Optional: dictate a note, then review and edit the transcript before saving. Audio is not retained.'
-}
-function microphoneError(error) { if (error?.name === 'NotAllowedError' || error?.name === 'SecurityError') return 'Microphone access was blocked. Allow microphone access in your browser settings, then try again.'; if (error?.name === 'NotFoundError') return 'No microphone was found. Connect one, then try again.'; if (error?.name === 'NotReadableError') return 'Your microphone is in use by another application. Close it, then try again.'; return 'We could not start the microphone. Please try again.' }
-async function audioDataUrl(blob) { return new Promise((resolve, reject) => { const reader = new FileReader(); reader.onload = () => resolve(reader.result); reader.onerror = () => reject(new Error('The recording could not be prepared for transcription.')); reader.readAsDataURL(blob) }) }
-async function toggleDictation() {
-  if (isDictating.value) { stopRecording(); return }
-  dictationError.value = ''
-  if (!navigator.mediaDevices?.getUserMedia || !window.MediaRecorder) { dictationError.value = 'Dictation is not supported by this browser. Please use a current version of Chrome, Edge, Firefox, or Safari.'; return }
-  try {
-    recordingStream = await navigator.mediaDevices.getUserMedia({ audio: true })
-    chunks = []
-    recorder = new MediaRecorder(recordingStream)
-    recorder.ondataavailable = event => { if (event.data.size) chunks.push(event.data) }
-    recorder.onerror = () => { dictationError.value = 'Recording stopped unexpectedly. Please try again.' }
-    recorder.onstop = async () => {
-      const stream = recordingStream
-      recordingStream = null
-      stream?.getTracks().forEach(track => track.stop())
-      isDictating.value = false
-      const duration = recordingSeconds.value
-      const blob = new Blob(chunks, { type: recorder?.mimeType || 'audio/webm' })
-      chunks = []
-      recorder = null
-      if (!blob.size) { if (!dictationError.value) dictationError.value = 'No audio was captured. Please try again.'; return }
-      transcribing.value = true
-      try {
-        const response = await authenticatedFetch('/api/ai/transcribe', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ audio: await audioDataUrl(blob), duration }) })
-        const data = await response.json().catch(() => ({}))
-        if (!response.ok) throw new Error(data.error?.message || data.error || 'The recording could not be transcribed.')
-        const text = String(data.text || '').trim()
-        if (!text) throw new Error('No speech was detected. Please try again or type the note.')
-        draftNotes.value = (draftNotes.value + (draftNotes.value ? '\n\n' : '') + text).trim()
-      } catch (error) { dictationError.value = error.message || 'The recording could not be transcribed. Please try again.' } finally { transcribing.value = false }
-    }
-    recordingSeconds.value = 0
-    recorder.start()
-    isDictating.value = true
-    recordingInterval.value = setInterval(() => {
-      recordingSeconds.value++
-      if (recordingSeconds.value >= MAX_RECORDING_SECONDS) {
-        dictationError.value = 'Dictation is limited to two minutes per recording. You can continue with another recording.'
-        stopRecording()
-      }
-    }, 1000)
-  } catch (error) {
-    recordingStream?.getTracks().forEach(track => track.stop())
-    recordingStream = null
-    recorder = null
-    dictationError.value = microphoneError(error)
-  }
-}
 function sessionStatusLabel(session) { return ({ draft: 'In progress', planned: 'Planned', in_progress: 'In progress', completed: 'Completed', closed: 'Completed' })[session?.status] || 'Completed' }
 function workflowStatusLabel(status) { return ({ awaiting_transcript: 'Awaiting transcript', transcript_received: 'Transcript received', needs_review: 'Needs review', review_choices_saved: 'Review choices saved', drafts_awaiting_review: 'Drafts awaiting review', approved: 'Approved', no_further_action: 'No further action' })[status] || 'No further action' }
 function sessionProgressLabel(session) { const workflow = workflowStatusLabel(session?.workflowStatus); return workflow === 'No further action' ? sessionStatusLabel(session) : sessionStatusLabel(session) + ' · ' + workflow }
