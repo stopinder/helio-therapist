@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import {
-  checkDictationFairUse,
+  reserveDictationUsage,
   isBudgetError
 } from '../api/_lib/ai-budget.js';
 
@@ -15,8 +15,8 @@ function client(data, error = null) {
 }
 
 test('Dictation fair-use RPC is defined correctly in migration', () => {
-  assert.match(migration, /create or replace function private\.check_dictation_fair_use/);
-  assert.match(migration, /create or replace function public\.check_dictation_fair_use/);
+  assert.match(migration, /create or replace function private\.reserve_dictation_usage/);
+  assert.match(migration, /create or replace function public\.reserve_dictation_usage/);
   assert.match(migration, /v_max_individual_seconds integer := 120/);
   assert.match(migration, /v_daily_limit integer := 1800/);
   assert.match(migration, /v_rate_limit_count integer := 10/);
@@ -26,14 +26,14 @@ test('Dictation fair-use RPC is defined correctly in migration', () => {
   assert.match(migration, /to service_role/);
 });
 
-test('checkDictationFairUse calls the RPC with duration', async () => {
+test('reserveDictationUsage calls the RPC with duration', async () => {
   const db = client(null);
-  await checkDictationFairUse({
+  await reserveDictationUsage({
     userId: 'user-123',
     durationSeconds: 45.5,
     supabase: db
   });
-  assert.deepEqual(db.calls, [[ 'check_dictation_fair_use', {
+  assert.deepEqual(db.calls, [[ 'reserve_dictation_usage', {
     p_user_id: 'user-123',
     p_duration_seconds: 46
   } ]]);
@@ -42,7 +42,7 @@ test('checkDictationFairUse calls the RPC with duration', async () => {
 test('Daily limit exhaustion is handled correctly', async () => {
   const db = client(null, { message: 'DICTATION_DAILY_LIMIT_EXCEEDED', code: 'P0001' });
   await assert.rejects(
-    checkDictationFairUse({ userId: 'user-123', durationSeconds: 10, supabase: db }),
+    reserveDictationUsage({ userId: 'user-123', durationSeconds: 10, supabase: db }),
     e => e.status === 429 && e.code === 'DICTATION_DAILY_LIMIT_EXCEEDED' && isBudgetError(e)
   );
 });
@@ -50,7 +50,7 @@ test('Daily limit exhaustion is handled correctly', async () => {
 test('Rate limit exhaustion is handled correctly', async () => {
   const db = client(null, { message: 'DICTATION_RATE_LIMIT_EXCEEDED', code: 'P0001' });
   await assert.rejects(
-    checkDictationFairUse({ userId: 'user-123', durationSeconds: 10, supabase: db }),
+    reserveDictationUsage({ userId: 'user-123', durationSeconds: 10, supabase: db }),
     e => e.status === 429 && e.code === 'DICTATION_RATE_LIMIT_EXCEEDED' && isBudgetError(e)
   );
 });
@@ -69,7 +69,7 @@ test('Transcription endpoint enforces 3MB limit', () => {
 
 test('Transcription endpoint uses both general budget and fair-use check', () => {
   assert.match(transcribe, /await reserveAiBudget\(/);
-  assert.match(transcribe, /await checkDictationFairUse\(/);
+  assert.match(transcribe, /await reserveDictationUsage\(/);
 });
 
 test('Dictation never consumes clinical AI credits', () => {
