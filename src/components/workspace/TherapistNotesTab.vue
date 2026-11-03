@@ -16,23 +16,19 @@
     <div class="grid grid-cols-1 gap-6" :aria-busy="loading">
       <div v-for="(label, key) in noteSections" :key="key" class="space-y-2">
         <label :for="key" class="text-body-sm font-bold text-ink uppercase tracking-wider">{{ label }}</label>
-        <textarea :id="key" v-model="notes[key]" rows="4" :disabled="loading || saving || conflict || Boolean(activeDictationKey) || Boolean(transcribingKey)" class="w-full p-3 rounded-control border border-border bg-surface focus:ring-2 focus:ring-action-link focus:border-action-link outline-none transition-all text-body-sm text-ink disabled:opacity-60" :placeholder="`Enter ${label.toLowerCase()}...`"></textarea>
-        <div class="flex items-center justify-between gap-3">
-          <p v-if="dictationErrorKey === key" class="text-caption text-state-danger" role="alert">{{ dictationError }}</p>
-          <span v-else class="text-caption text-ink-muted">Use the microphone to add text here for review before saving.</span>
-          <button
-            type="button"
-            class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-control border border-border bg-surface text-ink-secondary hover:bg-surface-subtle disabled:opacity-50"
-            :class="activeDictationKey === key ? 'border-state-danger/40 bg-state-danger/10 text-state-danger' : ''"
-            :disabled="loading || saving || conflict || (Boolean(activeDictationKey) && activeDictationKey !== key) || (Boolean(transcribingKey) && transcribingKey !== key)"
-            :aria-pressed="activeDictationKey === key"
-            :aria-label="recordingButtonLabel(key)"
-            :title="recordingButtonLabel(key)"
-            @click="toggleDictation(key)"
-          >
-            <Mic class="workspace-icon-sm" aria-hidden="true" />
-          </button>
+        <div class="relative">
+          <textarea :id="key" v-model="notes[key]" rows="4" :disabled="loading || saving || conflict || dictation.busy.value" class="w-full p-3 pr-12 rounded-control border border-border bg-surface focus:ring-2 focus:ring-action-link focus:border-action-link outline-none transition-all text-body-sm text-ink disabled:opacity-60" :placeholder="`Enter ${label.toLowerCase()}...`"></textarea>
+          <div class="absolute bottom-2 right-2">
+            <WhisperMicButton
+              :recording="dictationTargetKey === key && dictation.recording.value"
+              :transcribing="dictationTargetKey === key && dictation.transcribing.value"
+              :disabled="loading || saving || conflict || (dictation.busy.value && dictationTargetKey !== key)"
+              :label="`Dictate ${label.toLowerCase()}`"
+              @toggle="toggleDictation(key)"
+            />
+          </div>
         </div>
+        <p v-if="dictationTargetKey === key && dictation.error.value" class="text-caption text-state-danger" role="alert">{{ dictation.error.value }}</p>
       </div>
     </div>
 
@@ -44,16 +40,16 @@
 
       <div class="flex items-center justify-end gap-3">
         <span v-if="savedMessage" class="text-body-sm text-state-success" role="status">{{ savedMessage }}</span>
-        <button type="button" :disabled="loading || saving || conflict || Boolean(activeDictationKey) || Boolean(transcribingKey)" class="button-primary" @click="save">{{ saving ? 'Saving…' : 'Save working notes' }}</button>
+        <button type="button" :disabled="loading || saving || conflict || dictation.busy.value" class="button-primary" @click="save">{{ saving ? 'Saving…' : 'Save working notes' }}</button>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { Mic } from '@lucide/vue';
-import { onBeforeUnmount, onMounted, reactive, ref } from 'vue';
-import { authenticatedFetch } from '../../lib/api.js';
+import { onMounted, reactive, ref } from 'vue';
+import { appendDictation, useWhisperDictation } from '../../composables/useWhisperDictation.js';
+import WhisperMicButton from '../ui/WhisperMicButton.vue';
 import { emptyWorkingNotes, getSessionWorkingNotes, saveSessionWorkingNotes } from '../../lib/workingNotes.js';
 
 const props = defineProps({
@@ -71,15 +67,14 @@ const conflict = ref(false);
 const loadError = ref('');
 const saveError = ref('');
 const savedMessage = ref('');
-const activeDictationKey = ref('');
-const transcribingKey = ref('');
-const dictationErrorKey = ref('');
-const dictationError = ref('');
+const dictationTargetKey = ref('');
 const draftApplied = ref(false);
-
-let recorder = null;
-let stream = null;
-let chunks = [];
+const dictation = useWhisperDictation({
+  onText: (text, key) => {
+    if (!key || !(key in notes)) return;
+    notes[key] = appendDictation(notes[key], text, '\n');
+  }
+});
 
 async function load() {
   loading.value = true;
@@ -107,77 +102,16 @@ async function load() {
   }
 }
 
-function recordingButtonLabel(key) {
-  if (transcribingKey.value === key) return 'Transcribing recording';
-  if (activeDictationKey.value === key) return 'Stop recording';
-  return 'Start microphone recording';
-}
-
-async function toggleDictation(key) {
-  if (activeDictationKey.value === key) {
-    recorder?.stop();
-    return;
+function toggleDictation(key) {
+  if (!dictation.recording.value) {
+    dictationTargetKey.value = key;
+    dictation.resetError();
   }
-  if (activeDictationKey.value || transcribingKey.value) return;
-
-  dictationErrorKey.value = '';
-  dictationError.value = '';
-  try {
-    stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    chunks = [];
-    recorder = new MediaRecorder(stream);
-    recorder.ondataavailable = event => {
-      if (event.data.size > 0) chunks.push(event.data);
-    };
-    recorder.onstop = () => processDictation(key);
-    recorder.start();
-    activeDictationKey.value = key;
-  } catch {
-    dictationErrorKey.value = key;
-    dictationError.value = 'Microphone access was not available. You can continue by typing.';
-  }
-}
-
-async function processDictation(key) {
-  activeDictationKey.value = '';
-  stream?.getTracks().forEach(track => track.stop());
-
-  const blob = new Blob(chunks, { type: recorder?.mimeType || 'audio/webm' });
-  if (!blob.size) return;
-
-  transcribingKey.value = key;
-  dictationErrorKey.value = '';
-  dictationError.value = '';
-  try {
-    const audio = await blobToDataUrl(blob);
-    const response = await authenticatedFetch('/api/ai/transcribe', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ audio })
-    });
-    const payload = await response.json().catch(() => ({}));
-    if (!response.ok) throw new Error(payload?.error?.message || 'The recording could not be transcribed.');
-    const text = String(payload?.text || '').trim();
-    if (text) notes[key] = [notes[key].trim(), text].filter(Boolean).join(notes[key].trim() ? '\n' : '');
-  } catch (err) {
-    dictationErrorKey.value = key;
-    dictationError.value = err.message || 'The recording could not be transcribed. Your audio was not saved.';
-  } finally {
-    transcribingKey.value = '';
-  }
-}
-
-function blobToDataUrl(blob) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result);
-    reader.onerror = reject;
-    reader.readAsDataURL(blob);
-  });
+  dictation.toggle(key);
 }
 
 async function save() {
-  if (saving.value || conflict.value || activeDictationKey.value || transcribingKey.value) return;
+  if (saving.value || conflict.value || dictation.busy.value) return;
   saving.value = true;
   saveError.value = '';
   savedMessage.value = '';
@@ -206,8 +140,4 @@ async function save() {
 }
 
 onMounted(load);
-onBeforeUnmount(() => {
-  if (recorder?.state && recorder.state !== 'inactive') recorder.stop();
-  stream?.getTracks().forEach(track => track.stop());
-});
 </script>
