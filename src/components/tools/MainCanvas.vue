@@ -34,8 +34,8 @@
         </div>
         <template v-if="editingFocus">
           <label class="sr-only" for="current-focus">Current focus</label>
-          <textarea id="current-focus" v-model="draftFocus" placeholder="Record the therapeutic focus, goals and context to keep in view…"></textarea>
-          <div class="inline-actions"><button class="secondary" @click="cancelFocusEdit">Cancel</button><button class="primary" @click="saveFocus">Save focus</button></div>
+          <div class="relative"><textarea id="current-focus" v-model="draftFocus" class="pr-12" placeholder="Record the therapeutic focus, goals and context to keep in view…" :disabled="focusDictation.transcribing.value"></textarea><div class="absolute bottom-2 right-2"><WhisperMicButton :recording="focusDictation.recording.value" :transcribing="focusDictation.transcribing.value" label="Dictate current focus" @toggle="focusDictation.toggle()" /></div></div>
+          <div class="inline-actions"><button class="secondary" :disabled="focusDictation.busy.value" @click="cancelFocusEdit">Cancel</button><button class="primary" :disabled="focusDictation.busy.value" @click="saveFocus">Save focus</button></div>
         </template>
         <p v-else-if="selectedClient.note" class="focus-copy">{{ selectedClient.note }}</p>
         <p v-else class="quiet-copy">No current focus recorded yet.</p>
@@ -145,6 +145,7 @@ const deliverySending = ref(false)
 const deliveryMessage = ref('')
 const preparingFor = ref(null)
 const dictation = useWhisperDictation({ onText: text => { draftNotes.value = appendDictation(draftNotes.value, text, '\n\n') } })
+const focusDictation = useWhisperDictation({ onText: text => { draftFocus.value = appendDictation(draftFocus.value, text, '\n') } })
 
 const sessions = computed(() => allSessions.value.filter(item => String(item.clientId) === String(props.selectedClient?.id)).sort((a, b) => new Date(b.startedAt) - new Date(a.startedAt)))
 const notesDirty = computed(() => Boolean(
@@ -316,7 +317,7 @@ function requestCloseEditor() {
   closeEditor()
 }
 function beginEditFocus() { draftFocus.value = props.selectedClient?.note || ''; editingFocus.value = true }
-function cancelFocusEdit() { editingFocus.value = false; draftFocus.value = '' }
+function cancelFocusEdit() { focusDictation.stop(); editingFocus.value = false; draftFocus.value = ''; focusDictation.resetError() }
 function saveFocus() { emit('update-focus', draftFocus.value.trim()); editingFocus.value = false }
 
 function sessionStatusLabel(session) { return ({ draft: 'In progress', planned: 'Planned', in_progress: 'In progress', completed: 'Completed', closed: 'Completed' })[session?.status] || 'Completed' }
