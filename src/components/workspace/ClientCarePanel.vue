@@ -76,11 +76,17 @@
         </div>
         <button type="button" class="text-body-sm font-medium text-ink-muted hover:text-ink" @click="closeReview">Close</button>
       </div>
-      <textarea v-model="capture" rows="5" class="w-full border border-border rounded-control bg-surface px-inline-md py-stack-sm text-body text-ink" placeholder="Type here, or use the microphone to dictate…"></textarea>
+      <div class="relative">
+        <textarea v-model="capture" rows="5" class="w-full border border-border rounded-control bg-surface px-inline-md py-stack-sm pr-20 text-body text-ink" placeholder="Type or speak your reflection…" :disabled="generating"></textarea>
+        <div class="absolute bottom-2 right-2 flex items-center gap-1">
+          <WhisperMicButton :recording="dictation.recording.value" :transcribing="dictation.transcribing.value" :disabled="generating" label="Dictate therapist reflection" @toggle="dictation.toggle()" />
+          <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-full bg-action-primary text-on-action shadow-sm hover:bg-action-primary-hover disabled:opacity-40" :disabled="generating || !capture.trim() || dictation.busy.value" aria-label="Generate suggestions" title="Generate suggestions" @click="generateReflection">
+            <LoaderCircle v-if="generating" class="h-4 w-4 animate-spin" aria-hidden="true" />
+            <Send v-else class="h-4 w-4" aria-hidden="true" />
+          </button>
+        </div>
+      </div>
       <div class="flex flex-wrap items-center gap-inline-sm">
-        <button type="button" :disabled="transcribing" class="button-secondary" @click="toggleRecording">{{ recording ? '■ Stop recording' : '🎙 Dictate' }}</button>
-        <span v-if="recording" class="text-caption text-action-link">Listening… {{ recordingSeconds }}s</span>
-        <span v-else-if="transcribing" class="text-caption text-ink-muted">Transcribing securely…</span>
         <select v-model="steering" class="border border-border rounded-control bg-surface px-inline-sm py-stack-xs text-body-sm text-ink-secondary">
           <option value="">Balanced suggestions</option>
           <option value="stay close to observable evidence">Stay close to evidence</option>
@@ -88,9 +94,8 @@
           <option value="emphasise gentle behavioural experiments and practical next steps">More behavioural</option>
           <option value="make the language less interpretive and more tentative">Less interpretive</option>
         </select>
-        <button type="button" :disabled="generating || !capture.trim()" class="button-primary ml-auto" @click="generateReflection">{{ generating ? 'Thinking…' : suggestions.length && suggestionSource==='therapist_reflection' ? 'Regenerate suggestions' : 'Generate suggestions' }}</button>
       </div>
-      <p v-if="captureError" class="text-body-sm text-state-danger">{{ captureError }}</p>
+      <p v-if="dictation.error.value || captureError" class="text-body-sm text-state-danger">{{ dictation.error.value || captureError }}</p>
     </div>
 
     <div v-if="suggestionSource==='clinical_history' && historySources.length" class="rounded-control border border-border-muted bg-surface-subtle px-inline-md py-stack-sm">
@@ -163,14 +168,17 @@
 
 <script setup>
 import HelpLink from '../help/HelpLink.vue'
-import { computed,nextTick,onBeforeUnmount,onMounted,ref } from 'vue'
-import { createClientCareItem,generateCareSuggestions,listClientCareItems,transcribeCareAudio,updateClientCareItem } from '../../lib/clientCare.js'
+import { computed,nextTick,onMounted,ref } from 'vue'
+import { LoaderCircle, Send } from '@lucide/vue'
+import { createClientCareItem,generateCareSuggestions,listClientCareItems,updateClientCareItem } from '../../lib/clientCare.js'
+import { appendDictation, useWhisperDictation } from '../../composables/useWhisperDictation.js'
+import WhisperMicButton from '../ui/WhisperMicButton.vue'
 import { CLINICAL_LENSES,DEFAULT_LENS_ID,getLens } from '../../lib/clinicalLenses.js'
 
 const props=defineProps({clientId:{type:String,required:true}})
 const emit=defineEmits(['changed'])
-const items=ref([]),loading=ref(true),capture=ref(''),steering=ref(''),suggestions=ref([]),generating=ref(false),saving=ref(false),recording=ref(false),transcribing=ref(false),recordingSeconds=ref(0),captureError=ref(''),saveError=ref(''),selectedLensId=ref(DEFAULT_LENS_ID),showReview=ref(false),reviewMode=ref('history'),historyWindow=ref('last_three'),reviewGoal=ref('fill_empty'),suggestionSource=ref(''),historySources=ref([]),provenanceSessionId=ref(null),saveAcceptedArea=ref(null)
-let recorder=null,chunks=[],stream=null,recordingTimer=null
+const items=ref([]),loading=ref(true),capture=ref(''),steering=ref(''),suggestions=ref([]),generating=ref(false),saving=ref(false),captureError=ref(''),saveError=ref(''),selectedLensId=ref(DEFAULT_LENS_ID),showReview=ref(false),reviewMode=ref('history'),historyWindow=ref('last_three'),reviewGoal=ref('fill_empty'),suggestionSource=ref(''),historySources=ref([]),provenanceSessionId=ref(null),saveAcceptedArea=ref(null)
+const dictation=useWhisperDictation({onText:text=>{capture.value=appendDictation(capture.value,text,'\n')}})
 
 const lens=computed(()=>getLens(selectedLensId.value))
 const availableLenses=computed(()=>Object.values(CLINICAL_LENSES))
@@ -330,43 +338,8 @@ async function changeStatus(item,status){
     saveError.value='That Therapy Focus item could not be updated.'
   }
 }
-async function toggleRecording(){
-  if(recording.value){recorder?.stop();return}
-  captureError.value=''
-  try{
-    stream=await navigator.mediaDevices.getUserMedia({audio:true})
-    chunks=[]
-    recorder=new MediaRecorder(stream)
-    recorder.ondataavailable=event=>{if(event.data.size)chunks.push(event.data)}
-    recorder.onstop=transcribeRecording
-    recorder.start()
-    recording.value=true
-    recordingSeconds.value=0
-    recordingTimer=setInterval(()=>recordingSeconds.value++,1000)
-  }catch{
-    captureError.value='Microphone access was not available. You can continue by typing.'
-  }
-}
-async function transcribeRecording(){
-  recording.value=false
-  clearInterval(recordingTimer)
-  stream?.getTracks().forEach(track=>track.stop())
-  const blob=new Blob(chunks,{type:recorder?.mimeType||'audio/webm'})
-  if(!blob.size)return
-  transcribing.value=true
-  try{
-    const audio=await blobToDataUrl(blob)
-    const text=await transcribeCareAudio(audio)
-    capture.value=[capture.value.trim(),text.trim()].filter(Boolean).join(capture.value.trim()?'\n':'')
-  }catch(error){
-    captureError.value=error.message||'The recording could not be transcribed.'
-  }finally{
-    transcribing.value=false
-  }
-}
-function blobToDataUrl(blob){return new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(reader.result);reader.onerror=reject;reader.readAsDataURL(blob)})}
+
 function formatDate(value){return value?new Date(value).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}):''}
 
 onMounted(load)
-onBeforeUnmount(()=>{clearInterval(recordingTimer);stream?.getTracks().forEach(track=>track.stop())})
 </script>
