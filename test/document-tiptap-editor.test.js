@@ -15,6 +15,10 @@ test('practice and client document composers use the shared paginated Tiptap edi
   assert.match(client, /<RichDocumentEditor/)
   assert.doesNotMatch(practice, /<textarea[^>]*document-body-editor/)
   assert.doesNotMatch(client, /clinical-body/)
+  assert.match(client, /copySummary/)
+  assert.match(client, /summaryBodyToRichContent/)
+  assert.match(client, /Different parts of you in this work/)
+  assert.match(client, /Copied ✓/)
 
   assert.match(editor, /@tiptap\/vue-3/)
   assert.match(editor, /StarterKit/)
@@ -34,6 +38,8 @@ test('practice and client document composers use the shared paginated Tiptap edi
   assert.match(editor, /auto-page-break-before/)
   assert.match(editor, /document-page-number/)
   assert.match(editor, /pageCount/)
+  assert.match(editor, /keepWithNext/)
+  assert.match(editor, /z-index:1/)
 
   const dependencies = JSON.parse(pkg).dependencies
   assert.ok(dependencies['@tiptap/vue-3'])
@@ -43,4 +49,7 @@ test('practice and client document composers use the shared paginated Tiptap edi
   assert.match(pdf, /pageBreak/)
   assert.match(pdf, /addBufferedFooters/)
   assert.match(pdf, /pageNumber/)
+  assert.match(pdf, /ensureSpace/)
+  assert.match(pdf, /SUMMARY_HEADINGS/)
+  assert.match(pdf, /Different parts of you in this work/)
 })
