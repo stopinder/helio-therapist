@@ -3,8 +3,7 @@
     <header class="landing-header">
       <div class="landing-container header-inner">
         <router-link to="/" class="brand" aria-label="Helios home">
-          <span class="brand-mark-dot" aria-hidden="true" />
-          <span>helios.</span>
+          <img src="/brand/helios-logo.png" alt="Helios" class="brand-logo" />
         </router-link>
 
         <nav class="header-nav" aria-label="Landing page sections">
@@ -335,8 +334,10 @@
     <footer class="landing-footer">
       <div class="landing-container footer-inner">
         <div>
-          <router-link to="/" class="footer-brand">helios.</router-link>
-          <p>Clinical workspace software for therapists.</p>
+          <router-link to="/" class="footer-brand" aria-label="Helios home">
+            <img src="/brand/helios-logo.png" alt="Helios" class="footer-brand-logo" />
+          </router-link>
+          <p>A calmer place for the work around therapy.</p>
         </div>
         <nav aria-label="Legal, data and support">
           <router-link to="/privacy">Privacy</router-link>
@@ -464,26 +465,21 @@ const trustPrinciples = [
 
 .brand,
 .footer-brand {
-  font-family: var(--font-editorial);
-  font-weight: 500;
-  letter-spacing: -.035em;
-  color: var(--landing-ink);
-}
-
-.brand {
   display: inline-flex;
   align-items: center;
-  gap: 10px;
-  font-size: 34px;
-  line-height: 1;
+  flex: none;
 }
 
-.brand-mark-dot {
-  width: 24px;
-  height: 24px;
-  flex: none;
-  border-radius: 999px;
-  background: var(--landing-copper);
+.brand-logo {
+  display: block;
+  width: auto;
+  height: 36px;
+}
+
+.footer-brand-logo {
+  display: block;
+  width: auto;
+  height: 34px;
 }
 
 .header-nav,
@@ -1605,8 +1601,6 @@ const trustPrinciples = [
 }
 
 .footer-brand {
-  display: block;
-  font-size: 28px;
   line-height: 1;
 }
 
@@ -1713,13 +1707,8 @@ const trustPrinciples = [
     height: 72px;
   }
 
-  .brand {
-    font-size: 30px;
-  }
-
-  .brand-mark-dot {
-    width: 20px;
-    height: 20px;
+  .brand-logo {
+    height: 31px;
   }
 
   .account-nav {
