@@ -1,7 +1,10 @@
 <template>
   <main v-if="recovering" class="min-h-screen bg-surface-muted flex items-center justify-center px-4 py-8 sm:p-6">
     <section class="w-full max-w-md rounded-panel bg-surface-elevated border border-border-muted p-6 sm:p-8">
-      <h1 class="text-h1 font-semibold text-ink">Choose a new password</h1>
+      <router-link to="/" class="inline-flex items-center" aria-label="Helios home">
+        <img src="/brand/helios-logo.png" alt="Helios" class="h-10 w-auto" />
+      </router-link>
+      <h1 class="mt-6 text-h1 font-semibold text-ink">Choose a new password</h1>
       <p class="mt-2 text-body text-ink-muted">Use at least 8 characters.</p>
       <form class="mt-6 space-y-4" @submit.prevent="updatePassword">
         <div class="relative">
@@ -56,9 +59,11 @@
 
   <main v-else data-testid="login-page" class="min-h-screen bg-surface-muted flex items-center justify-center px-4 py-8 sm:p-6">
     <section class="w-full max-w-md rounded-panel bg-surface-elevated border border-border-muted p-6 sm:p-8">
-      <router-link to="/" class="type-ui text-action-link">← Helios home</router-link>
-      <h1 class="mt-5 text-h1 font-semibold text-ink">Helios</h1>
-      <p class="mt-2 text-body text-ink-muted">{{ mode === 'signup' ? 'Start Free: up to five active clients. No payment card required.' : 'Sign in to your therapist workspace.' }}</p>
+      <router-link to="/" class="inline-flex items-center" aria-label="Helios home">
+        <img src="/brand/helios-logo.png" alt="Helios" class="h-11 w-auto" />
+      </router-link>
+      <h1 class="sr-only">Helios</h1>
+      <p class="mt-6 text-body text-ink-muted">{{ mode === 'signup' ? 'Start Free: up to five active clients. No payment card required.' : 'Sign in to your therapist workspace.' }}</p>
 
       <div class="mt-6 grid grid-cols-2 rounded-panel bg-surface-muted p-1" role="tablist" aria-label="Account access">
         <router-link to="/sign-in" class="min-h-11 rounded-control px-3 text-body font-medium flex items-center justify-center transition-colors duration-standard ease-out" :class="mode === 'signin' ? 'bg-surface-elevated text-ink' : 'text-ink-muted'">Sign in</router-link>
