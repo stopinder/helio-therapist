@@ -238,15 +238,23 @@
             <option v-for="client in clients" :key="client.id" :value="client.id">{{ client.display_name }}</option>
           </select>
         </div>
-        <form class="relative flex items-end gap-2" @submit.prevent="sendMessage">
+        <form class="relative flex items-end gap-1" @submit.prevent="sendMessage">
           <textarea v-model="input" :rows="isExpanded ? 1 : 2" maxlength="1200"
             class="block w-full resize-none rounded-control border border-border-muted bg-surface px-3 text-sm text-ink placeholder:text-ink-subtle focus:border-accent focus:ring-1 focus:ring-accent"
             :class="isExpanded ? 'py-1.5' : 'py-2'"
             :placeholder="composerPlaceholder" :disabled="isLoading || isRestoring || !!restoreError" @keydown.enter.exact.prevent="sendMessage"></textarea>
-          <button type="submit" title="Send to Ask Helios"
-            class="flex h-9 w-9 shrink-0 items-center justify-center rounded-control bg-action-primary text-on-action shadow-sm hover:bg-action-primary-hover disabled:opacity-50"
-            :disabled="!input.trim() || isLoading || isRestoring || !!restoreError"><Send class="h-4 w-4" /></button>
+          <WhisperMicButton
+            :recording="askDictation.recording.value"
+            :transcribing="askDictation.transcribing.value"
+            :disabled="isLoading || isRestoring || !!restoreError"
+            label="Dictate to Ask Helios"
+            @toggle="askDictation.toggle()"
+          />
+          <button type="submit" title="Send to Ask Helios" aria-label="Send to Ask Helios"
+            class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-action-primary text-on-action shadow-sm hover:bg-action-primary-hover disabled:opacity-50"
+            :disabled="!input.trim() || isLoading || isRestoring || !!restoreError || askDictation.busy.value"><Send class="h-4 w-4" aria-hidden="true" /></button>
         </form>
+        <p v-if="askDictation.error.value" class="mt-1 px-1 text-[10px] text-state-danger" role="alert">{{ askDictation.error.value }}</p>
         <div v-if="!isExpanded" class="mt-2 flex justify-between items-center px-1">
           <span class="text-[10px] text-ink-subtle">{{ footerText }}</span>
           <button v-if="messages.length" type="button"
@@ -270,10 +278,12 @@
 import { computed, nextTick, ref, watch } from 'vue'
 import { Sparkles, X, Maximize2, Minimize2, Send, ExternalLink, History, MessageSquare, Trash2 } from '@lucide/vue'
 import { useAskHelios } from '../../composables/useAskHelios.js'
+import { appendDictation, useWhisperDictation } from '../../composables/useWhisperDictation.js'
 import { resolveAskHeliosMode } from '../../lib/askHeliosIntent.js'
 import { authenticatedFetch } from '../../lib/api.js'
 import NiceGuidanceAccess from './NiceGuidanceAccess.vue'
 import AskHeliosReflectionBridge from './AskHeliosReflectionBridge.vue'
+import WhisperMicButton from './WhisperMicButton.vue'
 import { isNiceGuidanceRequest, researchReferenceHeading } from '../../lib/niceGuidance.js'
 
 const tabs = [
@@ -336,6 +346,11 @@ const clinicalWindowLabel = computed(() => ({
 })[clinicalContext.value?.window] || 'This session')
 const latestAssistantIndex = computed(() => messages.value.findLastIndex(message => message.role === 'assistant'))
 const input = ref('')
+const askDictation = useWhisperDictation({
+  onText: text => {
+    input.value = appendDictation(input.value, text).slice(0, 1200)
+  }
+})
 const isLoading = ref(false)
 const isSavingAction = ref(false)
 const reflectionBridgeDraft = ref(null)
