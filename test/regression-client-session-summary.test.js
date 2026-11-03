@@ -122,6 +122,9 @@ test('Shared client summary lenses include IFS and Transactional Analysis with m
   );
   assert.match(clientSessionSummaryLensRule('internal_family_systems'), /Internal Family Systems \(IFS\) lens/);
   assert.match(clientSessionSummaryLensRule('internal_family_systems'), /protective intentions/);
+  assert.match(clientSessionSummaryLensRule('internal_family_systems'), /do not explain away genuine discernment as defence/i);
+  assert.match(clientSessionSummaryLensRule('internal_family_systems'), /saboteur/);
+  assert.match(clientSessionSummaryLensRule('internal_family_systems'), /When two or more inner positions are supported/);
   assert.match(clientSessionSummaryLensRule('internal_family_systems'), /Do not infer an exile/);
   assert.match(clientSessionSummaryLensRule('transactional_analysis'), /Transactional Analysis lens/);
 
@@ -149,7 +152,7 @@ test('Shared client summary lenses include IFS and Transactional Analysis with m
     closing: ''
   }, 'internal_family_systems');
 
-  assert.match(ifsBody, /An Internal Family Systems perspective/);
+  assert.match(ifsBody, /Different parts of you in this work/);
 });
 
 
