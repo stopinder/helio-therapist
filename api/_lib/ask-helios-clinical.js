@@ -1,6 +1,6 @@
 import { clientSessionSummaryLensRule } from './ai-client-session-summary.js';
 
-export const ASK_HELIOS_CLINICAL_PROMPT_VERSION = 'ask-helios-clinical/2.0.0';
+export const ASK_HELIOS_CLINICAL_PROMPT_VERSION = 'ask-helios-clinical/2.1.0';
 export const ASK_HELIOS_CLINICAL_WINDOWS = Object.freeze(['current','last_three','last_five','history']);
 export const ASK_HELIOS_CLINICAL_LENSES = Object.freeze(['general','integrative','gentle_cbt','internal_family_systems','transactional_analysis']);
 
