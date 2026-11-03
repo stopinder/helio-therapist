@@ -1,6 +1,6 @@
 import OpenAI, { toFile } from 'openai';
 import { requireAuthenticatedUser } from '../_lib/supabase.js';
-import { isBudgetError, reserveAiBudget, checkDictationFairUse } from '../_lib/ai-budget.js';
+import { isBudgetError, reserveDictationUsage } from '../_lib/ai-budget.js';
 import * as mm from 'music-metadata';
 
 const MAX_AUDIO_BYTES = 3 * 1024 * 1024;
@@ -32,7 +32,7 @@ function parseAudioDataUrl(value) {
   return { mimeType: match[1].toLowerCase(), audio: Buffer.from(match[2], 'base64') };
 }
 
-const model = 'whisper-1'
+const model = 'gpt-transcribe'
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -104,13 +104,13 @@ export default async function handler(req, res) {
       });
     }
 
-    // Dictation is free but subject to fair-use limits (daily total and rate limit)
-    await reserveAiBudget({ userId: user.id, feature: 'audio.transcription' });
+    // Reserve monthly plan allowance and the global Free acquisition budget BEFORE provider spend.
+    // Failed provider calls remain reserved so retries cannot become a cost-control loophole.
+    let allowance;
     try {
-      await checkDictationFairUse({ userId: user.id, durationSeconds: serverDuration });
+      allowance = await reserveDictationUsage({ userId: user.id, durationSeconds: serverDuration });
     } catch (error) {
       if (isBudgetError(error)) {
-        // Return 429 for fair-use limit breaches
         return res.status(error.status).json({ success: false, error: { code: error.code, message: error.message } });
       }
       throw error;
@@ -119,7 +119,16 @@ export default async function handler(req, res) {
     const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
     const file = await toFile(audio, `dictation.${mimeType.split('/')[1]}`, { type: mimeType });
     const result = await client.audio.transcriptions.create({ model, file });
-    return res.status(200).json({ success: true, text: result.text || '' });
+    return res.status(200).json({
+      success: true,
+      text: result.text || '',
+      allowance: {
+        plan: allowance.plan,
+        secondsUsed: allowance.secondsUsed,
+        secondsLimit: allowance.secondsLimit,
+        secondsRemaining: allowance.secondsRemaining
+      }
+    });
   } catch (error) {
     if (isBudgetError(error)) {
       return res.status(error.status).json({ success: false, error: { code: error.code, message: error.message } });
