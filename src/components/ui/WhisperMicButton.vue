@@ -1,7 +1,8 @@
 <template>
   <button
     type="button"
-    class="whisper-mic inline-flex shrink-0 items-center justify-center rounded-full text-ink-muted transition-colors hover:bg-surface-subtle hover:text-ink focus:outline-none focus:ring-2 focus:ring-state-focus-ring disabled:cursor-not-allowed disabled:opacity-40"
+    data-whisper-control
+    class="whisper-mic inline-flex shrink-0 items-center justify-center rounded-full bg-surface-subtle text-ink-secondary transition-colors hover:bg-surface-muted hover:text-ink focus:outline-none focus:ring-2 focus:ring-state-focus-ring disabled:cursor-not-allowed disabled:opacity-40"
     :class="[compact ? 'h-8 w-8' : 'h-9 w-9', recording ? 'bg-state-danger/10 text-state-danger hover:bg-state-danger/15 hover:text-state-danger' : '']"
     :disabled="disabled || transcribing"
     :aria-label="ariaLabel"
