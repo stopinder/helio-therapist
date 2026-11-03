@@ -11,7 +11,7 @@ test('reflection editor exposes an explicit save then AI handoff', () => {
   assert.match(workspace, /Save & Reflect with AI/)
   assert.match(workspace, /saveReflection\(\{ keepOpen: true \}\)/)
   assert.match(workspace, /path: '\/supervision', query: \{ aiReflection: reflection\.id \}/)
-  assert.match(workspace, /isRecording\.value \|\| isTranscribing\.value/)
+  assert.match(workspace, /dictation\.busy\.value/)
   assert.match(workspace, /reviewed text is saved privately first/)
 })
 
