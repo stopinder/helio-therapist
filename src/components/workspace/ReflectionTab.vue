@@ -8,13 +8,16 @@
       </div>
 
       <p v-if="loading" class="mb-4 text-body-sm text-ink-muted">Loading reflection…</p>
-      <p v-if="error" class="mb-4 text-body-sm text-state-danger" role="alert">{{ error }}</p>
+      <p v-if="error || dictation.error.value" class="mb-4 text-body-sm text-state-danger" role="alert">{{ error || dictation.error.value }}</p>
 
       <div class="grid grid-cols-1 gap-7" :aria-busy="loading">
         <div v-for="field in reflectionFields" :key="field.key" class="space-y-2">
           <label :for="field.key" class="text-body-sm font-semibold text-ink">{{ field.label }}</label>
           <p class="text-xs leading-5 text-ink-muted">{{ field.prompt }}</p>
-          <textarea :id="field.key" v-model="reflection[field.key]" rows="3" :disabled="loading || saving" class="w-full rounded-control border border-border bg-surface p-3 text-body-sm text-ink outline-none transition-all focus:border-action-link focus:ring-2 focus:ring-action-link disabled:opacity-60" :placeholder="field.placeholder"></textarea>
+          <div class="relative">
+            <textarea :id="field.key" v-model="reflection[field.key]" rows="3" :disabled="loading || saving || dictation.busy.value" class="w-full rounded-control border border-border bg-surface p-3 pr-12 text-body-sm text-ink outline-none transition-all focus:border-action-link focus:ring-2 focus:ring-action-link disabled:opacity-60" :placeholder="field.placeholder"></textarea>
+            <div class="absolute bottom-2 right-2"><WhisperMicButton :recording="dictationTarget === `main:${field.key}` && dictation.recording.value" :transcribing="dictationTarget === `main:${field.key}` && dictation.transcribing.value" :disabled="loading || saving || (dictation.busy.value && dictationTarget !== `main:${field.key}`)" :label="`Dictate ${field.label}`" @toggle="toggleDictation(`main:${field.key}`)" /></div>
+          </div>
         </div>
       </div>
     </section>
@@ -33,7 +36,10 @@
         <div v-for="field in mapFields" :key="field.key" class="space-y-2">
           <label :for="`map-${field.key}`" class="text-sm font-semibold text-ink">{{ field.label }}</label>
           <p class="text-xs leading-5 text-ink-muted">{{ field.prompt }}</p>
-          <textarea :id="`map-${field.key}`" v-model="reflection.reflectiveMap[field.key]" rows="3" :disabled="loading || saving" class="w-full rounded-control border border-border bg-surface-raised p-3 text-sm text-ink outline-none transition-all focus:border-action-link focus:ring-2 focus:ring-action-link disabled:opacity-60" :placeholder="field.placeholder"></textarea>
+          <div class="relative">
+            <textarea :id="`map-${field.key}`" v-model="reflection.reflectiveMap[field.key]" rows="3" :disabled="loading || saving || dictation.busy.value" class="w-full rounded-control border border-border bg-surface-raised p-3 pr-12 text-sm text-ink outline-none transition-all focus:border-action-link focus:ring-2 focus:ring-action-link disabled:opacity-60" :placeholder="field.placeholder"></textarea>
+            <div class="absolute bottom-2 right-2"><WhisperMicButton :recording="dictationTarget === `map:${field.key}` && dictation.recording.value" :transcribing="dictationTarget === `map:${field.key}` && dictation.transcribing.value" :disabled="loading || saving || (dictation.busy.value && dictationTarget !== `map:${field.key}`)" :label="`Dictate ${field.label}`" @toggle="toggleDictation(`map:${field.key}`)" /></div>
+          </div>
         </div>
       </div>
 
@@ -42,14 +48,16 @@
 
     <div class="flex items-center justify-end gap-3">
       <span v-if="savedMessage" class="text-body-sm text-state-success" role="status">{{ savedMessage }}</span>
-      <button type="button" :disabled="loading || saving" class="button-primary" @click="save">{{ saving ? 'Saving…' : 'Save private reflection' }}</button>
+      <button type="button" :disabled="loading || saving || dictation.busy.value" class="button-primary" @click="save">{{ saving ? 'Saving…' : 'Save private reflection' }}</button>
     </div>
   </div>
 </template>
 
 <script setup>
 import HelpLink from '../help/HelpLink.vue'
+import WhisperMicButton from '../ui/WhisperMicButton.vue'
 import { onMounted, reactive, ref } from 'vue'
+import { appendDictation, useWhisperDictation } from '../../composables/useWhisperDictation.js'
 import { emptyReflectiveMap, emptyWorkspaceReflection, getPrivateReflection, normalizeWorkspaceReflection, upsertPrivateReflection, workspaceReflectionBody } from '../../lib/reflections.js'
 
 const props = defineProps({ clientId: { type: String, required: true }, sessionId: { type: String, required: true } })
@@ -77,6 +85,21 @@ const loading = ref(true)
 const saving = ref(false)
 const error = ref('')
 const savedMessage = ref('')
+const dictationTarget = ref('')
+const dictation = useWhisperDictation({
+  onText: (text, target) => {
+    const [scope, key] = String(target || '').split(':')
+    if (scope === 'main' && key in reflection) reflection[key] = appendDictation(reflection[key], text, '\n')
+    if (scope === 'map' && key in reflection.reflectiveMap) reflection.reflectiveMap[key] = appendDictation(reflection.reflectiveMap[key], text, '\n')
+  }
+})
+function toggleDictation(target) {
+  if (!dictation.recording.value) {
+    dictationTarget.value = target
+    dictation.resetError()
+  }
+  dictation.toggle(target)
+}
 
 async function load() {
   loading.value = true
