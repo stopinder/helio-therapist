@@ -22,10 +22,14 @@
 
         <section>
           <label for="develop-reflection-body" class="text-body-sm font-semibold text-ink">What stayed with you?</label>
-          <textarea id="develop-reflection-body" v-model="body" rows="7" maxlength="20000" class="mt-2 w-full rounded-panel border border-border bg-surface p-4 text-body text-ink outline-none focus:border-state-selected focus:ring-2 focus:ring-state-selected/20"></textarea>
+          <div class="relative mt-2">
+            <textarea id="develop-reflection-body" v-model="body" rows="7" maxlength="20000" class="w-full rounded-panel border border-border bg-surface p-4 pr-14 text-body text-ink outline-none focus:border-state-selected focus:ring-2 focus:ring-state-selected/20" :disabled="dictation.transcribing.value"></textarea>
+            <div class="absolute bottom-3 right-3"><WhisperMicButton :recording="dictation.recording.value" :transcribing="dictation.transcribing.value" :disabled="saving" label="Dictate reflection" @toggle="dictation.toggle()" /></div>
+          </div>
           <div class="mt-2 flex items-center justify-between gap-3">
             <p class="text-caption text-ink-muted">{{ body.length.toLocaleString() }} / 20,000</p>
-            <p class="text-caption text-ink-muted">The captured thought remains private unless you choose otherwise.</p>
+            <p v-if="dictation.error.value" class="text-caption text-state-danger" role="alert">{{ dictation.error.value }}</p>
+            <p v-else class="text-caption text-ink-muted">The captured thought remains private unless you choose otherwise.</p>
           </div>
         </section>
 
@@ -94,12 +98,15 @@
 <script setup>
 import { reactive, ref } from 'vue'
 import { authenticatedFetch } from '../../lib/api.js'
+import { appendDictation, useWhisperDictation } from '../../composables/useWhisperDictation.js'
+import WhisperMicButton from '../ui/WhisperMicButton.vue'
 import { developQuickReflection, emptyReflectiveMap } from '../../lib/reflections.js'
 
 const props=defineProps({ reflection:{type:Object,required:true} })
 const emit=defineEmits(['close','saved'])
 
 const body=ref(props.reflection.body || '')
+const dictation=useWhisperDictation({onText:text=>{body.value=appendDictation(body.value,text,'\n\n').slice(0,20000)}})
 const theme=ref(props.reflection.theme || '')
 const includedInSupervision=ref(Boolean(props.reflection.included_in_supervision))
 const mapping=reactive({ ...emptyReflectiveMap(), ...(props.reflection.workspace_content?.reflectiveMap || {}) })
