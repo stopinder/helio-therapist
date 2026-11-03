@@ -79,9 +79,9 @@ Welcome to Helios, ${firstName || 'there'}.
 
 You’re in. Thanks for joining Helios.
 
-Helios is being built as a calm clinical workspace for psychotherapists — bringing together the practical parts of practice with space for reflection and professional growth.
+Helios is a calm clinical workspace for psychotherapists — bringing together the practical parts of practice with space for reflection and professional growth.
 
-You’re joining while Helios is still being shaped, so your experience of using it genuinely matters.
+A good place to begin is with one client, then let the workspace support the thread of the work from there.
 
 Open Helios:
 ${openHeliosUrl}
@@ -89,7 +89,7 @@ ${openHeliosUrl}
 Take your time exploring. Your practice details and integrations can be adjusted whenever you’re ready.
 
 Helios
-A calm workspace for clinical practice.
+A calmer place for the work around therapy.
 
 This is an account email from Helios. Product updates are controlled separately by the preference you selected when signing up.
 
