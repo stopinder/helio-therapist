@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as mm from 'music-metadata';
-import { reserveAiBudget, checkDictationFairUse } from '../api/_lib/ai-budget.js';
+import { reserveDictationUsage } from '../api/_lib/ai-budget.js';
 import { validWebmOpus } from './fixtures/audio-fixtures.js';
 
 // Mock Supabase client
@@ -14,27 +14,27 @@ function mockSupabase(responses = {}) {
       if (responses[fn]) {
         return responses[fn](params, options);
       }
-      return { data: null, error: null };
+      return { data: { plan:'free', periodStart:'2026-11-01', secondsUsed:30, secondsLimit:3600, secondsRemaining:3570 }, error: null };
     }
   };
 }
 
-test('checkDictationFairUse uses public gateway', async () => {
+test('reserveDictationUsage uses public gateway', async () => {
   const supabase = mockSupabase({
-    check_dictation_fair_use: (params, options) => {
+    reserve_dictation_usage: (params, options) => {
       assert.strictEqual(options, undefined);
       return { data: null, error: null };
     }
   });
 
-  await checkDictationFairUse({
+  await reserveDictationUsage({
     userId: 'user-1',
     durationSeconds: 30,
     supabase
   });
 
   assert.equal(supabase.calls.length, 1);
-  assert.equal(supabase.calls[0].fn, 'check_dictation_fair_use');
+  assert.equal(supabase.calls[0].fn, 'reserve_dictation_usage');
 });
 
 test('music-metadata correctly parses duration for real WebM fixture', async () => {
@@ -58,41 +58,51 @@ test('music-metadata rejects invalid files', async () => {
   }
 });
 
-test('Daily limit error mapping', async () => {
+test('Free monthly limit error mapping', async () => {
   const supabase = mockSupabase({
-    check_dictation_fair_use: () => ({
+    reserve_dictation_usage: () => ({
       data: null,
-      error: { message: 'DICTATION_DAILY_LIMIT_EXCEEDED' }
+      error: { message: 'DICTATION_FREE_MONTHLY_LIMIT_EXCEEDED' }
     })
   });
 
   await assert.rejects(
-    checkDictationFairUse({ userId: 'u1', durationSeconds: 10, supabase }),
-    { code: 'DICTATION_DAILY_LIMIT_EXCEEDED', status: 429 }
+    reserveDictationUsage({ userId: 'u1', durationSeconds: 10, supabase }),
+    { code: 'DICTATION_FREE_MONTHLY_LIMIT_EXCEEDED', status: 429 }
   );
 });
 
 test('Rate limit error mapping', async () => {
   const supabase = mockSupabase({
-    check_dictation_fair_use: () => ({
+    reserve_dictation_usage: () => ({
       data: null,
       error: { message: 'DICTATION_RATE_LIMIT_EXCEEDED' }
     })
   });
 
   await assert.rejects(
-    checkDictationFairUse({ userId: 'u1', durationSeconds: 10, supabase }),
+    reserveDictationUsage({ userId: 'u1', durationSeconds: 10, supabase }),
     { code: 'DICTATION_RATE_LIMIT_EXCEEDED', status: 429 }
+  );
+});
+
+test('Global Free budget error mapping', async () => {
+  const supabase = mockSupabase({
+    reserve_dictation_usage: () => ({ data: null, error: { message: 'DICTATION_FREE_GLOBAL_LIMIT' } })
+  });
+  await assert.rejects(
+    reserveDictationUsage({ userId: 'u1', durationSeconds: 10, supabase }),
+    { code: 'DICTATION_FREE_GLOBAL_LIMIT', status: 503 }
   );
 });
 
 test('Supabase unavailable handling', async () => {
   const supabase = mockSupabase({
-    check_dictation_fair_use: () => { throw new Error('Network error'); }
+    reserve_dictation_usage: () => { throw new Error('Network error'); }
   });
 
   await assert.rejects(
-    checkDictationFairUse({ userId: 'u1', durationSeconds: 10, supabase }),
+    reserveDictationUsage({ userId: 'u1', durationSeconds: 10, supabase }),
     { code: 'AI_BUDGET_UNAVAILABLE', status: 503 }
   );
 });
