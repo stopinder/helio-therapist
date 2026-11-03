@@ -14,6 +14,7 @@
             <div class="mt-5 flex flex-wrap items-center gap-3">
               <div class="flex gap-2">
                 <button class="button-primary" @click="downloadFinalised">Download PDF</button>
+                <button v-if="isSessionSummary" class="button-secondary" :disabled="copySummaryState === 'copying'" @click="copySummary">{{ copySummaryLabel }}</button>
                 <a v-if="isSessionSummary && clientEmail" :href="mailtoLink" class="button-secondary inline-flex items-center">Prepare email</a>
                 <button class="button-secondary" @click="$emit('show-documents')">View Client Documents</button>
                 <button class="button-secondary" @click="requestClose">Close</button>
@@ -90,7 +91,10 @@
                   <p class="text-caption text-ink-muted mt-0.5">{{ evidenceWindow.length ? `${evidenceWindow.length} session source${evidenceWindow.length===1?'':'s'} selected` : 'Choose an available anchor session to generate.' }}</p>
                   <p v-if="summaryGenerationMessage" class="text-caption mt-1" :class="summaryGenerationError ? 'text-state-danger' : 'text-ink-muted'">{{ summaryGenerationMessage }}</p>
                 </div>
-                <button type="button" class="button-primary w-full sm:w-auto sm:min-w-[15rem] justify-center shrink-0" :disabled="generatingSummary || loadingEvidence || !anchorSessionId || Boolean(evidenceError)" @click="generateSummary">{{ generatingSummary ? 'Generating…' : (hasExistingSummary ? 'Regenerate client summary' : 'Generate client summary') }}</button>
+                <div class="flex w-full sm:w-auto flex-col sm:flex-row gap-2">
+                  <button v-if="form.body.trim() && form.body.trim() !== SESSION_SUMMARY_TEMPLATE.trim()" type="button" class="button-secondary w-full sm:w-auto justify-center" :disabled="generatingSummary || copySummaryState === 'copying'" @click="copySummary">{{ copySummaryLabel }}</button>
+                  <button type="button" class="button-primary w-full sm:w-auto sm:min-w-[15rem] justify-center shrink-0" :disabled="generatingSummary || loadingEvidence || !anchorSessionId || Boolean(evidenceError)" @click="generateSummary">{{ generatingSummary ? 'Generating…' : (hasExistingSummary ? 'Regenerate client summary' : 'Generate client summary') }}</button>
+                </div>
               </div>
             </div>
 
@@ -118,21 +122,63 @@
 <script setup>
 import HelpLink from '../help/HelpLink.vue'
 import RichDocumentEditor from '../documents/RichDocumentEditor.vue'
-import { computed, onMounted, reactive, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import { createClientDocumentDraft, downloadClientDocument, finaliseClientDocument, generateClientSessionSummary, listClientSummaryEvidence, listDocumentSourceSessions, saveClientDocumentDraft } from '../../lib/clientDocuments.js'
 import { loadDocumentProfile, profileDisplay } from '../../lib/documentProfile.js'
 const SESSION_SUMMARY_TEMPLATE = `Where things are now\n\nWhat we have been working on\n\nPatterns across our recent work\n\nWhat has shifted — and what has been different\n\nStrengths and resources\n\nMaking sense of what we have noticed\n\nIdeas to carry forward\n\nClosing reflection`
+const SUMMARY_SECTION_HEADINGS = new Set([
+  'Where things are now',
+  'What we have been working on',
+  'Patterns across our recent work',
+  'What has shifted — and what has been different',
+  'Strengths and resources',
+  'Making sense of what we have noticed',
+  'A gentle CBT perspective',
+  'An integrative perspective',
+  'An Internal Family Systems perspective',
+  'Different parts of you in this work',
+  'A Transactional Analysis perspective',
+  'Ideas to carry forward',
+  'Closing reflection'
+])
+function richTextNodes(value) {
+  const nodes = []
+  String(value || '').split('\n').forEach((line, index) => {
+    if (index) nodes.push({ type: 'hardBreak' })
+    if (line) nodes.push({ type: 'text', text: line })
+  })
+  return nodes
+}
+function summaryBodyToRichContent(value) {
+  const content = []
+  for (const rawBlock of String(value || '').split(/\n{2,}/)) {
+    const block = rawBlock.trim()
+    if (!block) continue
+    const lines = block.split('\n')
+    const heading = lines[0].trim()
+    if (SUMMARY_SECTION_HEADINGS.has(heading)) {
+      content.push({ type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: heading }] })
+      const body = lines.slice(1).join('\n').trim()
+      if (body) content.push({ type: 'paragraph', content: richTextNodes(body) })
+    } else {
+      content.push({ type: 'paragraph', content: richTextNodes(block) })
+    }
+  }
+  return { type: 'doc', content: content.length ? content : [{ type: 'paragraph' }] }
+}
 const props = defineProps({ client: { type: Object, required: true }, clientEmail: { type: String, default: '' }, document: { type: Object, default: null }, initialDocumentType: { type: String, default: 'other' } })
 const emit = defineEmits(['close', 'saved', 'show-documents'])
 const SOURCE_PAGE_SIZE = 8
 const initialType = props.document?.documentType || props.initialDocumentType || 'other'
 const isSessionSummary = computed(() => form.documentType === 'session_summary')
 const loading = ref(true), saving = ref(false), action = ref(''), error = ref(''), saveMessage = ref(props.document ? 'Saved' : 'Not saved yet'), sources = ref([]), selectedSourceIds = ref([]), addedSourceIds = ref([]), expandedSourceId = ref(null), sourceQuery = ref(''), visibleSourceCount = ref(SOURCE_PAGE_SIZE), currentDocument = ref(props.document), baseline = ref(''), profile = ref({}), sourcePanelOpen = ref(false)
-const generatingSummary = ref(false), loadingEvidence = ref(false), evidenceError = ref(''), summaryLens = ref(props.document?.content?.clinicalIntelligence?.generation?.lens || 'general'), summaryWindow = ref(props.document?.content?.clinicalIntelligence?.generation?.window || 'last_three'), therapistGuidance = ref(''), summaryGenerationMessage = ref(''), summaryGenerationError = ref(false), summarySources = ref(props.document?.content?.clinicalIntelligence?.sources || []), summaryClaims = ref(props.document?.content?.clinicalIntelligence?.claims || []), summaryGeneration = ref(props.document?.content?.clinicalIntelligence?.generation || null), previousSummaryVersions = ref(props.document?.content?.clinicalIntelligence?.history || []), lastGeneratedBody = ref(props.document?.content?.clinicalIntelligence?.lastGeneratedBody || ''), availableSummarySessions = ref([]), anchorSessionId = ref(null), evidenceDateAutofillArmed = ref(false)
+const generatingSummary = ref(false), loadingEvidence = ref(false), evidenceError = ref(''), copySummaryState = ref('idle'), summaryLens = ref(props.document?.content?.clinicalIntelligence?.generation?.lens || 'general'), summaryWindow = ref(props.document?.content?.clinicalIntelligence?.generation?.window || 'last_three'), therapistGuidance = ref(''), summaryGenerationMessage = ref(''), summaryGenerationError = ref(false), summarySources = ref(props.document?.content?.clinicalIntelligence?.sources || []), summaryClaims = ref(props.document?.content?.clinicalIntelligence?.claims || []), summaryGeneration = ref(props.document?.content?.clinicalIntelligence?.generation || null), previousSummaryVersions = ref(props.document?.content?.clinicalIntelligence?.history || []), lastGeneratedBody = ref(props.document?.content?.clinicalIntelligence?.lastGeneratedBody || ''), availableSummarySessions = ref([]), anchorSessionId = ref(null), evidenceDateAutofillArmed = ref(false)
 const form = reactive({ title: props.document?.title || (initialType === 'session_summary' ? 'Session summary' : ''), documentType: initialType, recipient: props.document?.recipient || '', purpose: props.document?.purpose || (initialType === 'session_summary' ? 'A client-facing summary of the session' : ''), periodStart: props.document?.periodStart || '', periodEnd: props.document?.periodEnd || '', body: props.document?.content?.body || (initialType === 'session_summary' ? SESSION_SUMMARY_TEMPLATE : ''), richContent: props.document?.content?.richContent || null })
 const identity = computed(() => profileDisplay(profile.value)), finalised = computed(() => currentDocument.value?.status === 'completed')
 const hasExistingSummary = computed(() => isSessionSummary.value && Boolean(form.body.trim()) && form.body.trim() !== SESSION_SUMMARY_TEMPLATE.trim())
 const summaryLensLabel = computed(() => ({ general:'General', integrative:'Integrative', gentle_cbt:'CBT', internal_family_systems:'Internal Family Systems (IFS)', transactional_analysis:'Transactional Analysis' })[summaryLens.value] || 'General')
+const copySummaryLabel = computed(() => copySummaryState.value === 'copied' ? 'Copied ✓' : copySummaryState.value === 'copying' ? 'Copying…' : copySummaryState.value === 'failed' ? 'Copy failed' : 'Copy summary')
+let copySummaryResetTimer = 0
 const summaryWindowLabel = computed(() => ({ current:'This session', last_three:'Last 3 sessions', last_five:'Last 5 sessions', history:'Entire history' })[summaryWindow.value] || 'Selected sessions')
 const mailtoLink = computed(() => {
   if (!props.clientEmail) return ''
@@ -166,6 +212,7 @@ function changes() { const clinicalIntelligence=isSessionSummary.value?{generati
 function snapshot() { return JSON.stringify(changes()) }
 const dirty = computed(() => !finalised.value && baseline.value !== snapshot())
 onMounted(() => { loadWorkspace() })
+onBeforeUnmount(() => window.clearTimeout(copySummaryResetTimer))
 async function loadWorkspace() {
   loading.value = true
   error.value = ''
@@ -205,7 +252,33 @@ async function loadWorkspace() {
     loading.value = false
   }
 }
-async function generateSummary() { if (generatingSummary.value) return; const currentBody=form.body.trim(); if(currentBody&&currentBody!==SESSION_SUMMARY_TEMPLATE.trim()&&currentBody!==lastGeneratedBody.value&&!window.confirm('Generate again and replace your edited draft? Your current text will remain available under Restore previous version.'))return; generatingSummary.value = true; summaryGenerationError.value = false; summaryGenerationMessage.value = `Generating a new ${summaryLensLabel.value} summary…`; try { const result = await generateClientSessionSummary({ clientId: props.client.id, lens: summaryLens.value, window: summaryWindow.value, therapistGuidance: therapistGuidance.value,anchorSessionId:anchorSessionId.value }); if(currentBody)previousSummaryVersions.value=[...previousSummaryVersions.value,{body:form.body,richContent:form.richContent,savedAt:new Date().toISOString(),generation:summaryGeneration.value,sources:summarySources.value,claims:summaryClaims.value,lastGeneratedBody:lastGeneratedBody.value}].slice(-5); form.body = result.draft.body; form.richContent = null; lastGeneratedBody.value=result.draft.body; summarySources.value=result.sources||[]; summaryClaims.value=result.claims||[]; summaryGeneration.value={id:result.generationId,generatedAt:result.generatedAt,promptVersion:result.promptVersion,model:result.model,lens:result.lens,window:result.window,anchorSessionId:anchorSessionId.value,usage:result.usage,sample:Boolean(result.sample)}; summaryGenerationMessage.value = result.sample ? `Sample draft prepared from ${result.sessionCount} synthetic session source${result.sessionCount===1?'':'s'}. No AI allowance used.` : (result.sessionCount > 1 ? `Draft prepared from ${result.sessionCount} session sources. Review and edit before finalising.` : 'Draft prepared from the available session source. Review and edit before finalising.') } catch (e) { summaryGenerationError.value = true; summaryGenerationMessage.value = `${hasExistingSummary.value ? 'Generation failed — previous summary unchanged.' : 'Generation failed — no draft was created.'} ${e.message || 'Please try again.'}` } finally { generatingSummary.value = false } }
+async function generateSummary() { if (generatingSummary.value) return; const currentBody=form.body.trim(); if(currentBody&&currentBody!==SESSION_SUMMARY_TEMPLATE.trim()&&currentBody!==lastGeneratedBody.value&&!window.confirm('Generate again and replace your edited draft? Your current text will remain available under Restore previous version.'))return; generatingSummary.value = true; summaryGenerationError.value = false; summaryGenerationMessage.value = `Generating a new ${summaryLensLabel.value} summary…`; try { const result = await generateClientSessionSummary({ clientId: props.client.id, lens: summaryLens.value, window: summaryWindow.value, therapistGuidance: therapistGuidance.value,anchorSessionId:anchorSessionId.value }); if(currentBody)previousSummaryVersions.value=[...previousSummaryVersions.value,{body:form.body,richContent:form.richContent,savedAt:new Date().toISOString(),generation:summaryGeneration.value,sources:summarySources.value,claims:summaryClaims.value,lastGeneratedBody:lastGeneratedBody.value}].slice(-5); form.body = result.draft.body; form.richContent = summaryBodyToRichContent(result.draft.body); lastGeneratedBody.value=result.draft.body; summarySources.value=result.sources||[]; summaryClaims.value=result.claims||[]; summaryGeneration.value={id:result.generationId,generatedAt:result.generatedAt,promptVersion:result.promptVersion,model:result.model,lens:result.lens,window:result.window,anchorSessionId:anchorSessionId.value,usage:result.usage,sample:Boolean(result.sample)}; summaryGenerationMessage.value = result.sample ? `Sample draft prepared from ${result.sessionCount} synthetic session source${result.sessionCount===1?'':'s'}. No AI allowance used.` : (result.sessionCount > 1 ? `Draft prepared from ${result.sessionCount} session sources. Review and edit before finalising.` : 'Draft prepared from the available session source. Review and edit before finalising.') } catch (e) { summaryGenerationError.value = true; summaryGenerationMessage.value = `${hasExistingSummary.value ? 'Generation failed — previous summary unchanged.' : 'Generation failed — no draft was created.'} ${e.message || 'Please try again.'}` } finally { generatingSummary.value = false } }
+async function copySummary(){
+  const value=String(form.body||'').trim()
+  if(!value)return
+  copySummaryState.value='copying'
+  try{
+    if(navigator.clipboard?.writeText){
+      await navigator.clipboard.writeText(value)
+    }else{
+      const area=window.document.createElement('textarea')
+      area.value=value
+      area.setAttribute('readonly','')
+      area.style.position='fixed'
+      area.style.opacity='0'
+      window.document.body.appendChild(area)
+      area.select()
+      const copied=window.document.execCommand('copy')
+      area.remove()
+      if(!copied)throw new Error('Copy command was unavailable')
+    }
+    copySummaryState.value='copied'
+  }catch{
+    copySummaryState.value='failed'
+  }
+  window.clearTimeout(copySummaryResetTimer)
+  copySummaryResetTimer=window.setTimeout(()=>{copySummaryState.value='idle'},2200)
+}
 function restorePreviousSummary(){const previous=previousSummaryVersions.value.at(-1);if(!previous)return;const current={body:form.body,richContent:form.richContent,savedAt:new Date().toISOString(),generation:summaryGeneration.value,sources:summarySources.value,claims:summaryClaims.value,lastGeneratedBody:lastGeneratedBody.value};form.body=previous.body;form.richContent=previous.richContent||null;summaryGeneration.value=previous.generation||null;summarySources.value=previous.sources||[];summaryClaims.value=previous.claims||[];lastGeneratedBody.value=previous.lastGeneratedBody||previous.body;previousSummaryVersions.value=[...previousSummaryVersions.value.slice(0,-1),current].slice(-5);summaryGenerationMessage.value='Previous version restored. Review it before saving.'}
 function sourceLabel(source){if(source.kind==='session_capture')return `Reviewed Session Capture · ${formatDate(source.occurredAt)}`;if(source.kind==='session_summary')return `${source.status==='completed'?'Finalised':'Existing'} session summary · ${formatDate(source.occurredAt)}`;if(source.kind==='accepted_care')return `Accepted Therapy Focus · ${String(source.careKind||'context').replaceAll('_',' ')}`;return 'Therapist-authored guidance'}
 function appendSources() { if (isSessionSummary.value) return; const pending = addableSelectedSources.value; const text = pending.map(s => `Session ${formatDate(s.occurredAt)}\n${s.notes || ''}`.trim()).join('\n\n'); if (text) { form.body = [form.body.trim(), text].filter(Boolean).join('\n\n'); form.richContent = null; } addedSourceIds.value = [...new Set([...addedSourceIds.value, ...pending.map(s => s.id)])] }
