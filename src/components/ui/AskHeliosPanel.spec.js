@@ -33,6 +33,22 @@ describe('AskHeliosPanel', () => {
     expect(w.find('textarea').exists()).toBe(true)
   })
 
+  it('renders microphone and send controls inside the Ask Helios composer', () => {
+    const w = mount(AskHeliosPanel)
+    const composer = w.find('[data-testid="ask-helios-composer"]')
+    const actions = w.find('[data-testid="ask-helios-composer-actions"]')
+    const mic = w.find('[data-testid="ask-helios-mic"]')
+    const send = w.find('[data-testid="ask-helios-send"]')
+
+    expect(composer.exists()).toBe(true)
+    expect(actions.exists()).toBe(true)
+    expect(mic.exists()).toBe(true)
+    expect(send.exists()).toBe(true)
+    expect(composer.element.parentElement).toBe(actions.element.parentElement)
+    expect(mic.attributes('aria-label')).toBe('Dictate to Ask Helios')
+    expect(send.attributes('aria-label')).toBe('Send to Ask Helios')
+  })
+
   it('preserves the research endpoint and clickable references', async () => {
     api.authenticatedFetch.mockImplementation(async url => {
       if (url === '/api/ai/research') return ok({
