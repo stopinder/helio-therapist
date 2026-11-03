@@ -3,14 +3,11 @@
     <div class="flex h-16 shrink-0 items-center justify-between border-b border-sidebar-border px-5">
       <router-link to="/overview" class="flex min-w-0 items-center gap-2.5 rounded-control focus-visible:outline-sidebar-muted" aria-label="Helios home">
         <img
-          v-if="accountIdentity.practiceLogoUrl"
-          :src="accountIdentity.practiceLogoUrl"
+          src="/brand/helios-mark.png"
           alt=""
-          class="h-9 w-9 shrink-0 rounded-control object-contain"
+          class="h-9 w-9 shrink-0 object-contain"
+          aria-hidden="true"
         />
-        <span v-else class="icon-surface icon-surface-reflection rounded-pill border-none">
-          <Sun class="workspace-icon" aria-hidden="true" />
-        </span>
         <span class="min-w-0 leading-none">
           <span class="block font-serif text-[1.35rem] font-semibold text-sidebar-fg">Helios</span>
           <span class="mt-1 block truncate text-[0.58rem] uppercase tracking-[0.16em] text-sidebar-muted">
@@ -86,7 +83,6 @@ import {
   Inbox,
   LayoutDashboard,
   Settings,
-  Sun,
   Users,
   X
 } from '@lucide/vue'
