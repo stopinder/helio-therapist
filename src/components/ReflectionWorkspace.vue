@@ -16,34 +16,29 @@
 
     <form v-if="localView === 'main'" class="journal" @submit.prevent="saveReflection">
       <label class="sr-only" for="reflection-body">Reflection</label>
-      <section class="editor-surface">
-        <textarea id="reflection-body" ref="editor" v-model="body" class="reflection-editor" placeholder="Write or speak whatever feels important…" aria-label="Reflection" />
+      <section class="editor-surface relative">
+        <textarea id="reflection-body" ref="editor" v-model="body" class="reflection-editor pr-16" placeholder="Write or speak whatever feels important…" aria-label="Reflection" />
+        <div class="absolute bottom-4 right-4">
+          <WhisperMicButton :recording="dictation.recording.value" :transcribing="dictation.transcribing.value" :disabled="saving" label="Dictate reflection" @toggle="dictation.toggle()" />
+        </div>
       </section>
 
-      <div class="action-bar gap-4">
-        <div class="voice-control">
-          <button v-if="!isRecording" type="button" class="secondary-action" :disabled="isTranscribing" @click="startRecording">{{ isTranscribing ? 'Adding to reflection...' : '🎙️ Record voice' }}</button>
-          <template v-else>
-            <span class="recording-status" aria-live="polite"><span class="recording-indicator" aria-hidden="true" />Recording · {{ elapsed }}</span>
-            <button type="button" class="secondary-action" @click="togglePause">{{ isPaused ? 'Resume' : 'Pause' }}</button>
-            <button type="button" class="secondary-action" @click="stopRecording">Stop and add to reflection</button>
-          </template>
-        </div>
+      <div class="action-bar gap-4 justify-end">
         <div class="save-actions">
           <button type="button" class="secondary-action" @click="summariseCurrentAttempt">
             {{ generatingSummary ? 'Preparing draft...' : 'Summarise for supervision' }}
           </button>
-          <button type="button" class="secondary-action" :disabled="saving || !isBodyReady || isTranscribing || isRecording" @click="saveAndReflectWithAI">
+          <button type="button" class="secondary-action" :disabled="saving || !isBodyReady || dictation.busy.value" @click="saveAndReflectWithAI">
             {{ savingForAI ? 'Saving…' : '✨ Save & Reflect with AI' }}
           </button>
-          <button type="submit" class="primary-action" :disabled="saving || !isBodyReady">{{ saving && !savingForAI ? 'Saving...' : 'Save reflection' }}</button>
+          <button type="submit" class="primary-action" :disabled="saving || !isBodyReady || dictation.busy.value">{{ saving && !savingForAI ? 'Saving...' : 'Save reflection' }}</button>
         </div>
       </div>
       <p class="quiet ai-handoff-note">AI reflection is optional. Your reviewed text is saved privately first, then sent only when you continue from the AI confirmation.</p>
       <p v-if="showThresholdGuidance && !canSummarise" id="summary-threshold" class="quiet threshold-note text-state-warning">
         Write a little more to create a supervision summary ({{ minimumSummaryCharacters }} characters).
       </p>
-      <p v-if="saveError" class="error-message" role="alert">{{ saveError }}</p>
+      <p v-if="dictation.error.value || saveError" class="error-message" role="alert">{{ dictation.error.value || saveError }}</p>
     </form>
 
     <section class="reflection-history" :aria-labelledby="localView === 'main' ? 'recent-reflections-heading' : 'archive-heading'">
@@ -116,6 +111,8 @@ import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { supabase } from '../lib/supabase.js'
 import { withSessionRecovery, authenticatedFetch } from '../lib/api.js'
+import { appendDictation, useWhisperDictation } from '../composables/useWhisperDictation.js'
+import WhisperMicButton from './ui/WhisperMicButton.vue'
 
 const props = defineProps({ view: { type: String, default: 'main' } })
 const emit = defineEmits(['update:view'])
@@ -126,9 +123,9 @@ const maxReflectionCharacters = 20000
 const reflections = ref([]), loading = ref(false), saving = ref(false), savingForAI = ref(false), savingSummary = ref(false), generatingSummary = ref(false)
 const body = ref(''), saveError = ref(''), summaryDraft = ref(''), summaryReflection = ref(null), summaryError = ref(''), summaryGeneratedContent = ref('')
 const detailStage = ref('reflection')
-const editor = ref(null), recorder = ref(null), audioChunks = ref([]), isRecording = ref(false), isPaused = ref(false), isTranscribing = ref(false), seconds = ref(0), timer = ref(null)
+const editor = ref(null)
+const dictation = useWhisperDictation({ onText: text => { body.value = appendDictation(body.value, text, '\n\n'); editor.value?.focus() } })
 const selectedReflection = ref(null), showThresholdGuidance = ref(false)
-const elapsed = computed(() => `00:${String(seconds.value).padStart(2, '0')}`)
 const isBodyValid = computed(() => (body.value || '').length <= maxReflectionCharacters)
 const isBodyReady = computed(() => Boolean(body.value.trim()) && isBodyValid.value)
 const canSummarise = computed(() => canSummariseText(body.value))
@@ -166,7 +163,7 @@ async function saveReflection({ keepOpen = false } = {}) {
 }
 
 async function saveAndReflectWithAI() {
-  if (savingForAI.value || isRecording.value || isTranscribing.value) return
+  if (savingForAI.value || dictation.busy.value) return
   savingForAI.value = true
   const reflection = await saveReflection({ keepOpen: true })
   if (reflection) {
@@ -209,18 +206,11 @@ async function saveSummary() {
 }
 function discardDraft() { detailStage.value = 'reflection'; summaryDraft.value = ''; summaryGeneratedContent.value = ''; summaryError.value = '' }
 function backToReflection() { detailStage.value = 'reflection' }
-async function startRecording() { try { const stream = await navigator.mediaDevices.getUserMedia({ audio: true }); recorder.value = new MediaRecorder(stream); audioChunks.value = []; recorder.value.ondataavailable = event => audioChunks.value.push(event.data); recorder.value.onstop = transcribe; recorder.value.start(); isRecording.value = true; isPaused.value = false; seconds.value = 0; timer.value = window.setInterval(() => seconds.value += 1, 1000) } catch { saveError.value = 'Microphone access is needed to record a reflection.' } }
-function togglePause() { if (!recorder.value) return; if (isPaused.value) { recorder.value.resume(); isPaused.value = false } else { recorder.value.pause(); isPaused.value = true } }
-function stopRecording() { if (!recorder.value) return; window.clearInterval(timer.value); recorder.value.stop(); recorder.value.stream.getTracks().forEach(track => track.stop()); isRecording.value = false; isPaused.value = false }
-async function transcribe() {
-  const blob = new Blob(audioChunks.value, { type: recorder.value?.mimeType || 'audio/webm' }); const reader = new FileReader()
-  reader.onloadend = async () => { isTranscribing.value = true; try { const response = await authenticatedFetch('/api/ai/transcribe', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ audio: reader.result }) }); const data = await safeParseJson(response); if (!response.ok) throw new Error(data?.error?.message || data?.error || `Server error (${response.status}). Please try again later.`); if (data?.text) { body.value = `${body.value}${body.value ? '\n\n' : ''}${data.text}`; editor.value?.focus() } } catch (e) { saveError.value = e.message || 'The recording could not be transcribed.' } finally { isTranscribing.value = false } }
-  reader.readAsDataURL(blob)
-}
+
 function date(value) { return new Date(value).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }) }
 function handleKeyDown(e) { if (e.key === 'Escape' && selectedReflection.value) closeDetail() }
 onMounted(() => { load(); window.addEventListener('keydown', handleKeyDown) })
-onBeforeUnmount(() => { window.clearInterval(timer.value); recorder.value?.stream?.getTracks().forEach(track => track.stop()); document.body.style.overflow = ''; window.removeEventListener('keydown', handleKeyDown) })
+onBeforeUnmount(() => { document.body.style.overflow = ''; window.removeEventListener('keydown', handleKeyDown) })
 </script>
 
 <style scoped>
@@ -235,10 +225,6 @@ onBeforeUnmount(() => { window.clearInterval(timer.value); recorder.value?.strea
 .editor-surface:focus-within { border-color: var(--action-primary); box-shadow: 0 0 0 2px var(--action-primary-alpha); }
 .reflection-editor { width: 100%; min-height: 240px; padding: 1.5rem; border: 0; background: transparent; color: var(--text); font-size: 1rem; line-height: 1.6; resize: vertical; outline: none; }
 .action-bar { display: flex; justify-content: space-between; align-items: center; margin-top: 1rem; }
-.voice-control { display: flex; align-items: center; gap: 1rem; }
-.recording-status { display: flex; align-items: center; gap: 0.75rem; font-size: 0.875rem; font-weight: 600; color: var(--state-error); }
-.recording-indicator { width: 0.75rem; height: 0.75rem; background: var(--state-error); border-radius: 50%; animation: pulse 1.5s infinite; }
-@keyframes pulse { 0% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(1.1); } 100% { opacity: 1; transform: scale(1); } }
 .save-actions { display: flex; gap: 0.75rem; flex-wrap: wrap; justify-content: flex-end; }
 .primary-action { background: var(--action-primary); color: white; padding: 0.625rem 1.25rem; border-radius: 0.75rem; font-weight: 600; border: 0; cursor: pointer; transition: background 0.2s; }
 .primary-action:hover:not(:disabled) { background: var(--action-primary-hover); }
