@@ -10,7 +10,8 @@ import {
   reserveAiBudget
 } from '../api/_lib/ai-budget.js';
 
-const migration = readFileSync(new URL('../supabase/migrations/20261020220534_unmetered_dictation.sql', import.meta.url), 'utf8');
+const migration = readFileSync(new URL('../supabase/migrations/20261020154114_free_ai_monthly_budget.sql', import.meta.url), 'utf8');
+const dictationMigration = readFileSync(new URL('../supabase/migrations/20261103125000_dictation_cost_governor.sql', import.meta.url), 'utf8');
 const aiEngine = readFileSync(new URL('../api/_lib/ai-execution.js', import.meta.url), 'utf8');
 const transcribe = readFileSync(new URL('../api/ai/transcribe.js', import.meta.url), 'utf8');
 
@@ -24,7 +25,7 @@ test('Free budget is deliberately bounded and low cost', () => {
   assert.equal(FREE_AI_MAX_INPUT_CHARS, 12000);
   assert.equal(FREE_AI_MAX_OUTPUT_TOKENS, 1000);
   assert.equal(FREE_AI_TEXT_MODEL, 'gpt-4o-mini');
-  assert.match(migration, /Audio transcription is unmetered/);
+  assert.match(dictationMigration, /free_monthly_seconds integer not null default 3600/);
 });
 
 test('reserveAiBudget calls the server-only atomic RPC with no clinical input', async () => {
@@ -54,8 +55,6 @@ test('Oversize requests, missing RPC and malformed data fail closed', async () =
   const examples = [
     [{ message: 'FREE_AI_GLOBAL_LIMIT' }, 503],
     [{ message: 'FREE_AI_INPUT_TOO_LARGE' }, 413],
-    [{ message: 'DICTATION_DAILY_LIMIT_EXCEEDED' }, 429],
-    [{ message: 'DICTATION_RATE_LIMIT_EXCEEDED' }, 429],
     [{ message: 'function public.reserve_free_ai_action is missing', code: 'PGRST202' }, 503]
   ];
   for (const [error, status] of examples) {
@@ -81,14 +80,13 @@ test('all text AI provider calls reserve before OpenAI, clamp Free model and tok
   assert.match(aiEngine, /maxRetries: 0/);
 });
 
-test('the separate Whisper endpoint also uses the unmetered budget check', () => {
-  const reservePos = transcribe.indexOf('await reserveAiBudget(');
+test('the separate dictation endpoint reserves its own bounded allowance before OpenAI', () => {
+  const reservePos = transcribe.indexOf('await reserveDictationUsage(');
   const providerPos = transcribe.indexOf('await client.audio.transcriptions.create(');
   assert.ok(reservePos >= 0 && providerPos > reservePos);
-  assert.match(transcribe, /feature: 'audio.transcription'/);
+  assert.match(transcribe, /const model = 'gpt-transcribe'/);
+  assert.doesNotMatch(transcribe, /feature: 'audio.transcription'/);
   assert.match(transcribe, /isBudgetError\(error\)/);
-  // Unmetered dictation logic
-  assert.ok(migration.includes('Audio transcription is unmetered'));
 });
 
 test('RPC is service-role-only', () => {
