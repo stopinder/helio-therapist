@@ -11,21 +11,24 @@
 
       <form class="space-y-4 p-6" @submit.prevent="save">
         <label for="reflection-body" class="block text-body-sm font-semibold text-ink">Reflection</label>
-        <textarea
-          id="reflection-body"
-          v-model="body"
-          rows="12"
-          maxlength="20000"
-          class="w-full rounded-panel border border-border bg-surface p-4 text-body text-ink outline-none transition focus:border-state-selected focus:ring-2 focus:ring-state-selected/20"
-          :disabled="saving"
-        ></textarea>
+        <div class="relative">
+          <textarea
+            id="reflection-body"
+            v-model="body"
+            rows="12"
+            maxlength="20000"
+            class="w-full rounded-panel border border-border bg-surface p-4 pr-14 text-body text-ink outline-none transition focus:border-state-selected focus:ring-2 focus:ring-state-selected/20"
+            :disabled="saving || dictation.transcribing.value"
+          ></textarea>
+          <div class="absolute bottom-3 right-3"><WhisperMicButton :recording="dictation.recording.value" :transcribing="dictation.transcribing.value" :disabled="saving" label="Dictate reflection" @toggle="dictation.toggle()" /></div>
+        </div>
         <div class="flex items-center justify-between gap-4">
           <p class="text-caption text-ink-muted">{{ body.length.toLocaleString() }} / 20,000</p>
-          <p v-if="localError || error" class="text-caption font-medium text-state-danger" role="alert">{{ localError || error }}</p>
+          <p v-if="dictation.error.value || localError || error" class="text-caption font-medium text-state-danger" role="alert">{{ dictation.error.value || localError || error }}</p>
         </div>
         <div class="flex justify-end gap-3 border-t border-border-muted pt-4">
           <button type="button" class="button-secondary" :disabled="saving" @click="$emit('close')">Cancel</button>
-          <button type="submit" class="button-primary" :disabled="saving || !body.trim()">
+          <button type="submit" class="button-primary" :disabled="saving || !body.trim() || dictation.busy.value">
             {{ saving ? 'Saving…' : 'Save changes' }}
           </button>
         </div>
@@ -36,6 +39,8 @@
 
 <script setup>
 import { ref } from 'vue'
+import { appendDictation, useWhisperDictation } from '../../composables/useWhisperDictation.js'
+import WhisperMicButton from '../ui/WhisperMicButton.vue'
 
 const props = defineProps({
   reflection: { type: Object, required: true },
@@ -45,6 +50,7 @@ const props = defineProps({
 
 const emit = defineEmits(['close', 'save'])
 const body = ref(props.reflection.body || '')
+const dictation = useWhisperDictation({ onText: text => { body.value = appendDictation(body.value, text, '\n\n').slice(0, 20000) } })
 const localError = ref('')
 
 function save() {
