@@ -81,9 +81,15 @@
               <label class="block mt-4">
                 <span class="text-caption font-semibold">Therapist additions <span class="font-normal text-ink-muted">(optional)</span></span>
                 <span class="block text-caption text-ink-muted mt-0.5">Add a correction, observation or emphasis Helios should take into account.</span>
-                <textarea v-model="therapistGuidance" rows="3" maxlength="6000" class="mt-1.5 w-full p-2.5 border border-border rounded-control bg-surface text-body-sm" placeholder="Add therapist-authored context for this summary…" />
+                <div class="relative mt-1.5">
+                  <textarea v-model="therapistGuidance" rows="3" maxlength="6000" class="w-full p-2.5 pr-12 border border-border rounded-control bg-surface text-body-sm" placeholder="Add therapist-authored context for this summary…" :disabled="guidanceDictation.transcribing.value" />
+                  <div class="absolute bottom-2 right-2">
+                    <WhisperMicButton :recording="guidanceDictation.recording.value" :transcribing="guidanceDictation.transcribing.value" :disabled="generatingSummary" label="Dictate therapist additions" @toggle="guidanceDictation.toggle()" />
+                  </div>
+                </div>
               </label>
-              <p class="text-caption text-ink-muted mt-2">This remains explicitly therapist-authored and is never presented as something the client said.</p>
+              <p v-if="guidanceDictation.error.value" class="text-caption text-state-danger mt-2" role="alert">{{ guidanceDictation.error.value }}</p>
+              <p v-else class="text-caption text-ink-muted mt-2">This remains explicitly therapist-authored and is never presented as something the client said.</p>
 
               <div class="mt-4 pt-4 border-t border-border-muted flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <div class="min-w-0">
@@ -93,7 +99,7 @@
                 </div>
                 <div class="flex w-full sm:w-auto flex-col sm:flex-row gap-2">
                   <button v-if="form.body.trim() && form.body.trim() !== SESSION_SUMMARY_TEMPLATE.trim()" type="button" class="button-secondary w-full sm:w-auto justify-center" :disabled="generatingSummary || copySummaryState === 'copying'" @click="copySummary">{{ copySummaryLabel }}</button>
-                  <button type="button" class="button-primary w-full sm:w-auto sm:min-w-[15rem] justify-center shrink-0" :disabled="generatingSummary || loadingEvidence || !anchorSessionId || Boolean(evidenceError)" @click="generateSummary">{{ generatingSummary ? 'Generating…' : (hasExistingSummary ? 'Regenerate client summary' : 'Generate client summary') }}</button>
+                  <button type="button" class="button-primary w-full sm:w-auto sm:min-w-[15rem] justify-center shrink-0" :disabled="generatingSummary || loadingEvidence || !anchorSessionId || Boolean(evidenceError) || guidanceDictation.busy.value" @click="generateSummary">{{ generatingSummary ? 'Generating…' : (hasExistingSummary ? 'Regenerate client summary' : 'Generate client summary') }}</button>
                 </div>
               </div>
             </div>
@@ -122,9 +128,11 @@
 <script setup>
 import HelpLink from '../help/HelpLink.vue'
 import RichDocumentEditor from '../documents/RichDocumentEditor.vue'
+import WhisperMicButton from '../ui/WhisperMicButton.vue'
 import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import { createClientDocumentDraft, downloadClientDocument, finaliseClientDocument, generateClientSessionSummary, listClientSummaryEvidence, listDocumentSourceSessions, saveClientDocumentDraft } from '../../lib/clientDocuments.js'
 import { loadDocumentProfile, profileDisplay } from '../../lib/documentProfile.js'
+import { appendDictation, useWhisperDictation } from '../../composables/useWhisperDictation.js'
 const SESSION_SUMMARY_TEMPLATE = `Where things are now\n\nWhat we have been working on\n\nPatterns across our recent work\n\nWhat has shifted — and what has been different\n\nStrengths and resources\n\nMaking sense of what we have noticed\n\nIdeas to carry forward\n\nClosing reflection`
 const SUMMARY_SECTION_HEADINGS = new Set([
   'Where things are now',
@@ -173,6 +181,7 @@ const initialType = props.document?.documentType || props.initialDocumentType ||
 const isSessionSummary = computed(() => form.documentType === 'session_summary')
 const loading = ref(true), saving = ref(false), action = ref(''), error = ref(''), saveMessage = ref(props.document ? 'Saved' : 'Not saved yet'), sources = ref([]), selectedSourceIds = ref([]), addedSourceIds = ref([]), expandedSourceId = ref(null), sourceQuery = ref(''), visibleSourceCount = ref(SOURCE_PAGE_SIZE), currentDocument = ref(props.document), baseline = ref(''), profile = ref({}), sourcePanelOpen = ref(false)
 const generatingSummary = ref(false), loadingEvidence = ref(false), evidenceError = ref(''), copySummaryState = ref('idle'), summaryLens = ref(props.document?.content?.clinicalIntelligence?.generation?.lens || 'general'), summaryWindow = ref(props.document?.content?.clinicalIntelligence?.generation?.window || 'last_three'), therapistGuidance = ref(''), summaryGenerationMessage = ref(''), summaryGenerationError = ref(false), summarySources = ref(props.document?.content?.clinicalIntelligence?.sources || []), summaryClaims = ref(props.document?.content?.clinicalIntelligence?.claims || []), summaryGeneration = ref(props.document?.content?.clinicalIntelligence?.generation || null), previousSummaryVersions = ref(props.document?.content?.clinicalIntelligence?.history || []), lastGeneratedBody = ref(props.document?.content?.clinicalIntelligence?.lastGeneratedBody || ''), availableSummarySessions = ref([]), anchorSessionId = ref(null), evidenceDateAutofillArmed = ref(false)
+const guidanceDictation = useWhisperDictation({ onText: text => { therapistGuidance.value = appendDictation(therapistGuidance.value, text, '\n') } })
 const initialBody = props.document?.content?.body || (initialType === 'session_summary' ? SESSION_SUMMARY_TEMPLATE : '')
 const initialRichContent = props.document?.content?.richContent || (initialType === 'session_summary' && initialBody.trim() && initialBody.trim() !== SESSION_SUMMARY_TEMPLATE.trim() ? summaryBodyToRichContent(initialBody) : null)
 const form = reactive({ title: props.document?.title || (initialType === 'session_summary' ? 'Session summary' : ''), documentType: initialType, recipient: props.document?.recipient || '', purpose: props.document?.purpose || (initialType === 'session_summary' ? 'A client-facing summary of the session' : ''), periodStart: props.document?.periodStart || '', periodEnd: props.document?.periodEnd || '', body: initialBody, richContent: initialRichContent })
