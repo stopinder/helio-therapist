@@ -156,7 +156,7 @@ function recalculatePagination() {
     const blockHeight = child.getBoundingClientRect().height + verticalMargins(child)
 
     if (isManualBreak) {
-      moveToNextPage(child)
+      if (used > 0) moveToNextPage(child)
       continue
     }
 
