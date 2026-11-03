@@ -35,16 +35,21 @@ test('working notes use versioned RPC persistence and surface stale-save conflic
   assert.match(component, /changed in another tab/)
 })
 
-test('working notes dictation reuses authenticated transient transcription without changing persistence', async () => {
+test('working notes use the shared transient Whisper input without changing persistence', async () => {
   const component = await read('../src/components/workspace/TherapistNotesTab.vue')
+  const dictation = await read('../src/composables/useWhisperDictation.js')
   const endpoint = await read('../api/ai/transcribe.js')
 
-  assert.match(component, /navigator\.mediaDevices\.getUserMedia\(\{ audio: true \}\)/)
-  assert.match(component, /new MediaRecorder\(stream\)/)
-  assert.match(component, /authenticatedFetch\('\/api\/ai\/transcribe'/)
-  assert.match(component, /Use the microphone to add text here for review before saving\./)
-  assert.match(component, /notes\[key\] = \[notes\[key\]\.trim\(\), text\]/)
+  assert.match(component, /WhisperMicButton/)
+  assert.match(component, /useWhisperDictation/)
+  assert.match(component, /appendDictation\(notes\[key\], text, '\\n'\)/)
   assert.match(component, /saveSessionWorkingNotes/)
+  assert.doesNotMatch(component, /new MediaRecorder/)
+  assert.doesNotMatch(component, /\/api\/ai\/transcribe/)
+  assert.match(dictation, /navigator\.mediaDevices\.getUserMedia\(\{ audio: true \}\)/)
+  assert.match(dictation, /new MediaRecorder\(stream\)/)
+  assert.match(dictation, /authenticatedFetch\('\/api\/ai\/transcribe'/)
+  assert.match(dictation, /maxSeconds = 120/)
   assert.match(endpoint, /requireAuthenticatedUser\(req\)/)
   assert.match(endpoint, /MAX_AUDIO_BYTES = 3 \* 1024 \* 1024/)
   assert.doesNotMatch(endpoint, /storage\.from/)
