@@ -1,4 +1,4 @@
-export const CLIENT_SESSION_SUMMARY_PROMPT_VERSION = 'client-session-summary-v10';
+export const CLIENT_SESSION_SUMMARY_PROMPT_VERSION = 'client-session-summary-v11';
 export const CLIENT_SESSION_SUMMARY_LENSES = Object.freeze(['general', 'integrative', 'gentle_cbt', 'internal_family_systems', 'transactional_analysis']);
 export const CLIENT_SESSION_SUMMARY_FIELDS = Object.freeze(['opening','whatWeWorkedOn','patternsOverTime','changesAndExceptions','strengthsAndResources','perspectiveReflection','betweenSession','closing']);
 
@@ -32,6 +32,8 @@ Do not include safeguarding or risk material, therapist-only hypotheses, private
 If only one session source is supplied, do not claim a longitudinal pattern. Describe tentative connections as tentative.
 Prefer specific supported observations, sequence, change, exception and continuity over generic therapeutic language. Avoid generic encouragement that could apply to any client. Keep the summary focused rather than exhaustive: each non-empty section should usually be one concise paragraph, and the complete JSON response including claims must finish comfortably within the available output budget.
 
+The selected clinical lens is not confined to perspectiveReflection. It may shape clinically interpretive synthesis in whatWeWorkedOn, patternsOverTime, changesAndExceptions, strengthsAndResources, betweenSession and closing when the evidence supports it. Keep opening primarily descriptive and evidence-led. Do not add model terminology merely to make a lens more visible.
+
 Give each client-facing section a distinct job:
 - opening: orient the client to the current session and the most important current context. Do not use it to summarise every theme.
 - whatWeWorkedOn: describe the concrete topics explored, therapist action or intervention, and the client's response where supported.
@@ -52,7 +54,17 @@ const lensRules = {
   general: `General lens: remain model-neutral. Focus on supported themes, changes, stable threads, resources, next steps and useful connections. Do not impose CBT terminology.`,
   gentle_cbt: `Gentle CBT lens: where supported, map situation or trigger / antecedent -> thoughts, emotions and body responses -> behaviour or coping response -> short-term consequence and longer-term consequence. Notice repeated maintenance cycles, interruptions or exceptions to a cycle, experiments, coping responses and changes over time. Explicitly look for what interrupts the usual sequence and what the client learns from trying something different. Never manufacture a complete CBT sequence when evidence is missing, and never force CBT language into client-facing prose when ordinary language is clearer.`,
   integrative: `Integrative lens: do not force a single model. Focus on explicitly supported emotional, relational, behavioural and contextual themes, shifts in understanding, unfinished threads, resources and alternative possible meanings. Preserve ambiguity where more than one meaning remains plausible.`,
-  internal_family_systems: `Internal Family Systems (IFS) lens: where supported, notice the client's own descriptions of parts or inner positions, protective intentions, blending and unblending, polarisation between parts, burdens that are explicitly named, and moments of greater curiosity, compassion, calm, clarity, confidence, courage, creativity or connectedness. Prefer the client's own language for parts. Treat parts as a therapeutic way of organising experience rather than literal entities. Do not infer an exile, protector role, trauma history, burden, Self state, or childhood origin unless the source supports it. Do not present a part's intention as fact when it has not been explored; use tentative language such as “this part may be trying to…” or “we wondered whether…”.`,
+  internal_family_systems: `Internal Family Systems (IFS) lens: use IFS as an organising perspective across the clinically interpretive parts of the summary when the evidence supports it, rather than confining IFS to one theory paragraph. Notice the client's own descriptions of parts or inner positions, protective intentions, blending and unblending, polarisation between parts, burdens that are explicitly named, and moments of greater curiosity, compassion, calm, clarity, confidence, courage, creativity or connectedness.
+
+When two or more inner positions are supported, describe the relationship between them: what each seems to want, fear, prevent or make possible, and how the polarisation affects the client's choices. Do not collapse the formulation into a single “problem part”. Prefer the client's own language for parts and plain client-facing language before technical IFS terminology. Treat parts as a therapeutic way of organising experience rather than literal entities.
+
+Assume positive or protective intent only as a hypothesis to be explored, never as a fact. Do not label a part “saboteur”, “resistant”, “self-sabotaging”, dysfunctional or irrational as a clinical conclusion. If the client or therapist uses such a label, translate it into curious, non-adversarial language about what that response may be trying to accomplish or protect against.
+
+Crucially, do not explain away genuine discernment as defence. Uncertainty, lack of attraction, incompatibility, anger, reluctance, caution, preference, or a wish for distance may be valid information rather than evidence of a protector. When both ordinary discernment and a protective explanation are plausible, hold both possibilities explicitly and do not privilege the IFS explanation.
+
+Notice evidence of greater space around reactions, increased curiosity toward inner experience, compassion, perspective, or choice. These may be described as movement toward less blending or greater Self-led capacity when the evidence clearly supports that reading, but do not declare a Self state or “Self energy” unless the source establishes it. Do not infer an exile, fixed protector role, trauma history, burden, or childhood origin unless the source supports it. Do not present a part's intention as fact when it has not been explored; use tentative language such as “this part may be trying to…”, “we wondered whether…”, or “another possibility is…”.
+
+For patternsOverTime, describe a recurring polarisation or protective sequence only when it meets the same cross-session evidence threshold as any other pattern. For changesAndExceptions, look for supported signs of unblending, more choice, more curiosity, or a different relationship between parts rather than assuming symptoms have improved. For strengthsAndResources, include the client's capacity to notice, name, differentiate or stay curious toward different inner positions when demonstrated. For betweenSession, include IFS-consistent reflection or curiosity only when it was actually discussed, agreed or clearly left unfinished in the evidence; do not invent parts work as homework.`,
   transactional_analysis: `Transactional Analysis lens: where supported, notice patterns in interpersonal exchanges, shifts between Parent, Adult and Child positions, repeated expectations in relationships, and opportunities for clearer Adult-to-Adult communication. Use TA language only when it helps explain the evidence and avoid assigning fixed states or motives.`
 };
 
@@ -327,7 +339,7 @@ export function validateClientSessionSummaryResponse(value, validSourceIds = nul
 
 export function renderClientSessionSummary(sections, lens='general') {
   if(!sections)return '';
-  const perspectiveHeading=lens==='gentle_cbt'?'A gentle CBT perspective':lens==='integrative'?'An integrative perspective':lens==='internal_family_systems'?'An Internal Family Systems perspective':lens==='transactional_analysis'?'A Transactional Analysis perspective':'Making sense of what we have noticed';
+  const perspectiveHeading=lens==='gentle_cbt'?'A gentle CBT perspective':lens==='integrative'?'An integrative perspective':lens==='internal_family_systems'?'Different parts of you in this work':lens==='transactional_analysis'?'A Transactional Analysis perspective':'Making sense of what we have noticed';
   const blocks=[
     ['Where things are now',sections.opening],
     ['What we have been working on',sections.whatWeWorkedOn],
