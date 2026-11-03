@@ -12,7 +12,7 @@
             <p class="text-body-sm text-ink-secondary mt-2"><strong>{{ currentDocument.title }}</strong> is stored privately with this client and this version is read-only.</p>
             <p class="text-caption text-ink-muted mt-3">Finalised {{ formatDateTime(currentDocument.finalizedAt) }}</p>
             <div class="mt-5 flex flex-wrap items-center gap-3">
-              <div class="flex gap-2">
+              <div class="flex flex-wrap gap-2">
                 <button class="button-primary" @click="downloadFinalised">Download PDF</button>
                 <button v-if="isSessionSummary" class="button-secondary" :disabled="copySummaryState === 'copying'" @click="copySummary">{{ copySummaryLabel }}</button>
                 <a v-if="isSessionSummary && clientEmail" :href="mailtoLink" class="button-secondary inline-flex items-center">Prepare email</a>
