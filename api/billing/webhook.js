@@ -12,6 +12,20 @@ async function rawBody(req) {
 }
 const isoFromUnix = (value) => value ? new Date(value * 1000).toISOString() : null;
 
+async function recordPaidInvoiceRevenue(supabase, invoice, stripeEventId) {
+  const subscriptionId = typeof invoice.subscription === 'string' ? invoice.subscription : invoice.subscription?.id || null;
+  const paidAt = isoFromUnix(invoice.status_transitions?.paid_at || invoice.created) || new Date().toISOString();
+  const { error } = await supabase.rpc('record_billing_revenue_event', {
+    p_stripe_event_id: stripeEventId,
+    p_stripe_invoice_id: invoice.id,
+    p_stripe_subscription_id: subscriptionId,
+    p_currency: String(invoice.currency || '').toLowerCase(),
+    p_amount_paid_minor: Number(invoice.amount_paid || 0),
+    p_paid_at: paidAt
+  });
+  if (error) throw error;
+}
+
 async function syncSubscription(supabase, subscription) {
   const therapistId = subscription.metadata?.therapist_id;
   if (!therapistId) throw new Error('Stripe subscription missing therapist_id metadata');
@@ -44,6 +58,7 @@ export default async function handler(req, res) {
       }
     }
     if (event.type === 'invoice.paid') {
+      await recordPaidInvoiceRevenue(supabase, event.data.object, event.id);
       await sendPaidInvoiceEmail(event.data.object, stripe);
     }
     return res.status(200).json({ received: true });
