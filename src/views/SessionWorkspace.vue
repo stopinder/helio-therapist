@@ -1,5 +1,8 @@
 <template>
   <div class="flex flex-col h-full bg-surface-canvas">
+    <div v-if="cameFromInbox" class="px-inline-lg py-stack-sm border-b border-border bg-surface">
+      <RouterLink :to="inboxReturnDestination" class="text-body-sm font-medium text-action-link hover:underline">Back to Transcript Inbox</RouterLink>
+    </div>
     <div v-if="loading" class="flex-1 flex items-center justify-center"><div class="text-ink-muted flex flex-col items-center gap-2"><span class="w-8 h-8 border-4 border-state-selected border-t-transparent rounded-full animate-spin"></span><p>Loading session…</p></div></div>
     <div v-else-if="error" class="flex-1 flex items-center justify-center p-inline-lg"><div class="max-w-md w-full bg-surface p-inline-lg py-stack-lg rounded-card shadow-sm border border-state-danger/20 text-center"><h2 class="text-h2 font-semibold text-state-danger mb-2">Error</h2><p class="text-ink-secondary mb-6">{{ error }}</p><button @click="loadSession" class="button-primary">Try Again</button></div></div>
     <template v-else-if="session">
@@ -48,11 +51,17 @@
                     <button v-else @click="isEditingSummary = false" class="text-body-sm font-medium text-action-link hover:underline">Done reading</button>
                   </template>
                   <button v-if="transcript" type="button" @click="askHeliosAboutSession" class="button-secondary !min-h-0 py-1.5 px-3 text-body-sm shadow-sm">Ask Helios</button>
-                  <button v-if="summaryDocument?.content?.body && summaryDocument.status !== 'completed'" @click="generateSummary" :disabled="isGenerating" class="text-body-sm font-medium text-ink-muted hover:text-ink disabled:opacity-50">Regenerate</button>
+                  <button v-if="summaryDocument?.content?.body && summaryDocument.status !== 'completed'" @click="generateSummary" :disabled="isGenerating || transcriptLoading || !!transcriptError || !transcript" class="text-body-sm font-medium text-ink-muted hover:text-ink disabled:opacity-50">Regenerate</button>
                   <RouterLink v-if="summaryDocument?.id" :to="{ name: 'ClientWorkspace', params: { clientId: session.clientId }, query: { document: summaryDocument.id } }" class="button-secondary !min-h-0 py-1.5 px-3 text-body-sm shadow-sm">Open in Client Documents</RouterLink>
                   <button @click="copySummary" :disabled="!summaryDocument?.content?.body" class="button-secondary !min-h-0 py-1.5 px-3 text-body-sm shadow-sm">Copy summary</button>
                 </div>
               </div>
+
+              <div v-if="transcriptError" class="rounded-panel border border-state-danger/20 bg-state-danger-surface p-4" role="alert" data-testid="session-source-error">
+                <p class="text-body-sm text-state-danger">{{ transcriptError }}</p>
+                <button type="button" class="button-secondary mt-3" :disabled="transcriptLoading" @click="loadTranscript()">Retry source</button>
+              </div>
+              <p v-else-if="transcriptLoading" role="status" class="text-body-sm text-ink-muted">Loading the assigned source...</p>
 
               <div
                 v-if="transcript && !isGenerating && (!summaryDocument?.content?.body || showSummaryOptions)"
@@ -103,7 +112,7 @@
 
                 <div class="mt-4 flex flex-wrap items-center justify-between gap-3">
                   <p class="text-caption text-ink-muted">{{ summaryWindow === 'recent' ? 'Uses this encounter plus up to two previous available transcript-backed sessions.' : 'Uses only the transcript linked to this encounter.' }}</p>
-                  <button @click="generateSummary" :disabled="isGenerating" class="button-primary py-stack-xs px-inline-md">
+                  <button @click="generateSummary" :disabled="isGenerating || transcriptLoading || !!transcriptError || !transcript" class="button-primary py-stack-xs px-inline-md">
                     {{ summaryDocument?.content?.body ? 'Regenerate summary' : 'Generate summary' }}
                   </button>
                 </div>
@@ -214,11 +223,13 @@ import CompletedClinicalRecord from '../components/workspace/CompletedClinicalRe
 import { useAskHelios } from '../composables/useAskHelios.js';
 
 const route = useRoute();
+const cameFromInbox = computed(() => route.query.from === 'transcript-inbox');
+const inboxReturnDestination = computed(() => ({ name: 'Transcripts', query: typeof route.query.inboxReturn === 'string' ? { resume: route.query.inboxReturn } : {} }));
 const router = useRouter();
 const { openClinicalContext } = useAskHelios();
 const session = ref(null), client = ref(null), loading = ref(true), error = ref(''), transcript = ref(null), transcriptLoading = ref(false), transcriptError = ref(''), therapistName = ref('');
 const summaryDocument = ref(null);
-const activeView = ref('summary');
+const activeView = ref(route.query.view === 'clinical' ? 'clinical' : 'summary');
 const isEditingSummary = ref(false);
 const showTranscript = ref(false);
 const showReflection = ref(false);
@@ -254,7 +265,7 @@ function askHeliosAboutSession() {
 }
 
 async function generateSummary() {
-  if (!session.value || isGenerating.value || summaryDocument.value?.status === 'completed') return;
+  if (!session.value || !transcript.value || transcriptLoading.value || transcriptError.value || isGenerating.value || summaryDocument.value?.status === 'completed') return;
   isGenerating.value = true;
   generationError.value = '';
   try {
@@ -417,7 +428,23 @@ async function loadSession(){
   }
 }
 
-async function loadTranscript(){if(!session.value?.id||!session.value?.clientId)return;transcriptLoading.value=true;transcriptError.value='';transcript.value=null;try{const params=new URLSearchParams({sessionRef:String(session.value.id),clientId:String(session.value.clientId)});const response=await authenticatedFetch(`/api/zoom/transcripts?${params.toString()}`);const data=await response.json().catch(()=>({}));if(!response.ok)throw new Error(data.error||'Unable to load the linked transcript.');transcript.value=data.transcripts?.[0]||null}catch(err){transcriptError.value=err?.message||'Unable to load the linked transcript.'}finally{transcriptLoading.value=false}}
+async function loadTranscript(){
+  if(!session.value?.id||!session.value?.clientId)return;
+  transcriptLoading.value=true;transcriptError.value='';transcript.value=null;
+  try{
+    const sessionRef=String(session.value.id),clientId=String(session.value.clientId);
+    const requestedId=typeof route.query.transcriptId==='string'?route.query.transcriptId:'';
+    const params=requestedId?new URLSearchParams({id:requestedId}):new URLSearchParams({sessionRef,clientId});
+    const response=await authenticatedFetch(`/api/zoom/transcripts?${params.toString()}`);
+    const data=await response.json().catch(()=>({}));
+    if(!response.ok)throw new Error(data?.error||'Unable to load the linked transcript.');
+    const source=requestedId?data?.transcript:data?.transcripts?.[0];
+    if(requestedId&&!source)throw new Error('The assigned source could not be found. Return to Transcript Inbox to review it.');
+    if(source&&(String(source.clientId)!==clientId||String(source.sessionRef)!==sessionRef||(requestedId&&source.id!==requestedId)))throw new Error('This transcript no longer belongs to this encounter. Return to Transcript Inbox to review its assignment.');
+    transcript.value=source||null;
+  }catch(err){transcriptError.value=err?.message||'Unable to load the linked transcript.'}
+  finally{transcriptLoading.value=false}
+}
 
 const summaryGeneration = computed(() => summaryDocument.value?.content?.summaryGeneration || null);
 function summaryApproachLabel(lens) {

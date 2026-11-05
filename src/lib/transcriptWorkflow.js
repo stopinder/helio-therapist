@@ -4,11 +4,11 @@ export function hasLinkedEncounter(transcript) {
   return Boolean(hasId(transcript?.clientId) && hasId(transcript?.sessionRef));
 }
 export function transcriptWorkflowState(transcript) {
+  if (transcript?.completedAt) return { id: 'complete', label: 'Inbox setup complete', tone: 'success' };
   if (hasLinkedEncounter(transcript)) return { id: 'assigned', label: 'Assigned', tone: 'success' };
-  if (transcript?.attentionClearedAt) return { id: 'archived', label: 'Archived', tone: 'neutral' };
   if (hasId(transcript?.clientId)) return { id: 'needs-encounter', label: 'Assigned - encounter needed', tone: 'warning' };
   if (transcript?.sessionRef) return { id: 'inconsistent', label: 'Assignment needs review', tone: 'warning' };
-  if (transcript?.completedAt) return { id: 'complete', label: 'Inbox setup complete', tone: 'neutral' };
+  if (transcript?.attentionClearedAt) return { id: 'archived', label: 'Archived', tone: 'neutral' };
   return { id: 'needs-client', label: 'Needs client', tone: 'warning' };
 }
 export function transcriptNeedsAttention(transcript) {
