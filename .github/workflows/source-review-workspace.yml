@@ -1,0 +1,33 @@
+name: Source review test workspace
+on:
+  push:
+    branches: [fix/summary-source-review-20261105]
+    paths: [.github/workflows/source-review-workspace.yml]
+permissions:
+  contents: read
+jobs:
+  workspace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22'
+      - name: Install locked development dependencies without scripts or credentials
+        run: npm ci --ignore-scripts --no-fund
+      - name: Package code and dependencies only
+        shell: bash
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          mkdir -p /tmp/helios-workspace
+          tar --exclude='*.env' --exclude='.env*' --exclude='*/.env*' --exclude='*.pem' --exclude='*.key' --exclude='*/.temp' --exclude='*/.branches' -czf /tmp/helios-workspace/workspace.tgz src api test e2e supabase scripts public node_modules package.json package-lock.json index.html *.config.js *.config.mjs *.config.cjs *.config.ts
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: source-review-test-workspace
+          path: /tmp/helios-workspace/workspace.tgz
+          retention-days: 1
+          compression-level: 0
