@@ -42,8 +42,8 @@ test('AppSidebar contains Transcript Inbox link', async () => {
 test('Transcript Inbox supports Add New Client', async () => {
   const inbox = await readFile(new URL('../src/components/TranscriptInbox.vue', import.meta.url), 'utf8')
   assert.match(inbox, /import AddClientModal from '\.\/sidebar\/AddClientModal\.vue'/)
-  assert.match(inbox, /<AddClientModal v-if="showAddClient"/)
-  assert.match(inbox, /@click="showAddClient = true">Add new client<\/button>/)
+  assert.match(inbox, /<AddClientModal\s+v-if="showAddClient"/)
+  assert.match(inbox, /@click="openAddClientForSelected">Add client<\/button>/)
   assert.match(inbox, /async function handleAddClient\(payload\)/)
 })
 
@@ -55,10 +55,10 @@ test('Transcript Inbox workflow is one-step client assignment with direct Clinic
   assert.doesNotMatch(inbox, /Create session/)
   assert.doesNotMatch(inbox, /Link to an existing encounter instead/)
 
-  assert.match(inbox, /Assign client/)
-  assert.match(inbox, /clientId:selectedClientId\.value,clearAttention:true/)
+  assert.match(inbox, /Assign & open summary/)
+  assert.match(inbox, /assignTranscriptToClient\(selected\.value,selectedClientId\.value/)
   assert.match(inbox, /selected\.sessionRef/)
-  assert.match(inbox, /Open Clinical Workspace/)
+  assert.match(inbox, /Open session summary/)
   assert.match(inbox, /@click="openLinkedSession"/)
 
   assert.ok(!inbox.includes('<div><strong>Review choices</strong><small>{{ selected.reviewChoicesSavedAt ? \'Saved\' : \'Choose output and retention\' }}</small></div>'))

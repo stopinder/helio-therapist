@@ -1,6 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
+import { transcriptNeedsAttention, transcriptWorkflowState, sessionSummaryDestination } from '../src/lib/transcriptWorkflow.js'
 
 const inbox = await readFile(new URL('../src/components/TranscriptInbox.vue', import.meta.url), 'utf8')
 const api = await readFile(new URL('../api/zoom/transcripts.js', import.meta.url), 'utf8')
@@ -8,12 +9,12 @@ const api = await readFile(new URL('../api/zoom/transcripts.js', import.meta.url
 test('Transcript Inbox is an inline triage queue rather than an open-read-back assignment flow', () => {
   assert.match(inbox, /class="transcript-row triage-row"/)
   assert.match(inbox, /v-model="assignmentDrafts\[transcript\.id\]"/)
-  assert.match(inbox, /@click="assignFromInbox\(transcript\)"/)
-  assert.match(inbox, /'Assigning…' : 'Assign'/)
+  assert.match(inbox, /@click="assignFromInbox\(transcript, \{ openSummary: true \}\)"/)
+  assert.match(inbox, /'Assigning…' : 'Assign & open summary'/)
   assert.match(inbox, /Preview transcript/)
   assert.match(inbox, /Open full transcript/)
   assert.doesNotMatch(inbox, /class="transcript-row" @click="openTranscript\(transcript\)"/)
-  assert.match(inbox, /Assigned to .*Clinical Workspace/)
+  assert.match(inbox, /data-testid="assignment-handoff"/)
 })
 
 test('Transcript triage uses conservative deterministic matching and never silently assigns a suggestion', () => {
@@ -21,13 +22,13 @@ test('Transcript triage uses conservative deterministic matching and never silen
   assert.match(inbox, /normaliseIdentity\(client\.name\|\|client\.display_name\)===title/)
   assert.match(inbox, /Suggested from an exact Zoom title match — confirm before assigning\./)
   assert.match(inbox, /function isVerifiedMatch\(transcript\)/)
-  assert.match(inbox, /Verified Zoom\/session match/)
+  assert.match(inbox, /Assigned to \{\{ clientName/)
 })
 
 test('verified session-linked transcripts bypass Needs attention and can open Clinical Workspace directly', () => {
-  assert.match(inbox, /function needsAttention\(transcript\).*?!isVerifiedMatch\(transcript\)/s)
+  assert.equal(transcriptNeedsAttention({clientId:'c',sessionRef:'s',status:'unassigned'}),false)
   assert.match(inbox, /openLinkedSessionFromRow/)
-  assert.match(inbox, /name:'SessionWorkspace'/)
+  assert.deepEqual(sessionSummaryDestination({clientId:'c',sessionRef:'s'}).params,{clientId:'c',sessionId:'s'})
 })
 
 test('Transcript Inbox list is lightweight and loads full transcript detail only on demand', () => {
@@ -67,7 +68,7 @@ test('Transcript Inbox supports archive and protected delete directly from the r
   assert.match(inbox, /method:'DELETE'/)
   assert.match(inbox, /cannot be undone/)
   assert.match(inbox, /Transcript archived\. Restore it any time from History\./)
-  assert.match(inbox, /attentionClearedAt \? 'Archived'/)
+  assert.equal(transcriptWorkflowState({attentionClearedAt:'saved'}).label,'Archived')
   assert.match(inbox, /Archive all/)
 })
 
@@ -87,9 +88,9 @@ test('Transcript Inbox can add a missing client directly from an unassigned row'
   assert.match(inbox, />Add client<\/button>/)
   assert.match(inbox, /addClientTranscriptId/)
   assert.match(inbox, /suggestedNewClientName\(transcript\)/)
-  assert.match(inbox, /assignmentDrafts\.value = \{ \.\.\.assignmentDrafts\.value, \[targetTranscriptId\]: newClient\.id \}/)
-  assert.match(inbox, /assignTranscriptToClient\(transcript, newClient\.id/)
-  assert.match(inbox, /Added .* and assigned the transcript/)
+  assert.match(inbox, /assignmentDrafts\.value=\{\.\.\.assignmentDrafts\.value,\[transcript\.id\]:newClient\.id\}/)
+  assert.match(inbox, /assignTranscriptToClient\(transcript,newClient\.id/)
+  assert.match(inbox, /lastAssignmentLabel\.value=clientName/)
 })
 
 test('Add Client modal is available in both inbox and full transcript views', () => {
@@ -106,15 +107,15 @@ test('Transcript Inbox visual refinement uses the Helios semantic hierarchy with
   assert.match(inbox, /var\(--accent\)/)
   assert.match(inbox, /var\(--surface-reflection\)/)
   assert.match(inbox, /max-width: 1040px/)
-  assert.match(inbox, />Preview transcript</)
-  assert.match(inbox, />Open full transcript</)
+  assert.match(inbox, /Preview transcript/)
+  assert.match(inbox, /Open full transcript/)
 })
 
 
 test('Transcript Inbox client assignment controls cannot overflow the assignment panel', () => {
   assert.match(inbox, /\.inline-assignment \{[\s\S]*display:block;[\s\S]*overflow:hidden;/)
   assert.match(inbox, /\.field-group \{[\s\S]*min-width:0;/)
-  assert.match(inbox, /grid-template-columns:minmax\(0,1fr\) max-content max-content/)
+  assert.match(inbox, /grid-template-columns:minmax\(0,1fr\) max-content;/)
   assert.match(inbox, /\.inline-client-picker > \* \{ min-width:0; \}/)
   assert.match(inbox, /\.add-client-inline,\.assign-inline \{[\s\S]*min-width:max-content;/)
 })

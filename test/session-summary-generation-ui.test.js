@@ -39,8 +39,13 @@ test('SessionWorkspace offers Regenerate only for non-finalised summary content'
 
   const guard = source.match(/async function generateSummary\(\)\s*\{\s*if\s*\(([^\n]+)\)\s*return;/)?.[1]
   assert.ok(guard, 'Generation must retain its early-return guard')
-  const blocksGeneration = new Function('session', 'isGenerating', 'summaryDocument', `return Boolean(${guard})`)
-  assert.equal(blocksGeneration({ value: { id: 'session-1' } }, { value: false }, { value: { status: 'completed' } }), true)
+  const blocksGeneration = new Function('session', 'isGenerating', 'summaryDocument', 'transcript', 'transcriptLoading', 'transcriptError', `return Boolean(${guard})`)
+  const check = (document, source = { id: 'source-1' }, loading = false, error = '') => blocksGeneration({value:{id:'session-1'}},{value:false},{value:document},{value:source},{value:loading},{value:error})
+  assert.equal(check({status:'completed'}), true)
+  assert.equal(check({status:'draft'}), false)
+  assert.equal(check({status:'draft'}, null), true)
+  assert.equal(check({status:'draft'}, {id:'source-1'}, true), true)
+  assert.equal(check({status:'draft'}, {id:'source-1'}, false, 'Wrong encounter'), true)
 })
 
 test('SessionWorkspace sends the chosen approach, evidence scope and therapist guidance to AI', () => {

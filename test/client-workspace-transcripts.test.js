@@ -21,9 +21,9 @@ test('client transcript panel only renders transcripts assigned to the current c
 })
 
 test('Transcript Inbox only requires client assignment', () => {
-  assert.match(transcriptInboxSource, /Assign client/)
+  assert.match(transcriptInboxSource, /Assign & open summary/)
   assert.match(transcriptInboxSource, /clearAttention:true/)
-  assert.match(transcriptInboxSource, /Session linking is optional and can be done there\./)
+  assert.match(transcriptInboxSource, /isConfirmedAssignment\(data\.transcript,current\.id,clientId\)/)
   assert.doesNotMatch(transcriptInboxSource, /<h2>Session<\/h2>/)
   assert.doesNotMatch(transcriptInboxSource, /Link to an existing encounter instead/)
   assert.doesNotMatch(transcriptInboxSource, /Sessions must begin in progress/)
@@ -57,10 +57,12 @@ test('client transcript inbox navigation still preserves a return to the client 
   assert.match(transcriptsViewSource, /Back to client transcripts/)
 })
 
-test('transcript assignment can clear Needs attention in the same PATCH', () => {
+test('client assignment is distinct from explicit archiving', () => {
   assert.match(apiSource, /clearAttention/)
   assert.match(apiSource, /update\.attention_cleared_at = new Date\(\)\.toISOString\(\)/)
-  assert.match(transcriptInboxSource, /clientId:selectedClientId\.value,clearAttention:true/)
+  const assignment = transcriptInboxSource.split('async function assignTranscriptToClient')[1].split('async function assignFromInbox')[0]
+  assert.match(assignment, /expectedUpdatedAt:current\.updatedAt,clientId/)
+  assert.doesNotMatch(assignment, /clearAttention/)
 })
 
 test('client transcript workflow preserves authenticated therapist ownership boundaries', () => {

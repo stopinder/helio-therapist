@@ -4,13 +4,23 @@ import test from 'node:test'
 import * as Vue from 'vue'
 import { compile } from '@vue/compiler-dom'
 import { renderToString } from '@vue/server-renderer'
+import * as workflow from '../src/lib/transcriptWorkflow.js'
+import * as presentation from '../src/lib/transcriptPresentation.js'
+import * as navigation from '../src/lib/transcriptInboxNavigation.js'
 
 const source = fs.readFileSync(new URL('../src/components/TranscriptInbox.vue', import.meta.url), 'utf8')
 const script = source.match(/<script setup>([\s\S]*?)<\/script>/)[1].replace(/^import .*$/gm, '')
 const names = 'transcripts, selected, saving, loading, errorMessage, successMessage, lastClearedBatch, filterMode, searchQuery, clearAllAttention, undoClearAttention, restoreToAttention'
-function inbox(fetch) {
-  return new Function('ref', 'computed', 'onMounted', 'watch', 'useRouter', 'authenticatedFetch', 'defineProps', 'defineEmits', `${script}\nreturn {${names}}`)(Vue.ref, Vue.computed, () => {}, () => {}, () => ({}), fetch, () => ({ clients: [] }), () => () => {})
+function evaluateSetup(fetch, bindings) {
+  const deps = { ...workflow, ...presentation, ...navigation,
+    ref: Vue.ref, computed: Vue.computed, nextTick: Vue.nextTick,
+    onMounted: () => {}, watch: () => {}, useRouter: () => ({}), useRoute: () => ({query:{}}),
+    authenticatedFetch: fetch, defineProps: () => ({clients:[]}), defineEmits: () => () => {}
+  }
+  return new Function(...Object.keys(deps), `${script}\nreturn {${bindings}}`)(...Object.values(deps))
 }
+function inbox(fetch) { return evaluateSetup(fetch, names) }
+
 const cleared = id => ({ id, updatedAt: '2026-09-23T10:00:00.000Z', attentionClearedAt: '2026-09-23T10:00:00.000Z', text: 'Original text', status: 'ready', clientId: 'client', sessionRef: 'session', reviewChoicesSavedAt: null, completedAt: null })
 const restored = id => ({ ...cleared(id), attentionClearedAt: null, updatedAt: '2026-09-23T10:01:00.000Z' })
 const response = (transcript, ok = true) => ({ ok, json: async () => ({ transcript }) })
@@ -41,7 +51,7 @@ test('Undo applies successes, retains failed original versions, and retries only
   assert.deepEqual(requests.map(t => t.id), ['a', 'b', 'b'])
   assert.equal(requests[2].expectedUpdatedAt, cleared('b').updatedAt)
   assert.equal(state.lastClearedBatch.value.length, 0)
-  assert.equal(state.successMessage.value, 'Clearing undone.')
+  assert.equal(state.successMessage.value, 'Archive undone.')
   assert.equal(state.errorMessage.value, '')
 })
 
@@ -115,7 +125,8 @@ const template = source.match(/<template>([\s\S]*?)<script setup>/)[1].replace(/
 const render = new Function('Vue', compile(template, { mode: 'function' }).code)(Vue)
 async function html(overrides) {
   const bindings = `${names}, expandedRows, assignmentDrafts, assignmentSavingId, detailReturnId, editingClient, editingChoices, showRaw, filters, matchingTranscripts, visibleTranscripts, hasMoreHistory, actionableCount, historyLimit, historyPageSize, rowTitle, formatDate, workflowTone, workflowState, labelFor, clientName, selectedClientId, selectedLens, sourceRetention, showAddClient, addingClient, addClientError, isEligibleForDeletion`
-  const state = new Function('ref', 'computed', 'onMounted', 'watch', 'useRouter', 'authenticatedFetch', 'defineProps', 'defineEmits', `${script}\nreturn {${bindings}, clients: props.clients, ${[...script.matchAll(/^(?:async )?function (\w+)/gm)].map(m => m[1]).join(',')}}`)(Vue.ref, Vue.computed, () => {}, () => {}, () => ({}), () => {}, () => ({ clients: [] }), () => () => {})
+  const state = evaluateSetup(() => {}, `${bindings}, clients: props.clients, inboxRoot, lastAssignment, lastAssignmentLabel, navigationSavingId, inboxBusy, encounterDateDrafts, encounterDateSavingId, rowActionSavingId, rowActionSavingMode, expandedNoteIds, expandedPreviewIds, transcriptSearch, selectedSpeakerSummary, filteredSelectedConversationTurns, addClientInitialName, ${[...script.matchAll(/^(?:async )?function (\w+)/gm)].map(m => m[1]).join(',')}`)
+
   for (const [key, value] of Object.entries(overrides)) state[key].value = value
   state.loading.value = false
   const app = Vue.createSSRApp({ setup: () => state, render })
@@ -125,13 +136,13 @@ async function html(overrides) {
 }
 
 test('History explanation appears above populated and empty lists; completion label takes precedence', async () => {
-  const explanation = 'Transcripts cleared from the inbox or with completed inbox setup. Clearing does not mark work as complete.'
-  const populated = await html({ filterMode: 'history', transcripts: [cleared('a'), { ...cleared('b'), completedAt: '2026-09-23T10:03:00.000Z' }] })
+  const explanation = 'Assigned encounters and archived imports. Assignment does not generate a summary or approve a Clinical Record.'
+  const populated = await html({ filterMode: 'history', transcripts: [{...cleared('a'), clientId:null, sessionRef:null}, { ...cleared('b'), completedAt: '2026-09-23T10:03:00.000Z' }] })
   assert.ok(populated.includes(explanation), 'History explanation exists')
   assert.ok(populated.includes('class="inbox-list"'), 'History inbox list exists')
   assert.ok(populated.indexOf(explanation) < populated.indexOf('class="inbox-list"'))
   assert.equal(populated.split('Inbox setup complete').length - 1, 1)
-  assert.equal(populated.split('Cleared from inbox').length - 1, 1)
+  assert.equal(populated.split('Archived').length - 1, 1)
   const empty = await html({ filterMode: 'history', transcripts: [] })
   assert.ok(empty.indexOf(explanation) >= 0)
   assert.ok(empty.indexOf(explanation) < empty.indexOf('empty-card'))
