@@ -77,6 +77,24 @@ export function buildClinicalRecordSources({sessionId,sessions=[],captures=[],su
   }).slice(0,12);
 }
 
+export function clinicalRecordSuggestionsResponseFormat(sourceIds) {
+ const ids=[...new Set(sourceIds.filter(Boolean))];
+ const ref={type:'object',additionalProperties:false,properties:{sourceId:{type:'string',enum:ids},quote:{type:'string'}},required:['sourceId','quote']};
+ const field={type:'object',additionalProperties:false,properties:{text:{type:'string'},evidence:{type:'array',items:ref}},required:['text','evidence']};
+ return {type:'json_schema',json_schema:{name:'helios_clinical_record_evidence',strict:true,
+ schema:{type:'object',additionalProperties:false,properties:{fields:{type:'object',additionalProperties:false,properties:Object.fromEntries(CLINICAL_RECORD_FIELDS.map(k=>[k,field])),required:[...CLINICAL_RECORD_FIELDS]}},required:['fields']}}};
+}
+function matchingQuote(source,quote){
+ if(source.includes(quote))return quote;
+ const words=quote.trim().split(/\s+/u),found=[...source.matchAll(/\S+/gu)];
+ for(let i=0;i<=found.length-words.length;i++){
+  if(words.every((w,k)=>found[i+k][0]===w)){
+   const last=found[i+words.length-1];return source.slice(found[i].index,last.index+last[0].length);
+  }
+ }
+ return null;
+}
+
 export function validateClinicalRecordSuggestions(raw,sources,focusField=null){
   let obj;try{obj=typeof raw==='string'?JSON.parse(raw):raw}catch{return null}
   if(!obj||typeof obj!=='object'||Array.isArray(obj)||!obj.fields||typeof obj.fields!=='object')return null;
@@ -93,8 +111,9 @@ export function validateClinicalRecordSuggestions(raw,sources,focusField=null){
     for(const ref of field.evidence){
       if(typeof ref?.sourceId!=='string'||typeof ref?.quote!=='string'||ref.quote.trim().length<8||ref.quote.length>650)return null;
       const source=allowed.get(ref.sourceId);
-      if(!source||!source.text.includes(ref.quote))return null;
-      evidence.push({sourceId:source.id,quote:ref.quote,sourceTitle:source.title,kind:source.kind,
+      const quote=source&&matchingQuote(source.text,ref.quote);
+      if(!quote)return null;
+      evidence.push({sourceId:source.id,quote,sourceTitle:source.title,kind:source.kind,
         occurredAt:source.occurredAt,recordId:source.recordId,updatedAt:source.updatedAt,
         reviewStatus:source.reviewStatus});
     }
