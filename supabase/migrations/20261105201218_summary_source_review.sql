@@ -94,7 +94,7 @@ begin
   if jsonb_array_length(p_evidence)>6 then raise exception 'Too many review passages' using errcode='22023'; end if;
   if p_action in ('confirm','flag') then
     if p_action='confirm' then
-      if original.client_id is null or original.session_ref is null or length(trim(coalesce(p_context,'')))<10 then
+      if original.client_id is null or original.session_ref is null or length(trim(coalesce(p_context,'')))<10 or length(trim(coalesce(original.original_transcript,'')))<20 then
         raise exception 'Confirm the assigned encounter and describe its participants/context.' using errcode='22023';
       end if;
       perform 1 from public.sessions where id::text=original.session_ref and user_id=p_user_id and client_id=original.client_id;
