@@ -1,0 +1,61 @@
+name: Finalize clinical workspace handover
+on:
+  push:
+    branches: [fix/summary-source-review-20261105]
+    paths: [.github/workflows/finalize-clinical-flow.yml]
+permissions:
+  contents: read
+jobs:
+  verify-and-commit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22'
+      - name: Apply exact locally verified changes
+        run: |
+          set -euo pipefail
+          python3 scripts/finalize-clinical-flow.py
+          git diff --check
+      - run: npm ci --ignore-scripts --no-fund
+      - name: Regression and source protection checks
+        run: |
+          node --test test/transcript-summary-handoff.test.js test/client-workspace-transcripts.test.js test/session-summary-generation-ui.test.js test/session-workspace-simplified.test.js test/transcript-inbox-triage.test.js test/summary-source-outcomes.test.js test/summary-source-review-db.test.js test/transcript-clear-behaviour.test.js test/zoom-navigation-ui.test.js test/transcript-encounter-date.test.js test/transcript-clearing-logic.test.js test/session-linking-clarity.test.js
+      - run: npm run build
+      - run: npx playwright install --with-deps chromium
+      - run: node scripts/build-clinical-flow-offline.mjs
+      - run: npx playwright test --config playwright.clinical-flow.config.js
+      - name: Commit tested implementation and remove one-time scaffolding
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF" = refs/heads/fix/summary-source-review-20261105
+          rm scripts/finalize-clinical-flow.py .github/workflows/finalize-clinical-flow.yml
+          git add -A -- src test e2e scripts/finalize-clinical-flow.py .github/workflows/finalize-clinical-flow.yml
+          git diff --cached --check
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'fix: complete exact-source Clinical Workspace handover across all transcript views'
+          cat > /tmp/flow-askpass.sh <<'EOF'
+          #!/bin/sh
+          case "$1" in
+            *Username*) printf '%s\n' 'x-access-token' ;;
+            *Password*) printf '%s\n' "$GH_TOKEN" ;;
+          esac
+          EOF
+          chmod 700 /tmp/flow-askpass.sh
+          GIT_ASKPASS=/tmp/flow-askpass.sh GIT_TERMINAL_PROMPT=0 git push origin HEAD:refs/heads/fix/summary-source-review-20261105
+          rm /tmp/flow-askpass.sh
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: clinical-workspace-browser-checks
+          path: test-results/
+          retention-days: 2
