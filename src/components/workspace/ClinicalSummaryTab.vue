@@ -1,5 +1,39 @@
 <template>
   <div class="space-y-stack-lg max-w-4xl mx-auto" data-testid="clinical-summary-workspace">
+    <!-- Reuse prior clinical material without asking the therapist to retype it. -->
+    <section v-if="status === 'not_started' || status === 'draft'" class="rounded-panel border border-border-muted bg-surface-elevated p-5 space-y-4" data-testid="clinical-record-existing-material">
+      <div class="flex flex-wrap items-start justify-between gap-3">
+        <div class="min-w-0 flex-1">
+          <h3 class="text-h3 font-semibold text-ink">Prepare from existing clinical material</h3>
+          <p class="mt-1 text-body-sm text-ink-secondary">Reuse reviewed Session Captures, saved Session Summaries and earlier approved records. Helios shows supporting passages for each suggestion. Nothing is saved or approved automatically.</p>
+        </div>
+        <button type="button" class="button-primary" :disabled="suggestionsLoading || submitting" @click="requestExistingSuggestions()">{{ suggestionsLoading ? 'Reviewing sources…' : suggestions ? 'Refresh suggestions' : 'Prepare from existing material' }}</button>
+      </div>
+      <div class="flex flex-wrap gap-3 items-center">
+        <button type="button" class="button-secondary" :disabled="suggestionsLoading || submitting" @click="requestExistingSuggestions('presentingConcerns')">Ask Helios: presenting concerns</button>
+        <p class="text-caption text-ink-muted">Presenting concerns means what brought the client to therapy; current session themes are considered separately.</p>
+      </div>
+      <p v-if="suggestionError" class="text-body-sm text-state-danger" role="alert">{{ suggestionError }}</p>
+      <div v-if="suggestions" class="space-y-4" data-testid="clinical-record-suggested-fields">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <p class="text-body-sm font-semibold">Suggestions supported by existing records · therapist review required</p>
+          <button v-if="hasSuggestedFields" type="button" class="button-secondary" :disabled="suggestionsLoading" @click="useEmptySuggestedFields">Use suggestions in empty fields</button>
+        </div>
+        <p v-if="!hasSuggestedFields" class="text-body-sm text-ink-muted">No sufficiently supported suggestions were found. Your existing draft remains unchanged.</p>
+        <article v-for="(label,key) in summaryFields" :key="key" v-show="suggestions.fields[key]?.text" class="rounded-panel border border-border p-4 space-y-2" :data-testid="`evidence-field-${key}`">
+          <div class="flex flex-wrap items-center justify-between gap-3"><h4 class="text-body-sm font-semibold">{{ label }}</h4><button type="button" class="button-secondary" @click="useSuggestedField(key)">{{ summaryData[key] ? 'Replace field' : 'Use in draft' }}</button></div>
+          <p class="whitespace-pre-wrap text-body-sm text-ink-secondary">{{ suggestions.fields[key]?.text }}</p>
+          <details class="text-body-sm"><summary class="text-action-link cursor-pointer">View supporting passages ({{ suggestions.fields[key]?.evidence?.length || 0 }})</summary>
+            <blockquote v-for="(evidence,index) in suggestions.fields[key]?.evidence || []" :key="index" class="mt-2 pl-3 border-l-2 border-border text-caption text-ink-muted">
+              <strong>{{ evidence.sourceTitle }} · {{ evidence.reviewStatus }}<span v-if="evidence.occurredAt"> · {{ new Date(evidence.occurredAt).toLocaleDateString() }}</span></strong>
+              <p class="mt-1 whitespace-pre-wrap">“{{ evidence.quote }}”</p>
+            </blockquote>
+          </details>
+          <p v-if="acceptedEvidence[key]" class="text-caption text-state-success">Used in working draft · review the wording before approval</p>
+        </article>
+      </div>
+    </section>
+
     <!-- Preparation State -->
     <div v-if="status === 'not_started'" class="bg-surface-elevated border border-border-muted rounded-panel p-6 shadow-sm">
       <h3 class="text-h3 font-semibold text-ink mb-6">Prepare Clinical Record</h3>
@@ -53,7 +87,7 @@
             class="w-full py-3 bg-action-link text-on-action font-medium rounded-control flex items-center justify-center gap-2 transition-all hover:bg-action-link-hover focus-visible:ring-2 focus-visible:ring-state-focus-ring focus-visible:outline-none"
             :class="{ 'opacity-50 cursor-not-allowed': !canPrepareDraft }"
           >
-            {{ reviewedCapture ? 'Prepare draft from reviewed Session Capture' : 'Prepare empty Clinical Record draft' }}
+            {{ reviewedCapture ? 'Prepare draft from reviewed Session Capture' : 'Start an empty draft instead' }}
           </button>
           
           <div v-if="!canPrepareDraft" class="p-3 bg-state-danger-surface border border-state-danger/20 rounded flex gap-3 text-state-danger">
@@ -155,6 +189,7 @@
                 ref="firstField"
                 :id="key"
                 v-model="summaryData[key]"
+                @input="onClinicalFieldEdited(key)"
                 rows="4"
                 :disabled="dictation.busy.value"
                 class="w-full p-3 pr-12 rounded-control border border-border bg-surface focus:ring-2 focus:ring-action-link focus:border-action-link outline-none transition-all text-body-sm text-ink disabled:opacity-60"
@@ -188,6 +223,11 @@
           icon="📋"
         />
 
+        <label v-if="hasAcceptedSuggestions && status === 'draft'" class="mt-6 flex items-start gap-3 rounded-panel border border-border p-4 text-body-sm">
+          <input type="checkbox" v-model="evidenceReviewed" class="mt-1 h-4 w-4" />
+          <span>I have checked the suggested wording against its supporting records, including any uncertainty. These are my reviewed clinical notes, not automatically approved AI conclusions.</span>
+        </label>
+        <p v-if="hasAcceptedSuggestions && !evidenceReviewed && status === 'draft'" class="text-caption text-ink-muted">Review the imported fields before marking the draft ready.</p>
         <div class="mt-8 pt-6 border-t border-border flex justify-end gap-3">
           <p v-if="saveMessage" class="text-caption text-state-success font-medium animate-pulse flex-1 self-center" aria-live="polite">
             {{ saveMessage }}
@@ -202,7 +242,7 @@
           <button 
             v-if="status === 'draft'"
             @click="markReady"
-            :disabled="submitting || dictation.busy.value"
+            :disabled="submitting || dictation.busy.value || (hasAcceptedSuggestions && !evidenceReviewed)"
             class="px-inline-lg py-stack-sm bg-action-link text-on-action text-body-sm font-medium rounded-control hover:bg-action-link-hover transition-colors shadow-sm disabled:opacity-50"
           >
             Mark Ready for Review
@@ -394,6 +434,7 @@ import WhisperMicButton from '../ui/WhisperMicButton.vue';
 import { appendDictation, useWhisperDictation } from '../../composables/useWhisperDictation.js';
 import { saveSessionDraft, completeSessionRecord } from '../../lib/sessions.js';
 import { getSessionCapture } from '../../lib/sessionCaptures.js';
+import { suggestClinicalRecordFields } from '../../lib/clinicalRecordSuggestions.js';
 
 const props = defineProps({
   session: {
@@ -420,6 +461,47 @@ const dictationTargetKey = ref('');
 const reviewedCapture = ref(null);
 const selectedCaptureFields = ref([]);
 const captureLoadError = ref('');
+const suggestions = ref(null);
+const suggestionsLoading = ref(false);
+const suggestionError = ref('');
+const acceptedEvidence = reactive({});
+const evidenceReviewed = ref(false);
+let suggestionRequestVersion = 0;
+const hasSuggestedFields = computed(() => Object.values(suggestions.value?.fields || {}).some(field => field?.text));
+const hasAcceptedSuggestions = computed(() => Object.keys(acceptedEvidence).length > 0);
+function clearAcceptedEvidence(){for(const key of Object.keys(acceptedEvidence))delete acceptedEvidence[key];evidenceReviewed.value=false;}
+async function requestExistingSuggestions(focusField=null){
+  if(suggestionsLoading.value || status.value==='approved_record')return;
+  const requestVersion=++suggestionRequestVersion;
+  const clientId=props.session.clientId,sessionId=props.session.id;
+  suggestionsLoading.value=true;suggestionError.value='';
+  try{
+    const result=await suggestClinicalRecordFields({clientId,sessionId,focusField});
+    if(requestVersion!==suggestionRequestVersion || props.session.id!==sessionId || props.session.clientId!==clientId)return;
+    // A field-level request must not discard other suggestions already reviewed on screen.
+    suggestions.value=focusField && suggestions.value
+      ? {...result,fields:{...suggestions.value.fields,[focusField]:result.fields[focusField]}}
+      : result;
+  }catch(error){if(requestVersion===suggestionRequestVersion)suggestionError.value=error.message||'Unable to prepare suggestions.';}
+  finally{if(requestVersion===suggestionRequestVersion)suggestionsLoading.value=false;}
+}
+function useSuggestedField(key){
+  if(!['not_started','draft'].includes(status.value))return;
+  const selected=suggestions.value?.fields?.[key];if(!selected?.text || !selected.evidence?.length)return;
+  summaryData[key]=selected.text;
+  acceptedEvidence[key]=selected.evidence.map(e=>({sourceId:e.sourceId,recordId:e.recordId,kind:e.kind,updatedAt:e.updatedAt,quote:e.quote}));
+  evidenceReviewed.value=false;
+  status.value='draft';reviewConfirmed.value=false;
+}
+function useEmptySuggestedFields(){
+  for(const key of Object.keys(summaryFields))if(!summaryData[key])useSuggestedField(key);
+}
+function onClinicalFieldEdited(key){
+  // Evidence is linked to suggested text. After a clinician edits it, the earlier quote cannot be presented as proof of the edited wording.
+  delete acceptedEvidence[key];evidenceReviewed.value=false;reviewConfirmed.value=false;
+  if(status.value==='ready_for_review')status.value='draft';
+}
+
 
 const checklist = computed(() => [
   { id: 1, label: 'Reviewed Session Capture', available: Boolean(reviewedCapture.value), required: false },
@@ -451,6 +533,7 @@ const dictation = useWhisperDictation({
   onText: (text, key) => {
     if (!key || !(key in summaryData)) return;
     summaryData[key] = appendDictation(summaryData[key], text, '\n');
+    onClinicalFieldEdited(key);
   }
 });
 
@@ -517,6 +600,14 @@ const loadFromSession = () => {
         status.value = 'draft';
       }
       legacyNotes.value = parsed.legacyNotes || '';
+      clearAcceptedEvidence();
+      const provenance = parsed.aiSuggestionProvenance;
+      if (provenance && typeof provenance === 'object' && !Array.isArray(provenance)) {
+        for (const key of Object.keys(summaryFields)) {
+          if (Array.isArray(provenance[key]) && provenance[key].length <= 4) acceptedEvidence[key] = provenance[key];
+        }
+      }
+      evidenceReviewed.value = parsed.aiEvidenceReviewed === true;
     } else {
       legacyNotes.value = props.session.notes;
     }
@@ -527,6 +618,10 @@ const loadFromSession = () => {
 };
 
 // Re-load if session changes externally (e.g. from another tab/component)
+watch(() => props.session?.id, () => {
+  suggestionRequestVersion++;suggestions.value=null;suggestionError.value='';suggestionsLoading.value=false;clearAcceptedEvidence();
+  loadFromSession();void loadReviewedCapture();
+});
 watch(() => props.session?.notes, (newNotes, oldNotes) => {
   if (newNotes !== oldNotes) {
     loadFromSession();
@@ -653,7 +748,7 @@ const prepareDraft = async () => {
 const prepareDraftFromCapture = async () => {
   if (!reviewedCapture.value) return prepareDraft();
   for (const key of selectedCaptureFields.value) {
-    if (reviewedCapture.value.content[key]) summaryData[key] = reviewedCapture.value.content[key];
+    if (reviewedCapture.value.content[key] && !summaryData[key]) summaryData[key] = reviewedCapture.value.content[key];
   }
   status.value = 'draft';
   scrollAndFocus();
@@ -661,7 +756,7 @@ const prepareDraftFromCapture = async () => {
 
 function useCaptureField(key) {
   const suggestion = reviewedCapture.value?.content?.[key];
-  if (suggestion) summaryData[key] = suggestion;
+  if (suggestion) { summaryData[key] = suggestion;delete acceptedEvidence[key];evidenceReviewed.value=false; }
 }
 
 function toggleDictation(key) {
@@ -674,14 +769,16 @@ function toggleDictation(key) {
 }
 
 const saveDraft = async () => {
-  if (submitting.value || dictation.busy.value) return;
+  if (submitting.value || dictation.busy.value) return false;
   submitting.value = true;
   saveMessage.value = 'Saving…';
   
   try {
     const payload = {
       ...summaryData,
-      legacyNotes: legacyNotes.value
+      legacyNotes: legacyNotes.value,
+      aiSuggestionProvenance: {...acceptedEvidence},
+      aiEvidenceReviewed:hasAcceptedSuggestions.value ? evidenceReviewed.value : false
     };
     
     const updatedSession = await saveSessionDraft(
@@ -691,6 +788,7 @@ const saveDraft = async () => {
     
     emit('update:session', updatedSession);
     saveMessage.value = 'Draft saved.';
+    return true;
   } catch (error) {
     console.error('Failed to save clinical summary draft:', error);
     if (error.code === 'DEMO_CLINICAL_CONTENT') {
@@ -698,6 +796,7 @@ const saveDraft = async () => {
     } else {
       saveMessage.value = 'Failed to save.';
     }
+    return false;
   } finally {
     submitting.value = false;
     setTimeout(() => {
@@ -709,26 +808,29 @@ const saveDraft = async () => {
 };
 
 const markReady = () => {
-  if (dictation.busy.value) return;
+  if (dictation.busy.value || (hasAcceptedSuggestions.value && !evidenceReviewed.value)) return;
   status.value = 'ready_for_review';
   scrollAndFocus();
 };
 
 const openApprovalDialog = async () => {
+  if(hasAcceptedSuggestions.value && !evidenceReviewed.value)return;
   // Always save latest draft before opening approval dialog to ensure data is persistent
-  await saveDraft();
+  if(!await saveDraft()) return;
   isApprovalDialogOpen.value = true;
 };
 
 const confirmApproval = async () => {
-  if (submitting.value) return;
+  if (submitting.value || (hasAcceptedSuggestions.value && !evidenceReviewed.value)) return;
   submitting.value = true;
   saveMessage.value = 'Approving…';
 
   try {
     const payload = {
       ...summaryData,
-      legacyNotes: legacyNotes.value
+      legacyNotes: legacyNotes.value,
+      aiSuggestionProvenance: {...acceptedEvidence},
+      aiEvidenceReviewed:hasAcceptedSuggestions.value ? evidenceReviewed.value : false
     };
 
     const updatedSession = await completeSessionRecord(
