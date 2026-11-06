@@ -1,5 +1,11 @@
 <template>
   <div class="flex flex-col h-full bg-surface-canvas">
+    <div v-if="cameFromInbox" class="px-inline-lg py-stack-sm border-b border-border bg-surface">
+      <RouterLink :to="inboxReturnDestination" class="text-body-sm font-medium text-action-link hover:underline">Back to Transcript Inbox</RouterLink>
+    </div>
+    <div v-if="cameFromClientTranscripts" class="px-inline-lg py-stack-sm border-b border-border bg-surface">
+      <RouterLink :to="{ name: 'ClientWorkspace', params: { clientId: route.params.clientId }, query: { tab: 'Transcripts' } }" class="text-body-sm font-medium text-action-link hover:underline">Back to client transcripts</RouterLink>
+    </div>
     <div v-if="loading" class="flex-1 flex items-center justify-center"><div class="text-ink-muted flex flex-col items-center gap-2"><span class="w-8 h-8 border-4 border-state-selected border-t-transparent rounded-full animate-spin"></span><p>Loading session…</p></div></div>
     <div v-else-if="error" class="flex-1 flex items-center justify-center p-inline-lg"><div class="max-w-md w-full bg-surface p-inline-lg py-stack-lg rounded-card shadow-sm border border-state-danger/20 text-center"><h2 class="text-h2 font-semibold text-state-danger mb-2">Error</h2><p class="text-ink-secondary mb-6">{{ error }}</p><button @click="loadSession" class="button-primary">Try Again</button></div></div>
     <template v-else-if="session">
@@ -31,14 +37,21 @@
           </template>
 
           <template v-else>
+            <section v-if="sourceReview || summaryUnsafe" class="rounded-panel border border-border bg-surface-elevated p-5 space-y-3" data-testid="source-review-notice">
+              <h2 class="text-h3 font-semibold">{{ sourceReview?.resolved ? 'Source review saved' : 'Source needs review' }}</h2>
+              <p>{{ sourceReview?.message || 'The earlier output is a source-review notice, not a usable summary. Review its original source and regenerate.' }}</p>
+              <p class="text-body-sm">Your previous draft and imported Zoom note have been preserved. No new summary was saved by this review.</p>
+              <div v-if="!sourceReview?.resolved" class="flex flex-wrap gap-2"><button v-for="(item,index) in sourceReview?.sources || []" :key="index" v-show="item.transcriptId" class="button-primary" @click="openSourceReview(item)">Review flagged source {{ index+1 }}</button><button v-if="!sourceReview?.sources?.length && transcript?.id" class="button-primary" @click="openSourceReview()">Review original source</button></div>
+            </section>
+            <SourceReviewPanel v-if="reviewTranscriptId" :transcript-id="reviewTranscriptId" @close="reviewTranscriptId=''" @resolved="sourceReviewResolved" />
             <section class="space-y-6">
-              <div class="flex items-start justify-between gap-4">
+              <div class="flex flex-wrap items-start justify-between gap-4">
                 <div>
                   <h2 class="font-serif text-h2 text-ink">Session summary</h2>
                   <p v-if="summaryDocument?.id" class="mt-1 text-caption text-ink-muted">{{ summaryDocument.status === 'completed' ? 'Finalised in this client’s Documents.' : 'Saved in this client’s Documents.' }}</p>
                   <div v-if="summaryDocument?.content?.body && summaryDocument.status !== 'completed'" class="mt-2 flex flex-wrap items-center gap-2 text-caption text-ink-muted">
                     <span>{{ generatedSummaryLabel }}</span>
-                    <button type="button" class="font-semibold text-action-link hover:underline" @click="showSummaryOptions = !showSummaryOptions">{{ showSummaryOptions ? 'Hide options' : 'Change' }}</button>
+                    <button type="button" class="button-secondary text-body-sm" @click="showSummaryOptions = !showSummaryOptions">{{ showSummaryOptions ? 'Hide lens options' : 'Change lens / options' }}</button>
                   </div>
                 </div>
                 <div class="flex flex-wrap items-center justify-end gap-3">
@@ -48,14 +61,20 @@
                     <button v-else @click="isEditingSummary = false" class="text-body-sm font-medium text-action-link hover:underline">Done reading</button>
                   </template>
                   <button v-if="transcript" type="button" @click="askHeliosAboutSession" class="button-secondary !min-h-0 py-1.5 px-3 text-body-sm shadow-sm">Ask Helios</button>
-                  <button v-if="summaryDocument?.content?.body && summaryDocument.status !== 'completed'" @click="generateSummary" :disabled="isGenerating" class="text-body-sm font-medium text-ink-muted hover:text-ink disabled:opacity-50">Regenerate</button>
+                  <button v-if="summaryDocument?.content?.body && summaryDocument.status !== 'completed'" @click="generateSummary" :disabled="isGenerating || transcriptLoading || !!transcriptError || !transcript" class="text-body-sm font-medium text-ink-muted hover:text-ink disabled:opacity-50">Regenerate</button>
                   <RouterLink v-if="summaryDocument?.id" :to="{ name: 'ClientWorkspace', params: { clientId: session.clientId }, query: { document: summaryDocument.id } }" class="button-secondary !min-h-0 py-1.5 px-3 text-body-sm shadow-sm">Open in Client Documents</RouterLink>
-                  <button @click="copySummary" :disabled="!summaryDocument?.content?.body" class="button-secondary !min-h-0 py-1.5 px-3 text-body-sm shadow-sm">Copy summary</button>
+                  <button @click="copySummary" :disabled="!summaryDocument?.content?.body || !!sourceReview || summaryUnsafe" class="button-secondary !min-h-0 py-1.5 px-3 text-body-sm shadow-sm">Copy summary</button>
                 </div>
               </div>
 
+              <div v-if="transcriptError" class="rounded-panel border border-state-danger/20 bg-state-danger-surface p-4" role="alert" data-testid="session-source-error">
+                <p class="text-body-sm text-state-danger">{{ transcriptError }}</p>
+                <button type="button" class="button-secondary mt-3" :disabled="transcriptLoading" @click="loadTranscript()">Retry source</button>
+              </div>
+              <p v-else-if="transcriptLoading" role="status" class="text-body-sm text-ink-muted">Loading the assigned source...</p>
+
               <div
-                v-if="transcript && !isGenerating && (!summaryDocument?.content?.body || showSummaryOptions)"
+                v-if="transcript && !isGenerating && summaryDocument?.status !== 'completed' && (!summaryDocument?.content?.body || showSummaryOptions || summaryUnsafe)"
                 class="rounded-panel border border-border bg-surface-elevated p-5 shadow-sm"
                 data-testid="session-summary-options"
               >
@@ -64,6 +83,7 @@
                   <p class="text-body-sm text-ink-secondary">Choose how Helios should frame this summary. Your preferred approach is remembered for this client.</p>
                 </div>
 
+                <p v-if="summaryDocument?.content?.body" class="mt-3 text-body-sm text-ink-muted">Your existing draft stays unchanged until you choose Regenerate summary.</p>
                 <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3">
                   <label class="block">
                     <span class="text-caption font-semibold text-ink">Summary approach</span>
@@ -103,13 +123,14 @@
 
                 <div class="mt-4 flex flex-wrap items-center justify-between gap-3">
                   <p class="text-caption text-ink-muted">{{ summaryWindow === 'recent' ? 'Uses this encounter plus up to two previous available transcript-backed sessions.' : 'Uses only the transcript linked to this encounter.' }}</p>
-                  <button @click="generateSummary" :disabled="isGenerating" class="button-primary py-stack-xs px-inline-md">
+                  <button @click="generateSummary" :disabled="isGenerating || transcriptLoading || !!transcriptError || !transcript" class="button-primary py-stack-xs px-inline-md">
                     {{ summaryDocument?.content?.body ? 'Regenerate summary' : 'Generate summary' }}
                   </button>
                 </div>
                 <p v-if="summaryPreferenceError" class="mt-2 text-caption text-state-danger" role="alert">{{ summaryPreferenceError }}</p>
               </div>
 
+              <p v-if="summaryDocument?.status === 'completed' && prepareRequested" class="rounded-panel border border-border p-4 text-body-sm" role="status">This summary is finalised and read-only. Opening Clinical Workspace does not change or regenerate it.</p>
               <div class="relative min-h-[12rem]">
                 <div v-if="isGenerating" role="status" class="py-24 text-center text-ink-muted bg-surface rounded-panel border border-dashed border-border flex flex-col items-center gap-3 shadow-sm">
                   <span class="w-8 h-8 border-4 border-state-selected border-t-transparent rounded-full animate-spin"></span>
@@ -120,7 +141,7 @@
                   <p class="text-state-danger text-body-sm mb-4">{{ generationError }}</p>
                   <button @click="generateSummary" class="button-primary py-stack-xs px-inline-md text-body-sm">Retry</button>
                 </div>
-                <template v-else-if="summaryDocument">
+                <template v-else-if="summaryDocument && !summaryUnsafe">
                   <div v-if="generationError" class="mb-4 py-4 px-5 text-center bg-state-danger-surface rounded-panel border border-state-danger/20 shadow-sm" role="alert">
                     <p class="text-state-danger text-body-sm">Generation failed — previous summary unchanged. {{ generationError }}</p>
                     <button @click="generateSummary" class="button-primary mt-3 py-stack-xs px-inline-md text-body-sm">Retry</button>
@@ -199,12 +220,14 @@
 
 <script setup>
 import HelpLink from '../components/help/HelpLink.vue'
-import { ref, onMounted, computed } from 'vue';
+import SourceReviewPanel from '../components/workspace/SourceReviewPanel.vue';
+import { isUnusableSummary } from '../lib/summarySafety.js';
+import { ref, onMounted, computed, watch, onBeforeUnmount } from 'vue';
 import { useRoute, useRouter, RouterLink } from 'vue-router';
 import { supabase } from '../lib/supabase.js';
 import { getSession } from '../lib/sessions.js';
 import { getClient, updateClientSummaryPreference } from '../lib/clients.js';
-import { findSessionSummary, createClientDocumentDraft, saveClientDocumentDraft, generateSessionSummary } from '../lib/clientDocuments.js';
+import { findSessionSummary, createClientDocumentDraft, saveClientDocumentDraft, generateSessionSummary, checkSummarySourceSafety } from '../lib/clientDocuments.js';
 import { authenticatedFetch } from '../lib/api.js';
 import SessionWorkspaceHeader from '../components/workspace/SessionWorkspaceHeader.vue';
 import ReflectionTab from '../components/workspace/ReflectionTab.vue';
@@ -214,11 +237,28 @@ import CompletedClinicalRecord from '../components/workspace/CompletedClinicalRe
 import { useAskHelios } from '../composables/useAskHelios.js';
 
 const route = useRoute();
+const cameFromInbox = computed(() => route.query.from === 'transcript-inbox');
+const cameFromClientTranscripts = computed(() => route.query.from === 'client-transcripts');
+const prepareRequested = computed(() => route.query.prepare === '1');
+const inboxReturnDestination = computed(() => ({ name: 'Transcripts', query: typeof route.query.inboxReturn === 'string' ? { resume: route.query.inboxReturn } : {} }));
 const router = useRouter();
 const { openClinicalContext } = useAskHelios();
 const session = ref(null), client = ref(null), loading = ref(true), error = ref(''), transcript = ref(null), transcriptLoading = ref(false), transcriptError = ref(''), therapistName = ref('');
 const summaryDocument = ref(null);
-const activeView = ref('summary');
+const sourceReview=ref(null),reviewTranscriptId=ref('');
+const summaryUnsafe=computed(()=>isUnusableSummary(summaryDocument.value?.content));
+function openSourceReview(item){reviewTranscriptId.value=item?.transcriptId||transcript.value?.id||''}
+async function sourceReviewResolved(result){
+  if(result.action==='confirm'){
+    reviewTranscriptId.value='';sourceReview.value={resolved:true,message:'Source review saved. Generate a fresh summary before copying or sharing. Your earlier draft is unchanged.',sources:[]};await loadTranscript();
+  }else{sourceReview.value={message:'The original was separated. Open one of the reviewed encounters below.',sources:[]};transcript.value=null;}
+}
+async function verifySavedSummary(){
+  if(!summaryDocument.value?.id)return !summaryUnsafe.value;
+  try{const safety=await checkSummarySourceSafety(summaryDocument.value.id);if(!safety.safe){sourceReview.value=safety.review;return false}return true}
+  catch{sourceReview.value={message:'Source safety could not be verified. Review before copying or sharing.',sources:[]};return false}
+}
+const activeView = ref(route.query.view === 'clinical' ? 'clinical' : 'summary');
 const isEditingSummary = ref(false);
 const showTranscript = ref(false);
 const showReflection = ref(false);
@@ -236,6 +276,11 @@ const summaryPreferenceError = ref('');
 const preparingCbtCare = ref(false);
 const cbtCareError = ref('');
 let saveTimer = null;
+let disposed = false;
+watch(() => [route.query.prepare, route.query.view], () => {
+  if (prepareRequested.value) { activeView.value = 'summary'; showSummaryOptions.value = true; }
+});
+onBeforeUnmount(() => { disposed = true; clearTimeout(saveTimer); });
 
 function handleSessionUpdate(updatedSession) {
   session.value = updatedSession;
@@ -254,7 +299,7 @@ function askHeliosAboutSession() {
 }
 
 async function generateSummary() {
-  if (!session.value || isGenerating.value || summaryDocument.value?.status === 'completed') return;
+  if (!session.value || !transcript.value || transcriptLoading.value || transcriptError.value || isGenerating.value || summaryDocument.value?.status === 'completed') return;
   isGenerating.value = true;
   generationError.value = '';
   try {
@@ -267,7 +312,9 @@ async function generateSummary() {
       window: summaryWindow.value,
       therapistGuidance: therapistGuidance.value
     });
+    if (disposed) return;
     const generation = {
+      outcome:'ready',
       id: result.generationId,
       generatedAt: result.generatedAt,
       promptVersion: result.promptVersion,
@@ -306,10 +353,13 @@ async function generateSummary() {
         sourceManifest: result.sources
       });
     }
-    showSummaryOptions.value = false;
+    sourceReview.value=null;
+    showSummaryOptions.value = prepareRequested.value;
     showSummaryGuidance.value = false;
     therapistGuidance.value = '';
   } catch (err) {
+    if(err.code==='SOURCE_REVIEW_REQUIRED'){sourceReview.value=err.review||{message:err.message,sources:[]};return;}
+    if (disposed) return;
     generationError.value = err.message || 'Summary generation failed. Please try again.';
     console.error('Generation failed:', err);
   } finally {
@@ -365,7 +415,8 @@ async function prepareCbtCareSuggestions() {
 }
 
 async function copySummary() {
-  if (!summaryDocument.value?.content?.body) return;
+  if (!summaryDocument.value?.content?.body || sourceReview.value || summaryUnsafe.value) return;
+  if(!await verifySavedSummary())return;
   copyError.value = '';
   try {
     await navigator.clipboard.writeText(summaryDocument.value.content.body);
@@ -405,10 +456,11 @@ async function loadSession(){
     session.value=sessionData;
     client.value=clientData;
     summaryDocument.value = await findSessionSummary({ clientId, sessionId });
+    await verifySavedSummary();
     const previousGeneration = summaryDocument.value?.content?.summaryGeneration || null;
     summaryLens.value = clientData.preferred_summary_lens || previousGeneration?.lens || 'integrative';
     summaryWindow.value = previousGeneration?.window || 'current';
-    showSummaryOptions.value = !summaryDocument.value?.content?.body;
+    showSummaryOptions.value = prepareRequested.value || summaryUnsafe.value || !summaryDocument.value?.content?.body;
     loadTranscript();
   }catch(e){
     error.value='The session could not be loaded.';
@@ -417,7 +469,23 @@ async function loadSession(){
   }
 }
 
-async function loadTranscript(){if(!session.value?.id||!session.value?.clientId)return;transcriptLoading.value=true;transcriptError.value='';transcript.value=null;try{const params=new URLSearchParams({sessionRef:String(session.value.id),clientId:String(session.value.clientId)});const response=await authenticatedFetch(`/api/zoom/transcripts?${params.toString()}`);const data=await response.json().catch(()=>({}));if(!response.ok)throw new Error(data.error||'Unable to load the linked transcript.');transcript.value=data.transcripts?.[0]||null}catch(err){transcriptError.value=err?.message||'Unable to load the linked transcript.'}finally{transcriptLoading.value=false}}
+async function loadTranscript(){
+  if(!session.value?.id||!session.value?.clientId)return;
+  transcriptLoading.value=true;transcriptError.value='';transcript.value=null;
+  try{
+    const sessionRef=String(session.value.id),clientId=String(session.value.clientId);
+    const requestedId=typeof route.query.transcriptId==='string'?route.query.transcriptId:'';
+    const params=requestedId?new URLSearchParams({id:requestedId}):new URLSearchParams({sessionRef,clientId});
+    const response=await authenticatedFetch(`/api/zoom/transcripts?${params.toString()}`);
+    const data=await response.json().catch(()=>({}));
+    if(!response.ok)throw new Error(data?.error||'Unable to load the linked transcript.');
+    const source=requestedId?data?.transcript:data?.transcripts?.[0];
+    if(requestedId&&!source)throw new Error('The assigned source could not be found. Return to Transcript Inbox to review it.');
+    if(source&&(String(source.clientId)!==clientId||String(source.sessionRef)!==sessionRef||(requestedId&&source.id!==requestedId)))throw new Error('This transcript no longer belongs to this encounter. Return to Transcript Inbox to review its assignment.');
+    transcript.value=source||null;
+  }catch(err){transcriptError.value=err?.message||'Unable to load the linked transcript.'}
+  finally{transcriptLoading.value=false}
+}
 
 const summaryGeneration = computed(() => summaryDocument.value?.content?.summaryGeneration || null);
 function summaryApproachLabel(lens) {

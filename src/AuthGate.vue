@@ -53,7 +53,7 @@
   </main>
 
   <template v-else-if="session">
-    <AppShell data-testid="workspace-shell"><router-view /></AppShell>
+    <AppShell data-testid="workspace-shell"><router-view :key="route.name === 'SessionWorkspace' ? [route.params.clientId,route.params.sessionId,route.query.transcriptId || ''].join(':') : undefined" /></AppShell>
     <GlobalWhisperFallback />
   </template>
 
@@ -136,6 +136,7 @@
 </template>
 
 <script setup>
+import { clearInboxReturnContexts } from './lib/transcriptInboxNavigation.js'
 import { onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import AppShell from './layouts/AppShell.vue'
@@ -283,6 +284,7 @@ onMounted(async () => {
     if (event === 'SIGNED_IN' && nextSession?.access_token) {
       notifySignup(nextSession.access_token)
     }
+    if (event === 'SIGNED_OUT' || session.value?.user?.id !== nextSession?.user?.id) clearInboxReturnContexts()
     if (event === 'SIGNED_OUT') {
       const currentError = errorMessage.value
       clearFeedback()

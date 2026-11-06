@@ -44,7 +44,7 @@
 
       <p v-if="importError" class="max-w-[68rem] mx-auto mb-stack-md text-body-sm text-state-danger" role="alert">{{ importError }}</p>
       <p v-else-if="importSuccess" class="max-w-[68rem] mx-auto mb-stack-md text-body-sm text-state-success" role="status">{{ importSuccess }}</p>
-      <TranscriptInbox :key="inboxKey" :clients="clients" :open-transcript-id="openTranscriptId" @client-added="load" />
+      <TranscriptInbox :key="inboxKey" :clients="clients" :open-transcript-id="openTranscriptId" @client-added="handleClientAdded" />
     </main>
   </div>
 </template>
@@ -74,6 +74,9 @@ const MAX_IMPORT_BYTES = 2 * 1024 * 1024
 const returnClientId = computed(() => typeof route.query.returnClientId === 'string' ? route.query.returnClientId : '')
 const openTranscriptId = computed(() => typeof route.query.transcript === 'string' ? route.query.transcript : null)
 
+function handleClientAdded(client) {
+  if(client?.id)clients.value=[...clients.value.filter(item=>item.id!==client.id),client]
+}
 async function load() {
   loading.value = true
   error.value = ''

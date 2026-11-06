@@ -5,9 +5,9 @@ import { readFile } from 'node:fs/promises'
 const panelSource = await readFile(new URL('../src/components/workspace/ClientTranscriptsPanel.vue', import.meta.url), 'utf8')
 const inboxSource = await readFile(new URL('../src/components/TranscriptInbox.vue', import.meta.url), 'utf8')
 
-test('session linking is optional and lives inline in the client transcript panel', () => {
-  assert.match(panelSource, /Session link/)
-  assert.match(panelSource, /\(optional\)/)
+test('encounter linking lives inline before entering Clinical Workspace', () => {
+  assert.match(panelSource, /Link to an encounter/)
+  assert.match(panelSource, /Open Clinical Workspace/)
   assert.match(panelSource, /An in-progress session is a valid link\./)
   assert.match(panelSource, /sessionOptionLabel\(session\)/)
   assert.match(panelSource, /In progress ·/)

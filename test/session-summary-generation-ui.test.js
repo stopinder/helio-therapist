@@ -39,8 +39,13 @@ test('SessionWorkspace offers Regenerate only for non-finalised summary content'
 
   const guard = source.match(/async function generateSummary\(\)\s*\{\s*if\s*\(([^\n]+)\)\s*return;/)?.[1]
   assert.ok(guard, 'Generation must retain its early-return guard')
-  const blocksGeneration = new Function('session', 'isGenerating', 'summaryDocument', `return Boolean(${guard})`)
-  assert.equal(blocksGeneration({ value: { id: 'session-1' } }, { value: false }, { value: { status: 'completed' } }), true)
+  const blocksGeneration = new Function('session', 'isGenerating', 'summaryDocument', 'transcript', 'transcriptLoading', 'transcriptError', `return Boolean(${guard})`)
+  const check = (document, source = { id: 'source-1' }, loading = false, error = '') => blocksGeneration({value:{id:'session-1'}},{value:false},{value:document},{value:source},{value:loading},{value:error})
+  assert.equal(check({status:'completed'}), true)
+  assert.equal(check({status:'draft'}), false)
+  assert.equal(check({status:'draft'}, null), true)
+  assert.equal(check({status:'draft'}, {id:'source-1'}, true), true)
+  assert.equal(check({status:'draft'}, {id:'source-1'}, false, 'Wrong encounter'), true)
 })
 
 test('SessionWorkspace sends the chosen approach, evidence scope and therapist guidance to AI', () => {
@@ -48,7 +53,7 @@ test('SessionWorkspace sends the chosen approach, evidence scope and therapist g
   assert.match(source, /window:\s*summaryWindow\.value/)
   assert.match(source, /therapistGuidance:\s*therapistGuidance\.value/)
   assert.match(source, /summaryGeneration:\s*generation/)
-  assert.match(source, /showSummaryOptions\.value = false/)
+  assert.match(source, /showSummaryOptions\.value = prepareRequested\.value/)
 })
 
 test('Session summary approach is remembered per client', () => {
@@ -78,17 +83,17 @@ test('Direct session summary keeps full fidelity for the current encounter and c
   assert.match(apiSource, /PREVIOUS_TRANSCRIPT_EXCERPT_CHARS\s*=\s*12000/)
   assert.match(apiSource, /isCurrent:\s*index\s*===\s*0/)
   assert.match(apiSource, /!zoomSummary\s*\?\s*boundedTranscriptExcerpt\(transcript\)\s*:\s*''/)
-  assert.match(apiSource, /original_transcript_excerpt/)
+  assert.match(apiSource, /transcript:transcriptForPrompt, zoom_note:zoomSummary/)
   assert.match(apiSource, /EVERY section value must be a JSON string/)
-  assert.match(apiSource, /normalizeClientSessionSummaryResponse/)
-  assert.match(apiSource, /clientSessionSummaryResponseFormat\(validSourceIds\)/)
-  assert.match(apiSource, /session-summary-direct-v5/)
+  assert.match(apiSource, /validateSummaryOutcome/)
+  assert.match(apiSource, /summaryOutcomeResponseFormat\(validSourceIds\)/)
+  assert.match(apiSource, /session-summary-direct-v6-source-review/)
 })
 
 test('SessionWorkspace keeps the previous summary visible when regeneration fails', () => {
   assert.match(source, /generationError\s*&&\s*!summaryDocument/)
   assert.match(source, /Generation failed — previous summary unchanged\./)
-  assert.match(source, /<template v-else-if="summaryDocument">/)
+  assert.match(source, /<template v-else-if="summaryDocument && !summaryUnsafe">/)
   assert.match(source, /<SessionSummaryDocument/)
 })
 

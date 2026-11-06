@@ -15,15 +15,17 @@ test('Transcript Inbox makes encounter date explicit and editable before assignm
   assert.match(inbox, /Save date/)
 })
 
-test('assigning from the inbox saves a changed encounter date first', () => {
-  assert.match(inbox, /if\(encounterDateChanged\(transcript\)\)\{[\s\S]*saveEncounterDate\(transcript,\{quiet:true\}\)[\s\S]*assignTranscriptToClient\(current,clientId\)/)
-  assert.match(inbox, /sourceOccurredAt/)
-  assert.match(inbox, /expectedUpdatedAt:transcript\.updatedAt/)
+test('all assignment paths save a changed encounter date before the assignment PATCH', () => {
+  const shared = inbox.split('async function assignTranscriptToClient')[1].split('async function assignFromInbox')[0]
+  assert.match(shared, /encounterDateChanged\(current\)/)
+  assert.ok(shared.indexOf('saveEncounterDate(current') < shared.indexOf('authenticatedFetch'))
+  assert.match(shared, /expectedUpdatedAt:current\.updatedAt/)
+  assert.match(shared, /if\(!current\)return null/)
 })
 
-test('new-client assignment also preserves a corrected encounter date', () => {
-  assert.match(inbox, /if \(encounterDateChanged\(transcript\)\) \{[\s\S]*saveEncounterDate\(transcript, \{ quiet: true \}\)[\s\S]*assignTranscriptToClient\(current, newClient\.id/)
-  assert.match(inbox, /selected\.value && encounterDateChanged\(selected\.value\)/)
+test('new-client and detail assignment reuse the corrected-date transaction', () => {
+  assert.match(inbox, /assignTranscriptToClient\(transcript,newClient\.id/)
+  assert.match(inbox, /assignTranscriptToClient\(selected\.value,selectedClientId\.value/)
 })
 
 test('encounter date can only be changed on untouched unassigned transcripts', () => {

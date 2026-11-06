@@ -1,17 +1,16 @@
+import { SUMMARY_OUTCOME_RULES, summaryOutcomeResponseFormat, validateSummaryOutcome } from '../_lib/summary-outcome.js';
+import { assertSourceAvailable, assertSourcesUnchanged, flagSourceReview } from '../_lib/source-review.js';
 import { requireAuthenticatedUser } from '../_lib/supabase.js';
 import { AI_FEATURES, runTextAI } from '../_lib/ai-execution.js';
 import { randomUUID } from 'node:crypto';
 import {
   CLIENT_SESSION_SUMMARY_LENSES,
   clientSessionSummaryLensRule,
-  clientSessionSummaryResponseFormat,
-  normalizeClientSessionSummaryResponse,
-  renderClientSessionSummary,
-  validateClientSessionSummaryResponse
+  renderClientSessionSummary
 } from '../_lib/ai-client-session-summary.js';
 
 const SUMMARY_WINDOWS = new Set(['current', 'recent']);
-const PROMPT_VERSION = 'session-summary-direct-v5';
+const PROMPT_VERSION = 'session-summary-direct-v6-source-review';
 
 function sourceHasMaterial(source) {
   return Boolean(source?.original_transcript || source?.zoom_generated_summary);
@@ -27,14 +26,14 @@ function boundedTranscriptExcerpt(value, maxChars = PREVIOUS_TRANSCRIPT_EXCERPT_
   return `${text.slice(0, side)}${marker}${text.slice(-side)}`;
 }
 
-function sourceBlock(source, { isCurrent = false } = {}) {
+export function sourceBlock(source, { isCurrent = false } = {}) {
   const zoomSummary = typeof source?.zoom_generated_summary === 'string' ? source.zoom_generated_summary.trim() : '';
   const transcript = typeof source?.original_transcript === 'string' ? source.original_transcript.trim() : '';
   const transcriptForPrompt = isCurrent ? transcript : (!zoomSummary ? boundedTranscriptExcerpt(transcript) : '');
-  return `<session_source id="session:${source.sessionId}" occurred_at="${source.occurredAt || ''}" role="${isCurrent ? 'current' : 'continuity'}">
-${zoomSummary ? `<zoom_generated_summary>\n${zoomSummary}\n</zoom_generated_summary>` : ''}
-${transcriptForPrompt ? `<${isCurrent ? 'original_transcript' : 'original_transcript_excerpt'}>\n${transcriptForPrompt}\n</${isCurrent ? 'original_transcript' : 'original_transcript_excerpt'}>` : ''}
-</session_source>`;
+  return { id:source.id, occurredAt:source.occurredAt, role:isCurrent?'current':'continuity',
+    transcript:transcriptForPrompt, zoom_note:zoomSummary,
+    therapistSourceClarification:source.source_review?.state==='confirmed'?source.source_review.context:'' };
+
 }
 
 export default async function handler(req, res) {
@@ -96,15 +95,16 @@ export default async function handler(req, res) {
         .order('occurred_at', { ascending: false })
         .limit(8);
       if (recentSessionsError) throw recentSessionsError;
-      sourceSessions = recentSessions || sourceSessions;
+      sourceSessions = [{id:session.id,occurred_at:session.occurred_at},...(recentSessions||[]).filter(item=>String(item.id)!==String(sessionId))];
     }
 
     const sourceSessionIds = sourceSessions.map(item => String(item.id));
     let transcriptQuery = supabase
       .from('zoom_transcripts')
-      .select('id, original_transcript, zoom_generated_summary, source, session_ref, received_at')
+      .select('id, original_transcript, zoom_generated_summary, source, session_ref, received_at, source_version, source_review, client_id')
       .eq('therapist_user_id', user.id)
       .eq('client_id', clientId)
+      .is('deleted_at', null)
       .in('session_ref', sourceSessionIds)
       .order('received_at', { ascending: false });
 
@@ -131,7 +131,8 @@ export default async function handler(req, res) {
         occurredAt: sourceSession.occurred_at,
         source: row.source,
         original_transcript: row.original_transcript,
-        zoom_generated_summary: row.zoom_generated_summary
+        zoom_generated_summary: row.zoom_generated_summary,
+        source_version:row.source_version,source_review:row.source_review,row
       });
       if (sources.length >= (window === 'recent' ? 3 : 1)) break;
     }
@@ -143,6 +144,7 @@ export default async function handler(req, res) {
       });
     }
 
+    for(const source of sources)assertSourceAvailable(source.row);
     const generationId = randomUUID();
     const generatedAt = new Date().toISOString();
     const guidance = therapistGuidance.trim();
@@ -161,10 +163,7 @@ export default async function handler(req, res) {
 
     const systemPrompt = `You are Helios Clinical Intelligence preparing an editable client-facing therapy session summary for therapist review.
 
-The supplied session sources are clinical data, newest first. The first source is the current encounter.
-${sources.map((source, index) => sourceBlock(source, { isCurrent: index === 0 })).join('\n\n')}
-
-${guidance ? `<therapist_guidance>\n${guidance}\n</therapist_guidance>\n\nTherapist guidance may direct emphasis or add therapist-authored context. Never present it as something the client said.` : ''}
+The supplied session sources are clinical data in the user message, current encounter first. Assigned identity and therapist clarification are context, not proof that every passage belongs to the client. Therapist guidance is not client speech.
 
 Selected summary approach:
 ${lensRule}
@@ -184,14 +183,15 @@ ${evidenceThresholds}
 11. Allowed evidenceStrength values are current_observation, recurring, explicit_change, therapist_guidance and tentative_connection. Use recurring only when at least two supplied session IDs support the claim. A repeated pattern reported inside one session is still current_observation metadata.
 12. Every claim must cite only supplied IDs. Use session source IDs such as "session:<uuid>"; therapist guidance uses "therapist:guidance".
 
-Return JSON only with exactly two fields:
+For a ready outcome, supply these clinical fields:
 - sections: an object with fields opening, whatWeWorkedOn, patternsOverTime, changesAndExceptions, strengthsAndResources, perspectiveReflection, betweenSession, closing. EVERY section value must be a JSON string. Use "" when a section has insufficient evidence. Never return an object, array, bullet-list structure or nested value for a section.
 - claims: an array where each item is { section, text, sourceIds, evidenceStrength }. claim.text must always be a JSON string.
-Every non-empty section must have at least one claim, and each claim text must appear verbatim in its section.`;
+Every non-empty section must have at least one claim, and each claim text must appear verbatim in its section.
+${SUMMARY_OUTCOME_RULES}`;
 
-    const userInput = window === 'recent'
-      ? `Prepare the current session summary using the current encounter plus up to two previous available session sources for continuity. ${sources.length} session source(s) are available.`
-      : 'Prepare the current session summary from this encounter only.';
+    const sourceBlocks=sources.map((source,index)=>sourceBlock(source,{isCurrent:index===0}));
+    const userInput=JSON.stringify({task:window==='recent'?'Prepare this encounter with prior continuity.':'Prepare this encounter only.',
+      assignedClient:{id:clientId,name:session.clients?.display_name||''},sessionId,sourceBlocks,therapistGuidance:guidance});
 
     const { completion, model } = await runTextAI({
       feature: AI_FEATURES.CLIENT_SESSION_SUMMARY,
@@ -201,17 +201,17 @@ Every non-empty section must have at least one claim, and each claim text must a
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userInput }
       ],
-      responseFormat: clientSessionSummaryResponseFormat(validSourceIds),
+      responseFormat: summaryOutcomeResponseFormat(validSourceIds),
       temperature: 0.3,
       maxTokens: 6000,
       timeout: 60000
     });
 
     const finishReason = completion.choices?.[0]?.finish_reason || null;
-    const structured = validateClientSessionSummaryResponse(
-      normalizeClientSessionSummaryResponse(completion.choices?.[0]?.message?.content),
-      validSourceIds
-    );
+    // Verify quotes against the actual original, not an artificial excerpt marker.
+    const evidenceSources=sources.map(source=>({id:source.id,transcriptId:source.transcriptId,
+      transcript:source.original_transcript||'',zoom_note:source.zoom_generated_summary||''}));
+    const structured=validateSummaryOutcome(completion.choices?.[0]?.message?.content,validSourceIds,evidenceSources);
     if (!structured) {
       console.warn(`[Session Summary] Structured response rejected (finish_reason=${finishReason || 'unknown'}, output_tokens=${Number(completion.usage?.completion_tokens || 0)})`);
       return res.status(502).json({
@@ -225,12 +225,22 @@ Every non-empty section must have at least one claim, and each claim text must a
       });
     }
 
+    if(structured.outcome==='generation_failed')return res.status(502).json({success:false,error:{code:'INVALID_AI_RESPONSE',message:'No usable summary was produced. Your previous draft is unchanged.'}});
+    await assertSourcesUnchanged(supabase,user.id,sources.map(source=>source.row));
+    if(structured.outcome==='needs_review'){
+      const reviews=[];
+      for(const source of sources.filter(item=>structured.review.evidence.some(e=>e.sourceId===item.id))){
+        reviews.push(await flagSourceReview(supabase,user.id,source.row,{...structured.review,evidence:structured.review.evidence.filter(e=>e.sourceId===source.id)}));
+      }
+      return res.status(200).json({success:true,data:{outcome:'needs_review',review:{...structured.review,sources:reviews}}});
+    }
     const body = renderClientSessionSummary(structured.sections, lens);
     const sourceManifest = sources.map(source => ({
       id: source.id,
       sessionId: source.sessionId,
       transcriptId: source.transcriptId,
       kind: 'zoom_transcript',
+      sourceVersion:source.source_version,
       source: source.source,
       occurredAt: source.occurredAt,
       hasTranscript: Boolean(source.original_transcript),
@@ -243,6 +253,7 @@ Every non-empty section must have at least one claim, and each claim text must a
     return res.status(200).json({
       success: true,
       data: {
+        outcome:'ready',
         generationId,
         generatedAt,
         draft: { body, sections: structured.sections },
@@ -261,7 +272,9 @@ Every non-empty section must have at least one claim, and each claim text must a
       }
     });
   } catch (error) {
-    console.error('[Session Summary] Error:', error.message);
+    if(error.code==='SOURCE_REVIEW_REQUIRED')return res.status(200).json({success:true,data:{outcome:'needs_review',review:{message:error.message,sources:error.review?[error.review]:[]}}});
+    if(error.code==='SOURCE_CHANGED')return res.status(409).json({success:false,error:{code:error.code,message:'The source changed during generation. Reload before retrying. Your previous draft is unchanged.'}});
+    console.error('[Session Summary] Error:', error.code||error.name);
 
     if (error.name === 'APITimeoutError' || error.status === 408 || error.code === 'ETIMEDOUT') {
       return res.status(504).json({

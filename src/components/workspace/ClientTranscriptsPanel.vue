@@ -3,7 +3,7 @@
     <div class="flex items-start justify-between gap-inline-md pt-stack-md mb-stack-lg">
       <div>
         <h3 class="text-h3 font-semibold text-ink">Transcripts</h3>
-        <p class="text-body-sm text-ink-muted mt-1">Original source transcripts assigned to this client.</p>
+        <p class="text-body-sm text-ink-muted mt-1">Open Clinical Workspace to choose IFS or another approach. The imported transcript remains unchanged.</p>
       </div>
       <router-link :to="{ path: '/transcripts', query: { returnClientId: props.clientId } }" class="text-body-sm font-medium text-action-link hover:underline">Transcript Inbox</router-link>
     </div>
@@ -20,25 +20,27 @@
 
     <div v-else class="space-y-stack-sm pb-stack-lg">
       <article v-for="transcript in clientTranscripts" :key="transcript.id" class="border border-border-muted rounded-control bg-surface p-inline-md py-stack-md">
-        <div class="flex items-start justify-between gap-inline-md">
+        <div class="flex flex-wrap items-start justify-between gap-inline-md">
           <div class="min-w-0">
             <p class="text-body-sm font-medium text-ink">{{ titleFor(transcript) }}</p>
             <p class="text-caption text-ink-muted mt-0.5">
-              {{ formatDate(transcript.receivedAt) }}
+              {{ formatDate(transcript.sourceOccurredAt || transcript.receivedAt) }}
               <template v-if="transcript.sessionRef"> · Linked to session</template>
               <template v-else> · Not linked to a session</template>
             </p>
           </div>
 
-          <div class="flex items-center gap-inline-md shrink-0">
-            <button type="button" class="text-body-sm font-medium text-action-link hover:underline" @click="toggleTranscript(transcript.id)">
-              {{ expandedId === transcript.id ? 'Hide transcript' : 'View transcript' }}
-            </button>
+          <div class="flex flex-wrap items-center gap-inline-sm min-w-0 max-w-full">
             <RouterLink
-              v-if="transcript.sessionRef"
-              :to="{ name: 'SessionWorkspace', params: { clientId: props.clientId, sessionId: transcript.sessionRef } }"
-              class="text-body-sm font-semibold text-action-link hover:underline"
-            >Open session</RouterLink>
+              v-if="workspaceDestination(transcript)"
+              :to="workspaceDestination(transcript)"
+              class="button-primary whitespace-normal text-center max-w-full"
+              data-testid="open-clinical-workspace"
+            >Open Clinical Workspace</RouterLink>
+            <RouterLink v-else-if="transcript.sourceReview?.state === 'needs_review' || transcript.sourceReview?.state === 'separated'" :to="{path:'/transcripts',query:{transcript:transcript.id,returnClientId:props.clientId}}" class="button-primary">Review source</RouterLink>
+            <button type="button" class="button-secondary" :disabled="detailLoadingId === transcript.id" @click="toggleTranscript(transcript.id)">
+              {{ detailLoadingId === transcript.id ? 'Loading source...' : expandedId === transcript.id ? 'Hide transcript' : 'View transcript' }}
+            </button>
           </div>
         </div>
 
@@ -49,10 +51,10 @@
           </div>
 
           <div v-else class="space-y-stack-sm">
-            <p class="text-body-sm font-medium text-ink">Session link <span class="font-normal text-ink-muted">(optional)</span></p>
-            <p class="text-caption text-ink-muted">Choose the encounter this transcript belongs to. An in-progress session is a valid link.</p>
+            <p class="text-body-sm font-medium text-ink">Link to an encounter</p>
+            <p class="text-caption text-ink-muted">Choose the encounter this transcript belongs to, then open Clinical Workspace. An in-progress session is a valid link.</p>
 
-            <div v-if="sessionsForClient.length" class="flex items-center gap-inline-sm">
+            <div v-if="sessionsForClient.length" class="flex flex-wrap items-center gap-inline-sm">
               <label :for="`session-${transcript.id}`" class="sr-only">Session</label>
               <select
                 :id="`session-${transcript.id}`"
@@ -81,11 +83,12 @@
               >Cancel</button>
             </div>
 
-            <p v-else class="text-caption text-ink-muted">No sessions are recorded for this client yet. The transcript can remain assigned without a session link.</p>
+            <p v-else class="text-caption text-ink-muted">No encounters are recorded for this client yet. Return to Transcript Inbox to review the assignment before generating a summary.</p>
             <p v-if="linkErrors[transcript.id]" class="text-caption text-state-danger" role="alert">{{ linkErrors[transcript.id] }}</p>
           </div>
         </div>
 
+        <p v-if="detailErrors[transcript.id]" class="mt-3 text-body-sm text-state-danger" role="alert">{{ detailErrors[transcript.id] }}</p>
         <div v-if="expandedId === transcript.id" class="mt-stack-md border-t border-border-muted pt-stack-md">
           <p class="text-caption text-ink-muted mb-stack-sm">Original transcript · unchanged source</p>
           <pre class="whitespace-pre-wrap break-words text-body-sm text-ink-secondary font-sans max-h-96 overflow-y-auto">{{ transcript.text }}</pre>
@@ -100,6 +103,7 @@ import { computed, onMounted, ref, watch } from 'vue'
 import { RouterLink } from 'vue-router'
 import { authenticatedFetch } from '../../lib/api.js'
 import { listSessions } from '../../lib/sessions.js'
+import { sessionSummaryDestination } from '../../lib/transcriptWorkflow.js'
 
 const props = defineProps({ clientId: { type: String, required: true } })
 const transcripts = ref([])
@@ -111,6 +115,12 @@ const linkingId = ref(null)
 const savingId = ref(null)
 const selectedSessions = ref({})
 const linkErrors = ref({})
+const detailLoadingId = ref(null), detailErrors = ref({})
+let loadVersion = 0
+function workspaceDestination(transcript) {
+  if (String(transcript.clientId) !== String(props.clientId)) return null
+  return sessionSummaryDestination(transcript, { from: 'client-transcripts' })
+}
 
 const clientTranscripts = computed(() => transcripts.value
   .filter(item => String(item.clientId || '') === String(props.clientId))
@@ -125,16 +135,19 @@ const sessionsForClient = computed(() => sessions.value
   }))
 
 async function load() {
+  const version = ++loadVersion
+  const clientId = props.clientId
   loading.value = true
   error.value = ''
   try {
     const [response, sessionRows] = await Promise.all([
       authenticatedFetch('/api/zoom/transcripts'),
-      listSessions({ clientId: props.clientId })
+      listSessions({ clientId })
     ])
     const data = await response.json().catch(() => ({}))
     if (!response.ok) throw new Error(data.error || 'Unable to load transcripts.')
-    transcripts.value = data.transcripts || []
+    if (version !== loadVersion) return
+    transcripts.value = (data.transcripts || []).filter(item => String(item.clientId) === String(clientId))
     sessions.value = sessionRows || []
     const selected = {}
     for (const transcript of transcripts.value) {
@@ -142,14 +155,36 @@ async function load() {
     }
     selectedSessions.value = selected
   } catch (err) {
+    if (version !== loadVersion) return
     console.error('[Client Transcripts] Failed to load', err)
     error.value = err?.message || 'Couldn’t load this client’s transcripts.'
   } finally {
-    loading.value = false
+    if (version === loadVersion) loading.value = false
   }
 }
 
-function toggleTranscript(id) { expandedId.value = expandedId.value === id ? null : id }
+async function toggleTranscript(id) {
+  if (expandedId.value === id) { expandedId.value = null; return }
+  const current = transcripts.value.find(item => item.id === id)
+  if (!current || detailLoadingId.value) return
+  if (typeof current.text === 'string') { expandedId.value = id; return }
+  const version = loadVersion, clientId = props.clientId
+  detailLoadingId.value = id
+  detailErrors.value = { ...detailErrors.value, [id]: '' }
+  try {
+    const response = await authenticatedFetch('/api/zoom/transcripts?id=' + encodeURIComponent(id))
+    const data = await response.json().catch(() => ({}))
+    if (version !== loadVersion) return
+    if (!response.ok || data.transcript?.id !== id || String(data.transcript.clientId) !== String(clientId)) throw new Error('The source could not be verified for this client. Reload the transcripts.')
+    const index = transcripts.value.findIndex(item => item.id === id)
+    if (index < 0) return
+    if (transcripts.value[index].updatedAt !== current.updatedAt) return
+    transcripts.value[index] = data.transcript
+    expandedId.value = id
+  } catch (err) {
+    if (version === loadVersion) detailErrors.value = { ...detailErrors.value, [id]: err.message || 'Unable to load this source.' }
+  } finally { detailLoadingId.value = null }
+}
 
 function beginLinking(transcript) {
   linkingId.value = transcript.id
@@ -181,6 +216,7 @@ async function linkSession(transcript) {
     })
     const data = await response.json().catch(() => ({}))
     if (!response.ok) throw new Error(data.error || 'Unable to link this session.')
+    if (data.transcript?.id !== transcript.id || data.transcript.clientId !== props.clientId || data.transcript.sessionRef !== sessionRef) throw new Error('The encounter link could not be confirmed. Reload before retrying.')
     const index = transcripts.value.findIndex(item => item.id === transcript.id)
     if (index >= 0) transcripts.value[index] = data.transcript
     linkingId.value = null
@@ -202,7 +238,8 @@ function formatDate(value) {
 }
 
 function sessionOptionLabel(session) {
-  const date = formatDate(session.startedAt || session.createdAt)
+  const date = formatDate(session.occurredAt || session.startedAt || session.createdAt)
+  if (session.status === 'source_ready') return `Transcript ready · ${date}`
   if (session.status === 'in_progress') return `In progress · ${date}`
   if (session.status === 'completed') return `Completed · ${date}`
   if (session.status === 'closed') return `Closed · ${date}`

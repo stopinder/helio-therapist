@@ -1,20 +1,21 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import fs from 'node:fs'
+import { transcriptNeedsAttention } from '../src/lib/transcriptWorkflow.js'
 
 const inboxSource = fs.readFileSync(new URL('../src/components/TranscriptInbox.vue', import.meta.url), 'utf8')
 
 test('TranscriptInbox has Clear all button and logic', () => {
   // UI presence
-  assert.match(inboxSource, /class="secondary clear-all"/)
+  assert.match(inboxSource, /class="button-secondary clear-all compact-button"/)
   assert.match(inboxSource, /@click="clearAllAttention"/)
-  assert.match(inboxSource, /:disabled="saving \|\| !!searchQuery"/)
+  assert.match(inboxSource, /:disabled="inboxBusy \|\| !!searchQuery"/)
   
   // Logic presence
   assert.match(inboxSource, /async function clearAllAttention\(\)/)
   assert.match(inboxSource, /action: 'clear-attention'/)
   assert.match(inboxSource, /lastClearedBatch\.value = cleared/)
-  assert.match(inboxSource, /successMessage\.value = `\${cleared\.length} item\${cleared\.length === 1 \? '' : 's'} cleared from Needs attention\.`/)
+  assert.match(inboxSource, /successMessage\.value = `\${cleared\.length} item\${cleared\.length === 1 \? '' : 's'} archived\.`/)
 })
 
 test('TranscriptInbox has Undo logic', () => {
@@ -32,5 +33,6 @@ test('TranscriptInbox has restoration logic for individual items', () => {
 test('TranscriptInbox filtering includes cleared, completed and verified-matched items in history', () => {
   assert.match(inboxSource, /if \(filterMode\.value === 'attention' && !needsAttention\(item\)\) return false/)
   assert.match(inboxSource, /if \(filterMode\.value === 'history' && needsAttention\(item\)\) return false/)
-  assert.match(inboxSource, /function needsAttention\(transcript\).*?!isVerifiedMatch\(transcript\)/s)
+  for (const row of [{attentionClearedAt:'saved'},{completedAt:'saved'},{clientId:'c',sessionRef:'s',status:'unassigned'}]) assert.equal(transcriptNeedsAttention(row),false)
+  assert.equal(transcriptNeedsAttention({}),true)
 })

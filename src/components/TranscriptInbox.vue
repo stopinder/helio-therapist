@@ -1,5 +1,6 @@
 <template>
-  <section class="transcript-inbox">
+  <section ref="inboxRoot" class="transcript-inbox">
+    <SourceReviewPanel v-if="reviewSourceId" :transcript-id="reviewSourceId" @close="reviewSourceId=''" @resolved="handleSourceReviewed" />
     <template v-if="!selected">
       <header class="page-header inbox-page-header">
         <div class="header-orientation">
@@ -26,18 +27,23 @@
             {{ filter.label }}<template v-if="filter.id === 'attention'"> · {{ actionableCount }}</template>
           </button>
         </div>
-        <button v-if="filterMode === 'attention' && matchingTranscripts.length" class="button-secondary clear-all compact-button" :disabled="saving || !!searchQuery" :title="searchQuery ? 'Clear your search to archive all attention items.' : 'Archive every item currently in Needs attention.'" @click="clearAllAttention">
+        <button v-if="filterMode === 'attention' && matchingTranscripts.length" class="button-secondary clear-all compact-button" :disabled="inboxBusy || !!searchQuery" :title="searchQuery ? 'Clear your search to archive all attention items.' : 'Archive every item currently in Needs attention.'" @click="clearAllAttention">
           <Archive class="workspace-icon-sm" aria-hidden="true" />
           <span>{{ saving ? 'Archiving…' : 'Archive all' }}</span>
         </button>
       </div>
 
       <p v-if="errorMessage" class="notice error" role="alert">{{ errorMessage }}</p><p v-else-if="successMessage" class="notice success" role="status">{{ successMessage }}</p>
-      <button v-if="lastClearedBatch.length" class="undo-link" :disabled="saving" @click="undoClearAttention">Undo</button>
-      <p v-if="filterMode === 'history'">Archived transcripts and transcripts with completed inbox setup. Archiving preserves the transcript and removes it from Needs attention.</p>
+      <section v-if="lastAssignment" class="assignment-handoff notice success" data-testid="assignment-handoff" tabindex="-1" aria-label="Assignment confirmation">
+        <div><p class="type-eyebrow">Just assigned</p><strong role="status">Assigned to {{ lastAssignmentLabel }}.</strong><p>Encounter: {{ formatDate(lastAssignment.sourceOccurredAt || lastAssignment.receivedAt) }}</p><p class="type-metadata">{{ lastAssignment.sourceTitle }}</p><p class="type-metadata">Assignment saved. Open Clinical Workspace to choose a lens and prepare your summary.</p></div>
+        <div class="assignment-outcomes"><button v-if="sessionSummaryDestination(lastAssignment)" class="button-primary" :disabled="inboxBusy" @click="openLinkedSessionFromRow(lastAssignment)">Open Clinical Workspace</button><button class="button-secondary" :disabled="inboxBusy" @click="lastAssignment = null">Dismiss</button></div>
+      </section>
+      <button v-if="lastClearedBatch.length" class="undo-link" :disabled="inboxBusy" @click="undoClearAttention">Undo</button>
+      <p v-if="filterMode === 'history'">Assigned encounters and archived imports. Assignment does not generate a summary or approve a Clinical Record.</p>
       <div v-if="loading" class="empty-card compact">Loading transcripts…</div>
       <div v-else-if="!errorMessage && !transcripts.length" class="empty-card compact"><h2>Inbox up to date</h2><p>New Zoom transcripts will appear here when they need review.</p></div>
       <div v-else-if="visibleTranscripts.length" class="inbox-list">
+        <h2 v-if="lastAssignment && filterMode === 'attention'" class="remaining-heading">Other transcripts needing attention</h2>
         <article
           v-for="transcript in visibleTranscripts"
           :key="transcript.id"
@@ -58,10 +64,80 @@
                   </div>
                 </div>
               </div>
-              <StatusIndicator class="status-indicator" :tone="filterMode === 'history' ? (transcript.completedAt || (!transcript.attentionClearedAt && isVerifiedMatch(transcript)) ? 'success' : 'neutral') : workflowTone(transcript)">
-                {{ filterMode === 'history' ? (transcript.completedAt ? 'Inbox setup complete' : transcript.attentionClearedAt ? 'Archived' : isVerifiedMatch(transcript) ? 'Matched automatically' : 'History') : workflowState(transcript).label }}
-              </StatusIndicator>
+              <StatusIndicator class="status-indicator" :tone="workflowTone(transcript)">{{ workflowState(transcript).label }}</StatusIndicator>
             </div>
+
+            <div v-if="transcript.sourceReview?.state==='needs_review'" class="matched-note"><span>Check the original before preparing or sharing a summary.</span><button class="button-primary" @click="reviewSourceId=transcript.id">Review source</button></div>
+            <div v-else-if="transcript.sourceReview?.state==='separated'" class="matched-note"><span>Original retained. Use its reviewed conversation segments.</span><button class="button-secondary" @click="reviewSourceId=transcript.id">View separation</button></div>
+            <div v-else-if="filterMode === 'attention' && !transcript.clientId && !transcript.sessionRef" class="inline-assignment">
+              <div class="assignment-intro">
+                <span class="assignment-icon" aria-hidden="true"><UserPlus class="workspace-icon" /></span>
+                <div>
+                  <p class="type-ui font-semibold text-ink">Place with client</p>
+                  <p class="type-metadata text-ink-muted">Choose the client, then open Clinical Workspace to select IFS or another approach.</p>
+                </div>
+              </div>
+              <div class="encounter-date-field">
+                <div class="encounter-date-heading">
+                  <div>
+                    <label :for="'encounter-date-' + transcript.id">Encounter date</label>
+                    <p>This date controls longitudinal ordering and becomes the session date when assigned.</p>
+                  </div>
+                  <span class="encounter-time">Time: {{ formatTime(transcript.sourceOccurredAt || transcript.receivedAt) }}</span>
+                </div>
+                <div class="encounter-date-controls">
+                  <input
+                    :id="'encounter-date-' + transcript.id"
+                    v-model="encounterDateDrafts[transcript.id]"
+                    class="control-field min-h-touch"
+                    type="date"
+                    :disabled="inboxBusy"
+                  />
+                  <button
+                    type="button"
+                    class="button-secondary compact-button"
+                    :disabled="inboxBusy || !encounterDateChanged(transcript)"
+                    @click="saveEncounterDate(transcript)"
+                  >
+                    <CalendarDays class="workspace-icon-sm" aria-hidden="true" />
+                    <span>{{ encounterDateSavingId === transcript.id ? 'Saving…' : 'Save date' }}</span>
+                  </button>
+                </div>
+              </div>
+              <div class="field-group">
+                <label :for="'client-' + transcript.id">Client</label>
+                <div class="inline-client-picker">
+                  <select :id="'client-' + transcript.id" v-model="assignmentDrafts[transcript.id]" :disabled="inboxBusy" class="control-field min-h-touch">
+                    <option value="">Select client…</option>
+                    <option v-for="client in clients" :key="client.id" :value="client.id">{{ client.name || client.display_name }}</option>
+                  </select>
+                  <button type="button" class="button-secondary add-client-inline" :disabled="addingClient" @click="openAddClientForTranscript(transcript)">
+                    <UserPlus class="workspace-icon-sm" aria-hidden="true" />
+                    <span>Add client</span>
+                  </button>
+                </div>
+                <div class="assignment-outcomes">
+                  <button
+                    type="button"
+                    class="button-primary assign-inline"
+                    :disabled="inboxBusy || !assignmentDrafts[transcript.id]"
+                    @click="assignFromInbox(transcript, { openSummary: true })"
+                  >
+                    <Check class="workspace-icon-sm" aria-hidden="true" />
+                    <span>{{ assignmentSavingId === transcript.id ? 'Assigning…' : 'Assign & open Clinical Workspace' }}</span>
+                  </button>
+                  <button type="button" class="button-secondary" :disabled="inboxBusy || !assignmentDrafts[transcript.id]" @click="assignFromInbox(transcript, { openSummary: false })">Assign &amp; stay in inbox</button>
+                </div>
+                <span v-if="suggestedClient(transcript)" class="suggestion-note">Suggested from an exact Zoom title match — confirm before assigning.</span>
+              </div>
+            </div>
+
+            <div v-else-if="isVerifiedMatch(transcript)" class="matched-note">
+              <span class="matched-copy"><CheckCircle2 class="workspace-icon" aria-hidden="true" /> Assigned to {{ clientName(transcript.clientId) || 'client' }}</span>
+              <button type="button" class="button-primary compact-button" :disabled="inboxBusy" @click="openLinkedSessionFromRow(transcript)">Open Clinical Workspace</button>
+            </div>
+
+            <div v-else-if="transcript.clientId || transcript.sessionRef" class="matched-note"><span>The assignment needs an encounter check.</span><button class="button-secondary" @click="openTranscript(transcript)">Review assignment</button></div>
 
             <section v-if="transcript.zoomGeneratedSummary" class="zoom-note-card" aria-label="Zoom note">
               <div class="zoom-note-header">
@@ -86,71 +162,6 @@
             </section>
             <p v-else class="triage-preview">{{ transcriptPreview(transcript) }}</p>
 
-            <div v-if="filterMode === 'attention' && !isVerifiedMatch(transcript)" class="inline-assignment">
-              <div class="assignment-intro">
-                <span class="assignment-icon" aria-hidden="true"><UserPlus class="workspace-icon" /></span>
-                <div>
-                  <p class="type-ui font-semibold text-ink">Place with client</p>
-                  <p class="type-metadata text-ink-muted">Choose an existing client or add someone new.</p>
-                </div>
-              </div>
-              <div class="encounter-date-field">
-                <div class="encounter-date-heading">
-                  <div>
-                    <label :for="'encounter-date-' + transcript.id">Encounter date</label>
-                    <p>This date controls longitudinal ordering and becomes the session date when assigned.</p>
-                  </div>
-                  <span class="encounter-time">Time: {{ formatTime(transcript.sourceOccurredAt || transcript.receivedAt) }}</span>
-                </div>
-                <div class="encounter-date-controls">
-                  <input
-                    :id="'encounter-date-' + transcript.id"
-                    v-model="encounterDateDrafts[transcript.id]"
-                    class="control-field min-h-touch"
-                    type="date"
-                    :disabled="encounterDateSavingId === transcript.id || assignmentSavingId === transcript.id"
-                  />
-                  <button
-                    type="button"
-                    class="button-secondary compact-button"
-                    :disabled="encounterDateSavingId === transcript.id || assignmentSavingId === transcript.id || !encounterDateChanged(transcript)"
-                    @click="saveEncounterDate(transcript)"
-                  >
-                    <CalendarDays class="workspace-icon-sm" aria-hidden="true" />
-                    <span>{{ encounterDateSavingId === transcript.id ? 'Saving…' : 'Save date' }}</span>
-                  </button>
-                </div>
-              </div>
-              <div class="field-group">
-                <label :for="'client-' + transcript.id">Client</label>
-                <div class="inline-client-picker">
-                  <select :id="'client-' + transcript.id" v-model="assignmentDrafts[transcript.id]" class="control-field min-h-touch">
-                    <option value="">Select client…</option>
-                    <option v-for="client in clients" :key="client.id" :value="client.id">{{ client.name || client.display_name }}</option>
-                  </select>
-                  <button type="button" class="button-secondary add-client-inline" :disabled="addingClient" @click="openAddClientForTranscript(transcript)">
-                    <UserPlus class="workspace-icon-sm" aria-hidden="true" />
-                    <span>Add client</span>
-                  </button>
-                  <button
-                    type="button"
-                    class="button-primary assign-inline"
-                    :disabled="assignmentSavingId === transcript.id || !assignmentDrafts[transcript.id]"
-                    @click="assignFromInbox(transcript)"
-                  >
-                    <Check class="workspace-icon-sm" aria-hidden="true" />
-                    <span>{{ assignmentSavingId === transcript.id ? 'Assigning…' : 'Assign' }}</span>
-                  </button>
-                </div>
-                <span v-if="suggestedClient(transcript)" class="suggestion-note">Suggested from an exact Zoom title match — confirm before assigning.</span>
-              </div>
-            </div>
-
-            <div v-else-if="isVerifiedMatch(transcript)" class="matched-note">
-              <span class="matched-copy"><CheckCircle2 class="workspace-icon" aria-hidden="true" /> Verified Zoom/session match · {{ clientName(transcript.clientId) }}</span>
-              <button type="button" class="button-secondary compact-button" @click="openLinkedSessionFromRow(transcript)">Open Clinical Workspace</button>
-            </div>
-
             <div class="triage-actions">
               <div class="utility-actions">
                 <button type="button" class="quiet-action" :aria-expanded="expandedRows.has(transcript.id)" @click="toggleExpand(transcript.id, $event)">
@@ -163,11 +174,11 @@
                 </button>
               </div>
               <div v-if="filterMode === 'attention'" class="record-actions">
-                <button type="button" class="quiet-action" :disabled="rowActionSavingId === transcript.id" @click="archiveFromInbox(transcript)">
+                <button type="button" class="quiet-action" :disabled="inboxBusy" @click="archiveFromInbox(transcript)">
                   <Archive class="workspace-icon-sm" aria-hidden="true" />
                   <span>{{ rowActionSavingId === transcript.id && rowActionSavingMode === 'archive' ? 'Archiving…' : 'Archive' }}</span>
                 </button>
-                <button v-if="canDeleteTranscript(transcript)" type="button" class="quiet-action danger-action" :disabled="rowActionSavingId === transcript.id" @click="deleteFromInbox(transcript)">
+                <button v-if="canDeleteTranscript(transcript)" type="button" class="quiet-action danger-action" :disabled="inboxBusy" @click="deleteFromInbox(transcript)">
                   <Trash2 class="workspace-icon-sm" aria-hidden="true" />
                   <span>{{ rowActionSavingId === transcript.id && rowActionSavingMode === 'delete' ? 'Deleting…' : 'Delete' }}</span>
                 </button>
@@ -229,15 +240,20 @@
         </div>
       </header>
       <p v-if="errorMessage" class="notice error" role="alert">{{ errorMessage }}</p><p v-else-if="successMessage" class="notice success" role="status">{{ successMessage }}</p>
-      <section class="workflow-section client-section"><template v-if="!selected.clientId || editingClient"><div><p class="eyebrow">Client</p><h2>Client</h2><p>Select the client this original Zoom transcript belongs to. Helio will not guess.</p></div><div class="assignment-controls"><div v-if="!selected.clientId" class="encounter-date-field detail-encounter-date"><div class="encounter-date-heading"><div><label for="selected-encounter-date">Encounter date</label><p>This date controls longitudinal ordering and becomes the session date when assigned.</p></div><span class="encounter-time">Time: {{ formatTime(selected.sourceOccurredAt || selected.receivedAt) }}</span></div><div class="encounter-date-controls"><input id="selected-encounter-date" v-model="encounterDateDrafts[selected.id]" class="control-field min-h-touch" type="date" :disabled="encounterDateSavingId === selected.id || saving" /><button type="button" class="button-secondary compact-button" :disabled="encounterDateSavingId === selected.id || saving || !encounterDateChanged(selected)" @click="saveEncounterDate(selected)"><CalendarDays class="workspace-icon-sm" aria-hidden="true" /><span>{{ encounterDateSavingId === selected.id ? 'Saving…' : 'Save date' }}</span></button></div></div><div class="flex items-center gap-2"><label for="client-select" class="sr-only">Client</label><select id="client-select" v-model="selectedClientId" class="flex-1"><option value="" disabled>Select a client…</option><option v-for="client in clients" :key="client.id" :value="client.id">{{ client.name }}</option></select><button type="button" class="secondary whitespace-nowrap" @click="openAddClientForSelected">Add client</button></div><div class="assignment-actions"><button v-if="selected.clientId" class="secondary" :disabled="saving" @click="editingClient = false">Cancel</button><button class="primary" :disabled="saving || !selectedClientId || selectedClientId === selected.clientId" @click="saveAssignment">{{ saving ? 'Saving…' : selected.clientId ? 'Change client' : 'Assign client' }}</button></div></div></template><template v-else><div><p class="eyebrow">Client</p><h2>{{ clientName(selected.clientId) }}</h2><p>Assigned client</p></div><button class="secondary" @click="editingClient = true">Change</button></template></section>
+      <section v-if="lastAssignment" class="assignment-handoff notice success" data-testid="assignment-handoff" tabindex="-1" aria-label="Assignment confirmation">
+        <div><p class="type-eyebrow">Just assigned</p><strong role="status">Assigned to {{ lastAssignmentLabel }}.</strong><p>Encounter: {{ formatDate(lastAssignment.sourceOccurredAt || lastAssignment.receivedAt) }}</p><p class="type-metadata">{{ lastAssignment.sourceTitle }}</p><p class="type-metadata">Assignment saved. Open Clinical Workspace to choose a lens and prepare your summary.</p></div>
+        <div class="assignment-outcomes"><button v-if="sessionSummaryDestination(lastAssignment)" class="button-primary" :disabled="inboxBusy" @click="openLinkedSessionFromRow(lastAssignment)">Open Clinical Workspace</button><button class="button-secondary" :disabled="inboxBusy" @click="lastAssignment = null">Dismiss</button></div>
+      </section>
+      <section class="workflow-section client-section"><template v-if="!selected.clientId || editingClient"><div><p class="eyebrow">Client</p><h2>Client</h2><p>Select the client this original Zoom transcript belongs to. Helio will not guess.</p></div><div class="assignment-controls"><div v-if="!selected.clientId" class="encounter-date-field detail-encounter-date"><div class="encounter-date-heading"><div><label for="selected-encounter-date">Encounter date</label><p>This date controls longitudinal ordering and becomes the session date when assigned.</p></div><span class="encounter-time">Time: {{ formatTime(selected.sourceOccurredAt || selected.receivedAt) }}</span></div><div class="encounter-date-controls"><input id="selected-encounter-date" v-model="encounterDateDrafts[selected.id]" class="control-field min-h-touch" type="date" :disabled="inboxBusy" /><button type="button" class="button-secondary compact-button" :disabled="inboxBusy || !encounterDateChanged(selected)" @click="saveEncounterDate(selected)"><CalendarDays class="workspace-icon-sm" aria-hidden="true" /><span>{{ encounterDateSavingId === selected.id ? 'Saving…' : 'Save date' }}</span></button></div></div><div class="flex items-center gap-2"><label for="client-select" class="sr-only">Client</label><select id="client-select" v-model="selectedClientId" :disabled="inboxBusy" class="flex-1"><option value="" disabled>Select a client…</option><option v-for="client in clients" :key="client.id" :value="client.id">{{ client.name }}</option></select><button type="button" class="secondary whitespace-nowrap" @click="openAddClientForSelected">Add client</button></div><div class="assignment-actions"><button v-if="selected.clientId" class="secondary" :disabled="saving" @click="editingClient = false">Cancel</button><button class="primary" :disabled="inboxBusy || !selectedClientId || selectedClientId === selected.clientId" @click="saveAssignment({openSummary:true})">{{ saving ? 'Saving…' : selected.clientId ? 'Change client & open Clinical Workspace' : 'Assign & open Clinical Workspace' }}</button><button class="secondary" :disabled="inboxBusy || !selectedClientId || selectedClientId === selected.clientId" @click="saveAssignment({openSummary:false})">Assign &amp; stay in inbox</button></div></div></template><template v-else><div><p class="eyebrow">Client</p><h2>{{ clientName(selected.clientId) }}</h2><p>Assigned client</p></div><button class="secondary" @click="editingClient = true">Change</button></template></section>
       <section v-if="selected.clientId && !editingClient" class="ready-card">
         <div>
           <p class="eyebrow">Assigned</p>
           <h2>{{ clientName(selected.clientId) }}</h2>
-          <p>The transcript is now in this client’s workspace. Session linking is optional and can be done there.</p>
+          <p>Choose IFS or another approach in Clinical Workspace for this exact encounter. Nothing is generated until you choose Generate summary.</p>
         </div>
         <div class="assignment-actions">
-          <button v-if="selected.sessionRef" class="primary" @click="openLinkedSession">Open Clinical Workspace</button>
+          <button v-if="sessionSummaryDestination(selected)" class="primary" :disabled="inboxBusy" @click="openLinkedSession">Open Clinical Workspace</button>
+          <button v-if="selected.sourceReview?.state === 'needs_review' || selected.sourceReview?.state === 'separated'" class="primary" @click="reviewSourceId=selected.id">Review source</button>
           <button class="secondary" @click="openClientTranscripts">Client transcripts</button>
           <button class="secondary" @click="closeTranscript">Back to inbox</button>
         </div>
@@ -289,7 +305,7 @@
         </div>
       </section>
       <section v-if="selected.reviewChoicesSavedAt || editingChoices" class="review-choices"><div><p class="eyebrow">Review choices</p><h2>Review choices</h2><p>Choose what, if anything, should be requested later and how the original source should be retained. This does not start analysis.</p></div><label for="clinical-output">Requested output</label><select id="clinical-output" v-model="selectedLens"><option value="">No output requested</option><option value="clinical_summary">Clinical summary</option><option value="draft_note">Draft clinical note</option><option value="cbt">CBT reflection</option></select><fieldset><legend>Source retention</legend><label><input v-model="sourceRetention" type="radio" value="keep_until_review" /> Keep the original source until I review it</label><label><input v-model="sourceRetention" type="radio" value="delete_after_approved_output" /> Mark for deletion after I approve an output</label></fieldset><div class="assignment-actions"><button v-if="selected.reviewChoicesSavedAt" class="secondary" :disabled="saving" @click="editingChoices = false">Cancel</button><button class="primary save-choices" :disabled="saving" @click="saveReviewChoices">{{ saving ? 'Saving…' : selected.reviewChoicesSavedAt ? 'Update review choices' : 'Save review choices' }}</button></div></section>
-      <section v-if="selected.completedAt || selected.attentionClearedAt" class="ready-card complete-card">
+      <section v-if="!isVerifiedMatch(selected) && (selected.completedAt || selected.attentionClearedAt)" class="ready-card complete-card">
         <div v-if="selected.completedAt">
           <p class="eyebrow">Triage complete</p>
           <h2>Transcript triage complete</h2>
@@ -302,7 +318,7 @@
         </div>
         <div class="assignment-actions">
           <button v-if="selected.attentionClearedAt && !selected.completedAt" class="primary" :disabled="saving" @click="restoreToAttention">Return to Needs attention</button>
-          <button v-if="selected.clientId && selected.sessionRef" class="secondary" @click="openLinkedSession">View session</button>
+          <button v-if="selected.clientId && selected.sessionRef" class="secondary" @click="openLinkedSession">Open Clinical Workspace</button>
         </div>
       </section>
     </template>
@@ -317,17 +333,26 @@
   </section>
 </template>
 <script setup>
-import { computed, onMounted, ref, watch } from 'vue'
-import { useRouter } from 'vue-router'
+import { computed, nextTick, onMounted, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { Archive, ArrowLeft, CalendarDays, Check, CheckCircle2, ChevronDown, ChevronUp, Eye, FileText, Inbox, Search, Sparkles, Trash2, UserPlus, UserRound, UsersRound } from '@lucide/vue'
 import { authenticatedFetch } from '../lib/api.js'
 import { createClient } from '../lib/clients.js'
 import { conversationPreview, conversationTurns, searchConversationTurns, transcriptSpeakerSummary } from '../lib/transcriptPresentation.js'
 import AddClientModal from './sidebar/AddClientModal.vue'
 import StatusIndicator from './ui/StatusIndicator.vue'
+import SourceReviewPanel from './workspace/SourceReviewPanel.vue'
+const reviewSourceId=ref('')
+async function handleSourceReviewed(result){if(result.action==='confirm')reviewSourceId.value='';await load()}
 const props = defineProps({ clients: { type: Array, default: () => [] }, openTranscriptId: { type: [String, Number], default: null } })
 const emit = defineEmits(['client-added'])
+import { assignedTranscriptIdentity, hasLinkedEncounter, isConfirmedAssignment, sessionSummaryDestination, transcriptNeedsAttention, transcriptWorkflowState } from '../lib/transcriptWorkflow.js'
+import { saveInboxReturnContext, readInboxReturnContext } from '../lib/transcriptInboxNavigation.js'
 const router = useRouter()
+const route = useRoute()
+const inboxRoot = ref(null), lastAssignment = ref(null), lastAssignmentLabel = ref(''), navigationSavingId = ref(null)
+let listScrollPosition = null
+const inboxBusy = computed(() => saving.value || !!assignmentSavingId.value || !!encounterDateSavingId.value || !!rowActionSavingId.value || !!navigationSavingId.value)
 const transcripts = ref([]), selected = ref(null), selectedClientId = ref(''), selectedLens = ref(''), sourceRetention = ref('keep_until_review'), transcriptSearch = ref('')
 const editingClient = ref(false), editingChoices = ref(false), searchQuery = ref(''), filterMode = ref('attention'), showRaw = ref(false), expandedRows = ref(new Set()), expandedNoteIds = ref(new Set()), expandedPreviewIds = ref(new Set()), assignmentDrafts = ref({}), encounterDateDrafts = ref({}), assignmentSavingId = ref(null), encounterDateSavingId = ref(null), rowActionSavingId = ref(null), rowActionSavingMode = ref(''), detailReturnId = ref(null)
 const loading = ref(true), saving = ref(false), errorMessage = ref(''), successMessage = ref('')
@@ -408,16 +433,12 @@ function encounterDateChanged(transcript){
   if(!transcript?.id)return false
   return encounterDateDrafts.value[transcript.id]!==localDateInput(transcript.sourceOccurredAt||transcript.receivedAt)
 }
-function isVerifiedMatch(transcript){ return Boolean(transcript?.clientId && transcript?.sessionRef && transcript.status!=='unassigned') }
-function needsAttention(transcript){ return !transcript?.completedAt && !transcript?.attentionClearedAt && !isVerifiedMatch(transcript) }
+function isVerifiedMatch(transcript){ return hasLinkedEncounter(transcript) }
+function needsAttention(transcript){ return transcriptNeedsAttention(transcript) }
 function rowTitle(transcript){ return clientName(transcript.clientId) || transcript.sourceTitle || labelFor(transcript) }
-function triageIdentity(transcript){ return clientName(transcript.clientId) || suggestedClient(transcript)?.name || suggestedClient(transcript)?.display_name || (transcript.sourceTitle && normaliseIdentity(transcript.sourceTitle).split(' ').length<=3 ? transcript.sourceTitle : 'Unassigned transcript') }
-function workflowState(transcript){
-  if(isVerifiedMatch(transcript))return{id:'matched',label:'Matched'}
-  if(!transcript?.clientId||transcript.status==='unassigned')return{id:'needs-client',label:suggestedClient(transcript)?'Likely client':'Needs client'}
-  return{id:'assigned',label:'Assigned'}
-}
-function workflowTone(transcript){ return ({'needs-client':'warning','assigned':'success','matched':'success'})[workflowState(transcript).id] || 'neutral' }
+function triageIdentity(transcript){ return assignedTranscriptIdentity(transcript,clientName(transcript.clientId)) || 'Unassigned transcript' }
+function workflowState(transcript){ return transcriptWorkflowState(transcript) }
+function workflowTone(transcript){ return workflowState(transcript).tone }
 function speakerClues(transcript){
   const speakers=Array.isArray(transcript?.structuredTranscript?.speakers)?transcript.structuredTranscript.speakers:[];
   return [...new Set(speakers.map(item=>String(item?.display_name||'').trim()).filter(name=>name&&!/^unknown$/i.test(name)&&!/^speaker\s*\d+$/i.test(name)))].slice(0,4)
@@ -465,23 +486,23 @@ function zoomNoteBlocks(value){
 }
 function compactNoteBlock(block){
   if(block.type==='heading')return block
-  const limit=block.type==='bullet'?260:340
+  const limit=240
   return block.text.length>limit?{...block,text:`${block.text.slice(0,limit-1).trimEnd()}…`}:block
 }
 function visibleZoomNoteBlocks(transcript){
   const blocks=zoomNoteBlocks(transcript?.zoomGeneratedSummary)
   if(expandedNoteIds.value.has(transcript?.id))return blocks
-  return blocks.slice(0,4).map(compactNoteBlock)
+  return blocks.slice(0,blocks[0]?.type==='heading'?2:1).map(compactNoteBlock)
 }
 function zoomNoteCanExpand(transcript){
   const blocks=zoomNoteBlocks(transcript?.zoomGeneratedSummary)
-  return blocks.length>4||blocks.some(block=>block.type!=='heading'&&block.text.length>(block.type==='bullet'?260:340))
+  return blocks.length>(blocks[0]?.type==='heading'?2:1)||blocks.some(block=>block.type!=='heading'&&block.text.length>240)||typeof transcript.text!=='string'
 }
-function toggleZoomNote(id){
+async function toggleZoomNote(id){
   if(!id)return
   const next=new Set(expandedNoteIds.value)
   if(next.has(id))next.delete(id)
-  else next.add(id)
+  else { if (!await fetchTranscriptDetail(transcripts.value.find(item=>item.id===id))) return; next.add(id) }
   expandedNoteIds.value=next
 }
 function transcriptPreview(transcript){
@@ -516,7 +537,7 @@ function closeAddClient(){
   addClientError.value='';
 }
 async function clearAllAttention() {
-  if (saving.value || searchQuery.value || !matchingTranscripts.value.length) return;
+  if (inboxBusy.value || searchQuery.value || !matchingTranscripts.value.length) return;
   saving.value = true;
   errorMessage.value = '';
   successMessage.value = '';
@@ -551,7 +572,7 @@ function isRestoredTranscript(transcript, id) {
       transcript[key] === null || typeof transcript[key] === 'string');
 }
 async function undoClearAttention() {
-  if (saving.value || !lastClearedBatch.value.length) return;
+  if (inboxBusy.value || !lastClearedBatch.value.length) return;
   saving.value = true;
   errorMessage.value = '';
   successMessage.value = '';
@@ -588,7 +609,10 @@ async function restoreToAttention() {
   }
 }
 function replaceTranscriptInList(transcript) {
+  if(!transcript?.id)return;
   const index = transcripts.value.findIndex(item => item.id === transcript.id);
+  const current=transcripts.value[index];
+  if(current&&Date.parse(current.updatedAt)>Date.parse(transcript.updatedAt))return current;
   if (index >= 0) transcripts.value[index] = transcript;
   if (selected.value?.id === transcript.id) selected.value = transcript;
   const draft = encounterDateDrafts.value[transcript.id]
@@ -596,8 +620,9 @@ function replaceTranscriptInList(transcript) {
   if (!draft || !encounterDateChanged(transcript)) {
     encounterDateDrafts.value={...encounterDateDrafts.value,[transcript.id]:localDateInput(transcript.sourceOccurredAt||transcript.receivedAt)}
   }
+  return transcript;
 }
-function replaceTranscript(transcript){replaceTranscriptInList(transcript)}
+function replaceTranscript(transcript){return replaceTranscriptInList(transcript)}
 async function fetchTranscriptDetail(transcript){
   if(!transcript?.id)return null;
   if(typeof transcript.text==='string')return transcript;
@@ -605,8 +630,7 @@ async function fetchTranscriptDetail(transcript){
     const response=await authenticatedFetch('/api/zoom/transcripts?id='+encodeURIComponent(transcript.id));
     const data=await response.json().catch(()=>({}));
     if(!response.ok||!data.transcript)throw new Error(data.error||'Unable to load this transcript.');
-    replaceTranscriptInList(data.transcript);
-    return data.transcript;
+    return replaceTranscriptInList(data.transcript);
   }catch(error){
     errorMessage.value=error.message||'Unable to load this transcript.';
     return null;
@@ -622,6 +646,7 @@ async function toggleExpand(id, event) {
 async function openTranscript(transcript){
   const detailed=await fetchTranscriptDetail(transcript);
   if(!detailed)return;
+  listScrollPosition=readScrollPosition();
   detailReturnId.value=detailed.id;
   selected.value=detailed;
   selectedClientId.value=detailed.clientId||'';
@@ -670,43 +695,77 @@ async function saveEncounterDate(transcript,{quiet=false}={}){
     encounterDateSavingId.value=null
   }
 }
-async function assignTranscriptToClient(transcript,clientId,clientLabel=''){
-  if(!transcript?.id||!clientId||assignmentSavingId.value)return null;
-  assignmentSavingId.value=transcript.id;
-  errorMessage.value='';
-  successMessage.value='';
+function inboxScrollContainer(){
+  let parent=inboxRoot.value?.parentElement
+  while(parent){ if(/auto|scroll/.test(window.getComputedStyle(parent).overflowY))return parent; parent=parent.parentElement }
+  return null
+}
+function readScrollPosition(){return {scrollTop:inboxScrollContainer()?.scrollTop||0,windowY:window.scrollY||0}}
+function captureInboxContext(){return {filter:filterMode.value,search:searchQuery.value,historyLimit:historyLimit.value,...(selected.value&&listScrollPosition?listScrollPosition:readScrollPosition())}}
+async function restoreInboxContext(){
+  const context=readInboxReturnContext(route.query.resume||window.history.state?.heliosInboxReturn)
+  if(!context||props.openTranscriptId)return
+  filterMode.value=context.filter;searchQuery.value=context.search
+  await nextTick();historyLimit.value=context.historyLimit;await nextTick()
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    if(!inboxRoot.value)return
+    const container=inboxScrollContainer();if(container)container.scrollTop=context.scrollTop
+    window.scrollTo(0,context.windowY)
+  }))
+}
+async function assignTranscriptToClient(transcript,clientId,clientLabel='',{openSummary=false}={}){
+  if(!transcript?.id||!clientId||inboxBusy.value)return null
+  const returnContext=captureInboxContext()
+  assignmentSavingId.value=transcript.id
+  errorMessage.value='';successMessage.value='';lastAssignment.value=null
   try{
+    let current=transcript
+    if(!current.clientId&&encounterDateChanged(current)){
+      current=await saveEncounterDate(current,{quiet:true})
+      if(!current)return null
+    }
     const response=await authenticatedFetch('/api/zoom/transcripts',{
-      method:'PATCH',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({id:transcript.id,expectedUpdatedAt:transcript.updatedAt,clientId,clearAttention:true})
-    });
-    const data=await response.json().catch(()=>({}));
-    if(!response.ok||!data.transcript)throw new Error(data.error||'Unable to assign this transcript.');
-    replaceTranscript(data.transcript);
-    const label=clientLabel||clientName(data.transcript.clientId)||'the new client';
-    successMessage.value=`Assigned to ${label}. The transcript is ready in Clinical Workspace.`;
-    return data.transcript;
-  }catch(error){
-    errorMessage.value=error.message||'Unable to assign this transcript.';
-    return null;
-  }finally{
-    assignmentSavingId.value=null;
-  }
+      method:'PATCH',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({id:current.id,expectedUpdatedAt:current.updatedAt,clientId})
+    })
+    const data=await response.json().catch(()=>({}))
+    if(!response.ok)throw new Error(data?.error||'Unable to assign this transcript.')
+    if(data?.transcript?.id!==current.id||data?.transcript?.clientId!==clientId)throw new Error('The saved assignment could not be confirmed. Refresh the inbox before retrying.')
+    replaceTranscript(data.transcript)
+    lastAssignment.value=data.transcript
+    lastAssignmentLabel.value=clientName(clientId)||clientLabel||'Assigned client'
+    editingClient.value=false
+    if(!isConfirmedAssignment(data.transcript,current.id,clientId))throw new Error('The client was saved, but its encounter link is missing. Review the assignment before continuing.')
+    if(openSummary)await openLinkedSessionFromRow(data.transcript,returnContext)
+    else {
+      selected.value=null;await nextTick()
+      const confirmation=inboxRoot.value?.querySelector('[data-testid="assignment-handoff"]')
+      confirmation?.focus({preventScroll:true});confirmation?.scrollIntoView({block:'nearest'})
+    }
+    return data.transcript
+  }catch(error){errorMessage.value=error.message||'Unable to assign this transcript.';return null}
+  finally{assignmentSavingId.value=null}
 }
-async function assignFromInbox(transcript){
-  const clientId=assignmentDrafts.value[transcript.id];
-  if(!clientId)return;
-  let current=transcript
-  if(encounterDateChanged(transcript)){
-    current=await saveEncounterDate(transcript,{quiet:true})
-    if(!current)return
-  }
-  await assignTranscriptToClient(current,clientId);
+async function assignFromInbox(transcript,options={}){
+  const clientId=assignmentDrafts.value[transcript.id]
+  if(clientId)return assignTranscriptToClient(transcript,clientId,'',options)
 }
-async function openLinkedSessionFromRow(transcript){
-  if(!transcript?.clientId||!transcript?.sessionRef)return;
-  await router.push({name:'SessionWorkspace',params:{clientId:transcript.clientId,sessionId:transcript.sessionRef}});
+async function openLinkedSessionFromRow(transcript,context){
+  const destination=sessionSummaryDestination(transcript)
+  if(navigationSavingId.value)return
+  if(!destination){
+    if(['needs_review','separated'].includes(transcript?.sourceReview?.state))reviewSourceId.value=transcript.id
+    else errorMessage.value='Link this transcript to its encounter before opening Clinical Workspace.'
+    return
+  }
+  navigationSavingId.value=transcript.id;errorMessage.value=''
+  try{
+    const token=saveInboxReturnContext(context||captureInboxContext())
+    window.history.replaceState({...window.history.state,heliosInboxReturn:token},'')
+    const failure=await router.push({...destination,query:{...destination.query,transcriptId:transcript.id,inboxReturn:token}})
+    if(failure)throw new Error('Navigation interrupted')
+  }catch{errorMessage.value='The assignment is saved, but Clinical Workspace could not be opened. Use Open Clinical Workspace to try again.'}
+  finally{navigationSavingId.value=null}
 }
 function removeExpandedRow(id){
   if(!expandedRows.value.has(id))return;
@@ -715,7 +774,7 @@ function removeExpandedRow(id){
   expandedRows.value=next;
 }
 async function archiveFromInbox(transcript){
-  if(!transcript?.id||rowActionSavingId.value)return;
+  if(!transcript?.id||inboxBusy.value)return;
   rowActionSavingId.value=transcript.id;
   rowActionSavingMode.value='archive';
   errorMessage.value='';
@@ -739,7 +798,7 @@ async function archiveFromInbox(transcript){
   }
 }
 async function deleteTranscriptRecord(transcript,{closeDetail=false}={}){
-  if(!canDeleteTranscript(transcript)||rowActionSavingId.value)return false;
+  if(!canDeleteTranscript(transcript)||inboxBusy.value)return false;
   if(!window.confirm('Delete this unassigned transcript permanently? This removes the imported source from Helios and cannot be undone.'))return false;
   rowActionSavingId.value=transcript.id;
   rowActionSavingMode.value='delete';
@@ -770,14 +829,8 @@ async function deleteTranscriptRecord(transcript,{closeDetail=false}={}){
 }
 async function deleteFromInbox(transcript){return deleteTranscriptRecord(transcript)}
 
-async function saveAssignment(){
-  if(!selected.value||!selectedClientId.value)return
-  if(encounterDateChanged(selected.value)){
-    const dated=await saveEncounterDate(selected.value,{quiet:true})
-    if(!dated)return
-  }
-  const transcript=await patchTranscript({clientId:selectedClientId.value,clearAttention:true},'Unable to save the client assignment.')
-  if(transcript){editingClient.value=false;successMessage.value=`Assigned to ${clientName(transcript.clientId)} and ready in Clinical Workspace.`}
+async function saveAssignment(options={}){
+  if(selected.value&&selectedClientId.value)return assignTranscriptToClient(selected.value,selectedClientId.value,'',options)
 }
 async function saveReviewChoices(){const transcript=await patchTranscript({requestedLens:selectedLens.value||null,sourceRetention:sourceRetention.value,reviewChoicesSaved:true},'Unable to save review choices.');if(transcript){editingChoices.value=false;successMessage.value='Review choices saved. No analysis has started.'}}
 async function deleteTranscript(){if(!selected.value)return;await deleteTranscriptRecord(selected.value,{closeDetail:true})}
@@ -800,41 +853,26 @@ async function handleAddClient(payload) {
   addClientInitialName.value = '';
   addingClient.value = false;
 
-  if (targetTranscriptId) {
-    assignmentDrafts.value = { ...assignmentDrafts.value, [targetTranscriptId]: newClient.id };
-    const transcript = transcripts.value.find(item => item.id === targetTranscriptId);
-    if (!transcript) {
-      errorMessage.value = 'Client added, but the transcript is no longer available.';
-      return;
-    }
-    let current = transcript;
-    if (encounterDateChanged(transcript)) {
-      current = await saveEncounterDate(transcript, { quiet: true });
-      if (!current) return;
-    }
-    const assigned = await assignTranscriptToClient(current, newClient.id, newClient.name || newClient.display_name);
-    if (assigned) successMessage.value = `Added ${newClient.name || newClient.display_name} and assigned the transcript.`;
-    return;
-  }
-
-  selectedClientId.value = newClient.id;
-  if (selected.value && encounterDateChanged(selected.value)) {
-    const dated = await saveEncounterDate(selected.value, { quiet: true });
-    if (!dated) return;
-  }
-  const assigned = await patchTranscript({clientId:newClient.id,clearAttention:true},'Client added, but the transcript could not be assigned.');
-  if (assigned) {
-    editingClient.value=false;
-    successMessage.value=`Added ${newClient.name || newClient.display_name} and assigned the transcript.`;
-  }
+  const transcript=targetTranscriptId?transcripts.value.find(item=>item.id===targetTranscriptId):selected.value
+  if(!transcript){errorMessage.value='Client added, but the transcript is no longer available.';return}
+  assignmentDrafts.value={...assignmentDrafts.value,[transcript.id]:newClient.id}
+  selectedClientId.value=newClient.id
+  await assignTranscriptToClient(transcript,newClient.id,newClient.name||newClient.display_name,{openSummary:true})
 }
 async function openClientTranscripts(){if(!selected.value?.clientId)return;await router.push({name:'ClientWorkspace',params:{clientId:selected.value.clientId},query:{tab:'Transcripts'}})}
-async function openLinkedSession(){if(!selected.value?.sessionRef)return;if(selected.value.reviewChoicesSavedAt&&!selected.value.completedAt){const completed=await patchTranscript({markComplete:true},'Unable to complete transcript triage.');if(!completed)return}await router.push({name:'SessionWorkspace',params:{clientId:selected.value.clientId,sessionId:selected.value.sessionRef}})}
+async function openLinkedSession(){return openLinkedSessionFromRow(selected.value)}
 function downloadRaw(transcript){const blob=new Blob([transcript.text],{type:'text/plain;charset=utf-8'});const link=document.createElement('a');link.href=URL.createObjectURL(blob);link.download=`helio-zoom-transcript-${transcript.meetingId||transcript.id}.txt`;link.click();URL.revokeObjectURL(link.href)}
 async function openQueuedTranscript(id){if(!id)return;if(!transcripts.value.length)await load();const transcript=transcripts.value.find(item=>String(item.id)===String(id));if(transcript)await openTranscript(transcript)}
-watch(()=>props.openTranscriptId,openQueuedTranscript);watch(searchQuery,()=>{historyLimit.value=historyPageSize});onMounted(async()=>{await load();openQueuedTranscript(props.openTranscriptId)})
+watch(()=>props.openTranscriptId,openQueuedTranscript);watch(searchQuery,()=>{historyLimit.value=historyPageSize});onMounted(async()=>{await load();await restoreInboxContext();openQueuedTranscript(props.openTranscriptId)})
 </script>
 <style scoped>
+.assignment-handoff { display:flex; flex-wrap:wrap; gap:1rem; justify-content:space-between; }
+.assignment-handoff > div { min-width:0; }
+.assignment-outcomes { display:flex; flex-wrap:wrap; gap:.5rem; margin-top:.4rem; }
+.assignment-outcomes button { white-space:normal; min-width:0; max-width:100%; }
+.assignment-outcomes .assign-inline { min-width:0; white-space:normal; }
+.remaining-heading { font-size:var(--type-ui-size); color:var(--text-muted); margin:.3rem 0; }
+
 .transcript-inbox {
   max-width: 1040px;
   margin: 0 auto;
@@ -954,7 +992,7 @@ watch(()=>props.openTranscriptId,openQueuedTranscript);watch(searchQuery,()=>{hi
 .field-group { display:flex; min-width:0; flex-direction:column; gap:.4rem; }
 .inline-client-picker {
   display:grid;
-  grid-template-columns:minmax(0,1fr) max-content max-content;
+  grid-template-columns:minmax(0,1fr) max-content;
   min-width:0;
   width:100%;
   gap:.5rem;
