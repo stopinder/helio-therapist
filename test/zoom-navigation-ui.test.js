@@ -55,10 +55,10 @@ test('Transcript Inbox workflow is one-step client assignment with direct Clinic
   assert.doesNotMatch(inbox, /Create session/)
   assert.doesNotMatch(inbox, /Link to an existing encounter instead/)
 
-  assert.match(inbox, /Assign & open summary/)
+  assert.match(inbox, /Assign & open Clinical Workspace/)
   assert.match(inbox, /assignTranscriptToClient\(selected\.value,selectedClientId\.value/)
   assert.match(inbox, /selected\.sessionRef/)
-  assert.match(inbox, /Open session summary/)
+  assert.match(inbox, /Open Clinical Workspace/)
   assert.match(inbox, /@click="openLinkedSession"/)
 
   assert.ok(!inbox.includes('<div><strong>Review choices</strong><small>{{ selected.reviewChoicesSavedAt ? \'Saved\' : \'Choose output and retention\' }}</small></div>'))

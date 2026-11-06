@@ -21,7 +21,7 @@ test('client transcript panel only renders transcripts assigned to the current c
 })
 
 test('Transcript Inbox only requires client assignment', () => {
-  assert.match(transcriptInboxSource, /Assign & open summary/)
+  assert.match(transcriptInboxSource, /Assign & open Clinical Workspace/)
   assert.match(transcriptInboxSource, /clearAttention:true/)
   assert.match(transcriptInboxSource, /isConfirmedAssignment\(data\.transcript,current\.id,clientId\)/)
   assert.doesNotMatch(transcriptInboxSource, /<h2>Session<\/h2>/)
@@ -30,8 +30,7 @@ test('Transcript Inbox only requires client assignment', () => {
 })
 
 test('client workspace links sessions inline without returning to Transcript Inbox', () => {
-  assert.match(panelSource, /Session link/)
-  assert.match(panelSource, /\(optional\)/)
+  assert.match(panelSource, /Link to an encounter/)
   assert.match(panelSource, /An in-progress session is a valid link\./)
   assert.match(panelSource, /method: 'PATCH'/)
   assert.match(panelSource, /expectedUpdatedAt: transcript\.updatedAt/)

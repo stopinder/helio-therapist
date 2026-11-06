@@ -23,12 +23,16 @@ export function assignedTranscriptIdentity(transcript, clientLabel) {
 export function isConfirmedAssignment(transcript, transcriptId, clientId) {
   return Boolean(transcript && transcript.id === transcriptId && transcript.clientId === clientId && hasLinkedEncounter(transcript));
 }
-export function sessionSummaryDestination(transcript) {
+export function sessionSummaryDestination(transcript, { from = 'transcript-inbox' } = {}) {
   if (!hasLinkedEncounter(transcript) || ['needs_review','separated'].includes(transcript?.sourceReview?.state)) return null;
   return {
     name: 'SessionWorkspace',
     params: { clientId: transcript.clientId, sessionId: transcript.sessionRef },
-    query: { view: 'summary', from: 'transcript-inbox' }
+    query: {
+      view: 'summary', prepare: '1',
+      from: from === 'client-transcripts' ? 'client-transcripts' : 'transcript-inbox',
+      ...(hasId(transcript?.id) ? { transcriptId: transcript.id } : {})
+    }
   };
 }
 /** Navigation metadata only: never persist source text, summaries, or client objects. */

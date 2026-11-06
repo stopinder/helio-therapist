@@ -3,6 +3,9 @@
     <div v-if="cameFromInbox" class="px-inline-lg py-stack-sm border-b border-border bg-surface">
       <RouterLink :to="inboxReturnDestination" class="text-body-sm font-medium text-action-link hover:underline">Back to Transcript Inbox</RouterLink>
     </div>
+    <div v-if="cameFromClientTranscripts" class="px-inline-lg py-stack-sm border-b border-border bg-surface">
+      <RouterLink :to="{ name: 'ClientWorkspace', params: { clientId: route.params.clientId }, query: { tab: 'Transcripts' } }" class="text-body-sm font-medium text-action-link hover:underline">Back to client transcripts</RouterLink>
+    </div>
     <div v-if="loading" class="flex-1 flex items-center justify-center"><div class="text-ink-muted flex flex-col items-center gap-2"><span class="w-8 h-8 border-4 border-state-selected border-t-transparent rounded-full animate-spin"></span><p>Loading session…</p></div></div>
     <div v-else-if="error" class="flex-1 flex items-center justify-center p-inline-lg"><div class="max-w-md w-full bg-surface p-inline-lg py-stack-lg rounded-card shadow-sm border border-state-danger/20 text-center"><h2 class="text-h2 font-semibold text-state-danger mb-2">Error</h2><p class="text-ink-secondary mb-6">{{ error }}</p><button @click="loadSession" class="button-primary">Try Again</button></div></div>
     <template v-else-if="session">
@@ -42,13 +45,13 @@
             </section>
             <SourceReviewPanel v-if="reviewTranscriptId" :transcript-id="reviewTranscriptId" @close="reviewTranscriptId=''" @resolved="sourceReviewResolved" />
             <section class="space-y-6">
-              <div class="flex items-start justify-between gap-4">
+              <div class="flex flex-wrap items-start justify-between gap-4">
                 <div>
                   <h2 class="font-serif text-h2 text-ink">Session summary</h2>
                   <p v-if="summaryDocument?.id" class="mt-1 text-caption text-ink-muted">{{ summaryDocument.status === 'completed' ? 'Finalised in this client’s Documents.' : 'Saved in this client’s Documents.' }}</p>
                   <div v-if="summaryDocument?.content?.body && summaryDocument.status !== 'completed'" class="mt-2 flex flex-wrap items-center gap-2 text-caption text-ink-muted">
                     <span>{{ generatedSummaryLabel }}</span>
-                    <button type="button" class="font-semibold text-action-link hover:underline" @click="showSummaryOptions = !showSummaryOptions">{{ showSummaryOptions ? 'Hide options' : 'Change' }}</button>
+                    <button type="button" class="button-secondary text-body-sm" @click="showSummaryOptions = !showSummaryOptions">{{ showSummaryOptions ? 'Hide lens options' : 'Change lens / options' }}</button>
                   </div>
                 </div>
                 <div class="flex flex-wrap items-center justify-end gap-3">
@@ -71,7 +74,7 @@
               <p v-else-if="transcriptLoading" role="status" class="text-body-sm text-ink-muted">Loading the assigned source...</p>
 
               <div
-                v-if="transcript && !isGenerating && (!summaryDocument?.content?.body || showSummaryOptions)"
+                v-if="transcript && !isGenerating && summaryDocument?.status !== 'completed' && (!summaryDocument?.content?.body || showSummaryOptions || summaryUnsafe)"
                 class="rounded-panel border border-border bg-surface-elevated p-5 shadow-sm"
                 data-testid="session-summary-options"
               >
@@ -80,6 +83,7 @@
                   <p class="text-body-sm text-ink-secondary">Choose how Helios should frame this summary. Your preferred approach is remembered for this client.</p>
                 </div>
 
+                <p v-if="summaryDocument?.content?.body" class="mt-3 text-body-sm text-ink-muted">Your existing draft stays unchanged until you choose Regenerate summary.</p>
                 <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3">
                   <label class="block">
                     <span class="text-caption font-semibold text-ink">Summary approach</span>
@@ -126,6 +130,7 @@
                 <p v-if="summaryPreferenceError" class="mt-2 text-caption text-state-danger" role="alert">{{ summaryPreferenceError }}</p>
               </div>
 
+              <p v-if="summaryDocument?.status === 'completed' && prepareRequested" class="rounded-panel border border-border p-4 text-body-sm" role="status">This summary is finalised and read-only. Opening Clinical Workspace does not change or regenerate it.</p>
               <div class="relative min-h-[12rem]">
                 <div v-if="isGenerating" role="status" class="py-24 text-center text-ink-muted bg-surface rounded-panel border border-dashed border-border flex flex-col items-center gap-3 shadow-sm">
                   <span class="w-8 h-8 border-4 border-state-selected border-t-transparent rounded-full animate-spin"></span>
@@ -217,7 +222,7 @@
 import HelpLink from '../components/help/HelpLink.vue'
 import SourceReviewPanel from '../components/workspace/SourceReviewPanel.vue';
 import { isUnusableSummary } from '../lib/summarySafety.js';
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, computed, watch, onBeforeUnmount } from 'vue';
 import { useRoute, useRouter, RouterLink } from 'vue-router';
 import { supabase } from '../lib/supabase.js';
 import { getSession } from '../lib/sessions.js';
@@ -233,6 +238,8 @@ import { useAskHelios } from '../composables/useAskHelios.js';
 
 const route = useRoute();
 const cameFromInbox = computed(() => route.query.from === 'transcript-inbox');
+const cameFromClientTranscripts = computed(() => route.query.from === 'client-transcripts');
+const prepareRequested = computed(() => route.query.prepare === '1');
 const inboxReturnDestination = computed(() => ({ name: 'Transcripts', query: typeof route.query.inboxReturn === 'string' ? { resume: route.query.inboxReturn } : {} }));
 const router = useRouter();
 const { openClinicalContext } = useAskHelios();
@@ -269,6 +276,11 @@ const summaryPreferenceError = ref('');
 const preparingCbtCare = ref(false);
 const cbtCareError = ref('');
 let saveTimer = null;
+let disposed = false;
+watch(() => [route.query.prepare, route.query.view], () => {
+  if (prepareRequested.value) { activeView.value = 'summary'; showSummaryOptions.value = true; }
+});
+onBeforeUnmount(() => { disposed = true; clearTimeout(saveTimer); });
 
 function handleSessionUpdate(updatedSession) {
   session.value = updatedSession;
@@ -300,6 +312,7 @@ async function generateSummary() {
       window: summaryWindow.value,
       therapistGuidance: therapistGuidance.value
     });
+    if (disposed) return;
     const generation = {
       outcome:'ready',
       id: result.generationId,
@@ -341,11 +354,12 @@ async function generateSummary() {
       });
     }
     sourceReview.value=null;
-    showSummaryOptions.value = false;
+    showSummaryOptions.value = prepareRequested.value;
     showSummaryGuidance.value = false;
     therapistGuidance.value = '';
   } catch (err) {
     if(err.code==='SOURCE_REVIEW_REQUIRED'){sourceReview.value=err.review||{message:err.message,sources:[]};return;}
+    if (disposed) return;
     generationError.value = err.message || 'Summary generation failed. Please try again.';
     console.error('Generation failed:', err);
   } finally {
@@ -446,7 +460,7 @@ async function loadSession(){
     const previousGeneration = summaryDocument.value?.content?.summaryGeneration || null;
     summaryLens.value = clientData.preferred_summary_lens || previousGeneration?.lens || 'integrative';
     summaryWindow.value = previousGeneration?.window || 'current';
-    showSummaryOptions.value = !summaryDocument.value?.content?.body;
+    showSummaryOptions.value = prepareRequested.value || summaryUnsafe.value || !summaryDocument.value?.content?.body;
     loadTranscript();
   }catch(e){
     error.value='The session could not be loaded.';

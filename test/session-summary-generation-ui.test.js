@@ -53,7 +53,7 @@ test('SessionWorkspace sends the chosen approach, evidence scope and therapist g
   assert.match(source, /window:\s*summaryWindow\.value/)
   assert.match(source, /therapistGuidance:\s*therapistGuidance\.value/)
   assert.match(source, /summaryGeneration:\s*generation/)
-  assert.match(source, /showSummaryOptions\.value = false/)
+  assert.match(source, /showSummaryOptions\.value = prepareRequested\.value/)
 })
 
 test('Session summary approach is remembered per client', () => {

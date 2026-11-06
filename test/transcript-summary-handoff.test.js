@@ -140,7 +140,7 @@ test('return context is restored from an opaque token without names in the URL',
 })
 test('primary actions precede compact context, and summary navigation is read-only',()=>{
   assert.ok(source.indexOf('class="inline-assignment"')<source.indexOf('class="zoom-note-card"'))
-  assert.match(source,/Assign & open summary/);assert.match(source,/Assign &amp; stay in inbox/)
+  assert.match(source,/Assign & open Clinical Workspace/);assert.match(source,/Assign &amp; stay in inbox/)
   const handler=source.split('async function openLinkedSession()')[1].split('function downloadRaw')[0]
   assert.doesNotMatch(handler,/markComplete|patchTranscript|generate/)
   assert.match(workspace,/Back to Transcript Inbox/)

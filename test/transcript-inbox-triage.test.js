@@ -10,7 +10,7 @@ test('Transcript Inbox is an inline triage queue rather than an open-read-back a
   assert.match(inbox, /class="transcript-row triage-row"/)
   assert.match(inbox, /v-model="assignmentDrafts\[transcript\.id\]"/)
   assert.match(inbox, /@click="assignFromInbox\(transcript, \{ openSummary: true \}\)"/)
-  assert.match(inbox, /'Assigning…' : 'Assign & open summary'/)
+  assert.match(inbox, /'Assigning…' : 'Assign & open Clinical Workspace'/)
   assert.match(inbox, /Preview transcript/)
   assert.match(inbox, /Open full transcript/)
   assert.doesNotMatch(inbox, /class="transcript-row" @click="openTranscript\(transcript\)"/)
