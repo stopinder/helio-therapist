@@ -5,8 +5,8 @@ import { readFile } from 'node:fs/promises'
 const transcriptInboxSource = await readFile(new URL('../src/components/TranscriptInbox.vue', import.meta.url), 'utf8')
 
 test('Transcript Inbox previews are explicit and loaded on demand rather than included in the initial list payload', async () => {
-  assert.match(transcriptInboxSource, /function transcriptPreview\(transcript\)/)
-  assert.match(transcriptInboxSource, /No Zoom note excerpt is available/)
+  assert.match(transcriptInboxSource, /function collapsedConversation\(transcript\)/)
+  assert.match(transcriptInboxSource, /Readable preview available on demand\./)
   assert.match(transcriptInboxSource, /@click="toggleExpand\(transcript\.id, \$event\)"/)
   assert.match(transcriptInboxSource, /fetchTranscriptDetail/)
   assert.match(transcriptInboxSource, /class="conversation-preview"/)
