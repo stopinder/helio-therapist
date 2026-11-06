@@ -26,6 +26,19 @@ export function summaryOutcomeResponseFormat(ids) {
   schema.required=['outcome','review','sections','claims']; format.json_schema.name='helios_summary_outcome'; return format;
 }
 const exactKeys=(value,keys)=>value && typeof value==='object' && !Array.isArray(value) && Object.keys(value).length===keys.length && keys.every(key=>Object.hasOwn(value,key));
+/** Ignore harmless whitespace differences, never accept a paraphrase as a source quote. */
+function locateSourceQuote(source, quote) {
+  const exact = source.indexOf(quote);
+  if (exact >= 0) return {start:exact,quote};
+  const terms=quote.trim().split(/\s+/).filter(Boolean);
+  if (!terms.length) return null;
+  const regexText=terms.map(term=>term.replace(/[-/\\^$*+?.()|[\]{}]/g,'\\const exactKeys=(value,keys)=>value && typeof value==='object' && !Array.isArray(value) && Object.keys(value).length===keys.length && keys.every(key=>Object.hasOwn(value,key));')).join('\\s+');
+  try {
+    const hit=new RegExp(regexText,'u').exec(source);
+    return hit ? {start:hit.index,quote:hit[0]} : null;
+  }catch{return null}
+}
+
 /** Exact quotes verify provenance, not the correctness of the model's interpretation. */
 export function validateSummaryOutcome(raw,ids,evidenceSources=[]) {
   let value;try{value=typeof raw==='string'?JSON.parse(raw):raw}catch{return null}
@@ -41,16 +54,24 @@ export function validateSummaryOutcome(raw,ids,evidenceSources=[]) {
   }
   if(body.trim() || structured.claims.length)return null;
   if(value.outcome==='generation_failed')return value.review.reason==='invalid_output' && !value.review.evidence.length?{outcome:'generation_failed'}:null;
-  if(!['possible_mixed_encounters','source_conflict','insufficient_source'].includes(value.review.reason) || !value.review.message.trim() || value.review.message.length>1600 || value.review.evidence.length<1 || value.review.evidence.length>6)return null;
+  if(!['possible_mixed_encounters','source_conflict','insufficient_source'].includes(value.review.reason) || !value.review.message.trim() || value.review.message.length>1600 || value.review.evidence.length>6)return null;
   const evidence=[];
+  let unverifiedCount=value.review.evidence.length===0?1:0;
   for(const item of value.review.evidence){
-    if(!exactKeys(item,['sourceId','sourceType','quote']) || !['transcript','zoom_note','session_capture','session_summary'].includes(item.sourceType))return null;
+    if(!exactKeys(item,['sourceId','sourceType','quote']) || !['transcript','zoom_note','session_capture','session_summary'].includes(item.sourceType)){unverifiedCount++;continue}
     const source=evidenceSources.find(s=>s.id===item.sourceId),text=source?.[item.sourceType];
-    if(typeof text!=='string' || typeof item.quote!=='string' || item.quote.trim().length<8 || item.quote.length>1000)return null;
-    const start=text.indexOf(item.quote);if(start<0)return null;
-    evidence.push({...item,verified:true,transcriptId:source.transcriptId||null,
-      ...(item.sourceType==='transcript'?{startLine:text.slice(0,start).split('\n').length,endLine:text.slice(0,start+item.quote.length).split('\n').length}:{})});
+    if(typeof text!=='string'||typeof item.quote!=='string'||item.quote.trim().length<8||item.quote.length>1000){unverifiedCount++;continue}
+    const location=locateSourceQuote(text,item.quote);
+    if(!location){unverifiedCount++;continue}
+    const {start,quote}=location;
+    evidence.push({...item,quote,verified:true,transcriptId:source.transcriptId||null,
+      ...(item.sourceType==='transcript'?{startLine:text.slice(0,start).split('\n').length,endLine:text.slice(0,start+quote.length).split('\n').length}:{})});
   }
-  const reason=value.review.reason==='possible_mixed_encounters' && !evidence.some(e=>e.sourceType==='transcript')?'source_conflict':value.review.reason;
-  return {outcome:'needs_review',review:{reason,message:value.review.message.trim(),evidence}};
+  // Unverified model quotations must not change source state or become clinical evidence.
+  const requiresManualVerification=unverifiedCount>0;
+  const reason=value.review.reason==='possible_mixed_encounters'&&!evidence.some(e=>e.sourceType==='transcript')?'source_conflict':value.review.reason;
+  const message=requiresManualVerification
+    ? 'A possible source-boundary concern could not be verified against the original passages. Review the original transcript and Zoom note before preparing a summary.'
+    : value.review.message.trim();
+  return {outcome:'needs_review',review:{reason,message,evidence,requiresManualVerification}};
 }

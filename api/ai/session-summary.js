@@ -193,7 +193,7 @@ ${SUMMARY_OUTCOME_RULES}`;
     const userInput=JSON.stringify({task:window==='recent'?'Prepare this encounter with prior continuity.':'Prepare this encounter only.',
       assignedClient:{id:clientId,name:session.clients?.display_name||''},sessionId,sourceBlocks,therapistGuidance:guidance});
 
-    const { completion, model } = await runTextAI({
+    const request = {
       feature: AI_FEATURES.CLIENT_SESSION_SUMMARY,
       userId: user.id,
       promptVersion: PROMPT_VERSION,
@@ -205,32 +205,51 @@ ${SUMMARY_OUTCOME_RULES}`;
       temperature: 0.3,
       maxTokens: 6000,
       timeout: 60000
-    });
-
-    const finishReason = completion.choices?.[0]?.finish_reason || null;
-    // Verify quotes against the actual original, not an artificial excerpt marker.
+    };
+    const { completion, model } = await runTextAI(request);
+    let response=completion;
+    let finishReason=response.choices?.[0]?.finish_reason||null;
     const evidenceSources=sources.map(source=>({id:source.id,transcriptId:source.transcriptId,
       transcript:source.original_transcript||'',zoom_note:source.zoom_generated_summary||''}));
-    const structured=validateSummaryOutcome(completion.choices?.[0]?.message?.content,validSourceIds,evidenceSources);
-    if (!structured) {
-      console.warn(`[Session Summary] Structured response rejected (finish_reason=${finishReason || 'unknown'}, output_tokens=${Number(completion.usage?.completion_tokens || 0)})`);
-      return res.status(502).json({
-        success: false,
-        error: {
-          code: finishReason === 'length' ? 'AI_RESPONSE_TRUNCATED' : 'INVALID_AI_RESPONSE',
-          message: finishReason === 'length'
-            ? 'The generated session summary was too long to complete. Please try again.'
-            : 'Session summary generation is temporarily unavailable.'
-        }
-      });
+    let structured=validateSummaryOutcome(response.choices?.[0]?.message?.content,validSourceIds,evidenceSources);
+    if(!structured && finishReason==='stop'){
+      // One bounded repair pass. The source/claim validator remains unchanged for ready drafts.
+      console.warn('[Session Summary] Output failed source/structure validation; one repair attempt');
+      try{
+        const repaired=await runTextAI({
+          ...request,
+          messages:[...request.messages,
+            {role:'assistant',content:String(response.choices?.[0]?.message?.content||'').slice(0,22000)},
+            {role:'user',content:'The previous structured result did not pass strict source/format validation. Recheck the source and return a corrected result in the same schema. For a ready summary, every non-empty section must have verbatim claims with supplied source IDs. If the recording genuinely requires source review, return needs_review with precise verbatim passages from the supplied source. Do not invent evidence, omit uncertainty, or change a review outcome merely to pass validation.'}
+          ]
+        });
+        response=repaired.completion;
+        finishReason=response.choices?.[0]?.finish_reason||null;
+        structured=validateSummaryOutcome(response.choices?.[0]?.message?.content,validSourceIds,evidenceSources);
+      }catch(repairError){console.warn('[Session Summary] Repair attempt unavailable',repairError.code||repairError.name)}
+    }
+    if(!structured){
+      // Never log patient source text or generated content.
+      console.warn('[Session Summary] Structured response rejected after validation', {finishReason,outputTokens:Number(response.usage?.completion_tokens||0)});
+      return res.status(502).json({success:false,error:{
+        code:finishReason==='length'?'AI_RESPONSE_TRUNCATED':'AI_RESPONSE_UNVERIFIED',
+        message:finishReason==='length'
+          ? 'The generated session summary was too long to complete. Your previous draft is unchanged.'
+          : 'The generated summary could not be verified against its sources. No draft was saved. Retry or review the original transcript.'
+      }});
     }
 
     if(structured.outcome==='generation_failed')return res.status(502).json({success:false,error:{code:'INVALID_AI_RESPONSE',message:'No usable summary was produced. Your previous draft is unchanged.'}});
     await assertSourcesUnchanged(supabase,user.id,sources.map(source=>source.row));
     if(structured.outcome==='needs_review'){
       const reviews=[];
-      for(const source of sources.filter(item=>structured.review.evidence.some(e=>e.sourceId===item.id))){
-        reviews.push(await flagSourceReview(supabase,user.id,source.row,{...structured.review,evidence:structured.review.evidence.filter(e=>e.sourceId===source.id)}));
+      if(!structured.review.requiresManualVerification){
+        for(const source of sources.filter(item=>structured.review.evidence.some(e=>e.sourceId===item.id))){
+          reviews.push(await flagSourceReview(supabase,user.id,source.row,{...structured.review,evidence:structured.review.evidence.filter(e=>e.sourceId===source.id)}));
+        }
+      }else{
+        // Unverified quotations cannot change a patient's source-review state.
+        for(const source of sources)reviews.push({transcriptId:source.transcriptId,sessionId:source.sessionId,sourceVersion:source.source_version,state:'unreviewed'});
       }
       return res.status(200).json({success:true,data:{outcome:'needs_review',review:{...structured.review,sources:reviews}}});
     }
