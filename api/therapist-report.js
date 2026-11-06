@@ -47,7 +47,7 @@ export default async function handler(req, res) {
 
     // POST is sent only when the therapist chooses Generate AI reflection.
     const body = req.body || {};
-    const allowedKeys = new Set(['quizVersion', 'answers']);
+    const allowedKeys = new Set(['quizVersion', 'questionSetId', 'answers']);
     if (Object.keys(body).some(key => !allowedKeys.has(key))) return invalidRequest(res);
     if (body.quizVersion !== QUIZ_VERSION || !body.answers || typeof body.answers !== 'object' || Array.isArray(body.answers)) {
       return invalidRequest(res);
@@ -55,7 +55,7 @@ export default async function handler(req, res) {
 
     // Recompute the deterministic interpretation server-side. The model never receives
     // a client-authored profile or scores that the browser could have altered.
-    const result = buildResult(body.answers);
+    const result = buildResult(body.answers, body.questionSetId || 'original');
     if (!result.sufficientForNarrative) {
       return res.status(422).json({
         error: 'There is not enough quiz evidence for an AI-written narrative. The question-based reflection remains available.'
