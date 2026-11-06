@@ -21,7 +21,6 @@ jobs:
         with:
           node-version: '22'
       - name: Apply guarded integration to this isolated branch only
-        shell: bash
         run: |
           set -euo pipefail
           python3 scripts/apply-summary-review-integration.py
@@ -34,19 +33,16 @@ jobs:
       - name: Install locked dependencies without package lifecycle scripts
         run: npm ci --ignore-scripts --no-fund
       - name: Test outcomes, all migrations, isolation and old workflow contracts
-        shell: bash
         run: |
           set -euo pipefail
           node --test test/summary-source-outcomes.test.js test/summary-source-review-db.test.js test/session-summary-generation-ui.test.js test/session-workspace-simplified.test.js test/transcript-clear-behaviour.test.js | tee /tmp/source-review-tests.log
       - name: Build the production bundle
-        shell: bash
         run: |
           set -euo pipefail
           npm run build | tee /tmp/source-review-build.log
       - name: Save verified integration on its feature branch
         env:
           GH_TOKEN: ${{ github.token }}
-        shell: bash
         run: |
           set -euo pipefail
           test "$GITHUB_REF" = refs/heads/fix/summary-source-review-20261105
@@ -71,15 +67,14 @@ jobs:
         run: npx playwright test --config playwright.source-review.config.js
       - name: Package source and verification output only
         if: always()
-        shell: bash
         run: |
           set -euo pipefail
           mkdir -p /tmp/source-review-result
           git diff --binary > /tmp/source-review-result/uncommitted.patch
           git rev-parse HEAD > /tmp/source-review-result/head.txt
-          tar --exclude='*.env' --exclude='.env*' --exclude='*/.env*' --exclude='*.pem' --exclude='*.key' --exclude='*/.temp' --exclude='*/.branches' -czf /tmp/source-review-result/source.tgz src api test e2e supabase scripts package.json package-lock.json index.html vite.config.mjs vitest.config.js playwright.source-review.config.js
           for file in /tmp/source-review-tests.log /tmp/source-review-build.log; do if test -f "$file"; then cp "$file" /tmp/source-review-result/; fi; done
           if test -d test-results; then cp -R test-results /tmp/source-review-result/; fi
+          tar --exclude='*.env' --exclude='.env*' --exclude='*/.env*' --exclude='*.pem' --exclude='*.key' --exclude='*/.temp' --exclude='*/.branches' -czf /tmp/source-review-result/source.tgz src api test e2e supabase scripts package.json package-lock.json index.html vite.config.mjs vitest.config.mjs playwright.source-review.config.js
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
         with:
