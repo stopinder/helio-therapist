@@ -58,10 +58,20 @@ export default async function handler(req,res){
     if(!sources.length)return res.status(409).json({success:false,error:{code:'NO_REUSABLE_EVIDENCE',message:'No reviewed clinical material is available yet. Start with Session Capture or an empty draft.'}});
     const selected=[];let chars=0;
     for(const source of sources){const budget=INPUT_LIMIT-chars;if(budget<250)break;const next={...source,text:source.text.slice(0,Math.min(budget,7200))};chars+=next.text.length;selected.push(next)}
-    const {completion,model}=await runTextAI({feature:AI_FEATURES.TRANSCRIPT_DRAFT_CLINICAL_NOTE,userId:user.id,promptVersion:PROMPT_VERSION,
+    const request={feature:AI_FEATURES.TRANSCRIPT_DRAFT_CLINICAL_NOTE,userId:user.id,promptVersion:PROMPT_VERSION,
       messages:[{role:'system',content:SYSTEM_PROMPT},{role:'user',content:JSON.stringify({task:focusField?`Suggest only ${CLINICAL_RECORD_FIELD_LABELS[focusField]}; leave all other fields blank.`:'Suggest draft fields from the owned recorded evidence.',encounter:{id:sessionId,occurredAt:session.occurred_at},sources:selected})}],
-      responseFormat:clinicalRecordSuggestionsResponseFormat(selected.map(source=>source.id)),temperature:0.1,maxTokens:focusField?1800:3800,timeout:60000});
-    const checked=validateClinicalRecordSuggestions(completion.choices?.[0]?.message?.content,selected,focusField);
+      responseFormat:clinicalRecordSuggestionsResponseFormat(selected.map(source=>source.id)),temperature:0.1,maxTokens:focusField?1800:3800,timeout:60000};
+    let {completion,model}=await runTextAI(request);
+    let checked=validateClinicalRecordSuggestions(completion.choices?.[0]?.message?.content,selected,focusField);
+    if(!checked&&completion.choices?.[0]?.finish_reason==='stop'){
+      // A single bounded retry using the original source boundary; never publish unverified text.
+      try{
+        const retry=await runTextAI({...request,messages:[...request.messages,
+          {role:'user',content:'Your previous output could not pass source verification. Return exactly the required fields JSON structure. For every non-empty field cite an exact, unmodified passage from the named source. Leave unsupported fields empty. Do not invent, strengthen, or paraphrase evidence.'}]});
+        completion=retry.completion;model=retry.model;
+        checked=validateClinicalRecordSuggestions(completion.choices?.[0]?.message?.content,selected,focusField);
+      }catch(error){console.warn('[Clinical record suggestions] Retry unavailable',error.code||error.name)}
+    }
     if(!checked)return res.status(502).json({success:false,error:{code:'INVALID_EVIDENCE',message:'Helios could not verify the suggested wording against its sources. No clinical fields were changed. Review the original summaries before retrying.'}});
     // Do not return a suggestion if the current encounter was changed during generation.
     const {data:current,error:currentError}=await supabase.from('sessions').select('id,status,updated_at').eq('id',sessionId).eq('client_id',clientId).eq('user_id',user.id).maybeSingle();
