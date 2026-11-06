@@ -106,3 +106,22 @@ export function validateClinicalRecordSuggestions(raw,sources,focusField=null){
   if(!supported)return {fields,outcome:'insufficient_evidence'};
   return {fields,outcome:'ready'};
 }
+
+/** A closed schema so the provider returns the envelope expected by the validator. */
+export function clinicalRecordSuggestionsResponseFormat(sourceIds){
+  const ids=[...new Set(sourceIds.filter(id=>typeof id==='string' && id))];
+  if(!ids.length)throw new Error('Clinical Record suggestions require evidence sources.');
+  const fieldShape={type:'object',additionalProperties:false,properties:{
+    text:{type:'string'},
+    evidence:{type:'array',items:{type:'object',additionalProperties:false,properties:{
+      sourceId:{type:'string',enum:ids},quote:{type:'string'}
+    },required:['sourceId','quote']}}
+  },required:['text','evidence']};
+  const keys=[...CLINICAL_RECORD_FIELDS];
+  return {type:'json_schema',json_schema:{name:'clinical_record_suggestions_v2',strict:true,schema:{
+    type:'object',additionalProperties:false,properties:{
+      fields:{type:'object',additionalProperties:false,
+        properties:Object.fromEntries(keys.map(key=>[key,structuredClone(fieldShape)])),required:keys}
+    },required:['fields']
+  }}};
+}
