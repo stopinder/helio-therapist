@@ -25,7 +25,12 @@ test('ordinary discussion of confidentiality, relationships and parts remains cl
  for(const body of ['We discussed confidentiality and your relationship with your sister.','Two parts of you want different things.','We reviewed your music recording.'])assert.equal(isSummaryReviewNotice(body),false);
 });
 test('quotes must exist in their named source and carry exact original line references',()=>{
- for(const value of [review('transcript','Fabricated content not present here.'),review('zoom_note',original),review('transcript',note),review('toString','not a valid source type')])assert.equal(validateSummaryOutcome(value,ids,evidence),null);
+ for(const value of [review('transcript','Fabricated content not present here.'),review('zoom_note',original),review('transcript',note),review('toString','not a valid source type')]){
+   const result=validateSummaryOutcome(value,ids,evidence);
+   assert.equal(result.outcome,'needs_review');
+   assert.equal(result.review.requiresManualVerification,true);
+   assert.deepEqual(result.review.evidence,[]);
+ }
  const value=validateSummaryOutcome(review(),ids,evidence);assert.equal(value.outcome,'needs_review');assert.equal(value.review.evidence[0].startLine,2);assert.equal(value.review.evidence[0].verified,true);
 });
 test('secondary-note-only concern is a conflict rather than proven mixed appointments',()=>{assert.equal(validateSummaryOutcome(review('zoom_note',note),ids,evidence).review.reason,'source_conflict')});

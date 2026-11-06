@@ -13,8 +13,9 @@ describe('Session Summary API Timeout Verification (Static Analysis)', () => {
   test('passes explicit timeout of 60000 to runTextAI', () => {
     // Look for runTextAI call and verify timeout property
     // Pattern matches runTextAI({ ... timeout: 60000 ... })
-    const runTextAICall = /runTextAI\(\{[\s\S]*?timeout:\s*60000[\s\S]*?\}\)/;
-    assert.ok(runTextAICall.test(handlerSource), 'Should contain runTextAI call with timeout: 60000');
+    const literalCall=/runTextAI\(\{[\s\S]*?timeout:\s*60000[\s\S]*?\}\)/.test(handlerSource);
+    const sharedRequest=/const request\s*=\s*\{[\s\S]*?timeout:\s*60000[\s\S]*?\};[\s\S]*?runTextAI\(request\)/.test(handlerSource);
+    assert.ok(literalCall || sharedRequest, 'AI request must explicitly set timeout 60000');
   });
 
   test('maps timeout/provider errors to 504 status', () => {
