@@ -32,7 +32,7 @@ function locateSourceQuote(source, quote) {
   if (exact >= 0) return {start:exact,quote};
   const terms=quote.trim().split(/\s+/).filter(Boolean);
   if (!terms.length) return null;
-  const regexText=terms.map(term=>term.replace(/[-/\\^$*+?.()|[\]{}]/g,'\\const exactKeys=(value,keys)=>value && typeof value==='object' && !Array.isArray(value) && Object.keys(value).length===keys.length && keys.every(key=>Object.hasOwn(value,key));')).join('\\s+');
+  const regexText=terms.map(term=>term.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')).join('\\s+');
   try {
     const hit=new RegExp(regexText,'u').exec(source);
     return hit ? {start:hit.index,quote:hit[0]} : null;
