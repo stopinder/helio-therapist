@@ -1,4 +1,5 @@
-export const CLIENT_SESSION_SUMMARY_PROMPT_VERSION = 'client-session-summary-v11';
+import { isUnusableSummary } from '../../src/lib/summarySafety.js';
+export const CLIENT_SESSION_SUMMARY_PROMPT_VERSION = 'client-session-summary-v12-source-review';
 export const CLIENT_SESSION_SUMMARY_LENSES = Object.freeze(['general', 'integrative', 'gentle_cbt', 'internal_family_systems', 'transactional_analysis']);
 export const CLIENT_SESSION_SUMMARY_FIELDS = Object.freeze(['opening','whatWeWorkedOn','patternsOverTime','changesAndExceptions','strengthsAndResources','perspectiveReflection','betweenSession','closing']);
 
@@ -162,6 +163,7 @@ export function buildClinicalIntelligenceSessionCandidates({ captures = [], summ
   );
 
   for (const document of orderedDocuments) {
+    if(isUnusableSummary(document.content))continue;
     const body = typeof document?.content?.body === 'string' ? document.content.body.trim() : '';
     if (!body) continue;
     const manifest = Array.isArray(document?.source_manifest) ? document.source_manifest : [];

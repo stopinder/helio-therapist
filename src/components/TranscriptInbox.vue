@@ -1,5 +1,6 @@
 <template>
   <section ref="inboxRoot" class="transcript-inbox">
+    <SourceReviewPanel v-if="reviewSourceId" :transcript-id="reviewSourceId" @close="reviewSourceId=''" @resolved="handleSourceReviewed" />
     <template v-if="!selected">
       <header class="page-header inbox-page-header">
         <div class="header-orientation">
@@ -66,7 +67,9 @@
               <StatusIndicator class="status-indicator" :tone="workflowTone(transcript)">{{ workflowState(transcript).label }}</StatusIndicator>
             </div>
 
-            <div v-if="filterMode === 'attention' && !transcript.clientId && !transcript.sessionRef" class="inline-assignment">
+            <div v-if="transcript.sourceReview?.state==='needs_review'" class="matched-note"><span>Check the original before preparing or sharing a summary.</span><button class="button-primary" @click="reviewSourceId=transcript.id">Review source</button></div>
+            <div v-else-if="transcript.sourceReview?.state==='separated'" class="matched-note"><span>Original retained. Use its reviewed conversation segments.</span><button class="button-secondary" @click="reviewSourceId=transcript.id">View separation</button></div>
+            <div v-else-if="filterMode === 'attention' && !transcript.clientId && !transcript.sessionRef" class="inline-assignment">
               <div class="assignment-intro">
                 <span class="assignment-icon" aria-hidden="true"><UserPlus class="workspace-icon" /></span>
                 <div>
@@ -337,6 +340,9 @@ import { createClient } from '../lib/clients.js'
 import { conversationPreview, conversationTurns, searchConversationTurns, transcriptSpeakerSummary } from '../lib/transcriptPresentation.js'
 import AddClientModal from './sidebar/AddClientModal.vue'
 import StatusIndicator from './ui/StatusIndicator.vue'
+import SourceReviewPanel from './workspace/SourceReviewPanel.vue'
+const reviewSourceId=ref('')
+async function handleSourceReviewed(result){if(result.action==='confirm')reviewSourceId.value='';await load()}
 const props = defineProps({ clients: { type: Array, default: () => [] }, openTranscriptId: { type: [String, Number], default: null } })
 const emit = defineEmits(['client-added'])
 import { assignedTranscriptIdentity, hasLinkedEncounter, isConfirmedAssignment, sessionSummaryDestination, transcriptNeedsAttention, transcriptWorkflowState } from '../lib/transcriptWorkflow.js'

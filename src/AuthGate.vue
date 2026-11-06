@@ -53,7 +53,7 @@
   </main>
 
   <template v-else-if="session">
-    <AppShell data-testid="workspace-shell"><router-view /></AppShell>
+    <AppShell data-testid="workspace-shell"><router-view :key="route.name === 'SessionWorkspace' ? [route.params.clientId,route.params.sessionId,route.query.transcriptId || ''].join(':') : undefined" /></AppShell>
     <GlobalWhisperFallback />
   </template>
 

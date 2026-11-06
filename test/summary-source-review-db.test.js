@@ -49,7 +49,7 @@ test('source review migration, isolation, races, exact splitting and document bo
    }finally{await db.exec('reset role')}
   });
   await t.test('overlapping, missing and unreviewed ranges do not create records',async()=>{
-   for(const edit of [s=>s[1].startLine=3,s=>s[1].endLine=999,s=>s[0].reviewed=false]){const ranges=segments();edit(ranges);await assert.rejects(()=>resolve(db,currentVersion,'split',ranges));}
+   for(const edit of [s=>s[1].startLine=3,s=>s[1].endLine=999,s=>s[0].reviewed=false]){const ranges=segments();edit(ranges);const currentVersion=(await current(db)).source_version;await assert.rejects(()=>resolve(db,currentVersion,'split',ranges));}
    assert.equal((await db.query('select count(*)::int as n from public.zoom_transcripts')).rows[0].n,1);
   });
   await t.test('flagged source blocks document insertion before any draft can be overwritten',async()=>{

@@ -34,6 +34,13 @@
           </template>
 
           <template v-else>
+            <section v-if="sourceReview || summaryUnsafe" class="rounded-panel border border-border bg-surface-elevated p-5 space-y-3" data-testid="source-review-notice">
+              <h2 class="text-h3 font-semibold">{{ sourceReview?.resolved ? 'Source review saved' : 'Source needs review' }}</h2>
+              <p>{{ sourceReview?.message || 'The earlier output is a source-review notice, not a usable summary. Review its original source and regenerate.' }}</p>
+              <p class="text-body-sm">Your previous draft and imported Zoom note have been preserved. No new summary was saved by this review.</p>
+              <div v-if="!sourceReview?.resolved" class="flex flex-wrap gap-2"><button v-for="(item,index) in sourceReview?.sources || []" :key="index" v-show="item.transcriptId" class="button-primary" @click="openSourceReview(item)">Review flagged source {{ index+1 }}</button><button v-if="!sourceReview?.sources?.length && transcript?.id" class="button-primary" @click="openSourceReview()">Review original source</button></div>
+            </section>
+            <SourceReviewPanel v-if="reviewTranscriptId" :transcript-id="reviewTranscriptId" @close="reviewTranscriptId=''" @resolved="sourceReviewResolved" />
             <section class="space-y-6">
               <div class="flex items-start justify-between gap-4">
                 <div>
@@ -53,7 +60,7 @@
                   <button v-if="transcript" type="button" @click="askHeliosAboutSession" class="button-secondary !min-h-0 py-1.5 px-3 text-body-sm shadow-sm">Ask Helios</button>
                   <button v-if="summaryDocument?.content?.body && summaryDocument.status !== 'completed'" @click="generateSummary" :disabled="isGenerating || transcriptLoading || !!transcriptError || !transcript" class="text-body-sm font-medium text-ink-muted hover:text-ink disabled:opacity-50">Regenerate</button>
                   <RouterLink v-if="summaryDocument?.id" :to="{ name: 'ClientWorkspace', params: { clientId: session.clientId }, query: { document: summaryDocument.id } }" class="button-secondary !min-h-0 py-1.5 px-3 text-body-sm shadow-sm">Open in Client Documents</RouterLink>
-                  <button @click="copySummary" :disabled="!summaryDocument?.content?.body" class="button-secondary !min-h-0 py-1.5 px-3 text-body-sm shadow-sm">Copy summary</button>
+                  <button @click="copySummary" :disabled="!summaryDocument?.content?.body || !!sourceReview || summaryUnsafe" class="button-secondary !min-h-0 py-1.5 px-3 text-body-sm shadow-sm">Copy summary</button>
                 </div>
               </div>
 
@@ -129,7 +136,7 @@
                   <p class="text-state-danger text-body-sm mb-4">{{ generationError }}</p>
                   <button @click="generateSummary" class="button-primary py-stack-xs px-inline-md text-body-sm">Retry</button>
                 </div>
-                <template v-else-if="summaryDocument">
+                <template v-else-if="summaryDocument && !summaryUnsafe">
                   <div v-if="generationError" class="mb-4 py-4 px-5 text-center bg-state-danger-surface rounded-panel border border-state-danger/20 shadow-sm" role="alert">
                     <p class="text-state-danger text-body-sm">Generation failed — previous summary unchanged. {{ generationError }}</p>
                     <button @click="generateSummary" class="button-primary mt-3 py-stack-xs px-inline-md text-body-sm">Retry</button>
@@ -208,12 +215,14 @@
 
 <script setup>
 import HelpLink from '../components/help/HelpLink.vue'
+import SourceReviewPanel from '../components/workspace/SourceReviewPanel.vue';
+import { isUnusableSummary } from '../lib/summarySafety.js';
 import { ref, onMounted, computed } from 'vue';
 import { useRoute, useRouter, RouterLink } from 'vue-router';
 import { supabase } from '../lib/supabase.js';
 import { getSession } from '../lib/sessions.js';
 import { getClient, updateClientSummaryPreference } from '../lib/clients.js';
-import { findSessionSummary, createClientDocumentDraft, saveClientDocumentDraft, generateSessionSummary } from '../lib/clientDocuments.js';
+import { findSessionSummary, createClientDocumentDraft, saveClientDocumentDraft, generateSessionSummary, checkSummarySourceSafety } from '../lib/clientDocuments.js';
 import { authenticatedFetch } from '../lib/api.js';
 import SessionWorkspaceHeader from '../components/workspace/SessionWorkspaceHeader.vue';
 import ReflectionTab from '../components/workspace/ReflectionTab.vue';
@@ -229,6 +238,19 @@ const router = useRouter();
 const { openClinicalContext } = useAskHelios();
 const session = ref(null), client = ref(null), loading = ref(true), error = ref(''), transcript = ref(null), transcriptLoading = ref(false), transcriptError = ref(''), therapistName = ref('');
 const summaryDocument = ref(null);
+const sourceReview=ref(null),reviewTranscriptId=ref('');
+const summaryUnsafe=computed(()=>isUnusableSummary(summaryDocument.value?.content));
+function openSourceReview(item){reviewTranscriptId.value=item?.transcriptId||transcript.value?.id||''}
+async function sourceReviewResolved(result){
+  if(result.action==='confirm'){
+    reviewTranscriptId.value='';sourceReview.value={resolved:true,message:'Source review saved. Generate a fresh summary before copying or sharing. Your earlier draft is unchanged.',sources:[]};await loadTranscript();
+  }else{sourceReview.value={message:'The original was separated. Open one of the reviewed encounters below.',sources:[]};transcript.value=null;}
+}
+async function verifySavedSummary(){
+  if(!summaryDocument.value?.id)return !summaryUnsafe.value;
+  try{const safety=await checkSummarySourceSafety(summaryDocument.value.id);if(!safety.safe){sourceReview.value=safety.review;return false}return true}
+  catch{sourceReview.value={message:'Source safety could not be verified. Review before copying or sharing.',sources:[]};return false}
+}
 const activeView = ref(route.query.view === 'clinical' ? 'clinical' : 'summary');
 const isEditingSummary = ref(false);
 const showTranscript = ref(false);
@@ -279,6 +301,7 @@ async function generateSummary() {
       therapistGuidance: therapistGuidance.value
     });
     const generation = {
+      outcome:'ready',
       id: result.generationId,
       generatedAt: result.generatedAt,
       promptVersion: result.promptVersion,
@@ -317,10 +340,12 @@ async function generateSummary() {
         sourceManifest: result.sources
       });
     }
+    sourceReview.value=null;
     showSummaryOptions.value = false;
     showSummaryGuidance.value = false;
     therapistGuidance.value = '';
   } catch (err) {
+    if(err.code==='SOURCE_REVIEW_REQUIRED'){sourceReview.value=err.review||{message:err.message,sources:[]};return;}
     generationError.value = err.message || 'Summary generation failed. Please try again.';
     console.error('Generation failed:', err);
   } finally {
@@ -376,7 +401,8 @@ async function prepareCbtCareSuggestions() {
 }
 
 async function copySummary() {
-  if (!summaryDocument.value?.content?.body) return;
+  if (!summaryDocument.value?.content?.body || sourceReview.value || summaryUnsafe.value) return;
+  if(!await verifySavedSummary())return;
   copyError.value = '';
   try {
     await navigator.clipboard.writeText(summaryDocument.value.content.body);
@@ -416,6 +442,7 @@ async function loadSession(){
     session.value=sessionData;
     client.value=clientData;
     summaryDocument.value = await findSessionSummary({ clientId, sessionId });
+    await verifySavedSummary();
     const previousGeneration = summaryDocument.value?.content?.summaryGeneration || null;
     summaryLens.value = clientData.preferred_summary_lens || previousGeneration?.lens || 'integrative';
     summaryWindow.value = previousGeneration?.window || 'current';

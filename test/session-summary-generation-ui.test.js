@@ -83,17 +83,17 @@ test('Direct session summary keeps full fidelity for the current encounter and c
   assert.match(apiSource, /PREVIOUS_TRANSCRIPT_EXCERPT_CHARS\s*=\s*12000/)
   assert.match(apiSource, /isCurrent:\s*index\s*===\s*0/)
   assert.match(apiSource, /!zoomSummary\s*\?\s*boundedTranscriptExcerpt\(transcript\)\s*:\s*''/)
-  assert.match(apiSource, /original_transcript_excerpt/)
+  assert.match(apiSource, /transcript:transcriptForPrompt, zoom_note:zoomSummary/)
   assert.match(apiSource, /EVERY section value must be a JSON string/)
-  assert.match(apiSource, /normalizeClientSessionSummaryResponse/)
-  assert.match(apiSource, /clientSessionSummaryResponseFormat\(validSourceIds\)/)
-  assert.match(apiSource, /session-summary-direct-v5/)
+  assert.match(apiSource, /validateSummaryOutcome/)
+  assert.match(apiSource, /summaryOutcomeResponseFormat\(validSourceIds\)/)
+  assert.match(apiSource, /session-summary-direct-v6-source-review/)
 })
 
 test('SessionWorkspace keeps the previous summary visible when regeneration fails', () => {
   assert.match(source, /generationError\s*&&\s*!summaryDocument/)
   assert.match(source, /Generation failed — previous summary unchanged\./)
-  assert.match(source, /<template v-else-if="summaryDocument">/)
+  assert.match(source, /<template v-else-if="summaryDocument && !summaryUnsafe">/)
   assert.match(source, /<SessionSummaryDocument/)
 })
 

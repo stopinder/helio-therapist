@@ -1,8 +1,8 @@
 import { createHash } from 'node:crypto';
 import { getSupabaseUserClient, requireAuthenticatedUser } from '../_lib/supabase.js';
 
-const transcriptFields = 'id, zoom_meeting_id, zoom_meeting_uuid, zoom_note_id, source_title, structured_transcript, zoom_generated_summary, original_format, original_transcript, source, status, client_id, session_ref, source_occurred_at, received_at, updated_at, requested_lens, source_retention, review_choices_saved_at, completed_at, attention_cleared_at';
-const transcriptListFields = 'id, zoom_meeting_id, zoom_meeting_uuid, zoom_note_id, source_title, speaker_clues:structured_transcript->speakers, zoom_generated_summary, original_format, source, status, client_id, session_ref, source_occurred_at, received_at, updated_at, requested_lens, source_retention, review_choices_saved_at, completed_at, attention_cleared_at';
+const transcriptFields = 'id, zoom_meeting_id, zoom_meeting_uuid, zoom_note_id, source_title, structured_transcript, zoom_generated_summary, original_format, original_transcript, source, status, client_id, session_ref, source_occurred_at, received_at, updated_at, requested_lens, source_retention, review_choices_saved_at, completed_at, attention_cleared_at, source_version, source_review';
+const transcriptListFields = 'id, zoom_meeting_id, zoom_meeting_uuid, zoom_note_id, source_title, speaker_clues:structured_transcript->speakers, zoom_generated_summary, original_format, source, status, client_id, session_ref, source_occurred_at, received_at, updated_at, requested_lens, source_retention, review_choices_saved_at, completed_at, attention_cleared_at, source_version, source_review';
 const MAX_MANUAL_TRANSCRIPT_BYTES = 2 * 1024 * 1024;
 const MANUAL_SOURCE = 'zoom_manual';
 
@@ -11,6 +11,7 @@ function serialiseTranscript(row, { list = false } = {}) {
   const speakerClues = Array.isArray(row.speaker_clues) ? row.speaker_clues : null;
   return {
     id: row.id,
+    sourceVersion:row.source_version, sourceReview:row.source_review,
     meetingId: row.zoom_meeting_id,
     meetingUuid: row.zoom_meeting_uuid,
     noteId: row.zoom_note_id,

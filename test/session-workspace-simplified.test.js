@@ -62,7 +62,7 @@ test('Copy summary copies the edited document body', () => {
 })
 
 test('copy is disabled for empty content', () => {
-  assert.match(source, /:disabled="!summaryDocument\?\.content\?\.body"/)
+  assert.match(source, /:disabled="!summaryDocument\?\.content\?\.body \|\| !!sourceReview \|\| summaryUnsafe"/)
 })
 
 test('Session Workspace still exposes Zoom rejoin guidance', () => {

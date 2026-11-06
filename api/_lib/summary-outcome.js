@@ -44,7 +44,7 @@ export function validateSummaryOutcome(raw,ids,evidenceSources=[]) {
   if(!['possible_mixed_encounters','source_conflict','insufficient_source'].includes(value.review.reason) || !value.review.message.trim() || value.review.message.length>1600 || value.review.evidence.length<1 || value.review.evidence.length>6)return null;
   const evidence=[];
   for(const item of value.review.evidence){
-    if(!exactKeys(item,['sourceId','sourceType','quote']))return null;
+    if(!exactKeys(item,['sourceId','sourceType','quote']) || !['transcript','zoom_note','session_capture','session_summary'].includes(item.sourceType))return null;
     const source=evidenceSources.find(s=>s.id===item.sourceId),text=source?.[item.sourceType];
     if(typeof text!=='string' || typeof item.quote!=='string' || item.quote.trim().length<8 || item.quote.length>1000)return null;
     const start=text.indexOf(item.quote);if(start<0)return null;
