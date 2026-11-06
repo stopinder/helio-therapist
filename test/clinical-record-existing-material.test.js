@@ -42,3 +42,26 @@ test('Clinical Record UI has explicit source acceptance and review gates',()=>{
   assert.match(ui,/hasAcceptedSuggestions && !evidenceReviewed/);
   assert.match(ui,/@input="onClinicalFieldEdited\(key\)"/);
 });
+
+test('provider response schema matches the exact seven-field validator envelope',async()=>{
+  const {clinicalRecordSuggestionsResponseFormat}=await import('../api/_lib/clinical-record-evidence.js');
+  const schema=clinicalRecordSuggestionsResponseFormat(sources.map(item=>item.id)).json_schema;
+  assert.equal(schema.strict,true);
+  assert.deepEqual(schema.schema.required,['fields']);
+  assert.deepEqual(schema.schema.properties.fields.required,CLINICAL_RECORD_FIELDS);
+  assert.equal(schema.schema.additionalProperties,false);
+  for(const key of CLINICAL_RECORD_FIELDS){
+    const field=schema.schema.properties.fields.properties[key];
+    assert.deepEqual(field.required,['text','evidence']);
+    assert.deepEqual(field.properties.evidence.items.required,['sourceId','quote']);
+    assert.equal(field.properties.evidence.items.properties.sourceId.enum.includes('summary:summary1'),true);
+  }
+});
+test('clinical suggestion handler requests the closed schema and preserves draft on failure',()=>{
+  const handler=fs.readFileSync(new URL('../api/ai/clinical-record-suggestions.js',import.meta.url),'utf8');
+  assert.match(handler,/clinicalRecordSuggestionsResponseFormat\(selected\.map\(item=>item\.id\)\)/);
+  assert.match(handler,/Return exactly one JSON object with a top-level "fields" property/);
+  assert.match(handler,/one constrained repair/);
+  assert.match(handler,/if\(!checked\)return res\.status\(502\)/);
+  assert.match(handler,/Your draft is unchanged/);
+});
