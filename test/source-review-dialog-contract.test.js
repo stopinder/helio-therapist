@@ -24,7 +24,7 @@ test('all three source-review entrypoints open a shared, visible dialog rather t
 test('original transcript and imported Zoom note remain reviewable with explicit therapist approval',()=>{
   assert.match(panel,/Original transcript with line numbers/)
   assert.match(panel,/Imported Zoom note/)
-  assert.match(panel,/I have reviewed the original source and confirm/)
+  assert.match(panel,/I have reviewed the available session material and confirm/)
   assert.match(panel,/:disabled="!canConfirm"/)
   assert.match(panel,/authenticatedFetch\('\/api\/zoom\/source-review',\{method:'POST'/)
   assert.match(dialog,/<SourceReviewPanel :key="transcriptId"/)
