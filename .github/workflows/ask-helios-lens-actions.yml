@@ -1,0 +1,25 @@
+name: Ask Helios lens and answer action checks
+on:
+  push:
+    branches: [fix/ask-helios-lens-actions-20261107]
+  pull_request:
+    paths:
+      - src/components/ui/AskHeliosPanel.vue
+      - src/components/ui/AskHeliosPanel.lens-actions.spec.js
+      - src/composables/useAskHelios.js
+      - api/_lib/ask-helios-clinical.js
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22'
+      - run: npm ci --ignore-scripts --no-fund
+      - run: npx vitest run src/components/ui/AskHeliosPanel.lens-actions.spec.js src/components/ui/AskHeliosPanel.spec.js
+      - run: node --test test/ask-helios-clinical.test.js
+      - run: npm run build
