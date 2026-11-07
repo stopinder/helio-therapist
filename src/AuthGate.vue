@@ -203,28 +203,32 @@ watch([session, authLoading], async () => {
 
 const checkBilling = async () => {
   const token = session.value?.access_token
-  if (!token) return
+  const requestedUserId = session.value?.user?.id
+  if (!token || !requestedUserId) return
   billingLoading.value = true
   billingError.value = ''
   try {
     const response = await fetch('/api/billing/status', { headers: { Authorization: `Bearer ${token}` } })
     const data = await response.json()
-    if (token !== session.value?.access_token) return
+    if (requestedUserId !== session.value?.user?.id) return
     if (!response.ok) throw new Error(data.error || 'Unable to check subscription')
     billingSubscription.value = data.subscription
     billingAllowed.value = data.hasWorkspaceAccess === true
   } catch (error) {
-    if (token !== session.value?.access_token) return
+    if (requestedUserId !== session.value?.user?.id) return
     billingAllowed.value = false
     billingError.value = error.message || 'Unable to check subscription'
   } finally {
-    if (token === session.value?.access_token) billingLoading.value = false
+    if (requestedUserId === session.value?.user?.id) billingLoading.value = false
   }
 }
 
-watch(session, (nextSession) => {
+// Access follows authenticated identity rather than token rotation.
+// Same-user TOKEN_REFRESHED must never unmount clinical workspace drafts.
+watch(() => session.value?.user?.id || null, (userId) => {
   billingAllowed.value = false
-  if (nextSession) checkBilling()
+  billingError.value = ''
+  if (userId) checkBilling()
   else { billingLoading.value = true; billingSubscription.value = null }
 })
 

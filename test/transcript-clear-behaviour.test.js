@@ -10,12 +10,12 @@ import * as navigation from '../src/lib/transcriptInboxNavigation.js'
 
 const source = fs.readFileSync(new URL('../src/components/TranscriptInbox.vue', import.meta.url), 'utf8')
 const script = source.match(/<script setup>([\s\S]*?)<\/script>/)[1].replace(/^import .*$/gm, '')
-const names = 'transcripts, selected, saving, loading, errorMessage, successMessage, lastClearedBatch, filterMode, searchQuery, clearAllAttention, undoClearAttention, restoreToAttention'
+const names = 'transcripts, selected, saving, loading, errorMessage, successMessage, lastClearedBatch, filterMode, searchQuery, assignmentDrafts, encounterDateDrafts, clearAllAttention, undoClearAttention, restoreToAttention, refreshFromServer'
 function evaluateSetup(fetch, bindings) {
   const deps = { ...workflow, ...presentation, ...navigation,
     ref: Vue.ref, computed: Vue.computed, nextTick: Vue.nextTick,
     onMounted: () => {}, watch: () => {}, useRouter: () => ({}), useRoute: () => ({query:{}}),
-    authenticatedFetch: fetch, defineProps: () => ({clients:[]}), defineEmits: () => () => {}
+    authenticatedFetch: fetch, defineProps: () => ({clients:[]}), defineEmits: () => () => {}, defineExpose: () => {}
   }
   return new Function(...Object.keys(deps), `${script}\nreturn {${bindings}}`)(...Object.values(deps))
 }
@@ -280,4 +280,35 @@ test('eligible server restoration succeeds without modifying completion or trans
   assert.equal(result.data.transcript.completedAt, null)
   assert.equal(result.data.transcript.attentionClearedAt, null)
   assert.deepEqual(rows[0], { ...original, attention_cleared_at: null, updated_at: rows[0].updated_at })
+})
+
+test('refreshing Zoom metadata does not replace the selected transcript or typed assignment', async () => {
+  const current = { ...cleared('a'), clientId: null, sessionRef: null, updatedAt: '2026-11-06T09:00:00.000Z', text:'Original transcript text' }
+  const remote = { ...current, updatedAt: '2026-11-06T09:01:00.000Z', text: undefined, sourceTitle: 'Zoom note refreshed' }
+  const state = inbox(async () => ({ok:true,json:async()=>({transcripts:[remote]})}))
+  state.transcripts.value = [current]
+  state.selected.value = current
+  state.filterMode.value = 'history'
+  state.searchQuery.value = 'my current search'
+  state.assignmentDrafts.value = {a:'candidate-client'}
+  const oldSelection = state.selected.value
+  assert.equal(await state.refreshFromServer(),true)
+  assert.equal(state.selected.value,oldSelection)
+  assert.equal(state.filterMode.value,'history')
+  assert.equal(state.searchQuery.value,'my current search')
+  assert.equal(state.assignmentDrafts.value.a,'candidate-client')
+  assert.equal(state.transcripts.value[0].text,'Original transcript text')
+  assert.equal(state.transcripts.value[0].sourceTitle,'Zoom note refreshed')
+})
+
+test('failed background transcript refresh retains the current work instead of clearing the UI', async () => {
+  const state = inbox(async () => { throw new Error('Offline') })
+  const current = cleared('a')
+  state.transcripts.value = [current]
+  state.selected.value = current
+  state.searchQuery.value = 'do not lose this query'
+  await assert.rejects(state.refreshFromServer(),/Offline/)
+  assert.deepEqual(state.transcripts.value,[current])
+  assert.equal(state.selected.value.id,current.id)
+  assert.equal(state.searchQuery.value,'do not lose this query')
 })

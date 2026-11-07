@@ -21,7 +21,7 @@ function inbox(fetch=async()=>response({transcript:saved()}),push=async()=>undef
   globalThis.requestAnimationFrame=callback=>callback()
   const deps={...workflow,...navigation,...presentation,ref:Vue.ref,computed:Vue.computed,nextTick:Vue.nextTick,
     onMounted:()=>{},watch:()=>{},useRouter:()=>({push}),useRoute:()=>route,authenticatedFetch:fetch,
-    defineProps:()=>({clients:[{id:'client-a',name:'Alex Example'}]}),defineEmits:()=>()=>{},createClient:async()=>({id:'client-a',name:'Alex Example'})}
+    defineProps:()=>({clients:[{id:'client-a',name:'Alex Example'}]}),defineEmits:()=>()=>{},defineExpose:()=>{},createClient:async()=>({id:'client-a',name:'Alex Example'})}
   const names='transcripts,selected,selectedClientId,assignmentDrafts,encounterDateDrafts,assignmentSavingId,encounterDateSavingId,lastAssignment,lastAssignmentLabel,errorMessage,successMessage,filterMode,searchQuery,historyLimit,visibleTranscripts,loading,inboxBusy,addClientTranscriptId'
   const functions=[...script.matchAll(/^(?:async )?function (\w+)/gm)].map(match=>match[1]).join(',')
   const state=new Function(...Object.keys(deps),`${script}\nreturn {${names},${functions}}`)(...Object.values(deps))
