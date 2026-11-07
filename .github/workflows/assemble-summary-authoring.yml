@@ -1,0 +1,42 @@
+name: Assemble and verify global summary authoring
+on:
+  push:
+    branches: [refactor/global-summary-authoring-20261107]
+    paths:
+      - scripts/assemble-summary-authoring.mjs
+      - .github/workflows/assemble-summary-authoring.yml
+      - api/_lib/summary-*.js
+      - api/summary-resource-check.js
+      - src/lib/summary*.js
+      - src/lib/globalSummaryRoutes.spec.js
+      - src/components/workspace/SummaryRefinementPanel*
+      - test/global-summary-authoring.test.js
+permissions:
+  contents: read
+jobs:
+  assemble:
+    if: github.repository == 'stopinder/helio-therapist' && github.ref == 'refs/heads/refactor/global-summary-authoring-20261107'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22'
+      - name: Assemble the reviewed source refactor
+        run: node scripts/assemble-summary-authoring.mjs
+      - run: npm ci --ignore-scripts --no-fund
+      - name: Authoring, prospective-evidence, resource and source-boundary checks
+        run: node --test test/global-summary-authoring.test.js test/clinical-record-partial-validation.test.js test/summary-source-outcomes.test.js
+      - name: Both generation routes and real shared refinement component
+        run: npx vitest run src/lib/globalSummaryRoutes.spec.js src/components/workspace/SummaryRefinementPanel.spec.js src/lib/clinicalRecordValidationApi.spec.js src/components/workspace/ClinicalSummaryTab.validation.spec.js
+      - run: npm run build
+      - name: Publish only verified source files to this feature branch
+        run: node scripts/assemble-summary-authoring.mjs --publish
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
