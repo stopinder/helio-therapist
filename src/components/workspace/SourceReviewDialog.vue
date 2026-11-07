@@ -17,10 +17,10 @@
       >
         <header class="flex shrink-0 items-start justify-between gap-3 border-b border-border-muted px-4 py-3 sm:px-5">
           <div class="min-w-0">
-            <h2 id="source-review-dialog-title" class="text-h3 font-semibold text-ink">Review original transcript</h2>
+            <h2 id="source-review-dialog-title" class="text-h3 font-semibold text-ink">Review session source</h2>
             <p v-if="sourceLabel" class="mt-1 break-words text-body-sm text-ink-secondary">{{ sourceLabel }}</p>
             <p id="source-review-dialog-description" class="mt-1 text-caption text-ink-muted">
-              Compare the original conversation with its Zoom note. Nothing is approved or changed unless you explicitly confirm a review.
+              Review the Zoom note first; open the original transcript only when needed. Nothing changes without your confirmation.
             </p>
           </div>
           <button ref="closeButton" type="button" class="min-h-10 shrink-0 rounded-control border border-border-muted px-3 text-body-sm font-medium text-ink-secondary hover:bg-surface-subtle" @click="requestClose">

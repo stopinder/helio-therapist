@@ -87,7 +87,7 @@ test('Direct session summary keeps full fidelity for the current encounter and c
   assert.match(apiSource, /EVERY section value must be a JSON string/)
   assert.match(apiSource, /validateSummaryOutcome/)
   assert.match(apiSource, /summaryOutcomeResponseFormat\(validSourceIds\)/)
-  assert.match(apiSource, /session-summary-direct-v6-source-review/)
+  assert.match(apiSource, /session-summary-direct-v7-summary-first/)
 })
 
 test('SessionWorkspace keeps the previous summary visible when regeneration fails', () => {

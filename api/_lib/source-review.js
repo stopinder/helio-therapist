@@ -56,3 +56,13 @@ export async function documentReviewStatus(db,userId,document){
     return {safe:false,review:{message:error.message,sources}};
   }
 }
+
+/** New drafts need an explicit therapist review before finalisation. */
+export function assertTherapistApprovedSummary(document){
+  if(document?.document_type!=='session_summary')return;
+  const generation=document?.content?.summaryGeneration;
+  if(generation?.reviewRequired!==true)return; // Do not retrospectively gate legacy records.
+  if(typeof generation.reviewedAt!=='string'||!Number.isFinite(Date.parse(generation.reviewedAt))){
+    throw Object.assign(new Error('Review and approve the editable session summary before finalising.'),{status:409,code:'THERAPIST_REVIEW_REQUIRED'});
+  }
+}

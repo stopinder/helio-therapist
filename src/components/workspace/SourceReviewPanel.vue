@@ -12,14 +12,16 @@
           <p class="text-caption font-semibold">{{ evidenceLabel(item.sourceType) }}<span v-if="item.startLine"> · lines {{ item.startLine }}–{{ item.endLine }}</span></p>
           <blockquote class="whitespace-pre-wrap text-body-sm">{{ item.quote }}</blockquote>
         </div>
-        <details v-if="source.zoomNote"><summary class="cursor-pointer text-action-link">Imported Zoom note — secondary interpretation</summary><p class="whitespace-pre-wrap text-body-sm mt-3">{{ source.zoomNote }}</p></details>
-        <label class="block"><span class="font-semibold text-body-sm">Original transcript · {{ lines.length }} numbered lines</span><textarea :value="numberedSource" readonly rows="12" class="mt-2 w-full font-mono text-body-sm border border-border rounded-control p-3" aria-label="Original transcript with line numbers"></textarea></label>
-        <p v-if="!source.text?.trim()" class="text-body-sm text-state-danger">The original transcript is missing. Recover it before confirming attribution or separating conversations.</p>
-        <fieldset class="flex flex-wrap gap-4"><legend class="font-semibold mb-2">What does this source contain?</legend><label><input v-model="mode" type="radio" value="confirm" :disabled="busy" /> One encounter</label><label v-if="!source.parentId"><input v-model="mode" type="radio" value="split" :disabled="busy" /> Separate conversations</label></fieldset>
+        <details v-if="source.zoomNote" open data-testid="review-zoom-note" class="rounded-control border border-border-muted p-3"><summary class="cursor-pointer font-semibold text-action-link">Zoom note · quick session overview</summary><p class="mt-2 text-caption text-ink-muted">A secondary interpretation, not independent proof of client identity.</p><p class="whitespace-pre-wrap break-words text-body-sm mt-2">{{ source.zoomNote }}</p></details>
+        <details v-if="source.text?.trim()" :open="needsTranscriptReview" data-testid="review-original-transcript" class="rounded-control border border-border-muted p-3"><summary class="cursor-pointer text-action-link">View original transcript (only when needed)</summary><label class="mt-3 block"><span class="font-semibold text-body-sm">{{ lines.length }} numbered lines</span><textarea :value="numberedSource" readonly rows="12" class="mt-2 w-full font-mono text-body-sm border border-border rounded-control p-3" aria-label="Original transcript with line numbers"></textarea></label></details>
+        <p v-if="!source.text?.trim() && !source.zoomNote?.trim()" class="text-body-sm text-state-danger">No transcript or Zoom note is available. Recover the source before confirming or splitting.</p>
+        <p v-else-if="!source.text?.trim()" class="text-caption text-ink-muted">No original transcript was imported. You can review the available Zoom note and confirm the assigned encounter without inventing transcript evidence.</p>
+        <fieldset class="flex flex-wrap gap-4"><legend class="font-semibold mb-2">What does this source contain?</legend><label><input v-model="mode" type="radio" value="confirm" :disabled="busy" /> One encounter</label><label v-if="!source.parentId && source.text?.trim()"><input v-model="mode" type="radio" value="split" :disabled="busy" /> Separate conversations</label></fieldset>
         <template v-if="mode === 'confirm'">
           <p class="text-body-sm">Assigned client: <strong>{{ clientName(source.clientId) }}</strong>. Confirming the encounter does not make an imported note authoritative.</p>
-          <label class="block"><span class="text-body-sm font-semibold">Participants and context</span><textarea v-model="context" rows="3" maxlength="4000" class="w-full border border-border rounded-control p-3 mt-1" placeholder="Explain who is speaking and why other people or relationships are discussed." :disabled="busy"></textarea></label>
-          <label class="flex gap-2 items-start"><input v-model="reviewed" type="checkbox" :disabled="busy" /><span>I have reviewed the original source and confirm that it belongs to this assigned encounter.</span></label>
+          <label class="block"><span class="text-body-sm font-semibold">Participants and context</span><textarea v-model="context" rows="2" maxlength="4000" class="w-full border border-border rounded-control p-3 mt-1" placeholder="Confirm the client and encounter. Add context if the note mentions other people." :disabled="busy"></textarea></label>
+          <label class="flex gap-2 items-start"><input v-model="reviewed" type="checkbox" :disabled="busy" /><span>I have reviewed the available session material and confirm it belongs to the assigned client and encounter.</span></label>
+          <p v-if="!canConfirm && confirmationHint" role="status" class="text-caption text-ink-muted">{{ confirmationHint }}</p>
           <button type="button" class="button-primary" :disabled="!canConfirm" @click="confirmSource">{{ busy ? 'Saving review...' : 'Confirm this encounter' }}</button>
         </template>
         <template v-else>
@@ -60,7 +62,17 @@ const localDate=iso=>{const date=new Date(iso);if(!Number.isFinite(date.getTime(
 let segmentKey=0,loadVersion=0;
 function addSegment(){segments.value.push({key:++segmentKey,startLine:1,endLine:1,clientId:'',localDate:localDate(source.value?.occurredAt),reviewed:false})}
 function segmentText(segment){return lines.value.slice(Math.max(0,segment.startLine-1),segment.endLine).join('\n')}
-const canConfirm=computed(()=>!busy.value && !loading.value && !!source.value?.text?.trim() && reviewed.value && context.value.trim().length>=10 && !!source.value?.clientId && !!source.value?.sessionId);
+const hasSourceMaterial=computed(()=>Boolean(source.value?.text?.trim() || source.value?.zoomNote?.trim()));
+const needsTranscriptReview=computed(()=>(source.value?.evidence||[]).some(item=>item.sourceType==='transcript'&&item.verified!==false));
+const canConfirm=computed(()=>!busy.value&&!loading.value&&hasSourceMaterial.value&&reviewed.value&&context.value.trim().length>=10&&!!source.value?.clientId&&!!source.value?.sessionId);
+const confirmationHint=computed(()=>{
+  if(loading.value||busy.value)return '';
+  if(!hasSourceMaterial.value)return 'No transcript or Zoom note is available.';
+  if(!source.value?.clientId||!source.value?.sessionId)return 'Assign the source to a client and encounter first.';
+  if(context.value.trim().length<10)return 'Add a brief participants/context explanation (at least 10 characters).';
+  if(!reviewed.value)return 'Tick the confirmation box after reviewing the available note or transcript.';
+  return '';
+});
 const segmentError=computed(()=>{
   let previous=0;
   for(const segment of segments.value){
@@ -76,7 +88,12 @@ async function load(){
   try{
     const [response,availableClients]=await Promise.all([authenticatedFetch(`/api/zoom/source-review?id=${encodeURIComponent(props.transcriptId)}`),listClients()]);
     const data=await response.json();if(!response.ok)throw new Error(data.error?.message||'Unable to load source.');if(version!==loadVersion)return;
-    source.value=data.data;createdSegments.value=data.data.segments||[];clients.value=availableClients;segments.value=[];addSegment();addSegment();
+    source.value=data.data;createdSegments.value=data.data.segments||[];clients.value=availableClients;
+    const primary=(data.data.evidence||[]).some(item=>item.sourceType==='transcript'&&item.verified!==false);
+    context.value=!primary && data.data.zoomNote?.trim()
+      ? 'Therapist reviewed the Zoom note and confirmed the intended client and encounter.'
+      : '';
+    segments.value=[];addSegment();addSegment();
   }catch(e){if(version===loadVersion)error.value=e.message}finally{if(version===loadVersion)loading.value=false}
 }
 async function save(action){

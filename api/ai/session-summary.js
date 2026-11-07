@@ -1,4 +1,5 @@
 import { SUMMARY_OUTCOME_RULES, summaryOutcomeResponseFormat, validateSummaryOutcome } from '../_lib/summary-outcome.js';
+import { verifiedPrimaryConflict, hardBoundary, cautiousSources } from '../_lib/summary-draft-policy.js';
 import { assertSourceAvailable, assertSourcesUnchanged, flagSourceReview } from '../_lib/source-review.js';
 import { requireAuthenticatedUser } from '../_lib/supabase.js';
 import { AI_FEATURES, runTextAI } from '../_lib/ai-execution.js';
@@ -10,7 +11,7 @@ import {
 } from '../_lib/ai-client-session-summary.js';
 
 const SUMMARY_WINDOWS = new Set(['current', 'recent']);
-const PROMPT_VERSION = 'session-summary-direct-v6-source-review';
+const PROMPT_VERSION = 'session-summary-direct-v7-summary-first';
 
 function sourceHasMaterial(source) {
   return Boolean(source?.original_transcript || source?.zoom_generated_summary);
@@ -26,8 +27,8 @@ function boundedTranscriptExcerpt(value, maxChars = PREVIOUS_TRANSCRIPT_EXCERPT_
   return `${text.slice(0, side)}${marker}${text.slice(-side)}`;
 }
 
-export function sourceBlock(source, { isCurrent = false } = {}) {
-  const zoomSummary = typeof source?.zoom_generated_summary === 'string' ? source.zoom_generated_summary.trim() : '';
+export function sourceBlock(source, { isCurrent = false, suppressZoomNote = false } = {}) {
+  const zoomSummary = suppressZoomNote ? '' : (typeof source?.zoom_generated_summary === 'string' ? source.zoom_generated_summary.trim() : '');
   const transcript = typeof source?.original_transcript === 'string' ? source.original_transcript.trim() : '';
   const transcriptForPrompt = isCurrent ? transcript : (!zoomSummary ? boundedTranscriptExcerpt(transcript) : '');
   return { id:source.id, occurredAt:source.occurredAt, role:isCurrent?'current':'continuity',
@@ -51,6 +52,7 @@ export default async function handler(req, res) {
       transcriptId,
       lens = 'integrative',
       window = 'current',
+      excludeEarlierZoomNotes = false,
       therapistGuidance = ''
     } = req.body || {};
 
@@ -59,6 +61,7 @@ export default async function handler(req, res) {
       !sessionId ||
       !CLIENT_SESSION_SUMMARY_LENSES.includes(lens) ||
       !SUMMARY_WINDOWS.has(window) ||
+      typeof excludeEarlierZoomNotes !== 'boolean' ||
       typeof therapistGuidance !== 'string' ||
       therapistGuidance.length > 6000
     ) {
@@ -144,12 +147,24 @@ export default async function handler(req, res) {
       });
     }
 
-    for(const source of sources)assertSourceAvailable(source.row);
+    // Flagged earlier sessions must not block a separate current-session draft.
+    // Exclusion means none of their content enters the model or source manifest.
+    const omittedEarlierSources=[];
+    const selectedSources=sources.filter((source,index)=>{
+      if(index===0)return true;
+      if(['needs_review','separated'].includes(source.source_review?.state) ||
+         (excludeEarlierZoomNotes && !source.original_transcript?.trim())){
+        omittedEarlierSources.push(source.id);
+        return false;
+      }
+      return true;
+    });
+    for(const source of selectedSources)assertSourceAvailable(source.row);
     const generationId = randomUUID();
     const generatedAt = new Date().toISOString();
     const guidance = therapistGuidance.trim();
     const lensRule = clientSessionSummaryLensRule(lens);
-    const validSourceIds = new Set(sources.map(source => source.id));
+    const validSourceIds = new Set(selectedSources.map(source => source.id));
     if (guidance) validSourceIds.add('therapist:guidance');
 
     const evidenceThresholds = window === 'recent'
@@ -189,7 +204,7 @@ For a ready outcome, supply these clinical fields:
 Every non-empty section must have at least one claim, and each claim text must appear verbatim in its section.
 ${SUMMARY_OUTCOME_RULES}`;
 
-    const sourceBlocks=sources.map((source,index)=>sourceBlock(source,{isCurrent:index===0}));
+    const sourceBlocks=selectedSources.map((source,index)=>sourceBlock(source,{isCurrent:index===0,suppressZoomNote:excludeEarlierZoomNotes&&index>0}));
     const userInput=JSON.stringify({task:window==='recent'?'Prepare this encounter with prior continuity.':'Prepare this encounter only.',
       assignedClient:{id:clientId,name:session.clients?.display_name||''},sessionId,sourceBlocks,therapistGuidance:guidance});
 
@@ -206,11 +221,11 @@ ${SUMMARY_OUTCOME_RULES}`;
       maxTokens: 6000,
       timeout: 60000
     };
-    const { completion, model } = await runTextAI(request);
+    let { completion, model } = await runTextAI(request);
     let response=completion;
     let finishReason=response.choices?.[0]?.finish_reason||null;
-    const evidenceSources=sources.map(source=>({id:source.id,transcriptId:source.transcriptId,
-      transcript:source.original_transcript||'',zoom_note:source.zoom_generated_summary||''}));
+    const evidenceSources=selectedSources.map((source,index)=>({id:source.id,transcriptId:source.transcriptId,
+      transcript:source.original_transcript||'',zoom_note:excludeEarlierZoomNotes&&index>0?'':(source.zoom_generated_summary||'')}));
     let structured=validateSummaryOutcome(response.choices?.[0]?.message?.content,validSourceIds,evidenceSources);
     if(!structured && finishReason==='stop'){
       // One bounded repair pass. The source/claim validator remains unchanged for ready drafts.
@@ -240,21 +255,47 @@ ${SUMMARY_OUTCOME_RULES}`;
     }
 
     if(structured.outcome==='generation_failed')return res.status(502).json({success:false,error:{code:'INVALID_AI_RESPONSE',message:'No usable summary was produced. Your previous draft is unchanged.'}});
-    await assertSourcesUnchanged(supabase,user.id,sources.map(source=>source.row));
+    let usedSources=selectedSources;
+    const reviewCautions=[];
+    if(structured.outcome==='needs_review' && !hardBoundary(structured.review)){
+      const remaining=cautiousSources(selectedSources,structured.review);
+      if(remaining.length){
+        // A secondary note is not authoritative. Try once more using only
+        // remaining original transcripts and undisputed current material.
+        const ids=new Set(remaining.map(item=>item.id));
+        if(guidance)ids.add('therapist:guidance');
+        try{
+          const attempt=await runTextAI({...request,responseFormat:summaryOutcomeResponseFormat(ids),messages:[
+            {role:'system',content:systemPrompt+'\nConflicting secondary Zoom notes were excluded. Write only from the remaining source evidence. If the ORIGINAL transcript genuinely shows mixed client encounters, return needs_review with precise transcript quotes.'},
+            {role:'user',content:JSON.stringify({task:'Prepare a cautious editable draft from this client’s remaining evidence only.',assignedClient:{id:clientId,name:session.clients?.display_name||''},sessionId,sourceBlocks:remaining.map((source,index)=>sourceBlock(source,{isCurrent:index===0,suppressZoomNote:!!source.original_transcript?.trim()})),therapistGuidance:guidance})}
+          ]});
+          const evidence=remaining.map(source=>({id:source.id,transcriptId:source.transcriptId,transcript:source.original_transcript||'',zoom_note:source.original_transcript?.trim()?'':(source.zoom_generated_summary||'')}));
+          const checked=validateSummaryOutcome(attempt.completion.choices?.[0]?.message?.content,ids,evidence);
+          if(checked?.outcome==='ready'){
+            structured=checked;usedSources=remaining;completion=attempt.completion;model=attempt.model;
+            reviewCautions.push('A conflicting Zoom-generated note was excluded. Confirm the client identity and review this editable draft before approval.');
+          }else if(checked?.outcome==='needs_review'&&hardBoundary(checked.review)){
+            structured=checked;usedSources=remaining;
+          }
+        }catch(error){console.warn('[Session Summary] Cautious drafting unavailable',error.code||error.name)}
+      }
+    }
+    await assertSourcesUnchanged(supabase,user.id,usedSources.map(source=>source.row));
     if(structured.outcome==='needs_review'){
       const reviews=[];
-      if(!structured.review.requiresManualVerification){
-        for(const source of sources.filter(item=>structured.review.evidence.some(e=>e.sourceId===item.id))){
-          reviews.push(await flagSourceReview(supabase,user.id,source.row,{...structured.review,evidence:structured.review.evidence.filter(e=>e.sourceId===source.id)}));
+      if(verifiedPrimaryConflict(structured.review)){
+        for(const source of usedSources.filter(item=>structured.review.evidence.some(e=>e.sourceId===item.id&&e.verified&&['transcript','session_capture'].includes(e.sourceType)))){
+          reviews.push(await flagSourceReview(supabase,user.id,source.row,{...structured.review,evidence:structured.review.evidence.filter(e=>e.sourceId===source.id&&e.verified&&['transcript','session_capture'].includes(e.sourceType))}));
         }
       }else{
-        // Unverified quotations cannot change a patient's source-review state.
-        for(const source of sources)reviews.push({transcriptId:source.transcriptId,sessionId:source.sessionId,sourceVersion:source.source_version,state:'unreviewed'});
+        // Unverified model quotations and secondary-only notes cannot lock sources.
+        for(const source of usedSources)reviews.push({transcriptId:source.transcriptId,sessionId:source.sessionId,sourceVersion:source.source_version,state:'unreviewed'});
       }
-      return res.status(200).json({success:true,data:{outcome:'needs_review',review:{...structured.review,sources:reviews}}});
+      return res.status(200).json({success:true,data:{outcome:'needs_review',review:{...structured.review,sources:reviews,
+        message:verifiedPrimaryConflict(structured.review)?structured.review.message:'A safe draft could not be prepared from the current evidence. Check the client and Zoom note, or try this session only. Your previous draft is unchanged.'}}});
     }
     const body = renderClientSessionSummary(structured.sections, lens);
-    const sourceManifest = sources.map(source => ({
+    const sourceManifest = usedSources.map(source => ({
       id: source.id,
       sessionId: source.sessionId,
       transcriptId: source.transcriptId,
@@ -263,7 +304,8 @@ ${SUMMARY_OUTCOME_RULES}`;
       source: source.source,
       occurredAt: source.occurredAt,
       hasTranscript: Boolean(source.original_transcript),
-      hasZoomSummary: Boolean(source.zoom_generated_summary)
+      hasZoomSummary: Boolean(source.zoom_generated_summary) && !(reviewCautions.length>0 && !!source.original_transcript?.trim()) && !(excludeEarlierZoomNotes && source.sessionId!==String(sessionId)),
+      ...(reviewCautions.length && source.original_transcript?.trim()?{excludedZoomNote:true}:{})
     }));
     if (guidance) {
       sourceManifest.push({ id: 'therapist:guidance', kind: 'therapist_guidance' });
@@ -280,7 +322,8 @@ ${SUMMARY_OUTCOME_RULES}`;
         sources: sourceManifest,
         lens,
         window,
-        sessionCount: sources.length,
+        reviewCautions:[...reviewCautions,...(omittedEarlierSources.length?['Earlier flagged or note-only continuity sources were excluded.']:[]),...(excludeEarlierZoomNotes&&window==='recent'?['Earlier Zoom notes excluded by therapist choice.']:[])],
+        sessionCount: usedSources.length,
         promptVersion: PROMPT_VERSION,
         model,
         usage: {
