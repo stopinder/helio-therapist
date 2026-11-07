@@ -45,3 +45,8 @@ test('compact layout does not alter generation guards, editing or source review'
   assert.match(workspace,/summaryUnsafe/);
   assert.match(workspace,/:disabled="!summaryDocument\?\.content\?\.body \|\| !!sourceReview \|\| summaryUnsafe"/);
 });
+
+test('saved summary starts in reading mode even with a preparation deep link',()=>{
+  assert.match(workspace,/showSummaryOptions\.value = summaryUnsafe\.value \|\| !summaryDocument\.value\?\.content\?\.body/);
+  assert.match(workspace,/v-if="transcript && summaryDocument\?\.status !== 'completed'"/);
+});

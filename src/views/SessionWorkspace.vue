@@ -512,7 +512,7 @@ async function loadSession(){
     const previousGeneration = summaryDocument.value?.content?.summaryGeneration || null;
     summaryLens.value = clientData.preferred_summary_lens || previousGeneration?.lens || 'integrative';
     summaryWindow.value = previousGeneration?.window || 'current';
-    showSummaryOptions.value = prepareRequested.value || summaryUnsafe.value || !summaryDocument.value?.content?.body;
+    showSummaryOptions.value = summaryUnsafe.value || !summaryDocument.value?.content?.body;
     loadTranscript();
   }catch(e){
     error.value='The session could not be loaded.';
