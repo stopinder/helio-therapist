@@ -11,7 +11,7 @@ import {
 } from '../_lib/ai-client-session-summary.js';
 
 const SUMMARY_WINDOWS = new Set(['current', 'recent']);
-const PROMPT_VERSION = 'session-summary-direct-v7-summary-first';
+const PROMPT_VERSION = 'session-summary-direct-v8-formulation-and-refinement';
 
 function sourceHasMaterial(source) {
   return Boolean(source?.original_transcript || source?.zoom_generated_summary);
@@ -53,7 +53,9 @@ export default async function handler(req, res) {
       lens = 'integrative',
       window = 'current',
       excludeEarlierZoomNotes = false,
-      therapistGuidance = ''
+      therapistGuidance = '',
+      refinementRequest = '',
+      previousDraft = ''
     } = req.body || {};
 
     if (
@@ -63,7 +65,12 @@ export default async function handler(req, res) {
       !SUMMARY_WINDOWS.has(window) ||
       typeof excludeEarlierZoomNotes !== 'boolean' ||
       typeof therapistGuidance !== 'string' ||
-      therapistGuidance.length > 6000
+      therapistGuidance.length > 6000 ||
+      typeof refinementRequest !== 'string' ||
+      refinementRequest.length > 1800 ||
+      typeof previousDraft !== 'string' ||
+      previousDraft.length > 10000 ||
+      (refinementRequest.trim().length > 0 && !previousDraft.trim())
     ) {
       return res.status(400).json({
         success: false,
@@ -162,7 +169,7 @@ export default async function handler(req, res) {
     for(const source of selectedSources)assertSourceAvailable(source.row);
     const generationId = randomUUID();
     const generatedAt = new Date().toISOString();
-    const guidance = therapistGuidance.trim();
+    const guidance = [therapistGuidance.trim(), refinementRequest.trim() ? 'Therapist-authorised editorial request (NOT evidence of an intervention conducted or agreed): ' + refinementRequest.trim() : ''].filter(Boolean).join('\n\n');
     const lensRule = clientSessionSummaryLensRule(lens);
     const validSourceIds = new Set(selectedSources.map(source => source.id));
     if (guidance) validSourceIds.add('therapist:guidance');
@@ -189,9 +196,14 @@ Rules:
 3. Do not include private reflections, supervision material, diagnostic coding or institutional SOAP language.
 4. Do not invent risk, diagnosis, motivation, treatment response, history, homework or causal explanations.
 5. Preserve uncertainty. Use tentative language for inferred psychological meaning.
-6. Each section must add distinct value and avoid repetition.\n6a. Earlier continuity sessions may contain a Zoom summary or a bounded transcript excerpt rather than the full transcript. Use them to support continuity and recurrence, but do not overstate detail that is not present in that compact source.
+6. Each section must add distinct value and avoid repetition. Do not repeat the same generic conflict cycle in four headings. Leave unsupported sections empty rather than filling space.
+6b. This is a clinical formulation rather than an administrative account. Identify the most meaningful observed sequence: initiating concern, experienced meaning, emotional or bodily activation where recorded, protective response, effect on the other person and attempted repair or interruption. Show how interacting responses may inadvertently perpetuate the disconnection. Keep observations distinct from hypotheses: do not supply unrecorded sensations, private motives or assumed childhood origins.
+6c. Prioritise specificity and the clinical learning edge. A reader should understand what makes THIS interaction different from a generic couple's disagreement. Avoid weak introductory phrases ("today's session focused on") when a concrete supported pattern is available.
+6d. In CBT, only map triggering situation, automatic appraisal, affect/sensation, response, consequence and alternative where evidence supports each link. Highlight the possible meaning of "bad mother" accusations only if sourced and identify the relational consequence without turning interpretation into fact. In IFS, explore the relationship between different protective responses and the capacity for unblending or curiosity only when supported; avoid simply renaming defensiveness a "part".
+6e. Keep a client-facing tone, clinically articulate and direct without jargon or flattering filler. Prioritise formulation over a verbose chronology; concise sections, no boilerplate wrap-up. Reflect tension about therapeutic fit only once and consider its significance as an open conversation, never assert a rupture without evidence.
+6f. A therapist-approved refinement request is editorial direction, not a clinical source. Treat the previous draft only as comparison material. Only original session sources and explicitly attributed therapist guidance justify claims. If asked for a body-sensation exercise, label it "Optional exercise to consider" and describe it as an unagreed future possibility, not an intervention used or homework assigned. Do not invent links, authors, specific videos, or claim outside resources were reviewed.\n6a. Earlier continuity sessions may contain a Zoom summary or a bounded transcript excerpt rather than the full transcript. Use them to support continuity and recurrence, but do not overstate detail that is not present in that compact source.
 7. patternsOverTime is only for genuinely supported recurrence or explicitly established history.
-8. betweenSession contains only agreed intentions, experiments, resources or questions supported by the evidence.
+8. betweenSession contains only agreed intentions, experiments, resources or questions supported by the evidence; a specifically therapist-requested future exercise is permitted only as a separate "Optional exercise to consider", never presented as agreed session work or an established treatment plan.
 9. Apply the selected approach only where the evidence supports it; do not force model terminology into the prose.
 10. Evidence rules:
 ${evidenceThresholds}
@@ -206,7 +218,8 @@ ${SUMMARY_OUTCOME_RULES}`;
 
     const sourceBlocks=selectedSources.map((source,index)=>sourceBlock(source,{isCurrent:index===0,suppressZoomNote:excludeEarlierZoomNotes&&index>0}));
     const userInput=JSON.stringify({task:window==='recent'?'Prepare this encounter with prior continuity.':'Prepare this encounter only.',
-      assignedClient:{id:clientId,name:session.clients?.display_name||''},sessionId,sourceBlocks,therapistGuidance:guidance});
+      assignedClient:{id:clientId,name:session.clients?.display_name||''},sessionId,sourceBlocks,therapistGuidance:guidance,
+      editorialRefinement:refinementRequest.trim() ? {approvedInstruction:refinementRequest.trim(),previousDraftForComparisonOnly:previousDraft.slice(0,10000),boundary:'Neither the previous draft nor an exercise instruction is evidence of events, completed interventions or agreed homework.'} : null});
 
     const request = {
       feature: AI_FEATURES.CLIENT_SESSION_SUMMARY,
