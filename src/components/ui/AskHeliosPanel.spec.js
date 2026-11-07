@@ -436,7 +436,7 @@ describe('AskHeliosPanel', () => {
 
     expect(w.text()).toContain('Answer focus')
     expect(w.text()).toContain('A longer clinical answer that should be easy to read without a letterbox.')
-    expect(w.find('[data-ask-message-index="0"]').isVisible()).toBe(false)
+    expect(w.find('[data-ask-message-index="0"]').exists()).toBe(false)
     expect(w.find('[role="tablist"]').exists()).toBe(false)
     expect(w.find('[data-testid="ask-helios-clinical-context"]').exists()).toBe(false)
     expect(w.find('textarea').exists()).toBe(false)
@@ -525,7 +525,7 @@ describe('AskHeliosPanel', () => {
     await focus.trigger('click')
     expect(ask.isExpanded.value).toBe(false)
     expect(w.text()).toContain('A fictional clinical hypothesis')
-    expect(w.find('[data-ask-message-index="0"]').isVisible()).toBe(false)
+    expect(w.find('[data-ask-message-index="0"]').exists()).toBe(false)
     expect(w.find('textarea').exists()).toBe(false)
     await w.find('button[title="Exit answer focus"]').trigger('click')
     expect(w.text()).toContain('What might be worth exploring?')
