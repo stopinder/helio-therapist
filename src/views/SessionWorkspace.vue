@@ -152,6 +152,51 @@
                 <p v-if="summaryPreferenceError" class="mt-2 text-caption text-state-danger" role="alert">{{ summaryPreferenceError }}</p>
               </div>
 
+              <section v-if="summaryDocument?.content?.body && summaryDocument.status !== 'completed'" class="rounded-panel border border-border bg-surface-elevated p-5 space-y-3" data-testid="session-refine-summary">
+                <div class="flex flex-wrap items-start justify-between gap-2">
+                  <div><h3 class="text-h3 font-semibold text-ink">Refine Summary</h3>
+                    <p class="text-body-sm text-ink-secondary mt-1">Direct the next draft. Helios will return to the original clinical sources rather than treating the previous summary as evidence.</p></div>
+                  <span class="text-caption text-ink-muted">Therapist-directed</span>
+                </div>
+                <div class="flex flex-wrap gap-2">
+                  <button type="button" class="button-secondary text-body-sm" :disabled="isGenerating" @click="refinementInput='Explain the reciprocal relational pattern with greater clinical depth. Identify each person’s experienced meaning, protective response and effect on the other, only where supported. Avoid repetition and generic CBT or IFS formulations.'; refinementPreview=null">Deepen formulation</button>
+                  <button type="button" class="button-secondary text-body-sm" :disabled="isGenerating" @click="refinementInput='Add a concise optional body-sensing exercise: notice tension, breathing, impulses and changes in contact when a difficult conversation begins; pause and name sensations without requiring resolution. Clearly label it as a future exercise to consider, not work already agreed or undertaken.'; refinementPreview=null">Body-sensing exercise</button>
+                  <button type="button" class="button-secondary text-body-sm" :disabled="isGenerating" @click="refinementInput='Rewrite for clinical precision. Remove bland introductions, repetitive description and theory jargon. Highlight the most meaningful evidence-supported shift or learning edge, while preserving all important uncertainties.'; refinementPreview=null">Less vanilla</button>
+                </div>
+                <label class="block">
+                  <span class="text-body-sm font-medium text-ink">What should Helios change or add?</span>
+                  <textarea v-model="refinementInput" data-testid="session-refinement-input" maxlength="1800" rows="3" class="mt-1 w-full rounded-control border border-border bg-surface p-3 text-body-sm" placeholder="For example: Develop the link between bodily activation and the partners' defensive reactions; include an optional practice." :disabled="isGenerating" @input="refinementPreview=null" />
+                </label>
+                <div class="rounded-control border border-border-muted bg-surface-subtle p-3 space-y-2">
+                  <p class="text-body-sm font-semibold text-ink">Optional resource for therapist review</p>
+                  <p class="text-caption text-ink-muted">Resources are separate from the session evidence. Review the content and suitability before including a link for a client.</p>
+                  <label class="flex gap-2 items-start text-body-sm"><input v-model="includeResource" type="checkbox" class="mt-1" @change="refinementPreview=null"/>
+                    Include a proposed resource with the revised draft</label>
+                  <template v-if="includeResource">
+                    <p class="text-caption text-ink-muted">Example: <a href="https://www.youtube.com/watch?v=_DTmGtznab4" target="_blank" rel="noopener noreferrer" class="text-action-link underline">Jon Kabat-Zinn body scan (30 minutes, third-party upload)</a>. This is an example to check, not an automatically vetted recommendation.</p>
+                    <label class="block text-caption font-medium">Resource title
+                      <input v-model="resourceTitle" maxlength="160" class="mt-1 w-full border border-border rounded-control bg-surface p-2 text-body-sm" @input="refinementPreview=null"/>
+                    </label>
+                    <label class="block text-caption font-medium">Resource URL (HTTPS only)
+                      <input v-model="resourceUrl" type="url" maxlength="500" class="mt-1 w-full border border-border rounded-control bg-surface p-2 text-body-sm" @input="refinementPreview=null"/>
+                    </label>
+                    <a href="https://www.youtube.com/results?search_query=guided+body+scan+mindfulness" target="_blank" rel="noopener noreferrer" class="text-caption text-action-link underline">Find other body-sensing videos on YouTube</a>
+                  </template>
+                </div>
+                <p v-if="refinementError" class="text-body-sm text-state-danger" role="alert">{{ refinementError }}</p>
+                <div class="flex gap-2 flex-wrap">
+                  <button type="button" class="button-secondary" :disabled="!refinementInput.trim() || isGenerating || !!sourceReview || summaryUnsafe" @click="reviewRefinement">Review instruction</button>
+                  <button v-if="refinementPreview" type="button" class="button-secondary" @click="refinementPreview=null">Discard</button>
+                </div>
+                <div v-if="refinementPreview" class="rounded-control border border-action-link/30 bg-surface-subtle p-3 space-y-2" data-testid="session-refinement-review">
+                  <p class="text-body-sm font-semibold text-ink">Proposed changes · {{ summaryApproachLabel(summaryLens) }}</p>
+                  <p class="text-body-sm text-ink whitespace-pre-wrap">{{ refinementPreview.instruction }}</p>
+                  <p v-if="refinementPreview.resource" class="text-caption text-ink-secondary">Optional resource selected: {{ refinementPreview.resource.title }} — {{ refinementPreview.resource.url }}</p>
+                  <p class="text-caption text-ink-muted">This previews your instruction, not an AI revision. Accepting will regenerate a draft for your clinical review; it does not approve or finalise it.</p>
+                  <button type="button" class="button-primary" :disabled="isGenerating || transcriptLoading || !!transcriptError || !transcript" @click="acceptRefinement">Accept &amp; regenerate draft</button>
+                </div>
+              </section>
+
               <div v-if="summaryDocument?.content?.summaryGeneration?.reviewRequired" data-testid="summary-therapist-approval" class="rounded-panel border border-border bg-surface-elevated p-4 space-y-2">
                 <div class="flex flex-wrap items-center justify-between gap-3">
                   <div>
@@ -335,6 +380,12 @@ const summarySaveError = ref('');
 const summaryLens = ref('integrative');
 const summaryWindow = ref('current');
 const therapistGuidance = ref('');
+const refinementInput = ref('');
+const refinementPreview = ref(null);
+const refinementError = ref('');
+const includeResource = ref(false);
+const resourceTitle = ref('Jon Kabat-Zinn — Body Scan Meditation (30 minutes)');
+const resourceUrl = ref('https://www.youtube.com/watch?v=_DTmGtznab4');
 const showSummaryOptions = ref(true);
 const showSummaryGuidance = ref(false);
 const summaryPreferenceError = ref('');
@@ -363,7 +414,32 @@ function askHeliosAboutSession() {
   });
 }
 
-async function generateSummary() {
+function reviewRefinement() {
+  refinementError.value = '';
+  if (!summaryDocument.value?.content?.body || summaryUnsafe.value || sourceReview.value) { refinementError.value='Review the source and existing draft before refining.'; return; }
+  const instruction=refinementInput.value.trim();
+  if (!instruction) { refinementError.value='Enter an instruction first.'; return; }
+  let resource=null;
+  if (includeResource.value) {
+    try {
+      const parsed=new URL(resourceUrl.value.trim());
+      if (parsed.protocol !== 'https:' || !parsed.hostname || parsed.username || parsed.password) throw new Error('invalid resource');
+      if (!resourceTitle.value.trim()) throw new Error('Resource title required');
+      resource={title:resourceTitle.value.trim().replace(/[\r\n]+/g,' ').slice(0,160),url:parsed.toString()};
+    } catch { refinementError.value='Provide a valid HTTPS resource URL and title.'; return; }
+  }
+  refinementPreview.value={instruction,resource,body:summaryDocument.value.content.body,lens:summaryLens.value,window:summaryWindow.value,source:transcript.value?.id};
+}
+async function acceptRefinement() {
+  const preview=refinementPreview.value;
+  if (!preview || isGenerating.value) return;
+  if (preview.body !== summaryDocument.value?.content?.body || preview.lens !== summaryLens.value || preview.window !== summaryWindow.value || preview.source !== transcript.value?.id) {
+    refinementPreview.value=null;refinementError.value='The summary or selected evidence changed. Review your instruction again.';return;
+  }
+  await generateSummary(preview.instruction,preview.resource);
+}
+async function generateSummary(refinement = '', selectedResource = null) {
+  const approvedRefinement=typeof refinement==='string'?refinement.trim():'';
   if (!session.value || !transcript.value || transcriptLoading.value || transcriptError.value || isGenerating.value || summaryDocument.value?.status === 'completed') return;
   isGenerating.value = true;
   generationError.value = '';
@@ -376,9 +452,15 @@ async function generateSummary() {
       lens: summaryLens.value,
       window: summaryWindow.value,
       excludeEarlierZoomNotes: excludeEarlierZoomNotes.value,
-      therapistGuidance: therapistGuidance.value
+      therapistGuidance: therapistGuidance.value,
+      refinementRequest: approvedRefinement,
+      previousDraft: approvedRefinement ? String(summaryDocument.value?.content?.body||'').slice(0,10000) : ''
     });
     if (disposed) return;
+    const resourceAppendix=approvedRefinement && selectedResource
+      ? '\n\nOptional resource to consider (therapist selected, not discussed or agreed in session)\n' + selectedResource.title + '\n' + selectedResource.url
+      : '';
+    const revisedBody=result.draft.body+resourceAppendix;
     const generation = {
       outcome:'ready',
       id: result.generationId,
@@ -390,6 +472,8 @@ async function generateSummary() {
       sessionCount: result.sessionCount || 1,
       reviewCautions: Array.isArray(result.reviewCautions)?result.reviewCautions:[],
       reviewRequired:true,
+      refinedWith:approvedRefinement || undefined,
+      selectedResource:approvedRefinement ? selectedResource : null,
       reviewedAt:null
     };
     if (summaryDocument.value) {
@@ -398,7 +482,7 @@ async function generateSummary() {
       const updated = await saveClientDocumentDraft(summaryDocument.value, {
         content: {
           ...currentContent,
-          body: result.draft.body,
+          body: revisedBody,
           summaryGeneration: generation,
           history: [
             ...history,
@@ -418,7 +502,7 @@ async function generateSummary() {
         client: client.value,
         title: `Session Summary - ${workspaceSession.value.date}`,
         documentType: 'session_summary',
-        content: { body: result.draft.body, summaryGeneration: generation },
+        content: { body: revisedBody, summaryGeneration: generation },
         sourceManifest: result.sources
       });
     }
@@ -426,6 +510,7 @@ async function generateSummary() {
     showSummaryOptions.value = prepareRequested.value;
     showSummaryGuidance.value = false;
     therapistGuidance.value = '';
+    if (approvedRefinement) { refinementPreview.value=null;refinementInput.value='';refinementError.value='';includeResource.value=false; }
   } catch (err) {
     if(err.code==='SOURCE_REVIEW_REQUIRED'){sourceReview.value=err.review||{message:err.message,sources:[]};return;}
     if (disposed) return;
