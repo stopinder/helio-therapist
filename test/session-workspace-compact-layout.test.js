@@ -50,3 +50,18 @@ test('saved summary starts in reading mode even with a preparation deep link',()
   assert.match(workspace,/showSummaryOptions\.value = summaryUnsafe\.value \|\| !summaryDocument\.value\?\.content\?\.body/);
   assert.match(workspace,/v-if="transcript && summaryDocument\?\.status !== 'completed'"/);
 });
+
+test('bottom summary controls copy the same checked draft and scroll to the toolbar',()=>{
+  assert.match(workspace,/data-testid="summary-bottom-actions"/);
+  assert.match(workspace,/v-if="!isEditingSummary && summaryDocument\?\.content\?\.body"/);
+  assert.match(workspace,/@click="copySummary"/);
+  assert.match(workspace,/aria-label="Copy summary from bottom"/);
+  assert.match(workspace,/:disabled="!!sourceReview \|\| summaryUnsafe"/);
+  assert.match(workspace,/@click="scrollToSummaryToolbar"/);
+  assert.match(workspace,/aria-label="Back to summary toolbar"/);
+  assert.match(workspace,/ref="summaryToolbar" tabindex="-1"/);
+  assert.match(workspace,/scrollIntoView\(\{ block: 'start', behavior: reduceMotion/);
+  assert.match(workspace,/prefers-reduced-motion: reduce/);
+  assert.match(workspace,/verifySavedSummary\(\)/);
+  assert.match(workspace,/role="status" class="text-caption text-state-success">Copied/);
+});

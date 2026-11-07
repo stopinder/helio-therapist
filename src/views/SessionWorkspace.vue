@@ -51,7 +51,7 @@
             </section>
             <SourceReviewPanel v-if="reviewTranscriptId" :transcript-id="reviewTranscriptId" @close="reviewTranscriptId=''" @resolved="sourceReviewResolved" />
             <section class="space-y-6">
-              <div class="flex flex-wrap items-center justify-between gap-3 border-b border-border-muted pb-3" data-testid="summary-toolbar">
+              <div class="flex flex-wrap items-center justify-between gap-3 border-b border-border-muted pb-3 scroll-mt-3" data-testid="summary-toolbar" ref="summaryToolbar" tabindex="-1">
                 <div class="min-w-0 flex-1">
                   <h2 class="sr-only">Session summary</h2>
                   <p v-if="summaryDocument?.content?.body" class="text-body-sm font-medium leading-snug text-ink">{{ generatedSummaryLabel }}</p>
@@ -190,6 +190,23 @@
                       <span class="type-metadata text-ink-muted">{{ generatedSummaryLabel }}</span>
                     </div>
                   </div>
+                  <div v-if="!isEditingSummary && summaryDocument?.content?.body"
+                    class="mt-3 flex flex-wrap items-center justify-end gap-2 border-t border-border-muted pt-3"
+                    data-testid="summary-bottom-actions">
+                    <button type="button" @click="copySummary"
+                      :disabled="!!sourceReview || summaryUnsafe"
+                      class="inline-flex min-h-10 items-center gap-2 rounded-control border border-border-muted px-3 text-body-sm font-medium text-ink-secondary hover:bg-surface-subtle disabled:opacity-50"
+                      aria-label="Copy summary from bottom">
+                      <Copy class="h-4 w-4" aria-hidden="true" /> Copy summary
+                    </button>
+                    <button type="button" @click="scrollToSummaryToolbar"
+                      class="inline-flex min-h-10 items-center gap-2 rounded-control border border-border-muted px-3 text-body-sm font-medium text-ink-secondary hover:bg-surface-subtle"
+                      aria-label="Back to summary toolbar">
+                      <ArrowUp class="h-4 w-4" aria-hidden="true" /> Back to top
+                    </button>
+                    <span v-if="copySuccess" role="status" class="text-caption text-state-success">Copied</span>
+                    <span v-if="copyError" role="alert" class="w-full text-right text-caption text-state-danger">{{ copyError }}</span>
+                  </div>
                 </template>
                 <div v-else class="py-24 text-center text-ink-muted bg-surface rounded-panel border border-dashed border-border shadow-sm">
                   <div v-if="transcript" class="flex flex-col items-center gap-2">
@@ -259,7 +276,7 @@ import HelpLink from '../components/help/HelpLink.vue'
 import SourceReviewPanel from '../components/workspace/SourceReviewPanel.vue';
 import { isUnusableSummary } from '../lib/summarySafety.js';
 import { ref, onMounted, computed, watch, onBeforeUnmount } from 'vue';
-import { Copy, ChevronDown, Ellipsis } from '@lucide/vue';
+import { Copy, ChevronDown, Ellipsis, ArrowUp } from '@lucide/vue';
 import { useRoute, useRouter, RouterLink } from 'vue-router';
 import { supabase } from '../lib/supabase.js';
 import { getSession } from '../lib/sessions.js';
@@ -318,6 +335,14 @@ const therapistGuidance = ref('');
 const showSummaryOptions = ref(true);
 const showSummaryGuidance = ref(false);
 const summaryMoreMenu = ref(null);
+const summaryToolbar = ref(null);
+function scrollToSummaryToolbar() {
+  const target = summaryToolbar.value;
+  if (!target) return;
+  const reduceMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches;
+  target.scrollIntoView({ block: 'start', behavior: reduceMotion ? 'instant' : 'smooth' });
+  target.focus({ preventScroll: true });
+}
 function closeSummaryMoreMenu() { summaryMoreMenu.value?.removeAttribute('open'); }
 function runSummaryMoreAction(action) {
   closeSummaryMoreMenu();
