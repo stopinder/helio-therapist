@@ -316,7 +316,7 @@ describe('AskHeliosPanel', () => {
 
     await w.findAll('button').find(b => b.text() === 'Send to Reflect').trigger('click')
     await vi.waitFor(() => expect(w.text()).toContain('Review before saving'))
-    expect(w.text()).toContain('Wanting to rescue')
+    expect(w.find('#ask-map-innerPosition').element.value).toBe('Wanting to rescue')
     expect(api.authenticatedFetch.mock.calls.filter(c => c[0] === '/api/ai/actions')).toHaveLength(0)
 
     await w.find('#ask-reflection-stoodOut').setValue('I noticed myself moving too quickly to solve the problem.')
@@ -436,7 +436,7 @@ describe('AskHeliosPanel', () => {
 
     expect(w.text()).toContain('Answer focus')
     expect(w.text()).toContain('A longer clinical answer that should be easy to read without a letterbox.')
-    expect(w.text()).not.toContain('What might I be missing?')
+    expect(w.find('[data-ask-message-index="0"]').isVisible()).toBe(false)
     expect(w.find('[role="tablist"]').exists()).toBe(false)
     expect(w.find('[data-testid="ask-helios-clinical-context"]').exists()).toBe(false)
     expect(w.find('textarea').exists()).toBe(false)
@@ -525,7 +525,7 @@ describe('AskHeliosPanel', () => {
     await focus.trigger('click')
     expect(ask.isExpanded.value).toBe(false)
     expect(w.text()).toContain('A fictional clinical hypothesis')
-    expect(w.text()).not.toContain('What might be worth exploring?')
+    expect(w.find('[data-ask-message-index="0"]').isVisible()).toBe(false)
     expect(w.find('textarea').exists()).toBe(false)
     await w.find('button[title="Exit answer focus"]').trigger('click')
     expect(w.text()).toContain('What might be worth exploring?')
