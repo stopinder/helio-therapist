@@ -1,26 +1,32 @@
 <template>
   <div class="flex flex-col h-full bg-surface-canvas">
-    <div v-if="cameFromInbox" class="px-inline-lg py-stack-sm border-b border-border bg-surface">
-      <RouterLink :to="inboxReturnDestination" class="text-body-sm font-medium text-action-link hover:underline">Back to Transcript Inbox</RouterLink>
-    </div>
-    <div v-if="cameFromClientTranscripts" class="px-inline-lg py-stack-sm border-b border-border bg-surface">
-      <RouterLink :to="{ name: 'ClientWorkspace', params: { clientId: route.params.clientId }, query: { tab: 'Transcripts' } }" class="text-body-sm font-medium text-action-link hover:underline">Back to client transcripts</RouterLink>
-    </div>
     <div v-if="loading" class="flex-1 flex items-center justify-center"><div class="text-ink-muted flex flex-col items-center gap-2"><span class="w-8 h-8 border-4 border-state-selected border-t-transparent rounded-full animate-spin"></span><p>Loading session…</p></div></div>
     <div v-else-if="error" class="flex-1 flex items-center justify-center p-inline-lg"><div class="max-w-md w-full bg-surface p-inline-lg py-stack-lg rounded-card shadow-sm border border-state-danger/20 text-center"><h2 class="text-h2 font-semibold text-state-danger mb-2">Error</h2><p class="text-ink-secondary mb-6">{{ error }}</p><button @click="loadSession" class="button-primary">Try Again</button></div></div>
     <template v-else-if="session">
-      <SessionWorkspaceHeader :session="workspaceSession" />
-      <div class="flex justify-end px-inline-lg"><HelpLink topic="session-material" label="How summaries and Clinical Records work" /></div>
-
-      <div class="border-b border-border bg-surface px-inline-lg">
-        <div class="max-w-4xl mx-auto flex gap-2 py-2" role="tablist" aria-label="Session workspace views">
-          <button type="button" role="tab" :aria-selected="activeView === 'summary'" class="px-4 py-2 rounded-control text-body-sm font-medium" :class="activeView === 'summary' ? 'bg-state-selected text-action-link' : 'text-ink-secondary hover:bg-surface-subtle'" @click="activeView = 'summary'">Session Summary</button>
-          <button type="button" role="tab" :aria-selected="activeView === 'clinical'" class="px-4 py-2 rounded-control text-body-sm font-medium" :class="activeView === 'clinical' ? 'bg-state-selected text-action-link' : 'text-ink-secondary hover:bg-surface-subtle'" @click="activeView = 'clinical'">Clinical Record</button>
+      <SessionWorkspaceHeader
+        :session="workspaceSession"
+        :return-to="sessionReturnDestination"
+        :return-label="sessionReturnLabel"
+        :show-client-link="cameFromInbox || cameFromClientTranscripts"
+      />
+      <div class="border-b border-border bg-surface px-4 md:px-6">
+        <div class="mx-auto flex max-w-4xl items-center justify-between gap-2">
+          <div class="flex min-w-0 items-center gap-1" role="tablist" aria-label="Session workspace views">
+            <button type="button" role="tab" :aria-selected="activeView === 'summary'"
+              class="min-h-10 whitespace-nowrap border-b-2 px-3 text-body-sm font-medium transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-action-link"
+              :class="activeView === 'summary' ? 'border-action-link text-action-link' : 'border-transparent text-ink-secondary hover:text-ink'"
+              @click="activeView = 'summary'">Session Summary</button>
+            <button type="button" role="tab" :aria-selected="activeView === 'clinical'"
+              class="min-h-10 whitespace-nowrap border-b-2 px-3 text-body-sm font-medium transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-action-link"
+              :class="activeView === 'clinical' ? 'border-action-link text-action-link' : 'border-transparent text-ink-secondary hover:text-ink'"
+              @click="activeView = 'clinical'">Clinical Record</button>
+          </div>
+          <HelpLink topic="session-material" label="How summaries and Clinical Records work" />
         </div>
       </div>
-      
-      <div class="flex-1 overflow-auto p-inline-lg py-stack-lg">
-        <div class="max-w-4xl mx-auto space-y-12">
+
+      <div class="flex-1 overflow-auto px-4 py-4 md:px-6">
+        <div class="mx-auto max-w-4xl space-y-6">
           <template v-if="activeView === 'clinical'">
             <div v-if="session.status === 'completed'" class="space-y-6">
               <div data-testid="session-completion-handoff" class="rounded-panel border border-state-success/20 bg-state-success-surface p-6">
@@ -45,25 +51,54 @@
             </section>
             <SourceReviewPanel v-if="reviewTranscriptId" :transcript-id="reviewTranscriptId" @close="reviewTranscriptId=''" @resolved="sourceReviewResolved" />
             <section class="space-y-6">
-              <div class="flex flex-wrap items-start justify-between gap-4">
-                <div>
-                  <h2 class="font-serif text-h2 text-ink">Session summary</h2>
-                  <p v-if="summaryDocument?.id" class="mt-1 text-caption text-ink-muted">{{ summaryDocument.status === 'completed' ? 'Finalised in this client’s Documents.' : 'Saved in this client’s Documents.' }}</p>
-                  <div v-if="summaryDocument?.content?.body && summaryDocument.status !== 'completed'" class="mt-2 flex flex-wrap items-center gap-2 text-caption text-ink-muted">
-                    <span>{{ generatedSummaryLabel }}</span>
-                    <button type="button" class="button-secondary text-body-sm" @click="showSummaryOptions = !showSummaryOptions">{{ showSummaryOptions ? 'Hide lens options' : 'Change lens / options' }}</button>
-                  </div>
+              <div class="flex flex-wrap items-center justify-between gap-3 border-b border-border-muted pb-3" data-testid="summary-toolbar">
+                <div class="min-w-0 flex-1">
+                  <h2 class="sr-only">Session summary</h2>
+                  <p v-if="summaryDocument?.content?.body" class="text-body-sm font-medium leading-snug text-ink">{{ generatedSummaryLabel }}</p>
+                  <p v-else class="text-body-sm font-medium text-ink">Prepare session summary</p>
+                  <p v-if="summaryDocument?.id" class="mt-0.5 text-caption text-ink-muted">
+                    {{ summaryDocument.status === 'completed' ? 'Finalised in Documents' : 'Saved in Documents' }}
+                  </p>
                 </div>
-                <div class="flex flex-wrap items-center justify-end gap-3">
-                  <span v-if="copySuccess" class="text-body-sm text-state-success" role="status">Copied!</span>
-                  <template v-if="summaryDocument?.content?.body && !isGenerating && summaryDocument.status !== 'completed'">
-                    <button v-if="!isEditingSummary" @click="isEditingSummary = true" class="text-body-sm font-medium text-action-link hover:underline">Edit</button>
-                    <button v-else @click="isEditingSummary = false" class="text-body-sm font-medium text-action-link hover:underline">Done reading</button>
-                  </template>
-                  <button v-if="transcript" type="button" @click="askHeliosAboutSession" class="button-secondary !min-h-0 py-1.5 px-3 text-body-sm shadow-sm">Ask Helios</button>
-                  <button v-if="summaryDocument?.content?.body && summaryDocument.status !== 'completed'" @click="generateSummary" :disabled="isGenerating || transcriptLoading || !!transcriptError || !transcript" class="text-body-sm font-medium text-ink-muted hover:text-ink disabled:opacity-50">Regenerate</button>
-                  <RouterLink v-if="summaryDocument?.id" :to="{ name: 'ClientWorkspace', params: { clientId: session.clientId }, query: { document: summaryDocument.id } }" class="button-secondary !min-h-0 py-1.5 px-3 text-body-sm shadow-sm">Open in Client Documents</RouterLink>
-                  <button @click="copySummary" :disabled="!summaryDocument?.content?.body || !!sourceReview || summaryUnsafe" class="button-secondary !min-h-0 py-1.5 px-3 text-body-sm shadow-sm">Copy summary</button>
+                <div class="flex flex-wrap items-center justify-end gap-1.5" role="toolbar" aria-label="Summary actions">
+                  <button v-if="transcript && summaryDocument?.status !== 'completed'" type="button"
+                    class="inline-flex min-h-9 items-center gap-1 rounded-control border border-border-muted px-3 text-body-sm font-medium text-ink-secondary hover:bg-surface-subtle"
+                    :aria-expanded="showSummaryOptions" aria-controls="session-summary-options"
+                    @click="showSummaryOptions = !showSummaryOptions">
+                    Lens <ChevronDown class="h-4 w-4" aria-hidden="true" />
+                  </button>
+                  <button v-if="summaryDocument?.content?.body && !isGenerating && summaryDocument.status !== 'completed'" type="button"
+                    class="min-h-9 rounded-control px-3 text-body-sm font-medium text-action-link hover:bg-surface-subtle"
+                    @click="isEditingSummary = !isEditingSummary">
+                    {{ isEditingSummary ? 'Done editing' : 'Edit' }}
+                  </button>
+                  <button type="button" @click="copySummary"
+                    :disabled="!summaryDocument?.content?.body || !!sourceReview || summaryUnsafe"
+                    class="inline-flex min-h-9 items-center gap-1.5 rounded-control border border-border-muted px-3 text-body-sm font-medium text-ink-secondary hover:bg-surface-subtle disabled:opacity-50"
+                    aria-label="Copy summary" title="Copy summary">
+                    <Copy class="h-4 w-4" aria-hidden="true" />
+                    <span class="hidden sm:inline">Copy</span>
+                  </button>
+                  <details ref="summaryMoreMenu" class="relative" @keydown.esc.prevent="closeSummaryMoreMenu">
+                    <summary class="flex min-h-9 cursor-pointer list-none items-center gap-1 rounded-control border border-border-muted px-3 text-body-sm font-medium text-ink-secondary hover:bg-surface-subtle focus-visible:outline focus-visible:outline-2 focus-visible:outline-action-link"
+                      aria-label="More summary actions" aria-haspopup="menu">
+                      More <Ellipsis class="h-4 w-4" aria-hidden="true" />
+                    </summary>
+                    <div class="absolute right-0 top-full z-30 mt-1 w-56 rounded-control border border-border bg-surface p-1.5 shadow-lg"
+                      role="group" aria-label="Additional summary actions">
+                      <button v-if="transcript" type="button"
+                        class="block w-full rounded-control px-3 py-2.5 text-left text-body-sm text-ink hover:bg-surface-subtle"
+                        @click="runSummaryMoreAction('ask')">Ask Helios about this session</button>
+                      <button v-if="summaryDocument?.content?.body && summaryDocument.status !== 'completed'" type="button"
+                        class="block w-full rounded-control px-3 py-2.5 text-left text-body-sm text-ink hover:bg-surface-subtle"
+                        @click="runSummaryMoreAction('regenerate')">Regenerate summary</button>
+                      <RouterLink v-if="summaryDocument?.id"
+                        :to="{ name: 'ClientWorkspace', params: { clientId: session.clientId }, query: { document: summaryDocument.id } }"
+                        class="block rounded-control px-3 py-2.5 text-body-sm text-ink hover:bg-surface-subtle"
+                        @click="closeSummaryMoreMenu">Open in Client Documents</RouterLink>
+                    </div>
+                  </details>
+                  <span v-if="copySuccess" class="text-caption text-state-success" role="status">Copied</span>
                 </div>
               </div>
 
@@ -75,16 +110,17 @@
 
               <div
                 v-if="transcript && !isGenerating && summaryDocument?.status !== 'completed' && (!summaryDocument?.content?.body || showSummaryOptions || summaryUnsafe)"
-                class="rounded-panel border border-border bg-surface-elevated p-5 shadow-sm"
+                id="session-summary-options"
+                class="rounded-panel border border-border bg-surface-elevated p-4"
                 data-testid="session-summary-options"
               >
                 <div class="flex flex-col gap-1">
-                  <h3 class="text-h3 font-semibold text-ink">Prepare session summary</h3>
+                  <h3 class="text-body font-semibold text-ink">Prepare session summary</h3>
                   <p class="text-body-sm text-ink-secondary">Choose how Helios should frame this summary. Your preferred approach is remembered for this client.</p>
                 </div>
 
                 <p v-if="summaryDocument?.content?.body" class="mt-3 text-body-sm text-ink-muted">Your existing draft stays unchanged until you choose Regenerate summary.</p>
-                <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div class="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
                   <label class="block">
                     <span class="text-caption font-semibold text-ink">Summary approach</span>
                     <select v-model="summaryLens" class="mt-1 w-full p-2.5 border border-border rounded-control bg-surface" @change="savePreferredSummaryLens">
@@ -105,7 +141,7 @@
                   </label>
                 </div>
 
-                <div class="mt-4">
+                <div class="mt-3">
                   <button type="button" class="text-body-sm font-semibold text-action-link hover:underline" @click="showSummaryGuidance = !showSummaryGuidance">
                     {{ showSummaryGuidance ? 'Hide emphasis or instruction' : 'Add emphasis or instruction' }}
                   </button>
@@ -121,7 +157,7 @@
                   </label>
                 </div>
 
-                <div class="mt-4 flex flex-wrap items-center justify-between gap-3">
+                <div class="mt-3 flex flex-wrap items-center justify-between gap-3">
                   <p class="text-caption text-ink-muted">{{ summaryWindow === 'recent' ? 'Uses this encounter plus up to two previous available transcript-backed sessions.' : 'Uses only the transcript linked to this encounter.' }}</p>
                   <button @click="generateSummary" :disabled="isGenerating || transcriptLoading || !!transcriptError || !transcript" class="button-primary py-stack-xs px-inline-md">
                     {{ summaryDocument?.content?.body ? 'Regenerate summary' : 'Generate summary' }}
@@ -223,6 +259,7 @@ import HelpLink from '../components/help/HelpLink.vue'
 import SourceReviewPanel from '../components/workspace/SourceReviewPanel.vue';
 import { isUnusableSummary } from '../lib/summarySafety.js';
 import { ref, onMounted, computed, watch, onBeforeUnmount } from 'vue';
+import { Copy, ChevronDown, Ellipsis } from '@lucide/vue';
 import { useRoute, useRouter, RouterLink } from 'vue-router';
 import { supabase } from '../lib/supabase.js';
 import { getSession } from '../lib/sessions.js';
@@ -241,6 +278,14 @@ const cameFromInbox = computed(() => route.query.from === 'transcript-inbox');
 const cameFromClientTranscripts = computed(() => route.query.from === 'client-transcripts');
 const prepareRequested = computed(() => route.query.prepare === '1');
 const inboxReturnDestination = computed(() => ({ name: 'Transcripts', query: typeof route.query.inboxReturn === 'string' ? { resume: route.query.inboxReturn } : {} }));
+const sessionReturnDestination = computed(() => cameFromInbox.value
+  ? inboxReturnDestination.value
+  : cameFromClientTranscripts.value
+    ? { name: 'ClientWorkspace', params: { clientId: route.params.clientId }, query: { tab: 'Transcripts' } }
+    : '/clients/' + route.params.clientId
+);
+const sessionReturnLabel = computed(() => cameFromInbox.value ? 'Back to Transcript Inbox'
+  : cameFromClientTranscripts.value ? 'Back to client transcripts' : 'Back to Client Workspace');
 const router = useRouter();
 const { openClinicalContext } = useAskHelios();
 const session = ref(null), client = ref(null), loading = ref(true), error = ref(''), transcript = ref(null), transcriptLoading = ref(false), transcriptError = ref(''), therapistName = ref('');
@@ -272,6 +317,13 @@ const summaryWindow = ref('current');
 const therapistGuidance = ref('');
 const showSummaryOptions = ref(true);
 const showSummaryGuidance = ref(false);
+const summaryMoreMenu = ref(null);
+function closeSummaryMoreMenu() { summaryMoreMenu.value?.removeAttribute('open'); }
+function runSummaryMoreAction(action) {
+  closeSummaryMoreMenu();
+  if (action === 'ask') askHeliosAboutSession();
+  if (action === 'regenerate') showSummaryOptions.value = true;
+}
 const summaryPreferenceError = ref('');
 const preparingCbtCare = ref(false);
 const cbtCareError = ref('');
@@ -354,7 +406,7 @@ async function generateSummary() {
       });
     }
     sourceReview.value=null;
-    showSummaryOptions.value = prepareRequested.value;
+    showSummaryOptions.value = false;
     showSummaryGuidance.value = false;
     therapistGuidance.value = '';
   } catch (err) {
