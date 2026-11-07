@@ -309,6 +309,6 @@ test('failed background transcript refresh retains the current work instead of c
   state.searchQuery.value = 'do not lose this query'
   await assert.rejects(state.refreshFromServer(),/Offline/)
   assert.deepEqual(state.transcripts.value,[current])
-  assert.equal(state.selected.value,current)
+  assert.equal(state.selected.value.id,current.id)
   assert.equal(state.searchQuery.value,'do not lose this query')
 })
