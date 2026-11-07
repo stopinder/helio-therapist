@@ -151,7 +151,7 @@
               @click="input = example">{{ example }}</button>
           </div>
         </div>
-        <div v-for="(msg, index) in messages" v-if="!isAnswerFocused || index === focusAnswerIndex" :key="index"
+        <template v-for="(msg, index) in messages" :key="index"><div v-if="!isAnswerFocused || index === focusAnswerIndex"
           class="flex flex-col" :data-ask-message-index="index"
           :class="isAnswerFocused ? 'items-stretch' : (msg.role === 'user' ? 'items-end' : 'items-start')">
           <button v-if="msg.role === 'assistant' && isExpanded && !isAnswerFocused" type="button"
@@ -231,7 +231,7 @@
               <span v-if="copiedAnswerIndex === index" role="status" class="text-xs text-ink-muted">Copied</span>
             </template>
           </div>
-        </div>
+        </div></template>
         <div v-if="isLoading && !isAnswerFocused" class="flex flex-col items-start">
           <div class="bg-surface-subtle text-ink rounded-2xl rounded-tl-none border border-border-muted px-4 py-2.5">
             <div class="flex gap-1">
