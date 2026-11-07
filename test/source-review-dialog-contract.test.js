@@ -23,7 +23,7 @@ test('all three source-review entrypoints open a shared, visible dialog rather t
 })
 test('original transcript and imported Zoom note remain reviewable with explicit therapist approval',()=>{
   assert.match(panel,/Original transcript with line numbers/)
-  assert.match(panel,/Imported Zoom note/)
+  assert.match(panel,/Zoom note · quick session overview/)
   assert.match(panel,/I have reviewed the available session material and confirm/)
   assert.match(panel,/:disabled="!canConfirm"/)
   assert.match(panel,/authenticatedFetch\('\/api\/zoom\/source-review',\{method:'POST'/)
@@ -40,6 +40,6 @@ test('source links cannot silently invoke a review for a missing or malformed ID
 })
 test('session screen distinguishes sources without claiming a verified boundary',()=>{
   assert.doesNotMatch(session,/Review flagged source/)
-  assert.match(session,/Review original transcript \{\{ index\+1 \}\} of \{\{ reviewableSources.length \}\}/)
+  assert.match(session,/Review source \{\{ index\+1 \}\} of \{\{ reviewableSources.length \}\}/)
   assert.match(session,/reviewSourceLabel/)
 })

@@ -46,7 +46,8 @@ test('warning disguised as summary is rejected',()=>{
 test('handler repairs once and does not flag sources with unverified quotes',()=>{
  const source=readFileSync(new URL('../api/ai/session-summary.js',import.meta.url),'utf8');
  assert.match(source,/one repair attempt/);
- assert.match(source,/if\(!structured.review.requiresManualVerification\)/);
+ assert.match(source,/if\(verifiedPrimaryConflict\(structured.review\)\)/);
+ assert.match(source,/const remaining=cautiousSources\(selectedSources,structured.review\)/);
  assert.match(source,/AI_RESPONSE_UNVERIFIED/);
  assert.match(source,/No draft was saved/);
 });
