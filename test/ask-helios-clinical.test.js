@@ -102,7 +102,7 @@ test('Client and Session workspaces open Ask Helios with explicit clinical conte
   assert.match(clientWorkspace, /Ask Helios about this client/)
   assert.match(clientWorkspace, /openClinicalContext\(\{/)
   assert.match(clientWorkspace, /window:'last_three'/)
-  assert.match(sessionWorkspace, />Ask Helios</)
+  assert.match(sessionWorkspace, /Ask Helios about this session/)
   assert.match(sessionWorkspace, /askHeliosAboutSession/)
   assert.match(sessionWorkspace, /anchorSessionId:\s*String\(session\.value\.id\)/)
   assert.match(sessionWorkspace, /lens:\s*summaryLens\.value/)
