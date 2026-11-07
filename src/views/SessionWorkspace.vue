@@ -413,7 +413,7 @@ async function acceptSummaryRevision(){
 async function installSummaryResult(result,instruction=''){
   clearTimeout(saveTimer);
   const generation={outcome:'ready',id:result.generationId,generatedAt:result.generatedAt,promptVersion:result.promptVersion,model:result.model,
-    lens:result.lens||summaryLens.value,window:result.window||summaryWindow.value,sessionCount:result.sessionCount||1,
+    lens:result.lens||summaryLens.value,window:result.window||summaryWindow.value,anchorSessionId:session.value.id,sessionCount:result.sessionCount||1,
     reviewCautions:result.reviewCautions||[],qualityReview:result.qualityReview||null,summaryOptions:result.summaryOptions||{},resourceSelection:result.resourceSelection||null,
     reviewRequired:true,reviewedAt:null,refinedWith:instruction||undefined};
   const existing=summaryDocument.value?.content||{};

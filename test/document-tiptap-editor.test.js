@@ -1,3 +1,4 @@
+import { summaryBodyToRichContent } from '../src/lib/summaryAuthoring.js';
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
@@ -17,7 +18,7 @@ test('practice and client document composers use the shared paginated Tiptap edi
   assert.doesNotMatch(client, /clinical-body/)
   assert.match(client, /copySummary/)
   assert.match(client, /summaryBodyToRichContent/)
-  assert.match(client, /Different parts of you in this work/)
+  assert.equal(summaryBodyToRichContent('Different parts of you in this work\n\nA legacy section.').content[0].type,'heading')
   assert.match(client, /Copied ✓/)
 
   assert.match(editor, /@tiptap\/vue-3/)
@@ -51,5 +52,5 @@ test('practice and client document composers use the shared paginated Tiptap edi
   assert.match(pdf, /pageNumber/)
   assert.match(pdf, /ensureSpace/)
   assert.match(pdf, /SUMMARY_HEADINGS/)
-  assert.match(pdf, /Different parts of you in this work/)
+  assert.match(pdf, /summaryBodyToRichContent/)
 })

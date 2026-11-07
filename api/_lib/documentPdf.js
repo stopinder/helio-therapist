@@ -1,23 +1,9 @@
+import { SUMMARY_HEADINGS, summaryBodyToRichContent, safeResourceUrl } from '../../src/lib/summaryAuthoring.js';
 import fs from 'node:fs';
 import PDFDocument from 'pdfkit';
 
 const FONT_REGULAR=new URL('../../node_modules/@fontsource/noto-sans/files/noto-sans-latin-400-normal.woff',import.meta.url);
 const FONT_BOLD=new URL('../../node_modules/@fontsource/noto-sans/files/noto-sans-latin-700-normal.woff',import.meta.url);
-const SUMMARY_HEADINGS=new Set([
-  'Where things are now',
-  'What we have been working on',
-  'Patterns across our recent work',
-  'What has shifted — and what has been different',
-  'Strengths and resources',
-  'Making sense of what we have noticed',
-  'A gentle CBT perspective',
-  'An integrative perspective',
-  'An Internal Family Systems perspective',
-  'Different parts of you in this work',
-  'A Transactional Analysis perspective',
-  'Ideas to carry forward',
-  'Closing reflection'
-]);
 
 function text(value){return String(value??'').replace(/\r\n?/g,'\n');}
 function formatDate(value){if(!value)return'';const date=new Date(`${value}T00:00:00Z`);return Number.isNaN(date.getTime())?text(value):new Intl.DateTimeFormat('en-GB',{day:'numeric',month:'long',year:'numeric',timeZone:'UTC'}).format(date);}
@@ -80,6 +66,20 @@ function listItemText(node){
   return parts.filter(Boolean).join(' ');
 }
 
+function richParagraphSegments(node){
+  if(node?.type==='hardBreak')return [{text:'\n'}];
+  if(node?.type==='text'){
+    let href=null;const mark=node.marks?.find(item=>item.type==='link');
+    if(mark?.attrs?.href)try{href=safeResourceUrl(mark.attrs.href)}catch{}
+    return [{text:text(node.text),href}];
+  }
+  return (node?.content||[]).flatMap(richParagraphSegments);
+}
+function renderParagraphSegments(pdf,node,options){
+  const parts=richParagraphSegments(node).filter(part=>part.text);
+  parts.forEach((part,index)=>pdf.text(part.text,{...options,continued:index<parts.length-1,link:part.href||null,underline:Boolean(part.href)}));
+}
+
 function renderRichNodes(pdf,nodes,pageWidth,{indent=0}={}){
   for(let nodeIndex=0;nodeIndex<(nodes||[]).length;nodeIndex+=1){
     const node=nodes[nodeIndex];
@@ -125,7 +125,7 @@ function renderRichNodes(pdf,nodes,pageWidth,{indent=0}={}){
         pdf.font('NotoSans').fontSize(10.5).fillColor('#111827');
         const height=textHeight(pdf,value,options);
         if(height<=pageCapacity(pdf)-4)ensureSpace(pdf,height+8);
-        pdf.text(value,options);
+        renderParagraphSegments(pdf,node,options);
       }else{
         pdf.moveDown(0.55);
       }
@@ -221,6 +221,7 @@ export async function buildDocumentPdf(draft){
 
   const richContent=draft.content?.richContent;
   if(richContent?.type==='doc'&&Array.isArray(richContent.content))renderRichNodes(pdf,richContent.content,pageWidth);
+  else if(isSessionSummary(draft))renderRichNodes(pdf,summaryBodyToRichContent(draft.content?.body||'').content,pageWidth);
   else renderPlainBody(pdf,text(draft.content?.body||'').trim(),pageWidth);
 
   addBufferedFooters(pdf,draft);

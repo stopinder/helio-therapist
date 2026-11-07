@@ -139,7 +139,7 @@
 </template>
 <script setup>
 import SummaryRefinementPanel from './SummaryRefinementPanel.vue'
-import { candidateMatches, summaryContextKey, summaryBodyToRichContent } from '../../lib/summaryAuthoring.js'
+import { candidateMatches, summaryContextKey, summaryBodyToRichContent, SUMMARY_SECTION_GROUPS } from '../../lib/summaryAuthoring.js'
 import SourceReviewDialog from './SourceReviewDialog.vue'
 import { isUnusableSummary } from '../../lib/summarySafety.js'
 import HelpLink from '../help/HelpLink.vue'
@@ -149,14 +149,15 @@ import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import { createClientDocumentDraft, downloadClientDocument, finaliseClientDocument, generateClientSessionSummary, listClientSummaryEvidence, listDocumentSourceSessions, saveClientDocumentDraft, checkSummarySourceSafety } from '../../lib/clientDocuments.js'
 import { loadDocumentProfile, profileDisplay } from '../../lib/documentProfile.js'
 import { appendDictation, useWhisperDictation } from '../../composables/useWhisperDictation.js'
-const SESSION_SUMMARY_TEMPLATE = `Where things are now\n\nWhat we have been working on\n\nPatterns across our recent work\n\nWhat has shifted — and what has been different\n\nStrengths and resources\n\nMaking sense of what we have noticed\n\nIdeas to carry forward\n\nClosing reflection`
+const SESSION_SUMMARY_TEMPLATE = SUMMARY_SECTION_GROUPS.map(group=>group.heading).join('\n\n')
 const props = defineProps({ client: { type: Object, required: true }, clientEmail: { type: String, default: '' }, document: { type: Object, default: null }, initialDocumentType: { type: String, default: 'other' } })
 const emit = defineEmits(['close', 'saved', 'show-documents'])
 const SOURCE_PAGE_SIZE = 8
 const initialType = props.document?.documentType || props.initialDocumentType || 'other'
 const isSessionSummary = computed(() => form.documentType === 'session_summary')
 const loading = ref(true), saving = ref(false), action = ref(''), error = ref(''), saveMessage = ref(props.document ? 'Saved' : 'Not saved yet'), sources = ref([]), selectedSourceIds = ref([]), addedSourceIds = ref([]), expandedSourceId = ref(null), sourceQuery = ref(''), visibleSourceCount = ref(SOURCE_PAGE_SIZE), currentDocument = ref(props.document), baseline = ref(''), profile = ref({}), sourcePanelOpen = ref(false)
-const generatingSummary = ref(false), loadingEvidence = ref(false), evidenceError = ref(''), copySummaryState = ref('idle'), summaryLens = ref(props.document?.content?.summaryGeneration?.lens || props.document?.content?.clinicalIntelligence?.generation?.lens || 'general'), summaryWindow = ref(props.document?.content?.summaryGeneration?.window || props.document?.content?.clinicalIntelligence?.generation?.window || 'last_three'), therapistGuidance = ref(''), summaryGenerationMessage = ref(''), summaryGenerationError = ref(false), summarySources = ref(props.document?.content?.clinicalIntelligence?.sources || props.document?.sourceManifest || []), summaryClaims = ref(props.document?.content?.clinicalIntelligence?.claims || []), summaryGeneration = ref(props.document?.content?.clinicalIntelligence?.generation || props.document?.content?.summaryGeneration || null), previousSummaryVersions = ref(props.document?.content?.clinicalIntelligence?.history || []), lastGeneratedBody = ref(props.document?.content?.clinicalIntelligence?.lastGeneratedBody || ''), availableSummarySessions = ref([]), anchorSessionId = ref(null), evidenceDateAutofillArmed = ref(false)
+const initialGeneration=props.document?.content?.summaryGeneration || props.document?.content?.clinicalIntelligence?.generation || null
+const generatingSummary = ref(false), loadingEvidence = ref(false), evidenceError = ref(''), copySummaryState = ref('idle'), summaryLens = ref(initialGeneration?.lens || 'general'), summaryWindow = ref(initialGeneration?.window === 'recent' ? 'last_three' : initialGeneration?.window || 'last_three'), therapistGuidance = ref(''), summaryGenerationMessage = ref(''), summaryGenerationError = ref(false), summarySources = ref(props.document?.content?.clinicalIntelligence?.sources || props.document?.sourceManifest || []), summaryClaims = ref(props.document?.content?.clinicalIntelligence?.claims || []), summaryGeneration = ref(initialGeneration), previousSummaryVersions = ref(props.document?.content?.clinicalIntelligence?.history || []), lastGeneratedBody = ref(props.document?.content?.clinicalIntelligence?.lastGeneratedBody || ''), availableSummarySessions = ref([]), anchorSessionId = ref(null), evidenceDateAutofillArmed = ref(false)
 const pendingSummary=ref(null)
 const refinementContext=computed(()=>summaryContextKey([props.client.id,currentDocument.value?.id,summaryLens.value,summaryWindow.value,anchorSessionId.value,therapistGuidance.value]))
 watch(refinementContext,()=>{pendingSummary.value=null})
@@ -243,7 +244,7 @@ async function loadWorkspace() {
       evidenceError.value = ''
       try {
         availableSummarySessions.value = await listClientSummaryEvidence(props.client.id)
-        anchorSessionId.value = summaryGeneration.value?.anchorSessionId || availableSummarySessions.value[0]?.sessionId || null
+        anchorSessionId.value = summaryGeneration.value?.anchorSessionId || props.document?.sourceManifest?.find(item=>item.sessionId)?.sessionId || availableSummarySessions.value[0]?.sessionId || null
         if (!props.document?.periodStart && !props.document?.periodEnd) syncPeriodFromEvidence()
       } catch (e) {
         if (e.code === 'NO_REVIEWED_SESSION_CAPTURE' || e.code === 'NO_CLIENT_SUMMARY_EVIDENCE') {
