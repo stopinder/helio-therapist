@@ -40,5 +40,5 @@ test('resources are therapist selected and not misrepresented as recorded sessio
   assert.match(workspace,/parsed.protocol !== 'https:'/);
   assert.match(workspace,/Optional resource to consider \(therapist selected, not discussed or agreed in session\)/);
   assert.match(workspace,/does not approve or finalise it/);
-  assert.match(workspace,/YouTube\/results\?search_query=guided\+body\+scan/);
+  assert.match(workspace,/youtube\.com\/results\?search_query=guided\+body\+scan/);
 });
