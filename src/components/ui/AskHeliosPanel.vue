@@ -151,7 +151,7 @@
               @click="input = example">{{ example }}</button>
           </div>
         </div>
-        <div v-for="(msg, index) in messages" v-show="!isAnswerFocused || index === focusAnswerIndex" :key="index"
+        <div v-for="(msg, index) in messages" v-if="!isAnswerFocused || index === focusAnswerIndex" :key="index"
           class="flex flex-col" :data-ask-message-index="index"
           :class="isAnswerFocused ? 'items-stretch' : (msg.role === 'user' ? 'items-end' : 'items-start')">
           <button v-if="msg.role === 'assistant' && isExpanded && !isAnswerFocused" type="button"
