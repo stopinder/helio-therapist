@@ -1,0 +1,46 @@
+name: Global Summary Authoring
+on:
+  push:
+    branches: [refactor/global-summary-authoring-20261107]
+  pull_request:
+    paths:
+      - api/ai/session-summary.js
+      - api/ai/client-session-summary.js
+      - api/_lib/ai-client-session-summary.js
+      - api/_lib/summary-*.js
+      - api/summary-resource-check.js
+      - api/_lib/clinical-record-evidence.js
+      - src/lib/summary*.js
+      - src/lib/globalSummaryRoutes.spec.js
+      - src/lib/clientDocuments.js
+      - src/views/SessionWorkspace.vue
+      - src/components/workspace/*Summary*.vue
+      - src/components/workspace/ClientDocumentComposer.vue
+      - src/components/workspace/SummaryRefinementPanel.spec.js
+      - test/global-summary-authoring.test.js
+      - .github/workflows/global-summary-authoring.yml
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22'
+      - run: npm ci --ignore-scripts --no-fund
+      - name: Authoring, resource, prospective-evidence and confidentiality regression checks
+        run: node --test test/global-summary-authoring.test.js test/clinical-record-existing-material.test.js test/clinical-record-partial-validation.test.js test/summary-source-outcomes.test.js
+      - name: Both real API paths and shared refinement UI
+        run: npx vitest run src/lib/globalSummaryRoutes.spec.js src/components/workspace/SummaryRefinementPanel.spec.js src/lib/clinicalRecordValidationApi.spec.js src/components/workspace/ClinicalSummaryTab.validation.spec.js
+      - run: npm run build
+      - name: Compare all Node regressions with production baseline
+        run: |
+          git worktree add --detach /tmp/global-summary-baseline 121d363d13dc5f62c37ab56e876d3dc4d23a24c9
+          ln -s "$GITHUB_WORKSPACE/node_modules" /tmp/global-summary-baseline/node_modules
+          node scripts/compare-clinical-record-regressions.mjs /tmp/global-summary-baseline
