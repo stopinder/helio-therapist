@@ -38,21 +38,31 @@
 
           <template v-else>
             <section v-if="sourceReview || summaryUnsafe" class="rounded-panel border border-border bg-surface-elevated p-5 space-y-3" data-testid="source-review-notice">
-              <h2 class="text-h3 font-semibold">{{ sourceReview?.resolved ? 'Source review saved' : 'Source needs review' }}</h2>
-              <p>{{ sourceReview?.message || 'The earlier output is a source-review notice, not a usable summary. Review its original source and regenerate.' }}</p>
-              <p class="text-body-sm">Your previous draft and imported Zoom note have been preserved. No new summary was saved by this review.</p>
+              <h2 class="text-h3 font-semibold">{{ sourceReview?.resolved ? 'Source review saved' : sourceReviewNeedsTranscript ? 'Resolve session identity' : 'Check the client and Zoom note' }}</h2>
+              <p>{{ sourceReview?.message || 'This summary source needs clarification. Check the Zoom note or original evidence.' }}</p>
+              <p class="text-body-sm">Your previous draft and imported note are preserved. No new summary was saved.</p>
+              <div v-if="!sourceReviewNeedsTranscript && !sourceReview?.resolved" class="flex flex-wrap items-center gap-3 rounded-control bg-surface-subtle p-3" data-testid="soft-source-review">
+                <p class="flex-1 text-body-sm text-ink-secondary">A Zoom note is not proof of another client's conversation. A new draft can use this session only, excluding earlier continuity.</p>
+                <button type="button" class="button-primary" :disabled="isGenerating || transcriptLoading" @click="retryCurrentSessionOnly">Try this session only</button>
+                <button v-if="transcript?.id" type="button" class="button-secondary" @click="openSourceReview()">Confirm client / review Zoom note</button>
+              </div>
               <p v-if="sourceReviewOpenError" class="text-body-sm text-state-danger" role="alert">{{ sourceReviewOpenError }}</p>
-              <div v-if="!sourceReview?.resolved" class="flex flex-wrap gap-2">
+              <div v-if="!sourceReview?.resolved && sourceReviewNeedsTranscript" class="flex flex-wrap gap-2">
                 <button v-for="(item,index) in reviewableSources" :key="item.transcriptId" type="button" class="button-primary"
                   @click="openSourceReview(item,index)" :aria-label="'Review original transcript ' + (index+1) + ' of ' + reviewableSources.length">
-                  Review original transcript {{ index+1 }} of {{ reviewableSources.length }}
+                  Review source {{ index+1 }} of {{ reviewableSources.length }}
                 </button>
-                <button v-if="!reviewableSources.length && transcript?.id" type="button" class="button-primary" @click="openSourceReview()">Review original transcript</button>
+                <button v-if="!reviewableSources.length && transcript?.id" type="button" class="button-primary" @click="openSourceReview()">Review session source</button>
                 <p v-else-if="!reviewableSources.length && !transcript?.id" class="text-body-sm text-state-danger">No original transcript is linked. Check the assignment in Transcript Inbox.</p>
               </div>
             </section>
             <SourceReviewDialog v-if="reviewTranscriptId" :transcript-id="reviewTranscriptId" :source-label="reviewSourceLabel" @close="reviewTranscriptId=''" @resolved="sourceReviewResolved" />
             <section class="space-y-6">
+              <details v-if="transcript?.zoomGeneratedSummary" data-testid="summary-zoom-preview" class="rounded-panel border border-border bg-surface p-3">
+                <summary class="cursor-pointer text-body-sm font-semibold text-action-link">Identify this session · Preview Zoom note</summary>
+                <p class="mt-2 text-caption text-ink-muted">This is a secondary interpretation. Check the client and encounter before using it.</p>
+                <p class="mt-2 whitespace-pre-wrap break-words text-body-sm text-ink-secondary">{{ transcript.zoomGeneratedSummary }}</p>
+              </details>
               <div class="flex flex-wrap items-start justify-between gap-4">
                 <div>
                   <h2 class="font-serif text-h2 text-ink">Session summary</h2>
@@ -71,7 +81,7 @@
                   <button v-if="transcript" type="button" @click="askHeliosAboutSession" class="button-secondary !min-h-0 py-1.5 px-3 text-body-sm shadow-sm">Ask Helios</button>
                   <button v-if="summaryDocument?.content?.body && summaryDocument.status !== 'completed'" @click="generateSummary" :disabled="isGenerating || transcriptLoading || !!transcriptError || !transcript" class="text-body-sm font-medium text-ink-muted hover:text-ink disabled:opacity-50">Regenerate</button>
                   <RouterLink v-if="summaryDocument?.id" :to="{ name: 'ClientWorkspace', params: { clientId: session.clientId }, query: { document: summaryDocument.id } }" class="button-secondary !min-h-0 py-1.5 px-3 text-body-sm shadow-sm">Open in Client Documents</RouterLink>
-                  <button @click="copySummary" :disabled="!summaryDocument?.content?.body || !!sourceReview || summaryUnsafe" class="button-secondary !min-h-0 py-1.5 px-3 text-body-sm shadow-sm">Copy summary</button>
+                  <button @click="copySummary" :disabled="!summaryDocument?.content?.body || !!sourceReview || summaryUnsafe || needsTherapistReview" class="button-secondary !min-h-0 py-1.5 px-3 text-body-sm shadow-sm">Copy summary</button>
                 </div>
               </div>
 
@@ -112,6 +122,10 @@
                     </select>
                   </label>
                 </div>
+                <label v-if="summaryWindow === 'recent'" class="mt-3 flex items-start gap-2 text-body-sm text-ink-secondary" data-testid="exclude-earlier-zoom-notes">
+                  <input v-model="excludeEarlierZoomNotes" type="checkbox" class="mt-1" />
+                  <span>Exclude earlier Zoom notes. Use earlier transcripts when available; excluded notes remain saved.</span>
+                </label>
 
                 <div class="mt-4">
                   <button type="button" class="text-body-sm font-semibold text-action-link hover:underline" @click="showSummaryGuidance = !showSummaryGuidance">
@@ -136,6 +150,18 @@
                   </button>
                 </div>
                 <p v-if="summaryPreferenceError" class="mt-2 text-caption text-state-danger" role="alert">{{ summaryPreferenceError }}</p>
+              </div>
+
+              <div v-if="summaryDocument?.content?.summaryGeneration?.reviewRequired" data-testid="summary-therapist-approval" class="rounded-panel border border-border bg-surface-elevated p-4 space-y-2">
+                <div class="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <p class="font-semibold text-ink">{{ needsTherapistReview ? 'Draft — therapist review needed' : 'Summary reviewed by therapist' }}</p>
+                    <p class="text-body-sm text-ink-secondary">{{ needsTherapistReview ? 'Check the client, accuracy and clinical wording. Edit before approving or copying.' : 'Approved for use. Any further edits require review again.' }}</p>
+                  </div>
+                  <button v-if="needsTherapistReview && summaryDocument.status !== 'completed'" type="button" class="button-primary" :disabled="reviewSaveBusy || isEditingSummary" @click="approveSummaryDraft">{{ reviewSaveBusy ? 'Saving…' : 'Mark summary reviewed' }}</button>
+                </div>
+                <p v-if="summaryReviewError" role="alert" class="text-body-sm text-state-danger">{{ summaryReviewError }}</p>
+                <p v-for="(warning,index) in summaryDocument?.content?.summaryGeneration?.reviewCautions||[]" :key="index" class="text-caption text-ink-muted">{{ warning }}</p>
               </div>
 
               <p v-if="summaryDocument?.status === 'completed' && prepareRequested" class="rounded-panel border border-border p-4 text-body-sm" role="status">This summary is finalised and read-only. Opening Clinical Workspace does not change or regenerate it.</p>
@@ -253,12 +279,28 @@ const router = useRouter();
 const { openClinicalContext } = useAskHelios();
 const session = ref(null), client = ref(null), loading = ref(true), error = ref(''), transcript = ref(null), transcriptLoading = ref(false), transcriptError = ref(''), therapistName = ref('');
 const summaryDocument = ref(null);
+const excludeEarlierZoomNotes=ref(false),reviewSaveBusy=ref(false),summaryReviewError=ref('');
+const needsTherapistReview=computed(()=>summaryDocument.value?.content?.summaryGeneration?.reviewRequired===true &&
+  !summaryDocument.value?.content?.summaryGeneration?.reviewedAt);
 const sourceReview=ref(null),reviewTranscriptId=ref(''),reviewSourceLabel=ref(''),sourceReviewOpenError=ref('');
 const reviewUuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const reviewableSources=computed(()=>[...new Map((sourceReview.value?.sources||[])
   .filter(item=>reviewUuid.test(String(item?.transcriptId||'')))
   .map(item=>[item.transcriptId,item])).values()]);
 const summaryUnsafe=computed(()=>isUnusableSummary(summaryDocument.value?.content));
+const sourceReviewNeedsTranscript=computed(()=>{
+  const review=sourceReview.value;
+  if(!review || review.resolved)return false;
+  return (review.sources||[]).some(source=>['needs_review','separated'].includes(source?.state))
+    || (review.evidence||[]).some(item=>item?.verified && ['transcript','session_capture'].includes(item?.sourceType))
+    || review.reason==='insufficient_source';
+});
+async function retryCurrentSessionOnly(){
+  if(isGenerating.value)return;
+  summaryWindow.value='current';excludeEarlierZoomNotes.value=true;
+  sourceReview.value=null;
+  await generateSummary();
+}
 function openSourceReview(item=null,index=0){
   const id=item?.transcriptId||transcript.value?.id;
   if(!reviewUuid.test(String(id||''))){
@@ -333,6 +375,7 @@ async function generateSummary() {
       transcriptId,
       lens: summaryLens.value,
       window: summaryWindow.value,
+      excludeEarlierZoomNotes: excludeEarlierZoomNotes.value,
       therapistGuidance: therapistGuidance.value
     });
     if (disposed) return;
@@ -344,7 +387,10 @@ async function generateSummary() {
       model: result.model,
       lens: result.lens || summaryLens.value,
       window: result.window || summaryWindow.value,
-      sessionCount: result.sessionCount || 1
+      sessionCount: result.sessionCount || 1,
+      reviewCautions: Array.isArray(result.reviewCautions)?result.reviewCautions:[],
+      reviewRequired:true,
+      reviewedAt:null
     };
     if (summaryDocument.value) {
       const currentContent = summaryDocument.value.content || {};
@@ -376,7 +422,7 @@ async function generateSummary() {
         sourceManifest: result.sources
       });
     }
-    sourceReview.value=null;
+    sourceReview.value=null;summaryReviewError.value='';
     showSummaryOptions.value = prepareRequested.value;
     showSummaryGuidance.value = false;
     therapistGuidance.value = '';
@@ -388,6 +434,20 @@ async function generateSummary() {
   } finally {
     isGenerating.value = false;
   }
+}
+
+async function approveSummaryDraft(){
+  if(!summaryDocument.value?.id || !needsTherapistReview.value || reviewSaveBusy.value || isEditingSummary.value)return;
+  reviewSaveBusy.value=true;summaryReviewError.value='';
+  try{
+    clearTimeout(saveTimer);
+    if(!await verifySavedSummary())throw new Error('Resolve any source-boundary issue before approving.');
+    const content={...summaryDocument.value.content,summaryGeneration:{
+      ...summaryDocument.value.content.summaryGeneration,reviewedAt:new Date().toISOString()
+    }};
+    summaryDocument.value=await saveClientDocumentDraft(summaryDocument.value,{content});
+  }catch(error){summaryReviewError.value=error?.message||'Review status could not be saved. Please try again.'}
+  finally{reviewSaveBusy.value=false}
 }
 
 async function savePreferredSummaryLens() {
@@ -438,7 +498,7 @@ async function prepareCbtCareSuggestions() {
 }
 
 async function copySummary() {
-  if (!summaryDocument.value?.content?.body || sourceReview.value || summaryUnsafe.value) return;
+  if (!summaryDocument.value?.content?.body || sourceReview.value || summaryUnsafe.value || needsTherapistReview.value) return;
   if(!await verifySavedSummary())return;
   copyError.value = '';
   try {
@@ -453,6 +513,8 @@ async function copySummary() {
 
 async function handleSummaryInput() {
   if (summaryDocument.value?.status === 'completed') return;
+  if(summaryDocument.value?.content?.summaryGeneration?.reviewRequired)
+    summaryDocument.value.content.summaryGeneration.reviewedAt=null;
   clearTimeout(saveTimer);
   summarySaveError.value = '';
   saveTimer = setTimeout(async () => {
@@ -483,6 +545,7 @@ async function loadSession(){
     const previousGeneration = summaryDocument.value?.content?.summaryGeneration || null;
     summaryLens.value = clientData.preferred_summary_lens || previousGeneration?.lens || 'integrative';
     summaryWindow.value = previousGeneration?.window || 'current';
+    excludeEarlierZoomNotes.value=false;
     showSummaryOptions.value = prepareRequested.value || summaryUnsafe.value || !summaryDocument.value?.content?.body;
     loadTranscript();
   }catch(e){
