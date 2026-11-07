@@ -37,13 +37,20 @@
           </template>
 
           <template v-else>
-            <section v-if="sourceReview || summaryUnsafe" class="rounded-panel border border-border bg-surface-elevated p-5 space-y-3" data-testid="source-review-notice">
+            <section v-if="sourceReview || summaryUnsafe" ref="sourceReviewNotice" tabindex="-1" class="rounded-panel border border-border bg-surface-elevated p-5 space-y-3" data-testid="source-review-notice">
               <h2 class="text-h3 font-semibold">{{ sourceReview?.resolved ? 'Source review saved' : 'Source needs review' }}</h2>
               <p>{{ sourceReview?.message || 'The earlier output is a source-review notice, not a usable summary. Review its original source and regenerate.' }}</p>
               <p class="text-body-sm">Your previous draft and imported Zoom note have been preserved. No new summary was saved by this review.</p>
-              <div v-if="!sourceReview?.resolved" class="flex flex-wrap gap-2"><button v-for="(item,index) in sourceReview?.sources || []" :key="index" v-show="item.transcriptId" class="button-primary" @click="openSourceReview(item)">Review flagged source {{ index+1 }}</button><button v-if="!sourceReview?.sources?.length && transcript?.id" class="button-primary" @click="openSourceReview()">Review original source</button></div>
+              <p v-if="sourceReviewOpenError" role="alert" class="text-body-sm text-state-danger">{{ sourceReviewOpenError }}</p>
+              <div v-if="!sourceReview?.resolved" class="flex flex-wrap gap-2">
+                <button v-for="(item,index) in reviewableSources" :key="item.transcriptId" type="button" class="button-primary" :aria-expanded="reviewTranscriptId === item.transcriptId" aria-controls="original-source-review" @click="openSourceReview(item,$event)">Review original source {{ index+1 }}</button>
+                <button v-if="!reviewableSources.length && transcript?.id" type="button" class="button-primary" :aria-expanded="reviewTranscriptId === transcript.id" aria-controls="original-source-review" @click="openSourceReview(null,$event)">Review original source</button>
+                <p v-if="!reviewableSources.length && !transcript?.id" class="text-body-sm text-state-danger">No linked original source is available in this encounter. Check the transcript assignment in Transcript Inbox.</p>
+              </div>
             </section>
-            <SourceReviewPanel v-if="reviewTranscriptId" :transcript-id="reviewTranscriptId" @close="reviewTranscriptId=''" @resolved="sourceReviewResolved" />
+            <div v-if="reviewTranscriptId" id="original-source-review" ref="sourceReviewRegion" data-testid="source-review-region" tabindex="-1" role="region" aria-label="Original transcript source review" class="scroll-mt-4">
+              <SourceReviewPanel :transcript-id="reviewTranscriptId" @close="closeSourceReview" @resolved="sourceReviewResolved" />
+            </div>
             <section class="space-y-6">
               <div class="flex flex-wrap items-start justify-between gap-4">
                 <div>
@@ -222,7 +229,7 @@
 import HelpLink from '../components/help/HelpLink.vue'
 import SourceReviewPanel from '../components/workspace/SourceReviewPanel.vue';
 import { isUnusableSummary } from '../lib/summarySafety.js';
-import { ref, onMounted, computed, watch, onBeforeUnmount } from 'vue';
+import { ref, onMounted, computed, watch, onBeforeUnmount, nextTick } from 'vue';
 import { useRoute, useRouter, RouterLink } from 'vue-router';
 import { supabase } from '../lib/supabase.js';
 import { getSession } from '../lib/sessions.js';
@@ -246,11 +253,47 @@ const { openClinicalContext } = useAskHelios();
 const session = ref(null), client = ref(null), loading = ref(true), error = ref(''), transcript = ref(null), transcriptLoading = ref(false), transcriptError = ref(''), therapistName = ref('');
 const summaryDocument = ref(null);
 const sourceReview=ref(null),reviewTranscriptId=ref('');
+const sourceReviewRegion=ref(null),sourceReviewNotice=ref(null),sourceReviewOpenError=ref('');
 const summaryUnsafe=computed(()=>isUnusableSummary(summaryDocument.value?.content));
-function openSourceReview(item){reviewTranscriptId.value=item?.transcriptId||transcript.value?.id||''}
+// The model may return a list of candidate sources, but only stored transcript
+// UUIDs can be opened. Do not silently substitute a different client's source.
+const sourceReviewIdPattern=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const reviewableSources=computed(()=>Array.isArray(sourceReview.value?.sources)
+  ? [...new Map(sourceReview.value.sources
+      .filter(item=>sourceReviewIdPattern.test(String(item?.transcriptId||'')))
+      .map(item=>[item.transcriptId,item])).values()]
+  : []);
+let sourceReviewOpener=null;
+async function openSourceReview(item,event){
+  const candidate=item?item.transcriptId:transcript.value?.id;
+  if(!sourceReviewIdPattern.test(String(candidate||''))){
+    sourceReviewOpenError.value='The original transcript could not be located for this encounter. Check its assignment in Transcript Inbox.';
+    return false;
+  }
+  sourceReviewOpener=event?.currentTarget||sourceReviewOpener;
+  sourceReviewOpenError.value='';
+  reviewTranscriptId.value=candidate;
+  await nextTick();
+  const region=sourceReviewRegion.value;
+  if(!region){
+    sourceReviewOpenError.value='The source review could not be opened. Return to Transcript Inbox and try again.';
+    return false;
+  }
+  // The review is rendered below the warning, often below the viewport.
+  // Bring it into view immediately and announce the new region to keyboard users.
+  region.scrollIntoView({block:'start',behavior:'auto'});
+  region.focus({preventScroll:true});
+  return true;
+}
+async function closeSourceReview(){
+  reviewTranscriptId.value='';
+  await nextTick();
+  if(sourceReviewOpener?.isConnected)sourceReviewOpener.focus({preventScroll:true});
+  else sourceReviewNotice.value?.focus({preventScroll:true});
+}
 async function sourceReviewResolved(result){
   if(result.action==='confirm'){
-    reviewTranscriptId.value='';sourceReview.value={resolved:true,message:'Source review saved. Generate a fresh summary before copying or sharing. Your earlier draft is unchanged.',sources:[]};await loadTranscript();
+    reviewTranscriptId.value='';sourceReview.value={resolved:true,message:'Source review saved. Generate a fresh summary before copying or sharing. Your earlier draft is unchanged.',sources:[]};await loadTranscript();await nextTick();sourceReviewNotice.value?.focus({preventScroll:true});
   }else{sourceReview.value={message:'The original was separated. Open one of the reviewed encounters below.',sources:[]};transcript.value=null;}
 }
 async function verifySavedSummary(){
