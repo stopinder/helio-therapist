@@ -29,7 +29,7 @@ test('client summary setup explains scope and selected evidence compactly', () =
 })
 
 test('client summary generation is disabled until evidence is ready', () => {
-  assert.match(composer, /:disabled="generatingSummary \|\| loadingEvidence \|\| !anchorSessionId \|\| Boolean\(evidenceError\)"/)
+  assert.ok(composer.includes(':disabled="generatingSummary || loadingEvidence || !anchorSessionId || Boolean(evidenceError) || guidanceDictation.busy.value"'))
 })
 
 test('clinical intelligence intro no longer places a primary generate button before controls', () => {

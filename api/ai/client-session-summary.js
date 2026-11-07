@@ -12,8 +12,8 @@ export default async function handler(req, res) {
   if (req.method !== 'POST') { res.setHeader('Allow', 'POST'); return res.status(405).json({ success:false, error:{ code:'METHOD_NOT_ALLOWED', message:'Method not allowed' } }); }
   try {
     const { supabase, user } = await requireAuthenticatedUser(req);
-    const { clientId, lens='general', window='last_three', therapistGuidance='', anchorSessionId=null, preview=false } = req.body || {};
-    if (!clientId || typeof clientId !== 'string' || !/^[0-9a-f-]{36}$/i.test(clientId) || (anchorSessionId!==null&&(typeof anchorSessionId!=='string'||!/^[0-9a-f-]{36}$/i.test(anchorSessionId))) || typeof preview!=='boolean' || !CLIENT_SESSION_SUMMARY_LENSES.includes(lens) || !['current','last_three','last_five','history'].includes(window) || typeof therapistGuidance !== 'string' || therapistGuidance.length > 6000) {
+    const { clientId, lens='general', window='last_three', therapistGuidance='', refinementRequest='', previousDraft='', anchorSessionId=null, preview=false } = req.body || {};
+    if (!clientId || typeof clientId !== 'string' || !/^[0-9a-f-]{36}$/i.test(clientId) || (anchorSessionId!==null&&(typeof anchorSessionId!=='string'||!/^[0-9a-f-]{36}$/i.test(anchorSessionId))) || typeof preview!=='boolean' || !CLIENT_SESSION_SUMMARY_LENSES.includes(lens) || !['current','last_three','last_five','history'].includes(window) || typeof therapistGuidance !== 'string' || therapistGuidance.length > 6000 || typeof refinementRequest !== 'string' || refinementRequest.length > 1800 || typeof previousDraft !== 'string' || previousDraft.length > 10000 || (refinementRequest.trim() && !previousDraft.trim())) {
       return res.status(400).json({ success:false, error:{ code:'INVALID_REQUEST', message:'Choose a valid client, lens and summary window.' } });
     }
     const { data: ownedClient, error: clientError } = await supabase.from('clients').select('id,reference').eq('id', clientId).eq('user_id', user.id).maybeSingle();
@@ -110,7 +110,11 @@ export default async function handler(req, res) {
     const { data: careItems, error: careError } = await supabase.from('client_care_items').select('id,kind,body,status,origin,provenance_session_id').eq('client_id', clientId).eq('therapist_id', user.id).eq('status', 'current').order('updated_at', { ascending:false }).limit(30);
     if (careError) throw careError;
 
-    const evidenceMap=buildClinicalIntelligenceEvidenceMap({captures:selectedCaptures,careItems:careItems||[],therapistGuidance});
+    // An accepted editorial instruction is therapist-authored context, never a record of something said or completed.
+    const approvedGuidance = refinementRequest.trim()
+      ? [therapistGuidance, 'Therapist-approved editorial request (not a session event or an agreed intervention): ' + refinementRequest.trim()].filter(Boolean).join('\n\n')
+      : therapistGuidance;
+    const evidenceMap=buildClinicalIntelligenceEvidenceMap({captures:selectedCaptures,careItems:careItems||[],therapistGuidance:approvedGuidance});
     const validSourceIds=new Set([...evidenceMap.reviewedSessions.map(item=>item.id),...evidenceMap.currentAcceptedCareContext.map(item=>item.id),...(evidenceMap.therapistAuthoredContext.content?[evidenceMap.therapistAuthoredContext.id]:[])]);
     const generationId=randomUUID(),generatedAt=new Date().toISOString();
     const { data: verifiedSampleClient, error: sampleClientError } = await supabase.rpc('is_sample_client', {
@@ -125,6 +129,9 @@ export default async function handler(req, res) {
       sampleVerified: verifiedSampleClient === true
     });
     if (sampleSummary) {
+      if (refinementRequest.trim()) {
+        return res.status(409).json({success:false,error:{code:'SAMPLE_REFINEMENT_UNAVAILABLE',message:'Sample Practice summaries are fixed demonstrations. Refine a draft from your own reviewed clinical evidence instead.'}});
+      }
       const body = renderClientSessionSummary(sampleSummary.sections, lens);
       const sources=[
         ...evidenceMap.reviewedSessions.map(item=>({id:item.id,kind:item.sourceType==='transcript_backed_session_summary'?'session_summary':'session_capture',sessionId:item.sessionId,occurredAt:item.occurredAt,reviewedAt:item.reviewedAt,documentId:item.sourceDocumentId||undefined,status:item.sourceStatus||undefined})),
@@ -153,7 +160,7 @@ export default async function handler(req, res) {
     }
     const { completion, model } = await runTextAI({
       feature:AI_FEATURES.CLIENT_SESSION_SUMMARY, userId:user.id, promptVersion:CLIENT_SESSION_SUMMARY_PROMPT_VERSION,
-      messages:[{role:'system',content:clientSessionSummarySystemPrompt(lens).replace('Return JSON only with exactly two fields:','For a ready result, supply these clinical fields:')+'\n'+SUMMARY_OUTCOME_RULES},{role:'user',content:buildClientSessionSummaryInput({lens,window,captures:selectedCaptures,careItems:careItems||[],therapistGuidance})}],
+      messages:[{role:'system',content:clientSessionSummarySystemPrompt(lens).replace('Return JSON only with exactly two fields:','For a ready result, supply these clinical fields:')+'\n'+SUMMARY_OUTCOME_RULES},{role:'user',content:buildClientSessionSummaryInput({lens,window,captures:selectedCaptures,careItems:careItems||[],therapistGuidance:approvedGuidance,refinementRequest,previousDraft})}],
       responseFormat:summaryOutcomeResponseFormat(validSourceIds), temperature:0.2, maxTokens:8000, timeout:60000
     });
     const finishReason = completion.choices?.[0]?.finish_reason || null;

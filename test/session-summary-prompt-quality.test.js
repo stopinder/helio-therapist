@@ -5,7 +5,7 @@ import { CLIENT_SESSION_SUMMARY_PROMPT_VERSION, CLIENT_SESSION_SUMMARY_LENSES, c
 
 const endpoint=await readFile(new URL('../api/ai/client-session-summary.js',import.meta.url),'utf8');
 test('session summary prompt revision improves clinical prose without relaxing evidence or therapist review',()=>{
-  assert.equal(CLIENT_SESSION_SUMMARY_PROMPT_VERSION,'client-session-summary-v13-clinical-quality');
+  assert.equal(CLIENT_SESSION_SUMMARY_PROMPT_VERSION,'client-session-summary-v14-therapist-refinement');
   const p=clientSessionSummarySystemPrompt('integrative');
   for(const needle of ['CLINICAL WRITING STANDARD','client\'s reaction or bodily experience','rupture, repair','not independent confirmation','Leave optional sections empty','editable draft for therapist approval','Never cite a source that does not support the claim','Do not infer diagnoses'])assert.ok(p.includes(needle),needle);
 });
