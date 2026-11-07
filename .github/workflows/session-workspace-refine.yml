@@ -1,0 +1,24 @@
+name: Direct Session Summary quality and refinement
+on:
+  push:
+    branches: [feat/session-workspace-refine-clinical-quality-20261107]
+  pull_request:
+    paths:
+      - api/ai/session-summary.js
+      - src/views/SessionWorkspace.vue
+      - src/lib/clientDocuments.js
+      - test/session-workspace-refine-quality.test.js
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 14
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22'
+      - run: npm ci --ignore-scripts --no-fund
+      - run: node --test test/session-workspace-refine-quality.test.js test/refine-session-summary.test.js test/summary-source-outcomes.test.js
+      - run: npm run build
