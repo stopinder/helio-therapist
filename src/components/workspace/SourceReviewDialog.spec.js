@@ -38,7 +38,7 @@ describe('unified source review dialog', () => {
     expect(dialog.textContent).toContain('Dom · 6 Nov 2026')
     expect(dialog.textContent).toContain(UUID)
     expect(document.body.style.overflow).toBe('hidden')
-    expect(document.activeElement.textContent).toBe('Close')
+    expect(document.activeElement.textContent.trim()).toBe('Close')
     await wrapper.unmount()
   })
   it('emits a close on Escape and restores the original button focus when dismissed',async()=>{

@@ -351,8 +351,19 @@ function openInboxSourceReview(transcript){
 }
 async function handleSourceReviewed(result){
   if(result.action==='confirm')reviewSourceId.value=''
-  // Keep the surrounding queue/filter state and source review history intact.
-  await load()
+  // Reconcile the rows without toggling the Inbox loading placeholder or
+  // remounting the open transcript. Keep filters, search and typed assignments.
+  try{
+    const response=await authenticatedFetch('/api/zoom/transcripts')
+    const data=await response.json().catch(()=>({}))
+    if(!response.ok)throw new Error(data.error?.message||'Unable to refresh transcript status.')
+    const selectedId=selected.value?.id
+    transcripts.value=data.transcripts||[]
+    for(const item of transcripts.value)initialiseAssignmentDraft(item)
+    if(selectedId)selected.value=transcripts.value.find(item=>item.id===selectedId)||selected.value
+  }catch{
+    errorMessage.value='The source review was saved, but the inbox status could not refresh. Reopen Transcript Inbox to update the list.'
+  }
 }
 const props = defineProps({ clients: { type: Array, default: () => [] }, openTranscriptId: { type: [String, Number], default: null } })
 const emit = defineEmits(['client-added'])
