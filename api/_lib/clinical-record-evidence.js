@@ -12,7 +12,7 @@ export const CLINICAL_RECORD_FIELD_LABELS = Object.freeze({
   planNextSession:'Plan for next session'
 });
 
-const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 export function validUuid(id){return typeof id==='string' && UUID.test(id)}
 export function compactSourceText(value,limit=6500){
   return typeof value==='string'?value.trim().slice(0,limit):'';
