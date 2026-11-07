@@ -1,248 +1,120 @@
-// One-time, exact-baseline source refactor. Removed before release.
+// One-time reviewed refactor completion. Removed with its publishing workflow before release.
 import fs from 'node:fs';
 import { execFileSync } from 'node:child_process';
-const repo='stopinder/helio-therapist';
-const branch='refactor/global-summary-authoring-20261107';
-const paths=['api/_lib/ai-client-session-summary.js','api/ai/session-summary.js','api/ai/client-session-summary.js','src/lib/clientDocuments.js','src/views/SessionWorkspace.vue','src/components/workspace/ClientDocumentComposer.vue','api/_lib/clinical-record-evidence.js','scripts/evaluate-clinical-intelligence.mjs'];
-if(process.argv.includes('--publish')) {
-  if(process.env.GITHUB_REPOSITORY!==repo || process.env.GITHUB_REF!=='refs/heads/'+branch || !process.env.GITHUB_TOKEN)throw new Error('Wrong publishing context');
-  const changed=execFileSync('git',['diff','--name-only'],{encoding:'utf8'}).trim().split('\n').filter(Boolean);
-  if(!changed.length || changed.some(path=>!paths.includes(path)))throw new Error('Unexpected source change set');
-  async function api(path,method='GET',body){
-    const response=await fetch('https://api.github.com/repos/'+repo+path,{method,headers:{Authorization:'Bearer '+process.env.GITHUB_TOKEN,Accept:'application/vnd.github+json','Content-Type':'application/json'},...(body?{body:JSON.stringify(body)}:{})});
-    if(!response.ok)throw new Error('GitHub source publication failed: '+response.status);
-    return response.json();
-  }
-  const head=process.env.GITHUB_SHA;
-  const ref=await api('/git/ref/heads/'+branch);
-  if(ref.object.sha!==head)throw new Error('Branch changed during source verification');
-  const parent=await api('/git/commits/'+head);
-  const tree=await api('/git/trees','POST',{base_tree:parent.tree.sha,tree:changed.map(path=>({path,mode:'100644',type:'blob',content:fs.readFileSync(path,'utf8')}))});
-  const commit=await api('/git/commits','POST',{message:'Unify summary writing, optional resources and review-before-replace across all summary paths',tree:tree.sha,parents:[head]});
-  const fresh=await api('/git/ref/heads/'+branch);if(fresh.object.sha!==head)throw new Error('Branch changed before publication');
-  await api('/git/refs/heads/'+branch,'PATCH',{sha:commit.sha,force:false});
-  console.log('summary_source_commit='+commit.sha);
-  process.exit(0);
+const repo='stopinder/helio-therapist',branch='refactor/global-summary-authoring-20261107';
+const paths=['src/components/workspace/ClientDocumentComposer.vue','src/views/SessionWorkspace.vue','api/_lib/documentPdf.js','test/client-session-summary.test.js','test/session-summary-prompt-tuning.test.js','test/session-summary-single-source-recurrence.test.js','test/session-summary-generation-ui.test.js','test/summary-first-workflow.test.js','test/document-tiptap-editor.test.js'];
+if(process.argv.includes('--publish')){
+ if(process.env.GITHUB_REPOSITORY!==repo||process.env.GITHUB_REF!=='refs/heads/'+branch||!process.env.GITHUB_TOKEN)throw new Error('Wrong publishing context');
+ const changed=execFileSync('git',['diff','--name-only'],{encoding:'utf8'}).trim().split('\n').filter(Boolean);
+ if(!changed.length||changed.some(path=>!paths.includes(path)))throw new Error('Unexpected source changes');
+ async function api(path,method='GET',body){const r=await fetch('https://api.github.com/repos/'+repo+path,{method,headers:{Authorization:'Bearer '+process.env.GITHUB_TOKEN,Accept:'application/vnd.github+json','Content-Type':'application/json'},...(body?{body:JSON.stringify(body)}:{})});if(!r.ok)throw new Error('Source publication failed '+r.status);return r.json();}
+ const head=process.env.GITHUB_SHA,ref=await api('/git/ref/heads/'+branch);if(ref.object.sha!==head)throw new Error('Branch changed');
+ const parent=await api('/git/commits/'+head);
+ const tree=await api('/git/trees','POST',{base_tree:parent.tree.sha,tree:changed.map(path=>({path,mode:'100644',type:'blob',content:fs.readFileSync(path,'utf8')}))});
+ const commit=await api('/git/commits','POST',{message:'Complete shared summary hand-off, linked-resource export and architecture regression tests',tree:tree.sha,parents:[head]});
+ if((await api('/git/ref/heads/'+branch)).object.sha!==head)throw new Error('Branch changed');
+ await api('/git/refs/heads/'+branch,'PATCH',{sha:commit.sha,force:false});console.log('summary_source_commit='+commit.sha);process.exit(0);
 }
 const files=new Map(paths.map(path=>[path,fs.readFileSync(path,'utf8')]));
+function one(s,a,b){if(!s.includes(a)||s.indexOf(a)!==s.lastIndexOf(a))throw new Error('Missing or ambiguous anchor: '+a.slice(0,80));return s.replace(a,b);}
 function edit(path,fn){files.set(path,fn(files.get(path)));}
-function one(text,old,replacement){if(!text.includes(old)||text.indexOf(old)!==text.lastIndexOf(old))throw new Error('Missing or ambiguous refactor anchor: '+old.slice(0,100));return text.replace(old,replacement);}
-function span(text,start,end,replacement){const a=text.indexOf(start),b=text.indexOf(end,a+start.length);if(a<0||b<0)throw new Error('Missing refactor block: '+start);return text.slice(0,a)+replacement+text.slice(b);}
-
+function testBody(s,name,body){const start=s.indexOf("test('"+name+"'");if(start<0)throw new Error('Missing test '+name);let end=s.indexOf('\ntest(',start+5);if(end<0)end=s.length;return s.slice(0,start)+"test('"+name+"',async()=>{\n"+body+'\n});\n'+s.slice(end);}
 edit(paths[0],s=>{
-  const validator=s.slice(s.indexOf('export function normalizeClientSessionSummaryResponse'),s.indexOf('export function renderClientSessionSummary'));
-  s="import { summaryAuthoringPrompt, SUMMARY_POLICY_VERSION } from './summary-authoring-policy.js';\nimport { renderSummarySections } from '../../src/lib/summaryAuthoring.js';\nimport { summaryClinicalEvidence } from '../../src/lib/summaryEvidence.js';\n"+s;
-  s=one(s,"export const CLIENT_SESSION_SUMMARY_PROMPT_VERSION = 'client-session-summary-v14-therapist-refinement';","export const CLIENT_SESSION_SUMMARY_PROMPT_VERSION = SUMMARY_POLICY_VERSION + '/longitudinal';");
-  s=span(s,'const sharedRules = `','const lensRules = {','');
-  s=span(s,'export function clientSessionSummarySystemPrompt','export function clientSessionSummaryResponseFormat',"export function clientSessionSummarySystemPrompt(lens = 'general', options = {}) { return summaryAuthoringPrompt(clientSessionSummaryLensRule(lens), options); }\n\n");
-  s=one(s,"therapistGuidance = '', refinementRequest = '', previousDraft = '' })", "therapistGuidance = '', refinementRequest = '', previousDraft = '', summaryOptions = {} })");
-  s=one(s,'    reasoningInstructions: {',"    editorialPreferences: { audience: summaryOptions.audience || 'auto', addition: summaryOptions.addition || 'none' },\n    reasoningInstructions: {");
-  s=one(s,"content: capture.content && typeof capture.content === 'object' ? capture.content : {}","content: capture.content && typeof capture.content === 'object' ? {...capture.content, ...(typeof capture.content.existingSessionSummary === 'string' ? {existingSessionSummary:summaryClinicalEvidence(capture.content.existingSessionSummary)} : {})} : {}");
-  const index=s.indexOf('export function renderClientSessionSummary');
-  s=s.slice(0,index)+"export function renderClientSessionSummary(sections, lens='general') { return renderSummarySections(sections); }\n";
-  if(!s.includes(validator))throw new Error('Clinical source validator changed unexpectedly');
-  return s;
+ s=one(s,'candidateMatches, summaryContextKey, summaryBodyToRichContent','candidateMatches, summaryContextKey, summaryBodyToRichContent, SUMMARY_SECTION_GROUPS');
+ s=s.replace(/^const SESSION_SUMMARY_TEMPLATE = .*$/m,"const SESSION_SUMMARY_TEMPLATE = SUMMARY_SECTION_GROUPS.map(group=>group.heading).join('\\n\\n')");
+ s=one(s,'const generatingSummary = ref(false)',"const initialGeneration=props.document?.content?.summaryGeneration || props.document?.content?.clinicalIntelligence?.generation || null\nconst generatingSummary = ref(false)");
+ s=one(s,"summaryLens = ref(props.document?.content?.summaryGeneration?.lens || props.document?.content?.clinicalIntelligence?.generation?.lens || 'general')","summaryLens = ref(initialGeneration?.lens || 'general')");
+ s=one(s,"summaryWindow = ref(props.document?.content?.summaryGeneration?.window || props.document?.content?.clinicalIntelligence?.generation?.window || 'last_three')","summaryWindow = ref(initialGeneration?.window === 'recent' ? 'last_three' : initialGeneration?.window || 'last_three')");
+ s=one(s,'summaryGeneration = ref(props.document?.content?.clinicalIntelligence?.generation || props.document?.content?.summaryGeneration || null)','summaryGeneration = ref(initialGeneration)');
+ s=one(s,'anchorSessionId.value = summaryGeneration.value?.anchorSessionId || availableSummarySessions.value[0]?.sessionId || null','anchorSessionId.value = summaryGeneration.value?.anchorSessionId || props.document?.sourceManifest?.find(item=>item.sessionId)?.sessionId || availableSummarySessions.value[0]?.sessionId || null');
+ return s;
 });
-const serverImports="import { normalizeSummaryOptions, resourceAppendix, wantsSummaryExercise } from '../../src/lib/summaryAuthoring.js';\nimport { SUMMARY_POLICY_VERSION } from '../_lib/summary-authoring-policy.js';\nimport { reviewSummaryDraft } from '../_lib/summary-quality-review.js';\nimport { verifySummaryResource } from '../_lib/summary-resource-check.js';\n";
-edit(paths[1],s=>{
-  s=serverImports+s;
-  s=one(s,'  clientSessionSummaryLensRule,','  clientSessionSummarySystemPrompt,');
-  s=one(s,"const PROMPT_VERSION = 'session-summary-direct-v8-formulation-and-refinement';","const PROMPT_VERSION = SUMMARY_POLICY_VERSION + '/encounter';");
-  s=one(s,'    const { data: session, error: sessionError } = await supabase',"    const summaryOptions = normalizeSummaryOptions(req.body?.summaryOptions ?? {});\n    const { data: session, error: sessionError } = await supabase");
-  s=one(s,"    const guidance = [therapistGuidance.trim(),", "    const resourceVerification = await verifySummaryResource(summaryOptions.resource);\n    const guidance = [wantsSummaryExercise(summaryOptions) ? 'Therapist requests an optional future exercise for consideration, not an intervention performed or agreed in session.' : '', therapistGuidance.trim(),");
-  s=span(s,'    const lensRule = clientSessionSummaryLensRule(lens);','    const sourceBlocks=',String.raw`    const validSourceIds = new Set(selectedSources.map(source => source.id));
-    if (guidance) validSourceIds.add('therapist:guidance');
-    const systemPrompt = clientSessionSummarySystemPrompt(lens,summaryOptions)
-      .replace('Return JSON only with exactly two fields:','For a ready outcome, supply these clinical fields:')
-      + '\nEvidence window: ' + window + '\n' + SUMMARY_OUTCOME_RULES;
-
-`);
-  s=one(s,'sessionId,sourceBlocks,therapistGuidance:guidance,','sessionId,sourceBlocks,therapistGuidance:guidance,editorialPreferences:{audience:summaryOptions.audience,addition:summaryOptions.addition},');
-  s=one(s,'    await assertSourcesUnchanged(supabase,user.id,usedSources.map(source=>source.row));',String.raw`    let qualityReview={policyVersion:SUMMARY_POLICY_VERSION,kind:'mechanical_editorial_checks',revisionAttempted:false,warnings:[]};
-    if(structured.outcome==='ready') {
-      const qualityIds=new Set(usedSources.map(source=>source.id));
-      if(guidance)qualityIds.add('therapist:guidance');
-      const qualityInput=JSON.parse(userInput);
-      qualityInput.sourceBlocks=usedSources.map((source,index)=>sourceBlock(source,{isCurrent:index===0,suppressZoomNote:(reviewCautions.length>0&&!!source.original_transcript?.trim())||(excludeEarlierZoomNotes&&index>0)}));
-      const qualityEvidence=qualityInput.sourceBlocks.map(source=>({id:source.id,transcript:source.transcript,zoom_note:source.zoom_note}));
-      const reviewed=await reviewSummaryDraft({request:{...request,responseFormat:summaryOutcomeResponseFormat(qualityIds),messages:[{role:'system',content:systemPrompt},{role:'user',content:JSON.stringify(qualityInput)}]},completion,model,structured,validSourceIds:qualityIds,evidenceSources:qualityEvidence,summaryOptions});
-      structured=reviewed.structured;completion=reviewed.completion;model=reviewed.model;qualityReview=reviewed.qualityReview;
-    }
-    await assertSourcesUnchanged(supabase,user.id,usedSources.map(source=>source.row));`);
-  s=one(s,'    const body = renderClientSessionSummary(structured.sections, lens);','    const body = renderClientSessionSummary(structured.sections, lens) + resourceAppendix(summaryOptions.resource,resourceVerification);');
-  s=one(s,'        promptVersion: PROMPT_VERSION,','        promptVersion: PROMPT_VERSION,\n        summaryOptions, resourceSelection:summaryOptions.resource?{...summaryOptions.resource,verification:resourceVerification}:null, qualityReview,');
-  s=one(s,'  } catch (error) {\n    if(error.code',"  } catch (error) {\n    if(['INVALID_SUMMARY_OPTIONS','RESOURCE_NOT_VERIFIED','SUMMARY_ADDITION_NOT_VERIFIED'].includes(error.code))return res.status(error.status||422).json({success:false,error:{code:error.code,message:error.message}});\n    if(error.code");
-  return s;
-});
+edit(paths[1],s=>one(s,'lens:result.lens||summaryLens.value,window:result.window||summaryWindow.value,sessionCount:', 'lens:result.lens||summaryLens.value,window:result.window||summaryWindow.value,anchorSessionId:session.value.id,sessionCount:'));
 edit(paths[2],s=>{
-  s=serverImports+s;
-  s=one(s,'    const { data: ownedClient, error: clientError } = await supabase',"    const summaryOptions=normalizeSummaryOptions(req.body?.summaryOptions ?? {});\n    const { data: ownedClient, error: clientError } = await supabase");
-  s=one(s,'    const approvedGuidance = refinementRequest.trim()',"    const resourceVerification=await verifySummaryResource(summaryOptions.resource);\n    const exerciseGuidance=wantsSummaryExercise(summaryOptions)?'Therapist requests an optional future exercise for consideration, not performed or agreed in session.':'';\n    const approvedGuidance = refinementRequest.trim()");
-  s=one(s,"? [therapistGuidance, 'Therapist-approved editorial request", "? [exerciseGuidance,therapistGuidance, 'Therapist-approved editorial request");
-  s=one(s,'      : therapistGuidance;','      : [exerciseGuidance,therapistGuidance].filter(Boolean).join("\\n\\n");');
-  s=one(s,'    const { completion, model } = await runTextAI({','    const request = {');
-  s=one(s,"clientSessionSummarySystemPrompt(lens).replace", "clientSessionSummarySystemPrompt(lens,summaryOptions).replace");
-  s=one(s,'therapistGuidance:approvedGuidance,refinementRequest,previousDraft})','therapistGuidance:approvedGuidance,refinementRequest,previousDraft,summaryOptions})');
-  s=one(s,'    });\n    const finishReason = completion.choices?', '    };\n    let { completion, model } = await runTextAI(request);\n    const finishReason = completion.choices?');
-  s=one(s,'    const structured=validateSummaryOutcome(', '    let structured=validateSummaryOutcome(');
-  s=one(s,'    await assertSourcesUnchanged(supabase,user.id,selectedTranscriptRows);',String.raw`    const reviewed=await reviewSummaryDraft({request,completion,model,structured,validSourceIds,evidenceSources,summaryOptions});
-    structured=reviewed.structured;completion=reviewed.completion;model=reviewed.model;
-    const qualityReview=reviewed.qualityReview;
-    await assertSourcesUnchanged(supabase,user.id,selectedTranscriptRows);`);
-  s=one(s,'    const body = renderClientSessionSummary(structured.sections, lens);','    const body = renderClientSessionSummary(structured.sections, lens) + resourceAppendix(summaryOptions.resource,resourceVerification);');
-  s=one(s,'sessionCount:selectedCaptures.length,promptVersion:CLIENT_SESSION_SUMMARY_PROMPT_VERSION,model,usage:', 'sessionCount:selectedCaptures.length,promptVersion:CLIENT_SESSION_SUMMARY_PROMPT_VERSION,summaryOptions,resourceSelection:summaryOptions.resource?{...summaryOptions.resource,verification:resourceVerification}:null,qualityReview,model,usage:');
-  s=one(s,'  } catch (error) {\n    if(error.code',"  } catch (error) {\n    if(['INVALID_SUMMARY_OPTIONS','RESOURCE_NOT_VERIFIED','SUMMARY_ADDITION_NOT_VERIFIED'].includes(error.code))return res.status(error.status||422).json({success:false,error:{code:error.code,message:error.message}});\n    if(error.code");
-  return s;
+ s="import { SUMMARY_HEADINGS, summaryBodyToRichContent, safeResourceUrl } from '../../src/lib/summaryAuthoring.js';\n"+s;
+ const a=s.indexOf('const SUMMARY_HEADINGS=new Set(['),b=s.indexOf('\n]);',a);if(a<0||b<0)throw new Error('PDF heading table missing');s=s.slice(0,a)+s.slice(b+5);
+ const insert=String.raw`function richParagraphSegments(node){
+  if(node?.type==='hardBreak')return [{text:'\n'}];
+  if(node?.type==='text'){
+    let href=null;const mark=node.marks?.find(item=>item.type==='link');
+    if(mark?.attrs?.href)try{href=safeResourceUrl(mark.attrs.href)}catch{}
+    return [{text:text(node.text),href}];
+  }
+  return (node?.content||[]).flatMap(richParagraphSegments);
+}
+function renderParagraphSegments(pdf,node,options){
+  const parts=richParagraphSegments(node).filter(part=>part.text);
+  parts.forEach((part,index)=>pdf.text(part.text,{...options,continued:index<parts.length-1,link:part.href||null,underline:Boolean(part.href)}));
+}
+
+`;
+ s=one(s,'function renderRichNodes(',insert+'function renderRichNodes(');
+ s=one(s,'        pdf.text(value,options);\n      }else{','        renderParagraphSegments(pdf,node,options);\n      }else{');
+ s=one(s,"  else renderPlainBody(pdf,text(draft.content?.body||'').trim(),pageWidth);","  else if(isSessionSummary(draft))renderRichNodes(pdf,summaryBodyToRichContent(draft.content?.body||'').content,pageWidth);\n  else renderPlainBody(pdf,text(draft.content?.body||'').trim(),pageWidth);");
+ return s;
 });
 edit(paths[3],s=>{
-  s=one(s,"refinementRequest='',previousDraft='',anchorSessionId=null}","refinementRequest='',previousDraft='',summaryOptions={},anchorSessionId=null}");
-  s=one(s,'therapistGuidance,refinementRequest,previousDraft,anchorSessionId})','therapistGuidance,refinementRequest,previousDraft,summaryOptions,anchorSessionId})');
-  s=one(s,"therapistGuidance='',refinementRequest='',previousDraft=''})","therapistGuidance='',refinementRequest='',previousDraft='',summaryOptions={}})");
-  s=one(s,'therapistGuidance,refinementRequest,previousDraft})','therapistGuidance,refinementRequest,previousDraft,summaryOptions})');
-  return s;
+ s="import { clientSessionSummarySystemPrompt, buildClientSessionSummaryInput } from '../api/_lib/ai-client-session-summary.js';\nimport { SUMMARY_SECTION_GROUPS, summaryBodyToRichContent } from '../src/lib/summaryAuthoring.js';\n"+s;
+ s=testBody(s,'Clinical Intelligence prompt separates recurrence from causality and protects client-facing boundaries',String.raw`const prompt=clientSessionSummarySystemPrompt('integrative');
+ assert.match(prompt,/recurrence is not causality/i);assert.match(prompt,/Never invent.*diagnoses/);assert.match(prompt,/risk/);assert.match(prompt,/directly reported/);assert.match(prompt,/recurring/);assert.match(prompt,/tentative interpretation/);assert.match(prompt,/Silence is not improvement/i);`);
+ s=testBody(s,'Clinical Intelligence quality contract requires staged comparison and evidence thresholds',String.raw`const input=JSON.parse(buildClientSessionSummaryInput({captures:[]}));
+ assert.deepEqual(input.reasoningInstructions.sequence,['map evidence by source type','compare reviewed sessions','identify evidence strength','draft client-facing sections']);
+ assert.match(input.reasoningInstructions.recurrenceThreshold,/two or more session sources/);assert.match(input.reasoningInstructions.currentObservationRule,/current observation/);assert.match(input.reasoningInstructions.changeRule,/explicit comparative evidence/);
+ assert.deepEqual(input.evidenceMap.comparisonTasks,['recurrence','change','stability','exceptions','resources','unfinished_threads','possible_connections']);`);
+ s=testBody(s,'Clinical Intelligence prompt gives each client-facing section a distinct job',String.raw`const prompt=clientSessionSummarySystemPrompt('general');
+ for(const field of ['opening','whatWeWorkedOn','patternsOverTime','changesAndExceptions','strengthsAndResources','perspectiveReflection','betweenSession','closing'])assert.match(prompt,new RegExp(field+':'));
+ assert.match(prompt,/therapist contribution/);assert.match(prompt,/actual agreements/);assert.match(prompt,/Say each important thing once/);assert.match(prompt,/eight storage fields are NOT eight mandatory paragraphs/);assert.equal(SUMMARY_SECTION_GROUPS.length,4);`);
+ s=testBody(s,'therapist-authored additions are passed separately and never presented as client statements',String.raw`const input=JSON.parse(buildClientSessionSummaryInput({therapistGuidance:'A therapist-authored correction.'}));
+ assert.equal(input.evidenceMap.therapistAuthoredContext.sourceType,'therapist_guidance');assert.equal(input.evidenceMap.therapistAuthoredContext.content,'A therapist-authored correction.');
+ assert.match(clientSessionSummarySystemPrompt('general'),/editing instructions are directions, NOT proof that an event occurred/);
+ for(const path of ['../api/ai/client-session-summary.js','../src/lib/clientDocuments.js'])assert.match(await read(path),/therapistGuidance/);
+ assert.match(await read('../src/components/workspace/ClientDocumentComposer.vue'),/Therapist additions/);`);
+ s=testBody(s,'AI returns structured clinical intelligence and Helios renders the client document deterministically',String.raw`const sections={opening:'Work felt uncertain.',whatWeWorkedOn:'We explored the recorded response.',patternsOverTime:'A repeated pattern was reported.',changesAndExceptions:'An exception was reported.',strengthsAndResources:'A specific capacity was demonstrated.',perspectiveReflection:'A tentative interpretation.',betweenSession:'An agreed next step.',closing:'An unfinished question.'};
+ const rendered=renderClientSessionSummary(sections,'gentle_cbt');
+ for(const value of Object.values(sections))assert.ok(rendered.includes(value));
+ for(const group of SUMMARY_SECTION_GROUPS)assert.ok(rendered.includes(group.heading));
+ assert.equal(summaryBodyToRichContent(rendered).content.filter(node=>node.type==='heading').length,4);assert.doesNotMatch(rendered,/A gentle CBT perspective/);`);
+ s=one(s,'assert.match(composer,/replace your edited draft/i);','assert.match(composer,/candidateMatches/);assert.match(composer,/pendingSummary/);');
+ s=one(s,String.raw`assert.match(runner,/temperature:\s*0\.2/);assert.match(runner,/max_tokens:\s*8000/);`,String.raw`assert.match(runner,/buildTemperatureParams\(model,0\.2\)/);assert.match(runner,/buildTokenLimitParams\(model,8000\)/);`);
+ return s;
 });
-
-edit(paths[4],s=>{
-  s=one(s,'<script setup>',"<script setup>\nimport SummaryRefinementPanel from '../components/workspace/SummaryRefinementPanel.vue';\nimport { candidateMatches, summaryContextKey } from '../lib/summaryAuthoring.js';");
-  s=span(s,'              <section v-if="summaryDocument?.content?.body && summaryDocument.status', '              <div v-if="summaryDocument?.content?.summaryGeneration?.reviewRequired"',String.raw`              <SummaryRefinementPanel v-if="summaryDocument?.content?.body && summaryDocument.status !== 'completed'"
-                :body="summaryDocument.content.body" :context-key="refinementContext" :busy="isGenerating || reviewSaveBusy"
-                :disabled="!!sourceReview || summaryUnsafe || transcriptLoading || !!transcriptError || !transcript"
-                :candidate="pendingSummary" :error="generationError"
-                @generate="requestSummaryRefinement" @accept="acceptSummaryRevision" @discard="pendingSummary=null" />
-
-`);
-  s=span(s,"const refinementInput = ref('');",'const showSummaryOptions = ref(true);',String.raw`const pendingSummary=ref(null);
-const refinementContext=computed(()=>summaryContextKey([session.value?.clientId,session.value?.id,transcript.value?.id,transcript.value?.sourceVersion,summaryLens.value,summaryWindow.value,excludeEarlierZoomNotes.value,therapistGuidance.value]));
-watch(refinementContext,()=>{pendingSummary.value=null;});
-`);
-  s=span(s,'function reviewRefinement() {','async function approveSummaryDraft()',String.raw`async function requestSummaryRefinement(payload) {
-  if(payload.baseBody!==summaryDocument.value?.content?.body || payload.contextKey!==refinementContext.value)return;
-  await generateSummary(payload);
-}
-async function generateSummary(payload = null) {
-  if(!session.value || !transcript.value || transcriptLoading.value || transcriptError.value || isGenerating.value || reviewSaveBusy.value || summaryDocument.value?.status==='completed')return;
-  const refinement=payload && typeof payload.instruction==='string'?payload:null;
-  const baseBody=summaryDocument.value?.content?.body||'';
-  const contextKey=refinementContext.value;
-  isGenerating.value=true;generationError.value='';pendingSummary.value=null;
-  try{
-    const result=await generateSessionSummary({clientId:session.value.clientId,sessionId:session.value.id,transcriptId:transcript.value.id,
-      lens:summaryLens.value,window:summaryWindow.value,excludeEarlierZoomNotes:excludeEarlierZoomNotes.value,therapistGuidance:therapistGuidance.value,
-      refinementRequest:refinement?.instruction||'',previousDraft:refinement?baseBody.slice(0,10000):'',summaryOptions:refinement?.summaryOptions||{}});
-    if(disposed)return;
-    if(contextKey!==refinementContext.value || baseBody!==(summaryDocument.value?.content?.body||''))throw new Error('The draft or evidence selection changed. Prepare a new preview; nothing has been replaced.');
-    if(baseBody){pendingSummary.value={result,baseBody,contextKey,instruction:refinement?.instruction||''};return;}
-    await installSummaryResult(result,refinement?.instruction||'');
-  }catch(err){
-    if(err.code==='SOURCE_REVIEW_REQUIRED'){sourceReview.value=err.review||{message:err.message,sources:[]};return;}
-    if(!disposed)generationError.value=err.message||'Summary generation failed. The current draft is unchanged.';
-  }finally{isGenerating.value=false;}
-}
-async function acceptSummaryRevision(){
-  if(isGenerating.value||reviewSaveBusy.value||summaryDocument.value?.status==='completed')return;
-  const candidate=pendingSummary.value;
-  if(!candidateMatches(candidate,summaryDocument.value?.content?.body||'',refinementContext.value)){pendingSummary.value=null;generationError.value='The current draft changed. Prepare a new preview.';return;}
-  isGenerating.value=true;generationError.value='';
-  try{
-    if(sourceReview.value || !await verifySavedSummary())throw new Error('Resolve the source concern before accepting a revision.');
-    if(!candidateMatches(candidate,summaryDocument.value?.content?.body||'',refinementContext.value))throw new Error('The current draft changed. Prepare a new preview.');
-    await installSummaryResult(candidate.result,candidate.instruction);
-    pendingSummary.value=null;
-  }catch(error){generationError.value=error.message||'The revised draft could not be saved. Your current draft remains available.';}
-  finally{isGenerating.value=false;}
-}
-async function installSummaryResult(result,instruction=''){
-  clearTimeout(saveTimer);
-  const generation={outcome:'ready',id:result.generationId,generatedAt:result.generatedAt,promptVersion:result.promptVersion,model:result.model,
-    lens:result.lens||summaryLens.value,window:result.window||summaryWindow.value,sessionCount:result.sessionCount||1,
-    reviewCautions:result.reviewCautions||[],qualityReview:result.qualityReview||null,summaryOptions:result.summaryOptions||{},resourceSelection:result.resourceSelection||null,
-    reviewRequired:true,reviewedAt:null,refinedWith:instruction||undefined};
-  const existing=summaryDocument.value?.content||{};
-  const previous=existing.clinicalIntelligence?.history||existing.history||[];
-  const snapshot={body:existing.body,richContent:existing.richContent||null,generation:existing.summaryGeneration||existing.clinicalIntelligence?.generation||null,
-    sources:summaryDocument.value?.sourceManifest||[],claims:existing.clinicalIntelligence?.claims||[],lastGeneratedBody:existing.clinicalIntelligence?.lastGeneratedBody||'',timestamp:new Date().toISOString(),type:'pre_regeneration'};
-  const history=existing.body?[...previous,snapshot].slice(-5):previous;
-  const content={...existing,body:result.draft.body,richContent:null,summaryGeneration:generation,
-    clinicalIntelligence:{generation,claims:result.claims||[],sources:result.sources||[],history,lastGeneratedBody:result.draft.body},history};
-  if(summaryDocument.value){
-    summaryDocument.value=await saveClientDocumentDraft(summaryDocument.value,{content,sourceManifest:result.sources});
-  }else{
-    summaryDocument.value=await createClientDocumentDraft({client:client.value,title:'Session Summary - '+workspaceSession.value.date,documentType:'session_summary',content,sourceManifest:result.sources});
-  }
-  sourceReview.value=null;summaryReviewError.value='';isEditingSummary.value=false;
-  showSummaryOptions.value=prepareRequested.value;showSummaryGuidance.value=false;therapistGuidance.value='';
-}
-
-`);
-  return s;
+edit(paths[4],()=>String.raw`import test from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import { clientSessionSummarySystemPrompt } from '../api/_lib/ai-client-session-summary.js';
+test('session summary prompt tuning rules',async t=>{
+ const content=clientSessionSummarySystemPrompt('integrative');
+ const endpoint=fs.readFileSync('api/ai/session-summary.js','utf8');
+ await t.test('includes tentative inference guidance',()=>{assert.match(content,/tentative interpretation/);assert.match(content,/Never invent missing links/);});
+ await t.test('includes repetition avoidance guidance',()=>{assert.match(content,/Say each important thing once/);assert.match(content,/remove repetitive descriptions/i);});
+ await t.test('keeps section roles and longitudinal boundaries explicit',()=>{assert.match(content,/patternsOverTime: supported recurrence/);assert.match(content,/betweenSession: actual agreements/);assert.match(content,/two or more independent supplied session IDs/);assert.match(content,/Change needs explicit comparative evidence/);});
+ await t.test('preserves grounding and evidenceStrength rules for both evidence scopes',()=>{for(const word of ['current_observation','therapist_guidance','tentative_connection'])assert.ok(content.includes(word));assert.match(content,/Cite only supplied source IDs/);assert.match(content,/text appears verbatim/i);assert.match(endpoint,/window === 'recent'/);assert.match(content,/single session, including its report of earlier repeated events/);});
 });
-
+`);
 edit(paths[5],s=>{
-  s=one(s,'<script setup>',"<script setup>\nimport SummaryRefinementPanel from './SummaryRefinementPanel.vue'\nimport { candidateMatches, summaryContextKey, summaryBodyToRichContent } from '../../lib/summaryAuthoring.js'");
-  s=span(s,'            <div v-if="hasExistingSummary && !finalised"','            <div v-if="summarySources.length"',String.raw`            <SummaryRefinementPanel v-if="hasExistingSummary && !finalised" :body="form.body" :context-key="refinementContext"
-              :busy="generatingSummary || saving" :disabled="!!sourceReview || summaryUnsafe || sourceSafetyChecking || loadingEvidence || !anchorSessionId || !!evidenceError || guidanceDictation.busy.value"
-              :candidate="pendingSummary" :error="summaryGenerationError ? summaryGenerationMessage : ''"
-              @generate="requestSummaryRefinement" @accept="acceptSummaryRevision" @discard="pendingSummary=null" />
-
-`);
-  s=span(s,'const SUMMARY_SECTION_HEADINGS = new Set([','const props = defineProps(','');
-  s=one(s,"summaryLens = ref(props.document?.content?.clinicalIntelligence?.generation?.lens || 'general')", "summaryLens = ref(props.document?.content?.summaryGeneration?.lens || props.document?.content?.clinicalIntelligence?.generation?.lens || 'general')");
-  s=one(s,"summaryWindow = ref(props.document?.content?.clinicalIntelligence?.generation?.window || 'last_three')", "summaryWindow = ref(props.document?.content?.summaryGeneration?.window || props.document?.content?.clinicalIntelligence?.generation?.window || 'last_three')");
-  s=span(s,"const refinementInput=ref('')",'const initialBody = ',String.raw`const pendingSummary=ref(null)
-const refinementContext=computed(()=>summaryContextKey([props.client.id,currentDocument.value?.id,summaryLens.value,summaryWindow.value,anchorSessionId.value,therapistGuidance.value]))
-watch(refinementContext,()=>{pendingSummary.value=null})
-const guidanceDictation=useWhisperDictation({onText:text=>{therapistGuidance.value=appendDictation(therapistGuidance.value,text,'\n')}})
-`);
-  s=span(s,'async function generateSummary(refinement =','async function copySummary()',String.raw`async function requestSummaryRefinement(payload){
-  if(payload.baseBody!==form.body || payload.contextKey!==refinementContext.value)return
-  await generateSummary(payload)
-}
-async function generateSummary(payload=null){
-  if(generatingSummary.value || saving.value || sourceSafetyChecking.value || finalised.value || loadingEvidence.value || !anchorSessionId.value || evidenceError.value || guidanceDictation.busy.value)return
-  const refinement=payload&&typeof payload.instruction==='string'?payload:null
-  const baseBody=form.body,contextKey=refinementContext.value
-  generatingSummary.value=true;summaryGenerationError.value=false;summaryGenerationMessage.value='Preparing an editable summary...';pendingSummary.value=null
-  try{
-    const result=await generateClientSessionSummary({clientId:props.client.id,lens:summaryLens.value,window:summaryWindow.value,therapistGuidance:therapistGuidance.value,
-      refinementRequest:refinement?.instruction||'',previousDraft:refinement?baseBody.slice(0,10000):'',summaryOptions:refinement?.summaryOptions||{},anchorSessionId:anchorSessionId.value})
-    if(contextKey!==refinementContext.value || baseBody!==form.body)throw new Error('The draft or evidence selection changed. Prepare a new preview; nothing has been replaced.')
-    if(hasExistingSummary.value){pendingSummary.value={result,baseBody,contextKey,instruction:refinement?.instruction||''};summaryGenerationMessage.value='Revised draft ready to preview. Your current draft is unchanged.';return}
-    installSummaryResult(result,refinement?.instruction||'')
-  }catch(error){
-    if(error.code==='SOURCE_REVIEW_REQUIRED'){sourceReview.value=error.review||{message:error.message,sources:[]};summaryGenerationMessage.value='Source review is required. The existing draft is unchanged.';return}
-    summaryGenerationError.value=true;summaryGenerationMessage.value=(error.message||'Generation failed.')+' The current draft is unchanged.'
-  }finally{generatingSummary.value=false}
-}
-function acceptSummaryRevision(){
-  if(generatingSummary.value||saving.value||finalised.value||sourceReview.value||sourceSafetyChecking.value)return
-  const candidate=pendingSummary.value
-  if(!candidateMatches(candidate,form.body,refinementContext.value)){pendingSummary.value=null;summaryGenerationError.value=true;summaryGenerationMessage.value='The current draft changed. Prepare a new preview.';return}
-  installSummaryResult(candidate.result,candidate.instruction);pendingSummary.value=null
-}
-function installSummaryResult(result,instruction=''){
-  if(hasExistingSummary.value)previousSummaryVersions.value=[...previousSummaryVersions.value,{body:form.body,richContent:form.richContent,savedAt:new Date().toISOString(),generation:summaryGeneration.value,sources:summarySources.value,claims:summaryClaims.value,lastGeneratedBody:lastGeneratedBody.value}].slice(-5)
-  form.body=result.draft.body;form.richContent=summaryBodyToRichContent(result.draft.body);lastGeneratedBody.value=result.draft.body
-  summarySources.value=result.sources||[];summaryClaims.value=result.claims||[]
-  summaryGeneration.value={outcome:'ready',id:result.generationId,generatedAt:result.generatedAt,promptVersion:result.promptVersion,model:result.model,lens:result.lens,window:result.window,
-    anchorSessionId:anchorSessionId.value,usage:result.usage,sample:Boolean(result.sample),refinementRequest:instruction||undefined,summaryOptions:result.summaryOptions||{},
-    resourceSelection:result.resourceSelection||null,qualityReview:result.qualityReview||null,reviewRequired:true,reviewedAt:null}
-  sourceReview.value=null;summaryGenerationMessage.value=result.sample?'Synthetic example prepared. No AI allowance used.':'Draft ready. Review and edit before saving or finalising.'
-}
-`);
-  s=one(s,'...(clinicalIntelligence?{clinicalIntelligence}:{})','...(clinicalIntelligence?{clinicalIntelligence,summaryGeneration:summaryGeneration.value}:{})');
-  s=one(s,"try { const draft = await persistDraft(); currentDocument.value = await finaliseClientDocument(draft);", "try { if(isSessionSummary.value && summaryGeneration.value?.reviewRequired)summaryGeneration.value={...summaryGeneration.value,reviewedAt:new Date().toISOString()}; const draft = await persistDraft(); currentDocument.value = await finaliseClientDocument(draft);");
-  s=one(s,'const identity = computed(',"watch(()=>form.body,()=>{if(summaryGeneration.value?.reviewedAt && currentDocument.value?.status!=='completed')summaryGeneration.value={...summaryGeneration.value,reviewedAt:null}})\nconst identity = computed(");
-  return s;
+ s="import { clientSessionSummarySystemPrompt } from '../api/_lib/ai-client-session-summary.js';\n"+s;
+ return testBody(s,'single-session reported history cannot be labelled cross-session recurrence',String.raw`const prompt=clientSessionSummarySystemPrompt('general');
+ assert.match(prompt,/Use current_observation for a single session, including its report of earlier repeated events/);
+ assert.match(prompt,/recurring claim must cite two or more independent supplied session IDs/);
+ assert.match(direct,/clientSessionSummarySystemPrompt\(lens,summaryOptions\)/);`);
 });
 edit(paths[6],s=>{
-  s="import { summaryClinicalEvidence } from '../../src/lib/summaryEvidence.js';\n"+s;
-  return one(s,"text:doc.content?.body});","text:summaryClinicalEvidence(doc.content?.body)});");
+ s="import { clientSessionSummarySystemPrompt } from '../api/_lib/ai-client-session-summary.js';\nconst globalPrompt=clientSessionSummarySystemPrompt('integrative');\n"+s;
+ s=one(s,String.raw`/clientSessionSummaryLensRule\(lens\)/`,String.raw`/clientSessionSummarySystemPrompt\(lens,summaryOptions\)/`);
+ s=one(s,String.raw`assert.match(apiSource, /EVERY section value must be a JSON string/)`,String.raw`assert.match(globalPrompt, /exactly these string fields/)`);
+ s=one(s,String.raw`assert.match(apiSource, /session-summary-direct-v7-summary-first/)`,String.raw`assert.match(apiSource, /SUMMARY_POLICY_VERSION/)`);
+ s=one(s,String.raw`const guard = source.match(/async function generateSummary\(\)\s*\{\s*if\s*\(([^\n]+)\)\s*return;/)?.[1]`,String.raw`const guard = source.match(/async function generateSummary\(payload = null\)\s*\{\s*if\s*\(([^\n]+)\)\s*return;/)?.[1]`);
+ s=one(s,"new Function('session', 'isGenerating', 'summaryDocument', 'transcript', 'transcriptLoading', 'transcriptError',", "new Function('session', 'isGenerating', 'summaryDocument', 'transcript', 'transcriptLoading', 'transcriptError', 'reviewSaveBusy',");
+ s=one(s,'{value:source},{value:loading},{value:error})','{value:source},{value:loading},{value:error},{value:false})');
+ return s;
 });
-edit(paths[7],s=>{
-  s="import { buildTokenLimitParams, buildTemperatureParams } from '../api/_lib/ai-execution.js';\n"+s;
-  return one(s,'temperature:0.2,max_tokens:8000','...buildTemperatureParams(model,0.2),...buildTokenLimitParams(model,8000)');
+edit(paths[7],s=>one(s,String.raw`/excludeEarlierZoomNotes: excludeEarlierZoomNotes\.value/`,String.raw`/excludeEarlierZoomNotes:\s*excludeEarlierZoomNotes\.value/`));
+edit(paths[8],s=>{
+ s="import { summaryBodyToRichContent } from '../src/lib/summaryAuthoring.js';\n"+s;
+ s=one(s,'  assert.match(client, /Different parts of you in this work/)',"  assert.equal(summaryBodyToRichContent('Different parts of you in this work\\n\\nA legacy section.').content[0].type,'heading')");
+ s=one(s,'  assert.match(pdf, /Different parts of you in this work/)',"  assert.match(pdf, /summaryBodyToRichContent/)");return s;
 });
-for(const [path,text] of files)fs.writeFileSync(path,text);
-for(const path of paths.filter(path=>/\.(?:js|mjs)$/.test(path)))execFileSync('node',['--check',path],{stdio:'inherit'});
+for(const [path,source]of files)fs.writeFileSync(path,source);
+for(const path of paths.filter(path=>path.endsWith('.js')))execFileSync('node',['--check',path],{stdio:'inherit'});
 execFileSync('git',['diff','--check'],{stdio:'inherit'});
-console.log('Shared summary source refactor assembled for review and tests.');
+console.log('Global summary hand-off and regression updates assembled.');
