@@ -1,5 +1,5 @@
 import { isUnusableSummary } from '../../src/lib/summarySafety.js';
-export const CLIENT_SESSION_SUMMARY_PROMPT_VERSION = 'client-session-summary-v13-clinical-quality';
+export const CLIENT_SESSION_SUMMARY_PROMPT_VERSION = 'client-session-summary-v14-therapist-refinement';
 export const CLIENT_SESSION_SUMMARY_LENSES = Object.freeze(['general', 'integrative', 'gentle_cbt', 'internal_family_systems', 'transactional_analysis']);
 export const CLIENT_SESSION_SUMMARY_FIELDS = Object.freeze(['opening','whatWeWorkedOn','patternsOverTime','changesAndExceptions','strengthsAndResources','perspectiveReflection','betweenSession','closing']);
 
@@ -12,6 +12,9 @@ const sharedRules = `You are Helios Clinical Intelligence preparing an editable 
 Use only the supplied session evidence, current therapist-accepted Therapy Focus, and therapist-authored guidance. Session evidence may be either a reviewed Session Capture or an existing transcript-backed client session summary already stored in the workspace. One or more session sources may be supplied, newest first. When a long history is supplied, prioritise clinically meaningful recurrence, change, exceptions, resources and unfinished threads rather than trying to mention every session.
 A transcript-backed session summary is secondary, compressed evidence rather than verbatim client speech. Preserve its uncertainty and never strengthen a claim merely because it appears in a previous summary.
 Write in clear, warm, collaborative language that a client can understand. Be substantial when evidence supports it, but never pad sparse material.
+Clinical formulation is more than recording topics: use source-supported sequences of activation, bodily response, felt meaning, protective behaviour, relational impact and attempted repair to explain a potentially mutual pattern, with a meaningful exception or an honest uncertainty. Neither assert private motives nor force theory. A strong summary may describe two interacting protection strategies without assigning fault when source evidence supports each step.
+When the therapist approves an editorial refinement request, prioritise the requested improvement within the same evidence limits. The previous draft is context for what to improve, NOT a new clinical source, and any claims added must be independently grounded in the supplied evidence or clearly identified therapist-authored instruction.
+An exercise requested for future consideration must be headed "Optional exercise to consider" and written as a prospective suggestion, NEVER as something completed, assigned or agreed in the encounter. Include it only if the request specifically asks for such a suggestion, make it brief, optional and non-prescriptive, and never include it as evidence of client change. Therapist approval of an editorial request is NOT approval of the final clinical summary.
 
 CLINICAL WRITING STANDARD:
 - Begin with the actual work of this encounter, not a generic opening such as "In this session we explored various themes". Lead with one or two concrete developments the supplied source supports.
@@ -53,7 +56,7 @@ Give each client-facing section a distinct job:
 - changesAndExceptions: identify explicit change, stability, interruption or exception. Say what was different and what evidence shows the difference; do not manufacture improvement.
 - strengthsAndResources: identify specific client capacities, choices, relationships, coping responses or resources demonstrated in the evidence. Do not substitute praise or generic strengths language.
 - perspectiveReflection: apply the selected perspective only to supported evidence. Offer useful synthesis without diagnosis or causal certainty, and preserve ambiguity where appropriate.
-- betweenSession: include agreed actions, experiments, questions to notice, or unfinished work that has a clear source. Do not invent homework.
+- betweenSession: include agreed actions, experiments, questions to notice, or unfinished work that has a clear source. Do not invent homework. A therapist-requested future exercise may be added as a separately labelled "Optional exercise to consider" only when explicitly requested and accepted as a proposed addition, not attributed to the session or presented as assigned homework.
 - closing: briefly name the most useful thread to carry forward into the next session. Do not repeat the whole summary.
 
 Do not repeat the same point across sections. When one fact could fit several sections, place the detail in the section where it adds the most clinical value and refer to it elsewhere only if the new sentence adds a genuinely different comparison, consequence, exception or next step.
@@ -232,13 +235,18 @@ export function buildClinicalIntelligenceEvidenceMap({ captures = [], careItems 
   };
 }
 
-export function buildClientSessionSummaryInput({ lens = 'general', window = 'last_three', captures = [], careItems = [], therapistGuidance = '' }) {
+export function buildClientSessionSummaryInput({ lens = 'general', window = 'last_three', captures = [], careItems = [], therapistGuidance = '', refinementRequest = '', previousDraft = '' }) {
   const evidenceMap = buildClinicalIntelligenceEvidenceMap({ captures, careItems, therapistGuidance });
   return JSON.stringify({
     task: 'Prepare structured Clinical Intelligence for a therapist-reviewable client summary.',
     lens,
     window,
     evidenceMap,
+    editorialRefinement: refinementRequest.trim() ? {
+      therapistApprovedRequest: String(refinementRequest).trim().slice(0, 1800),
+      previousDraftForComparisonOnly: String(previousDraft).slice(0, 10000),
+      boundary: 'This is an editorial request and prior draft, not clinical evidence. Ground clinical statements in selected sources. Label optional future exercises as proposed and unagreed.'
+    } : null,
     reasoningInstructions: {
       sequence: ['map evidence by source type', 'compare reviewed sessions', 'identify evidence strength', 'draft client-facing sections'],
       recurrenceThreshold: 'two or more session sources with substantially similar evidence',
