@@ -40,7 +40,7 @@ test('exercise is always a proposed future option and cannot be presented as com
  assert.match(prompt,/Optional exercise to consider/);
  assert.match(prompt,/NEVER as something completed, assigned or agreed/);
  assert.match(prompt,/therapist approves an editorial refinement request/);
- assert.match(prompt,/reciprocal/i);
+ assert.match(prompt,/interacting protection strategies/i);
  assert.equal(CLIENT_SESSION_SUMMARY_PROMPT_VERSION,'client-session-summary-v14-therapist-refinement');
  assert.match(composer,/not activities already completed or agreed/);
  assert.match(composer,/Preview of the instruction, not a generated revision/);
