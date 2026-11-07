@@ -111,39 +111,10 @@
               </div>
             </div>
 
-            <div v-if="hasExistingSummary && !finalised" class="mt-4 rounded-control border border-border-muted bg-surface p-4" data-testid="refine-summary">
-              <div class="flex flex-wrap items-center justify-between gap-2">
-                <div><h4 class="text-body-sm font-semibold text-ink">Refine Summary</h4>
-                  <p class="text-caption text-ink-muted mt-1">Tell Helios what to improve. Review your instruction before regenerating; the current draft stays available under Restore previous version.</p>
-                </div>
-                <span class="text-caption text-ink-muted">Therapist-directed</span>
-              </div>
-              <div class="mt-3 flex flex-wrap gap-2">
-                <button type="button" class="button-secondary text-caption" :disabled="generatingSummary" @click="setRefinementExample('formulation')">Deepen the clinical formulation</button>
-                <button type="button" class="button-secondary text-caption" :disabled="generatingSummary" @click="setRefinementExample('body')">Suggest a body-awareness exercise</button>
-                <button type="button" class="button-secondary text-caption" :disabled="generatingSummary" @click="setRefinementExample('concise')">Make it less descriptive</button>
-              </div>
-              <label class="block mt-3">
-                <span class="text-caption font-semibold text-ink">Your instruction</span>
-                <textarea v-model="refinementInput" data-testid="refine-summary-input" maxlength="1800" rows="3"
-                  class="w-full mt-1.5 p-3 border border-border rounded-control bg-surface text-body-sm"
-                  placeholder="For example: Explore the reciprocal protective pattern more clearly and suggest an optional exercise in noticing bodily activation."
-                  :disabled="generatingSummary" @input="refinementPreview = null" />
-              </label>
-              <p class="text-caption text-ink-muted mt-2">New exercises are suggestions for consideration, not activities already completed or agreed in session. They require your review before the summary is saved.</p>
-              <p v-if="refinementError" class="mt-2 text-caption text-state-danger" role="alert">{{ refinementError }}</p>
-              <div class="mt-3 flex flex-wrap gap-2">
-                <button type="button" class="button-secondary" :disabled="!refinementInput.trim() || generatingSummary || loadingEvidence || !!evidenceError" @click="previewRefinement">Review proposed refinement</button>
-                <button v-if="refinementPreview" type="button" class="button-secondary" @click="refinementPreview=null">Discard instruction</button>
-              </div>
-              <div v-if="refinementPreview" class="mt-3 rounded-control border border-action-link/30 bg-surface-subtle p-3" data-testid="refine-summary-preview">
-                <p class="text-caption font-semibold text-ink">Your proposed instruction · {{ summaryLensLabel }}</p>
-                <p class="mt-2 text-body-sm whitespace-pre-wrap text-ink">{{ refinementPreview.instruction }}</p>
-                <p class="mt-2 text-caption text-ink-muted">Preview of the instruction, not a generated revision. Helios will use the original sources and your approved direction; you will review the new editable draft before saving or finalising.</p>
-                <button type="button" class="button-primary mt-3" :disabled="generatingSummary || !anchorSessionId || loadingEvidence || !!evidenceError || sourceSafetyChecking"
-                  @click="applyRefinement">Accept instruction &amp; regenerate</button>
-              </div>
-            </div>
+            <SummaryRefinementPanel v-if="hasExistingSummary && !finalised" :body="form.body" :context-key="refinementContext"
+              :busy="generatingSummary || saving" :disabled="!!sourceReview || summaryUnsafe || sourceSafetyChecking || loadingEvidence || !anchorSessionId || !!evidenceError || guidanceDictation.busy.value"
+              :candidate="pendingSummary" :error="summaryGenerationError ? summaryGenerationMessage : ''"
+              @generate="requestSummaryRefinement" @accept="acceptSummaryRevision" @discard="pendingSummary=null" />
 
             <div v-if="summarySources.length" class="mt-4 rounded-control border border-border-muted bg-surface-subtle p-3"><div class="flex flex-wrap items-center justify-between gap-2"><p class="text-caption font-semibold text-ink">Evidence used</p><button v-if="previousSummaryVersions.length" type="button" class="text-caption font-semibold text-action-link" @click="restorePreviousSummary">Restore previous version</button></div><ul class="mt-2 space-y-1 text-caption text-ink-secondary"><li v-for="source in summarySources" :key="source.id">{{ sourceLabel(source) }}</li></ul><p class="mt-2 text-caption text-ink-muted">Provenance is stored with this draft. Review the wording against these sources before finalising.</p></div>
           </section>
@@ -167,6 +138,8 @@
   </teleport>
 </template>
 <script setup>
+import SummaryRefinementPanel from './SummaryRefinementPanel.vue'
+import { candidateMatches, summaryContextKey, summaryBodyToRichContent } from '../../lib/summaryAuthoring.js'
 import SourceReviewDialog from './SourceReviewDialog.vue'
 import { isUnusableSummary } from '../../lib/summarySafety.js'
 import HelpLink from '../help/HelpLink.vue'
@@ -177,82 +150,17 @@ import { createClientDocumentDraft, downloadClientDocument, finaliseClientDocume
 import { loadDocumentProfile, profileDisplay } from '../../lib/documentProfile.js'
 import { appendDictation, useWhisperDictation } from '../../composables/useWhisperDictation.js'
 const SESSION_SUMMARY_TEMPLATE = `Where things are now\n\nWhat we have been working on\n\nPatterns across our recent work\n\nWhat has shifted — and what has been different\n\nStrengths and resources\n\nMaking sense of what we have noticed\n\nIdeas to carry forward\n\nClosing reflection`
-const SUMMARY_SECTION_HEADINGS = new Set([
-  'Where things are now',
-  'What we have been working on',
-  'Patterns across our recent work',
-  'What has shifted — and what has been different',
-  'Strengths and resources',
-  'Making sense of what we have noticed',
-  'A gentle CBT perspective',
-  'An integrative perspective',
-  'An Internal Family Systems perspective',
-  'Different parts of you in this work',
-  'A Transactional Analysis perspective',
-  'Ideas to carry forward',
-  'Closing reflection'
-])
-function richTextNodes(value) {
-  const nodes = []
-  String(value || '').split('\n').forEach((line, index) => {
-    if (index) nodes.push({ type: 'hardBreak' })
-    if (line) nodes.push({ type: 'text', text: line })
-  })
-  return nodes
-}
-function summaryBodyToRichContent(value) {
-  const content = []
-  for (const rawBlock of String(value || '').split(/\n{2,}/)) {
-    const block = rawBlock.trim()
-    if (!block) continue
-    const lines = block.split('\n')
-    const heading = lines[0].trim()
-    if (SUMMARY_SECTION_HEADINGS.has(heading)) {
-      content.push({ type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: heading }] })
-      const body = lines.slice(1).join('\n').trim()
-      if (body) content.push({ type: 'paragraph', content: richTextNodes(body) })
-    } else {
-      content.push({ type: 'paragraph', content: richTextNodes(block) })
-    }
-  }
-  return { type: 'doc', content: content.length ? content : [{ type: 'paragraph' }] }
-}
 const props = defineProps({ client: { type: Object, required: true }, clientEmail: { type: String, default: '' }, document: { type: Object, default: null }, initialDocumentType: { type: String, default: 'other' } })
 const emit = defineEmits(['close', 'saved', 'show-documents'])
 const SOURCE_PAGE_SIZE = 8
 const initialType = props.document?.documentType || props.initialDocumentType || 'other'
 const isSessionSummary = computed(() => form.documentType === 'session_summary')
 const loading = ref(true), saving = ref(false), action = ref(''), error = ref(''), saveMessage = ref(props.document ? 'Saved' : 'Not saved yet'), sources = ref([]), selectedSourceIds = ref([]), addedSourceIds = ref([]), expandedSourceId = ref(null), sourceQuery = ref(''), visibleSourceCount = ref(SOURCE_PAGE_SIZE), currentDocument = ref(props.document), baseline = ref(''), profile = ref({}), sourcePanelOpen = ref(false)
-const generatingSummary = ref(false), loadingEvidence = ref(false), evidenceError = ref(''), copySummaryState = ref('idle'), summaryLens = ref(props.document?.content?.clinicalIntelligence?.generation?.lens || 'general'), summaryWindow = ref(props.document?.content?.clinicalIntelligence?.generation?.window || 'last_three'), therapistGuidance = ref(''), summaryGenerationMessage = ref(''), summaryGenerationError = ref(false), summarySources = ref(props.document?.content?.clinicalIntelligence?.sources || props.document?.sourceManifest || []), summaryClaims = ref(props.document?.content?.clinicalIntelligence?.claims || []), summaryGeneration = ref(props.document?.content?.clinicalIntelligence?.generation || props.document?.content?.summaryGeneration || null), previousSummaryVersions = ref(props.document?.content?.clinicalIntelligence?.history || []), lastGeneratedBody = ref(props.document?.content?.clinicalIntelligence?.lastGeneratedBody || ''), availableSummarySessions = ref([]), anchorSessionId = ref(null), evidenceDateAutofillArmed = ref(false)
-const refinementInput=ref(''), refinementPreview=ref(null), refinementError=ref('')
-const guidanceDictation = useWhisperDictation({ onText: text => { therapistGuidance.value = appendDictation(therapistGuidance.value, text, '\n') } })
-function setRefinementExample(type) {
-  const examples = {
-    formulation: 'Go beyond describing events. Clarify the reciprocal protective pattern between both partners using the IFS lens where supported, including the moment each begins to feel threatened and how their responses affect one another. Remain tentative and evidence-grounded.',
-    body: 'Add a brief Optional exercise to consider: invite each person to notice bodily sensations, changes in breathing, tension and impulses when activation begins, and to describe what they notice without needing to resolve the disagreement immediately. Present this as a future suggestion, not an activity already discussed or agreed.',
-    concise: 'Make this summary less vanilla and more clinically useful: reduce repetition and generic wording, foreground the most meaningful supported interaction, the point where the pattern changes and the learning edge. Do not invent any new session events.'
-  }
-  refinementInput.value = examples[type] || ''
-  refinementPreview.value = null
-  refinementError.value = ''
-}
-function previewRefinement() {
-  const instruction = refinementInput.value.trim()
-  refinementError.value = ''
-  if (!instruction) { refinementError.value = 'Enter a refinement instruction first.'; return }
-  if (!hasExistingSummary.value || summaryUnsafe.value || sourceReview.value) { refinementError.value = 'Review the current summary and any source concerns before refining.'; return }
-  refinementPreview.value = {instruction, body: form.body, lens:summaryLens.value, window:summaryWindow.value, anchor:anchorSessionId.value}
-}
-async function applyRefinement() {
-  if (!refinementPreview.value || generatingSummary.value) return
-  const preview=refinementPreview.value
-  if (preview.body !== form.body || preview.lens !== summaryLens.value || preview.window !== summaryWindow.value || preview.anchor !== anchorSessionId.value) {
-    refinementPreview.value = null
-    refinementError.value = 'The draft or evidence selection changed. Review your instruction again before regenerating.'
-    return
-  }
-  await generateSummary(preview.instruction)
-}
+const generatingSummary = ref(false), loadingEvidence = ref(false), evidenceError = ref(''), copySummaryState = ref('idle'), summaryLens = ref(props.document?.content?.summaryGeneration?.lens || props.document?.content?.clinicalIntelligence?.generation?.lens || 'general'), summaryWindow = ref(props.document?.content?.summaryGeneration?.window || props.document?.content?.clinicalIntelligence?.generation?.window || 'last_three'), therapistGuidance = ref(''), summaryGenerationMessage = ref(''), summaryGenerationError = ref(false), summarySources = ref(props.document?.content?.clinicalIntelligence?.sources || props.document?.sourceManifest || []), summaryClaims = ref(props.document?.content?.clinicalIntelligence?.claims || []), summaryGeneration = ref(props.document?.content?.clinicalIntelligence?.generation || props.document?.content?.summaryGeneration || null), previousSummaryVersions = ref(props.document?.content?.clinicalIntelligence?.history || []), lastGeneratedBody = ref(props.document?.content?.clinicalIntelligence?.lastGeneratedBody || ''), availableSummarySessions = ref([]), anchorSessionId = ref(null), evidenceDateAutofillArmed = ref(false)
+const pendingSummary=ref(null)
+const refinementContext=computed(()=>summaryContextKey([props.client.id,currentDocument.value?.id,summaryLens.value,summaryWindow.value,anchorSessionId.value,therapistGuidance.value]))
+watch(refinementContext,()=>{pendingSummary.value=null})
+const guidanceDictation=useWhisperDictation({onText:text=>{therapistGuidance.value=appendDictation(therapistGuidance.value,text,'\n')}})
 const initialBody = props.document?.content?.body || (initialType === 'session_summary' ? SESSION_SUMMARY_TEMPLATE : '')
 const initialRichContent = props.document?.content?.richContent || (initialType === 'session_summary' && initialBody.trim() && initialBody.trim() !== SESSION_SUMMARY_TEMPLATE.trim() ? summaryBodyToRichContent(initialBody) : null)
 const form = reactive({ title: props.document?.title || (initialType === 'session_summary' ? 'Session summary' : ''), documentType: initialType, recipient: props.document?.recipient || '', purpose: props.document?.purpose || (initialType === 'session_summary' ? 'A client-facing summary of the session' : ''), periodStart: props.document?.periodStart || '', periodEnd: props.document?.periodEnd || '', body: initialBody, richContent: initialRichContent })
@@ -276,6 +184,7 @@ onMounted(async()=>{
   catch{sourceReview.value={message:'Source safety could not be verified. Review before copying or sharing.',sources:[]}}
   finally{sourceSafetyChecking.value=false}
 })
+watch(()=>form.body,()=>{if(summaryGeneration.value?.reviewedAt && currentDocument.value?.status!=='completed')summaryGeneration.value={...summaryGeneration.value,reviewedAt:null}})
 const identity = computed(() => profileDisplay(profile.value)), finalised = computed(() => currentDocument.value?.status === 'completed')
 const hasExistingSummary = computed(() => isSessionSummary.value && Boolean(form.body.trim()) && form.body.trim() !== SESSION_SUMMARY_TEMPLATE.trim())
 const summaryLensLabel = computed(() => ({ general:'General', integrative:'Integrative', gentle_cbt:'CBT', internal_family_systems:'Internal Family Systems (IFS)', transactional_analysis:'Transactional Analysis' })[summaryLens.value] || 'General')
@@ -310,7 +219,7 @@ function syncPeriodFromEvidence() {
 watch([summaryWindow, anchorSessionId], () => {
   if (evidenceDateAutofillArmed.value) syncPeriodFromEvidence()
 })
-function changes() { const clinicalIntelligence=isSessionSummary.value?{generation:summaryGeneration.value,claims:summaryClaims.value,sources:summarySources.value,history:previousSummaryVersions.value.slice(-5),lastGeneratedBody:lastGeneratedBody.value}:undefined; return { title: form.title, documentType: form.documentType, recipient: form.recipient, purpose: form.purpose, periodStart: form.periodStart || null, periodEnd: form.periodEnd || null, content: { body: form.body, richContent: form.richContent,...(clinicalIntelligence?{clinicalIntelligence}:{}) }, sourceManifest: isSessionSummary.value ? [...summarySources.value,{kind:'ai_generation',...(summaryGeneration.value||{})}] : selectedSources.value.map(s => ({ kind: 'session', id: s.id, version: s.version, occurredAt: s.occurredAt })) } }
+function changes() { const clinicalIntelligence=isSessionSummary.value?{generation:summaryGeneration.value,claims:summaryClaims.value,sources:summarySources.value,history:previousSummaryVersions.value.slice(-5),lastGeneratedBody:lastGeneratedBody.value}:undefined; return { title: form.title, documentType: form.documentType, recipient: form.recipient, purpose: form.purpose, periodStart: form.periodStart || null, periodEnd: form.periodEnd || null, content: { body: form.body, richContent: form.richContent,...(clinicalIntelligence?{clinicalIntelligence,summaryGeneration:summaryGeneration.value}:{}) }, sourceManifest: isSessionSummary.value ? [...summarySources.value,{kind:'ai_generation',...(summaryGeneration.value||{})}] : selectedSources.value.map(s => ({ kind: 'session', id: s.id, version: s.version, occurredAt: s.occurredAt })) } }
 function snapshot() { return JSON.stringify(changes()) }
 const dirty = computed(() => !finalised.value && baseline.value !== snapshot())
 onMounted(() => { loadWorkspace() })
@@ -354,7 +263,41 @@ async function loadWorkspace() {
     loading.value = false
   }
 }
-async function generateSummary(refinement = '') { if (generatingSummary.value || sourceSafetyChecking.value) return; const approvedRefinement=typeof refinement==='string' ? refinement.trim() : ''; const currentBody=form.body.trim(); if(currentBody&&currentBody!==SESSION_SUMMARY_TEMPLATE.trim()&&currentBody!==lastGeneratedBody.value&&!window.confirm('Generate again and replace your edited draft? Your current text will remain available under Restore previous version.'))return; generatingSummary.value = true; summaryGenerationError.value = false; summaryGenerationMessage.value = `Generating a new ${summaryLensLabel.value} summary…`; try { const result = await generateClientSessionSummary({ clientId: props.client.id, lens: summaryLens.value, window: summaryWindow.value, therapistGuidance: therapistGuidance.value,refinementRequest:approvedRefinement,previousDraft:approvedRefinement ? currentBody.slice(0,10000) : '',anchorSessionId:anchorSessionId.value }); sourceReview.value=null; if(currentBody)previousSummaryVersions.value=[...previousSummaryVersions.value,{body:form.body,richContent:form.richContent,savedAt:new Date().toISOString(),generation:summaryGeneration.value,sources:summarySources.value,claims:summaryClaims.value,lastGeneratedBody:lastGeneratedBody.value}].slice(-5); form.body = result.draft.body; form.richContent = summaryBodyToRichContent(result.draft.body); lastGeneratedBody.value=result.draft.body; summarySources.value=result.sources||[]; summaryClaims.value=result.claims||[]; summaryGeneration.value={outcome:'ready',refinementRequest:approvedRefinement || undefined,id:result.generationId,generatedAt:result.generatedAt,promptVersion:result.promptVersion,model:result.model,lens:result.lens,window:result.window,anchorSessionId:anchorSessionId.value,usage:result.usage,sample:Boolean(result.sample)}; if(approvedRefinement){refinementInput.value='';refinementPreview.value=null;refinementError.value=''} summaryGenerationMessage.value = result.sample ? `Sample draft prepared from ${result.sessionCount} synthetic session source${result.sessionCount===1?'':'s'}. No AI allowance used.` : (result.sessionCount > 1 ? `Draft prepared from ${result.sessionCount} session sources. Review and edit before finalising.` : 'Draft prepared from the available session source. Review and edit before finalising.') } catch (e) { if(e.code==='SOURCE_REVIEW_REQUIRED'){sourceReview.value=e.review||{message:e.message,sources:[]};summaryGenerationMessage.value='Source needs review. Previous draft unchanged.';return;} summaryGenerationError.value = true; summaryGenerationMessage.value = `${hasExistingSummary.value ? 'Generation failed — previous summary unchanged.' : 'Generation failed — no draft was created.'} ${e.message || 'Please try again.'}` } finally { generatingSummary.value = false } }
+async function requestSummaryRefinement(payload){
+  if(payload.baseBody!==form.body || payload.contextKey!==refinementContext.value)return
+  await generateSummary(payload)
+}
+async function generateSummary(payload=null){
+  if(generatingSummary.value || saving.value || sourceSafetyChecking.value || finalised.value || loadingEvidence.value || !anchorSessionId.value || evidenceError.value || guidanceDictation.busy.value)return
+  const refinement=payload&&typeof payload.instruction==='string'?payload:null
+  const baseBody=form.body,contextKey=refinementContext.value
+  generatingSummary.value=true;summaryGenerationError.value=false;summaryGenerationMessage.value='Preparing an editable summary...';pendingSummary.value=null
+  try{
+    const result=await generateClientSessionSummary({clientId:props.client.id,lens:summaryLens.value,window:summaryWindow.value,therapistGuidance:therapistGuidance.value,
+      refinementRequest:refinement?.instruction||'',previousDraft:refinement?baseBody.slice(0,10000):'',summaryOptions:refinement?.summaryOptions||{},anchorSessionId:anchorSessionId.value})
+    if(contextKey!==refinementContext.value || baseBody!==form.body)throw new Error('The draft or evidence selection changed. Prepare a new preview; nothing has been replaced.')
+    if(hasExistingSummary.value){pendingSummary.value={result,baseBody,contextKey,instruction:refinement?.instruction||''};summaryGenerationMessage.value='Revised draft ready to preview. Your current draft is unchanged.';return}
+    installSummaryResult(result,refinement?.instruction||'')
+  }catch(error){
+    if(error.code==='SOURCE_REVIEW_REQUIRED'){sourceReview.value=error.review||{message:error.message,sources:[]};summaryGenerationMessage.value='Source review is required. The existing draft is unchanged.';return}
+    summaryGenerationError.value=true;summaryGenerationMessage.value=(error.message||'Generation failed.')+' The current draft is unchanged.'
+  }finally{generatingSummary.value=false}
+}
+function acceptSummaryRevision(){
+  if(generatingSummary.value||saving.value||finalised.value||sourceReview.value||sourceSafetyChecking.value)return
+  const candidate=pendingSummary.value
+  if(!candidateMatches(candidate,form.body,refinementContext.value)){pendingSummary.value=null;summaryGenerationError.value=true;summaryGenerationMessage.value='The current draft changed. Prepare a new preview.';return}
+  installSummaryResult(candidate.result,candidate.instruction);pendingSummary.value=null
+}
+function installSummaryResult(result,instruction=''){
+  if(hasExistingSummary.value)previousSummaryVersions.value=[...previousSummaryVersions.value,{body:form.body,richContent:form.richContent,savedAt:new Date().toISOString(),generation:summaryGeneration.value,sources:summarySources.value,claims:summaryClaims.value,lastGeneratedBody:lastGeneratedBody.value}].slice(-5)
+  form.body=result.draft.body;form.richContent=summaryBodyToRichContent(result.draft.body);lastGeneratedBody.value=result.draft.body
+  summarySources.value=result.sources||[];summaryClaims.value=result.claims||[]
+  summaryGeneration.value={outcome:'ready',id:result.generationId,generatedAt:result.generatedAt,promptVersion:result.promptVersion,model:result.model,lens:result.lens,window:result.window,
+    anchorSessionId:anchorSessionId.value,usage:result.usage,sample:Boolean(result.sample),refinementRequest:instruction||undefined,summaryOptions:result.summaryOptions||{},
+    resourceSelection:result.resourceSelection||null,qualityReview:result.qualityReview||null,reviewRequired:true,reviewedAt:null}
+  sourceReview.value=null;summaryGenerationMessage.value=result.sample?'Synthetic example prepared. No AI allowance used.':'Draft ready. Review and edit before saving or finalising.'
+}
 async function copySummary(){
   if(sourceReview.value||summaryUnsafe.value||sourceSafetyChecking.value)return;
   if(currentDocument.value?.id){try{const safety=await checkSummarySourceSafety(currentDocument.value.id);if(!safety.safe){sourceReview.value=safety.review;return}}catch{sourceReview.value={message:'Source safety could not be verified. Review before copying.',sources:[]};return}}
@@ -389,7 +332,7 @@ function appendSources() { if (isSessionSummary.value) return; const pending = a
 function toggleSourcePreview(id) { expandedSourceId.value = expandedSourceId.value === id ? null : id } function loadMoreSources() { visibleSourceCount.value += SOURCE_PAGE_SIZE } function resetSourceWindow() { visibleSourceCount.value = SOURCE_PAGE_SIZE; expandedSourceId.value = null }
 async function persistDraft() { currentDocument.value = currentDocument.value ? await saveClientDocumentDraft(currentDocument.value, changes()) : await createClientDocumentDraft({ client: props.client, ...changes() }); baseline.value = snapshot(); saveMessage.value = `Saved ${new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute:'2-digit' })} to Client Documents`; emit('saved', currentDocument.value); return currentDocument.value }
 async function saveDraft() { if (saving.value) return; saving.value = true; action.value = 'save'; error.value = ''; try { await persistDraft() } catch (e) { error.value = e.message || 'Could not save this draft.' } finally { saving.value = false; action.value = '' } }
-async function finaliseDocument() { if(sourceReview.value||summaryUnsafe.value||sourceSafetyChecking.value)return; if (saving.value || !form.body.trim()) return; const label = isSessionSummary.value ? 'session summary' : 'clinical document'; if (!window.confirm(`Finalise this ${label}? This version will become read-only.`)) return; saving.value = true; action.value = 'finalise'; error.value = ''; try { const draft = await persistDraft(); currentDocument.value = await finaliseClientDocument(draft); baseline.value = snapshot(); emit('saved', currentDocument.value) } catch (e) { error.value = e.message || 'Could not finalise this document.' } finally { saving.value = false; action.value = '' } }
+async function finaliseDocument() { if(sourceReview.value||summaryUnsafe.value||sourceSafetyChecking.value)return; if (saving.value || !form.body.trim()) return; const label = isSessionSummary.value ? 'session summary' : 'clinical document'; if (!window.confirm(`Finalise this ${label}? This version will become read-only.`)) return; saving.value = true; action.value = 'finalise'; error.value = ''; try { if(isSessionSummary.value && summaryGeneration.value?.reviewRequired)summaryGeneration.value={...summaryGeneration.value,reviewedAt:new Date().toISOString()}; const draft = await persistDraft(); currentDocument.value = await finaliseClientDocument(draft); baseline.value = snapshot(); emit('saved', currentDocument.value) } catch (e) { error.value = e.message || 'Could not finalise this document.' } finally { saving.value = false; action.value = '' } }
 async function downloadFinalised() { if(sourceReview.value||summaryUnsafe.value||sourceSafetyChecking.value)return; try { await downloadClientDocument(currentDocument.value) } catch (e) { error.value = e.message } } function requestClose() { if (saving.value) return; if (!finalised.value && dirty.value && !window.confirm('You have unsaved changes. Close without saving?')) return; emit('close') }
 function formatDate(v) { if (!v) return ''; const d = new Date(v.length === 10 ? `${v}T00:00:00` : v); return Number.isNaN(d.getTime()) ? v : d.toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' }) } function formatDateTime(v) { return v ? new Date(v).toLocaleString('en-GB', { dateStyle:'medium', timeStyle:'short' }) : '' }
 </script>
