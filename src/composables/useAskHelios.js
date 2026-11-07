@@ -145,6 +145,8 @@ export function useAskHelios() {
         if (context?.clientId) restoredClinicalContext = context
         return {
           ...m,
+          generatedLens: m.role === 'assistant' ? (context?.lens || null) : null,
+          generatedWindow: m.role === 'assistant' ? (context?.window || null) : null,
           references: metadata.filter(item => item?.kind !== 'ask_helios_clinical_context')
         }
       })

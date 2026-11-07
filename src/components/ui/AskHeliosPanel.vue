@@ -151,7 +151,7 @@
               @click="input = example">{{ example }}</button>
           </div>
         </div>
-        <div v-for="(msg, index) in messages" v-show="!isAnswerFocused || index === focusAnswerIndex" :key="index"
+        <template v-for="(msg, index) in messages" :key="index"><div v-if="!isAnswerFocused || index === focusAnswerIndex"
           class="flex flex-col" :data-ask-message-index="index"
           :class="isAnswerFocused ? 'items-stretch' : (msg.role === 'user' ? 'items-end' : 'items-start')">
           <button v-if="msg.role === 'assistant' && isExpanded && !isAnswerFocused" type="button"
@@ -165,7 +165,15 @@
               msg.role === 'assistant' && isExpanded ? 'w-full max-w-5xl mx-auto' : '',
               msg.role === 'assistant' && !isExpanded ? 'max-w-[92%]' : ''
             ]">
-            <div class="whitespace-pre-wrap">{{ msg.content }}</div>
+            <p v-if="msg.role === 'assistant' && msg.generatedLens" class="mb-2 text-[11px] font-semibold text-ink-muted">Generated with {{ lensName(msg.generatedLens) }} · {{ windowName(msg.generatedWindow) }}<span v-if="clinicalContext && (msg.generatedLens !== clinicalContext.lens || msg.generatedWindow !== clinicalContext.window)" class="ml-2 text-state-warning">Previous perspective — regenerate to update</span></p>
+            <div v-if="editingAnswerIndex === index" class="space-y-2">
+              <label class="block text-xs font-semibold" :for="'ask-answer-edit-'+index">Therapist-edited copy</label>
+              <textarea :id="'ask-answer-edit-'+index" v-model="editDraft" rows="12" class="w-full rounded-control border border-border-muted bg-surface p-3 text-sm text-ink" maxlength="12000"></textarea>
+              <div class="flex gap-2"><button type="button" class="rounded-control bg-action-primary px-3 py-2 text-xs text-on-action" @click="saveEditedCopy(index)">Use edited copy</button><button type="button" class="rounded-control border border-border-muted px-3 py-2 text-xs" @click="editingAnswerIndex = -1">Cancel</button></div>
+              <p class="text-xs text-ink-muted">Local copy only. The original saved AI answer remains unchanged.</p>
+            </div>
+            <div v-else class="whitespace-pre-wrap">{{ editedCopies[index] ?? msg.content }}</div>
+            <p v-if="msg.role === 'assistant' && editedCopies[index] !== undefined" class="mt-2 text-xs text-ink-muted">Therapist-edited copy · original AI answer retained in conversation history</p>
             <div v-if="msg.references?.length" class="mt-3 pt-3 border-t border-border-muted/30">
               <h4 class="text-[10px] font-bold uppercase tracking-wider text-ink-muted mb-1.5">
                 {{ mode === 'workspace' ? 'Workspace records' : researchReferenceHeading(msg.references) }}
@@ -213,8 +221,17 @@
               <p class="mt-1 text-[10px] text-ink-muted">Helios prepares a provisional reflection and optional map. Nothing is saved until you review and confirm it.</p>
             </div>
           </div>
-          <span class="mt-1 px-1 text-[10px] text-ink-subtle">{{ msg.role === 'user' ? 'You' : 'Helios' }}</span>
-        </div>
+          <div class="mt-1 flex flex-wrap items-center gap-2 px-1">
+            <span class="text-[10px] text-ink-subtle">{{ msg.role === 'user' ? 'You' : 'Helios' }}</span>
+            <template v-if="msg.role === 'assistant'">
+              <button type="button" class="text-xs font-medium text-accent hover:underline" :aria-label="'Copy answer '+index" @click="copyAnswer(index)">Copy</button>
+              <button type="button" class="text-xs font-medium text-accent hover:underline" :aria-label="'Edit answer '+index" @click="editAnswer(index)">Edit</button>
+              <button v-if="mode === 'workspace' && clinicalContext" type="button" class="text-xs font-medium text-accent hover:underline" :disabled="isLoading" :aria-label="'Regenerate answer '+index" @click="regenerateAnswer(index)">Regenerate with {{ clinicalLensLabel }}</button>
+              <button type="button" class="text-xs font-medium text-accent hover:underline" @click="isAnswerFocused ? exitAnswerFocus() : focusAnswer(index)">{{ isAnswerFocused ? 'Exit focus' : 'Focus' }}</button>
+              <span v-if="copiedAnswerIndex === index" role="status" class="text-xs text-ink-muted">Copied</span>
+            </template>
+          </div>
+        </div></template>
         <div v-if="isLoading && !isAnswerFocused" class="flex flex-col items-start">
           <div class="bg-surface-subtle text-ink rounded-2xl rounded-tl-none border border-border-muted px-4 py-2.5">
             <div class="flex gap-1">
@@ -370,8 +387,46 @@ const modeNotice = ref('')
 const showExpandedContextDetails = ref(false)
 const focusAnswerIndex = ref(-1)
 const isAnswerFocused = computed(() => focusAnswerIndex.value >= 0)
+const editedCopies = ref({})
+const editingAnswerIndex = ref(-1)
+const editDraft = ref('')
+const copiedAnswerIndex = ref(-1)
+const lensNames = {general:'General',integrative:'Integrative',gentle_cbt:'CBT',internal_family_systems:'IFS',transactional_analysis:'TA'}
+const windowNames = {current:'This session',last_three:'Last 3',last_five:'Last 5',history:'Entire history'}
+function lensName(lens) { return lensNames[lens] || 'Clinical perspective' }
+function windowName(window) { return windowNames[window] || 'Selected evidence' }
+function editAnswer(index) {
+  if (messages.value[index]?.role !== 'assistant') return
+  editDraft.value = String(editedCopies.value[index] ?? messages.value[index].content ?? '')
+  editingAnswerIndex.value = index
+}
+function saveEditedCopy(index) {
+  if (editingAnswerIndex.value !== index || !editDraft.value.trim()) return
+  editedCopies.value = {...editedCopies.value,[index]:editDraft.value.trim()}
+  editingAnswerIndex.value = -1
+}
+async function copyAnswer(index) {
+  const content = String(editedCopies.value[index] ?? messages.value[index]?.content ?? '')
+  if (!content) return
+  try {
+    await navigator.clipboard.writeText(content)
+    copiedAnswerIndex.value = index
+  } catch {
+    editAnswer(index)
+    modeNotice.value = 'Clipboard access was unavailable. Select and copy the answer from the editor.'
+  }
+}
+function regenerateAnswer(index) {
+  if (isLoading.value || !clinicalContext.value || messages.value[index]?.role !== 'assistant') return
+  const question = [...messages.value.slice(0,index)].reverse().find(message => message.role === 'user')?.content
+  if (!question) { modeNotice.value = 'Original question unavailable. Ask the question again under the new lens.'; return }
+  exitAnswerFocus()
+  void sendMessage(question, {regenerate:true})
+}
 
 function changeMode(next) {
+  editedCopies.value = {}
+  editingAnswerIndex.value = -1
   closeReflectionBridge()
   exitAnswerFocus()
   showExpandedContextDetails.value = false
@@ -440,6 +495,7 @@ async function scrollToLatestAnswer() {
 // restoration and rendering finish, including a return from the history list.
 // Do not watch messages deeply: background metadata updates must not interrupt
 // someone deliberately scrolling up to read an earlier answer.
+watch(activeConversationId, () => { editedCopies.value = {}; editingAnswerIndex.value = -1 })
 watch(isPanelOpen, open => {
   if (!open) {
     closeReflectionBridge()
@@ -524,7 +580,7 @@ async function saveReflectionBridge(reviewed) {
     reflectionBridgeError.value = error.message || 'Unable to save reflection. Review the fields and retry.'
   } finally { reflectionBridgeSaving.value = false }
 }
-async function sendMessage(override = null) {
+async function sendMessage(override = null, options = {}) {
   // Vue passes an event object for submit handlers; only a deliberate string
   // argument is a programmatic follow-up search.
   const text = typeof override === 'string' ? override.trim() : input.value.trim()
@@ -552,7 +608,11 @@ async function sendMessage(override = null) {
   const requestVersion = getContextVersion()
   // Document task context is recovered by the authenticated API from the
   // persisted conversation, including after browser refresh or reopening.
-  const history = messages.value.filter(m => ['user', 'assistant'].includes(m.role))
+  // A change in lens must not let an earlier AI formulation contaminate the new answer.
+  const earlierAssistant = [...messages.value].reverse().find(m => m.role === 'assistant' && m.generatedLens)
+  const lensChanged = sentMode === 'workspace' && clinicalContext.value &&
+    earlierAssistant && earlierAssistant.generatedLens !== clinicalContext.value.lens
+  const history = options.regenerate || lensChanged ? [] : messages.value.filter(m => ['user', 'assistant'].includes(m.role))
     .slice(-6).map(m => ({ role: m.role, content: m.content }))
   input.value = ''
   addMessage({ role: 'user', content: text })
@@ -564,6 +624,7 @@ async function sendMessage(override = null) {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         mode: sentMode, query: text, conversationId: existingId, history,
+        regenerate: options.regenerate === true,
         clientId: sentMode === 'workspace' ? selectedClientId.value : null,
         clinicalContext: sentMode === 'workspace' ? clinicalContext.value : null,
         // The server revalidates any selected client/session scope against the signed-in therapist.
@@ -579,7 +640,9 @@ async function sendMessage(override = null) {
       role: 'assistant', content: data.answer, references: data.references || [],
       proposedAction: data.proposedAction || null, warning: data.warning,
       documentSearch: data.documentSearch || null,
-      researchHandoff: data.clinicalContext?.researchHandoff || null
+      researchHandoff: data.clinicalContext?.researchHandoff || null,
+      generatedLens: data.clinicalContext?.lens || null,
+      generatedWindow: data.clinicalContext?.window || null
     })
     if (data.clinicalContext && clinicalContext.value) setClinicalContext(data.clinicalContext)
     if (data.saved !== false && data.conversationId) {

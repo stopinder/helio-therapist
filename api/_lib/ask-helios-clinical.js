@@ -1,6 +1,6 @@
 import { clientSessionSummaryLensRule } from './ai-client-session-summary.js';
 
-export const ASK_HELIOS_CLINICAL_PROMPT_VERSION = 'ask-helios-clinical/2.1.0';
+export const ASK_HELIOS_CLINICAL_PROMPT_VERSION = 'ask-helios-clinical/2.2.0';
 export const ASK_HELIOS_CLINICAL_WINDOWS = Object.freeze(['current','last_three','last_five','history']);
 export const ASK_HELIOS_CLINICAL_LENSES = Object.freeze(['general','integrative','gentle_cbt','internal_family_systems','transactional_analysis']);
 
@@ -160,6 +160,13 @@ export async function loadAskHeliosClinicalContext({ supabase, userId, clientId,
   };
 }
 
+const PERSPECTIVE_DISCIPLINE = Object.freeze({
+  transactional_analysis: 'For a TA reading, attend to observable transactions and possible Parent/Adult/Child ego-state shifts, script beliefs, drivers and relational patterns only where supported. Do not use IFS-specific parts, Self-energy, blending or unblending language as your analytical framework. If the underlying evidence uses such terms, describe them as source statements and translate the inference cautiously into TA rather than treating them as verified TA concepts.',
+  internal_family_systems: 'For an IFS reading, attend to protective parts, possible blending/unblending, inner relationships and Self-led awareness only where the evidence supports that lens. Do not impose TA Parent/Adult/Child ego-state categories as the central formulation.',
+  gentle_cbt: 'For a CBT reading, focus on evidenced thoughts, behavioural responses, maintaining cycles and testable alternatives; do not impose IFS or TA-specific constructs.',
+  integrative: 'Integrate perspectives cautiously where they illuminate recorded material; label any interpretation rather than claiming a particular theory is established.',
+  general: 'Use ordinary descriptive language, avoiding theory-specific constructs unless explicitly present in the evidence.'
+});
 export function askHeliosClinicalSystemPrompt(lens = 'integrative') {
   return `You are Ask Helios, a clinical thinking assistant for a qualified therapist. The therapist has explicitly selected the client/session evidence supplied in this request. Help the therapist understand what may be happening without replacing their judgement or acting as a supervisor.
 
@@ -167,6 +174,9 @@ Separate what is recorded from what is inferred. Do not diagnose, invent trauma 
 
 The selected therapeutic perspective is a thinking lens, not a conclusion:
 ${clientSessionSummaryLensRule(lens)}
+${PERSPECTIVE_DISCIPLINE[lens] || PERSPECTIVE_DISCIPLINE.integrative}
+
+Do not simply paraphrase an earlier formulation in a different lens. Different perspectives should result in genuinely different *hypotheses and questions*, not invented evidence. Follow the selected lens even if source summaries happen to describe prior work in another model.
 
 Answer the therapist's actual question first. Do not substitute a generic clinical review, safety explanation, or evidence-audit template for a direct answer. Use the selected evidence to make the answer specific: name the concrete pattern, tension, exception, missing meaning, or uncertainty that bears on the question. If the evidence cannot answer the question, say exactly what is missing and offer the most useful next question rather than filling space.
 
