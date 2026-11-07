@@ -110,7 +110,11 @@ export default async function handler(req, res) {
     const { data: careItems, error: careError } = await supabase.from('client_care_items').select('id,kind,body,status,origin,provenance_session_id').eq('client_id', clientId).eq('therapist_id', user.id).eq('status', 'current').order('updated_at', { ascending:false }).limit(30);
     if (careError) throw careError;
 
-    const evidenceMap=buildClinicalIntelligenceEvidenceMap({captures:selectedCaptures,careItems:careItems||[],therapistGuidance});
+    // An accepted editorial instruction is therapist-authored context, never a record of something said or completed.
+    const approvedGuidance = refinementRequest.trim()
+      ? [therapistGuidance, 'Therapist-approved editorial request (not a session event or an agreed intervention): ' + refinementRequest.trim()].filter(Boolean).join('\n\n')
+      : therapistGuidance;
+    const evidenceMap=buildClinicalIntelligenceEvidenceMap({captures:selectedCaptures,careItems:careItems||[],therapistGuidance:approvedGuidance});
     const validSourceIds=new Set([...evidenceMap.reviewedSessions.map(item=>item.id),...evidenceMap.currentAcceptedCareContext.map(item=>item.id),...(evidenceMap.therapistAuthoredContext.content?[evidenceMap.therapistAuthoredContext.id]:[])]);
     const generationId=randomUUID(),generatedAt=new Date().toISOString();
     const { data: verifiedSampleClient, error: sampleClientError } = await supabase.rpc('is_sample_client', {
@@ -125,6 +129,9 @@ export default async function handler(req, res) {
       sampleVerified: verifiedSampleClient === true
     });
     if (sampleSummary) {
+      if (refinementRequest.trim()) {
+        return res.status(409).json({success:false,error:{code:'SAMPLE_REFINEMENT_UNAVAILABLE',message:'Sample Practice summaries are fixed demonstrations. Refine a draft from your own reviewed clinical evidence instead.'}});
+      }
       const body = renderClientSessionSummary(sampleSummary.sections, lens);
       const sources=[
         ...evidenceMap.reviewedSessions.map(item=>({id:item.id,kind:item.sourceType==='transcript_backed_session_summary'?'session_summary':'session_capture',sessionId:item.sessionId,occurredAt:item.occurredAt,reviewedAt:item.reviewedAt,documentId:item.sourceDocumentId||undefined,status:item.sourceStatus||undefined})),
@@ -153,7 +160,7 @@ export default async function handler(req, res) {
     }
     const { completion, model } = await runTextAI({
       feature:AI_FEATURES.CLIENT_SESSION_SUMMARY, userId:user.id, promptVersion:CLIENT_SESSION_SUMMARY_PROMPT_VERSION,
-      messages:[{role:'system',content:clientSessionSummarySystemPrompt(lens).replace('Return JSON only with exactly two fields:','For a ready result, supply these clinical fields:')+'\n'+SUMMARY_OUTCOME_RULES},{role:'user',content:buildClientSessionSummaryInput({lens,window,captures:selectedCaptures,careItems:careItems||[],therapistGuidance:refinementRequest.trim() ? [therapistGuidance, 'Therapist-approved editorial request for future or revised wording, NOT a statement that an action occurred or was agreed: '+refinementRequest.trim()].filter(Boolean).join('\n\n') : therapistGuidance,refinementRequest,previousDraft})}],
+      messages:[{role:'system',content:clientSessionSummarySystemPrompt(lens).replace('Return JSON only with exactly two fields:','For a ready result, supply these clinical fields:')+'\n'+SUMMARY_OUTCOME_RULES},{role:'user',content:buildClientSessionSummaryInput({lens,window,captures:selectedCaptures,careItems:careItems||[],therapistGuidance:approvedGuidance,refinementRequest,previousDraft})}],
       responseFormat:summaryOutcomeResponseFormat(validSourceIds), temperature:0.2, maxTokens:8000, timeout:60000
     });
     const finishReason = completion.choices?.[0]?.finish_reason || null;
