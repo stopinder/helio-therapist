@@ -12,7 +12,7 @@ const syntheticCases = [
 test('clinical quality prompt has a tracked revision and direct, non-formulaic reasoning contract', () => {
   assert.equal(ASK_HELIOS_CLINICAL_PROMPT_VERSION, 'ask-helios-clinical/2.3.0');
   const prompt=askHeliosClinicalSystemPrompt('integrative');
-  for (const instruction of ['Begin with a clear, specific answer','moment','secondary summaries','not independent corroboration','one discriminating alternative','120–220 words','Do not claim to be a human clinician']) {
+  for (const instruction of ['Begin with a clear, specific answer','what triggers the shift','secondary summaries','not independent corroboration','one discriminating alternative','120–220 words','Do not claim to be a human clinician']) {
     assert.ok(prompt.includes(instruction), instruction);
   }
 });
