@@ -1,3 +1,4 @@
+import { summaryClinicalEvidence } from '../../src/lib/summaryEvidence.js';
 import { isSummaryReviewNotice, isUnusableSummary } from '../../src/lib/summarySafety.js';
 
 export const CLINICAL_RECORD_FIELDS = Object.freeze([
@@ -55,7 +56,7 @@ export function buildClinicalRecordSources({sessionId,sessions=[],captures=[],su
     const anchor=anchors[0];
     add({id:`summary:${doc.id}`,kind:'session_summary',title:doc.title||'Saved Session Summary',
       sessionId:anchor,recordId:doc.id,updatedAt:doc.updated_at,occurredAt:bySession.get(anchor)?.occurred_at,
-      reviewStatus:doc.status==='completed'?'finalised':'working draft',text:doc.content?.body});
+      reviewStatus:doc.status==='completed'?'finalised':'working draft',text:summaryClinicalEvidence(doc.content?.body)});
   }
   for(const sess of sessions){
     if(sess.status!=='completed')continue;

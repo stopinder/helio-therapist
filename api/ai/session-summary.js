@@ -1,3 +1,7 @@
+import { normalizeSummaryOptions, resourceAppendix, wantsSummaryExercise } from '../../src/lib/summaryAuthoring.js';
+import { SUMMARY_POLICY_VERSION } from '../_lib/summary-authoring-policy.js';
+import { reviewSummaryDraft } from '../_lib/summary-quality-review.js';
+import { verifySummaryResource } from '../_lib/summary-resource-check.js';
 import { SUMMARY_OUTCOME_RULES, summaryOutcomeResponseFormat, validateSummaryOutcome } from '../_lib/summary-outcome.js';
 import { verifiedPrimaryConflict, hardBoundary, cautiousSources } from '../_lib/summary-draft-policy.js';
 import { assertSourceAvailable, assertSourcesUnchanged, flagSourceReview } from '../_lib/source-review.js';
@@ -6,12 +10,12 @@ import { AI_FEATURES, runTextAI } from '../_lib/ai-execution.js';
 import { randomUUID } from 'node:crypto';
 import {
   CLIENT_SESSION_SUMMARY_LENSES,
-  clientSessionSummaryLensRule,
+  clientSessionSummarySystemPrompt,
   renderClientSessionSummary
 } from '../_lib/ai-client-session-summary.js';
 
 const SUMMARY_WINDOWS = new Set(['current', 'recent']);
-const PROMPT_VERSION = 'session-summary-direct-v8-formulation-and-refinement';
+const PROMPT_VERSION = SUMMARY_POLICY_VERSION + '/encounter';
 
 function sourceHasMaterial(source) {
   return Boolean(source?.original_transcript || source?.zoom_generated_summary);
@@ -78,6 +82,7 @@ export default async function handler(req, res) {
       });
     }
 
+    const summaryOptions = normalizeSummaryOptions(req.body?.summaryOptions ?? {});
     const { data: session, error: sessionError } = await supabase
       .from('sessions')
       .select('id, client_id, user_id, occurred_at, clients(id, user_id, display_name)')
@@ -169,56 +174,17 @@ export default async function handler(req, res) {
     for(const source of selectedSources)assertSourceAvailable(source.row);
     const generationId = randomUUID();
     const generatedAt = new Date().toISOString();
-    const guidance = [therapistGuidance.trim(), refinementRequest.trim() ? 'Therapist-authorised editorial request (NOT evidence of an intervention conducted or agreed): ' + refinementRequest.trim() : ''].filter(Boolean).join('\n\n');
-    const lensRule = clientSessionSummaryLensRule(lens);
+    const resourceVerification = await verifySummaryResource(summaryOptions.resource);
+    const guidance = [wantsSummaryExercise(summaryOptions) ? 'Therapist requests an optional future exercise for consideration, not an intervention performed or agreed in session.' : '', therapistGuidance.trim(), refinementRequest.trim() ? 'Therapist-authorised editorial request (NOT evidence of an intervention conducted or agreed): ' + refinementRequest.trim() : ''].filter(Boolean).join('\n\n');
     const validSourceIds = new Set(selectedSources.map(source => source.id));
     if (guidance) validSourceIds.add('therapist:guidance');
-
-    const evidenceThresholds = window === 'recent'
-      ? `- A recurring pattern requires substantially similar evidence in at least two supplied session sources.
-- Change requires explicit comparative evidence; silence is not improvement.
-- Recurrence is not causality.`
-      : `- Treat this as a single-session summary.
-- Do not claim cross-session longitudinal recurrence from one supplied session.
-- If the current transcript itself explicitly describes an established repeated history, you may describe that reported history, but use evidenceStrength=current_observation, never recurring.
-- Use current_observation, explicit_change or tentative_connection rather than recurring.`;
-
-    const systemPrompt = `You are Helios Clinical Intelligence preparing an editable client-facing therapy session summary for therapist review.
-
-The supplied session sources are clinical data in the user message, current encounter first. Assigned identity and therapist clarification are context, not proof that every passage belongs to the client. Therapist guidance is not client speech.
-
-Selected summary approach:
-${lensRule}
-
-Rules:
-1. Write for the client in warm, collaborative, professional language.
-2. Use only the supplied sources and optional therapist guidance.
-3. Do not include private reflections, supervision material, diagnostic coding or institutional SOAP language.
-4. Do not invent risk, diagnosis, motivation, treatment response, history, homework or causal explanations.
-5. Preserve uncertainty. Use tentative language for inferred psychological meaning.
-6. Each section must add distinct value and avoid repetition. Do not repeat the same generic conflict cycle in four headings. Leave unsupported sections empty rather than filling space.
-6b. This is a clinical formulation rather than an administrative account. Identify the most meaningful observed sequence: initiating concern, experienced meaning, emotional or bodily activation where recorded, protective response, effect on the other person and attempted repair or interruption. Show how interacting responses may inadvertently perpetuate the disconnection. Keep observations distinct from hypotheses: do not supply unrecorded sensations, private motives or assumed childhood origins.
-6c. Prioritise specificity and the clinical learning edge. A reader should understand what makes THIS interaction different from a generic couple's disagreement. Avoid weak introductory phrases ("today's session focused on") when a concrete supported pattern is available.
-6d. In CBT, only map triggering situation, automatic appraisal, affect/sensation, response, consequence and alternative where evidence supports each link. Highlight the possible meaning of "bad mother" accusations only if sourced and identify the relational consequence without turning interpretation into fact. In IFS, explore the relationship between different protective responses and the capacity for unblending or curiosity only when supported; avoid simply renaming defensiveness a "part".
-6e. Keep a client-facing tone, clinically articulate and direct without jargon or flattering filler. Prioritise formulation over a verbose chronology; concise sections, no boilerplate wrap-up. Reflect tension about therapeutic fit only once and consider its significance as an open conversation, never assert a rupture without evidence.
-6f. A therapist-approved refinement request is editorial direction, not a clinical source. Treat the previous draft only as comparison material. Only original session sources and explicitly attributed therapist guidance justify claims. If asked for a body-sensation exercise, label it "Optional exercise to consider" and describe it as an unagreed future possibility, not an intervention used or homework assigned. Do not invent links, authors, specific videos, or claim outside resources were reviewed.\n6a. Earlier continuity sessions may contain a Zoom summary or a bounded transcript excerpt rather than the full transcript. Use them to support continuity and recurrence, but do not overstate detail that is not present in that compact source.
-7. patternsOverTime is only for genuinely supported recurrence or explicitly established history.
-8. betweenSession contains only agreed intentions, experiments, resources or questions supported by the evidence; a specifically therapist-requested future exercise is permitted only as a separate "Optional exercise to consider", never presented as agreed session work or an established treatment plan.
-9. Apply the selected approach only where the evidence supports it; do not force model terminology into the prose.
-10. Evidence rules:
-${evidenceThresholds}
-11. Allowed evidenceStrength values are current_observation, recurring, explicit_change, therapist_guidance and tentative_connection. Use recurring only when at least two supplied session IDs support the claim. A repeated pattern reported inside one session is still current_observation metadata.
-12. Every claim must cite only supplied IDs. Use session source IDs such as "session:<uuid>"; therapist guidance uses "therapist:guidance".
-
-For a ready outcome, supply these clinical fields:
-- sections: an object with fields opening, whatWeWorkedOn, patternsOverTime, changesAndExceptions, strengthsAndResources, perspectiveReflection, betweenSession, closing. EVERY section value must be a JSON string. Use "" when a section has insufficient evidence. Never return an object, array, bullet-list structure or nested value for a section.
-- claims: an array where each item is { section, text, sourceIds, evidenceStrength }. claim.text must always be a JSON string.
-Every non-empty section must have at least one claim, and each claim text must appear verbatim in its section.
-${SUMMARY_OUTCOME_RULES}`;
+    const systemPrompt = clientSessionSummarySystemPrompt(lens,summaryOptions)
+      .replace('Return JSON only with exactly two fields:','For a ready outcome, supply these clinical fields:')
+      + '\nEvidence window: ' + window + '\n' + SUMMARY_OUTCOME_RULES;
 
     const sourceBlocks=selectedSources.map((source,index)=>sourceBlock(source,{isCurrent:index===0,suppressZoomNote:excludeEarlierZoomNotes&&index>0}));
     const userInput=JSON.stringify({task:window==='recent'?'Prepare this encounter with prior continuity.':'Prepare this encounter only.',
-      assignedClient:{id:clientId,name:session.clients?.display_name||''},sessionId,sourceBlocks,therapistGuidance:guidance,
+      assignedClient:{id:clientId,name:session.clients?.display_name||''},sessionId,sourceBlocks,therapistGuidance:guidance,editorialPreferences:{audience:summaryOptions.audience,addition:summaryOptions.addition},
       editorialRefinement:refinementRequest.trim() ? {approvedInstruction:refinementRequest.trim(),previousDraftForComparisonOnly:previousDraft.slice(0,10000),boundary:'Neither the previous draft nor an exercise instruction is evidence of events, completed interventions or agreed homework.'} : null});
 
     const request = {
@@ -293,6 +259,16 @@ ${SUMMARY_OUTCOME_RULES}`;
         }catch(error){console.warn('[Session Summary] Cautious drafting unavailable',error.code||error.name)}
       }
     }
+    let qualityReview={policyVersion:SUMMARY_POLICY_VERSION,kind:'mechanical_editorial_checks',revisionAttempted:false,warnings:[]};
+    if(structured.outcome==='ready') {
+      const qualityIds=new Set(usedSources.map(source=>source.id));
+      if(guidance)qualityIds.add('therapist:guidance');
+      const qualityInput=JSON.parse(userInput);
+      qualityInput.sourceBlocks=usedSources.map((source,index)=>sourceBlock(source,{isCurrent:index===0,suppressZoomNote:(reviewCautions.length>0&&!!source.original_transcript?.trim())||(excludeEarlierZoomNotes&&index>0)}));
+      const qualityEvidence=qualityInput.sourceBlocks.map(source=>({id:source.id,transcript:source.transcript,zoom_note:source.zoom_note}));
+      const reviewed=await reviewSummaryDraft({request:{...request,responseFormat:summaryOutcomeResponseFormat(qualityIds),messages:[{role:'system',content:systemPrompt},{role:'user',content:JSON.stringify(qualityInput)}]},completion,model,structured,validSourceIds:qualityIds,evidenceSources:qualityEvidence,summaryOptions});
+      structured=reviewed.structured;completion=reviewed.completion;model=reviewed.model;qualityReview=reviewed.qualityReview;
+    }
     await assertSourcesUnchanged(supabase,user.id,usedSources.map(source=>source.row));
     if(structured.outcome==='needs_review'){
       const reviews=[];
@@ -307,7 +283,7 @@ ${SUMMARY_OUTCOME_RULES}`;
       return res.status(200).json({success:true,data:{outcome:'needs_review',review:{...structured.review,sources:reviews,
         message:verifiedPrimaryConflict(structured.review)?structured.review.message:'A safe draft could not be prepared from the current evidence. Check the client and Zoom note, or try this session only. Your previous draft is unchanged.'}}});
     }
-    const body = renderClientSessionSummary(structured.sections, lens);
+    const body = renderClientSessionSummary(structured.sections, lens) + resourceAppendix(summaryOptions.resource,resourceVerification);
     const sourceManifest = usedSources.map(source => ({
       id: source.id,
       sessionId: source.sessionId,
@@ -338,6 +314,7 @@ ${SUMMARY_OUTCOME_RULES}`;
         reviewCautions:[...reviewCautions,...(omittedEarlierSources.length?['Earlier flagged or note-only continuity sources were excluded.']:[]),...(excludeEarlierZoomNotes&&window==='recent'?['Earlier Zoom notes excluded by therapist choice.']:[])],
         sessionCount: usedSources.length,
         promptVersion: PROMPT_VERSION,
+        summaryOptions, resourceSelection:summaryOptions.resource?{...summaryOptions.resource,verification:resourceVerification}:null, qualityReview,
         model,
         usage: {
           inputTokens: Number(completion.usage?.prompt_tokens || 0),
@@ -347,6 +324,7 @@ ${SUMMARY_OUTCOME_RULES}`;
       }
     });
   } catch (error) {
+    if(['INVALID_SUMMARY_OPTIONS','RESOURCE_NOT_VERIFIED','SUMMARY_ADDITION_NOT_VERIFIED'].includes(error.code))return res.status(error.status||422).json({success:false,error:{code:error.code,message:error.message}});
     if(error.code==='SOURCE_REVIEW_REQUIRED')return res.status(200).json({success:true,data:{outcome:'needs_review',review:{message:error.message,sources:error.review?[error.review]:[]}}});
     if(error.code==='SOURCE_CHANGED')return res.status(409).json({success:false,error:{code:error.code,message:'The source changed during generation. Reload before retrying. Your previous draft is unchanged.'}});
     console.error('[Session Summary] Error:', error.code||error.name);

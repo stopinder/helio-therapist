@@ -1,3 +1,5 @@
+import { clientSessionSummarySystemPrompt } from '../api/_lib/ai-client-session-summary.js';
+const globalPrompt=clientSessionSummarySystemPrompt('integrative');
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
@@ -37,10 +39,10 @@ test('SessionWorkspace offers Regenerate only for non-finalised summary content'
   assert.equal(isVisible({ content: { body: '' }, status: 'draft' }), false)
   assert.equal(isVisible(null), false)
 
-  const guard = source.match(/async function generateSummary\(\)\s*\{\s*if\s*\(([^\n]+)\)\s*return;/)?.[1]
+  const guard = source.match(/async function generateSummary\(payload = null\)\s*\{\s*if\s*\(([^\n]+)\)\s*return;/)?.[1]
   assert.ok(guard, 'Generation must retain its early-return guard')
-  const blocksGeneration = new Function('session', 'isGenerating', 'summaryDocument', 'transcript', 'transcriptLoading', 'transcriptError', `return Boolean(${guard})`)
-  const check = (document, source = { id: 'source-1' }, loading = false, error = '') => blocksGeneration({value:{id:'session-1'}},{value:false},{value:document},{value:source},{value:loading},{value:error})
+  const blocksGeneration = new Function('session', 'isGenerating', 'summaryDocument', 'transcript', 'transcriptLoading', 'transcriptError', 'reviewSaveBusy', `return Boolean(${guard})`)
+  const check = (document, source = { id: 'source-1' }, loading = false, error = '') => blocksGeneration({value:{id:'session-1'}},{value:false},{value:document},{value:source},{value:loading},{value:error},{value:false})
   assert.equal(check({status:'completed'}), true)
   assert.equal(check({status:'draft'}), false)
   assert.equal(check({status:'draft'}, null), true)
@@ -84,10 +86,10 @@ test('Direct session summary keeps full fidelity for the current encounter and c
   assert.match(apiSource, /isCurrent:\s*index\s*===\s*0/)
   assert.match(apiSource, /!zoomSummary\s*\?\s*boundedTranscriptExcerpt\(transcript\)\s*:\s*''/)
   assert.match(apiSource, /transcript:transcriptForPrompt, zoom_note:zoomSummary/)
-  assert.match(apiSource, /EVERY section value must be a JSON string/)
+  assert.match(globalPrompt, /exactly these string fields/)
   assert.match(apiSource, /validateSummaryOutcome/)
   assert.match(apiSource, /summaryOutcomeResponseFormat\(validSourceIds\)/)
-  assert.match(apiSource, /session-summary-direct-v7-summary-first/)
+  assert.match(apiSource, /SUMMARY_POLICY_VERSION/)
 })
 
 test('SessionWorkspace keeps the previous summary visible when regeneration fails', () => {
@@ -100,7 +102,7 @@ test('SessionWorkspace keeps the previous summary visible when regeneration fail
 test('Session summary API supports current or recent transcript-backed evidence', () => {
   assert.match(apiSource, /SUMMARY_WINDOWS = new Set\(\['current', 'recent'\]\)/)
   assert.match(apiSource, /CLIENT_SESSION_SUMMARY_LENSES\.includes\(lens\)/)
-  assert.match(apiSource, /clientSessionSummaryLensRule\(lens\)/)
+  assert.match(apiSource, /clientSessionSummarySystemPrompt\(lens,summaryOptions\)/)
   assert.match(apiSource, /window === 'recent'/)
   assert.match(apiSource, /sources\.length >= \(window === 'recent' \? 3 : 1\)/)
   assert.match(apiSource, /therapist_guidance/)

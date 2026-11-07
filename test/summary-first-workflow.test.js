@@ -55,7 +55,7 @@ test('recent-source opt out excludes earlier notes, not current transcript, with
  assert.match(api,/typeof excludeEarlierZoomNotes !== 'boolean'/)
  assert.match(api,/excludeEarlierZoomNotes && !source\.original_transcript\?\.trim\(\)/)
  assert.match(view,/data-testid="exclude-earlier-zoom-notes"/)
- assert.match(view,/excludeEarlierZoomNotes: excludeEarlierZoomNotes\.value/)
+ assert.match(view,/excludeEarlierZoomNotes:\s*excludeEarlierZoomNotes\.value/)
  assert.match(view,/data-testid="summary-zoom-preview"/)
  assert.match(view,/data-testid="soft-source-review"/)
  assert.match(view,/Confirm client \/ review Zoom note/)
