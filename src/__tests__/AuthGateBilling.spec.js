@@ -90,11 +90,12 @@ describe('new-account billing gate', () => {
     fetch.mockResolvedValue({ ok: true, json: async () => ({ hasWorkspaceAccess: true, subscription: null }) })
     const wrapper = mount(AuthGate)
     await flushPromises()
-    const calls = fetch.mock.calls.length
+    const billingCalls = fetch.mock.calls.filter(([url]) => url === '/api/billing/status').length
     const listener = auth.onAuthStateChange.mock.calls.at(-1)[0]
     listener('SIGNED_IN', { access_token: 'another-token', user: { id: 'therapist-two' } })
     await flushPromises()
-    expect(fetch.mock.calls.length).toBe(calls + 1)
+    // SIGNED_IN may also trigger the independent signup welcome request.
+    expect(fetch.mock.calls.filter(([url]) => url === '/api/billing/status').length).toBe(billingCalls + 1)
     wrapper.unmount()
   })
 
