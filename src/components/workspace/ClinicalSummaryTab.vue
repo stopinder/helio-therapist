@@ -15,13 +15,14 @@
       </div>
       <p v-if="suggestionError" class="text-body-sm text-state-danger" role="alert">{{ suggestionError }}</p>
       <div v-if="suggestions" class="space-y-4" data-testid="clinical-record-suggested-fields">
+        <ClinicalRecordSuggestionFeedback :result="suggestions" :busy="suggestionsLoading || submitting" @retry="requestExistingSuggestions" />
         <div class="flex flex-wrap items-center justify-between gap-2">
-          <p class="text-body-sm font-semibold">Suggestions supported by existing records · therapist review required</p>
-          <button v-if="hasSuggestedFields" type="button" class="button-secondary" :disabled="suggestionsLoading" @click="useEmptySuggestedFields">Use suggestions in empty fields</button>
+          <p class="text-body-sm font-semibold">Suggestions with matching source passages · therapist review required</p>
+          <button v-if="hasSuggestedFields" type="button" class="button-secondary" :disabled="suggestionsLoading || submitting" @click="useEmptySuggestedFields">Use suggestions in empty fields</button>
         </div>
         <p v-if="!hasSuggestedFields" class="text-body-sm text-ink-muted">No sufficiently supported suggestions were found. Your existing draft remains unchanged.</p>
         <article v-for="(label,key) in summaryFields" :key="key" v-show="suggestions.fields[key]?.text" class="rounded-panel border border-border p-4 space-y-2" :data-testid="`evidence-field-${key}`">
-          <div class="flex flex-wrap items-center justify-between gap-3"><h4 class="text-body-sm font-semibold">{{ label }}</h4><button type="button" class="button-secondary" @click="useSuggestedField(key)">{{ summaryData[key] ? 'Replace field' : 'Use in draft' }}</button></div>
+          <div class="flex flex-wrap items-center justify-between gap-3"><h4 class="text-body-sm font-semibold">{{ label }}</h4><button type="button" class="button-secondary" :disabled="suggestionsLoading || submitting" @click="useSuggestedField(key)">{{ summaryData[key] ? 'Replace field' : 'Use in draft' }}</button></div>
           <p class="whitespace-pre-wrap text-body-sm text-ink-secondary">{{ suggestions.fields[key]?.text }}</p>
           <details class="text-body-sm"><summary class="text-action-link cursor-pointer">View supporting passages ({{ suggestions.fields[key]?.evidence?.length || 0 }})</summary>
             <blockquote v-for="(evidence,index) in suggestions.fields[key]?.evidence || []" :key="index" class="mt-2 pl-3 border-l-2 border-border text-caption text-ink-muted">
@@ -431,6 +432,8 @@ import ApprovalConfirmationDialog from './ApprovalConfirmationDialog.vue';
 import ApprovedClinicalRecordView from './ApprovedClinicalRecordView.vue';
 import NoticeBanner from './NoticeBanner.vue';
 import WhisperMicButton from '../ui/WhisperMicButton.vue';
+import ClinicalRecordSuggestionFeedback from './ClinicalRecordSuggestionFeedback.vue';
+import { mergeClinicalRecordSuggestionResult } from '../../lib/clinicalRecordSuggestionState.js';
 import { appendDictation, useWhisperDictation } from '../../composables/useWhisperDictation.js';
 import { saveSessionDraft, completeSessionRecord } from '../../lib/sessions.js';
 import { getSessionCapture } from '../../lib/sessionCaptures.js';
@@ -471,22 +474,27 @@ const hasSuggestedFields = computed(() => Object.values(suggestions.value?.field
 const hasAcceptedSuggestions = computed(() => Object.keys(acceptedEvidence).length > 0);
 function clearAcceptedEvidence(){for(const key of Object.keys(acceptedEvidence))delete acceptedEvidence[key];evidenceReviewed.value=false;}
 async function requestExistingSuggestions(focusField=null){
-  if(suggestionsLoading.value || status.value==='approved_record')return;
+  if(suggestionsLoading.value || submitting.value || !['not_started','draft'].includes(status.value))return;
   const requestVersion=++suggestionRequestVersion;
   const clientId=props.session.clientId,sessionId=props.session.id;
   suggestionsLoading.value=true;suggestionError.value='';
   try{
     const result=await suggestClinicalRecordFields({clientId,sessionId,focusField});
     if(requestVersion!==suggestionRequestVersion || props.session.id!==sessionId || props.session.clientId!==clientId)return;
-    // A field-level request must not discard other suggestions already reviewed on screen.
-    suggestions.value=focusField && suggestions.value
-      ? {...result,fields:{...suggestions.value.fields,[focusField]:result.fields[focusField]}}
-      : result;
-  }catch(error){if(requestVersion===suggestionRequestVersion)suggestionError.value=error.message||'Unable to prepare suggestions.';}
+    // A focused retry preserves other suggestions only while their source metadata remains current.
+    suggestions.value=mergeClinicalRecordSuggestionResult(suggestions.value,result,focusField);
+  }catch(error){
+    if(requestVersion===suggestionRequestVersion){
+      suggestionError.value=error.message||'Unable to prepare suggestions.';
+      // Do not leave stale suggestions available after a confidentiality/ownership failure.
+      if(['SOURCE_CHANGED','SOURCE_REVIEW_REQUIRED','SOURCE_REVIEW_UNAVAILABLE','SESSION_NOT_EDITABLE','CLIENT_NOT_AVAILABLE','SUGGESTION_SCOPE_MISMATCH','AUTH_REQUIRED','UNAUTHORIZED'].includes(error.code))suggestions.value=null;
+    }
+  }
   finally{if(requestVersion===suggestionRequestVersion)suggestionsLoading.value=false;}
 }
 function useSuggestedField(key){
-  if(!['not_started','draft'].includes(status.value))return;
+  if(suggestionsLoading.value || submitting.value || !['not_started','draft'].includes(status.value))return;
+  if(suggestions.value?.fieldResults?.[key]?.state==='withheld')return;
   const selected=suggestions.value?.fields?.[key];if(!selected?.text || !selected.evidence?.length)return;
   summaryData[key]=selected.text;
   acceptedEvidence[key]=selected.evidence.map(e=>({sourceId:e.sourceId,recordId:e.recordId,kind:e.kind,updatedAt:e.updatedAt,quote:e.quote}));

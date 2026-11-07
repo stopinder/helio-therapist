@@ -1,0 +1,41 @@
+name: Clinical Record field validation repair
+on:
+  push:
+    branches: [fix/clinical-record-field-validation-20261107]
+  pull_request:
+    paths:
+      - api/_lib/clinical-record-*.js
+      - api/ai/clinical-record-suggestions.js
+      - src/lib/clinicalRecord*.js
+      - src/components/workspace/ClinicalSummaryTab.vue
+      - src/components/workspace/ClinicalSummaryTab.validation.spec.js
+      - src/components/workspace/ClinicalRecordSuggestionFeedback.vue
+      - test/clinical-record-*.test.js
+      - scripts/compare-clinical-record-regressions.mjs
+      - .github/workflows/clinical-record-field-validation.yml
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22'
+      - run: npm ci --ignore-scripts --no-fund
+      - name: Validator, bounded retry and source-boundary regression tests
+        run: node --test test/clinical-record-existing-material.test.js test/clinical-record-partial-validation.test.js test/summary-source-outcomes.test.js
+      - name: API ownership and source-change checks plus real Clinical Record component tests
+        run: npx vitest run src/lib/clinicalRecordValidationApi.spec.js src/components/workspace/ClinicalSummaryTab.validation.spec.js
+      - name: Production build
+        run: npm run build
+      - name: Compare full Node suite against the unchanged production baseline
+        run: |
+          git worktree add --detach /tmp/clinical-record-baseline b06e0df7e3e6abaeead0c2875a4c8a980a8ac0a3
+          ln -s "$GITHUB_WORKSPACE/node_modules" /tmp/clinical-record-baseline/node_modules
+          node scripts/compare-clinical-record-regressions.mjs /tmp/clinical-record-baseline
