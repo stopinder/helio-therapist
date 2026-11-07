@@ -18,6 +18,7 @@ export const state = {
   isPanelOpen: ref(true), isExpanded: ref(false), panelWidth: ref(440), mode: ref('workspace'),
   messages: ref([]), conversations: ref([]), activeConversationId: ref(null), clients: ref([]), selectedClientId: ref(null),
   isRestoring: ref(true), restoreError: ref(''),
+  clinicalContext: ref({clientId:'cccccccc-cccc-4ccc-cccc-cccccccccccc',clientName:'Synthetic client',window:'last_three',lens:'internal_family_systems',sourceCount:1}), setClinicalContext:noOp, clearClinicalContext:noOp,
   closePanel: () => { state.isPanelOpen.value = false }, setWidth: width => { state.panelWidth.value = width },
   toggleExpand: () => { state.isExpanded.value = !state.isExpanded.value },
   addMessage: noOp, clearConversation: noOp, selectConversation: noOp, deleteConversation: noOp,
@@ -104,6 +105,13 @@ try {
     await page.evaluate(() => window.scrollFixture.restore());
     await expect.poll(async () => Math.abs(await topDelta())).toBeLessThan(2);
     await expect(latest).toContainText('Showing 17-24 of 40');
+    await expect(page.locator('[data-testid="ask-helios-clinical-context-compact"]')).toBeVisible();
+    const readingFraction = await page.evaluate(() => {
+      const panel=document.querySelector('.fixed.bottom-0.right-0');
+      const reader=document.querySelector('[data-testid="ask-helios-answer-scroll"]');
+      return reader.getBoundingClientRect().height/panel.getBoundingClientRect().height;
+    });
+    assert.ok(readingFraction >= 0.64, 'reading surface should use most of the available panel height');
     assert.ok(await pane.evaluate(el => el.scrollHeight - el.clientHeight - el.scrollTop) > 100, 'must not land at references at the bottom');
     assert.equal(await page.evaluate(() => window.scrollY), backgroundY, 'must not scroll the surrounding application');
     assert.equal(await page.locator('[data-ask-message-index]').count(), 6, 'all earlier history remains available');
