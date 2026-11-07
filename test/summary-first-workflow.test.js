@@ -79,7 +79,7 @@ test('note-first confirmation is explicit and retains audit, ownership and versi
  assert.match(panel,/data-testid="review-zoom-note"/)
  assert.match(panel,/data-testid="review-original-transcript"/)
  assert.match(panel,/confirmationHint/)
- assert.match(panel,/reviewed\.value && context\.value\.trim\(\)\.length>=10/)
+ assert.match(panel,/reviewed\.value&&context\.value\.trim\(\)\.length>=10/)
  assert.match(migration,/greatest\(length\(trim\(coalesce\(original\.original_transcript,''\)\)\),length\(trim\(coalesce\(original\.zoom_generated_summary,''\)\)\)\)<20/)
  assert.match(migration,/current_user not in \('postgres','service_role'\)/)
  assert.match(migration,/source_version<>p_expected_version/)
