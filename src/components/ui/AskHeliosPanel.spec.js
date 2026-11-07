@@ -316,7 +316,7 @@ describe('AskHeliosPanel', () => {
 
     await w.findAll('button').find(b => b.text() === 'Send to Reflect').trigger('click')
     await vi.waitFor(() => expect(w.text()).toContain('Review before saving'))
-    expect(w.text()).toContain('Wanting to rescue')
+    expect(w.findAll('input').some(field => field.element.value === 'Wanting to rescue')).toBe(true)
     expect(api.authenticatedFetch.mock.calls.filter(c => c[0] === '/api/ai/actions')).toHaveLength(0)
 
     await w.find('#ask-reflection-stoodOut').setValue('I noticed myself moving too quickly to solve the problem.')
