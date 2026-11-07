@@ -608,7 +608,11 @@ async function sendMessage(override = null, options = {}) {
   const requestVersion = getContextVersion()
   // Document task context is recovered by the authenticated API from the
   // persisted conversation, including after browser refresh or reopening.
-  const history = options.regenerate ? [] : messages.value.filter(m => ['user', 'assistant'].includes(m.role))
+  // A change in lens must not let an earlier AI formulation contaminate the new answer.
+  const earlierAssistant = [...messages.value].reverse().find(m => m.role === 'assistant' && m.generatedLens)
+  const lensChanged = sentMode === 'workspace' && clinicalContext.value &&
+    earlierAssistant && earlierAssistant.generatedLens !== clinicalContext.value.lens
+  const history = options.regenerate || lensChanged ? [] : messages.value.filter(m => ['user', 'assistant'].includes(m.role))
     .slice(-6).map(m => ({ role: m.role, content: m.content }))
   input.value = ''
   addMessage({ role: 'user', content: text })
