@@ -1,0 +1,31 @@
+name: Unified source-review dialog checks
+on:
+  push:
+    branches: [fix/unified-source-review-dialog-production-20261107]
+  pull_request:
+    paths:
+      - src/components/workspace/SourceReviewDialog.vue
+      - src/components/workspace/SourceReviewPanel.vue
+      - src/components/TranscriptInbox.vue
+      - src/views/SessionWorkspace.vue
+      - src/components/workspace/ClientDocumentComposer.vue
+      - src/components/workspace/SourceReviewDialog.spec.js
+      - test/source-review-dialog-contract.test.js
+permissions:
+  contents: read
+jobs:
+  source-review:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22'
+      - run: npm ci --ignore-scripts --no-fund
+      - name: Verify source-review UI and confidentiality contracts
+        run: |
+          node --test test/source-review-dialog-contract.test.js
+          npx vitest run src/components/workspace/SourceReviewDialog.spec.js
+      - name: Build production assets
+        run: npm run build

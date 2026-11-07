@@ -1,6 +1,6 @@
 <template>
   <section ref="inboxRoot" class="transcript-inbox">
-    <SourceReviewPanel v-if="reviewSourceId" :transcript-id="reviewSourceId" @close="reviewSourceId=''" @resolved="handleSourceReviewed" />
+    <SourceReviewDialog v-if="reviewSourceId" :transcript-id="reviewSourceId" :source-label="reviewSourceLabel" @close="reviewSourceId=''" @resolved="handleSourceReviewed" />
     <template v-if="!selected">
       <header class="page-header inbox-page-header">
         <div class="header-orientation">
@@ -67,8 +67,8 @@
               <StatusIndicator class="status-indicator" :tone="workflowTone(transcript)">{{ workflowState(transcript).label }}</StatusIndicator>
             </div>
 
-            <div v-if="transcript.sourceReview?.state==='needs_review'" class="matched-note"><span>Check the original before preparing or sharing a summary.</span><button class="button-primary" @click="reviewSourceId=transcript.id">Review source</button></div>
-            <div v-else-if="transcript.sourceReview?.state==='separated'" class="matched-note"><span>Original retained. Use its reviewed conversation segments.</span><button class="button-secondary" @click="reviewSourceId=transcript.id">View separation</button></div>
+            <div v-if="transcript.sourceReview?.state==='needs_review'" class="matched-note"><span>Check the original before preparing or sharing a summary.</span><button class="button-primary" @click.stop="openInboxSourceReview(transcript)">Review source</button></div>
+            <div v-else-if="transcript.sourceReview?.state==='separated'" class="matched-note"><span>Original retained. Use its reviewed conversation segments.</span><button class="button-secondary" @click.stop="openInboxSourceReview(transcript)">View separation</button></div>
             <div v-else-if="filterMode === 'attention' && !transcript.clientId && !transcript.sessionRef" class="inline-assignment">
               <div class="assignment-intro">
                 <span class="assignment-icon" aria-hidden="true"><UserPlus class="workspace-icon" /></span>
@@ -253,7 +253,7 @@
         </div>
         <div class="assignment-actions">
           <button v-if="sessionSummaryDestination(selected)" class="primary" :disabled="inboxBusy" @click="openLinkedSession">Open Clinical Workspace</button>
-          <button v-if="selected.sourceReview?.state === 'needs_review' || selected.sourceReview?.state === 'separated'" class="primary" @click="reviewSourceId=selected.id">Review source</button>
+          <button v-if="selected.sourceReview?.state === 'needs_review' || selected.sourceReview?.state === 'separated'" class="primary" @click.stop="openInboxSourceReview(selected)">Review source</button>
           <button class="secondary" @click="openClientTranscripts">Client transcripts</button>
           <button class="secondary" @click="closeTranscript">Back to inbox</button>
         </div>
@@ -341,9 +341,30 @@ import { createClient } from '../lib/clients.js'
 import { conversationPreview, conversationTurns, searchConversationTurns, transcriptSpeakerSummary } from '../lib/transcriptPresentation.js'
 import AddClientModal from './sidebar/AddClientModal.vue'
 import StatusIndicator from './ui/StatusIndicator.vue'
-import SourceReviewPanel from './workspace/SourceReviewPanel.vue'
-const reviewSourceId=ref('')
-async function handleSourceReviewed(result){if(result.action==='confirm')reviewSourceId.value='';await load()}
+import SourceReviewDialog from './workspace/SourceReviewDialog.vue'
+const reviewSourceId=ref(''),reviewSourceLabel=ref('')
+function openInboxSourceReview(transcript){
+  if(!transcript?.id){errorMessage.value='No original transcript is linked to this item.';return}
+  reviewSourceLabel.value=[triageIdentity(transcript),formatDate(transcript.sourceOccurredAt||transcript.receivedAt),transcript.sourceTitle]
+    .filter(Boolean).join(' · ')
+  reviewSourceId.value=transcript.id
+}
+async function handleSourceReviewed(result){
+  if(result.action==='confirm')reviewSourceId.value=''
+  // Reconcile the rows without toggling the Inbox loading placeholder or
+  // remounting the open transcript. Keep filters, search and typed assignments.
+  try{
+    const response=await authenticatedFetch('/api/zoom/transcripts')
+    const data=await response.json().catch(()=>({}))
+    if(!response.ok)throw new Error(data.error?.message||'Unable to refresh transcript status.')
+    const selectedId=selected.value?.id
+    transcripts.value=data.transcripts||[]
+    for(const item of transcripts.value)initialiseAssignmentDraft(item)
+    if(selectedId)selected.value=transcripts.value.find(item=>item.id===selectedId)||selected.value
+  }catch{
+    errorMessage.value='The source review was saved, but the inbox status could not refresh. Reopen Transcript Inbox to update the list.'
+  }
+}
 const props = defineProps({ clients: { type: Array, default: () => [] }, openTranscriptId: { type: [String, Number], default: null } })
 const emit = defineEmits(['client-added'])
 import { assignedTranscriptIdentity, hasLinkedEncounter, isConfirmedAssignment, sessionSummaryDestination, transcriptNeedsAttention, transcriptWorkflowState } from '../lib/transcriptWorkflow.js'
@@ -754,7 +775,7 @@ async function openLinkedSessionFromRow(transcript,context){
   const destination=sessionSummaryDestination(transcript)
   if(navigationSavingId.value)return
   if(!destination){
-    if(['needs_review','separated'].includes(transcript?.sourceReview?.state))reviewSourceId.value=transcript.id
+    if(['needs_review','separated'].includes(transcript?.sourceReview?.state))openInboxSourceReview(transcript)
     else errorMessage.value='Link this transcript to its encounter before opening Clinical Workspace.'
     return
   }

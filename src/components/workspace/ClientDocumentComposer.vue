@@ -12,7 +12,7 @@
           <button v-for="(item,index) in reviewSources" :key="index" class="button-secondary mt-2" :disabled="!item.transcriptId" @click="reviewTranscriptId=item.transcriptId">Review source {{index+1}}</button>
           <a v-if="sourceReview?.resolved && confirmedEncounterUrl" :href="confirmedEncounterUrl" class="button-primary">Open this encounter to regenerate</a>
         </section>
-        <div v-if="reviewTranscriptId" class="overflow-auto max-h-[70vh] p-4"><SourceReviewPanel :transcript-id="reviewTranscriptId" @close="reviewTranscriptId=''" @resolved="handleSourceReviewResolved" /></div>
+        <SourceReviewDialog v-if="reviewTranscriptId" :transcript-id="reviewTranscriptId" :source-label="(client?.display_name || client?.name || 'Client') + ' · Original transcript'" @close="reviewTranscriptId=''" @resolved="handleSourceReviewResolved" />
         <div v-if="finalised" class="flex-1 overflow-auto p-8">
           <div class="max-w-2xl mx-auto rounded-panel border border-state-success/20 bg-state-success-surface p-6">
             <p class="text-h3 font-semibold text-state-success">✓ PDF finalised and saved</p>
@@ -133,7 +133,7 @@
   </teleport>
 </template>
 <script setup>
-import SourceReviewPanel from './SourceReviewPanel.vue'
+import SourceReviewDialog from './SourceReviewDialog.vue'
 import { isUnusableSummary } from '../../lib/summarySafety.js'
 import HelpLink from '../help/HelpLink.vue'
 import RichDocumentEditor from '../documents/RichDocumentEditor.vue'

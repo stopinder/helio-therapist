@@ -41,9 +41,17 @@
               <h2 class="text-h3 font-semibold">{{ sourceReview?.resolved ? 'Source review saved' : 'Source needs review' }}</h2>
               <p>{{ sourceReview?.message || 'The earlier output is a source-review notice, not a usable summary. Review its original source and regenerate.' }}</p>
               <p class="text-body-sm">Your previous draft and imported Zoom note have been preserved. No new summary was saved by this review.</p>
-              <div v-if="!sourceReview?.resolved" class="flex flex-wrap gap-2"><button v-for="(item,index) in sourceReview?.sources || []" :key="index" v-show="item.transcriptId" class="button-primary" @click="openSourceReview(item)">Review flagged source {{ index+1 }}</button><button v-if="!sourceReview?.sources?.length && transcript?.id" class="button-primary" @click="openSourceReview()">Review original source</button></div>
+              <p v-if="sourceReviewOpenError" class="text-body-sm text-state-danger" role="alert">{{ sourceReviewOpenError }}</p>
+              <div v-if="!sourceReview?.resolved" class="flex flex-wrap gap-2">
+                <button v-for="(item,index) in reviewableSources" :key="item.transcriptId" type="button" class="button-primary"
+                  @click="openSourceReview(item,index)" :aria-label="'Review original transcript ' + (index+1) + ' of ' + reviewableSources.length">
+                  Review original transcript {{ index+1 }} of {{ reviewableSources.length }}
+                </button>
+                <button v-if="!reviewableSources.length && transcript?.id" type="button" class="button-primary" @click="openSourceReview()">Review original transcript</button>
+                <p v-else-if="!reviewableSources.length && !transcript?.id" class="text-body-sm text-state-danger">No original transcript is linked. Check the assignment in Transcript Inbox.</p>
+              </div>
             </section>
-            <SourceReviewPanel v-if="reviewTranscriptId" :transcript-id="reviewTranscriptId" @close="reviewTranscriptId=''" @resolved="sourceReviewResolved" />
+            <SourceReviewDialog v-if="reviewTranscriptId" :transcript-id="reviewTranscriptId" :source-label="reviewSourceLabel" @close="reviewTranscriptId=''" @resolved="sourceReviewResolved" />
             <section class="space-y-6">
               <div class="flex flex-wrap items-start justify-between gap-4">
                 <div>
@@ -220,7 +228,7 @@
 
 <script setup>
 import HelpLink from '../components/help/HelpLink.vue'
-import SourceReviewPanel from '../components/workspace/SourceReviewPanel.vue';
+import SourceReviewDialog from '../components/workspace/SourceReviewDialog.vue';
 import { isUnusableSummary } from '../lib/summarySafety.js';
 import { ref, onMounted, computed, watch, onBeforeUnmount } from 'vue';
 import { useRoute, useRouter, RouterLink } from 'vue-router';
@@ -245,9 +253,24 @@ const router = useRouter();
 const { openClinicalContext } = useAskHelios();
 const session = ref(null), client = ref(null), loading = ref(true), error = ref(''), transcript = ref(null), transcriptLoading = ref(false), transcriptError = ref(''), therapistName = ref('');
 const summaryDocument = ref(null);
-const sourceReview=ref(null),reviewTranscriptId=ref('');
+const sourceReview=ref(null),reviewTranscriptId=ref(''),reviewSourceLabel=ref(''),sourceReviewOpenError=ref('');
+const reviewUuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const reviewableSources=computed(()=>[...new Map((sourceReview.value?.sources||[])
+  .filter(item=>reviewUuid.test(String(item?.transcriptId||'')))
+  .map(item=>[item.transcriptId,item])).values()]);
 const summaryUnsafe=computed(()=>isUnusableSummary(summaryDocument.value?.content));
-function openSourceReview(item){reviewTranscriptId.value=item?.transcriptId||transcript.value?.id||''}
+function openSourceReview(item=null,index=0){
+  const id=item?.transcriptId||transcript.value?.id;
+  if(!reviewUuid.test(String(id||''))){
+    sourceReviewOpenError.value='The original transcript link is missing or invalid. Open Transcript Inbox to check the encounter assignment.';
+    return;
+  }
+  sourceReviewOpenError.value='';
+  const name=client.value?.display_name||client.value?.name||'Client';
+  const count=reviewableSources.value.length;
+  reviewSourceLabel.value=count>1 ? name+' · Original source '+(index+1)+' of '+count : name+' · Original transcript';
+  reviewTranscriptId.value=id;
+}
 async function sourceReviewResolved(result){
   if(result.action==='confirm'){
     reviewTranscriptId.value='';sourceReview.value={resolved:true,message:'Source review saved. Generate a fresh summary before copying or sharing. Your earlier draft is unchanged.',sources:[]};await loadTranscript();

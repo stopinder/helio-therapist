@@ -1,6 +1,6 @@
 <template>
-  <section class="rounded-panel border border-border bg-surface-elevated p-5 space-y-4" data-testid="source-review-panel" aria-label="Review transcript source">
-    <header class="flex flex-wrap justify-between gap-3"><div><h3 class="text-h3 font-semibold">Review the source</h3><p class="text-body-sm text-ink-secondary">Check the original conversation, not just the imported Zoom note. This review does not generate or share a summary.</p></div><button type="button" class="button-secondary" :disabled="busy" @click="$emit('close')">Close review</button></header>
+  <section :class="embedded ? 'space-y-4' : 'rounded-panel border border-border bg-surface-elevated p-5 space-y-4'" data-testid="source-review-panel" aria-label="Review transcript source">
+    <header v-if="!embedded" class="flex flex-wrap justify-between gap-3"><div><h3 class="text-h3 font-semibold">Review the source</h3><p class="text-body-sm text-ink-secondary">Check the original conversation, not just the imported Zoom note. This review does not generate or share a summary.</p></div><button type="button" class="button-secondary" :disabled="busy" @click="$emit('close')">Close review</button></header>
     <p v-if="error" role="alert" class="text-state-danger">{{ error }}</p>
     <button v-if="error && !busy" type="button" class="button-secondary" @click="load">Reload current source</button>
     <p v-if="loading" role="status">Loading the original source...</p>
@@ -49,7 +49,7 @@ import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue';
 import { RouterLink } from 'vue-router';
 import { authenticatedFetch } from '../../lib/api.js';
 import { listClients } from '../../lib/clients.js';
-const props=defineProps({transcriptId:{type:String,required:true}});
+const props=defineProps({transcriptId:{type:String,required:true},embedded:{type:Boolean,default:false}});
 const emit=defineEmits(['resolved','close']);
 const source=ref(null),clients=ref([]),loading=ref(false),busy=ref(false),error=ref(''),mode=ref('confirm'),context=ref(''),reviewed=ref(false),segments=ref([]),createdSegments=ref([]);
 const lines=computed(()=>String(source.value?.text||'').replace(/\r\n?/g,'\n').split('\n'));
