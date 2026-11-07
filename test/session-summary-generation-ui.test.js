@@ -26,7 +26,7 @@ test('SessionWorkspace presents inline summary customization before first genera
 })
 
 test('SessionWorkspace offers Regenerate only for non-finalised summary content', () => {
-  const button = source.match(/<button\b[^>]*>\s*Regenerate\s*<\/button>/i)?.[0]
+  const button = source.match(/<button\b[^>]*>\s*Regenerate summary\s*<\/button>/i)?.[0]
   assert.ok(button, 'Regenerate button must exist')
   const condition = button.match(/v-if="([^"]+)"/)?.[1]
   assert.ok(condition, 'Regenerate must have a visibility condition')
@@ -53,7 +53,7 @@ test('SessionWorkspace sends the chosen approach, evidence scope and therapist g
   assert.match(source, /window:\s*summaryWindow\.value/)
   assert.match(source, /therapistGuidance:\s*therapistGuidance\.value/)
   assert.match(source, /summaryGeneration:\s*generation/)
-  assert.match(source, /showSummaryOptions\.value = prepareRequested\.value/)
+  assert.match(source, /showSummaryOptions\.value = false/)
 })
 
 test('Session summary approach is remembered per client', () => {
@@ -111,3 +111,18 @@ test('SessionWorkspace calls generateSessionSummary helper', () => {
   assert.match(source, /import \{[^}]*generateSessionSummary[^}]*\} from ['"]\.\.\/lib\/clientDocuments\.js['"]/)
   assert.match(source, /generateSessionSummary\(\{/i)
 })
+
+test('compact toolbar holds secondary actions in a disclosure with no automatic regeneration',()=>{
+  assert.match(source, /data-testid="summary-toolbar"/);
+  assert.match(source, /role="toolbar" aria-label="Summary actions"/);
+  assert.match(source, /<details ref="summaryMoreMenu"/);
+  assert.match(source, /Ask Helios about this session/);
+  assert.match(source, /Open in Client Documents/);
+  assert.match(source, /function runSummaryMoreAction\(action\)/);
+  assert.match(source, /if \(action === 'regenerate'\) showSummaryOptions\.value = true/);
+  assert.match(source, /:aria-expanded="showSummaryOptions"/);
+  assert.match(source, /aria-controls="session-summary-options"/);
+  assert.match(source, /:return-to="sessionReturnDestination"/);
+  assert.doesNotMatch(source, /class="flex justify-end px-inline-lg"><HelpLink/);
+  assert.doesNotMatch(source, /<RouterLink[^>]*>Back to Transcript Inbox<\/RouterLink>/);
+});

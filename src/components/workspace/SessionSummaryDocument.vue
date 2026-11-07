@@ -1,25 +1,12 @@
 <template>
-  <div class="session-summary-document surface-panel !border-none !bg-surface-raised/50 p-6 sm:p-12 shadow-sm">
-    <div class="max-w-[65ch] mx-auto">
-      <!-- Title Area -->
-      <header class="mb-12 border-b border-border-muted pb-8">
-        <h1 class="font-serif text-h1 text-ink mb-2">Session Summary</h1>
-        <div class="flex flex-wrap gap-x-6 gap-y-2 text-body-sm text-ink-muted">
-          <div class="flex items-center gap-1.5">
-            <User class="workspace-icon-sm" />
-            <span>{{ clientName }}</span>
-          </div>
-          <div class="flex items-center gap-1.5">
-            <Calendar class="workspace-icon-sm" />
-            <span>{{ date }}</span>
-          </div>
-        </div>
-      </header>
-
+  <article class="session-summary-document rounded-panel bg-surface-raised/50 px-4 py-5 sm:px-6 sm:py-6"
+    :aria-label="'Session summary for ' + clientName + ' on ' + date">
+    <div class="mx-auto max-w-[65ch]">
+      <h1 class="sr-only">Session Summary — {{ clientName }}, {{ date }}</h1>
       <!-- Content -->
-      <div class="document-body space-y-8 text-body-long text-ink-secondary leading-relaxed">
+      <div class="document-body space-y-5 text-body-long text-ink-secondary leading-relaxed">
         <template v-for="(block, index) in parsedBlocks" :key="index">
-          <h2 v-if="block.type === 'heading'" class="font-serif text-h2 text-ink mt-12 first:mt-0">
+          <h2 v-if="block.type === 'heading'" class="font-serif text-h2 text-ink mt-7 first:mt-0">
             {{ block.content }}
           </h2>
           <p v-else class="whitespace-pre-wrap">
@@ -32,12 +19,11 @@
         No content available for this summary.
       </div>
     </div>
-  </div>
+  </article>
 </template>
 
 <script setup>
 import { computed } from 'vue';
-import { User, Calendar } from '@lucide/vue';
 
 const props = defineProps({
   body: {
