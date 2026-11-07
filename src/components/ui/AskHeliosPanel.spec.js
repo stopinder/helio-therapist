@@ -316,7 +316,7 @@ describe('AskHeliosPanel', () => {
 
     await w.findAll('button').find(b => b.text() === 'Send to Reflect').trigger('click')
     await vi.waitFor(() => expect(w.text()).toContain('Review before saving'))
-    expect(w.text()).toContain('Wanting to rescue')
+    expect(w.find('#ask-map-innerPosition').element.value).toBe('Wanting to rescue')
     expect(api.authenticatedFetch.mock.calls.filter(c => c[0] === '/api/ai/actions')).toHaveLength(0)
 
     await w.find('#ask-reflection-stoodOut').setValue('I noticed myself moving too quickly to solve the problem.')
@@ -436,7 +436,7 @@ describe('AskHeliosPanel', () => {
 
     expect(w.text()).toContain('Answer focus')
     expect(w.text()).toContain('A longer clinical answer that should be easy to read without a letterbox.')
-    expect(w.text()).not.toContain('What might I be missing?')
+    expect(w.find('[data-ask-message-index="0"]').exists()).toBe(false)
     expect(w.find('[role="tablist"]').exists()).toBe(false)
     expect(w.find('[data-testid="ask-helios-clinical-context"]').exists()).toBe(false)
     expect(w.find('textarea').exists()).toBe(false)
@@ -482,4 +482,56 @@ describe('AskHeliosPanel', () => {
     await vi.waitFor(() => expect(w.text()).toContain('Your next appointment'))
     expect(w.text()).not.toContain('Send to Reflect')
   })
+  it('collapses the side-panel clinical context after a question and preserves editable lens/window choices', async () => {
+    const clientId = 'cccccccc-cccc-4ccc-cccc-cccccccccccc'
+    await ask.openClinicalContext({
+      clientId, clientName: 'Cass', anchorSessionId: 'eeeeeeee-eeee-4eee-eeee-eeeeeeeeeeee',
+      window: 'last_three', lens: 'internal_family_systems', source: 'session_workspace'
+    })
+    api.authenticatedFetch.mockImplementation(async url => {
+      if (url === '/api/ai/assist') return ok({ answer: 'A bounded synthetic clinical observation.', mode:'workspace' })
+      return ok({ conversations:[], clients:[] })
+    })
+    const w = mount(AskHeliosPanel)
+    expect(ask.isExpanded.value).toBe(false)
+    expect(w.findAll('[data-testid="ask-helios-clinical-context"] select')).toHaveLength(2)
+    await w.find('textarea').setValue('What pattern may be emerging?')
+    await w.find('form').trigger('submit')
+    await vi.waitFor(() => expect(w.text()).toContain('A bounded synthetic clinical observation.'))
+    const compact = w.find('[data-testid="ask-helios-clinical-context-compact"]')
+    expect(compact.exists()).toBe(true)
+    expect(compact.text()).toContain('Cass')
+    expect(compact.text()).toContain('IFS')
+    expect(compact.text()).toContain('Last 3')
+    expect(w.findAll('[data-testid="ask-helios-clinical-context"] select')).toHaveLength(0)
+    expect(w.find('[data-testid="ask-helios-composer"]').attributes('rows')).toBe('1')
+    expect(ask.clinicalContext.value).toMatchObject({clientId,window:'last_three',lens:'internal_family_systems'})
+    await w.find('button[aria-label="Edit clinical context"]').trigger('click')
+    expect(w.findAll('[data-testid="ask-helios-clinical-context"] select')).toHaveLength(2)
+    await w.findAll('[data-testid="ask-helios-clinical-context"] button').find(b => b.text() === 'Done').trigger('click')
+    expect(w.find('[data-testid="ask-helios-clinical-context-compact"]').exists()).toBe(true)
+  })
+
+  it('focuses an answer without expanding the side panel or deleting conversation history', async () => {
+    const clientId = 'cccccccc-cccc-4ccc-cccc-cccccccccccc'
+    await ask.openClinicalContext({clientId,clientName:'Cass',window:'last_three',lens:'integrative'})
+    ask.addMessage({role:'user',content:'What might be worth exploring?'})
+    ask.addMessage({role:'assistant',content:'A fictional clinical hypothesis to discuss.'})
+    const w = mount(AskHeliosPanel)
+    expect(ask.isExpanded.value).toBe(false)
+    expect(w.find('[data-testid="ask-helios-clinical-context-compact"]').exists()).toBe(true)
+    const focus = w.findAll('button').find(b => b.text() === 'Focus answer')
+    expect(focus).toBeTruthy()
+    await focus.trigger('click')
+    expect(ask.isExpanded.value).toBe(false)
+    expect(w.text()).toContain('A fictional clinical hypothesis')
+    expect(w.find('[data-ask-message-index="0"]').exists()).toBe(false)
+    expect(w.find('textarea').exists()).toBe(false)
+    await w.find('button[title="Exit answer focus"]').trigger('click')
+    expect(w.text()).toContain('What might be worth exploring?')
+    expect(ask.messages.value).toHaveLength(2)
+    expect(w.find('textarea').exists()).toBe(true)
+    expect(ask.isExpanded.value).toBe(false)
+  })
+
 })

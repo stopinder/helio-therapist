@@ -49,10 +49,10 @@
 
       <div v-if="mode === 'workspace' && clinicalContext && !showHistory && !isAnswerFocused"
         class="shrink-0 border-b border-border-muted bg-surface-subtle"
-        :class="isExpanded && !showExpandedContextDetails ? 'px-4 py-2' : 'px-4 py-3'"
+        :class="isClinicalContextCompact ? 'px-3 py-2' : 'px-4 py-3'"
         data-testid="ask-helios-clinical-context">
-        <div v-if="isExpanded && !showExpandedContextDetails" class="flex items-center justify-between gap-3" data-testid="ask-helios-clinical-context-compact">
-          <div class="min-w-0 flex items-center gap-2 text-xs text-ink-secondary">
+        <div v-if="isClinicalContextCompact" class="flex min-h-8 items-center justify-between gap-3" data-testid="ask-helios-clinical-context-compact">
+          <div class="min-w-0 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-ink-secondary">
             <span class="shrink-0 text-[10px] font-bold uppercase tracking-wider text-accent">Clinical context</span>
             <span class="truncate font-semibold text-ink">{{ clinicalContext.clientName || 'Selected client' }}</span>
             <span class="text-ink-subtle">·</span>
@@ -61,9 +61,9 @@
             <span class="shrink-0">{{ clinicalWindowLabel }}</span>
             <span v-if="clinicalContext.sourceCount" class="hidden shrink-0 text-ink-muted lg:inline">· {{ clinicalContext.sourceCount }} source{{ clinicalContext.sourceCount === 1 ? '' : 's' }}</span>
           </div>
-          <div class="flex shrink-0 items-center gap-3">
-            <button type="button" class="text-[11px] font-medium text-accent hover:underline"
-              @click="showExpandedContextDetails = true">Edit</button>
+          <div class="flex shrink-0 items-center gap-2">
+            <button type="button" class="inline-flex min-h-8 items-center rounded-control px-2 text-xs font-medium text-accent hover:bg-surface-muted"
+              aria-label="Edit clinical context" :aria-expanded="false" @click="showExpandedContextDetails = true">Edit</button>
             <button type="button" class="text-[11px] font-medium text-ink-muted hover:text-ink"
               :disabled="isLoading" @click="clearClinicalContext">Clear</button>
           </div>
@@ -77,7 +77,7 @@
               <p class="mt-1 text-[11px] text-ink-muted">{{ clinicalContext.sourceCount ? clinicalContext.sourceCount + ' session source' + (clinicalContext.sourceCount === 1 ? '' : 's') + ' currently available' : 'Sources are checked when you ask a question.' }}</p>
             </div>
             <div class="flex items-center gap-3">
-              <button v-if="isExpanded" type="button" class="text-[11px] font-medium text-accent hover:underline"
+              <button v-if="isExpanded || messages.length" type="button" class="min-h-8 rounded-control px-2 text-xs font-medium text-accent hover:bg-surface-muted"
                 @click="showExpandedContextDetails = false">Done</button>
               <button type="button" class="text-[11px] font-medium text-ink-muted hover:text-ink"
                 :disabled="isLoading" @click="clearClinicalContext">Clear</button>
@@ -139,8 +139,9 @@
           @click="handleSelectConversation(null)">Start New Conversation</button>
       </div>
 
-      <div v-else ref="scrollContainer" class="min-h-0 flex-1 overflow-y-auto space-y-4"
-        :class="isAnswerFocused ? 'p-5 md:p-8' : 'p-4'" aria-live="polite">
+      <div v-else ref="scrollContainer" class="min-h-0 flex-1 overflow-y-auto overscroll-contain space-y-4"
+        :class="isAnswerFocused ? 'px-4 py-5 md:px-8 md:py-6' : 'px-3 py-3 sm:px-4 sm:py-4'"
+        data-testid="ask-helios-answer-scroll" aria-live="polite">
         <div v-if="messages.length === 0" class="flex h-full flex-col items-center justify-center text-center p-5">
           <div class="mb-4 rounded-full bg-accent/10 p-4"><Sparkles class="h-8 w-8 text-accent" /></div>
           <h3 class="type-body-large font-semibold text-ink">{{ welcomeHeading }}</h3>
@@ -151,21 +152,21 @@
               @click="input = example">{{ example }}</button>
           </div>
         </div>
-        <div v-for="(msg, index) in messages" v-show="!isAnswerFocused || index === focusAnswerIndex" :key="index"
+        <template v-for="(msg, index) in messages" :key="index">
+          <div v-if="!isAnswerFocused || index === focusAnswerIndex"
           class="flex flex-col" :data-ask-message-index="index"
           :class="isAnswerFocused ? 'items-stretch' : (msg.role === 'user' ? 'items-end' : 'items-start')">
-          <button v-if="msg.role === 'assistant' && isExpanded && !isAnswerFocused" type="button"
+          <button v-if="msg.role === 'assistant' && !isAnswerFocused" type="button"
             class="mb-1 self-start rounded-control px-2 py-1 text-[10px] font-medium text-ink-muted hover:bg-surface-muted hover:text-ink"
             title="Focus this answer" @click="focusAnswer(index)">Focus answer</button>
-          <div class="rounded-2xl px-4 py-2.5 text-sm"
+          <div class="min-w-0 rounded-2xl px-3 py-3 text-sm sm:px-4 sm:py-3.5"
             :class="[
               msg.role === 'user'
-                ? 'bg-action-primary text-on-action rounded-tr-none max-w-[92%]'
-                : 'bg-surface-subtle text-ink rounded-tl-none border border-border-muted',
-              msg.role === 'assistant' && isExpanded ? 'w-full max-w-5xl mx-auto' : '',
-              msg.role === 'assistant' && !isExpanded ? 'max-w-[92%]' : ''
+                ? 'max-w-[90%] bg-action-primary text-on-action rounded-tr-none'
+                : 'w-full bg-surface-subtle text-ink rounded-tl-none border border-border-muted',
+              msg.role === 'assistant' && (isExpanded || isAnswerFocused) ? 'max-w-3xl mx-auto' : ''
             ]">
-            <div class="whitespace-pre-wrap">{{ msg.content }}</div>
+            <div class="whitespace-pre-wrap break-words leading-7 text-[14px] sm:text-[15px]">{{ msg.content }}</div>
             <div v-if="msg.references?.length" class="mt-3 pt-3 border-t border-border-muted/30">
               <h4 class="text-[10px] font-bold uppercase tracking-wider text-ink-muted mb-1.5">
                 {{ mode === 'workspace' ? 'Workspace records' : researchReferenceHeading(msg.references) }}
@@ -213,8 +214,16 @@
               <p class="mt-1 text-[10px] text-ink-muted">Helios prepares a provisional reflection and optional map. Nothing is saved until you review and confirm it.</p>
             </div>
           </div>
-          <span class="mt-1 px-1 text-[10px] text-ink-subtle">{{ msg.role === 'user' ? 'You' : 'Helios' }}</span>
+          <div class="mt-1 flex w-full items-center gap-3 px-1 text-[11px] text-ink-subtle" :class="msg.role === 'user' ? 'justify-end' : 'justify-start'">
+            <span>{{ msg.role === 'user' ? 'You' : 'Helios' }}</span>
+            <button v-if="msg.role === 'assistant'" type="button"
+              class="min-h-8 rounded-control px-2 text-xs font-medium text-ink-muted hover:bg-surface-muted hover:text-ink"
+              :aria-label="'Copy answer ' + (index + 1)" @click="copyAnswer(msg, index)">
+              {{ copiedAnswerIndex === index ? 'Copied' : 'Copy answer' }}
+            </button>
+          </div>
         </div>
+        </template>
         <div v-if="isLoading && !isAnswerFocused" class="flex flex-col items-start">
           <div class="bg-surface-subtle text-ink rounded-2xl rounded-tl-none border border-border-muted px-4 py-2.5">
             <div class="flex gap-1">
@@ -226,7 +235,8 @@
         </div>
       </div>
 
-      <footer v-if="!isAnswerFocused" class="shrink-0 border-t border-border-muted" :class="isExpanded ? 'p-2' : 'p-3'">
+      <footer v-if="!isAnswerFocused" class="shrink-0 border-t border-border-muted bg-surface"
+        :class="isExpanded ? 'px-3 py-2' : 'px-3 py-2.5'">
         <div v-if="mode === 'workspace' && !clinicalContext" class="mb-2">
           <label for="ask-helios-client" class="mb-1 block text-[11px] font-medium text-ink-secondary">
             Client for session preparation (optional)
@@ -240,11 +250,11 @@
         </div>
         <form class="relative" @submit.prevent="sendMessage">
           <div class="relative">
-            <textarea v-model="input" :rows="isExpanded ? 1 : 2" maxlength="1200"
+            <textarea ref="composerTextarea" v-model="input" rows="1" maxlength="1200"
               data-testid="ask-helios-composer"
-              class="block w-full resize-none rounded-[1.25rem] border border-border-muted bg-surface px-3 pr-20 text-sm text-ink placeholder:text-ink-subtle focus:border-accent focus:ring-1 focus:ring-accent"
-              :class="isExpanded ? 'py-2' : 'py-2.5'"
-              :placeholder="composerPlaceholder" :disabled="isLoading || isRestoring || !!restoreError" @keydown.enter.exact.prevent="sendMessage"></textarea>
+              class="block min-h-11 max-h-28 w-full resize-none overflow-y-auto rounded-[1.25rem] border border-border-muted bg-surface px-3 py-2.5 pr-20 text-sm leading-5 text-ink placeholder:text-ink-subtle focus:border-accent focus:ring-1 focus:ring-accent"
+              :placeholder="composerPlaceholder" :disabled="isLoading || isRestoring || !!restoreError"
+              @input="resizeComposer" @keydown.enter.exact.prevent="sendMessage"></textarea>
             <div class="absolute bottom-2 right-2 flex items-center gap-1" data-testid="ask-helios-composer-actions">
               <WhisperMicButton
                 data-testid="ask-helios-mic"
@@ -261,8 +271,9 @@
           </div>
         </form>
         <p v-if="askDictation.error.value" class="mt-1 px-1 text-[10px] text-state-danger" role="alert">{{ askDictation.error.value }}</p>
-        <div v-if="!isExpanded" class="mt-2 flex justify-between items-center px-1">
-          <span class="text-[10px] text-ink-subtle">{{ footerText }}</span>
+        <div v-if="!isExpanded && (!isClinicalContextCompact || messages.length)" class="mt-1 flex justify-between items-center px-1">
+          <span v-if="!isClinicalContextCompact" class="text-[10px] text-ink-subtle">{{ footerText }}</span>
+          <span v-else aria-hidden="true"></span>
           <button v-if="messages.length" type="button"
             class="text-[10px] text-ink-muted hover:text-state-danger" :disabled="isLoading"
             @click="clearConversation">New chat</button>
@@ -351,7 +362,30 @@ const clinicalWindowLabel = computed(() => ({
   history: 'Entire history'
 })[clinicalContext.value?.window] || 'This session')
 const latestAssistantIndex = computed(() => messages.value.findLastIndex(message => message.role === 'assistant'))
+// Keep evidence selectors accessible but not permanently in the reading area.
+const isClinicalContextCompact = computed(() => !showExpandedContextDetails.value &&
+  (isExpanded.value || messages.value.length > 0))
+
 const input = ref('')
+const composerTextarea = ref(null)
+const copiedAnswerIndex = ref(-1)
+function resizeComposer() {
+  const textarea = composerTextarea.value
+  if (!textarea) return
+  textarea.style.height = 'auto'
+  textarea.style.height = Math.min(112, Math.max(44, textarea.scrollHeight || 44)) + 'px'
+}
+watch(input, () => { void nextTick(resizeComposer) }, {flush:'post'})
+async function copyAnswer(message, index) {
+  if (message?.role !== 'assistant' || !message.content) return
+  try {
+    await navigator.clipboard.writeText(String(message.content))
+    copiedAnswerIndex.value = index
+  } catch {
+    copiedAnswerIndex.value = -1
+  }
+}
+
 const askDictation = useWhisperDictation({
   onText: text => {
     input.value = appendDictation(input.value, text).slice(0, 1200)
@@ -398,7 +432,7 @@ function beginResearchHandoff(query) {
 }
 function focusAnswer(index) {
   if (messages.value[index]?.role !== 'assistant') return
-  if (!isExpanded.value) toggleExpand()
+  // Read within the current panel width; expanding is always a separate choice.
   showHistory.value = false
   showExpandedContextDetails.value = false
   focusAnswerIndex.value = index
@@ -556,6 +590,8 @@ async function sendMessage(override = null) {
     .slice(-6).map(m => ({ role: m.role, content: m.content }))
   input.value = ''
   addMessage({ role: 'user', content: text })
+  showExpandedContextDetails.value = false
+  copiedAnswerIndex.value = -1
   isLoading.value = true
   await scrollToMessageStart(messages.value.length - 1)
   try {
