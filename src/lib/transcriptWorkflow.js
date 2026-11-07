@@ -3,6 +3,11 @@ const hasId = value => typeof value === 'string' && value.trim().length > 0;
 export function hasLinkedEncounter(transcript) {
   return Boolean(hasId(transcript?.clientId) && hasId(transcript?.sessionRef));
 }
+export function transcriptClientAssignmentState(transcript){
+  return hasId(transcript?.clientId)
+    ? {id:'assigned',label:'Assigned',tone:'success'}
+    : {id:'needs-client',label:'Needs client',tone:'warning'};
+}
 export function transcriptWorkflowState(transcript) {
   if(transcript?.sourceReview?.state==='separated')return{id:'separated',label:'Separated original',tone:'neutral'};
   if(transcript?.sourceReview?.state==='needs_review')return{id:'source-review',label:'Source needs review',tone:'warning'};
