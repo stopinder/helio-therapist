@@ -18,6 +18,7 @@ on:
       - test/summary-first-workflow.test.js
       - test/source-review-one-click.test.js
       - test/source-reassignment-contract.test.js
+      - test/session-correction-preservation.test.js
       - src/components/TranscriptInbox.vue
       - src/components/workspace/ClientDocumentComposer.vue
 permissions:
@@ -32,6 +33,6 @@ jobs:
         with:
           node-version: '22'
       - run: npm ci --ignore-scripts --no-fund
-      - run: node --test test/source-reassignment-contract.test.js test/source-review-one-click.test.js test/summary-first-workflow.test.js test/summary-source-outcomes.test.js test/session-summary-generation-ui.test.js
+      - run: node --test test/session-correction-preservation.test.js test/source-reassignment-contract.test.js test/source-review-one-click.test.js test/summary-first-workflow.test.js test/summary-source-outcomes.test.js test/session-summary-generation-ui.test.js
       - run: npx vitest run src/components/workspace/SourceReviewPanel.spec.js src/lib/sourceReviewOneClickApi.spec.js src/components/workspace/SourceReviewDialog.spec.js
       - run: npm run build
