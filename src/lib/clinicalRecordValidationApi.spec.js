@@ -10,8 +10,9 @@ const sessionId='22222222-2222-4222-8222-222222222222';
 const otherClient='33333333-3333-4333-8333-333333333333';
 const userId='44444444-4444-4444-8444-444444444444';
 const quote='We explored responses to workplace stress.';
+const passageId='passage_1';
 const fields=()=>Object.fromEntries(CLINICAL_RECORD_FIELDS.map(key=>[key,{text:'',evidence:[]}]));
-function output(){const result=fields();result.sessionThemes={text:'Workplace stress was explored.',evidence:[{sourceId:`capture:${sessionId}`,quote}]};result.riskSafeguarding={text:'UNSUPPORTED_CANDIDATE',evidence:[]};return {fields:result};}
+function output(){const result=fields();result.sessionThemes={text:'Workplace stress was explored.',evidence:[{passageId}]};result.riskSafeguarding={text:'UNSUPPORTED_CANDIDATE',evidence:[]};return {fields:result};}
 const completion=raw=>({model:'synthetic-model',completion:{choices:[{finish_reason:'stop',message:{content:JSON.stringify(raw)}}]}});
 function fakeDb(records){
   const calls=[];
@@ -70,10 +71,13 @@ describe('Clinical Record field-level recovery API and confidentiality',()=>{
     expect(runTextAI).toHaveBeenCalledTimes(1);
     expect(records.sessions[0].notes).toBe('');
     expect(res.payload.data.verification).toBe('source_quotes_only');
+    expect(res.payload.data.fields.sessionThemes.evidence[0].quote).toContain(quote);
+    expect(res.payload.data.fields.sessionThemes.evidence[0].quote).toContain('Session themes:');
+    expect(runTextAI.mock.calls[0][0].responseFormat.json_schema.name).toBe('clinical_record_passage_suggestions_v1');
   });
   it('does not read or return another client source to repair a fabricated citation',async()=>{
     records.session_capture_drafts.push({...records.session_capture_drafts[0],client_id:otherClient,content:{sessionThemes:'OTHER_CLIENT_PRIVATE_TEXT'}});
-    const result=output();result.fields.riskSafeguarding={text:'OTHER_CLIENT_CANDIDATE',evidence:[{sourceId:'foreign-record',quote:'OTHER_CLIENT_PRIVATE_TEXT'}]};
+    const result=output();result.fields.riskSafeguarding={text:'OTHER_CLIENT_CANDIDATE',evidence:[{passageId:'foreign-record'}]};
     runTextAI.mockResolvedValue(completion(result));
     const res=await invoke();
     expect(res.statusCode).toBe(200);expect(res.payload.data.fields.riskSafeguarding.text).toBe('');
