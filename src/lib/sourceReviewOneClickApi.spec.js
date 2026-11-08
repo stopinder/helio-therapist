@@ -63,6 +63,14 @@ describe('explicit one-click encounter confirmation',()=>{
     expect(response.statusCode).toBe(409);
     expect(response.payload.error.code).toBe('SOURCE_CHANGED');
   });
+  it('reports forbidden server action as a distinct, useful error code',async()=>{
+    db.rpc.mockResolvedValueOnce({data:null,error:{code:'42501',message:'Forbidden'}});
+    const response=await invoke(request());
+    expect(response.statusCode).toBe(403);
+    expect(response.payload.error.code).toBe('SOURCE_REVIEW_FORBIDDEN');
+    expect(response.payload.error.message).toContain('server refused');
+    expect(response.payload.error.message).not.toContain('Forbidden');
+  });
   it('still refuses malformed versions or an overlong optional note',async()=>{
     const invalid=await invoke(request({sourceVersion:'not-a-uuid'}));
     expect(invalid.statusCode).toBe(400);
