@@ -155,4 +155,26 @@ $function$;
 
 REVOKE ALL ON FUNCTION public.reassign_reviewed_transcript_source(uuid,uuid,uuid,uuid,boolean,text) FROM PUBLIC,anon,authenticated;
 GRANT EXECUTE ON FUNCTION public.reassign_reviewed_transcript_source(uuid,uuid,uuid,uuid,boolean,text) TO service_role;
+
+-- Close the older direct authenticated assignment RPC's already-assigned-source
+-- path. First assignment from NULL remains permitted; a correction requires
+-- the therapist-reviewed service-only RPC above.
+CREATE OR REPLACE FUNCTION public.prevent_unreviewed_transcript_reassignment()
+RETURNS trigger LANGUAGE plpgsql SET search_path TO ''
+AS $guard$
+BEGIN
+  IF tg_op='UPDATE' AND old.client_id IS NOT NULL
+     AND new.client_id IS DISTINCT FROM old.client_id
+     AND current_user NOT IN ('postgres','service_role') THEN
+    RAISE EXCEPTION 'An assigned source must be reassigned through the reviewed correction flow.'
+      USING errcode='42501';
+  END IF;
+  RETURN new;
+END;
+$guard$;
+DROP TRIGGER IF EXISTS prevent_unreviewed_transcript_reassignment_trigger ON public.zoom_transcripts;
+CREATE TRIGGER prevent_unreviewed_transcript_reassignment_trigger
+  BEFORE UPDATE OF client_id ON public.zoom_transcripts
+  FOR EACH ROW EXECUTE FUNCTION public.prevent_unreviewed_transcript_reassignment();
+REVOKE ALL ON FUNCTION public.prevent_unreviewed_transcript_reassignment() FROM PUBLIC,anon,authenticated;
 COMMIT;
