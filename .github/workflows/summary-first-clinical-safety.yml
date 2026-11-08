@@ -1,7 +1,7 @@
 name: Summary-first source and therapist approval checks
 on:
   push:
-    branches: [feat/summary-first-clinical-workflow-20261107, fix/source-review-one-click-confirm-20261108]
+    branches: [feat/summary-first-clinical-workflow-20261107, fix/source-review-one-click-confirm-20261108, fix/source-review-confirm-actionable-20261108]
   pull_request:
     paths:
       - api/ai/session-summary.js
