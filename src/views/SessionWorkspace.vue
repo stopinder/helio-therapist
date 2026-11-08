@@ -82,7 +82,7 @@
                   <button v-if="summaryDocument?.content?.body && summaryDocument.status !== 'completed'" @click="generateSummary" :disabled="isGenerating || transcriptLoading || !!transcriptError || !transcript" class="text-body-sm font-medium text-ink-muted hover:text-ink disabled:opacity-50">Regenerate</button>
                    <button v-if="summaryDocument?.content?.body && summaryDocument.status !== 'completed'" type="button" class="button-secondary !min-h-0 py-1.5 px-3 text-body-sm shadow-sm" :aria-expanded="showRefinement" @click="showRefinement = !showRefinement">{{ showRefinement ? 'Hide refinement' : 'Refine' }}</button>
                   <RouterLink v-if="summaryDocument?.id" :to="{ name: 'ClientWorkspace', params: { clientId: session.clientId }, query: { document: summaryDocument.id } }" class="button-secondary !min-h-0 py-1.5 px-3 text-body-sm shadow-sm">Open in Client Documents</RouterLink>
-                  <button @click="copySummary" :disabled="!summaryDocument?.content?.body || !!sourceReview || summaryUnsafe || needsTherapistReview" class="button-secondary !min-h-0 py-1.5 px-3 text-body-sm shadow-sm">Copy summary</button>
+                  <button @click="copySummary" :disabled="isGenerating || !summaryDocument?.content?.body || !!sourceReview || summaryUnsafe || needsTherapistReview" class="button-secondary !min-h-0 py-1.5 px-3 text-body-sm shadow-sm">Copy summary</button>
                 </div>
               </div>
 
@@ -189,7 +189,7 @@
                 <div v-if="isGenerating" ref="summaryGenerationProgress" tabindex="-1" data-testid="summary-generation-progress" role="status" aria-live="polite" class="py-20 text-center text-ink-muted bg-surface rounded-panel border border-state-selected/40 flex flex-col items-center gap-3 shadow-sm scroll-mt-8">
                   <span class="w-10 h-10 border-4 border-state-selected border-t-transparent rounded-full motion-safe:animate-spin" aria-hidden="true"></span>
                   <p class="type-body-medium">{{ summaryDocument?.content?.body ? 'Regenerating session summary…' : 'Generating session summary…' }}</p>
-                  <p class="text-body-sm">Your existing draft is safe. You'll review the new version before it replaces anything.</p>
+                  <p class="text-body-sm">{{ summaryDocument?.content?.body ? 'Your existing draft stays unchanged until you accept a revision.' : 'Preparing an editable draft from the reviewed session material.' }}</p>
                 </div>
                 <div v-else-if="generationError && !summaryDocument" class="py-12 px-6 text-center bg-state-danger-surface rounded-panel border border-state-danger/20 shadow-sm">
                   <p class="text-state-danger text-body-sm mb-4">{{ generationError }}</p>
@@ -275,6 +275,7 @@
         <button type="button" class="button-secondary shadow-lg pointer-events-auto inline-flex items-center gap-2" @click="scrollSummaryToTop" aria-label="Back to top of session summary">
           <ArrowUp class="w-4 h-4" aria-hidden="true" /> Back to top
         </button>
+        <p v-if="copyError" role="alert" class="basis-full rounded-control bg-state-danger-surface px-3 py-2 text-caption text-state-danger pointer-events-auto">{{ copyError }}</p>
       </div>
     </template>
   </div>
@@ -533,6 +534,7 @@ async function prepareCbtCareSuggestions() {
 }
 
 async function copySummary() {
+  if(isGenerating.value)return;
   if (!summaryDocument.value?.content?.body || sourceReview.value || summaryUnsafe.value || needsTherapistReview.value) return;
   if(!await verifySavedSummary())return;
   copyError.value = '';
