@@ -1,5 +1,19 @@
 import { isUnusableSummary } from '../../src/lib/summarySafety.js';
 export const SOURCE_REVIEW_FIELDS='id,therapist_user_id,client_id,session_ref,original_transcript,zoom_generated_summary,source_version,source_review,source_parent_id,source_parent_version,source_occurred_at,updated_at';
+/**
+ * The therapist's explicit checked acknowledgement is the review evidence.
+ * A free-text participant explanation is optional, not an artificial ten-character gate.
+ * The existing source-review RPC still requires a nonempty, auditable context.
+ */
+export const SOURCE_CONFIRMATION_ATTESTATION='Therapist confirmed the reviewed source represents one encounter for the assigned client.';
+export function sourceConfirmationContext(extra=''){
+  if(typeof extra!=='string')throw Object.assign(new Error('Invalid participant context.'),{code:'INVALID_REVIEW',status:400});
+  const detail=extra.trim();
+  const context=detail ? SOURCE_CONFIRMATION_ATTESTATION+' Additional therapist context: '+detail : SOURCE_CONFIRMATION_ATTESTATION;
+  if(context.length>4000)throw Object.assign(new Error('Participant context is too long.'),{code:'INVALID_REVIEW',status:400});
+  return context;
+}
+
 export function reviewRequired(message='Review the source before sharing or generating this summary.',review=null){
   return Object.assign(new Error(message),{status:409,code:'SOURCE_REVIEW_REQUIRED',review});
 }
