@@ -4,6 +4,13 @@
 -- A single transaction moves the otherwise empty source-ready encounter and its transcript.
 BEGIN;
 
+-- Preserve existing action types and add an explicit reassignment audit event.
+ALTER TABLE public.transcript_source_review_events
+  DROP CONSTRAINT transcript_source_review_events_action_check;
+ALTER TABLE public.transcript_source_review_events
+  ADD CONSTRAINT transcript_source_review_events_action_check
+  CHECK (action IN ('confirm','flag','split','reassign'));
+
 CREATE OR REPLACE FUNCTION public.reassign_reviewed_transcript_source(
   p_user_id uuid,
   p_transcript_id uuid,
