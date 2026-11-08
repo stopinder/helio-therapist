@@ -1,6 +1,6 @@
 // Shared by every client-facing summary surface and both server generation routes.
 // This module contains no client records, practitioner defaults or network requests.
-export const SUMMARY_POLICY_VERSION = 'helios-summary-authoring/1.0.0';
+export const SUMMARY_POLICY_VERSION = 'helios-summary-authoring/1.1.0';
 export const SUMMARY_AUDIENCES = Object.freeze(['auto', 'individual', 'shared']);
 export const SUMMARY_ADDITIONS = Object.freeze(['none', 'exercise', 'resource', 'exercise_and_resource']);
 export const SUMMARY_SECTION_GROUPS = Object.freeze([
