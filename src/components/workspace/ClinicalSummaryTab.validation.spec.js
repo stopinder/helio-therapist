@@ -38,7 +38,8 @@ describe('Clinical Record partial suggestions on the real record screen',()=>{
   it('shows passing fields and specific failed-field messages without applying or saving anything',async()=>{
     const wrapper=screen();await prepare(wrapper);
     expect(wrapper.find('[data-testid="clinical-record-validation-feedback"]').exists()).toBe(true);
-    expect(wrapper.text()).toContain('The suggested wording had no supporting passage');
+    expect(wrapper.text()).toContain('Why 1 other field could not be prepared');
+    expect(wrapper.find('[data-testid="clinical-record-withheld-fields"]').attributes('open')).toBeUndefined();
     expect(wrapper.text()).toContain('Workplace stress was explored.');
     expect(wrapper.text()).not.toContain('REJECTED_RISK_FINDING');
     expect(wrapper.find('#presentingConcerns').element.value).toBe('Existing therapist wording.');
@@ -48,7 +49,10 @@ describe('Clinical Record partial suggestions on the real record screen',()=>{
   });
   it('only applies supported suggestions after explicit choice and keeps the review gate',async()=>{
     const wrapper=screen();await prepare(wrapper);
-    await button(wrapper,'Use suggestions in empty fields').trigger('click');
+    expect(wrapper.text()).not.toContain('No reviewed Session Capture is available yet.');
+    expect(button(wrapper,'Review editable draft')).toBeDefined();
+    await button(wrapper,'Review editable draft').trigger('click');
+    await flushPromises();
     expect(wrapper.find('#presentingConcerns').element.value).toBe('Existing therapist wording.');
     expect(wrapper.find('#sessionThemes').element.value).toBe('Workplace stress was explored.');
     expect(wrapper.find('#riskSafeguarding').element.value).toBe('');
@@ -80,7 +84,7 @@ describe('Clinical Record partial suggestions on the real record screen',()=>{
     suggestClinicalRecordFields.mockResolvedValue(response({partial:false,focusField:'riskSafeguarding'}));
     const wrapper=screen();await prepare(wrapper);
     expect(wrapper.text()).toContain('No source-backed suggestions are ready to use');
-    expect(button(wrapper,'Use suggestions in empty fields')).toBeUndefined();
+    expect(button(wrapper,'Review editable draft')).toBeUndefined();
     expect(wrapper.find('#riskSafeguarding').element.value).toBe('');
   });
   it('feedback explains provenance limits and provides a field-specific retry without raw rejected data',async()=>{
