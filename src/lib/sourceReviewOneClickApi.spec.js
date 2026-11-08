@@ -45,6 +45,37 @@ describe('explicit one-click encounter confirmation',()=>{
     expect(response.statusCode).toBe(200);
     expect(db.rpc.mock.calls[0][1].p_context).toBe(sourceConfirmationContext('Partner mentioned, not present.'));
   });
+  it('reassigns a reviewed source only to a different chosen client through the atomic RPC',async()=>{
+    const target='66666666-6666-4666-8666-666666666666';
+    db.rpc.mockResolvedValueOnce({data:{id:transcriptId,sourceVersion:'77777777-7777-4777-8777-777777777777',clientId:target,sessionId,previousClientId:clientId,review:{state:'confirmed'}},error:null});
+    const response=await invoke(request({action:'reassign',targetClientId:target,reviewed:true}));
+    expect(response.statusCode).toBe(200);
+    expect(db.rpc).toHaveBeenCalledWith('reassign_reviewed_transcript_source',{
+      p_user_id:userId,p_transcript_id:transcriptId,p_expected_version:sourceVersion,
+      p_target_client_id:target,p_acknowledged:true,p_context:''
+    });
+    expect(response.payload.data.clientId).toBe(target);
+  });
+  it('rejects reassignment without explicit review or with the same client, without invoking the RPC',async()=>{
+    const target='66666666-6666-4666-8666-666666666666';
+    expect((await invoke(request({action:'reassign',targetClientId:target,reviewed:false}))).statusCode).toBe(400);
+    expect((await invoke(request({action:'reassign',targetClientId:clientId}))).statusCode).toBe(400);
+    expect((await invoke(request({action:'reassign',targetClientId:'bad-id'}))).statusCode).toBe(400);
+    expect(db.rpc).not.toHaveBeenCalled();
+  });
+  it('blocks reassignment safely when dependent clinical material exists',async()=>{
+    db.rpc.mockResolvedValueOnce({data:null,error:{code:'23514',message:'This encounter has existing clinical material.'}});
+    const response=await invoke(request({action:'reassign',targetClientId:'66666666-6666-4666-8666-666666666666'}));
+    expect(response.statusCode).toBe(409);
+    expect(response.payload.error.code).toBe('REASSIGNMENT_BLOCKED');
+    expect(response.payload.error.message).toContain('clinical material');
+  });
+  it('refuses a stale reassignment before changing any client',async()=>{
+    db.rpc.mockResolvedValueOnce({data:null,error:{code:'40001',message:'Source changed'}});
+    const response=await invoke(request({action:'reassign',targetClientId:'66666666-6666-4666-8666-666666666666'}));
+    expect(response.statusCode).toBe(409);
+    expect(response.payload.error.code).toBe('SOURCE_CHANGED');
+  });
   it('never confirms without the explicit therapist checkbox',async()=>{
     const response=await invoke(request({reviewed:false}));
     expect(response.statusCode).toBe(400);
