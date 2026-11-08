@@ -28,7 +28,7 @@
           </details>
           <label class="flex gap-2 items-start"><input v-model="reviewed" type="checkbox" :disabled="busy" /><span>I have reviewed the available session material and confirm it belongs to the assigned client and encounter.</span></label>
           <p v-if="!canConfirm && confirmationHint" role="status" class="text-caption text-ink-muted">{{ confirmationHint }}</p>
-          <button type="button" class="button-primary" :disabled="!canConfirm" @click="confirmSource">{{ busy ? 'Saving review...' : 'Confirm this encounter' }}</button>
+          <button type="button" class="button-primary" data-testid="confirm-reviewed-encounter" :disabled="busy || loading" @click="confirmSource">{{ busy ? 'Saving review...' : 'Confirm this encounter' }}</button>
         </template>
         <template v-else>
           <p class="text-body-sm">Select non-overlapping ranges in source order. Only the selected lines enter each new encounter. Unselected lines remain in the original but are excluded from the new summaries. The original is retained unchanged.</p>
@@ -108,7 +108,14 @@ async function save(action){
     emit('resolved',{action,clientId:reviewedSource.clientId,sessionId:reviewedSource.sessionId,...data.data});
   }catch(e){if(version===loadVersion)error.value=e.message}finally{busy.value=false}
 }
-function confirmSource(){if(canConfirm.value)return save('confirm')}
+function confirmSource(){
+  if(busy.value||loading.value)return;
+  error.value='';
+  if(!reviewed.value){error.value='Tick the confirmation box after reviewing the source. No information has been saved.';return;}
+  if(!hasSourceMaterial.value){error.value='No original transcript or Zoom note is available. Recover the source before confirming.';return;}
+  if(!source.value?.clientId||!source.value?.sessionId){error.value='This source is not linked to a client and session. Assign it before confirming.';return;}
+  return save('confirm');
+}
 function splitSource(){if(!segmentError.value)return save('split')}
 watch(()=>props.transcriptId,load);onMounted(load);onBeforeUnmount(()=>{loadVersion++});
 </script>
