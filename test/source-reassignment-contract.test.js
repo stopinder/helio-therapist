@@ -30,6 +30,10 @@ test('source moves together with its isolated empty encounter and a complete aud
   assert.match(migration,/'reassign'/);
   assert.match(migration,/'previousClientId',previous_client_id/);
   assert.match(migration,/sourceVersion',original\.source_version/);
+  assert.match(migration,/CREATE TRIGGER prevent_unreviewed_transcript_reassignment_trigger/);
+  assert.match(migration,/old.client_id IS NOT NULL/);
+  assert.match(migration,/new.client_id IS DISTINCT FROM old.client_id/);
+  assert.match(migration,/'previousReview',previous_review/);
   for(const term of ['public.session_capture_drafts','public.documents','public.session_working_notes','public.private_reflections','public.client_care_items','public.zoom_session_links','public.cbt_thought_records','public.session_billable_time_revisions','original.source_parent_id','source_review->>\'state\'=\'separated\'']){
     assert.ok(migration.includes(term), 'dependency check missing: '+term);
   }
