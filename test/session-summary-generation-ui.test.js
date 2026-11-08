@@ -55,7 +55,8 @@ test('SessionWorkspace sends the chosen approach, evidence scope and therapist g
   assert.match(source, /window:\s*summaryWindow\.value/)
   assert.match(source, /therapistGuidance:\s*therapistGuidance\.value/)
   assert.match(source, /summaryGeneration:\s*generation/)
-  assert.match(source, /showSummaryOptions\.value = prepareRequested\.value/)
+  assert.match(source, /showSummaryOptions\.value=false/)
+  assert.match(source, /previousGeneration\?\.lens \|\| clientData\.preferred_summary_lens/)
 })
 
 test('Session summary approach is remembered per client', () => {
@@ -69,8 +70,9 @@ test('Session summary approach is remembered per client', () => {
 })
 
 test('SessionWorkspace handles generation state', () => {
-  assert.match(source, /Preparing session summary…/i)
-  assert.match(source, /This may take a few minutes\. Please keep this page open\./i)
+  assert.match(source, /Generating session summary…/i)
+  assert.match(source, /data-testid="summary-generation-progress"/)
+  assert.match(source, /scrollToSummaryTarget\(summaryGenerationProgress\)/)
   assert.match(source, /isGenerating/i)
 })
 
