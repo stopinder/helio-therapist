@@ -203,6 +203,9 @@ export default async function handler(req, res) {
       if (!existing) return res.status(404).json({ error: 'Transcript not found.' });
       if (!expectedUpdatedAt || typeof expectedUpdatedAt !== 'string') return res.status(400).json({ error: 'Reload this transcript before saving changes.' });
       if (existing.updated_at !== expectedUpdatedAt) return res.status(409).json({ error: 'This transcript changed in another tab or window. Reload it before saving so newer work is not overwritten.' });
+      if (clientId && existing.client_id && clientId !== existing.client_id) {
+        return res.status(409).json({ error: 'This source is already assigned. Use Review source → Wrong client — reassign to correct it with confirmation and an audit trail.' });
+      }
 
       if (sourceOccurredAt !== undefined && (
         existing.status !== 'unassigned' ||
