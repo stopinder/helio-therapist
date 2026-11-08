@@ -85,6 +85,12 @@ export function assessSummaryDraft(structured, preferences = {}) {
       seen.add(normalized);
     }
   }
+  // Surface formulaic explanatory caveats for a single evidence-preserving editorial pass.
+  // These are stylistic signals, never a reason to reject an otherwise valid clinical draft.
+  const prose = FIELDS.map(key => typeof sections[key] === 'string' ? sections[key] : '').join(' ');
+  if (/without assuming (?:that |either |any |one |this |it )|it may be useful to (?:stay curious|consider|notice)|a useful tension to hold/i.test(prose)) {
+    issue('FORMULAIC_CAVEAT', false, 'Replace a generic editorial disclaimer with a concise source-grounded observation or an explicit unresolved question.');
+  }
   if (/^(today.s session focused on|in this session we explored various|this session focused on)/i.test((sections.opening || '').trim())) {
     issue('GENERIC_OPENING', false, 'The opening describes the session administratively rather than specifically.');
   }
