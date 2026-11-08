@@ -18,7 +18,10 @@
         <ClinicalRecordSuggestionFeedback :result="suggestions" :busy="suggestionsLoading || submitting" @retry="requestExistingSuggestions" />
         <div class="flex flex-wrap items-center justify-between gap-2">
           <p class="text-body-sm font-semibold">Suggestions with matching source passages · therapist review required</p>
-          <button v-if="hasSuggestedFields" type="button" class="button-secondary" :disabled="suggestionsLoading || submitting" @click="useEmptySuggestedFields">Use suggestions in empty fields</button>
+          <div v-if="hasSuggestedFields" class="flex flex-wrap gap-2">
+            <button type="button" class="button-primary" data-testid="clinical-record-review-draft" :disabled="suggestionsLoading || submitting" @click="reviewSuggestedDraft">{{ status === 'not_started' ? 'Review editable draft' : 'Use suggestions in empty fields' }}</button>
+            <button v-if="status === 'not_started'" type="button" class="button-secondary" :disabled="suggestionsLoading || submitting" @click="prepareDraft">Start blank instead</button>
+          </div>
         </div>
         <p v-if="!hasSuggestedFields" class="text-body-sm text-ink-muted">No sufficiently supported suggestions were found. Your existing draft remains unchanged.</p>
         <article v-for="(label,key) in summaryFields" :key="key" v-show="suggestions.fields[key]?.text" class="rounded-panel border border-border p-4 space-y-2" :data-testid="`evidence-field-${key}`">
@@ -36,7 +39,7 @@
     </section>
 
     <!-- Preparation State -->
-    <div v-if="status === 'not_started'" class="bg-surface-elevated border border-border-muted rounded-panel p-6 shadow-sm">
+    <div v-if="status === 'not_started' && !hasSuggestedFields" class="bg-surface-elevated border border-border-muted rounded-panel p-6 shadow-sm">
       <h3 class="text-h3 font-semibold text-ink mb-6">Prepare Clinical Record</h3>
       
       <div class="space-y-8">
@@ -110,7 +113,7 @@
     </div>
 
     <!-- Workflow Active states -->
-    <div v-else class="space-y-stack-lg">
+    <div v-else-if="status !== 'not_started'" class="space-y-stack-lg">
       <!-- Workflow Indicator -->
       <div class="bg-surface-elevated border border-border-muted rounded-panel p-6 shadow-sm pb-2">
         <div class="flex items-center justify-between mb-2">
@@ -503,6 +506,14 @@ function useSuggestedField(key){
 }
 function useEmptySuggestedFields(){
   for(const key of Object.keys(summaryFields))if(!summaryData[key])useSuggestedField(key);
+}
+async function reviewSuggestedDraft(){
+  if(!hasSuggestedFields.value || suggestionsLoading.value || submitting.value)return;
+  useEmptySuggestedFields();
+  // No persistence or approval occurs here: this enters an editable local draft.
+  if(status.value==='not_started')status.value='draft';
+  await nextTick();
+  scrollAndFocus();
 }
 function onClinicalFieldEdited(key){
   // Evidence is linked to suggested text. After a clinician edits it, the earlier quote cannot be presented as proof of the edited wording.
