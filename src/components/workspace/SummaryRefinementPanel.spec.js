@@ -37,6 +37,13 @@ describe('one shared therapist-controlled summary refinement',()=>{
     expect(wrapper.emitted('accept')).toBeUndefined();
     await wrapper.find('[data-testid="summary-accept-revision"]').trigger('click');expect(wrapper.emitted('accept')).toHaveLength(1);
   });
+  it('can delegate revision preview to the main session reading surface without duplicating it',()=>{
+    const candidate={baseBody:body,contextKey,result:{draft:{body:'A specific revised summary.'}}};
+    const wrapper=render({candidate,showPreview:false});
+    expect(wrapper.find('[data-testid="summary-revision-preview"]').exists()).toBe(false);
+    expect(wrapper.find('[data-testid="summary-preview-revision"]').exists()).toBe(true);
+    expect(wrapper.emitted('accept')).toBeUndefined();
+  });
   it('discards the proposal without applying it and invalidates stale context',async()=>{
     const candidate={baseBody:body,contextKey,result:{draft:{body:'Proposed revision.'}}};
     const wrapper=render({candidate});await wrapper.find('[data-testid="summary-discard-revision"]').trigger('click');
