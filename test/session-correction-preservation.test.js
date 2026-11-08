@@ -137,7 +137,7 @@ test('Session Correction: Preserves review choices when only session changes for
   assert.equal(updated.completed_at, null, 'Completion state should be cleared on session correction')
 })
 
-test('Session Correction: Invalidates review choices when client changes', async () => {
+test('Session Correction: blocks direct unassignment and preserves clinical review choices', async () => {
   resetMockDatabase()
   const SAVED_AT = new Date().toISOString()
   mockDatabase.zoom_transcripts = [{
@@ -151,17 +151,17 @@ test('Session Correction: Invalidates review choices when client changes', async
     status: 'ready'
   }]
 
-  // Changing client to null (unassigning)
-  const res = await patchTranscript({
-    id: 'trans-1',
-    clientId: null
-  })
+  // Clinical material must not be orphaned by directly clearing an assigned client.
+  // Use the therapist-confirmed source-review reassignment path instead.
+  const res = await patchTranscript({id:'trans-1',clientId:null})
 
-  assert.equal(res.statusCode, 200)
-  const updated = mockDatabase.zoom_transcripts[0]
-  assert.equal(updated.client_id, null)
-  assert.equal(updated.session_ref, null)
-  assert.equal(updated.review_choices_saved_at, null, 'Review choices must be cleared when client changes')
+  assert.equal(res.statusCode,409)
+  assert.match(res.body.error,/Review source/)
+  const unchanged=mockDatabase.zoom_transcripts[0]
+  assert.equal(unchanged.client_id,'client-a')
+  assert.equal(unchanged.session_ref,'sess-a1')
+  assert.equal(unchanged.review_choices_saved_at,SAVED_AT)
+  assert.equal(unchanged.requested_lens,'clinical_summary')
 })
 
 test('Clinical Summary: Rejects unsaved review choices', async () => {
