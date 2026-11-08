@@ -135,6 +135,7 @@
             <div v-else-if="isVerifiedMatch(transcript)" class="matched-note">
               <span class="matched-copy"><CheckCircle2 class="workspace-icon" aria-hidden="true" /> Assigned to {{ clientName(transcript.clientId) || 'client' }}</span>
               <button type="button" class="button-primary compact-button" :disabled="inboxBusy" @click="openLinkedSessionFromRow(transcript)">Open Clinical Workspace</button>
+              <button type="button" class="button-secondary compact-button" :disabled="inboxBusy" @click.stop="openInboxSourceReview(transcript)">Correct client assignment</button>
             </div>
 
             <div v-else-if="transcript.clientId || transcript.sessionRef" class="matched-note"><span>The assignment needs an encounter check.</span><button class="button-secondary" @click="openTranscript(transcript)">Review assignment</button></div>
@@ -244,7 +245,7 @@
         <div><p class="type-eyebrow">Just assigned</p><strong role="status">Assigned to {{ lastAssignmentLabel }}.</strong><p>Encounter: {{ formatDate(lastAssignment.sourceOccurredAt || lastAssignment.receivedAt) }}</p><p class="type-metadata">{{ lastAssignment.sourceTitle }}</p><p class="type-metadata">Assignment saved. Open Clinical Workspace to choose a lens and prepare your summary.</p></div>
         <div class="assignment-outcomes"><button v-if="sessionSummaryDestination(lastAssignment)" class="button-primary" :disabled="inboxBusy" @click="openLinkedSessionFromRow(lastAssignment)">Open Clinical Workspace</button><button class="button-secondary" :disabled="inboxBusy" @click="lastAssignment = null">Dismiss</button></div>
       </section>
-      <section class="workflow-section client-section"><template v-if="!selected.clientId || editingClient"><div><p class="eyebrow">Client</p><h2>Client</h2><p>Select the client this original Zoom transcript belongs to. Helio will not guess.</p></div><div class="assignment-controls"><div v-if="!selected.clientId" class="encounter-date-field detail-encounter-date"><div class="encounter-date-heading"><div><label for="selected-encounter-date">Encounter date</label><p>This date controls longitudinal ordering and becomes the session date when assigned.</p></div><span class="encounter-time">Time: {{ formatTime(selected.sourceOccurredAt || selected.receivedAt) }}</span></div><div class="encounter-date-controls"><input id="selected-encounter-date" v-model="encounterDateDrafts[selected.id]" class="control-field min-h-touch" type="date" :disabled="inboxBusy" /><button type="button" class="button-secondary compact-button" :disabled="inboxBusy || !encounterDateChanged(selected)" @click="saveEncounterDate(selected)"><CalendarDays class="workspace-icon-sm" aria-hidden="true" /><span>{{ encounterDateSavingId === selected.id ? 'Saving…' : 'Save date' }}</span></button></div></div><div class="flex items-center gap-2"><label for="client-select" class="sr-only">Client</label><select id="client-select" v-model="selectedClientId" :disabled="inboxBusy" class="flex-1"><option value="" disabled>Select a client…</option><option v-for="client in clients" :key="client.id" :value="client.id">{{ client.name }}</option></select><button type="button" class="secondary whitespace-nowrap" @click="openAddClientForSelected">Add client</button></div><div class="assignment-actions"><button v-if="selected.clientId" class="secondary" :disabled="saving" @click="editingClient = false">Cancel</button><button class="primary" :disabled="inboxBusy || !selectedClientId || selectedClientId === selected.clientId" @click="saveAssignment({openSummary:true})">{{ saving ? 'Saving…' : selected.clientId ? 'Change client & open Clinical Workspace' : 'Assign & open Clinical Workspace' }}</button><button class="secondary" :disabled="inboxBusy || !selectedClientId || selectedClientId === selected.clientId" @click="saveAssignment({openSummary:false})">Assign &amp; stay in inbox</button></div></div></template><template v-else><div><p class="eyebrow">Client</p><h2>{{ clientName(selected.clientId) }}</h2><p>Assigned client</p></div><button class="secondary" @click="editingClient = true">Change</button></template></section>
+      <section class="workflow-section client-section"><template v-if="!selected.clientId || editingClient"><div><p class="eyebrow">Client</p><h2>Client</h2><p>Select the client this original Zoom transcript belongs to. Helio will not guess.</p></div><div class="assignment-controls"><div v-if="!selected.clientId" class="encounter-date-field detail-encounter-date"><div class="encounter-date-heading"><div><label for="selected-encounter-date">Encounter date</label><p>This date controls longitudinal ordering and becomes the session date when assigned.</p></div><span class="encounter-time">Time: {{ formatTime(selected.sourceOccurredAt || selected.receivedAt) }}</span></div><div class="encounter-date-controls"><input id="selected-encounter-date" v-model="encounterDateDrafts[selected.id]" class="control-field min-h-touch" type="date" :disabled="inboxBusy" /><button type="button" class="button-secondary compact-button" :disabled="inboxBusy || !encounterDateChanged(selected)" @click="saveEncounterDate(selected)"><CalendarDays class="workspace-icon-sm" aria-hidden="true" /><span>{{ encounterDateSavingId === selected.id ? 'Saving…' : 'Save date' }}</span></button></div></div><div class="flex items-center gap-2"><label for="client-select" class="sr-only">Client</label><select id="client-select" v-model="selectedClientId" :disabled="inboxBusy" class="flex-1"><option value="" disabled>Select a client…</option><option v-for="client in clients" :key="client.id" :value="client.id">{{ client.name }}</option></select><button type="button" class="secondary whitespace-nowrap" @click="openAddClientForSelected">Add client</button></div><div class="assignment-actions"><button v-if="selected.clientId" class="secondary" :disabled="saving" @click="editingClient = false">Cancel</button><button class="primary" :disabled="inboxBusy || !selectedClientId || selectedClientId === selected.clientId" @click="saveAssignment({openSummary:true})">{{ saving ? 'Saving…' : selected.clientId ? 'Change client & open Clinical Workspace' : 'Assign & open Clinical Workspace' }}</button><button class="secondary" :disabled="inboxBusy || !selectedClientId || selectedClientId === selected.clientId" @click="saveAssignment({openSummary:false})">Assign &amp; stay in inbox</button></div></div></template><template v-else><div><p class="eyebrow">Client</p><h2>{{ clientName(selected.clientId) }}</h2><p>Assigned client</p></div><button class="secondary" @click="openInboxSourceReview(selected)">Correct assignment</button></template></section>
       <section v-if="selected.clientId && !editingClient" class="ready-card">
         <div>
           <p class="eyebrow">Assigned</p>
@@ -253,7 +254,7 @@
         </div>
         <div class="assignment-actions">
           <button v-if="sessionSummaryDestination(selected)" class="primary" :disabled="inboxBusy" @click="openLinkedSession">Open Clinical Workspace</button>
-          <button v-if="selected.sourceReview?.state === 'needs_review' || selected.sourceReview?.state === 'separated'" class="primary" @click.stop="openInboxSourceReview(selected)">Review source</button>
+          <button v-if="selected.clientId && selected.sessionRef" class="secondary" @click.stop="openInboxSourceReview(selected)">Review or correct client</button>
           <button class="secondary" @click="openClientTranscripts">Client transcripts</button>
           <button class="secondary" @click="closeTranscript">Back to inbox</button>
         </div>
@@ -350,7 +351,7 @@ function openInboxSourceReview(transcript){
   reviewSourceId.value=transcript.id
 }
 async function handleSourceReviewed(result){
-  if(result.action==='confirm')reviewSourceId.value=''
+  if(['confirm','reassign'].includes(result.action))reviewSourceId.value=''
   // Reconcile the rows without toggling the Inbox loading placeholder or
   // remounting the open transcript. Keep filters, search and typed assignments.
   try{
@@ -361,6 +362,15 @@ async function handleSourceReviewed(result){
     transcripts.value=data.transcripts||[]
     for(const item of transcripts.value)initialiseAssignmentDraft(item)
     if(selectedId)selected.value=transcripts.value.find(item=>item.id===selectedId)||selected.value
+    if(result.action==='reassign'){
+      const corrected=transcripts.value.find(item=>item.id===result.id)
+      if(corrected){
+        lastAssignment.value=corrected
+        lastAssignmentLabel.value=clientName(corrected.clientId)||'correct client'
+      }
+      editingClient.value=false
+      successMessage.value='Client assignment corrected. The original source and its empty linked encounter have moved; no other client records were moved.'
+    }
   }catch{
     errorMessage.value='The source review was saved, but the inbox status could not refresh. Reopen Transcript Inbox to update the list.'
   }
@@ -736,6 +746,11 @@ async function restoreInboxContext(){
 }
 async function assignTranscriptToClient(transcript,clientId,clientLabel='',{openSummary=false}={}){
   if(!transcript?.id||!clientId||inboxBusy.value)return null
+  if(transcript.clientId && transcript.clientId!==clientId){
+    errorMessage.value='Use Review source → Wrong client — reassign to correct an already-linked encounter.';
+    openInboxSourceReview(transcript);
+    return null;
+  }
   const returnContext=captureInboxContext()
   assignmentSavingId.value=transcript.id
   errorMessage.value='';successMessage.value='';lastAssignment.value=null

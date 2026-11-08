@@ -16,7 +16,7 @@
         <details v-if="source.text?.trim()" :open="needsTranscriptReview" data-testid="review-original-transcript" class="rounded-control border border-border-muted p-3"><summary class="cursor-pointer text-action-link">View original transcript (only when needed)</summary><label class="mt-3 block"><span class="font-semibold text-body-sm">{{ lines.length }} numbered lines</span><textarea :value="numberedSource" readonly rows="12" class="mt-2 w-full font-mono text-body-sm border border-border rounded-control p-3" aria-label="Original transcript with line numbers"></textarea></label></details>
         <p v-if="!source.text?.trim() && !source.zoomNote?.trim()" class="text-body-sm text-state-danger">No transcript or Zoom note is available. Recover the source before confirming or splitting.</p>
         <p v-else-if="!source.text?.trim()" class="text-caption text-ink-muted">No original transcript was imported. You can review the available Zoom note and confirm the assigned encounter without inventing transcript evidence.</p>
-        <fieldset class="flex flex-wrap gap-4"><legend class="font-semibold mb-2">What does this source contain?</legend><label><input v-model="mode" type="radio" value="confirm" :disabled="busy" /> One encounter</label><label v-if="!source.parentId && source.text?.trim()"><input v-model="mode" type="radio" value="split" :disabled="busy" /> Separate conversations</label></fieldset>
+        <fieldset class="flex flex-wrap gap-4"><legend class="font-semibold mb-2">What does this source contain?</legend><label><input v-model="mode" type="radio" value="confirm" :disabled="busy" /> One encounter</label><label v-if="!source.parentId && source.text?.trim()"><input v-model="mode" type="radio" value="split" :disabled="busy" /> Separate conversations</label><label v-if="source.clientId && source.sessionId && !source.parentId"><input v-model="mode" type="radio" value="reassign" :disabled="busy" /> Wrong client — reassign</label></fieldset>
         <template v-if="mode === 'confirm'">
           <p class="text-body-sm">Assigned client: <strong>{{ clientName(source.clientId) }}</strong>. Confirming the encounter does not make an imported note authoritative.</p>
           <p v-if="needsTranscriptReview" class="text-body-sm text-ink-secondary">The original transcript contains a passage that needs checking. Review it above before confirming. If the recording contains separate appointments, choose <strong>Separate conversations</strong>.</p>
@@ -29,6 +29,29 @@
           <label class="flex gap-2 items-start"><input v-model="reviewed" type="checkbox" :disabled="busy" /><span>I have reviewed the available session material and confirm it belongs to the assigned client and encounter.</span></label>
           <p v-if="!canConfirm && confirmationHint" role="status" class="text-caption text-ink-muted">{{ confirmationHint }}</p>
           <button type="button" class="button-primary" data-testid="confirm-reviewed-encounter" :disabled="busy || loading" @click="confirmSource">{{ busy ? 'Saving review...' : 'Confirm this encounter' }}</button>
+        </template>
+        <template v-else-if="mode === 'reassign'">
+          <div class="rounded-control border border-border-muted bg-surface-subtle p-4 space-y-3" data-testid="source-reassignment">
+            <h4 class="font-semibold text-body">Correct the assigned client</h4>
+            <p class="text-body-sm text-ink-secondary">This source is currently assigned to <strong>{{ clientName(source.clientId) }}</strong>. Select who the entire session actually belongs to. Nothing moves until you confirm.</p>
+            <label class="block">
+              <span class="text-body-sm font-medium">Correct client</span>
+              <select v-model="reassignClientId" class="control-field mt-1 w-full" :disabled="busy" data-testid="reassign-target-client">
+                <option value="">Select the correct client…</option>
+                <option v-for="client in activeClients" :key="client.id" :value="client.id" :disabled="client.id===source.clientId">{{ client.name || client.display_name }}</option>
+              </select>
+            </label>
+            <p class="text-caption text-ink-secondary">Helios moves only this transcript and its linked, otherwise empty imported encounter. If session notes, another source, a clinical document or billing work already exists, the correction is blocked rather than moving that material to someone else.</p>
+            <details class="rounded-control border border-border-muted p-3">
+              <summary class="cursor-pointer text-body-sm text-action-link">Add clarification (optional)</summary>
+              <textarea v-model="context" maxlength="3900" rows="2" :disabled="busy" class="w-full border border-border rounded-control p-3 mt-2" placeholder="Optional: what clarified the source identity"></textarea>
+            </details>
+            <label class="flex gap-2 items-start">
+              <input v-model="reassignReviewed" type="checkbox" :disabled="busy" />
+              <span>I reviewed the available original material and confirm this entire encounter belongs to <strong>{{ clientName(reassignClientId) || 'the client I select' }}</strong>, not {{ clientName(source.clientId) }}.</span>
+            </label>
+            <button type="button" class="button-primary" data-testid="confirm-source-reassignment" :disabled="busy || loading" @click="reassignSource">{{ busy ? 'Reassigning…' : 'Confirm reassignment' }}</button>
+          </div>
         </template>
         <template v-else>
           <p class="text-body-sm">Select non-overlapping ranges in source order. Only the selected lines enter each new encounter. Unselected lines remain in the original but are excluded from the new summaries. The original is retained unchanged.</p>
@@ -48,6 +71,10 @@
           <div class="flex flex-wrap gap-3"><button type="button" class="button-secondary" :disabled="busy || segments.length>=10" @click="addSegment">Add conversation</button><button type="button" class="button-primary" :disabled="busy || !!segmentError" @click="splitSource">{{ busy ? 'Saving reviewed segments...' : 'Create separate reviewed encounters' }}</button></div>
         </template>
       </template>
+      <div v-if="reassignedSource" class="rounded-control border border-border bg-surface-subtle p-3 space-y-2" data-testid="source-reassignment-complete">
+        <p role="status">Source reassigned to {{ clientName(reassignedSource.clientId) }}. The original client no longer owns this encounter.</p>
+        <RouterLink :to="{name:'SessionWorkspace',params:{clientId:reassignedSource.clientId,sessionId:reassignedSource.sessionId},query:{view:'summary',transcriptId:reassignedSource.id}}" class="button-primary">Open corrected encounter</RouterLink>
+      </div>
       <div v-if="createdSegments.length" class="space-y-3" data-testid="reviewed-segments"><p role="status">Separate encounters are available. No summaries were generated by this action.</p><RouterLink v-for="segment in createdSegments" :key="segment.id" :to="{name:'SessionWorkspace',params:{clientId:segment.clientId,sessionId:segment.sessionId},query:{view:'summary',transcriptId:segment.id}}" class="button-primary">Open summary for {{ clientName(segment.clientId) }}</RouterLink></div>
     </template>
   </section>
@@ -59,7 +86,8 @@ import { authenticatedFetch } from '../../lib/api.js';
 import { listClients } from '../../lib/clients.js';
 const props=defineProps({transcriptId:{type:String,required:true},embedded:{type:Boolean,default:false}});
 const emit=defineEmits(['resolved','close']);
-const source=ref(null),clients=ref([]),loading=ref(false),busy=ref(false),error=ref(''),mode=ref('confirm'),context=ref(''),reviewed=ref(false),segments=ref([]),createdSegments=ref([]);
+const source=ref(null),clients=ref([]),loading=ref(false),busy=ref(false),error=ref(''),mode=ref('confirm'),context=ref(''),reviewed=ref(false),reassignClientId=ref(''),reassignReviewed=ref(false),reassignedSource=ref(null),segments=ref([]),createdSegments=ref([]);
+const activeClients=computed(()=>clients.value.filter(client=>client.archived!==true));
 const lines=computed(()=>String(source.value?.text||'').replace(/\r\n?/g,'\n').split('\n'));
 const numberedSource=computed(()=>lines.value.map((line,index)=>`${index+1} | ${line}`).join('\n'));
 const clientName=id=>clients.value.find(client=>client.id===id)?.name||clients.value.find(client=>client.id===id)?.display_name||'Not assigned';
@@ -89,7 +117,7 @@ const segmentError=computed(()=>{
   return segments.value.length<2?'Choose at least two conversations.':'';
 });
 async function load(){
-  const version=++loadVersion;loading.value=true;error.value='';source.value=null;reviewed.value=false;context.value='';createdSegments.value=[];mode.value='confirm';
+  const version=++loadVersion;loading.value=true;error.value='';source.value=null;reviewed.value=false;reassignClientId.value='';reassignReviewed.value=false;reassignedSource.value=null;context.value='';createdSegments.value=[];mode.value='confirm';
   try{
     const [response,availableClients]=await Promise.all([authenticatedFetch(`/api/zoom/source-review?id=${encodeURIComponent(props.transcriptId)}`),listClients()]);
     const data=await response.json();if(!response.ok)throw new Error(data.error?.message||'Unable to load source.');if(version!==loadVersion)return;
@@ -102,9 +130,10 @@ async function save(action){
   if(busy.value||!source.value)return;busy.value=true;error.value='';
   const version=loadVersion,reviewedSource=source.value,id=props.transcriptId;
   try{
-    const response=await authenticatedFetch('/api/zoom/source-review',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action,transcriptId:id,sourceVersion:reviewedSource.sourceVersion,reviewed:true,context:context.value,segments:action==='split'?segments.value.map(item=>({startLine:item.startLine,endLine:item.endLine,clientId:item.clientId,occurredAt:new Date(item.localDate).toISOString(),reviewed:item.reviewed})):[]})});
+    const response=await authenticatedFetch('/api/zoom/source-review',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action,transcriptId:id,sourceVersion:reviewedSource.sourceVersion,reviewed:action==='reassign'?reassignReviewed.value:true,targetClientId:action==='reassign'?reassignClientId.value:undefined,context:context.value,segments:action==='split'?segments.value.map(item=>({startLine:item.startLine,endLine:item.endLine,clientId:item.clientId,occurredAt:new Date(item.localDate).toISOString(),reviewed:item.reviewed})):[]})});
     const data=await response.json();if(!response.ok)throw new Error(data.error?.message||'Unable to save review.');if(version!==loadVersion)return;
-    source.value={...reviewedSource,state:data.data.review.state,sourceVersion:data.data.sourceVersion};createdSegments.value=data.data.segments||[];
+    source.value={...reviewedSource,state:data.data.review.state,sourceVersion:data.data.sourceVersion,clientId:data.data.clientId||reviewedSource.clientId,sessionId:data.data.sessionId||reviewedSource.sessionId};createdSegments.value=data.data.segments||[];
+    if(action==='reassign')reassignedSource.value={id,clientId:data.data.clientId,sessionId:data.data.sessionId};
     emit('resolved',{action,clientId:reviewedSource.clientId,sessionId:reviewedSource.sessionId,...data.data});
   }catch(e){if(version===loadVersion)error.value=e.message}finally{busy.value=false}
 }
@@ -115,6 +144,18 @@ function confirmSource(){
   if(!hasSourceMaterial.value){error.value='No original transcript or Zoom note is available. Recover the source before confirming.';return;}
   if(!source.value?.clientId||!source.value?.sessionId){error.value='This source is not linked to a client and session. Assign it before confirming.';return;}
   return save('confirm');
+}
+function reassignSource(){
+  if(busy.value||loading.value)return;
+  error.value='';
+  if(!reassignClientId.value || reassignClientId.value===source.value?.clientId){
+    error.value='Choose the correct client, different from the currently assigned client.';return;
+  }
+  if(!reassignReviewed.value){
+    error.value='Review the original material and tick the reassignment confirmation first.';return;
+  }
+  if(!hasSourceMaterial.value){error.value='No source material is available to verify.';return;}
+  return save('reassign');
 }
 function splitSource(){if(!segmentError.value)return save('split')}
 watch(()=>props.transcriptId,load);onMounted(load);onBeforeUnmount(()=>{loadVersion++});

@@ -18,9 +18,31 @@ export default async function handler(req,res){
       }
       return res.status(200).json({data:{...presentReview(row),text:row.original_transcript,zoomNote:row.zoom_generated_summary,occurredAt:row.source_occurred_at,parentId:row.source_parent_id,segments}});
     }
-    const {action,sourceVersion,context='',segments=[],reviewed=false}=req.body||{};
-    if(!['confirm','split'].includes(action)||!uuid(sourceVersion)||reviewed!==true||typeof context!=='string'||context.length>4000||!Array.isArray(segments))return res.status(400).json({error:{code:'INVALID_REVIEW',message:'Review the source and confirm the selected action.'}});
+    const {action,sourceVersion,context='',segments=[],reviewed=false,targetClientId}=req.body||{};
+    if(!['confirm','split','reassign'].includes(action)||!uuid(sourceVersion)||reviewed!==true||typeof context!=='string'||context.length>4000||!Array.isArray(segments))return res.status(400).json({error:{code:'INVALID_REVIEW',message:'Review the source and confirm the selected action.'}});
     if(action==='split'&&(segments.length<2||segments.length>10||segments.some(s=>s?.reviewed!==true||!Number.isInteger(s.startLine)||!Number.isInteger(s.endLine)||!uuid(s.clientId)||typeof s.occurredAt!=='string'||!Number.isFinite(Date.parse(s.occurredAt)))))return res.status(400).json({error:{code:'INVALID_SEGMENTS',message:'Choose valid conversation ranges, clients and dates.'}});
+    if(action==='reassign'){
+      if(!uuid(targetClientId)||targetClientId===row.client_id||segments.length||context.length>3900)
+        return res.status(400).json({error:{code:'INVALID_REASSIGNMENT',message:'Choose a different active client and confirm that the entire encounter belongs to them.'}});
+      const {data,error:moveError}=await supabase.rpc('reassign_reviewed_transcript_source',{
+        p_user_id:user.id,p_transcript_id:id,p_expected_version:sourceVersion,
+        p_target_client_id:targetClientId,p_acknowledged:reviewed,p_context:context
+      });
+      if(moveError){
+        const status=moveError.code==='40001'||moveError.code==='23514'?409:moveError.code==='P0002'?404:moveError.code==='42501'?403:400;
+        const code=moveError.code==='40001'?'SOURCE_CHANGED':moveError.code==='23514'?'REASSIGNMENT_BLOCKED':moveError.code==='P0002'?'REASSIGNMENT_NOT_FOUND':moveError.code==='42501'?'REASSIGNMENT_FORBIDDEN':'INVALID_REASSIGNMENT';
+        console.warn('[Source reassignment rejected]',{dbCode:moveError.code||'unknown',status});
+        const message=code==='REASSIGNMENT_FORBIDDEN'
+          ? 'The reassignment was not permitted. Nothing was moved. Contact support with code REASSIGNMENT_FORBIDDEN.'
+          : code==='SOURCE_CHANGED'
+            ? 'The source changed since you opened it. Reload and review before reassigning.'
+            : code==='REASSIGNMENT_BLOCKED'
+              ? moveError.message
+              : 'The source or target client could not be verified. Nothing was moved.';
+        return res.status(status).json({error:{code,message}});
+      }
+      return res.status(200).json({data});
+    }
     // The checked therapist attestation is sufficient for a one-encounter confirmation.
     // Preserve optional details, but never demand arbitrary filler just to pass the SQL context length check.
     const reviewContext=action==='confirm'?sourceConfirmationContext(context):context;

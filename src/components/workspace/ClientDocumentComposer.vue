@@ -191,6 +191,13 @@ const confirmedEncounterUrl=computed(()=>{
   return source?.clientId&&source?.sessionId&&source?.id?`/clients/${encodeURIComponent(source.clientId)}/sessions/${encodeURIComponent(source.sessionId)}?view=summary&transcriptId=${encodeURIComponent(source.id)}`:''
 })
 function handleSourceReviewResolved(result){
+  if(result.action==='reassign'){
+    reviewTranscriptId.value=''
+    confirmedSource.value=result
+    sourceReview.value={message:'This encounter was moved to the correct client. The existing summary cannot be reused as evidence; open the corrected encounter and regenerate it.',sources:[]}
+    pendingSummary.value=null
+    return
+  }
   if(result.action==='confirm'){
     confirmedSource.value=result;reviewTranscriptId.value=''
     sourceReview.value={resolved:true,message:'Source review saved. Regenerate this encounter summary before using it in a longer-term summary. The earlier draft is not ready to share.',sources:[]}

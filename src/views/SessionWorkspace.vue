@@ -359,6 +359,18 @@ function openSourceReview(item=null,index=0){
   reviewTranscriptId.value=id;
 }
 async function sourceReviewResolved(result){
+  if(result.action==='reassign'){
+    reviewTranscriptId.value='';
+    sourceReview.value=null;
+    pendingSummary.value=null;
+    summaryDocument.value=null;
+    transcript.value=null;
+    // SessionWorkspace remains mounted across param changes; reload its new
+    // client/encounter explicitly so no previous client's draft remains visible.
+    await router.replace({name:'SessionWorkspace',params:{clientId:result.clientId,sessionId:result.sessionId},query:{view:'summary',transcriptId:result.id}});
+    await loadSession();
+    return;
+  }
   if(result.action==='confirm'){
     reviewTranscriptId.value='';sourceReview.value={resolved:true,message:'Source review saved. Generate a fresh summary before copying or sharing. Your earlier draft is unchanged.',sources:[]};await loadTranscript();
   }else{sourceReview.value={message:'The original was separated. Open one of the reviewed encounters below.',sources:[]};transcript.value=null;}
