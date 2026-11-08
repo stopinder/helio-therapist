@@ -1,13 +1,15 @@
 name: Summary-first source and therapist approval checks
 on:
   push:
-    branches: [feat/summary-first-clinical-workflow-20261107, fix/source-review-one-click-confirm-20261108, fix/source-review-confirm-actionable-20261108]
+    branches: [feat/summary-first-clinical-workflow-20261107, fix/source-review-one-click-confirm-20261108, fix/source-review-confirm-actionable-20261108, fix/reassign-reviewed-transcript-source-20261108]
   pull_request:
     paths:
       - api/ai/session-summary.js
       - api/_lib/summary-draft-policy.js
       - api/_lib/source-review.js
       - api/zoom/source-review.js
+      - api/zoom/transcripts.js
+      - supabase/migrations/*reassign_reviewed_transcript_source.sql
       - api/documents.js
       - src/views/SessionWorkspace.vue
       - src/components/workspace/SourceReviewPanel.vue
@@ -15,6 +17,9 @@ on:
       - src/lib/sourceReviewOneClickApi.spec.js
       - test/summary-first-workflow.test.js
       - test/source-review-one-click.test.js
+      - test/source-reassignment-contract.test.js
+      - src/components/TranscriptInbox.vue
+      - src/components/workspace/ClientDocumentComposer.vue
 permissions:
   contents: read
 jobs:
@@ -27,6 +32,6 @@ jobs:
         with:
           node-version: '22'
       - run: npm ci --ignore-scripts --no-fund
-      - run: node --test test/source-review-one-click.test.js test/summary-first-workflow.test.js test/summary-source-outcomes.test.js test/session-summary-generation-ui.test.js
+      - run: node --test test/source-reassignment-contract.test.js test/source-review-one-click.test.js test/summary-first-workflow.test.js test/summary-source-outcomes.test.js test/session-summary-generation-ui.test.js
       - run: npx vitest run src/components/workspace/SourceReviewPanel.spec.js src/lib/sourceReviewOneClickApi.spec.js src/components/workspace/SourceReviewDialog.spec.js
       - run: npm run build
