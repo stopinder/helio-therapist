@@ -174,6 +174,101 @@ export function validateClinicalRecordSuggestions(raw,sources,focusField=null){
   };
 }
 
+/**
+ * Give the model small, server-selected verbatim passages to reference by ID.
+ * It must select passages, never reproduce quotation characters. The server
+ * materialises quotes from its own immutable source snapshot before applying
+ * the original strict, exact-substring validator. No fuzzy matching is used.
+ *
+ * Round-robin inclusion prevents a long recent source from crowding out all
+ * earlier reviewed sources, while the ordering still favours current work.
+ */
+export function buildClinicalRecordPassages(sources,{maxPassages=72,maxLength=420}={}){
+  if(!Array.isArray(sources) || !Number.isInteger(maxPassages) || maxPassages<1
+    || maxPassages>100 || !Number.isInteger(maxLength) || maxLength<30 || maxLength>600)return [];
+  const buckets=[];
+  for(const source of sources){
+    if(typeof source?.id!=='string' || typeof source?.text!=='string')continue;
+    const chunks=[];
+    for(const match of source.text.matchAll(/[^\r\n]+/g)){
+      const line=match[0];
+      let start=0;
+      while(start<line.length){
+        let end=Math.min(start+maxLength,line.length);
+        if(end<line.length){
+          const part=line.slice(start,end);
+          const lastSpace=Math.max(part.lastIndexOf(' '),part.lastIndexOf('\t'));
+          if(lastSpace>=Math.floor(maxLength*.55))end=start+lastSpace;
+        }
+        const text=line.slice(start,end).trim();
+        if(text.length>=8 && text.length<=650 && source.text.includes(text))chunks.push(text);
+        start=end;
+        while(start<line.length && /\s/.test(line[start]))start++;
+      }
+    }
+    if(chunks.length)buckets.push({sourceId:source.id,chunks});
+  }
+  const out=[];
+  let round=0;
+  while(out.length<maxPassages && buckets.some(bucket=>round<bucket.chunks.length)){
+    for(const bucket of buckets){
+      if(round>=bucket.chunks.length)continue;
+      out.push({id:'passage_'+(out.length+1),sourceId:bucket.sourceId,text:bucket.chunks[round]});
+      if(out.length===maxPassages)break;
+    }
+    round++;
+  }
+  return out;
+}
+
+/** Closed schema: only passage IDs, never model-authored quotation text. */
+export function clinicalRecordAnchoredResponseFormat(passages){
+  const ids=[...new Set(passages.map(item=>item?.id).filter(Boolean))];
+  if(!ids.length || ids.length>100)throw new Error('Clinical Record requires permitted evidence passages.');
+  const fieldShape={type:'object',additionalProperties:false,properties:{
+    text:{type:'string'},
+    evidence:{type:'array',items:{type:'object',additionalProperties:false,properties:{
+      passageId:{type:'string',enum:ids}
+    },required:['passageId']}}
+  },required:['text','evidence']};
+  return {type:'json_schema',json_schema:{name:'clinical_record_passage_suggestions_v1',strict:true,schema:{
+    type:'object',additionalProperties:false,properties:{
+      fields:{type:'object',additionalProperties:false,
+        properties:Object.fromEntries(CLINICAL_RECORD_FIELDS.map(key=>[key,structuredClone(fieldShape)])),
+        required:[...CLINICAL_RECORD_FIELDS]}
+    },required:['fields']
+  }}};
+}
+
+/**
+ * Replace a model-selected passage ID with the actual source text. Unknown or
+ * malformed passage selectors stay invalid; do not manufacture or approximate
+ * a citation to salvage model wording.
+ */
+export function materializeClinicalRecordPassages(raw,passages){
+  if(clinicalRecordResponseProblem(raw))return raw;
+  const obj=typeof raw==='string'?JSON.parse(raw):raw;
+  const byId=new Map(passages.map(item=>[item.id,item]));
+  const fields={};
+  for(const key of CLINICAL_RECORD_FIELDS){
+    const field=obj.fields[key];
+    if(!plainObject(field) || !Array.isArray(field.evidence)){
+      if(Object.hasOwn(obj.fields,key))fields[key]=field;
+      continue;
+    }
+    fields[key]={...field,evidence:field.evidence.map(ref=>{
+      if(plainObject(ref)&&Object.keys(ref).length===1&&typeof ref.passageId==='string'&&byId.has(ref.passageId)){
+        const found=byId.get(ref.passageId);
+        return {sourceId:found.sourceId,quote:found.text};
+      }
+      // No cited text, source IDs, or patient content from an invalid candidate
+      // may escape in an error response.
+      return {sourceId:'__invalid_passage_id__',quote:'Invalid permitted passage reference.'};
+    })};
+  }
+  return {fields};
+}
+
 /** A closed schema so the provider returns the envelope expected by the validator. */
 export function clinicalRecordSuggestionsResponseFormat(sourceIds){
   const ids=[...new Set(sourceIds.filter(id=>typeof id==='string' && id))];
