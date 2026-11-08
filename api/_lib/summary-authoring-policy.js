@@ -29,6 +29,13 @@ Use the selected lens as a way of understanding the work throughout, not as a ge
 Say each important thing once. Retain detail that makes this work particular; remove repetitive descriptions, flattering filler and boilerplate closings. Do not lengthen a sparse source to satisfy a template. Usually three or four coherent visible sections will suffice; the eight storage fields are NOT eight mandatory paragraphs. Leave optional sections empty when they would repeat material or add nothing.
 Use the client's recorded words only when quoted exactly. Clinical specificity does not mean certainty, persuasion, instructions or a famous practitioner endorsement.
 
+FINAL CLINICAL EDITORIAL PASS — APPLY TO EVERY LENS AND CLIENT
+Distinguish a loss, setback or disappointment from the relief of no longer carrying its associated pressure: both can coexist without becoming opposing "parts" unless the client actually described distinct inner positions. Do not turn fatigue, numbness, withdrawal, reduced pleasure, distraction or uncertainty into a protective strategy, avoidance cycle or causal medication effect without evidence; where a possible function was explored, present it as a question rather than an explanation.
+In individual work, distinguish current distress from changes in circumstances, practical functioning and actual emotional recovery. An improvement in housing, work schedule or routine is not proof of improved mood or restored motivation. Preserve the unresolved central difficulty even when other areas improved.
+Compress lists of activities, symptoms and circumstances into a clinically meaningful sentence while retaining the few concrete details that make the person's account recognisable. Do not over-compress clinically significant medication changes, reported benefits or unresolved questions about effects; avoid making a pharmacological inference.
+When a client explicitly asks for direction, homework or an activity but nothing was chosen, name the request and the actual suggestion without converting it into an agreed plan. If an embodied or social activity was discussed, explain its tentative therapeutic purpose in ordinary language only if that rationale is supported; do not automatically call it behavioural activation, prescribe an exercise or add an external resource.
+Avoid editorial hedges that tell the client what the writer is *not* assuming (for example "without assuming either is the problem") when a direct, respectful observation would suffice. Do not claim insight, resilience, progress or meaningful change merely because the client described a difficulty. Each visible section must contribute a distinct answer: what happened, what it may mean, what actually differs, or what remains open. Use no more words than those answers require.
+
 SELECTED LENS
 ${lensRule}
 
@@ -77,6 +84,12 @@ export function assessSummaryDraft(structured, preferences = {}) {
       if (seen.has(normalized)) issue('REPEATED_SENTENCE', false, 'A substantive sentence is repeated.');
       seen.add(normalized);
     }
+  }
+  // Surface formulaic explanatory caveats for a single evidence-preserving editorial pass.
+  // These are stylistic signals, never a reason to reject an otherwise valid clinical draft.
+  const prose = FIELDS.map(key => typeof sections[key] === 'string' ? sections[key] : '').join(' ');
+  if (/without assuming (?:that |either |any |one |this |it )|it may be useful to (?:stay curious|consider|notice)|a useful tension to hold/i.test(prose)) {
+    issue('FORMULAIC_CAVEAT', false, 'Replace a generic editorial disclaimer with a concise source-grounded observation or an explicit unresolved question.');
   }
   if (/^(today.s session focused on|in this session we explored various|this session focused on)/i.test((sections.opening || '').trim())) {
     issue('GENERIC_OPENING', false, 'The opening describes the session administratively rather than specifically.');
