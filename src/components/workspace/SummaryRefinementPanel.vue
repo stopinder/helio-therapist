@@ -45,7 +45,7 @@
     </div>
     <p v-if="localError || error" role="alert" class="text-body-sm text-state-danger">{{ localError || error }}</p>
     <button type="button" class="button-primary" data-testid="summary-preview-revision" :disabled="busy || disabled || checkingLink || !body.trim()" @click="requestRevision">{{ busy ? 'Preparing revision...' : 'Preview revised summary' }}</button>
-    <div v-if="candidate && candidateIsCurrent" class="space-y-3 border-t border-border pt-4" data-testid="summary-revision-preview">
+    <div v-if="showPreview && candidate && candidateIsCurrent" class="space-y-3 border-t border-border pt-4" data-testid="summary-revision-preview">
       <h4 class="text-body font-semibold">Proposed revised draft</h4>
       <p class="text-caption text-ink-muted">This has not replaced or approved the current summary. Review it, including any optional addition.</p>
       <SessionSummaryDocument :body="candidate.result.draft.body" compact />
@@ -62,7 +62,7 @@ import { computed, ref, watch } from 'vue';
 import { authenticatedFetch } from '../../lib/api.js';
 import { normalizeSummaryOptions, safeResourceUrl, candidateMatches } from '../../lib/summaryAuthoring.js';
 import SessionSummaryDocument from './SessionSummaryDocument.vue';
-const props=defineProps({body:{type:String,default:''},contextKey:{type:String,required:true},busy:Boolean,disabled:Boolean,candidate:{type:Object,default:null},error:{type:String,default:''}});
+const props=defineProps({body:{type:String,default:''},contextKey:{type:String,required:true},busy:Boolean,disabled:Boolean,candidate:{type:Object,default:null},showPreview:{type:Boolean,default:true},error:{type:String,default:''}});
 const emit=defineEmits(['generate','accept','discard']);
 const instruction=ref(''),audience=ref('auto'),addition=ref('none');
 const resourceUrl=ref(''),resourceTitle=ref(''),resourcePurpose=ref(''),resourceReviewed=ref(false),checkedResource=ref(null),checkingLink=ref(false),localError=ref('');
