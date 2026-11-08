@@ -4,6 +4,7 @@ import { readFile } from 'node:fs/promises';
 
 const session=await readFile(new URL('../src/views/SessionWorkspace.vue',import.meta.url),'utf8');
 const refinement=await readFile(new URL('../src/components/workspace/SummaryRefinementPanel.vue',import.meta.url),'utf8');
+const composer=await readFile(new URL('../src/components/workspace/ClientDocumentComposer.vue',import.meta.url),'utf8');
 
 test('both Generate and Regenerate share a visible, accessible auto-scrolled progress state',()=>{
   assert.match(session, /ref="sessionScrollContainer"[^>]*@scroll\.passive="handleSessionScroll"/);
@@ -58,4 +59,18 @@ test('source integrity errors remain blocking and now scroll to their explanatio
   assert.match(session,/await scrollToSummaryTarget\(sourceReviewNotice\)/);
   assert.match(session,/ref="sourceReviewNotice"/);
   assert.match(session,/summaryDocument\.value\?\.status==='completed'/);
+});
+
+test('Client Documents uses the same visible progress and return-to-top navigation',()=>{
+  assert.match(composer,/ref="composerScrollContainer"[^>]*@scroll\.passive="handleComposerScroll"/);
+  assert.match(composer,/data-testid="summary-generation-placeholder"/);
+  assert.match(composer,/ref="composerGenerationProgress"/);
+  assert.match(composer,/summary-generation-spinner/);
+  assert.match(composer,/await scrollToComposerTarget\(composerGenerationProgress\)/);
+  assert.match(composer,/await scrollToComposerTarget\(composerDocumentCanvas\)/);
+  assert.match(composer,/data-testid="composer-back-to-top"/);
+  assert.match(composer,/composerScrollContainer\.value\?\.scrollTo\(\{top:0/);
+  assert.match(refinement,/ref="revisionPreviewTarget"/);
+  assert.match(refinement,/element\.scrollIntoView\?\.\(/);
+  assert.match(composer,/sourceReview\.value\|\|summaryUnsafe\.value\|\|sourceSafetyChecking\.value/);
 });
