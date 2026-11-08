@@ -70,9 +70,11 @@ test('provider response schema matches the exact seven-field validator envelope'
 test('clinical suggestion handler requests the closed schema and preserves draft on envelope failure',()=>{
   const handler=fs.readFileSync(new URL('../api/ai/clinical-record-suggestions.js',import.meta.url),'utf8');
   const generator=fs.readFileSync(new URL('../api/_lib/clinical-record-generation.js',import.meta.url),'utf8');
-  assert.match(handler,/clinicalRecordSuggestionsResponseFormat\(selected\.map\(item=>item\.id\)\)/);
+  assert.match(handler,/clinicalRecordAnchoredResponseFormat\(passages\)/);
+  assert.match(handler,/buildClinicalRecordPassages\(selected\)/);
   assert.match(handler,/Return exactly one JSON object with a top-level "fields" property/);
   assert.match(generator,/one constrained repair/);
+  assert.match(generator,/materializeClinicalRecordPassages\(content,passages\)/);
   assert.match(handler,/if\(!checked\)return res\.status\(502\)/);
   assert.match(handler,/Your draft is unchanged/);
 });
