@@ -45,7 +45,7 @@
     </div>
     <p v-if="localError || error" role="alert" class="text-body-sm text-state-danger">{{ localError || error }}</p>
     <button type="button" class="button-primary" data-testid="summary-preview-revision" :disabled="busy || disabled || checkingLink || !body.trim()" @click="requestRevision">{{ busy ? 'Preparing revision...' : 'Preview revised summary' }}</button>
-    <div v-if="showPreview && candidate && candidateIsCurrent" class="space-y-3 border-t border-border pt-4" data-testid="summary-revision-preview">
+    <div v-if="showPreview && candidate && candidateIsCurrent" ref="revisionPreviewTarget" tabindex="-1" class="space-y-3 border-t border-border pt-4 scroll-mt-6" data-testid="summary-revision-preview">
       <h4 class="text-body font-semibold">Proposed revised draft</h4>
       <p class="text-caption text-ink-muted">This has not replaced or approved the current summary. Review it, including any optional addition.</p>
       <SessionSummaryDocument :body="candidate.result.draft.body" compact />
@@ -58,7 +58,7 @@
   </section>
 </template>
 <script setup>
-import { computed, ref, watch } from 'vue';
+import { computed, ref, watch, nextTick } from 'vue';
 import { authenticatedFetch } from '../../lib/api.js';
 import { normalizeSummaryOptions, safeResourceUrl, candidateMatches } from '../../lib/summaryAuthoring.js';
 import SessionSummaryDocument from './SessionSummaryDocument.vue';
@@ -69,6 +69,17 @@ const resourceUrl=ref(''),resourceTitle=ref(''),resourcePurpose=ref(''),resource
 let checkVersion=0;
 const wantsResource=computed(()=>['resource','exercise_and_resource'].includes(addition.value));
 const candidateIsCurrent=computed(()=>candidateMatches(props.candidate,props.body,props.contextKey));
+const revisionPreviewTarget=ref(null);
+watch(()=>props.candidate,async candidate=>{
+  if(!candidate||!props.showPreview)return;
+  await nextTick();
+  if(!candidateIsCurrent.value)return;
+  const element=revisionPreviewTarget.value;
+  if(!element?.isConnected)return;
+  const reduced=typeof window!=='undefined'&&window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+  element.scrollIntoView?.({behavior:reduced?'auto':'smooth',block:'start'});
+  element.focus?.({preventScroll:true});
+});
 watch([instruction,audience,addition,resourceTitle,resourcePurpose,resourceReviewed],()=>{localError.value='';emit('discard');});
 watch(resourceUrl,()=>{checkVersion++;checkedResource.value=null;resourceReviewed.value=false;localError.value='';emit('discard');});
 watch(()=>props.contextKey,()=>{checkVersion++;instruction.value='';addition.value='none';audience.value='auto';resourceUrl.value='';resourceTitle.value='';resourcePurpose.value='';resourceReviewed.value=false;checkedResource.value=null;localError.value='';emit('discard');});
