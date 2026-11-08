@@ -30,6 +30,7 @@ test('source moves together with its isolated empty encounter and a complete aud
   assert.match(migration,/'reassign'/);
   assert.match(migration,/'previousClientId',previous_client_id/);
   assert.match(migration,/sourceVersion',original\.source_version/);
+  assert.match(migration,/CHECK \(action IN \('confirm','flag','split','reassign'\)\)/);
   assert.match(migration,/CREATE TRIGGER prevent_unreviewed_transcript_reassignment_trigger/);
   assert.match(migration,/old.client_id IS NOT NULL/);
   assert.match(migration,/new.client_id IS DISTINCT FROM old.client_id/);
