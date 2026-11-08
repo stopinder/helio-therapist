@@ -50,8 +50,8 @@ describe('Clinical Record partial suggestions on the real record screen',()=>{
   it('only applies supported suggestions after explicit choice and keeps the review gate',async()=>{
     const wrapper=screen();await prepare(wrapper);
     expect(wrapper.text()).not.toContain('No reviewed Session Capture is available yet.');
-    expect(button(wrapper,'Review editable draft')).toBeDefined();
-    await button(wrapper,'Review editable draft').trigger('click');
+    expect(button(wrapper,'Use suggestions in empty fields')).toBeDefined();
+    await button(wrapper,'Use suggestions in empty fields').trigger('click');
     await flushPromises();
     expect(wrapper.find('#presentingConcerns').element.value).toBe('Existing therapist wording.');
     expect(wrapper.find('#sessionThemes').element.value).toBe('Workplace stress was explored.');
@@ -59,6 +59,20 @@ describe('Clinical Record partial suggestions on the real record screen',()=>{
     expect(button(wrapper,'Mark Ready for Review').attributes('disabled')).toBeDefined();
     expect(wrapper.text()).toContain('I have checked the suggested wording against its supporting records');
     expect(saveSessionDraft).not.toHaveBeenCalled();expect(completeSessionRecord).not.toHaveBeenCalled();
+  });
+  it('from a new encounter, offers one reviewable draft action without a conflicting no-capture checklist',async()=>{
+    const wrapper=mount(ClinicalSummaryTab,{props:{session:{id:sessionId,clientId,status:'source_ready',notes:''}},global:{stubs}});
+    wrappers.push(wrapper);
+    await prepare(wrapper);
+    expect(button(wrapper,'Review editable draft')).toBeDefined();
+    expect(wrapper.text()).not.toContain('No reviewed Session Capture is available yet.');
+    await button(wrapper,'Review editable draft').trigger('click');
+    await flushPromises();
+    expect(wrapper.find('#sessionThemes').element.value).toBe('Workplace stress was explored.');
+    expect(wrapper.find('#riskSafeguarding').element.value).toBe('');
+    expect(button(wrapper,'Mark Ready for Review').attributes('disabled')).toBeDefined();
+    expect(saveSessionDraft).not.toHaveBeenCalled();
+    expect(completeSessionRecord).not.toHaveBeenCalled();
   });
   it('retrying one field keeps other current suggestions and all therapist edits',async()=>{
     const wrapper=screen();await prepare(wrapper);
@@ -84,7 +98,7 @@ describe('Clinical Record partial suggestions on the real record screen',()=>{
     suggestClinicalRecordFields.mockResolvedValue(response({partial:false,focusField:'riskSafeguarding'}));
     const wrapper=screen();await prepare(wrapper);
     expect(wrapper.text()).toContain('No source-backed suggestions are ready to use');
-    expect(button(wrapper,'Review editable draft')).toBeUndefined();
+    expect(button(wrapper,'Use suggestions in empty fields')).toBeUndefined();
     expect(wrapper.find('#riskSafeguarding').element.value).toBe('');
   });
   it('feedback explains provenance limits and provides a field-specific retry without raw rejected data',async()=>{
