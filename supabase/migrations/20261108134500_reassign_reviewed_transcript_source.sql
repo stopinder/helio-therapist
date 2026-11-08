@@ -20,6 +20,7 @@ DECLARE
   original public.zoom_transcripts%rowtype;
   encounter public.sessions%rowtype;
   previous_client_id uuid;
+  previous_review jsonb;
   new_review jsonb;
 BEGIN
   IF current_user NOT IN ('postgres','service_role') THEN
@@ -110,6 +111,7 @@ BEGIN
   END IF;
 
   previous_client_id:=original.client_id;
+  previous_review:=original.source_review;
   UPDATE public.sessions SET client_id=p_target_client_id,updated_at=now()
     WHERE id=encounter.id;
 
@@ -143,6 +145,7 @@ BEGIN
   VALUES (p_user_id,original.id,original.source_version,'reassign',
     new_review||jsonb_build_object(
       'previousClientId',previous_client_id,
+      'previousReview',previous_review,
       'targetClientId',p_target_client_id,
       'sessionId',encounter.id));
 
