@@ -72,7 +72,7 @@ test('clinical suggestion handler requests the closed schema and preserves draft
   const generator=fs.readFileSync(new URL('../api/_lib/clinical-record-generation.js',import.meta.url),'utf8');
   assert.match(handler,/clinicalRecordAnchoredResponseFormat\(passages\)/);
   assert.match(handler,/buildClinicalRecordPassages\(selected\)/);
-  assert.match(handler,/Return exactly one JSON object with a top-level "fields" property/);
+  assert.match(handler,/Return exactly one JSON object with a top-level "fields" object/);
   assert.match(generator,/one constrained repair/);
   assert.match(generator,/materializeClinicalRecordPassages\(content,passages\)/);
   assert.match(handler,/if\(!checked\)return res\.status\(502\)/);
