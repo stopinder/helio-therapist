@@ -9,7 +9,7 @@ test('every modality inherits Rogers-informed, evidence-first therapeutic useful
   assert.equal(CLIENT_SESSION_SUMMARY_LENSES.length,5);
   for(const lens of CLIENT_SESSION_SUMMARY_LENSES){
     const prompt=clientSessionSummarySystemPrompt(lens,{audience:'individual'});
-    for(const phrase of ['Therapeutic usefulness takes priority','unconditional positive regard','accurate empathic understanding','congruent, honest communication','Where the source supports it','Do not force a positive takeaway','source-grounded recognition','Do not lengthen a sparse source','Never invent quotations','not a diagnostic assessment']){
+    for(const phrase of ['Therapeutic usefulness takes priority','unconditional positive regard','accurate empathic understanding','congruent, honest communication','Where the source supports it','do not force a positive takeaway','specific and proportionate','Do not lengthen a sparse source','Never invent quotations','not a diagnostic assessment']){
       assert.ok(prompt.includes(phrase),lens+' lacks: '+phrase);
     }
     assert.match(prompt,/It is not a diagnostic assessment or an automatically approved clinical record/);
