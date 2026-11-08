@@ -19,7 +19,7 @@
         </div>
       </div>
       
-      <div class="flex-1 overflow-auto p-inline-lg py-stack-lg">
+      <div ref="sessionScrollContainer" class="flex-1 overflow-auto p-inline-lg py-stack-lg" @scroll.passive="handleSessionScroll">
         <div class="max-w-4xl mx-auto space-y-12">
           <template v-if="activeView === 'clinical'">
             <div v-if="session.status === 'completed'" class="space-y-6">
@@ -37,7 +37,7 @@
           </template>
 
           <template v-else>
-            <section v-if="sourceReview || summaryUnsafe" class="rounded-panel border border-border bg-surface-elevated p-5 space-y-3" data-testid="source-review-notice">
+            <section v-if="sourceReview || summaryUnsafe" ref="sourceReviewNotice" tabindex="-1" class="rounded-panel border border-border bg-surface-elevated p-5 space-y-3" data-testid="source-review-notice">
               <h2 class="text-h3 font-semibold">{{ sourceReview?.resolved ? 'Source review saved' : sourceReviewNeedsTranscript ? 'Resolve session identity' : 'Check the client and Zoom note' }}</h2>
               <p>{{ sourceReview?.message || 'This summary source needs clarification. Check the Zoom note or original evidence.' }}</p>
               <p class="text-body-sm">Your previous draft and imported note are preserved. No new summary was saved.</p>
@@ -80,8 +80,9 @@
                   </template>
                   <button v-if="transcript" type="button" @click="askHeliosAboutSession" class="button-secondary !min-h-0 py-1.5 px-3 text-body-sm shadow-sm">Ask Helios</button>
                   <button v-if="summaryDocument?.content?.body && summaryDocument.status !== 'completed'" @click="generateSummary" :disabled="isGenerating || transcriptLoading || !!transcriptError || !transcript" class="text-body-sm font-medium text-ink-muted hover:text-ink disabled:opacity-50">Regenerate</button>
+                   <button v-if="summaryDocument?.content?.body && summaryDocument.status !== 'completed'" type="button" class="button-secondary !min-h-0 py-1.5 px-3 text-body-sm shadow-sm" :aria-expanded="showRefinement" @click="showRefinement = !showRefinement">{{ showRefinement ? 'Hide refinement' : 'Refine' }}</button>
                   <RouterLink v-if="summaryDocument?.id" :to="{ name: 'ClientWorkspace', params: { clientId: session.clientId }, query: { document: summaryDocument.id } }" class="button-secondary !min-h-0 py-1.5 px-3 text-body-sm shadow-sm">Open in Client Documents</RouterLink>
-                  <button @click="copySummary" :disabled="!summaryDocument?.content?.body || !!sourceReview || summaryUnsafe || needsTherapistReview" class="button-secondary !min-h-0 py-1.5 px-3 text-body-sm shadow-sm">Copy summary</button>
+                  <button @click="copySummary" :disabled="isGenerating || !summaryDocument?.content?.body || !!sourceReview || summaryUnsafe || needsTherapistReview" class="button-secondary !min-h-0 py-1.5 px-3 text-body-sm shadow-sm">Copy summary</button>
                 </div>
               </div>
 
@@ -152,8 +153,8 @@
                 <p v-if="summaryPreferenceError" class="mt-2 text-caption text-state-danger" role="alert">{{ summaryPreferenceError }}</p>
               </div>
 
-              <SummaryRefinementPanel v-if="summaryDocument?.content?.body && summaryDocument.status !== 'completed'"
-                :body="summaryDocument.content.body" :context-key="refinementContext" :busy="isGenerating || reviewSaveBusy"
+              <SummaryRefinementPanel v-if="showRefinement && summaryDocument?.content?.body && summaryDocument.status !== 'completed'"
+                :body="summaryDocument.content.body" :context-key="refinementContext" :show-preview="false" :busy="isGenerating || reviewSaveBusy"
                 :disabled="!!sourceReview || summaryUnsafe || transcriptLoading || !!transcriptError || !transcript"
                 :candidate="pendingSummary" :error="generationError"
                 @generate="requestSummaryRefinement" @accept="acceptSummaryRevision" @discard="pendingSummary=null" />
@@ -171,11 +172,24 @@
               </div>
 
               <p v-if="summaryDocument?.status === 'completed' && prepareRequested" class="rounded-panel border border-border p-4 text-body-sm" role="status">This summary is finalised and read-only. Opening Clinical Workspace does not change or regenerate it.</p>
-              <div class="relative min-h-[12rem]">
-                <div v-if="isGenerating" role="status" class="py-24 text-center text-ink-muted bg-surface rounded-panel border border-dashed border-border flex flex-col items-center gap-3 shadow-sm">
-                  <span class="w-8 h-8 border-4 border-state-selected border-t-transparent rounded-full animate-spin"></span>
-                  <p class="type-body-medium">Preparing session summary…</p>
-                  <p class="text-body-sm">This may take a few minutes. Please keep this page open.</p>
+              <section v-if="pendingSummary && candidateMatches(pendingSummary, summaryDocument?.content?.body || '', refinementContext)" ref="summaryRevisionPreview" tabindex="-1" class="rounded-panel border border-state-selected/40 bg-surface-elevated p-4 sm:p-5 space-y-4 scroll-mt-8" data-testid="session-summary-revision-preview" aria-label="Revised summary ready">
+                <div class="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <h3 class="text-h3 font-semibold text-ink">Revised summary ready</h3>
+                    <p class="text-body-sm text-ink-secondary mt-1">Review this version. Your current summary stays unchanged until you choose to use it.</p>
+                  </div>
+                  <div class="flex flex-wrap items-center gap-2">
+                    <button type="button" class="button-secondary" :disabled="isGenerating" @click="pendingSummary = null">Keep current</button>
+                    <button type="button" class="button-primary" :disabled="isGenerating || reviewSaveBusy || !!sourceReview" @click="acceptSummaryRevision">Use revised draft</button>
+                  </div>
+                </div>
+                <SessionSummaryDocument :body="pendingSummary.result.draft.body" compact />
+              </section>
+              <div ref="summaryDisplayedDocument" class="relative min-h-[12rem]">
+                <div v-if="isGenerating" ref="summaryGenerationProgress" tabindex="-1" data-testid="summary-generation-progress" role="status" aria-live="polite" class="py-20 text-center text-ink-muted bg-surface rounded-panel border border-state-selected/40 flex flex-col items-center gap-3 shadow-sm scroll-mt-8">
+                  <span class="w-10 h-10 border-4 border-state-selected border-t-transparent rounded-full motion-safe:animate-spin" aria-hidden="true"></span>
+                  <p class="type-body-medium">{{ summaryDocument?.content?.body ? 'Regenerating session summary…' : 'Generating session summary…' }}</p>
+                  <p class="text-body-sm">{{ summaryDocument?.content?.body ? 'Your existing draft stays unchanged until you accept a revision.' : 'Preparing an editable draft from the reviewed session material.' }}</p>
                 </div>
                 <div v-else-if="generationError && !summaryDocument" class="py-12 px-6 text-center bg-state-danger-surface rounded-panel border border-state-danger/20 shadow-sm">
                   <p class="text-state-danger text-body-sm mb-4">{{ generationError }}</p>
@@ -254,6 +268,15 @@
           </template>
         </div>
       </div>
+      <div v-if="activeView === 'summary' && showScrollActions" class="fixed bottom-5 right-4 sm:right-6 z-40 flex flex-wrap justify-end gap-2 pointer-events-none" data-testid="session-summary-scroll-actions">
+        <button v-if="summaryDocument?.content?.body && !needsTherapistReview && !summaryUnsafe && !sourceReview" type="button" class="button-primary shadow-lg pointer-events-auto inline-flex items-center gap-2" @click="copySummary" :disabled="isGenerating" aria-label="Copy reviewed session summary">
+          <Copy class="w-4 h-4" aria-hidden="true" /> {{ copySuccess ? 'Copied!' : 'Copy summary' }}
+        </button>
+        <button type="button" class="button-secondary shadow-lg pointer-events-auto inline-flex items-center gap-2" @click="scrollSummaryToTop" aria-label="Back to top of session summary">
+          <ArrowUp class="w-4 h-4" aria-hidden="true" /> Back to top
+        </button>
+        <p v-if="copyError" role="alert" class="basis-full rounded-control bg-state-danger-surface px-3 py-2 text-caption text-state-danger pointer-events-auto">{{ copyError }}</p>
+      </div>
     </template>
   </div>
 </template>
@@ -264,7 +287,8 @@ import { candidateMatches, summaryContextKey } from '../lib/summaryAuthoring.js'
 import HelpLink from '../components/help/HelpLink.vue'
 import SourceReviewDialog from '../components/workspace/SourceReviewDialog.vue';
 import { isUnusableSummary } from '../lib/summarySafety.js';
-import { ref, onMounted, computed, watch, onBeforeUnmount } from 'vue';
+import { ref, onMounted, computed, watch, onBeforeUnmount, nextTick } from 'vue';
+import { ArrowUp, Copy } from '@lucide/vue';
 import { useRoute, useRouter, RouterLink } from 'vue-router';
 import { supabase } from '../lib/supabase.js';
 import { getSession } from '../lib/sessions.js';
@@ -287,6 +311,19 @@ const router = useRouter();
 const { openClinicalContext } = useAskHelios();
 const session = ref(null), client = ref(null), loading = ref(true), error = ref(''), transcript = ref(null), transcriptLoading = ref(false), transcriptError = ref(''), therapistName = ref('');
 const summaryDocument = ref(null);
+const sessionScrollContainer=ref(null),summaryGenerationProgress=ref(null),summaryRevisionPreview=ref(null),summaryDisplayedDocument=ref(null),sourceReviewNotice=ref(null);
+const showScrollActions=ref(false),showRefinement=ref(false);
+function handleSessionScroll(event){showScrollActions.value=(event?.target?.scrollTop||0)>280;}
+function reducedMotion(){return typeof window!=='undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;}
+async function scrollToSummaryTarget(target){
+  await nextTick();
+  const element=target.value;
+  if(!element?.isConnected)return;
+  element.scrollIntoView({behavior:reducedMotion()?'auto':'smooth',block:'center'});
+  element.focus?.({preventScroll:true});
+}
+function scrollSummaryToTop(){sessionScrollContainer.value?.scrollTo({top:0,behavior:reducedMotion()?'auto':'smooth'});}
+
 const excludeEarlierZoomNotes=ref(false),reviewSaveBusy=ref(false),summaryReviewError=ref('');
 const needsTherapistReview=computed(()=>summaryDocument.value?.content?.summaryGeneration?.reviewRequired===true &&
   !summaryDocument.value?.content?.summaryGeneration?.reviewedAt);
@@ -354,7 +391,7 @@ const cbtCareError = ref('');
 let saveTimer = null;
 let disposed = false;
 watch(() => [route.query.prepare, route.query.view], () => {
-  if (prepareRequested.value) { activeView.value = 'summary'; showSummaryOptions.value = true; }
+  if (prepareRequested.value) { activeView.value = 'summary'; if (!summaryDocument.value?.content?.body) showSummaryOptions.value = true; }
 });
 onBeforeUnmount(() => { disposed = true; clearTimeout(saveTimer); });
 
@@ -384,17 +421,19 @@ async function generateSummary(payload = null) {
   const baseBody=summaryDocument.value?.content?.body||'';
   const contextKey=refinementContext.value;
   isGenerating.value=true;generationError.value='';pendingSummary.value=null;
+  await scrollToSummaryTarget(summaryGenerationProgress);
   try{
     const result=await generateSessionSummary({clientId:session.value.clientId,sessionId:session.value.id,transcriptId:transcript.value.id,
       lens:summaryLens.value,window:summaryWindow.value,excludeEarlierZoomNotes:excludeEarlierZoomNotes.value,therapistGuidance:therapistGuidance.value,
       refinementRequest:refinement?.instruction||'',previousDraft:refinement?baseBody.slice(0,10000):'',summaryOptions:refinement?.summaryOptions||{}});
     if(disposed)return;
     if(contextKey!==refinementContext.value || baseBody!==(summaryDocument.value?.content?.body||''))throw new Error('The draft or evidence selection changed. Prepare a new preview; nothing has been replaced.');
-    if(baseBody){pendingSummary.value={result,baseBody,contextKey,instruction:refinement?.instruction||''};return;}
+    if(baseBody){pendingSummary.value={result,baseBody,contextKey,instruction:refinement?.instruction||''};showRefinement.value=false;await scrollToSummaryTarget(summaryRevisionPreview);return;}
     await installSummaryResult(result,refinement?.instruction||'');
+    await scrollToSummaryTarget(summaryDisplayedDocument);
   }catch(err){
-    if(err.code==='SOURCE_REVIEW_REQUIRED'){sourceReview.value=err.review||{message:err.message,sources:[]};return;}
-    if(!disposed)generationError.value=err.message||'Summary generation failed. The current draft is unchanged.';
+    if(err.code==='SOURCE_REVIEW_REQUIRED'){sourceReview.value=err.review||{message:err.message,sources:[]};await scrollToSummaryTarget(sourceReviewNotice);return;}
+    if(!disposed){generationError.value=err.message||'Summary generation failed. The current draft is unchanged.';await scrollToSummaryTarget(summaryDisplayedDocument);}
   }finally{isGenerating.value=false;}
 }
 async function acceptSummaryRevision(){
@@ -407,13 +446,14 @@ async function acceptSummaryRevision(){
     if(!candidateMatches(candidate,summaryDocument.value?.content?.body||'',refinementContext.value))throw new Error('The current draft changed. Prepare a new preview.');
     await installSummaryResult(candidate.result,candidate.instruction);
     pendingSummary.value=null;
+    await scrollToSummaryTarget(summaryDisplayedDocument);
   }catch(error){generationError.value=error.message||'The revised draft could not be saved. Your current draft remains available.';}
   finally{isGenerating.value=false;}
 }
 async function installSummaryResult(result,instruction=''){
   clearTimeout(saveTimer);
   const generation={outcome:'ready',id:result.generationId,generatedAt:result.generatedAt,promptVersion:result.promptVersion,model:result.model,
-    lens:result.lens||summaryLens.value,window:result.window||summaryWindow.value,anchorSessionId:session.value.id,sessionCount:result.sessionCount||1,
+    lens:result.lens||summaryLens.value,window:result.window||summaryWindow.value,excludeEarlierZoomNotes:excludeEarlierZoomNotes.value,anchorSessionId:session.value.id,sessionCount:result.sessionCount||1,
     reviewCautions:result.reviewCautions||[],qualityReview:result.qualityReview||null,summaryOptions:result.summaryOptions||{},resourceSelection:result.resourceSelection||null,
     reviewRequired:true,reviewedAt:null,refinedWith:instruction||undefined};
   const existing=summaryDocument.value?.content||{};
@@ -429,7 +469,7 @@ async function installSummaryResult(result,instruction=''){
     summaryDocument.value=await createClientDocumentDraft({client:client.value,title:'Session Summary - '+workspaceSession.value.date,documentType:'session_summary',content,sourceManifest:result.sources});
   }
   sourceReview.value=null;summaryReviewError.value='';isEditingSummary.value=false;
-  showSummaryOptions.value=prepareRequested.value;showSummaryGuidance.value=false;therapistGuidance.value='';
+  showSummaryOptions.value=false;showSummaryGuidance.value=false;showRefinement.value=false;therapistGuidance.value='';
 }
 
 async function approveSummaryDraft(){
@@ -494,6 +534,7 @@ async function prepareCbtCareSuggestions() {
 }
 
 async function copySummary() {
+  if(isGenerating.value)return;
   if (!summaryDocument.value?.content?.body || sourceReview.value || summaryUnsafe.value || needsTherapistReview.value) return;
   if(!await verifySavedSummary())return;
   copyError.value = '';
@@ -539,10 +580,12 @@ async function loadSession(){
     summaryDocument.value = await findSessionSummary({ clientId, sessionId });
     await verifySavedSummary();
     const previousGeneration = summaryDocument.value?.content?.summaryGeneration || null;
-    summaryLens.value = clientData.preferred_summary_lens || previousGeneration?.lens || 'integrative';
+    summaryLens.value = previousGeneration?.lens || clientData.preferred_summary_lens || 'integrative';
     summaryWindow.value = previousGeneration?.window || 'current';
-    excludeEarlierZoomNotes.value=false;
-    showSummaryOptions.value = prepareRequested.value || summaryUnsafe.value || !summaryDocument.value?.content?.body;
+    excludeEarlierZoomNotes.value = previousGeneration?.excludeEarlierZoomNotes === true ||
+      (previousGeneration?.excludeEarlierZoomNotes == null && Boolean(previousGeneration?.reviewCautions?.some(note => note.includes('Earlier Zoom notes excluded by therapist choice'))));
+    showSummaryOptions.value = summaryUnsafe.value || !summaryDocument.value?.content?.body;
+    showRefinement.value = false;
     loadTranscript();
   }catch(e){
     error.value='The session could not be loaded.';
