@@ -22,7 +22,8 @@ test('source review confirmation needs explicit acknowledgement but no invented 
   assert.match(panel,/hasSourceMaterial\.value&&reviewed\.value&&!!source\.value\?\.clientId/);
   assert.doesNotMatch(panel,/context\.value\.trim\(\)\.length>=10/);
   assert.match(panel,/Add participants or context \(optional\)/);
-  assert.match(panel,/:disabled="!canConfirm"/);
+  assert.match(panel,/:disabled="busy \|\| loading"/)
+  assert.match(panel,/if\(!reviewed\.value\)/);
   assert.match(panel,/mode === 'confirm'/);
   assert.match(panel,/Separate conversations/);
 });
