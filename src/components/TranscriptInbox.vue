@@ -135,6 +135,7 @@
             <div v-else-if="isVerifiedMatch(transcript)" class="matched-note">
               <span class="matched-copy"><CheckCircle2 class="workspace-icon" aria-hidden="true" /> Assigned to {{ clientName(transcript.clientId) || 'client' }}</span>
               <button type="button" class="button-primary compact-button" :disabled="inboxBusy" @click="openLinkedSessionFromRow(transcript)">Open Clinical Workspace</button>
+              <button type="button" class="button-secondary compact-button" :disabled="inboxBusy" @click.stop="openInboxSourceReview(transcript)">Correct client assignment</button>
             </div>
 
             <div v-else-if="transcript.clientId || transcript.sessionRef" class="matched-note"><span>The assignment needs an encounter check.</span><button class="button-secondary" @click="openTranscript(transcript)">Review assignment</button></div>
@@ -253,7 +254,7 @@
         </div>
         <div class="assignment-actions">
           <button v-if="sessionSummaryDestination(selected)" class="primary" :disabled="inboxBusy" @click="openLinkedSession">Open Clinical Workspace</button>
-          <button v-if="selected.sourceReview?.state === 'needs_review' || selected.sourceReview?.state === 'separated'" class="primary" @click.stop="openInboxSourceReview(selected)">Review source</button>
+          <button v-if="selected.clientId && selected.sessionRef" class="secondary" @click.stop="openInboxSourceReview(selected)">Review or correct client</button>
           <button class="secondary" @click="openClientTranscripts">Client transcripts</button>
           <button class="secondary" @click="closeTranscript">Back to inbox</button>
         </div>
@@ -350,7 +351,7 @@ function openInboxSourceReview(transcript){
   reviewSourceId.value=transcript.id
 }
 async function handleSourceReviewed(result){
-  if(result.action==='confirm')reviewSourceId.value=''
+  if(['confirm','reassign'].includes(result.action))reviewSourceId.value=''
   // Reconcile the rows without toggling the Inbox loading placeholder or
   // remounting the open transcript. Keep filters, search and typed assignments.
   try{
@@ -361,6 +362,15 @@ async function handleSourceReviewed(result){
     transcripts.value=data.transcripts||[]
     for(const item of transcripts.value)initialiseAssignmentDraft(item)
     if(selectedId)selected.value=transcripts.value.find(item=>item.id===selectedId)||selected.value
+    if(result.action==='reassign'){
+      const corrected=transcripts.value.find(item=>item.id===result.id)
+      if(corrected){
+        lastAssignment.value=corrected
+        lastAssignmentLabel.value=clientName(corrected.clientId)||'correct client'
+      }
+      editingClient.value=false
+      successMessage.value='Client assignment corrected. The original source and its empty linked encounter have moved; no other client records were moved.'
+    }
   }catch{
     errorMessage.value='The source review was saved, but the inbox status could not refresh. Reopen Transcript Inbox to update the list.'
   }
