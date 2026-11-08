@@ -25,7 +25,18 @@ export default async function handler(req,res){
     // Preserve optional details, but never demand arbitrary filler just to pass the SQL context length check.
     const reviewContext=action==='confirm'?sourceConfirmationContext(context):context;
     const {data,error:saveError}=await supabase.rpc('resolve_transcript_source_review',{p_user_id:user.id,p_transcript_id:id,p_expected_version:sourceVersion,p_action:action,p_context:reviewContext,p_evidence:[],p_segments:segments});
-    if(saveError)return res.status(saveError.code==='40001'?409:saveError.code==='42501'?403:400).json({error:{code:saveError.code==='40001'?'SOURCE_CHANGED':'INVALID_REVIEW',message:saveError.message}});
+    if(saveError){
+      const status=saveError.code==='40001'?409:saveError.code==='42501'?403:400;
+      const code=saveError.code==='40001'?'SOURCE_CHANGED':saveError.code==='42501'?'SOURCE_REVIEW_FORBIDDEN':'INVALID_REVIEW';
+      // Server-side diagnostic contains no client identity or transcript content.
+      console.warn('[Source review save rejected]',{action,dbCode:saveError.code||'unknown',status});
+      const message=code==='SOURCE_REVIEW_FORBIDDEN'
+        ? 'The server refused to save this confirmation. Your session material is unchanged. Contact support with the SOURCE_REVIEW_FORBIDDEN error code.'
+        : code==='SOURCE_CHANGED'
+          ? 'The session source changed. Reload and review the current source before confirming.'
+          : (saveError.message||'The confirmation could not be saved.');
+      return res.status(status).json({error:{code,message}});
+    }
     return res.status(200).json({data});
   }catch(error){console.error('[Source review]',error.code||'unavailable');return res.status(error.status||500).json({error:{code:error.code||'SOURCE_REVIEW_UNAVAILABLE',message:error.status===401?'Please sign in again.':'Source review is unavailable. Nothing has been changed.'}})}
 }
