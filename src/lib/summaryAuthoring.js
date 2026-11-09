@@ -1,6 +1,6 @@
 // Shared by every client-facing summary surface and both server generation routes.
 // This module contains no client records, practitioner defaults or network requests.
-export const SUMMARY_POLICY_VERSION = 'helios-summary-authoring/1.1.0';
+export const SUMMARY_POLICY_VERSION = 'helios-summary-authoring/1.2.0';
 export const SUMMARY_AUDIENCES = Object.freeze(['auto', 'individual', 'shared']);
 export const SUMMARY_ADDITIONS = Object.freeze(['none', 'exercise', 'resource', 'exercise_and_resource']);
 export const SUMMARY_SECTION_GROUPS = Object.freeze([
@@ -53,6 +53,24 @@ export function normalizeSummaryOptions(value = {}) {
   }
   return { audience, addition, resource };
 }
+// Therapist-authored instructions are requests for output, never evidence of what occurred.
+// Detection is deliberately limited to explicit imperatives / requests, not incidental
+// source mentions of sensing, homework or a completed exercise.
+export function summaryInstructionRequirements(guidance = '', refinement = '', options = {}) {
+  const request = [guidance, refinement].filter(Boolean).join('\n');
+  const actionable = /(?:provide|include|write|draft|create|prepare|give|add|describe|outline|explain|suggest|request|instructions?\s+(?:for|on)|step[- ]by[- ]step|how\s+to|guide\s+(?:to|for|on)).{0,150}(?:exercis(?:e|es)|practice|sensing|somatic|body\s*scan|check[- ]?in)|(?:exercis(?:e|es)|practice|sensing|somatic\s+check[- ]?in).{0,100}(?:instructions?|steps?|guide|description|how\s+to)/i.test(request);
+  const exercise = wantsSummaryExercise(options) || actionable;
+  const eightPoint = exercise && /(?:eight|8)[- ]point(?:ed)?\s+(?:sensing\s+)?(?:exercise|practice|sequence)?/i.test(request);
+  const somaticCheckIn = exercise && /(?:somatic|bodily|body)[- ]?\s*check[- ]?in/i.test(request);
+  const sixPoint = exercise && /(?:six|6)[- ]point(?:ed)?\s+(?:exercise|practice|sequence)?/i.test(request);
+  return { exercise, eightPoint, sixPoint, somaticCheckIn };
+}
+export function effectiveSummaryOptions(options = {}, guidance = '', refinement = '') {
+  const normalized = normalizeSummaryOptions(options);
+  if (!summaryInstructionRequirements(guidance, refinement, normalized).exercise || wantsSummaryExercise(normalized)) return normalized;
+  return { ...normalized, addition: normalized.addition === 'resource' ? 'exercise_and_resource' : 'exercise' };
+}
+
 export function wantsSummaryExercise(options) {
   return ['exercise', 'exercise_and_resource'].includes(options?.addition);
 }
