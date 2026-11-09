@@ -62,8 +62,10 @@ test('transcripts workspace offers a manual Zoom Notes reconciliation action', (
 
   assert.match(viewSource, /Check Zoom Notes/);
   assert.match(viewSource, /authenticatedFetch\('\/api\/zoom\/reconcile-my-notes', \{ method: 'POST' \}\)/);
-  assert.match(viewSource, /inboxKey\.value \+= 1/);
-  assert.match(viewSource, /checkZoomNotes\(\{ silent: true \}\)/);
+  assert.match(viewSource, /await refreshInbox\(\)/);
+  assert.match(viewSource, /refreshAfterImport\(\)/);
+  assert.match(viewSource, /<TranscriptInbox ref="inboxRef"/);
+  assert.doesNotMatch(viewSource, /inboxKey|checkZoomNotes\(\{ silent: true \}\)/);
   assert.match(viewSource, /No missing transcripts found\./);
 });
 
