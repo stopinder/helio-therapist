@@ -267,7 +267,7 @@ export default async function handler(req, res) {
       const qualityInput=JSON.parse(userInput);
       qualityInput.sourceBlocks=usedSources.map((source,index)=>sourceBlock(source,{isCurrent:index===0,suppressZoomNote:(reviewCautions.length>0&&!!source.original_transcript?.trim())||(excludeEarlierZoomNotes&&index>0)}));
       const qualityEvidence=qualityInput.sourceBlocks.map(source=>({id:source.id,transcript:source.transcript,zoom_note:source.zoom_note}));
-      const reviewed=await reviewSummaryDraft({request:{...request,responseFormat:summaryOutcomeResponseFormat(qualityIds),messages:[{role:'system',content:systemPrompt},{role:'user',content:JSON.stringify(qualityInput)}]},completion,model,structured,validSourceIds:qualityIds,evidenceSources:qualityEvidence,summaryOptions});
+      const reviewed=await reviewSummaryDraft({request:{...request,responseFormat:summaryOutcomeResponseFormat(qualityIds),messages:[{role:'system',content:systemPrompt},{role:'user',content:JSON.stringify(qualityInput)}]},completion,model,structured,validSourceIds:qualityIds,evidenceSources:qualityEvidence,summaryOptions,instructionRequirements});
       structured=reviewed.structured;completion=reviewed.completion;model=reviewed.model;qualityReview=reviewed.qualityReview;
     }
     await assertSourcesUnchanged(supabase,user.id,usedSources.map(source=>source.row));
