@@ -56,13 +56,13 @@ describe('Transcript Inbox keeps active work intact during Zoom checks',()=>{
     await flushPromises();
     expect(refreshCalls).toBe(1);
     expect(mounts).toBe(1);
-    expect(wrapper.text()).toContain('finish your current assignment');
+    expect(wrapper.text()).toContain('Finish your current assignment');
     allowRefresh=true;
     await button(wrapper,'refresh the inbox').trigger('click');
     await flushPromises();
     expect(refreshCalls).toBe(2);
     expect(mounts).toBe(1);
-    expect(wrapper.text()).not.toContain('finish your current assignment');
+    expect(wrapper.text()).not.toContain('Finish your current assignment');
     wrapper.unmount();
   });
 });
