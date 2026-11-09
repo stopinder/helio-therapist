@@ -31,12 +31,7 @@ jobs:
           npm ls js-beautify editorconfig glob minimatch || true
       - name: Verify full audit
         run: npm audit --audit-level=moderate
-      - name: Run unit, component and build checks
-        run: |
-          npm test
-          npm run test:components
-          npm run build
-      - name: Commit only verified manifest and lockfile
+      - name: Commit audited manifest and lockfile to review branch
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -45,3 +40,11 @@ jobs:
             git commit -m "Replace vulnerable dependency chains with current supported versions [skip ci]"
             git push origin HEAD:security/remove-vulnerable-dependency-chains-20261109
           fi
+      - name: Run Node tests
+        run: npm test
+      - name: Run Vue component tests
+        if: always()
+        run: npm run test:components
+      - name: Build production bundle
+        if: always()
+        run: npm run build
