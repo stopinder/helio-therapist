@@ -1,0 +1,29 @@
+name: Protect workspace from Zoom and auth refreshes
+on:
+  pull_request:
+    paths:
+      - src/AuthGate.vue
+      - src/views/Transcripts.vue
+      - src/components/TranscriptInbox.vue
+      - src/__tests__/AuthGateBilling.spec.js
+      - test/zoom-sync-preserve-work.test.js
+  push:
+    branches: [fix/zoom-inbox-auth-refresh-preserve-work-20261107]
+permissions:
+  contents: read
+jobs:
+  preserve-work:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22'
+      - run: npm ci --ignore-scripts --no-fund
+      - name: Run focused transcript state tests
+        run: node --test test/zoom-sync-preserve-work.test.js test/transcript-clear-behaviour.test.js test/manual-transcript-import.test.js test/zoom-my-notes-reconciliation.test.js
+      - name: Verify real AuthGate component does not remount on token refresh
+        run: npx vitest run src/__tests__/AuthGateBilling.spec.js
+      - name: Verify production UI build
+        run: npm run build

@@ -696,6 +696,27 @@ function closeTranscript(){
   requestAnimationFrame(()=>document.querySelector(`[data-transcript-id="${returnId}"]`)?.scrollIntoView({block:'center'}));
 }
 async function load(){loading.value=true;errorMessage.value='';try{const response=await authenticatedFetch('/api/zoom/transcripts');const data=await response.json().catch(()=>({}));if(!response.ok)throw new Error(data.error||'Unable to load transcripts.');transcripts.value=data.transcripts||[];for(const transcript of transcripts.value)initialiseAssignmentDraft(transcript)}catch(error){errorMessage.value=error.message||'Unable to load transcripts.'}finally{loading.value=false}}
+// Update server-confirmed rows without resetting search, selection or typed drafts.
+let refreshVersion=0
+async function refreshFromServer(){
+  const version=++refreshVersion
+  const response=await authenticatedFetch('/api/zoom/transcripts')
+  const data=await response.json().catch(()=>({}))
+  if(!response.ok)throw new Error(data.error||'Unable to refresh transcripts.')
+  if(version!==refreshVersion)return false
+  const existing=new Map(transcripts.value.map(item=>[String(item.id),item]))
+  transcripts.value=(data.transcripts||[]).map(item=>{
+    const previous=existing.get(String(item.id))
+    if(!previous)return item
+    if(Date.parse(previous.updatedAt||0)>Date.parse(item.updatedAt||0))return previous
+    return typeof previous.text==='string'&&typeof item.text!=='string'
+      ? {...item,text:previous.text}
+      : item
+  })
+  for(const transcript of transcripts.value)initialiseAssignmentDraft(transcript)
+  return true
+}
+defineExpose({refreshFromServer})
 async function patchTranscript(body,fallbackMessage){saving.value=true;errorMessage.value='';successMessage.value='';try{const response=await authenticatedFetch('/api/zoom/transcripts',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:selected.value.id,expectedUpdatedAt:selected.value.updatedAt,...body})});const data=await response.json().catch(()=>({}));if(!response.ok)throw new Error(data.error||fallbackMessage);if(body.restoreAttention && !isRestoredTranscript(data?.transcript,selected.value.id))throw new Error(fallbackMessage);replaceTranscript(data.transcript);return data.transcript}catch(error){errorMessage.value=error.message||fallbackMessage;return null}finally{saving.value=false}}
 async function saveEncounterDate(transcript,{quiet=false}={}){
   if(!transcript?.id||encounterDateSavingId.value)return transcript

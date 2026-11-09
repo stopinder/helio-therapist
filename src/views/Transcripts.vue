@@ -44,7 +44,7 @@
 
       <p v-if="importError" class="max-w-[68rem] mx-auto mb-stack-md text-body-sm text-state-danger" role="alert">{{ importError }}</p>
       <p v-else-if="importSuccess" class="max-w-[68rem] mx-auto mb-stack-md text-body-sm text-state-success" role="status">{{ importSuccess }}</p>
-      <TranscriptInbox :key="inboxKey" :clients="clients" :open-transcript-id="openTranscriptId" @client-added="handleClientAdded" />
+      <TranscriptInbox ref="inboxRef" :clients="clients" :open-transcript-id="openTranscriptId" @client-added="handleClientAdded" />
     </main>
   </div>
 </template>
@@ -67,7 +67,7 @@ const importSuccess = ref('')
 const importing = ref(false)
 const checkingZoom = ref(false)
 const fileInput = ref(null)
-const inboxKey = ref(0)
+const inboxRef = ref(null)
 const showPasteImport = ref(false)
 const pastedTranscript = ref('')
 const MAX_IMPORT_BYTES = 2 * 1024 * 1024
@@ -76,6 +76,11 @@ const openTranscriptId = computed(() => typeof route.query.transcript === 'strin
 
 function handleClientAdded(client) {
   if(client?.id)clients.value=[...clients.value.filter(item=>item.id!==client.id),client]
+}
+// Sync data in-place: remounting the inbox destroys unsaved assignment state.
+async function refreshInboxInPlace() {
+  try { await inboxRef.value?.refreshFromServer?.() }
+  catch (error) { console.warn('[Transcripts] Background list refresh unavailable', error?.code || error?.name || 'unavailable') }
 }
 async function load() {
   loading.value = true
@@ -102,7 +107,7 @@ async function checkZoomNotes({ silent = false } = {}) {
     const response = await authenticatedFetch('/api/zoom/reconcile-my-notes', { method: 'POST' })
     const data = await response.json().catch(() => ({}))
     if (!response.ok) throw new Error(data.error || 'Unable to check Zoom Notes.')
-    if ((data.imported || 0) > 0 || (data.refreshed || 0) > 0) inboxKey.value += 1
+    if ((data.imported || 0) > 0 || (data.refreshed || 0) > 0) await refreshInboxInPlace()
     if (!silent) {
       if (data.imported > 0) importSuccess.value = `${data.imported} ${data.imported === 1 ? 'transcript' : 'transcripts'} imported from Zoom.`
       else if (data.refreshed > 0) importSuccess.value = `${data.refreshed} existing Zoom ${data.refreshed === 1 ? 'note was' : 'notes were'} refreshed.`
@@ -121,7 +126,7 @@ async function submitTranscriptImport(filename, text) {
     const response = await authenticatedFetch('/api/zoom/transcripts', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ filename, text }) })
     const data = await response.json().catch(() => ({}))
     if (!response.ok) throw new Error(data.error || 'Unable to import the transcript.')
-    inboxKey.value += 1
+    await refreshInboxInPlace()
     importSuccess.value = data.duplicate ? 'That transcript is already in your inbox.' : 'Transcript imported. Assign the client when you are ready.'
     return true
   } catch (err) { console.error('[Transcript Import] Failed', err); importError.value = 'Couldn’t import the transcript. Please try again.'; return false }
@@ -139,8 +144,6 @@ async function importTranscriptFile(event) {
   const text = await file.text(); await submitTranscriptImport(file.name, text)
 }
 
-onMounted(async () => {
-  await load()
-  await checkZoomNotes({ silent: true })
-})
+// Zoom reconciliation is user initiated: page entry must never interrupt work.
+onMounted(load)
 </script>
