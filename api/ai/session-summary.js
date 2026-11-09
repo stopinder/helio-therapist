@@ -1,4 +1,4 @@
-import { normalizeSummaryOptions, resourceAppendix, wantsSummaryExercise } from '../../src/lib/summaryAuthoring.js';
+import { effectiveSummaryOptions, resourceAppendix, wantsSummaryExercise, summaryInstructionRequirements } from '../../src/lib/summaryAuthoring.js';
 import { SUMMARY_POLICY_VERSION } from '../_lib/summary-authoring-policy.js';
 import { reviewSummaryDraft } from '../_lib/summary-quality-review.js';
 import { verifySummaryResource } from '../_lib/summary-resource-check.js';
@@ -82,7 +82,8 @@ export default async function handler(req, res) {
       });
     }
 
-    const summaryOptions = normalizeSummaryOptions(req.body?.summaryOptions ?? {});
+    const summaryOptions = effectiveSummaryOptions(req.body?.summaryOptions ?? {}, therapistGuidance, refinementRequest);
+    const instructionRequirements=summaryInstructionRequirements(therapistGuidance, refinementRequest, summaryOptions);
     const { data: session, error: sessionError } = await supabase
       .from('sessions')
       .select('id, client_id, user_id, occurred_at, clients(id, user_id, display_name)')
