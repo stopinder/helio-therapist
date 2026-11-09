@@ -1,5 +1,8 @@
 name: Security dependency refresh
 on:
+  pull_request:
+    branches:
+      - main
   push:
     branches:
       - security/remove-vulnerable-dependency-chains-20261109
