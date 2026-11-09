@@ -46,7 +46,7 @@ ${lensRule}
 
 OPTIONAL ADDITIONS
 ${wantsSummaryExercise(options)
-    ? 'The therapist requested a deliverable: actual usable, numbered, step-by-step client-facing instructions in betweenSession, introduced by the exact heading Optional exercise to consider on its own line. A mention that an exercise was discussed, assigned or promised is NOT fulfilment. Include clear starting posture, attention sequence, approximate duration when supplied, and a gentle stop-or-modify instruction. Keep the instructions separate from the factual account; accurately retain any exercise actually performed or agreed in the record. If a named tradition or practitioner is explicitly requested, distinguish a safe adaptation from a canonical verified sequence; never claim it is authoritative without verified method material. If precise steps are not available, do not invent an authoritative sequence: provide a clearly labelled general adaptation for therapist review, or flag the gap. Do not require reliving conflict or pushing through discomfort. Cite therapist:guidance for added guidance, and session IDs only for what actually occurred.'
+    ? 'The therapist requested a deliverable: actual usable, sequentially numbered step-by-step client-facing instructions in betweenSession, introduced by the exact heading Optional exercise to consider on its own line. If eight points are requested, supply points numbered 1 through 8; if six points are requested, supply 1 through 6. If a somatic check-in is requested, add a separately titled Somatic check-in with concrete instructions for attending to sensation while speaking or listening together. A mention that an exercise was discussed, assigned or promised is NOT fulfilment. Include clear starting posture, attention sequence, approximate duration when supplied, and a gentle stop-or-modify instruction. Keep the instructions separate from the factual account; accurately retain any exercise actually performed or agreed in the record. If a named tradition or practitioner is explicitly requested, distinguish a safe adaptation from a canonical verified sequence; never claim it is authoritative without verified method material. If precise steps are not available, do not invent an authoritative sequence: provide a clearly labelled general adaptation for therapist review, or flag the gap. Do not require reliving conflict or pushing through discomfort. Cite therapist:guidance for added guidance, and session IDs only for what actually occurred.'
     : 'No NEW exercise, homework, technique, practitioner, book or video recommendation has been requested. Do not introduce one. Existing actions explicitly discussed or agreed in the clinical evidence may still be recorded with accurate attribution.'}
 External resources are selected and checked separately by the therapist, not invented by you. Do not output resource URLs or add a practitioner from a prior draft as a default. A source-confirmed practitioner mentioned as part of the session may be reported, not converted into a recommendation. Resource selection is not proof of discussion or agreement during the session.
 
@@ -70,7 +70,7 @@ Return JSON only with exactly two fields:
 
 // These are mechanical checks, not clinical truth or semantic entailment checks.
 // No clinical text is logged or returned in diagnostics.
-export function assessSummaryDraft(structured, preferences = {}) {
+export function assessSummaryDraft(structured, preferences = {}, requirements = {}) {
   if (!structured || structured.outcome && structured.outcome !== 'ready') return [];
   const options = normalizeSummaryOptions(preferences);
   const sections = structured.sections || {};
@@ -92,10 +92,24 @@ export function assessSummaryDraft(structured, preferences = {}) {
   }
   if (wantsSummaryExercise(options)) {
     const guidance = String(sections.betweenSession || '');
-    const hasHeading = /(?:^|\\n)\\s*Optional exercise to consider\\s*(?:\\n|$)/i.test(guidance);
-    const hasSteps = /(?:^|\\n)\\s*(?:1[.)]|Step 1[:.)]|First[,.:])\\s+[^\\n]+/i.test(guidance)
-      && /(?:^|\\n)\\s*(?:2[.)]|Step 2[:.)]|Next[,.:])\\s+[^\\n]+/i.test(guidance);
-    if (!hasHeading || !hasSteps) issue('REQUESTED_EXERCISE_MISSING', true, 'The requested exercise must appear as a separate, usable step-by-step addition, not merely be mentioned.');
+    const heading = /(?:^|\n)\s*Optional exercise to consider\s*(?:\n|$)/i.test(guidance);
+    const lines = guidance.split(/\r?\n/).map(line => line.trim());
+    const numbered = lines.map(line => /^(\d{1,2})[.)]\s+\S/.exec(line)).filter(Boolean).map(match => Number(match[1]));
+    const sequential = numbered.length >= 2 && numbered.every((value, index) => value === index + 1);
+    const needsEight = requirements.eightPoint === true;
+    const needsSix = requirements.sixPoint === true && !needsEight;
+    const minimum = needsEight ? 8 : needsSix ? 6 : 2;
+    const countOk = sequential && numbered.length >= minimum;
+    const meaningful = numbered.length >= minimum && lines.filter(line => /^\d{1,2}[.)]\s+/.test(line)).every(line => line.trim().split(/\s+/).length >= 6);
+    const safety = /\b(stop|pause|modify|adapt|choose|comfortable|discomfort|overwhelm)\b/i.test(guidance);
+    if (!heading || !countOk || !meaningful || !safety) issue('REQUESTED_EXERCISE_MISSING', true, 'Provide a separate usable numbered exercise with all requested points and permission to stop or modify, not merely a reference to it.');
+    if (requirements.somaticCheckIn) {
+      const checkinSection = /(?:^|\n)\s*(?:Somatic|Body|Bodily)\s+check[- ]?in\s*(?:\n|$)/i.test(guidance);
+      const checkin = guidance.match(/(?:^|\n)\s*(?:Somatic|Body|Bodily)\s+check[- ]?in\s*\n([\s\S]*)/i)?.[1] || '';
+      if (!checkinSection || !/\b(?:notice|sense|feel|attend|bring attention)\b/i.test(checkin) || !/\b(?:together|each other|partner|listen|speaking|conversation)\b/i.test(checkin)) {
+        issue('REQUESTED_SOMATIC_CHECKIN_MISSING', true, 'Include a separate actionable somatic check-in for the couple, not a suggestion merely to schedule one.');
+      }
+    }
   }
   // Surface formulaic explanatory caveats for a single evidence-preserving editorial pass.
   // These are stylistic signals, never a reason to reject an otherwise valid clinical draft.
