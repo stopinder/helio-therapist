@@ -11,7 +11,7 @@ export const SUMMARY_SECTION_GROUPS = Object.freeze([
 ]);
 export const SUMMARY_HEADINGS = new Set([
   ...SUMMARY_SECTION_GROUPS.map(group => group.heading),
-  'Optional exercise to consider', 'Optional resource',
+  'Optional exercise to consider', 'Somatic check-in', 'Optional resource',
   'Where things are now', 'What we have been working on', 'Patterns across our recent work',
   'What has shifted \u2014 and what has been different', 'Strengths and resources',
   'Making sense of what we have noticed', 'A gentle CBT perspective', 'An integrative perspective',
@@ -60,7 +60,7 @@ export function summaryInstructionRequirements(guidance = '', refinement = '', o
   const request = [guidance, refinement].filter(Boolean).join('\n');
   const actionable = /(?:provide|include|write|draft|create|prepare|give|add|describe|outline|explain|suggest|request|instructions?\s+(?:for|on)|step[- ]by[- ]step|how\s+to|guide\s+(?:to|for|on)).{0,150}(?:exercis(?:e|es)|practice|sensing|somatic|body\s*scan|check[- ]?in)|(?:exercis(?:e|es)|practice|sensing|somatic\s+check[- ]?in).{0,100}(?:instructions?|steps?|guide|description|how\s+to)/i.test(request);
   const exercise = wantsSummaryExercise(options) || actionable;
-  const eightPoint = exercise && /(?:eight|8)[- ]point(?:ed)?\s+(?:sensing\s+)?(?:exercise|practice|sequence)?/i.test(request);
+  const eightPoint = exercise && (/(?:eight|8)[- ]point(?:ed)?\s+(?:sensing\s+)?(?:exercise|practice|sequence)?/i.test(request) || /(?:points?\s+)?(?:one|1)\s+(?:through|to|[-–])\s+(?:eight|8)\b/i.test(request));
   const somaticCheckIn = exercise && /(?:somatic|bodily|body)[- ]?\s*check[- ]?in/i.test(request);
   const sixPoint = exercise && /(?:six|6)[- ]point(?:ed)?\s+(?:exercise|practice|sequence)?/i.test(request);
   return { exercise, eightPoint, sixPoint, somaticCheckIn };
