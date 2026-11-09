@@ -46,7 +46,7 @@ ${lensRule}
 
 OPTIONAL ADDITIONS
 ${wantsSummaryExercise(options)
-    ? 'The therapist explicitly requested an optional prospective exercise. Put a short, adaptable exercise under Optional exercise to consider in betweenSession. Explain its purpose without promises; allow the client to decline, modify or stop. Do not require reliving a conflict or pushing through discomfort. Do not attribute it to a named practitioner or method unless explicitly requested and supported by supplied verified material. It was NOT completed, assigned or agreed in the recorded encounter. Cite therapist:guidance for the request, not a session ID as proof it happened.'
+    ? 'The therapist requested a deliverable: actual usable, numbered, step-by-step client-facing instructions in betweenSession, introduced by the exact heading Optional exercise to consider on its own line. A mention that an exercise was discussed, assigned or promised is NOT fulfilment. Include clear starting posture, attention sequence, approximate duration when supplied, and a gentle stop-or-modify instruction. Keep the instructions separate from the factual account; accurately retain any exercise actually performed or agreed in the record. If a named tradition or practitioner is explicitly requested, distinguish a safe adaptation from a canonical verified sequence; never claim it is authoritative without verified method material. If precise steps are not available, do not invent an authoritative sequence: provide a clearly labelled general adaptation for therapist review, or flag the gap. Do not require reliving conflict or pushing through discomfort. Cite therapist:guidance for added guidance, and session IDs only for what actually occurred.'
     : 'No NEW exercise, homework, technique, practitioner, book or video recommendation has been requested. Do not introduce one. Existing actions explicitly discussed or agreed in the clinical evidence may still be recorded with accurate attribution.'}
 External resources are selected and checked separately by the therapist, not invented by you. Do not output resource URLs or add a practitioner from a prior draft as a default. A source-confirmed practitioner mentioned as part of the session may be reported, not converted into a recommendation. Resource selection is not proof of discussion or agreement during the session.
 
@@ -89,6 +89,13 @@ export function assessSummaryDraft(structured, preferences = {}) {
       if (seen.has(normalized)) issue('REPEATED_SENTENCE', false, 'A substantive sentence is repeated.');
       seen.add(normalized);
     }
+  }
+  if (wantsSummaryExercise(options)) {
+    const guidance = String(sections.betweenSession || '');
+    const hasHeading = /(?:^|\\n)\\s*Optional exercise to consider\\s*(?:\\n|$)/i.test(guidance);
+    const hasSteps = /(?:^|\\n)\\s*(?:1[.)]|Step 1[:.)]|First[,.:])\\s+[^\\n]+/i.test(guidance)
+      && /(?:^|\\n)\\s*(?:2[.)]|Step 2[:.)]|Next[,.:])\\s+[^\\n]+/i.test(guidance);
+    if (!hasHeading || !hasSteps) issue('REQUESTED_EXERCISE_MISSING', true, 'The requested exercise must appear as a separate, usable step-by-step addition, not merely be mentioned.');
   }
   // Surface formulaic explanatory caveats for a single evidence-preserving editorial pass.
   // These are stylistic signals, never a reason to reject an otherwise valid clinical draft.
