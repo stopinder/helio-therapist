@@ -10,12 +10,14 @@ permissions:
   contents: write
 jobs:
   refresh:
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
         with:
           persist-credentials: true
+          ref: security/remove-vulnerable-dependency-chains-20261109
       - uses: actions/setup-node@v4
         with:
           node-version: 22
