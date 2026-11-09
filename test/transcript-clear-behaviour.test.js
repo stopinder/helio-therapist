@@ -15,7 +15,7 @@ function evaluateSetup(fetch, bindings) {
   const deps = { ...workflow, ...presentation, ...navigation,
     ref: Vue.ref, computed: Vue.computed, nextTick: Vue.nextTick,
     onMounted: () => {}, watch: () => {}, useRouter: () => ({}), useRoute: () => ({query:{}}),
-    authenticatedFetch: fetch, defineProps: () => ({clients:[]}), defineEmits: () => () => {}
+    authenticatedFetch: fetch, defineProps: () => ({clients:[]}), defineEmits: () => () => {}, defineExpose: () => {}
   }
   return new Function(...Object.keys(deps), `${script}\nreturn {${bindings}}`)(...Object.values(deps))
 }
@@ -125,7 +125,7 @@ const template = source.match(/<template>([\s\S]*?)<script setup>/)[1].replace(/
 const render = new Function('Vue', compile(template, { mode: 'function' }).code)(Vue)
 async function html(overrides) {
   const bindings = `${names}, expandedRows, assignmentDrafts, assignmentSavingId, detailReturnId, editingClient, editingChoices, showRaw, filters, matchingTranscripts, visibleTranscripts, hasMoreHistory, actionableCount, historyLimit, historyPageSize, rowTitle, formatDate, workflowTone, workflowState, labelFor, clientName, selectedClientId, selectedLens, sourceRetention, showAddClient, addingClient, addClientError, isEligibleForDeletion`
-  const state = evaluateSetup(() => {}, `${bindings}, clients: props.clients, inboxRoot, reviewSourceId, sessionSummaryDestination, lastAssignment, lastAssignmentLabel, navigationSavingId, inboxBusy, encounterDateDrafts, encounterDateSavingId, rowActionSavingId, rowActionSavingMode, expandedNoteIds, expandedPreviewIds, transcriptSearch, selectedSpeakerSummary, filteredSelectedConversationTurns, addClientInitialName, ${[...script.matchAll(/^(?:async )?function (\w+)/gm)].map(m => m[1]).join(',')}`)
+  const state = evaluateSetup(() => {}, `${bindings}, clients: props.clients, inboxRoot, reviewSourceId, sessionSummaryDestination, lastAssignment, lastAssignmentLabel, navigationSavingId, navigationErrorId, inboxBusy, encounterDateDrafts, encounterDateSavingId, rowActionSavingId, rowActionSavingMode, expandedNoteIds, expandedPreviewIds, transcriptSearch, selectedSpeakerSummary, filteredSelectedConversationTurns, addClientInitialName, ${[...script.matchAll(/^(?:async )?function (\w+)/gm)].map(m => m[1]).join(',')}`)
 
   for (const [key, value] of Object.entries(overrides)) state[key].value = value
   state.loading.value = false

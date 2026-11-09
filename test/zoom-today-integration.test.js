@@ -9,6 +9,11 @@ test('Overview Today workflow integration for Zoom notes', async () => {
   assert.match(overview, /Zoom notes/)
   assert.match(overview, /Check for new notes/)
 
+  // Put the everyday Zoom check above the schedule, with a direct Inbox route.
+  assert.ok(overview.indexOf('aria-label="Zoom imports"') > 0)
+  assert.ok(overview.indexOf('aria-label="Zoom imports"') < overview.indexOf('title="Today’s schedule"'))
+  assert.match(overview, /<router-link to="\/transcripts"[^>]+>Transcript Inbox<\/router-link>/)
+
   // Requirement: Invoking it uses the existing reconcile-my-notes endpoint
   assert.match(overview, /authenticatedFetch\('\/api\/zoom\/reconcile-my-notes', \{ method: 'POST' \}\)/)
 

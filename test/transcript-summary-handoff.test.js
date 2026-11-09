@@ -15,14 +15,14 @@ const fixture = () => ({ id:'source-a', clientId:null, sessionRef:null, status:'
   completedAt:null, attentionClearedAt:null, reviewChoicesSavedAt:null, text:null })
 const saved = (row=fixture()) => ({...row, clientId:'client-a',sessionRef:'encounter-exact',status:'assigned',updatedAt:'2026-10-15T10:00:00Z'})
 const response = (body,ok=true) => ({ok,json:async()=>body})
-function inbox(fetch=async()=>response({transcript:saved()}),push=async()=>undefined){
+function inbox(fetch=async()=>response({transcript:saved()}),push=async()=>undefined,routerExtras={}){
   const route={query:{}}
   globalThis.window={scrollY:0,history:{state:{},replaceState(value){this.state=value}},getComputedStyle:()=>({overflowY:'auto'}),scrollTo(){}}
   globalThis.requestAnimationFrame=callback=>callback()
   const deps={...workflow,...navigation,...presentation,ref:Vue.ref,computed:Vue.computed,nextTick:Vue.nextTick,
-    onMounted:()=>{},watch:()=>{},useRouter:()=>({push}),useRoute:()=>route,authenticatedFetch:fetch,
+    onMounted:()=>{},watch:()=>{},defineExpose:()=>{},useRouter:()=>({push,...routerExtras}),useRoute:()=>route,authenticatedFetch:fetch,
     defineProps:()=>({clients:[{id:'client-a',name:'Alex Example'}]}),defineEmits:()=>()=>{},createClient:async()=>({id:'client-a',name:'Alex Example'})}
-  const names='transcripts,selected,selectedClientId,assignmentDrafts,encounterDateDrafts,assignmentSavingId,encounterDateSavingId,lastAssignment,lastAssignmentLabel,errorMessage,successMessage,filterMode,searchQuery,historyLimit,visibleTranscripts,loading,inboxBusy,addClientTranscriptId'
+  const names='transcripts,selected,selectedClientId,assignmentDrafts,encounterDateDrafts,assignmentSavingId,encounterDateSavingId,lastAssignment,lastAssignmentLabel,errorMessage,successMessage,filterMode,searchQuery,historyLimit,visibleTranscripts,loading,inboxBusy,addClientTranscriptId,navigationErrorId,navigationSavingId'
   const functions=[...script.matchAll(/^(?:async )?function (\w+)/gm)].map(match=>match[1]).join(',')
   const state=new Function(...Object.keys(deps),`${script}\nreturn {${names},${functions}}`)(...Object.values(deps))
   state.route=route;state.transcripts.value=[fixture()];state.initialiseAssignmentDraft(state.transcripts.value[0])
@@ -105,8 +105,48 @@ test('navigation failure preserves assignment and retry navigates without anothe
   await state.assignTranscriptToClient(fixture(),'client-a','',{openSummary:true})
   assert.equal(state.lastAssignment.value.sessionRef,'encounter-exact')
   assert.match(state.errorMessage.value,/assignment is saved/)
+  assert.equal(state.navigationErrorId.value,'source-a')
   await state.openLinkedSessionFromRow(state.lastAssignment.value)
   assert.equal(patches,1);assert.equal(navigations,2);assert.equal(state.errorMessage.value,'')
+})
+test('a silent route redirect is recognised as a failed workspace handoff, without reassigning',async()=>{
+  const currentRoute=Vue.ref({name:'Transcripts',params:{},query:{}})
+  const state=inbox(undefined,async()=>undefined,{currentRoute})
+  await state.openLinkedSessionFromRow(saved())
+  assert.equal(state.navigationErrorId.value,'source-a')
+  assert.match(state.errorMessage.value,/assignment is saved/)
+  assert.match(state.errorMessage.value,/no reassignment is needed/)
+  assert.equal(state.navigationSavingId.value,null)
+})
+test('inbox refresh never destroys a selected transcript or a pending assignment',async()=>{
+  const calls=[]
+  const state=inbox(async(url,options)=>{
+    calls.push({url,method:options?.method})
+    return response({transcripts:[fixture(),{...fixture(),id:'new-source'}]})
+  })
+  state.loading.value=false
+  state.selected.value=fixture()
+  assert.equal(await state.refreshAfterImport(),false)
+  assert.equal(calls.length,0)
+  state.selected.value=null
+  state.assignmentSavingId.value='source-a'
+  assert.equal(await state.refreshAfterImport(),false)
+  assert.equal(calls.length,0)
+  state.assignmentSavingId.value=null
+  assert.equal(await state.refreshAfterImport(),true)
+  assert.equal(calls.length,1)
+  assert.deepEqual(state.transcripts.value.map(item=>item.id),['source-a','new-source'])
+})
+test('router handoff stores an opaque return token without rewriting browser history',async()=>{
+  const paths=[]
+  const state=inbox(undefined,async target=>{paths.push(target)})
+  let historyWrites=0
+  globalThis.window.history.replaceState=()=>{historyWrites++}
+  await state.openLinkedSessionFromRow(saved())
+  assert.equal(historyWrites,0)
+  assert.equal(paths[0].name,'SessionWorkspace')
+  assert.equal(paths[0].params.sessionId,'encounter-exact')
+  assert.ok(navigation.readInboxReturnContext(paths[0].query.inboxReturn))
 })
 test('detail assignment shares the same handover transaction',async()=>{
   const state=inbox();state.selected.value=fixture();state.selectedClientId.value='client-a'

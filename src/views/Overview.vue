@@ -9,25 +9,9 @@
       <div class="mt-4 flex flex-wrap gap-2"><AppButton to="/clients" variant="primary">Go to clients</AppButton><AppButton to="/settings">Complete practice details</AppButton></div>
     </SurfaceCard>
 
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-9 items-start">
-      <section class="lg:col-span-2 space-y-4">
-        <SectionHeader title="Today’s schedule"><template #action><router-link to="/calendar" class="type-ui text-action-link hover:text-action-link-hover underline-offset-4 hover:underline">View calendar →</router-link></template></SectionHeader>
-        <SurfaceCard v-if="loading" compact class="text-center"><p class="type-body text-ink-muted animate-pulse">Loading schedule...</p></SurfaceCard>
-        <SurfaceCard v-else-if="todayEvents.length === 0" class="text-center"><p class="type-body text-ink-muted">{{ isNewWorkspace ? 'Your schedule will appear here once you add clients and appointments.' : 'No appointments scheduled for today.' }}</p></SurfaceCard>
-        <div v-else class="space-y-2.5">
-          <SurfaceCard v-for="event in todayEvents" :key="event.id" compact class="flex flex-wrap md:flex-nowrap items-center justify-between gap-4 group">
-            <div class="flex items-center gap-4 min-w-0"><div class="w-[4.25rem] shrink-0 pr-4 border-r border-border-muted"><div class="type-body-medium text-ink">{{ formatTime(event.start) }}</div><div class="type-metadata text-ink-muted mt-1">60 min</div></div><div class="min-w-0"><div class="type-body-medium text-ink truncate">{{ event.clientName }}</div><div class="type-ui text-ink-secondary mt-0.5">{{ event.type }}</div><StatusIndicator class="mt-0.5">{{ formatStatus(event.status) }}</StatusIndicator></div></div>
-            <div class="flex items-center gap-2 ml-auto"><AppButton v-if="event.clientId" :to="`/clients/${event.clientId}`">Open client</AppButton><AppButton v-if="event.isEligibleForStart" variant="primary" :disabled="startingEventId === event.id" :aria-busy="startingEventId === event.id" @click="startSession(event)">{{ startingEventId === event.id ? 'Opening…' : 'Clinical Workspace' }}</AppButton></div>
-            <p v-if="sessionOpenErrorId === event.id" role="alert" class="w-full type-metadata text-state-danger">Couldn’t open the session workspace. Please try again.</p>
-          </SurfaceCard>
-        </div>
-      </section>
-
-      <aside class="space-y-6">
-        <section class="space-y-3">
-          <p class="type-eyebrow text-ink-muted">Continue working</p>
-          <div class="space-y-2.5">
-            <SurfaceCard tone="base" compact class="border-accent/20 bg-accent/5">
+    <!-- Importing Zoom notes is a frequent entry point: keep it above the schedule, not below the fold. -->
+    <section aria-label="Zoom imports" class="space-y-2">
+      <SurfaceCard tone="base" compact class="border-accent/20 bg-accent/5">
               <div class="flex items-center justify-between gap-4">
                 <div>
                   <div class="flex items-center gap-2 type-ui font-semibold text-ink">
@@ -56,11 +40,35 @@
                     <span v-else>Import notes from recent Zoom meetings.</span>
                   </div>
                 </div>
-                <AppButton variant="primary" :disabled="isCheckingZoom" :aria-busy="isCheckingZoom" @click="checkZoomNotes">
-                  {{ isCheckingZoom ? 'Checking…' : 'Check for new notes' }}
-                </AppButton>
+                <div class="flex flex-wrap items-center gap-3">
+                  <router-link to="/transcripts" class="type-ui font-medium text-action-link hover:underline">Transcript Inbox</router-link>
+                  <AppButton variant="primary" :disabled="isCheckingZoom" :aria-busy="isCheckingZoom" @click="checkZoomNotes">
+                    {{ isCheckingZoom ? 'Checking…' : 'Check for new notes' }}
+                  </AppButton>
+                </div>
               </div>
             </SurfaceCard>
+    </section>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-9 items-start">
+      <section class="lg:col-span-2 space-y-4">
+        <SectionHeader title="Today’s schedule"><template #action><router-link to="/calendar" class="type-ui text-action-link hover:text-action-link-hover underline-offset-4 hover:underline">View calendar →</router-link></template></SectionHeader>
+        <SurfaceCard v-if="loading" compact class="text-center"><p class="type-body text-ink-muted animate-pulse">Loading schedule...</p></SurfaceCard>
+        <SurfaceCard v-else-if="todayEvents.length === 0" class="text-center"><p class="type-body text-ink-muted">{{ isNewWorkspace ? 'Your schedule will appear here once you add clients and appointments.' : 'No appointments scheduled for today.' }}</p></SurfaceCard>
+        <div v-else class="space-y-2.5">
+          <SurfaceCard v-for="event in todayEvents" :key="event.id" compact class="flex flex-wrap md:flex-nowrap items-center justify-between gap-4 group">
+            <div class="flex items-center gap-4 min-w-0"><div class="w-[4.25rem] shrink-0 pr-4 border-r border-border-muted"><div class="type-body-medium text-ink">{{ formatTime(event.start) }}</div><div class="type-metadata text-ink-muted mt-1">60 min</div></div><div class="min-w-0"><div class="type-body-medium text-ink truncate">{{ event.clientName }}</div><div class="type-ui text-ink-secondary mt-0.5">{{ event.type }}</div><StatusIndicator class="mt-0.5">{{ formatStatus(event.status) }}</StatusIndicator></div></div>
+            <div class="flex items-center gap-2 ml-auto"><AppButton v-if="event.clientId" :to="`/clients/${event.clientId}`">Open client</AppButton><AppButton v-if="event.isEligibleForStart" variant="primary" :disabled="startingEventId === event.id" :aria-busy="startingEventId === event.id" @click="startSession(event)">{{ startingEventId === event.id ? 'Opening…' : 'Clinical Workspace' }}</AppButton></div>
+            <p v-if="sessionOpenErrorId === event.id" role="alert" class="w-full type-metadata text-state-danger">Couldn’t open the session workspace. Please try again.</p>
+          </SurfaceCard>
+        </div>
+      </section>
+
+      <aside class="space-y-6">
+        <section class="space-y-3">
+          <p class="type-eyebrow text-ink-muted">Continue working</p>
+          <div class="space-y-2.5">
+            
 
             <router-link v-if="unmatchedCount > 0" to="/transcripts" class="block focus-visible:rounded-panel">
               <SurfaceCard tone="warning" compact class="border-state-warning-subtle/30 bg-state-warning-subtle/10">

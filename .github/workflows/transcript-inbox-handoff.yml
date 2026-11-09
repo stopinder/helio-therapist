@@ -1,0 +1,56 @@
+name: Transcript Inbox handoff and Zoom entry
+
+on:
+  pull_request:
+    paths:
+      - 'src/components/TranscriptInbox.vue'
+      - 'src/views/Overview.vue'
+      - 'src/views/Transcripts.vue'
+      - 'src/views/Transcripts.navigation.spec.js'
+      - 'src/lib/transcriptInboxNavigation.js'
+      - 'src/lib/transcriptWorkflow.js'
+      - 'test/transcript-summary-handoff.test.js'
+      - 'test/transcript-clear-behaviour.test.js'
+      - 'test/zoom-my-notes-reconciliation.test.js'
+      - 'test/zoom-today-integration.test.js'
+      - 'test/manual-transcript-import.test.js'
+      - '.github/workflows/transcript-inbox-handoff.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'src/components/TranscriptInbox.vue'
+      - 'src/views/Overview.vue'
+      - 'src/views/Transcripts.vue'
+      - 'src/views/Transcripts.navigation.spec.js'
+      - '.github/workflows/transcript-inbox-handoff.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install dependencies
+        run: npm ci --ignore-scripts --no-fund
+      - name: Verify exact Inbox handoff and import safety
+        run: >-
+          node --test
+          test/transcript-summary-handoff.test.js
+          test/transcript-clear-behaviour.test.js
+          test/transcript-inbox-triage.test.js
+          test/zoom-my-notes-reconciliation.test.js
+          test/zoom-today-integration.test.js
+          test/manual-transcript-import.test.js
+      - name: Verify live Transcripts view does not remount during Zoom imports
+        run: npx vitest run src/views/Transcripts.navigation.spec.js
+      - name: Build application
+        run: npm run build
