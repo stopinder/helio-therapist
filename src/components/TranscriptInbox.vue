@@ -36,7 +36,7 @@
       <p v-if="errorMessage" class="notice error" role="alert">{{ errorMessage }}</p><p v-else-if="successMessage" class="notice success" role="status">{{ successMessage }}</p>
       <section v-if="lastAssignment" class="assignment-handoff notice success" data-testid="assignment-handoff" tabindex="-1" aria-label="Assignment confirmation">
         <div><p class="type-eyebrow">Just assigned</p><strong role="status">Assigned to {{ lastAssignmentLabel }}.</strong><p>Encounter: {{ formatDate(lastAssignment.sourceOccurredAt || lastAssignment.receivedAt) }}</p><p class="type-metadata">{{ lastAssignment.sourceTitle }}</p><p class="type-metadata">Assignment saved. Open Clinical Workspace to choose a lens and prepare your summary.</p></div>
-        <div class="assignment-outcomes"><button v-if="sessionSummaryDestination(lastAssignment)" class="button-primary" :disabled="inboxBusy" @click="openLinkedSessionFromRow(lastAssignment)">Open Clinical Workspace</button><button class="button-secondary" :disabled="inboxBusy" @click="lastAssignment = null">Dismiss</button></div>
+        <div class="assignment-outcomes"><button v-if="sessionSummaryDestination(lastAssignment)" class="button-primary" :disabled="inboxBusy" @click="openLinkedSessionFromRow(lastAssignment)">{{ navigationSavingId === lastAssignment.id ? 'Opening workspace…' : 'Open Clinical Workspace' }}</button><button class="button-secondary" :disabled="inboxBusy" @click="lastAssignment = null">Dismiss</button></div><p v-if="navigationErrorId === lastAssignment.id" class="type-metadata text-state-danger" role="alert">{{ errorMessage }}</p>
       </section>
       <button v-if="lastClearedBatch.length" class="undo-link" :disabled="inboxBusy" @click="undoClearAttention">Undo</button>
       <p v-if="filterMode === 'history'">Assigned encounters and archived imports. Assignment does not generate a summary or approve a Clinical Record.</p>
@@ -134,8 +134,8 @@
 
             <div v-else-if="isVerifiedMatch(transcript)" class="matched-note">
               <span class="matched-copy"><CheckCircle2 class="workspace-icon" aria-hidden="true" /> Assigned to {{ clientName(transcript.clientId) || 'client' }}</span>
-              <button type="button" class="button-primary compact-button" :disabled="inboxBusy" @click="openLinkedSessionFromRow(transcript)">Open Clinical Workspace</button>
-              <button type="button" class="button-secondary compact-button" :disabled="inboxBusy" @click.stop="openInboxSourceReview(transcript)">Correct client assignment</button>
+              <button type="button" class="button-primary compact-button" :disabled="inboxBusy" @click="openLinkedSessionFromRow(transcript)">{{ navigationSavingId === transcript.id ? 'Opening workspace…' : 'Open Clinical Workspace' }}</button>
+              <button type="button" class="button-secondary compact-button" :disabled="inboxBusy" @click.stop="openInboxSourceReview(transcript)">Correct client assignment</button><span v-if="navigationErrorId === transcript.id" class="type-metadata text-state-danger" role="alert">{{ errorMessage }}</span>
             </div>
 
             <div v-else-if="transcript.clientId || transcript.sessionRef" class="matched-note"><span>The assignment needs an encounter check.</span><button class="button-secondary" @click="openTranscript(transcript)">Review assignment</button></div>
@@ -243,7 +243,7 @@
       <p v-if="errorMessage" class="notice error" role="alert">{{ errorMessage }}</p><p v-else-if="successMessage" class="notice success" role="status">{{ successMessage }}</p>
       <section v-if="lastAssignment" class="assignment-handoff notice success" data-testid="assignment-handoff" tabindex="-1" aria-label="Assignment confirmation">
         <div><p class="type-eyebrow">Just assigned</p><strong role="status">Assigned to {{ lastAssignmentLabel }}.</strong><p>Encounter: {{ formatDate(lastAssignment.sourceOccurredAt || lastAssignment.receivedAt) }}</p><p class="type-metadata">{{ lastAssignment.sourceTitle }}</p><p class="type-metadata">Assignment saved. Open Clinical Workspace to choose a lens and prepare your summary.</p></div>
-        <div class="assignment-outcomes"><button v-if="sessionSummaryDestination(lastAssignment)" class="button-primary" :disabled="inboxBusy" @click="openLinkedSessionFromRow(lastAssignment)">Open Clinical Workspace</button><button class="button-secondary" :disabled="inboxBusy" @click="lastAssignment = null">Dismiss</button></div>
+        <div class="assignment-outcomes"><button v-if="sessionSummaryDestination(lastAssignment)" class="button-primary" :disabled="inboxBusy" @click="openLinkedSessionFromRow(lastAssignment)">{{ navigationSavingId === lastAssignment.id ? 'Opening workspace…' : 'Open Clinical Workspace' }}</button><button class="button-secondary" :disabled="inboxBusy" @click="lastAssignment = null">Dismiss</button></div><p v-if="navigationErrorId === lastAssignment.id" class="type-metadata text-state-danger" role="alert">{{ errorMessage }}</p>
       </section>
       <section class="workflow-section client-section"><template v-if="!selected.clientId || editingClient"><div><p class="eyebrow">Client</p><h2>Client</h2><p>Select the client this original Zoom transcript belongs to. Helio will not guess.</p></div><div class="assignment-controls"><div v-if="!selected.clientId" class="encounter-date-field detail-encounter-date"><div class="encounter-date-heading"><div><label for="selected-encounter-date">Encounter date</label><p>This date controls longitudinal ordering and becomes the session date when assigned.</p></div><span class="encounter-time">Time: {{ formatTime(selected.sourceOccurredAt || selected.receivedAt) }}</span></div><div class="encounter-date-controls"><input id="selected-encounter-date" v-model="encounterDateDrafts[selected.id]" class="control-field min-h-touch" type="date" :disabled="inboxBusy" /><button type="button" class="button-secondary compact-button" :disabled="inboxBusy || !encounterDateChanged(selected)" @click="saveEncounterDate(selected)"><CalendarDays class="workspace-icon-sm" aria-hidden="true" /><span>{{ encounterDateSavingId === selected.id ? 'Saving…' : 'Save date' }}</span></button></div></div><div class="flex items-center gap-2"><label for="client-select" class="sr-only">Client</label><select id="client-select" v-model="selectedClientId" :disabled="inboxBusy" class="flex-1"><option value="" disabled>Select a client…</option><option v-for="client in clients" :key="client.id" :value="client.id">{{ client.name }}</option></select><button type="button" class="secondary whitespace-nowrap" @click="openAddClientForSelected">Add client</button></div><div class="assignment-actions"><button v-if="selected.clientId" class="secondary" :disabled="saving" @click="editingClient = false">Cancel</button><button class="primary" :disabled="inboxBusy || !selectedClientId || selectedClientId === selected.clientId" @click="saveAssignment({openSummary:true})">{{ saving ? 'Saving…' : selected.clientId ? 'Change client & open Clinical Workspace' : 'Assign & open Clinical Workspace' }}</button><button class="secondary" :disabled="inboxBusy || !selectedClientId || selectedClientId === selected.clientId" @click="saveAssignment({openSummary:false})">Assign &amp; stay in inbox</button></div></div></template><template v-else><div><p class="eyebrow">Client</p><h2>{{ clientName(selected.clientId) }}</h2><p>Assigned client</p></div><button class="secondary" @click="openInboxSourceReview(selected)">Correct assignment</button></template></section>
       <section v-if="selected.clientId && !editingClient" class="ready-card">
@@ -381,9 +381,9 @@ import { assignedTranscriptIdentity, hasLinkedEncounter, isConfirmedAssignment, 
 import { saveInboxReturnContext, readInboxReturnContext } from '../lib/transcriptInboxNavigation.js'
 const router = useRouter()
 const route = useRoute()
-const inboxRoot = ref(null), lastAssignment = ref(null), lastAssignmentLabel = ref(''), navigationSavingId = ref(null)
+const inboxRoot = ref(null), lastAssignment = ref(null), lastAssignmentLabel = ref(''), navigationSavingId = ref(null), navigationErrorId = ref(null), refreshing = ref(false)
 let listScrollPosition = null
-const inboxBusy = computed(() => saving.value || !!assignmentSavingId.value || !!encounterDateSavingId.value || !!rowActionSavingId.value || !!navigationSavingId.value)
+const inboxBusy = computed(() => refreshing.value || saving.value || !!assignmentSavingId.value || !!encounterDateSavingId.value || !!rowActionSavingId.value || !!navigationSavingId.value)
 const transcripts = ref([]), selected = ref(null), selectedClientId = ref(''), selectedLens = ref(''), sourceRetention = ref('keep_until_review'), transcriptSearch = ref('')
 const editingClient = ref(false), editingChoices = ref(false), searchQuery = ref(''), filterMode = ref('attention'), showRaw = ref(false), expandedRows = ref(new Set()), expandedNoteIds = ref(new Set()), expandedPreviewIds = ref(new Set()), assignmentDrafts = ref({}), encounterDateDrafts = ref({}), assignmentSavingId = ref(null), encounterDateSavingId = ref(null), rowActionSavingId = ref(null), rowActionSavingMode = ref(''), detailReturnId = ref(null)
 const loading = ref(true), saving = ref(false), errorMessage = ref(''), successMessage = ref('')
@@ -696,6 +696,13 @@ function closeTranscript(){
   requestAnimationFrame(()=>document.querySelector(`[data-transcript-id="${returnId}"]`)?.scrollIntoView({block:'center'}));
 }
 async function load(){loading.value=true;errorMessage.value='';try{const response=await authenticatedFetch('/api/zoom/transcripts');const data=await response.json().catch(()=>({}));if(!response.ok)throw new Error(data.error||'Unable to load transcripts.');transcripts.value=data.transcripts||[];for(const transcript of transcripts.value)initialiseAssignmentDraft(transcript)}catch(error){errorMessage.value=error.message||'Unable to load transcripts.'}finally{loading.value=false}}
+/** Import refresh must never destroy an in-progress client assignment or transcript reader. */
+async function refreshAfterImport(){
+  if(inboxBusy.value || loading.value || selected.value || showAddClient.value)return false
+  refreshing.value=true
+  try{await load();return !errorMessage.value}finally{refreshing.value=false}
+}
+defineExpose({refreshAfterImport})
 async function patchTranscript(body,fallbackMessage){saving.value=true;errorMessage.value='';successMessage.value='';try{const response=await authenticatedFetch('/api/zoom/transcripts',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:selected.value.id,expectedUpdatedAt:selected.value.updatedAt,...body})});const data=await response.json().catch(()=>({}));if(!response.ok)throw new Error(data.error||fallbackMessage);if(body.restoreAttention && !isRestoredTranscript(data?.transcript,selected.value.id))throw new Error(fallbackMessage);replaceTranscript(data.transcript);return data.transcript}catch(error){errorMessage.value=error.message||fallbackMessage;return null}finally{saving.value=false}}
 async function saveEncounterDate(transcript,{quiet=false}={}){
   if(!transcript?.id||encounterDateSavingId.value)return transcript
@@ -794,14 +801,24 @@ async function openLinkedSessionFromRow(transcript,context){
     else errorMessage.value='Link this transcript to its encounter before opening Clinical Workspace.'
     return
   }
-  navigationSavingId.value=transcript.id;errorMessage.value=''
+  navigationSavingId.value=transcript.id;navigationErrorId.value=null;errorMessage.value=''
   try{
     const token=saveInboxReturnContext(context||captureInboxContext())
-    window.history.replaceState({...window.history.state,heliosInboxReturn:token},'')
+    // Put the return token in the route itself; do not mutate Vue Router history state.
     const failure=await router.push({...destination,query:{...destination.query,transcriptId:transcript.id,inboxReturn:token}})
     if(failure)throw new Error('Navigation interrupted')
-  }catch{errorMessage.value='The assignment is saved, but Clinical Workspace could not be opened. Use Open Clinical Workspace to try again.'}
-  finally{navigationSavingId.value=null}
+    const current=router.currentRoute?.value
+    if(current && (current.name!=='SessionWorkspace'
+      || String(current.params.clientId)!==String(transcript.clientId)
+      || String(current.params.sessionId)!==String(transcript.sessionRef)))
+      throw new Error('Clinical Workspace route did not open')
+  }catch{
+    navigationErrorId.value=transcript.id
+    errorMessage.value='Your assignment is saved, but Clinical Workspace did not open. Select Open Clinical Workspace again; no reassignment is needed.'
+    await nextTick()
+    const handoff=inboxRoot.value?.querySelector('[data-testid="assignment-handoff"]')
+    if(handoff && lastAssignment.value?.id===transcript.id)handoff.scrollIntoView({block:'nearest'})
+  }finally{navigationSavingId.value=null}
 }
 function removeExpandedRow(id){
   if(!expandedRows.value.has(id))return;
