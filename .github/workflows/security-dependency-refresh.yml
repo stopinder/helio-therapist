@@ -26,6 +26,9 @@ jobs:
           npm install --save-dev happy-dom@latest vite@latest vitest@latest
           npm install @vercel/functions@latest
           npm update
+          rm -rf node_modules package-lock.json
+          npm install --ignore-scripts --no-fund
+          npm ls js-beautify editorconfig glob minimatch || true
       - name: Verify full audit
         run: npm audit --audit-level=moderate
       - name: Run unit, component and build checks
