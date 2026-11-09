@@ -22,7 +22,9 @@ jobs:
       - name: Replace obsolete pins and upgrade dependency graph
         run: |
           npm pkg delete overrides
-          npm install --save-dev @vue/test-utils@latest happy-dom@latest vite@latest vitest@latest
+          npm install --save-dev --save-exact @vue/test-utils@2.4.11
+          npm install --save-dev happy-dom@latest vite@latest vitest@latest
+          npm install @vercel/functions@latest
           npm update
       - name: Verify full audit
         run: npm audit --audit-level=moderate
