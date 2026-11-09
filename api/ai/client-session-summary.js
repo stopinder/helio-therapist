@@ -20,7 +20,16 @@ export default async function handler(req, res) {
     if (!clientId || typeof clientId !== 'string' || !/^[0-9a-f-]{36}$/i.test(clientId) || (anchorSessionId!==null&&(typeof anchorSessionId!=='string'||!/^[0-9a-f-]{36}$/i.test(anchorSessionId))) || typeof preview!=='boolean' || !CLIENT_SESSION_SUMMARY_LENSES.includes(lens) || !['current','last_three','last_five','history'].includes(window) || typeof therapistGuidance !== 'string' || therapistGuidance.length > 6000 || typeof refinementRequest !== 'string' || refinementRequest.length > 1800 || typeof previousDraft !== 'string' || previousDraft.length > 10000 || (refinementRequest.trim() && !previousDraft.trim())) {
       return res.status(400).json({ success:false, error:{ code:'INVALID_REQUEST', message:'Choose a valid client, lens and summary window.' } });
     }
-    const summaryOptions=normalizeSummaryOptions(req.body?.summaryOptions ?? {});
+    const requestedOptions=normalizeSummaryOptions(req.body?.summaryOptions ?? {});
+    // A therapist's explicit free-text request for instructions is a deliverable,
+    // even if the optional-addition dropdown was left at its default.
+    const instructionText=[therapistGuidance,refinementRequest].join(' ');
+    const requestsExercise=/(?:instruct(?:ions)?|step[- ]by[- ]step|how to|guide|provide|write|include|give|prepare|suggest|request|add|create|draft).{0,100}(?:exercise|practice|sensing|grounding|meditation)|(?:exercise|practice|sensing).{0,70}(?:instructions|steps|guide|how to)/i.test(instructionText);
+    const summaryOptions=requestsExercise && requestedOptions.addition==='none'
+      ? {...requestedOptions,addition:'exercise'}
+      : requestsExercise && requestedOptions.addition==='resource'
+        ? {...requestedOptions,addition:'exercise_and_resource'}
+        : requestedOptions;
     const { data: ownedClient, error: clientError } = await supabase.from('clients').select('id,reference').eq('id', clientId).eq('user_id', user.id).maybeSingle();
     if (clientError) throw clientError;
     if (!ownedClient) return res.status(404).json({ success:false, error:{ code:'CLIENT_NOT_FOUND', message:'Client not found or access denied.' } });
