@@ -123,8 +123,8 @@ test('sample practice demonstrates the real transcript workflow with explicit sy
   assert.match(clientsView, /Synthetic AI demonstrations do not use your Free AI allowance/)
   assert.match(clientsView, /Practise transcript triage/)
   assert.match(clientsView, /router.push\('\/transcripts'\)/)
-  assert.match(transcriptInbox, /Sample practice/)
-  assert.match(transcriptInbox, /Try assigning Alex Morgan — Sample/)
+  assert.match(transcriptInbox, /isSampleTranscript\(transcript\)/)
+  assert.match(transcriptInbox, /Sample Zoom transcript/)
   assert.match(transcriptInbox, /class="sample-badge">Sample/)
 })
 
