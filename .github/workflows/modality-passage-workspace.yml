@@ -1,29 +1,95 @@
-name: Modality passage repair workspace
+name: Verify passage-reference preview repair
 on:
   push:
     branches: [feat/modality-intelligence-preview-20261110]
     paths: [.github/workflows/modality-passage-workspace.yml]
 permissions:
   contents: read
+concurrency:
+  group: helios-passage-repair
+  cancel-in-progress: false
 jobs:
-  workspace:
+  verify:
     if: github.repository == 'stopinder/helio-therapist' && github.ref == 'refs/heads/feat/modality-intelligence-preview-20261110'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+      - name: Apply exact locally reviewed repair
+        run: |
+          python3 - <<'PY'
+          import base64, hashlib, lzma
+          from pathlib import Path
+          patch = lzma.decompress(base64.b64decode(Path('.github/passage-repair.patch.b64').read_text()))
+          assert hashlib.sha256(patch).hexdigest() == '09989c9cd6191bb241b15c5c145c9103a96ca3d6436e6efd047ab1d34d6d5085'
+          Path('/tmp/passage-repair.patch').write_bytes(patch)
+          PY
+          git apply --unidiff-zero --check /tmp/passage-repair.patch
+          git apply --unidiff-zero /tmp/passage-repair.patch
+          git diff --check
+      - run: npm ci --ignore-scripts --no-fund
+      - name: Audit dependencies
+        run: npm audit --audit-level=moderate
+      - name: Complete Node regression suite
+        run: npm test
+      - name: Complete component and API regression suite
+        run: npm run test:components
+      - name: Compile production-format bundle without deployment
+        run: npm run build
+      - name: Compare modality contracts without a live model call
+        run: node scripts/evaluate-modality-intelligence.mjs > /tmp/passage-contracts.json
+      - name: Install synthetic browser
+        run: npx playwright install --with-deps chromium
+      - name: Verify desktop and mobile failure recovery
+        run: node scripts/verify-modality-preview.mjs
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: passage-repair-synthetic-verification
+          path: test-results/modality-preview/*.png
+          retention-days: 7
+          if-no-files-found: warn
+  publish:
+    needs: verify
+    permissions:
+      contents: write
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
+          ref: ${{ github.sha }}
           persist-credentials: false
-      - name: Export tracked non-secret sources only
+      - name: Materialise only the verified patch
         run: |
-          mkdir -p /tmp/helios-passage-source
-          git archive HEAD | tar -x -C /tmp/helios-passage-source
-          find /tmp/helios-passage-source -name '.env*' -delete
-          tar -czf /tmp/helios-passage-source.tgz -C /tmp/helios-passage-source .
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
-        with:
-          name: helios-passage-source
-          path: /tmp/helios-passage-source.tgz
-          compression-level: 0
-          retention-days: 1
-          if-no-files-found: error
+          python3 - <<'PY'
+          import base64, hashlib, lzma
+          from pathlib import Path
+          patch = lzma.decompress(base64.b64decode(Path('.github/passage-repair.patch.b64').read_text()))
+          assert hashlib.sha256(patch).hexdigest() == '09989c9cd6191bb241b15c5c145c9103a96ca3d6436e6efd047ab1d34d6d5085'
+          Path('/tmp/passage-repair.patch').write_bytes(patch)
+          PY
+          git apply --unidiff-zero --check /tmp/passage-repair.patch
+          git apply --unidiff-zero /tmp/passage-repair.patch
+          git add api/_lib/modality-intelligence/contracts.js api/_lib/modality-intelligence/evidence-passages.js api/_lib/modality-intelligence/pipeline.js docs/architecture/modality-intelligence-preview.md scripts/verify-modality-preview.mjs src/components/workspace/ClientDocumentComposer.vue src/components/workspace/SummaryEvidenceLimitNotice.vue src/components/workspace/__tests__/SummaryEvidenceLimitNotice.spec.js src/lib/modalityIntelligenceApi.spec.js src/lib/summaryModalities.js src/views/SessionWorkspace.vue test/fixtures/modality-intelligence.js test/modality-evidence-batches.test.js test/modality-evidence-passages.test.js test/modality-intelligence.test.js
+          git rm .github/passage-repair.patch.b64 .github/workflows/modality-passage-workspace.yml
+          git diff --cached --check
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'Resolve evidence from exact source passages and preserve actionable draft recovery'
+      - name: Fast-forward preview only, never production
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF" = refs/heads/feat/modality-intelligence-preview-20261110
+          AUTH=$(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w0)
+          git -c http.https://github.com/.extraheader="AUTHORIZATION: basic $AUTH" push origin HEAD:refs/heads/feat/modality-intelligence-preview-20261110
+          git rev-parse HEAD
