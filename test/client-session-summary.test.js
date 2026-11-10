@@ -58,7 +58,17 @@ const sections={opening:'Work felt uncertain.',whatWeWorkedOn:'We explored the r
  assert.equal(summaryBodyToRichContent(rendered).content.filter(node=>node.type==='heading').length,4);assert.doesNotMatch(rendered,/A gentle CBT perspective/);
 });
 
-test('composer generates an editable draft and offers four continuity windows without requiring capture-only history',async()=>{const composer=await read('../src/components/workspace/ClientDocumentComposer.vue');const service=await read('../src/lib/clientDocuments.js');assert.match(composer,/Generate client summary/i);assert.match(composer,/This session only/i);assert.match(composer,/Last 3 sessions/i);assert.match(composer,/Last 5 sessions/i);assert.match(composer,/Entire history/i);assert.match(composer,/transcript-backed session summaries/i);assert.match(composer,/From .*optional/i);assert.match(composer,/To .*optional/i);assert.match(composer,/Auto-filled from the selected evidence window/i);assert.match(composer,/generateClientSessionSummary/);assert.match(service,/\/api\/ai\/client-session-summary/);assert.match(composer,/Finalise PDF/);});
+test('composer offers four continuity scopes, explicit anchor selection and editable drafts', async () => {
+  const composer=await read('../src/components/workspace/ClientDocumentComposer.vue');
+  const service=await read('../src/lib/clientDocuments.js');
+  for (const scope of ['This session only','Last 3 sessions','Last 5 sessions','Entire history']) assert.match(composer,new RegExp(scope));
+  assert.match(composer,/reviewed Session Captures, transcript-backed summaries/);
+  assert.match(composer,/v-model="anchorSessionId"/);
+  assert.match(composer,/v-model="therapistGuidance"/);
+  assert.match(composer,/generateClientSessionSummary/);
+  assert.match(service,/\/api\/ai\/client-session-summary/);
+  assert.match(composer,/Finalise PDF/);
+});
 test('manual Clinical Intelligence benchmark uses only synthetic fixtures and never persists AI usage',async()=>{const packageJson=JSON.parse(await read('../package.json'));const runner=await read('../scripts/evaluate-clinical-intelligence.mjs');assert.equal(packageJson.scripts['evaluate:clinical-intelligence'],'node scripts/evaluate-clinical-intelligence.mjs');assert.match(runner,/CLINICAL_INTELLIGENCE_CASES/);assert.match(runner,/clientSessionSummarySystemPrompt/);assert.match(runner,/buildClientSessionSummaryInput/);assert.match(runner,/validateClientSessionSummaryResponse/);assert.match(runner,/renderClientSessionSummary/);assert.match(runner,/CLIENT_SESSION_SUMMARY_PROMPT_VERSION/);assert.match(runner,/scoreClinicalIntelligenceOutput/);assert.match(runner,/OPENAI_API_KEY/);assert.match(runner,/clientSessionSummaryResponseFormat\(validSourceIds\)/);assert.match(runner,/buildTemperatureParams\(model,0\.2\)/);assert.match(runner,/buildTokenLimitParams\(model,8000\)/);assert.match(runner,/--show-output/);assert.doesNotMatch(runner,/runTextAI|getSupabaseClient|supabase/i);assert.doesNotMatch(runner,/Promise\.all/);});
 
 test('source selection follows clinical chronology and never reaches beyond the anchor session',()=>{
@@ -104,9 +114,9 @@ test('therapist can inspect and choose the clinical anchor before generation',as
   const composer=await read('../src/components/workspace/ClientDocumentComposer.vue');
   const service=await read('../src/lib/clientDocuments.js');
   const endpoint=await read('../api/ai/client-session-summary.js');
-  assert.match(composer,/Summary anchored to/);
+  assert.match(composer,/Anchor session/);
   assert.match(composer,/anchorSessionId/);
-  assert.match(composer,/Evidence window/);
+  assert.match(composer,/Evidence selected/);
   assert.match(service,/listClientSummaryEvidence/);
   assert.match(endpoint,/preview/);
 });
