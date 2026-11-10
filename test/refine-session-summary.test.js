@@ -27,8 +27,8 @@ test('only explicit approval can replace a draft with a refined regeneration, wi
 });
 test('exercise is always a proposed future option and cannot be presented as completed or agreed',()=>{
  const prompt=clientSessionSummarySystemPrompt('internal_family_systems',{addition:'exercise'});
- assert.match(prompt,/Optional exercise to consider/);assert.match(prompt,/NOT completed, assigned or agreed/);
- assert.match(prompt,/decline, modify or stop/);assert.equal(CLIENT_SESSION_SUMMARY_PROMPT_VERSION,SUMMARY_POLICY_VERSION+'/longitudinal');
+ assert.match(prompt,/Optional exercise to consider/);assert.match(prompt,/accurately retain any exercise actually performed or agreed/);
+ assert.match(prompt,/stop-or-modify instruction/);assert.equal(CLIENT_SESSION_SUMMARY_PROMPT_VERSION,SUMMARY_POLICY_VERSION+'/longitudinal');
  assert.match(panel,/No new exercise or resource/);assert.match(panel,/New exercises are optional suggestions/);
 });
 test('source evidence and approved editorial instruction share a validated provenance map',()=>{
