@@ -139,7 +139,7 @@ test('Shared client summary lenses include IFS and Transactional Analysis with m
     closing: ''
   }, 'transactional_analysis');
 
-  assert.match(body, /A Transactional Analysis perspective/);
+  assert.match(body, /Making sense of the work/); assert.match(body, /A supported perspective\./);
 
   const ifsBody = renderClientSessionSummary({
     opening: '',
@@ -152,7 +152,7 @@ test('Shared client summary lenses include IFS and Transactional Analysis with m
     closing: ''
   }, 'internal_family_systems');
 
-  assert.match(ifsBody, /Different parts of you in this work/);
+  assert.match(ifsBody, /Making sense of the work/); assert.match(ifsBody, /A supported IFS perspective\./);
 });
 
 
