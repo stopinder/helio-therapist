@@ -96,6 +96,9 @@ describe('ClientDocumentComposer', () => {
   })
 
   it('hides the previous summary while a replacement is generating and restores it on failure', async () => {
+    clientDocs.listClientSummaryEvidence.mockResolvedValueOnce([
+      { sessionId: 's1', occurredAt: '2026-10-29T10:00:00Z', reviewedAt: '2026-10-29T12:00:00Z' }
+    ])
     let rejectGeneration
     clientDocs.generateClientSessionSummary.mockImplementationOnce(() => new Promise((resolve, reject) => {
       rejectGeneration = reject
@@ -131,6 +134,9 @@ describe('ClientDocumentComposer', () => {
   })
 
   it('preserves text on generation failure', async () => {
+    clientDocs.listClientSummaryEvidence.mockResolvedValueOnce([
+      { sessionId: 's1', occurredAt: '2026-10-29T10:00:00Z', reviewedAt: '2026-10-29T12:00:00Z' }
+    ])
     clientDocs.generateClientSessionSummary.mockRejectedValue(new Error('AI failed'))
     
     const wrapper = mount(ClientDocumentComposer, {
