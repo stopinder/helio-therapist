@@ -1,0 +1,134 @@
+name: Install reviewed modality preview
+on:
+  push:
+    branches: [feat/modality-intelligence-preview-20261110]
+    paths: [.github/workflows/install-modality-preview.yml]
+permissions:
+  contents: read
+jobs:
+  install:
+    if: github.repository == 'stopinder/helio-therapist' && github.ref == 'refs/heads/feat/modality-intelligence-preview-20261110'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    outputs:
+      commit: ${{ steps.apply.outputs.commit }}
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+          fetch-depth: 10
+      - name: Verify exact source payload and advance only the preview branch
+        id: apply
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: python
+        run: |
+          import base64, hashlib, json, lzma, os, pathlib, subprocess, urllib.request, urllib.error
+          repo = 'stopinder/helio-therapist'
+          branch = 'feat/modality-intelligence-preview-20261110'
+          base = 'f0209540965eed903a3c7ecc010e8c731c035f55'
+          expected = 'ec92b5d8ef8b2b79ae57e915f173ab836c3ce9a7d70f6bc40f79db6719a278cb'
+          assert os.environ['GITHUB_REPOSITORY'] == repo
+          assert os.environ['GITHUB_REF'] == 'refs/heads/' + branch
+          sha = os.environ['GITHUB_SHA']
+          hashes = ['24c6eca1df1a07c165e39e3376ddc36ec67efe16ba587d364c40706962053621','3540b79840cae2349cd3d4260ec64a27179e7396c9439ba301c1006f302f8ab4','4d1509b156648bb6abd76a3b12edca456fa69e0df00535c4c99047deb111ded0','a30a03e0a83510fee72a1614803a89ebbf3bf8777bd0a3a1de2fcb461d65a40f','b5845a5a55069703f99c301d8e86cf8e4a48b1627a227b616ea533450da0393f','4a3f8a3bc369d6dd58bdd33985cde475d8bca9907f78a1d9e5eb984e32c84c68']
+          parts = []
+          for i, digest in enumerate(hashes, 1):
+              part = pathlib.Path(f'.github/modality-source-{i}.b64').read_bytes().strip()
+              assert hashlib.sha256(part).hexdigest() == digest, f'Payload part {i} mismatch'
+              parts.append(part)
+          packed = base64.b64decode(b''.join(parts), validate=True)
+          decoder = lzma.LZMADecompressor(memlimit=256 * 1024 * 1024)
+          raw = decoder.decompress(packed, max_length=512 * 1024)
+          assert decoder.eof and not decoder.unused_data
+          assert hashlib.sha256(raw).hexdigest() == expected, 'Whole payload mismatch'
+          payload = json.loads(raw)
+          assert payload['baseCommit'] == base and len(payload['files']) == 37
+          subprocess.run(['git', 'merge-base', '--is-ancestor', base, sha], check=True)
+          allowed_workflows = {'.github/workflows/modality-intelligence-preview.yml', '.github/workflows/modality-preview-workspace.yml'}
+          entries, seen = [], set()
+          for item in payload['files']:
+              path = item['path']
+              p = pathlib.PurePosixPath(path)
+              assert not p.is_absolute() and '..' not in p.parts and path not in seen
+              assert path in allowed_workflows or p.parts[0] in {'api','src','test','scripts','docs'} or path == 'vercel.json'
+              assert not any(part.startswith('.env') or part in {'.git','node_modules'} for part in p.parts)
+              seen.add(path)
+              current = pathlib.Path(path)
+              if 'text' in item:
+                  assert not current.exists(), f'Unexpected existing file: {path}'
+                  text = item['text']
+              else:
+                  assert current.is_file() and not current.is_symlink()
+                  previous = current.read_bytes()
+                  assert hashlib.sha256(previous).hexdigest() == item['base'], f'Source moved: {path}'
+                  if item.get('delete'):
+                      entries.append({'path':path,'mode':'100644','type':'blob','sha':None})
+                      continue
+                  text = previous.decode('utf-8')
+                  last = 0
+                  for start, end, replacement in item['edits']:
+                      assert isinstance(start,int) and isinstance(end,int) and last <= start <= end <= len(text)
+                      assert isinstance(replacement,str)
+                      last = end
+                  for start, end, replacement in reversed(item['edits']):
+                      text = text[:start] + replacement + text[end:]
+                  assert hashlib.sha256(text.encode('utf-8')).hexdigest() == item['after'], f'Reconstruction mismatch: {path}'
+              assert len(text.encode('utf-8')) < 200000
+              entries.append({'path':path,'mode':'100644','type':'blob','content':text})
+          for i in range(1,7):
+              entries.append({'path':f'.github/modality-source-{i}.b64','mode':'100644','type':'blob','sha':None})
+          entries.append({'path':'.github/workflows/install-modality-preview.yml','mode':'100644','type':'blob','sha':None})
+          def api(method, suffix, data=None):
+              request = urllib.request.Request('https://api.github.com/repos/' + repo + suffix, method=method,
+                  data=None if data is None else json.dumps(data).encode('utf-8'),
+                  headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'],'Accept':'application/vnd.github+json','Content-Type':'application/json','X-GitHub-Api-Version':'2022-11-28','User-Agent':'Helios-preview-source-verifier'})
+              try:
+                  with urllib.request.urlopen(request, timeout=30) as response:
+                      return json.load(response)
+              except urllib.error.HTTPError as error:
+                  raise RuntimeError(f'GitHub operation failed with status {error.code}') from None
+          ref_path = '/git/refs/heads/' + branch
+          assert api('GET', ref_path)['object']['sha'] == sha, 'Preview branch changed'
+          commit = api('GET', '/git/commits/' + sha)
+          tree = api('POST', '/git/trees', {'base_tree':commit['tree']['sha'],'tree':entries})
+          new_commit = api('POST', '/git/commits', {'message':'Build source-aware modality-specific clinical intelligence preview','tree':tree['sha'],'parents':[sha]})
+          assert api('GET', ref_path)['object']['sha'] == sha, 'Preview branch changed before update'
+          api('PATCH', ref_path, {'sha':new_commit['sha'],'force':False})
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as output:
+              output.write('commit=' + new_commit['sha'] + '\n')
+          print('Verified source committed to preview: ' + new_commit['sha'])
+  verify:
+    needs: install
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+          ref: ${{ needs.install.outputs.commit }}
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --ignore-scripts --no-fund
+      - run: npm audit --audit-level=moderate
+      - run: npm test
+      - run: npm run test:components
+      - run: npm run build
+      - run: node scripts/evaluate-modality-intelligence.mjs
+      - run: npx playwright install --with-deps chromium
+      - name: Verify real composer at desktop and mobile sizes with synthetic services
+        env:
+          MODALITY_SCREENSHOT_DIR: /tmp/modality-preview-visual
+        run: node scripts/verify-modality-preview.mjs
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: modality-preview-synthetic-visual-checks
+          path: /tmp/modality-preview-visual
+          retention-days: 7
+          if-no-files-found: error
