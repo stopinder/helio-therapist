@@ -126,7 +126,7 @@ test('Shared client summary lenses include IFS and Transactional Analysis with m
   assert.match(clientSessionSummaryLensRule('internal_family_systems'), /saboteur/);
   assert.match(clientSessionSummaryLensRule('internal_family_systems'), /When two or more inner positions are supported/);
   assert.match(clientSessionSummaryLensRule('internal_family_systems'), /Do not infer an exile/);
-  assert.match(clientSessionSummaryLensRule('transactional_analysis'), /Transactional Analysis lens/);
+  assert.match(clientSessionSummaryLensRule('transactional_analysis'), /Transactional Analysis \(TA\) lens/);
 
   const body = renderClientSessionSummary({
     opening: '',
