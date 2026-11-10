@@ -15,7 +15,7 @@ test('Clients page uses live Supabase clients and standard UI patterns', async (
   assert.match(clientsView, /createClient/)
   assert.match(clientsView, /listUpcomingClientAppointments/)
   assert.match(clientsView, /listClients\(\{includeArchived:true\}\)/)
-  assert.match(clientsView, /onMounted\(loadClients\)/)
+  assert.match(clientsView, /onMounted\(async\s*\(\)\s*=>\s*\{\s*await loadClients\(\)/)
   assert.doesNotMatch(clientsView, /mockClient/)
 
   assert.match(clientsView, /v-if="loading"/)
@@ -24,6 +24,6 @@ test('Clients page uses live Supabase clients and standard UI patterns', async (
   assert.match(clientsView, /v-for="client in filteredClients"/)
 
   assert.match(clientsView, /router\.push\(['"`]\/clients\/\$\{id\}['"`]\)/)
-  assert.match(clientsView, /openClient\(client\.id\)/)
+  assert.match(clientsView, /openClient\(client\)/)
   assert.doesNotMatch(clientsView, /ID:\s*\{\{ client\.id/)
 })
