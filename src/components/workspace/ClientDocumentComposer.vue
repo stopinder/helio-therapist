@@ -105,12 +105,12 @@
                 <div class="min-w-0">
                   <p class="text-caption font-semibold text-ink">{{ summaryLensLabel }} · {{ summaryWindowLabel }}</p>
                   <p class="text-caption text-ink-muted mt-0.5">{{ evidenceWindow.length ? `${evidenceWindow.length} session source${evidenceWindow.length===1?'':'s'} selected` : 'Choose an available anchor session to generate.' }}</p>
-                  <SummaryEvidenceLimitNotice v-if="summaryGenerationErrorCode === 'EVIDENCE_WINDOW_TOO_LARGE'" :message="summaryGenerationMessage" @adjust="adjustSummaryEvidence" />
+                  <SummaryEvidenceLimitNotice v-if="summaryGenerationError" :kind="summaryGenerationErrorCode === 'EVIDENCE_WINDOW_TOO_LARGE' ? 'limit' : 'generation'" :message="summaryGenerationMessage" :retry-disabled="generatingSummary || loadingEvidence || !anchorSessionId || Boolean(evidenceError) || guidanceDictation.busy.value" @adjust="adjustSummaryEvidence" @retry="generateSummary" />
                   <p v-else-if="summaryGenerationMessage" class="text-caption mt-1" :class="summaryGenerationError ? 'text-state-danger' : 'text-ink-muted'">{{ summaryGenerationMessage }}</p>
                 </div>
                 <div class="flex w-full sm:w-auto flex-col sm:flex-row gap-2">
                   <button v-if="intelligenceMode === 'client_summary' && form.body.trim() && form.body.trim() !== SESSION_SUMMARY_TEMPLATE.trim()" type="button" class="button-secondary w-full sm:w-auto justify-center" :disabled="generatingSummary || copySummaryState === 'copying' || !!sourceReview || summaryUnsafe || sourceSafetyChecking" @click="copySummary">{{ copySummaryLabel }}</button>
-                  <button v-if="summaryGenerationErrorCode !== 'EVIDENCE_WINDOW_TOO_LARGE'" type="button" class="button-primary w-full sm:w-auto sm:min-w-[15rem] justify-center shrink-0" :disabled="generatingSummary || loadingEvidence || !anchorSessionId || Boolean(evidenceError) || guidanceDictation.busy.value" @click="generateSummary">{{ generatingSummary ? 'Preparing…' : summaryGenerationErrorCode === 'EVIDENCE_WINDOW_TOO_LARGE' ? 'Adjust evidence' : intelligenceMode === 'therapist_formulation' ? 'Prepare therapist formulation' : (hasExistingSummary ? 'Regenerate client summary' : 'Generate client summary') }}</button>
+                  <button v-if="!summaryGenerationError" type="button" class="button-primary w-full sm:w-auto sm:min-w-[15rem] justify-center shrink-0" :disabled="generatingSummary || loadingEvidence || !anchorSessionId || Boolean(evidenceError) || guidanceDictation.busy.value" @click="generateSummary">{{ generatingSummary ? 'Preparing…' : summaryGenerationErrorCode === 'EVIDENCE_WINDOW_TOO_LARGE' ? 'Adjust evidence' : intelligenceMode === 'therapist_formulation' ? 'Prepare therapist formulation' : (hasExistingSummary ? 'Regenerate client summary' : 'Generate client summary') }}</button>
                 </div>
               </div>
             </div>
@@ -196,7 +196,7 @@ async function scrollToComposerTarget(target){
   element.focus?.({preventScroll:true})
 }
 const refinementContext=computed(()=>summaryContextKey([props.client.id,currentDocument.value?.id,summaryLens.value,summaryWindow.value,anchorSessionId.value,therapistGuidance.value,intelligenceMode.value,includeZoomSummary.value]))
-watch(refinementContext,()=>{pendingSummary.value=null;privateFormulation.value=null;if(summaryGenerationErrorCode.value==='EVIDENCE_WINDOW_TOO_LARGE'){summaryGenerationErrorCode.value='';summaryGenerationError.value=false;summaryGenerationMessage.value=''}})
+watch(refinementContext,()=>{pendingSummary.value=null;privateFormulation.value=null;if(summaryGenerationError.value){summaryGenerationErrorCode.value='';summaryGenerationError.value=false;summaryGenerationMessage.value=''}})
 const guidanceDictation=useWhisperDictation({onText:text=>{therapistGuidance.value=appendDictation(therapistGuidance.value,text,'\n')}})
 const initialBody = props.document?.content?.body || (initialType === 'session_summary' ? SESSION_SUMMARY_TEMPLATE : '')
 const initialRichContent = props.document?.content?.richContent || (initialType === 'session_summary' && initialBody.trim() && initialBody.trim() !== SESSION_SUMMARY_TEMPLATE.trim() ? summaryBodyToRichContent(initialBody) : null)
@@ -328,7 +328,7 @@ async function generateSummary(payload=null){
     await scrollToComposerTarget(composerDocumentCanvas)
   }catch(error){
     if(error.code==='SOURCE_REVIEW_REQUIRED'){sourceReview.value=error.review||{message:error.message,sources:[]};summaryGenerationMessage.value='Source review is required. The existing draft is unchanged.';return}
-    summaryGenerationErrorCode.value=error.code||'';summaryGenerationError.value=true;summaryGenerationMessage.value=(error.message||'Generation failed.')+' The current draft is unchanged.'
+    summaryGenerationErrorCode.value=error.code||'';summaryGenerationError.value=true;summaryGenerationMessage.value=error.message||'Generation failed. The current draft is unchanged.'
   }finally{generatingSummary.value=false}
 }
 function acceptSummaryRevision(){

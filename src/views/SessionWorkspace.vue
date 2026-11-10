@@ -194,19 +194,11 @@
                   <p class="text-body-sm">{{ summaryDocument?.content?.body ? 'Your existing draft stays unchanged until you accept a revision.' : 'Preparing an editable draft from the reviewed session material.' }}</p>
                 </div>
                 <div v-else-if="generationError && (!summaryDocument || intelligenceMode === 'therapist_formulation')">
-                  <SummaryEvidenceLimitNotice v-if="generationErrorCode === 'EVIDENCE_WINDOW_TOO_LARGE'" :message="generationError" @adjust="adjustSummaryEvidence" />
-                  <div v-else class="py-8 px-6 text-center bg-state-danger-surface rounded-panel border border-state-danger/20 shadow-sm" role="alert">
-                    <p class="text-state-danger text-body-sm mb-4">{{ generationError }}</p>
-                    <button @click="generateSummary" class="button-primary py-stack-xs px-inline-md text-body-sm">Retry</button>
-                  </div>
+                  <SummaryEvidenceLimitNotice :kind="generationErrorCode === 'EVIDENCE_WINDOW_TOO_LARGE' ? 'limit' : 'generation'" :message="generationError" @adjust="adjustSummaryEvidence" @retry="generateSummary" />
                 </div>
                 <p v-else-if="intelligenceMode === 'therapist_formulation'" class="text-body-sm text-ink-muted">{{ privateFormulation ? 'The client summary remains unchanged.' : 'Prepare a working formulation above. It stays separate from the client summary and is not saved automatically.' }}</p>
                 <template v-else-if="intelligenceMode === 'client_summary' && summaryDocument && !summaryUnsafe">
-                  <SummaryEvidenceLimitNotice v-if="generationErrorCode === 'EVIDENCE_WINDOW_TOO_LARGE'" class="mb-4" :message="generationError" @adjust="adjustSummaryEvidence" />
-                  <div v-else-if="generationError" class="mb-4 py-4 px-5 text-center bg-state-danger-surface rounded-panel border border-state-danger/20 shadow-sm" role="alert">
-                    <p class="text-state-danger text-body-sm">Generation failed — previous summary unchanged. {{ generationError }}</p>
-                    <button @click="generateSummary" class="button-primary mt-3 py-stack-xs px-inline-md text-body-sm">Retry</button>
-                  </div>
+                  <SummaryEvidenceLimitNotice v-if="generationError" class="mb-4" :kind="generationErrorCode === 'EVIDENCE_WINDOW_TOO_LARGE' ? 'limit' : 'generation'" :message="'Generation failed — previous summary unchanged. ' + generationError" @adjust="adjustSummaryEvidence" @retry="generateSummary" />
                   <SessionSummaryDocument v-if="!isEditingSummary" :body="summaryDocument.content.body" :clientName="client?.name" :date="workspaceSession.date" />
                   <div v-else class="bg-surface rounded-panel border border-border p-6 shadow-sm animate-expandIn">
                     <textarea v-model="summaryDocument.content.body" class="w-full min-h-[30rem] p-6 border border-border rounded-control bg-surface-subtle type-body-long focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-all resize-y" placeholder="No session summary yet." @input="handleSummaryInput"></textarea>
@@ -411,7 +403,7 @@ const pendingSummary=ref(null);
 const intelligenceMode=ref('client_summary'),includeZoomSummary=ref(false),privateFormulation=ref(null);
 const intelligenceSelection=computed(()=>({clientId:session.value?.clientId,sessionId:session.value?.id,transcriptId:transcript.value?.id,scope:'encounter',window:summaryWindow.value}));
 const refinementContext=computed(()=>summaryContextKey([session.value?.clientId,session.value?.id,transcript.value?.id,transcript.value?.sourceVersion,summaryLens.value,summaryWindow.value,excludeEarlierZoomNotes.value,therapistGuidance.value,intelligenceMode.value,includeZoomSummary.value]));
-watch(refinementContext,()=>{pendingSummary.value=null;privateFormulation.value=null;if(generationErrorCode.value==='EVIDENCE_WINDOW_TOO_LARGE'){generationError.value='';generationErrorCode.value='';}});
+watch(refinementContext,()=>{pendingSummary.value=null;privateFormulation.value=null;if(generationError.value){generationError.value='';generationErrorCode.value='';}});
 const showSummaryOptions = ref(true);
 const showSummaryGuidance = ref(false);
 const summaryPreferenceError = ref('');

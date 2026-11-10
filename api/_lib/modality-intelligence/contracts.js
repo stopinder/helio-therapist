@@ -78,7 +78,10 @@ export function verifyEvidence(value, sources, { allowEmpty = false, maxObservat
   if (!value.observations.length || value.observations.length > maxObservations || !value.priorities.length || value.priorities.length > 3) throw failure('EVIDENCE_MAP_INCOMPLETE','The evidence map is incomplete. Your existing work is unchanged.');
   const ids = new Set();
   for (const observation of value.observations) {
-    if (!/^e[1-9]\d{0,2}$/.test(observation.id) || ids.has(observation.id) || !observation.text.trim() || !observation.citations.length || !observation.citations.every(verifyCitation)) {
+    if (!/^e[1-9]\d{0,2}$/.test(observation.id) || ids.has(observation.id) || !observation.text.trim() || !observation.citations.length) {
+      throw failure('INVALID_EVIDENCE_REFERENCE','An observation could not be linked unambiguously to its source. Your existing work is unchanged.');
+    }
+    if (!observation.citations.every(verifyCitation)) {
       throw failure('UNVERIFIED_SOURCE_QUOTE','A supporting passage could not be verified. Your existing work is unchanged.');
     }
     ids.add(observation.id);

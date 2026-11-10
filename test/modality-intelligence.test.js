@@ -9,11 +9,11 @@ import { parseModalityRequest } from '../api/ai/modality-summary.js';
 import { summaryClinicalEvidence } from '../src/lib/summaryEvidence.js';
 import { parseSummaryBlocks } from '../src/lib/summaryAuthoring.js';
 import { assertClientDocumentContent, isUnusableSummary } from '../src/lib/summarySafety.js';
-import { packFixture, evidenceFixture, formulationFixture, compositionFixture, completed, SOURCE_ID, SYNTHETIC_MODALITY_CASES } from './fixtures/modality-intelligence.js';
+import { packFixture, evidenceFixture, passageEvidenceFixture, formulationFixture, compositionFixture, completed, SOURCE_ID, SYNTHETIC_MODALITY_CASES } from './fixtures/modality-intelligence.js';
 
 const base={pack:packFixture(),lens:'gentle_cbt',options:{mode:'client_summary',includeZoomSummary:false},summaryOptions:{audience:'individual',addition:'none'},requirements:{exercise:false}};
 const clone=value=>structuredClone(value);
-function staged(lens,composed=compositionFixture(lens)) {let index=0;const calls=[];return {calls,run:async request=>{calls.push(request);return completed([evidenceFixture(),formulationFixture(lens),composed][index++]);}};}
+function staged(lens,composed=compositionFixture(lens)) {let index=0;const calls=[];return {calls,run:async request=>{calls.push(request);return completed(index++===0?passageEvidenceFixture(request):index===2?formulationFixture(lens):composed);}};}
 
 test('each modality registers independent formulation keys, composition keys and strategy',()=>{
   assert.doesNotThrow(assertModalityRegistry);
@@ -75,7 +75,7 @@ test('therapist mode stops after formulation and has no client draft/exportable 
 });
 test('source concern stops the pipeline without generating or fabricating a draft',async()=>{
   const value={...evidenceFixture(),outcome:'needs_review',reviewMessage:'Check which encounter this source belongs to.'};let calls=0;
-  const result=await runModalityPipeline({...base,run:async()=>{calls++;return completed(value)}});
+  const result=await runModalityPipeline({...base,run:async request=>{calls++;return completed({...passageEvidenceFixture(request),outcome:value.outcome,reviewMessage:value.reviewMessage})}});
   assert.equal(calls,1);assert.equal(result.outcome,'needs_review');assert.equal(result.draft,undefined);
 });
 test('unsupported formulation references and assertive hypotheses are rejected',()=>{
@@ -98,7 +98,7 @@ test('canonical or supplied sequence cannot be replaced by an unlabelled general
 test('one bounded repair fixes missing instructions; a second failure never returns a successful draft',async()=>{
   const wrong=compositionFixture('gentle_cbt');wrong.sections.cycle.body+=' An unsupported extra claim.';
   let calls=0;const outputs=[evidenceFixture(),formulationFixture('gentle_cbt'),wrong,wrong];
-  await assert.rejects(runModalityPipeline({...base,run:async()=>completed(outputs[calls++])}),{code:'INTELLIGENCE_DELIVERABLE_INCOMPLETE'});assert.equal(calls,4);
+  await assert.rejects(runModalityPipeline({...base,run:async req=>completed(calls++===0?passageEvidenceFixture(req):outputs[calls-1])}),{code:'INTELLIGENCE_DELIVERABLE_INCOMPLETE'});assert.equal(calls,4);
 });
 test('new modality headings render as headings and proposed check-ins never become encounter evidence',()=>{
   const body=renderModalityDocument(compositionFixture('integrative'),modalityStrategy('integrative'));

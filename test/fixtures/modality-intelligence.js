@@ -24,3 +24,12 @@ export function compositionFixture(lens) {
   return {sections,practice:{status:'not_requested',title:'',introduction:'',sequenceBasis:'not_applicable',steps:[],checkInSteps:[],safety:'',clarification:''}};
 }
 export function completed(value) {return {model:'synthetic-test-only',completion:{choices:[{finish_reason:'stop',message:{content:JSON.stringify(value)}}],usage:{prompt_tokens:100,completion_tokens:100,total_tokens:200}}};}
+
+// Provider fixture references a passage actually present in this request.
+// Public evidenceFixture remains the resolved, client-side contract.
+export function passageEvidenceFixture(request) {
+  const input = JSON.parse(request.messages[1].content);
+  const value = evidenceFixture();
+  value.observations[0].citations = [{passageId:input.sources[0].passages[0].id}];
+  return value;
+}

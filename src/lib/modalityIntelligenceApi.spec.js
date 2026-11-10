@@ -1,11 +1,17 @@
 import { describe,it,expect,vi,beforeEach } from 'vitest';
+import {mount,flushPromises} from '@vue/test-utils';
+import Composer from '../components/workspace/ClientDocumentComposer.vue';
+import {recentSessionFixture,recentSessionProvider,RECENT_CASES} from '../../test/fixtures/recent-session-generation.js';
+import {authenticatedFetch} from './api.js';
 import handler from '../../api/ai/modality-summary.js';
 import {requireAuthenticatedUser} from '../../api/_lib/supabase.js';
 import {createTextAIWorkflow} from '../../api/_lib/ai-execution.js';
 import {loadModalitySources} from '../../api/_lib/modality-intelligence/sources.js';
 import {verifySummaryResource} from '../../api/_lib/summary-resource-check.js';
-import {packFixture,evidenceFixture,formulationFixture,compositionFixture,completed,SOURCE_ID} from '../../test/fixtures/modality-intelligence.js';
+import {packFixture,evidenceFixture,passageEvidenceFixture,formulationFixture,compositionFixture,completed,SOURCE_ID} from '../../test/fixtures/modality-intelligence.js';
 
+vi.mock('./api.js',()=>({authenticatedFetch:vi.fn()}));
+vi.mock('./documentProfile.js',()=>({loadDocumentProfile:vi.fn(async()=>({})),profileDisplay:()=>({heading:'Synthetic practice',footer:'Helios'})}));
 vi.mock('../../api/_lib/supabase.js',()=>({requireAuthenticatedUser:vi.fn()}));
 vi.mock('../../api/_lib/ai-execution.js',()=>({createTextAIWorkflow:vi.fn(),AI_FEATURES:{CLIENT_SESSION_SUMMARY:'client.session_summary'}}));
 vi.mock('../../api/_lib/summary-resource-check.js',()=>({verifySummaryResource:vi.fn(async()=>null)}));
@@ -23,7 +29,7 @@ beforeEach(()=>{
  vi.clearAllMocks();queries=[];requests=[];
  tables={clients:[{id:clientId,user_id:user,display_name:'Synthetic client',reference:'TEST',archived:false}],sessions:[{id:sessionId,user_id:user,client_id:clientId,occurred_at:'2026-01-01T10:00:00Z'}],zoom_transcripts:[{id:transcriptId,therapist_user_id:user,client_id:clientId,session_ref:sessionId,original_transcript:packFixture().sources[0].text,zoom_generated_summary:'Zoom-only private test phrase.',source_version:1,source_review:{state:'unreviewed'},received_at:'2026-01-01T11:00:00Z',deleted_at:null}],session_capture_drafts:[],documents:[],client_care_items:[]};
  db={from:vi.fn(query),rpc:vi.fn(async()=>({data:false,error:null}))};requireAuthenticatedUser.mockResolvedValue({supabase:db,user:{id:user}});
- let index=0;run=vi.fn(async req=>{requests.push(req);return completed([evidenceFixture(),formulationFixture('gentle_cbt'),compositionFixture('gentle_cbt')][index++]);});createTextAIWorkflow.mockResolvedValue(run);
+ let index=0;run=vi.fn(async req=>{requests.push(req);return completed(index++===0?passageEvidenceFixture(req):index===2?formulationFixture('gentle_cbt'):compositionFixture('gentle_cbt'));});createTextAIWorkflow.mockResolvedValue(run);
 });
 describe('source-aware modality gateway',()=>{
  const base={clientId,sessionId,transcriptId,lens:'gentle_cbt'};
@@ -38,7 +44,7 @@ describe('source-aware modality gateway',()=>{
  });
  it('excludes Zoom text by default and includes it only as a separately typed secondary source',async()=>{
   await invoke(base);expect(JSON.stringify(requests)).not.toContain('Zoom-only private test phrase.');
-  requests.length=0;run.mockImplementationOnce(async req=>{requests.push(req);return completed(evidenceFixture())}).mockImplementationOnce(async()=>completed(formulationFixture('gentle_cbt'))).mockImplementationOnce(async()=>completed(compositionFixture('gentle_cbt')));
+  requests.length=0;run.mockImplementationOnce(async req=>{requests.push(req);return completed(passageEvidenceFixture(req))}).mockImplementationOnce(async()=>completed(formulationFixture('gentle_cbt'))).mockImplementationOnce(async()=>completed(compositionFixture('gentle_cbt')));
   const res=await invoke({...base,intelligenceOptions:{includeZoomSummary:true}});expect(res.statusCode).toBe(200);const input=JSON.parse(requests[0].messages[1].content);const zoom=input.sources.find(s=>s.type==='zoom_summary');expect(zoom.secondary).toBe(true);expect(zoom.encounterId).toBe(sessionId);expect(zoom.id).not.toBe(SOURCE_ID);
  });
  it('ownership filters bind every clinical table before generation',async()=>{
@@ -55,7 +61,7 @@ describe('source-aware modality gateway',()=>{
   tables.zoom_transcripts[0].source_review={state:'needs_review',message:'Review source assignment.'};const res=await invoke(base);expect(res.payload.data.outcome).toBe('needs_review');expect(createTextAIWorkflow).not.toHaveBeenCalled();
  });
  it('rejects changed versions after generation, preserving the previous draft',async()=>{
-  let index=0;run.mockImplementation(async req=>{const value=[evidenceFixture(),formulationFixture('gentle_cbt'),compositionFixture('gentle_cbt')][index++];if(index===3)tables.zoom_transcripts[0].source_version=2;return completed(value);});
+  let index=0;run.mockImplementation(async req=>{const value=index++===0?passageEvidenceFixture(req):index===2?formulationFixture('gentle_cbt'):compositionFixture('gentle_cbt');if(index===3)tables.zoom_transcripts[0].source_version=2;return completed(value);});
   const res=await invoke(base);expect(res.statusCode).toBe(409);expect(res.payload.error.code).toBe('SOURCE_CHANGED');expect(res.payload.data).toBeUndefined();
  });
  it('does not send private reflection, risk or supervision care items to any stage',async()=>{
@@ -92,7 +98,7 @@ describe('source-aware modality gateway',()=>{
   tables.zoom_transcripts=tables.sessions.map((session,i)=>({...transcript,id:i?`0000000${i}-cccc-4ccc-8ccc-cccccccccccc`:transcriptId,session_ref:session.id,original_transcript:('A synthetic session observation. ').repeat(2800)+`Final marker ${i}.`}));
   run.mockImplementation(async req=>{
     requests.push(req);const input=JSON.parse(req.messages[1].content),schema=req.responseFormat.json_schema.schema;
-    if(schema.properties.observations){const v=evidenceFixture();v.observations[0].citations=[{sourceId:input.sources[0].id,quote:input.sources[0].text.slice(-24)}];return completed(v);}
+    if(schema.properties.observations){const v=evidenceFixture();v.observations[0].citations=[{passageId:input.sources[0].passages.at(-1).id}];return completed(v);}
     if(schema.properties.priorities&&!schema.properties.fields)return completed({priorities:[{observationIds:['e1'],importance:'Observed clinical priority.'}]});
     return completed(schema.properties.fields?formulationFixture('gentle_cbt'):compositionFixture('gentle_cbt'));
   });
@@ -109,4 +115,75 @@ describe('source-aware modality gateway',()=>{
   const viewer=await invoke({...base,action:'sources'});expect(viewer.statusCode).toBe(200);expect(viewer.payload.data.zoomSummaries).toHaveLength(1);
  });
 
+});
+
+// Real composer -> clientDocuments -> request projection -> real API handler ->
+// real source selection, batching, passage checks, formulation and composition.
+// Only authentication/database and the external provider are controlled fixtures.
+describe('complete recent-session generation and recovery',()=>{
+ const editor={props:['modelValue'],emits:['update:modelValue'],template:'<textarea data-testid="integration-editor" :value="modelValue" @input="$emit(\'update:modelValue\', $event.target.value)" />'};
+ async function openComposer(){
+   const fixture=recentSessionFixture();tables.sessions=fixture.sessions;tables.zoom_transcripts=fixture.transcripts;
+   authenticatedFetch.mockImplementation(async(url,options)=>{
+     expect(url).toBe('/api/ai/modality-summary');
+     const response=await invoke(JSON.parse(options.body));
+     return {ok:response.statusCode<400,status:response.statusCode,json:async()=>response.payload};
+   });
+   run.mockImplementation(recentSessionProvider({requests}));
+   const wrapper=mount(Composer,{props:{client:{id:clientId,display_name:'Synthetic couple'},initialDocumentType:'session_summary'},global:{stubs:{teleport:true,RichDocumentEditor:editor,HelpLink:true}}});
+   await flushPromises();
+   const select=wrapper.findAll('select').find(el=>el.find('option[value="gentle_cbt"]').exists());
+   await select.setValue('gentle_cbt');await flushPromises();
+   return wrapper;
+ }
+ it('renders an editable supported draft for all three long recent sessions without saving',async()=>{
+   const wrapper=await openComposer();
+   try{
+     const generate=wrapper.findAll('button').find(b=>b.text()==='Generate client summary');
+     expect(generate.element.disabled).toBe(false);await generate.trigger('click');await flushPromises();
+     const body=wrapper.get('[data-testid="integration-editor"]').element.value;
+     for(const item of RECENT_CASES)expect(body).toContain(item.sentence);
+     expect(body).toContain('Understanding the pattern');
+     expect(createTextAIWorkflow).toHaveBeenCalledTimes(1);
+     const request=authenticatedFetch.mock.calls.map(([,options])=>JSON.parse(options.body)).find(req=>req.action==='generate');
+     expect(request).toMatchObject({scope:'longitudinal',window:'last_three',anchorSessionId:tables.sessions[0].id});
+     expect(wrapper.text()).toContain('Draft ready. Review and edit before saving or finalising.');
+     expect(wrapper.emitted('saved')).toBeUndefined();
+     expect(queries.filter(q=>q.table==='zoom_transcripts').length).toBeGreaterThan(1);
+     const evidenceCalls=requests.filter(req=>req.responseFormat.json_schema.schema.properties.observations);
+     expect(evidenceCalls).toHaveLength(3);
+     for(const transcript of tables.zoom_transcripts){
+       const source=evidenceCalls.flatMap(req=>JSON.parse(req.messages[1].content).sources).find(item=>item.id==='transcript:'+transcript.id);
+       expect(source.passages.map(p=>p.text).join('')).toBe(transcript.original_transcript.trim()); // Loader trims only outer whitespace; internal text is exact.
+     }
+   }finally{wrapper.unmount();}
+ });
+ it('keeps the editable draft on invalid references, then offers a reviewable replacement after explicit retry',async()=>{
+   const wrapper=await openComposer();
+   try{
+     const button=text=>wrapper.findAll('button').find(b=>b.text()===text);
+     await button('Generate client summary').trigger('click');await flushPromises();
+     const previous=wrapper.get('[data-testid="integration-editor"]').element.value;
+     run.mockImplementation(recentSessionProvider({fault:'invalid_reference',requests}));
+     await button('Regenerate client summary').trigger('click');await flushPromises();
+     expect(wrapper.get('[data-testid="summary-evidence-limit"]').text()).toMatch(/unchanged/);
+     expect(wrapper.get('[data-testid="integration-editor"]').element.value).toBe(previous);
+     expect(wrapper.emitted('saved')).toBeUndefined();
+     run.mockImplementation(recentSessionProvider({requests}));
+     await button('Try again').trigger('click');await flushPromises();
+     expect(wrapper.find('[data-testid="summary-evidence-limit"]').exists()).toBe(false);
+     expect(wrapper.text()).toContain('Revised draft ready to preview. Your current draft is unchanged.');
+     expect(wrapper.get('[data-testid="integration-editor"]').element.value).toBe(previous);
+     expect(wrapper.emitted('saved')).toBeUndefined();
+   }finally{wrapper.unmount();}
+ });
+ for(const fault of ['needs_review','truncated'])it(`never renders a partial draft when a batch reports ${fault}`,async()=>{
+   const fixture=recentSessionFixture();tables.sessions=fixture.sessions;tables.zoom_transcripts=fixture.transcripts;
+   run.mockImplementation(recentSessionProvider({requests,fault}));
+   const res=await invoke({clientId,anchorSessionId:fixture.sessions[0].id,scope:'longitudinal',window:'last_three',lens:'gentle_cbt'});
+   expect(res.payload.data?.draft).toBeUndefined();
+   if(fault==='needs_review')expect(res.payload.data.outcome).toBe('needs_review');
+   else expect(res.statusCode).toBe(502);
+   expect(requests.every(req=>req.responseFormat.json_schema.schema.properties.observations)).toBe(true);
+ });
 });

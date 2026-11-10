@@ -34,7 +34,7 @@ function mockStages({reviewBatch=0,invalidQuote=false,emptyBatch=0}={}){
   const calls=[];let batch=0;
   return {calls,run:async request=>{
     calls.push(request);const input=JSON.parse(request.messages[1].content),schema=request.responseFormat.json_schema.schema;
-    if(schema.properties.observations){batch++;const s=input.sources[0],value=evidenceFixture();value.observations[0].text=`Observation from ${s.encounterId}.`;value.observations[0].citations=[{sourceId:s.id,quote:invalidQuote?'A quote not in the supplied batch.':s.text.slice(-32)}];
+    if(schema.properties.observations){batch++;const s=input.sources[0],value=evidenceFixture();value.observations[0].text=`Observation from ${s.encounterId}.`;value.observations[0].citations=[invalidQuote?{passageId:s.passages[0].id,quote:'A quote not in the supplied batch.'}:{passageId:s.passages.at(-1).id}];
       if(batch===reviewBatch){value.outcome='needs_review';value.reviewMessage='Check this encounter.';value.reviewEvidence=value.observations[0].citations;}
       if(batch===emptyBatch){value.observations=[];value.priorities=[];value.gaps=['No salient observations in this part.'];}
       return completed(value);
@@ -54,8 +54,8 @@ test('large-window pipeline reads every batch before formulation and preserves u
 test('a source concern in any batch stops composition rather than dropping the problematic batch',async()=>{
   const mock=mockStages({reviewBatch:2});const out=await runModalityPipeline({...request([source(1),source(2),source(3)]),run:mock.run});assert.equal(out.outcome,'needs_review');assert.equal(out.draft,undefined);assert.ok(mock.calls.every(c=>c.responseFormat.json_schema.schema.properties.observations));
 });
-test('unverifiable batch quotations abort without a successful partial draft',async()=>{
-  const mock=mockStages({invalidQuote:true});await assert.rejects(runModalityPipeline({...request([source(1),source(2)]),run:mock.run}),{code:'UNVERIFIED_SOURCE_QUOTE'});
+test('model-supplied quotation text is rejected rather than replacing an exact source passage',async()=>{
+  const mock=mockStages({invalidQuote:true});await assert.rejects(runModalityPipeline({...request([source(1),source(2)]),run:mock.run}),{code:'INVALID_INTELLIGENCE_OUTPUT'});
 });
 test('an uninformative batch is still covered and its limitations are retained',async()=>{
   const mock=mockStages({emptyBatch:2});const out=await runModalityPipeline({...request([source(1),source(2)]),run:mock.run});assert.equal(out.outcome,'ready');assert.equal(out.architecture.evidenceCoverage.batchCount,2);assert.ok(mock.calls.some(c=>c.messages[1].content.includes('No salient observations in this part.')));
@@ -67,5 +67,5 @@ test('a quote elsewhere in the full source is not accepted as evidence read from
   await assert.rejects(runModalityPipeline({...request([item]),run:async req=>{
     if(first){first=false;const v=evidenceFixture();v.observations[0].citations=[{sourceId:item.id,quote:'A unique statement appearing only at the end.'}];return completed(v);}
     return mock.run(req);
-  }}),{code:'UNVERIFIED_SOURCE_QUOTE'});
+  }}),{code:'INVALID_INTELLIGENCE_OUTPUT'});
 });
