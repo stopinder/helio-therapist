@@ -20,7 +20,7 @@ test('Ask Helios reflection draft contract uses therapist first-person material 
   assert.match(askHeliosReflectionDraftSystemPrompt, /only FIRST-PERSON therapist material/i)
   assert.match(askHeliosReflectionDraftSystemPrompt, /Assistant messages.*NOT evidence/i)
   assert.match(askHeliosReflectionDraftSystemPrompt, /Do not repeat client names/i)
-  assert.match(askHeliosReflectionDraftSystemPrompt, /leave fields blank/i)
+  assert.match(askHeliosReflectionDraftSystemPrompt, /leave a mapping field blank/i)
 })
 
 test('reflection draft normalisation is bounded and ignores unknown fields', () => {
