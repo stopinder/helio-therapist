@@ -23,7 +23,7 @@ test('Follow-ups UI components follow requirements', async () => {
   assert.match(modal, /useWhisperDictation/)
   assert.match(modal, /@toggle="dictation.toggle\(\)"/)
   assert.ok(modal.includes("Save"))
-  assert.ok(modal.includes("Cancel"))
+  assert.match(modal, /\$emit\('close'\)/)
   assert.match(modal, /useWhisperDictation/)
   assert.match(modal, /appendDictation/)
   assert.ok(panel.includes("No follow-ups waiting."))
