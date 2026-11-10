@@ -38,7 +38,22 @@ jobs:
       - name: Audit dependencies
         run: npm audit --audit-level=moderate
       - name: Complete Node regression suite
-        run: npm test
+        run: |
+          set +e
+          npm test > /tmp/node-tests.log 2>&1
+          STATUS=$?
+          set -e
+          python3 - <<'PY'
+          from pathlib import Path
+          lines = Path('/tmp/node-tests.log').read_text().splitlines()
+          selected = set(range(max(0, len(lines)-16), len(lines)))
+          for i, line in enumerate(lines):
+              if line.lstrip().startswith('not ok'):
+                  selected.update(range(max(0, i-3), min(len(lines), i+65)))
+          for i in sorted(selected):
+              print(lines[i])
+          PY
+          exit "$STATUS"
       - name: Complete component and API regression suite
         run: npm run test:components
       - name: Compile production-format bundle without deployment
@@ -46,14 +61,16 @@ jobs:
       - name: Compare modality contracts without a live model call
         run: node scripts/evaluate-modality-intelligence.mjs > /tmp/passage-contracts.json
       - name: Install synthetic browser
-        run: npx playwright install --with-deps chromium
+        run: npx playwright install --with-deps chromium > /tmp/browser-install.log 2>&1 || { tail -n 50 /tmp/browser-install.log; exit 1; }
       - name: Verify desktop and mobile failure recovery
         run: node scripts/verify-modality-preview.mjs
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
         with:
           name: passage-repair-synthetic-verification
-          path: test-results/modality-preview/*.png
+          path: |
+            test-results/modality-preview/*.png
+            /tmp/node-tests.log
           retention-days: 7
           if-no-files-found: warn
   publish:
