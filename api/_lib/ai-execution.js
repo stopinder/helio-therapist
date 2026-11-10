@@ -58,9 +58,21 @@ export function buildTemperatureParams(model, temperature) {
   return { temperature };
 }
 
+// Opaque, server-created reservations cannot be supplied by HTTP callers.
+const workflowPermits = new WeakMap();
+export async function createTextAIWorkflow({ feature, userId, maxCalls = 4, maxInputChars = 500000, maxOutputTokens = 16500 }) {
+  if (!Object.values(AI_FEATURES).includes(feature) || !userId) throw new Error('Invalid authenticated AI workflow');
+  if (!process.env.OPENAI_API_KEY) throw Object.assign(new Error('AI provider is unavailable.'), {code:'AI_PROVIDER_NOT_CONFIGURED',status:503});
+  // Existing Free caps apply to the WHOLE workflow; rejection happens before a credit is consumed.
+  const usedFreeCredits = await reserveAiBudget({ userId, feature, requestChars:maxInputChars, maxOutputTokens });
+  const permit = Object.freeze({});
+  workflowPermits.set(permit,{userId,feature,maxCalls,maxInputChars,maxOutputTokens,calls:0,inputChars:0,outputTokens:0,usedFreeCredits,expiresAt:Date.now()+240000});
+  return async request => runTextAI({...request,feature,userId,workflowPermit:permit});
+}
+
 export async function runTextAI({
   feature, userId, promptVersion = null, messages, temperature,
-  maxTokens, responseFormat, timeout = 20000
+  maxTokens, responseFormat, timeout = 20000, workflowPermit = null
 }) {
   if (!Object.values(AI_FEATURES).includes(feature)) throw new Error(`Unknown AI feature: ${feature}`);
   if (!userId) throw new Error('AI execution requires an authenticated user ID');
@@ -79,15 +91,25 @@ export async function runTextAI({
     ? Math.min(maxTokens, FREE_AI_MAX_OUTPUT_TOKENS)
     : FREE_AI_MAX_OUTPUT_TOKENS;
 
-  let usedFreeCredits = await reserveAiBudget({
-    userId, feature, requestChars, maxOutputTokens: freeOutputLimit
-  });
+  let usedFreeCredits;
+  if (workflowPermit !== null) {
+    const budget = workflowPermits.get(workflowPermit);
+    if (!budget || budget.userId !== userId || budget.feature !== feature || budget.expiresAt < Date.now() ||
+        budget.calls >= budget.maxCalls || !Number.isInteger(maxTokens) || maxTokens < 1 ||
+        budget.outputTokens + maxTokens > budget.maxOutputTokens || budget.inputChars + requestChars > budget.maxInputChars) {
+      throw Object.assign(new Error('The bounded AI workflow could not continue.'),{code:'AI_WORKFLOW_BUDGET_EXCEEDED',status:422});
+    }
+    budget.calls++; budget.inputChars += requestChars; budget.outputTokens += maxTokens;
+    usedFreeCredits = budget.usedFreeCredits;
+  } else {
+    usedFreeCredits = await reserveAiBudget({ userId, feature, requestChars, maxOutputTokens: freeOutputLimit });
+  }
 
   const isFree = usedFreeCredits !== null;
   const model = isFree ? FREE_AI_TEXT_MODEL : getTextModel(feature);
   const outputLimit = isFree ? freeOutputLimit : maxTokens;
   const startedAt = Date.now();
-  const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY, timeout, ...(isFree ? { maxRetries: 0 } : {}) });
+  const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY, timeout, ...(isFree || workflowPermit ? { maxRetries: 0 } : {}) });
 
   try {
     const completion = await openai.chat.completions.create({

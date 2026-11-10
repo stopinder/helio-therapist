@@ -1,0 +1,89 @@
+import { describe,it,expect,vi,beforeEach } from 'vitest';
+import handler from '../../api/ai/modality-summary.js';
+import {requireAuthenticatedUser} from '../../api/_lib/supabase.js';
+import {createTextAIWorkflow} from '../../api/_lib/ai-execution.js';
+import {loadModalitySources} from '../../api/_lib/modality-intelligence/sources.js';
+import {verifySummaryResource} from '../../api/_lib/summary-resource-check.js';
+import {packFixture,evidenceFixture,formulationFixture,compositionFixture,completed,SOURCE_ID} from '../../test/fixtures/modality-intelligence.js';
+
+vi.mock('../../api/_lib/supabase.js',()=>({requireAuthenticatedUser:vi.fn()}));
+vi.mock('../../api/_lib/ai-execution.js',()=>({createTextAIWorkflow:vi.fn(),AI_FEATURES:{CLIENT_SESSION_SUMMARY:'client.session_summary'}}));
+vi.mock('../../api/_lib/summary-resource-check.js',()=>({verifySummaryResource:vi.fn(async()=>null)}));
+const user='ffffffff-ffff-4fff-8fff-ffffffffffff',clientId='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',sessionId='bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',transcriptId=SOURCE_ID.slice('transcript:'.length);
+let tables,queries,db,run,requests;
+function query(table) {
+  const filters=[],q={table,filters,sort:null,n:Infinity};queries.push(q);
+  const builder={select:vi.fn(()=>builder),eq:(key,value)=>{filters.push(['eq',key,value]);return builder},is:(key,value)=>{filters.push(['is',key,value]);return builder},in:(key,value)=>{filters.push(['in',key,value]);return builder},not:(key,op,value)=>{filters.push(['not',key,value]);return builder},lte:(key,value)=>{filters.push(['lte',key,value]);return builder},order:(key,options)=>{q.sort=[key,options.ascending];return builder},limit:n=>{q.n=n;return builder},
+    then:(resolve,reject)=>Promise.resolve({data:result(),error:null}).then(resolve,reject),maybeSingle:async()=>({data:result()[0]||null,error:null})};
+  function result(){let rows=(tables[table]||[]).filter(row=>filters.every(([op,key,value])=>op==='eq'?row[key]===value:op==='is'?(row[key]??null)===value:op==='in'?value.includes(row[key]):op==='not'?(row[key]??null)!==value:op==='lte'?row[key]<=value:true));if(q.sort)rows=[...rows].sort((a,b)=>String(a[q.sort[0]]).localeCompare(String(b[q.sort[0]]))*(q.sort[1]?1:-1));return rows.slice(0,q.n);}
+  return builder;
+}
+async function invoke(body,method='POST') {const res={statusCode:200,setHeader:vi.fn(),status(code){this.statusCode=code;return this},json(payload){this.payload=payload;return this}};await handler({method,body},res);return res;}
+beforeEach(()=>{
+ vi.clearAllMocks();queries=[];requests=[];
+ tables={clients:[{id:clientId,user_id:user,display_name:'Synthetic client',reference:'TEST',archived:false}],sessions:[{id:sessionId,user_id:user,client_id:clientId,occurred_at:'2026-01-01T10:00:00Z'}],zoom_transcripts:[{id:transcriptId,therapist_user_id:user,client_id:clientId,session_ref:sessionId,original_transcript:packFixture().sources[0].text,zoom_generated_summary:'Zoom-only private test phrase.',source_version:1,source_review:{state:'unreviewed'},received_at:'2026-01-01T11:00:00Z',deleted_at:null}],session_capture_drafts:[],documents:[],client_care_items:[]};
+ db={from:vi.fn(query),rpc:vi.fn(async()=>({data:false,error:null}))};requireAuthenticatedUser.mockResolvedValue({supabase:db,user:{id:user}});
+ let index=0;run=vi.fn(async req=>{requests.push(req);return completed([evidenceFixture(),formulationFixture('gentle_cbt'),compositionFixture('gentle_cbt')][index++]);});createTextAIWorkflow.mockResolvedValue(run);
+});
+describe('source-aware modality gateway',()=>{
+ const base={clientId,sessionId,transcriptId,lens:'gentle_cbt'};
+ for(const scope of ['encounter','longitudinal'])it(`${scope} uses the same verified three-stage pipeline`,async()=>{
+  const res=await invoke({...base,scope});expect(res.statusCode).toBe(200);expect(res.payload.data.mode).toBe('client_summary');expect(run).toHaveBeenCalledTimes(3);expect(createTextAIWorkflow).toHaveBeenCalledTimes(1);expect(db.from).not.toHaveBeenCalledWith('private_reflections');expect(res.payload.data.reviewRequired).toBe(true);
+ });
+ it('reads Zoom summaries on explicit request without a model call or credit reservation',async()=>{
+  const res=await invoke({...base,action:'sources'});expect(res.statusCode).toBe(200);expect(res.payload.data.zoomSummaries[0].text).toBe('Zoom-only private test phrase.');expect(createTextAIWorkflow).not.toHaveBeenCalled();expect(run).not.toHaveBeenCalled();
+ });
+ it('offers raw transcript sessions in the longitudinal picker even without captures',async()=>{
+  const res=await invoke({clientId,scope:'longitudinal',action:'availability'});expect(res.payload.data.availableSessions[0].sessionId).toBe(sessionId);expect(createTextAIWorkflow).not.toHaveBeenCalled();
+ });
+ it('excludes Zoom text by default and includes it only as a separately typed secondary source',async()=>{
+  await invoke(base);expect(JSON.stringify(requests)).not.toContain('Zoom-only private test phrase.');
+  requests.length=0;run.mockImplementationOnce(async req=>{requests.push(req);return completed(evidenceFixture())}).mockImplementationOnce(async()=>completed(formulationFixture('gentle_cbt'))).mockImplementationOnce(async()=>completed(compositionFixture('gentle_cbt')));
+  const res=await invoke({...base,intelligenceOptions:{includeZoomSummary:true}});expect(res.statusCode).toBe(200);const input=JSON.parse(requests[0].messages[1].content);const zoom=input.sources.find(s=>s.type==='zoom_summary');expect(zoom.secondary).toBe(true);expect(zoom.encounterId).toBe(sessionId);expect(zoom.id).not.toBe(SOURCE_ID);
+ });
+ it('ownership filters bind every clinical table before generation',async()=>{
+  await invoke(base);
+  for(const q of queries.filter(q=>['sessions','zoom_transcripts','documents','client_care_items','session_capture_drafts'].includes(q.table))){expect(q.filters).toContainEqual(['eq',q.table==='zoom_transcripts'?'therapist_user_id':q.table==='client_care_items'?'therapist_id':'user_id',user]);expect(q.filters).toContainEqual(['eq','client_id',clientId]);}
+ });
+ it('rejects a client or transcript from another tenant without invoking AI',async()=>{
+  tables.clients[0].user_id='someone-else';const res=await invoke(base);expect(res.statusCode).toBe(404);expect(createTextAIWorkflow).not.toHaveBeenCalled();
+ });
+ it('rejects reassigned transcript before invoking the model',async()=>{
+  tables.zoom_transcripts[0].client_id='another-client';const res=await invoke(base);expect(res.statusCode).toBe(404);expect(createTextAIWorkflow).not.toHaveBeenCalled();
+ });
+ it('source review remains blocking even when Zoom inclusion is off',async()=>{
+  tables.zoom_transcripts[0].source_review={state:'needs_review',message:'Review source assignment.'};const res=await invoke(base);expect(res.payload.data.outcome).toBe('needs_review');expect(createTextAIWorkflow).not.toHaveBeenCalled();
+ });
+ it('rejects changed versions after generation, preserving the previous draft',async()=>{
+  let index=0;run.mockImplementation(async req=>{const value=[evidenceFixture(),formulationFixture('gentle_cbt'),compositionFixture('gentle_cbt')][index++];if(index===3)tables.zoom_transcripts[0].source_version=2;return completed(value);});
+  const res=await invoke(base);expect(res.statusCode).toBe(409);expect(res.payload.error.code).toBe('SOURCE_CHANGED');expect(res.payload.data).toBeUndefined();
+ });
+ it('does not send private reflection, risk or supervision care items to any stage',async()=>{
+  tables.client_care_items=[{id:'secret',therapist_id:user,client_id:clientId,kind:'supervision',status:'current',body:'THERAPIST PRIVATE SPECULATION'}];await invoke(base);expect(JSON.stringify(requests)).not.toContain('THERAPIST PRIVATE SPECULATION');
+ });
+ it('therapist-only mode returns no client body and never invokes persistence',async()=>{
+  const res=await invoke({...base,intelligenceOptions:{mode:'therapist_formulation'}});expect(res.statusCode).toBe(200);expect(res.payload.data.formulation.visibility).toBe('therapist_only');expect(res.payload.data.draft).toBeUndefined();expect(run).toHaveBeenCalledTimes(2);expect(queries.some(q=>q.table==='documents')).toBe(true);
+ });
+ it('never charges for unverified external resources',async()=>{
+  verifySummaryResource.mockRejectedValueOnce(Object.assign(new Error('Resource is not verified.'),{code:'RESOURCE_NOT_VERIFIED',status:422}));const res=await invoke(base);expect(res.statusCode).toBe(422);expect(createTextAIWorkflow).not.toHaveBeenCalled();
+ });
+ it('default sample pathway is explicitly unavailable rather than pretending fixtures are model output',async()=>{
+  db.rpc.mockResolvedValue({data:true,error:null});const res=await invoke(base);expect(res.payload.error.code).toBe('SAMPLE_MODALITY_PREVIEW_UNAVAILABLE');expect(createTextAIWorkflow).not.toHaveBeenCalled();
+ });
+ it('quota failures precede every model request',async()=>{
+  createTextAIWorkflow.mockRejectedValueOnce(Object.assign(new Error('Existing allowance exceeded.'),{code:'FREE_AI_INPUT_TOO_LARGE',status:413}));const res=await invoke(base);expect(res.statusCode).toBe(413);expect(run).not.toHaveBeenCalled();
+ });
+ it('does not count one derivative summary as independent evidence for multiple encounters',async()=>{
+  const olderId='eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee';
+  tables.sessions.push({...tables.sessions[0],id:olderId,occurred_at:'2025-12-20T10:00:00Z'});
+  tables.zoom_transcripts=[];
+  tables.documents=[{id:'doc-one',user_id:user,client_id:clientId,document_type:'session_summary',content:{body:'An earlier combined summary of the work.'},source_manifest:[{sessionId},{sessionId:olderId}],updated_at:'2026-01-02'}];
+  const pack=await loadModalitySources(db,user,{clientId,anchorSessionId:sessionId,window:'last_three',intelligenceOptions:{includeZoomSummary:false},therapistGuidance:'',refinementRequest:''},{forViewing:true});
+  expect(pack.sources.map(source=>source.id)).toEqual(['document:doc-one']);
+  expect(pack.manifest.filter(source=>source.documentId==='doc-one')).toHaveLength(1);
+  expect(pack.sessionCount).toBe(1);
+ });
+ it('source viewer shows only the chosen transcript note, not an unrelated duplicate import',async()=>{
+  tables.zoom_transcripts.unshift({...tables.zoom_transcripts[0],id:'dddddddd-dddd-4ddd-8ddd-dddddddddddd',zoom_generated_summary:'Other import note',received_at:'2026-01-02'});const res=await invoke({...base,action:'sources'});expect(res.payload.data.zoomSummaries.map(note=>note.id)).toEqual([transcriptId]);
+ });
+});

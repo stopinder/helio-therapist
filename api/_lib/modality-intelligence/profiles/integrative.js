@@ -1,0 +1,7 @@
+export default {
+  id: 'integrative',
+  priorities: 'Find the central lived dilemma and the most useful connections between emotional, bodily, relational and practical context. Do not build a catalogue of theories.',
+  reasoning: `Construct one coherent, pluralistic understanding from the supplied material. Distinguish lived experience, relationship patterns, embodied responses, meaning, agency and material constraints. Preserve tensions that cannot be resolved into a single explanation. Do not privilege one theory or quietly turn integrative work into either a CBT maintenance cycle or IFS protector mapping. Include the therapist's contribution and the client's response when supported. A pause in therapy caused by finances is a practical constraint, not automatically avoidance or a rupture. Relief and loss can coexist without being opposing parts.`,
+  composition: `In experience, begin with the central lived concern rather than a checklist. In connections, link relational meaning, bodily experience and circumstances only where the evidence warrants it, leaving alternatives open. In direction, bring together the client's resources, choices and actual agreements. Use a fluid reflective narrative, not CBT diagrams or compulsory parts terminology.`,
+  example: 'Wanting connection while losing sight of one\'s own wishes can be a relational dilemma. Bodily discomfort may help make the moment recognisable. It is not evidence of a trauma origin or a single defensive mechanism.'
+};

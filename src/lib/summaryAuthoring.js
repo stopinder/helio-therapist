@@ -1,3 +1,4 @@
+import { MODALITY_HEADINGS } from './summaryModalities.js';
 // Shared by every client-facing summary surface and both server generation routes.
 // This module contains no client records, practitioner defaults or network requests.
 export const SUMMARY_POLICY_VERSION = 'helios-summary-authoring/1.2.0';
@@ -10,6 +11,7 @@ export const SUMMARY_SECTION_GROUPS = Object.freeze([
   { heading: 'Looking ahead', fields: ['betweenSession', 'closing'] }
 ]);
 export const SUMMARY_HEADINGS = new Set([
+  ...MODALITY_HEADINGS,
   ...SUMMARY_SECTION_GROUPS.map(group => group.heading),
   'Optional exercise to consider', 'Somatic check-in', 'Optional resource',
   'Where things are now', 'What we have been working on', 'Patterns across our recent work',
@@ -58,7 +60,8 @@ export function normalizeSummaryOptions(value = {}) {
 // source mentions of sensing, homework or a completed exercise.
 export function summaryInstructionRequirements(guidance = '', refinement = '', options = {}) {
   const request = [guidance, refinement].filter(Boolean).join('\n');
-  const actionable = /(?:provide|include|write|draft|create|prepare|give|add|describe|outline|explain|suggest|request|instructions?\s+(?:for|on)|step[- ]by[- ]step|how\s+to|guide\s+(?:to|for|on)).{0,150}(?:exercis(?:e|es)|practice|sensing|somatic|body\s*scan|check[- ]?in)|(?:exercis(?:e|es)|practice|sensing|somatic\s+check[- ]?in).{0,100}(?:instructions?|steps?|guide|description|how\s+to)/i.test(request);
+  const explicitRequest = /\b(?:provide|include|write|draft|create|prepare|give|add|describe|outline|explain|suggest|request)\b.{0,150}\b(?:exercises?|practice|sensing|somatic|body\s*scan|check[- ]?in)\b|\b(?:instructions?\s+(?:for|on)|step[- ]by[- ]step|how\s+to|guide\s+(?:to|for|on)).{0,150}(?:exercise|practice|sensing)|\b(?:exercise|practice|sensing|somatic\s+check[- ]?in).{0,100}(?:instructions?|steps?|guide|description|how\s+to)/i;
+  const actionable = request.split(/[.!;\n]+/).some(clause => !/\b(?:do not|don't|avoid|omit|exclude|without|no need to|not requesting)\b.{0,100}\b(?:exercise|practice|sensing|instructions|check[- ]?in)\b/i.test(clause) && explicitRequest.test(clause));
   const exercise = wantsSummaryExercise(options) || actionable;
   const eightPoint = exercise && (/(?:eight|8)[- ]point(?:ed)?\s+(?:sensing\s+)?(?:exercise|practice|sequence)?/i.test(request) || /(?:points?\s+)?(?:one|1)\s+(?:through|to|[-–])\s+(?:eight|8)\b/i.test(request));
   const somaticCheckIn = exercise && /(?:somatic|bodily|body)[- ]?\s*check[- ]?in/i.test(request);

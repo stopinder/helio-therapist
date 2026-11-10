@@ -1,4 +1,5 @@
 import assert from 'node:assert';
+const providerFixture=async url=>({ok:true,text:async()=>url.includes('/esearch.fcgi')?JSON.stringify({esearchresult:{idlist:[]}}):JSON.stringify({resultList:{result:[{pmid:'42',title:'Synthetic publication',authorString:'Researcher',pubYear:'2024',abstractText:'A synthetic abstract used to verify normalization and citation behavior without depending on external provider availability.'}]}})});
 import { searchResearch } from '../api/_lib/research-retrieval.js';
 import { buildResearchAssistantPrompt, parseResearchResponse, validateAndFormatReferences } from '../api/_lib/ai-research.js';
 
@@ -6,7 +7,7 @@ async function testRetrievalQuality() {
   console.log('Testing research retrieval quality...');
 
   // Test 1: Deduplication
-  const results = await searchResearch('CBT for depression');
+  const results = await searchResearch('CBT for depression',{fetchImpl:providerFixture,throttle:false});
   console.log(`Found ${results.length} results for 'CBT for depression'`);
   
   const seenIds = new Set();
@@ -38,15 +39,11 @@ async function testRetrievalQuality() {
 
 async function testFaultTolerance() {
   console.log('Testing retrieval fault tolerance...');
-  // This is a sanity check that searchResearch doesn't throw when one provider is potentially blocked or fails
-  // We can't easily mock fetch globally here without impact, but we can verify it returns an array even on failures
-  try {
-    const results = await searchResearch('!!! invalid query !!!');
-    assert.ok(Array.isArray(results), 'Should return an array even for invalid queries');
-    console.log('✓ Handled invalid/empty search gracefully');
-  } catch (e) {
-    assert.fail('searchResearch should not throw');
-  }
+  const partial=async url=>{if(url.includes('ncbi.nlm.nih.gov'))throw new Error('Synthetic provider outage');return providerFixture(url)};
+  const results=await searchResearch('CBT',{fetchImpl:partial,throttle:false});
+  assert.ok(results.length>0,'A working provider should still supply evidence');
+  await assert.rejects(searchResearch('CBT',{fetchImpl:async()=>{throw new Error('Synthetic outage')},throttle:false}),{status:502});
+  console.log('Verified partial-provider fallback and explicit all-provider failure');
 }
 
 async function testCitationIntegrity() {

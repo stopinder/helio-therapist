@@ -1,0 +1,7 @@
+export default {
+  id: 'transactional_analysis',
+  priorities: 'Start with observable exchanges: an invitation or comment, the response, what follows and any change in the exchange. Infer ego states or scripts only tentatively.',
+  reasoning: `Organise this formulation around transactions, expectations and opportunities for Adult-to-Adult relating. Ego states are possible patterns of communication, not fixed identities. A crossed transaction, driver or script requires supporting material; do not fill in family history or script decisions. Distinguish an externally reported exchange from an inner expectation. Preserve power differences and safety; never manufacture equal responsibility in joint work. Do not import IFS protectors or Self-energy. Recognise actual moments of clarification, choice and collaborative exchange without claiming durable change.`,
+  composition: `Describe what happens between people in exchanges, then the supported expectations and possible alternatives in expectations. Use choices for actual agreements and opportunities noticed, not invented contracts. Translate theory into accessible language while retaining a recognisably transactional focus.`,
+  example: 'A request is followed by immediate agreement, then unexpressed frustration. That exchange is observable. A Be Pleasing driver is only a tentative possibility, not an established script or diagnosis.'
+};

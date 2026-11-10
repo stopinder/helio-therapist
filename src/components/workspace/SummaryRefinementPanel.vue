@@ -49,6 +49,7 @@
       <h4 class="text-body font-semibold">Proposed revised draft</h4>
       <p class="text-caption text-ink-muted">This has not replaced or approved the current summary. Review it, including any optional addition.</p>
       <SessionSummaryDocument :body="candidate.result.draft.body" compact />
+      <SummaryEvidencePanel :claims="candidate.result.claims || []" />
       <p v-for="warning in candidate.result.qualityReview?.warnings || []" :key="warning" class="text-caption text-ink-muted">{{ warning }}</p>
       <div class="flex flex-wrap gap-2">
         <button type="button" class="button-primary" data-testid="summary-accept-revision" :disabled="busy || disabled" @click="acceptRevision">Use revised draft</button>
@@ -61,6 +62,7 @@
 import { computed, ref, watch, nextTick } from 'vue';
 import { authenticatedFetch } from '../../lib/api.js';
 import { normalizeSummaryOptions, safeResourceUrl, candidateMatches } from '../../lib/summaryAuthoring.js';
+import SummaryEvidencePanel from './SummaryEvidencePanel.vue';
 import SessionSummaryDocument from './SessionSummaryDocument.vue';
 const props=defineProps({body:{type:String,default:''},contextKey:{type:String,required:true},busy:Boolean,disabled:Boolean,candidate:{type:Object,default:null},showPreview:{type:Boolean,default:true},error:{type:String,default:''}});
 const emit=defineEmits(['generate','accept','discard']);
