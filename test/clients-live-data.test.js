@@ -23,7 +23,7 @@ test('Clients page uses live Supabase clients and standard UI patterns', async (
   assert.match(clientsView, /filteredClients\.length\s*===\s*0/)
   assert.match(clientsView, /v-for="client in filteredClients"/)
 
-  assert.match(clientsView, /router\.push\(['"`]\/clients\/\$\{id\}['"`]\)/)
+  assert.match(clientsView, /router\.push\(`\/clients\/\$\{client\.id\}`\)/)
   assert.match(clientsView, /openClient\(client\)/)
   assert.doesNotMatch(clientsView, /ID:\s*\{\{ client\.id/)
 })
