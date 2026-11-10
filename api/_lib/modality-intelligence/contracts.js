@@ -59,7 +59,7 @@ export function parseOutput(completion, schema) {
 }
 export function failure(code, message, status = 422) { return Object.assign(new Error(message), { code, status }); }
 const normalized = text => String(text).replace(/\s+/g,' ').trim();
-export function verifyEvidence(value, sources) {
+export function verifyEvidence(value, sources, { allowEmpty = false, maxObservations = 32 } = {}) {
   const bySource = new Map(sources.map(source => [source.id, source]));
   if (bySource.size !== sources.length) throw failure('DUPLICATE_SOURCE_ID','The evidence contains ambiguous source identifiers. Your existing work is unchanged.');
   const verifyCitation = citation => {
@@ -71,7 +71,11 @@ export function verifyEvidence(value, sources) {
     if (!value.reviewMessage.trim()) throw failure('INVALID_SOURCE_REVIEW','The source needs therapist review.');
     return value;
   }
-  if (!value.observations.length || value.observations.length > 32 || !value.priorities.length || value.priorities.length > 3) throw failure('EVIDENCE_MAP_INCOMPLETE','The evidence map is incomplete. Your existing work is unchanged.');
+  if (allowEmpty && !value.observations.length) {
+    if (value.priorities.length || !value.gaps.some(gap=>gap.trim())) throw failure('EVIDENCE_MAP_INCOMPLETE','The evidence batch is incomplete. Your existing work is unchanged.');
+    return value;
+  }
+  if (!value.observations.length || value.observations.length > maxObservations || !value.priorities.length || value.priorities.length > 3) throw failure('EVIDENCE_MAP_INCOMPLETE','The evidence map is incomplete. Your existing work is unchanged.');
   const ids = new Set();
   for (const observation of value.observations) {
     if (!/^e[1-9]\d{0,2}$/.test(observation.id) || ids.has(observation.id) || !observation.text.trim() || !observation.citations.length || !observation.citations.every(verifyCitation)) {

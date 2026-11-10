@@ -1,3 +1,5 @@
+import { planEvidenceBatches, MAX_BATCH_OBSERVATIONS, MAX_EVIDENCE_BATCHES } from './evidence-batches.js';
+import { object, list, strings, string } from './contracts.js';
 import { INTELLIGENCE_VERSION } from '../../../src/lib/summaryModalities.js';
 import { modalityStrategy } from './profiles/index.js';
 import { responseFormat, evidenceSchema, formulationSchema, compositionSchema, parseOutput, verifyEvidence, verifyFormulation, compositionIssues, renderModalityDocument, failure } from './contracts.js';
@@ -20,19 +22,64 @@ function stageUsage(completion) {
 export async function runModalityPipeline({ pack, lens, options, summaryOptions, requirements, therapistGuidance = '', refinementRequest = '', previousDraft = '', run }) {
   const profile = modalityStrategy(lens);
   const stages = [];
-  const execute = async (name, system, input, schema, maxTokens) => {
+  const plan = planEvidenceBatches(pack.sources);
+  const deadline = Date.now()+210000;
+  const execute = async (name, system, input, schema, maxTokens, stageTimeout = 55000) => {
+    const remaining = deadline-Date.now();
+    if (remaining<1000) throw failure('INTELLIGENCE_REVIEW_TIMEOUT','The complete evidence review did not finish in time. Your existing draft is unchanged; no partial summary was returned.',504);
     const started = Date.now();
-    const result = await run({ promptVersion:`${INTELLIGENCE_VERSION}/${profile.id}/${profile.version}/${name}`, messages:[{role:'system',content:system},{role:'user',content:JSON.stringify(input)}], responseFormat:responseFormat(`helios_${name}_${profile.id}`,schema), maxTokens, temperature:0.2, timeout:55000 });
+    const result = await run({ promptVersion:`${INTELLIGENCE_VERSION}/${profile.id}/${profile.version}/${name}`, messages:[{role:'system',content:system},{role:'user',content:JSON.stringify(input)}], responseFormat:responseFormat(`helios_${name}_${profile.id}`,schema), maxTokens, temperature:0.2, timeout:Math.min(stageTimeout,remaining) });
     stages.push({ name, model:result.model, durationMs:Date.now()-started, ...stageUsage(result.completion) });
     return parseOutput(result.completion,schema);
   };
-  const neutralSchema = evidenceSchema(pack.sources.map(source => source.id));
-  const evidence = verifyEvidence(await execute('evidence',evidencePrompt(),{ sources:pack.sources, sourceWarnings:pack.warnings, requestedDeliverables:requirements, editorialRequest:refinementRequest, instructionBoundary:'therapist_context may contain observations and editorial directions; a request is not a recorded event.' },neutralSchema,3500), pack.sources);
+  const inputFor = sources => ({ sources, sourceWarnings:pack.warnings, requestedDeliverables:requirements, editorialRequest:refinementRequest,
+    instructionBoundary:'therapist_context may contain observations and editorial directions; a request is not a recorded event.' });
+  let evidence;
+  if (plan.batches.length===1) {
+    evidence = verifyEvidence(await execute('evidence',evidencePrompt(),inputFor(pack.sources),evidenceSchema(pack.sources.map(source=>source.id)),3500),pack.sources);
+  } else {
+    const collected=[];
+    // At most four independent reads in flight. Wait for the whole wave to
+    // settle before returning an error; no orphaned work or partial success.
+    for(let start=0;start<plan.batches.length;start+=4) {
+      const wave=await Promise.allSettled(plan.batches.slice(start,start+4).map(async(batch,index)=> {
+        const number=start+index+1;
+        const prompt=evidencePrompt()+`\nBATCH ${number} OF ${plan.batches.length}. Read ALL supplied ranges. This is a partial view, not a complete encounter. Extract at most ${MAX_BATCH_OBSERVATIONS} concise observations, retaining significant late events, contradictions, explicit corrections and supplied method steps. Use short exact quotations. Never infer an absence from a partial source. A range with no relevant observation may return ready with empty observations/priorities and a specific gap. Choose local priorities only; final priorities are selected after all batches. Source range offsets are context, never a change of encounter identity.`;
+        return verifyEvidence(await execute('evidence_batch_'+number,prompt,inputFor(batch.sources),evidenceSchema(batch.sources.map(source=>source.id)),2400,45000),batch.sources,{allowEmpty:true,maxObservations:MAX_BATCH_OBSERVATIONS});
+      }));
+      const rejected=wave.find(item=>item.status==='rejected');
+      if(rejected)throw rejected.reason;
+      collected.push(...wave.map(item=>item.value));
+      const concern=collected.find(item=>item.outcome==='needs_review');
+      if(concern) {
+        evidence=concern;
+        break;
+      }
+    }
+    if(!evidence) {
+      const observations=[],seen=new Set(),gaps=[];
+      for(const [index,batch] of collected.entries()) {
+        gaps.push(...batch.gaps.map(gap=>`Source batch ${index+1}: ${gap}`));
+        for(const observation of batch.observations) {
+          // Only identical repeated observations are coalesced, never similar
+          // events from different sessions or two partners' differing accounts.
+          const key=JSON.stringify([observation.text,observation.kind,observation.citations.map(c=>[c.sourceId,c.quote]).sort()]);
+          if(seen.has(key))continue;
+          seen.add(key);
+          observations.push({...observation,id:'e'+(observations.length+1)});
+        }
+      }
+      if(!observations.length)throw failure('EVIDENCE_MAP_INCOMPLETE','No supported observations were found across the selected material. Your existing draft is unchanged.');
+      const focusSchema=object({priorities:list(object({observationIds:strings,importance:string}))});
+      const focus=await execute('evidence_focus',SAFETY+'\nSelect one to three clinical priorities across ALL supplied batch observations. Return references to existing observation IDs only; do not rewrite, merge or discard the observations. Include important contradictions and differences between partners or sessions. The entire observation set will remain available for formulation, not just your selections.',{observations,gaps,sourceWarnings:pack.warnings},focusSchema,1200,25000);
+      evidence=verifyEvidence({outcome:'ready',reviewMessage:'',reviewEvidence:[],observations,priorities:focus.priorities,gaps},pack.sources,{maxObservations:MAX_EVIDENCE_BATCHES*MAX_BATCH_OBSERVATIONS});
+    }
+  }
   if (evidence.outcome === 'needs_review') return { outcome:'needs_review', review:{message:evidence.reviewMessage,evidence:evidence.reviewEvidence,sources:pack.manifest.filter(source=>source.kind==='zoom_transcript')} };
   const evidenceIds = evidence.observations.map(item => item.id);
   const formula = verifyFormulation(await execute('formulation',formulationPrompt(profile),{ observations:evidence.observations, priorities:evidence.priorities, gaps:evidence.gaps },formulationSchema(lens,evidenceIds),3000),evidence,profile);
   const formulation = { modalityId:lens, profileVersion:profile.version, fields:formula.fields, limitations:formula.limitations, evidence:evidence.observations, priorities:evidence.priorities, sourceWarnings:pack.warnings, visibility:'therapist_only', reviewRequired:true };
-  const audit = () => ({ version:INTELLIGENCE_VERSION, profileVersion:profile.version, stages, checks:['source_quotes','source_references','modality_contract','explicit_deliverables'], clinicalVerification:'therapist_review_required' });
+  const audit = () => ({ version:INTELLIGENCE_VERSION, profileVersion:profile.version, stages, checks:['source_quotes','source_references','modality_contract','explicit_deliverables'], clinicalVerification:'therapist_review_required', evidenceCoverage:{batchCount:plan.batches.length,sourceChars:plan.sourceChars,sourceCount:plan.sourceCount,ranges:plan.coverage,allSelectedTextSubmitted:true} });
   const usage = () => stages.reduce((total,stage)=>({inputTokens:total.inputTokens+stage.inputTokens,outputTokens:total.outputTokens+stage.outputTokens,totalTokens:total.totalTokens+stage.totalTokens}),{inputTokens:0,outputTokens:0,totalTokens:0});
   if (options.mode === 'therapist_formulation') return { outcome:'ready', mode:options.mode, formulation, architecture:audit(), usage:usage(), model:stages.at(-1).model };
   const schema = compositionSchema(lens,evidenceIds);

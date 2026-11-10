@@ -86,4 +86,27 @@ describe('source-aware modality gateway',()=>{
  it('source viewer shows only the chosen transcript note, not an unrelated duplicate import',async()=>{
   tables.zoom_transcripts.unshift({...tables.zoom_transcripts[0],id:'dddddddd-dddd-4ddd-8ddd-dddddddddddd',zoom_generated_summary:'Other import note',received_at:'2026-01-02'});const res=await invoke({...base,action:'sources'});expect(res.payload.data.zoomSummaries.map(note=>note.id)).toEqual([transcriptId]);
  });
+ it('recent sessions above the former cap reach every extraction batch using one allowance reservation',async()=>{
+  const seed=tables.sessions[0],transcript=tables.zoom_transcripts[0];
+  tables.sessions=Array.from({length:3},(_,i)=>({...seed,id:i?`0000000${i}-bbbb-4bbb-8bbb-bbbbbbbbbbbb`:sessionId,occurred_at:`2025-12-${30-i}T10:00:00Z`}));
+  tables.zoom_transcripts=tables.sessions.map((session,i)=>({...transcript,id:i?`0000000${i}-cccc-4ccc-8ccc-cccccccccccc`:transcriptId,session_ref:session.id,original_transcript:('A synthetic session observation. ').repeat(2800)+`Final marker ${i}.`}));
+  run.mockImplementation(async req=>{
+    requests.push(req);const input=JSON.parse(req.messages[1].content),schema=req.responseFormat.json_schema.schema;
+    if(schema.properties.observations){const v=evidenceFixture();v.observations[0].citations=[{sourceId:input.sources[0].id,quote:input.sources[0].text.slice(-24)}];return completed(v);}
+    if(schema.properties.priorities&&!schema.properties.fields)return completed({priorities:[{observationIds:['e1'],importance:'Observed clinical priority.'}]});
+    return completed(schema.properties.fields?formulationFixture('gentle_cbt'):compositionFixture('gentle_cbt'));
+  });
+  const res=await invoke({...base,window:'recent'});
+  expect(res.statusCode).toBe(200);expect(res.payload.data.architecture.evidenceCoverage.batchCount).toBe(3);expect(res.payload.data.sessionCount).toBe(3);
+  expect(createTextAIWorkflow).toHaveBeenCalledTimes(1);expect(createTextAIWorkflow.mock.calls[0][0].maxCalls).toBe(7);
+  const input=requests.filter(req=>req.responseFormat.json_schema.schema.properties.observations).map(req=>req.messages[1].content).join('');
+  for(let i=0;i<3;i++)expect(input).toContain(`Final marker ${i}.`);
+  expect(JSON.stringify(requests)).not.toContain('Zoom-only private test phrase.');
+ });
+ it('over-cap selections fail before any allowance reservation and leave source viewing available',async()=>{
+  tables.zoom_transcripts[0].original_transcript='x'.repeat(600001);
+  const res=await invoke(base);expect(res.statusCode).toBe(413);expect(res.payload.error.code).toBe('EVIDENCE_WINDOW_TOO_LARGE');expect(createTextAIWorkflow).not.toHaveBeenCalled();expect(run).not.toHaveBeenCalled();
+  const viewer=await invoke({...base,action:'sources'});expect(viewer.statusCode).toBe(200);expect(viewer.payload.data.zoomSummaries).toHaveLength(1);
+ });
+
 });

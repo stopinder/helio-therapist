@@ -117,7 +117,7 @@
 
                   <label class="block">
                     <span class="text-caption font-semibold text-ink">Evidence</span>
-                    <select v-model="summaryWindow" class="mt-1 w-full p-2.5 border border-border rounded-control bg-surface">
+                    <select ref="summaryEvidenceSelect" v-model="summaryWindow" class="mt-1 w-full p-2.5 border border-border rounded-control bg-surface">
                       <option value="current">This session</option>
                       <option value="recent">Recent sessions</option>
                     </select>
@@ -146,7 +146,7 @@
                 <div class="mt-4 flex flex-wrap items-center justify-between gap-3">
                   <p class="text-caption text-ink-muted">{{ summaryWindow === 'recent' ? 'Uses this encounter and up to two previous encounters. Missing evidence is flagged.' : 'Uses the selected encounter and reviewed clinical context.' }}</p>
                   <button @click="generateSummary" :disabled="isGenerating || transcriptLoading || !!transcriptError || !transcript" class="button-primary py-stack-xs px-inline-md">
-                    {{ intelligenceMode === 'therapist_formulation' ? 'Prepare therapist formulation' : summaryDocument?.content?.body ? 'Regenerate summary' : 'Generate summary' }}
+                    {{ generationErrorCode === 'EVIDENCE_WINDOW_TOO_LARGE' ? 'Adjust evidence' : intelligenceMode === 'therapist_formulation' ? 'Prepare therapist formulation' : summaryDocument?.content?.body ? 'Regenerate summary' : 'Generate summary' }}
                   </button>
                 </div>
                 <p v-if="summaryPreferenceError" class="mt-2 text-caption text-state-danger" role="alert">{{ summaryPreferenceError }}</p>
@@ -193,13 +193,17 @@
                   <p class="type-body-medium">{{ intelligenceMode === 'therapist_formulation' ? 'Preparing therapist formulation…' : summaryDocument?.content?.body ? 'Regenerating session summary…' : 'Generating session summary…' }}</p>
                   <p class="text-body-sm">{{ summaryDocument?.content?.body ? 'Your existing draft stays unchanged until you accept a revision.' : 'Preparing an editable draft from the reviewed session material.' }}</p>
                 </div>
-                <div v-else-if="generationError && (!summaryDocument || intelligenceMode === 'therapist_formulation')" class="py-12 px-6 text-center bg-state-danger-surface rounded-panel border border-state-danger/20 shadow-sm">
-                  <p class="text-state-danger text-body-sm mb-4">{{ generationError }}</p>
-                  <button @click="generateSummary" class="button-primary py-stack-xs px-inline-md text-body-sm">Retry</button>
+                <div v-else-if="generationError && (!summaryDocument || intelligenceMode === 'therapist_formulation')">
+                  <SummaryEvidenceLimitNotice v-if="generationErrorCode === 'EVIDENCE_WINDOW_TOO_LARGE'" :message="generationError" @adjust="adjustSummaryEvidence" />
+                  <div v-else class="py-8 px-6 text-center bg-state-danger-surface rounded-panel border border-state-danger/20 shadow-sm" role="alert">
+                    <p class="text-state-danger text-body-sm mb-4">{{ generationError }}</p>
+                    <button @click="generateSummary" class="button-primary py-stack-xs px-inline-md text-body-sm">Retry</button>
+                  </div>
                 </div>
                 <p v-else-if="intelligenceMode === 'therapist_formulation'" class="text-body-sm text-ink-muted">{{ privateFormulation ? 'The client summary remains unchanged.' : 'Prepare a working formulation above. It stays separate from the client summary and is not saved automatically.' }}</p>
                 <template v-else-if="intelligenceMode === 'client_summary' && summaryDocument && !summaryUnsafe">
-                  <div v-if="generationError" class="mb-4 py-4 px-5 text-center bg-state-danger-surface rounded-panel border border-state-danger/20 shadow-sm" role="alert">
+                  <SummaryEvidenceLimitNotice v-if="generationErrorCode === 'EVIDENCE_WINDOW_TOO_LARGE'" class="mb-4" :message="generationError" @adjust="adjustSummaryEvidence" />
+                  <div v-else-if="generationError" class="mb-4 py-4 px-5 text-center bg-state-danger-surface rounded-panel border border-state-danger/20 shadow-sm" role="alert">
                     <p class="text-state-danger text-body-sm">Generation failed — previous summary unchanged. {{ generationError }}</p>
                     <button @click="generateSummary" class="button-primary mt-3 py-stack-xs px-inline-md text-body-sm">Retry</button>
                   </div>
@@ -296,6 +300,7 @@ import { useRoute, useRouter, RouterLink } from 'vue-router';
 import { supabase } from '../lib/supabase.js';
 import { getSession } from '../lib/sessions.js';
 import { getClient, updateClientSummaryPreference } from '../lib/clients.js';
+import SummaryEvidenceLimitNotice from '../components/workspace/SummaryEvidenceLimitNotice.vue';
 import ClinicalIntelligenceControls from '../components/workspace/ClinicalIntelligenceControls.vue';
 import SummaryEvidencePanel from '../components/workspace/SummaryEvidencePanel.vue';
 import TherapistFormulationPanel from '../components/workspace/TherapistFormulationPanel.vue';
@@ -395,6 +400,9 @@ const copySuccess = ref(false);
 const copyError = ref('');
 const isGenerating = ref(false);
 const generationError = ref('');
+const generationErrorCode = ref('');
+const summaryEvidenceSelect = ref(null);
+async function adjustSummaryEvidence(){showSummaryOptions.value=true;await scrollToSummaryTarget(summaryEvidenceSelect);}
 const summarySaveError = ref('');
 const summaryLens = ref('integrative');
 const summaryWindow = ref('current');
@@ -403,7 +411,7 @@ const pendingSummary=ref(null);
 const intelligenceMode=ref('client_summary'),includeZoomSummary=ref(false),privateFormulation=ref(null);
 const intelligenceSelection=computed(()=>({clientId:session.value?.clientId,sessionId:session.value?.id,transcriptId:transcript.value?.id,scope:'encounter',window:summaryWindow.value}));
 const refinementContext=computed(()=>summaryContextKey([session.value?.clientId,session.value?.id,transcript.value?.id,transcript.value?.sourceVersion,summaryLens.value,summaryWindow.value,excludeEarlierZoomNotes.value,therapistGuidance.value,intelligenceMode.value,includeZoomSummary.value]));
-watch(refinementContext,()=>{pendingSummary.value=null;privateFormulation.value=null;});
+watch(refinementContext,()=>{pendingSummary.value=null;privateFormulation.value=null;if(generationErrorCode.value==='EVIDENCE_WINDOW_TOO_LARGE'){generationError.value='';generationErrorCode.value='';}});
 const showSummaryOptions = ref(true);
 const showSummaryGuidance = ref(false);
 const summaryPreferenceError = ref('');
@@ -441,7 +449,8 @@ async function generateSummary(payload = null) {
   const refinement=payload && typeof payload.instruction==='string'?payload:null;
   const baseBody=summaryDocument.value?.content?.body||'';
   const contextKey=refinementContext.value;
-  isGenerating.value=true;generationError.value='';pendingSummary.value=null;
+  if(generationErrorCode.value==='EVIDENCE_WINDOW_TOO_LARGE')return adjustSummaryEvidence();
+  isGenerating.value=true;generationError.value='';generationErrorCode.value='';pendingSummary.value=null;
   await scrollToSummaryTarget(summaryGenerationProgress);
   try{
     const result=await generateSessionSummary({clientId:session.value.clientId,sessionId:session.value.id,transcriptId:transcript.value.id,
@@ -455,7 +464,7 @@ async function generateSummary(payload = null) {
     await scrollToSummaryTarget(summaryDisplayedDocument);
   }catch(err){
     if(err.code==='SOURCE_REVIEW_REQUIRED'){sourceReview.value=err.review||{message:err.message,sources:[]};await scrollToSummaryTarget(sourceReviewNotice);return;}
-    if(!disposed){generationError.value=err.message||'Summary generation failed. The current draft is unchanged.';await scrollToSummaryTarget(summaryDisplayedDocument);}
+    if(!disposed){generationErrorCode.value=err.code||'';generationError.value=err.message||'Summary generation failed. The current draft is unchanged.';await scrollToSummaryTarget(summaryDisplayedDocument);}
   }finally{isGenerating.value=false;}
 }
 async function acceptSummaryRevision(){

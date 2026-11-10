@@ -65,7 +65,7 @@
                 <label class="block">
                   <span class="text-caption font-semibold">Continuity</span>
                   <span class="block text-caption text-ink-muted mt-0.5">How much recent history</span>
-                  <select v-model="summaryWindow" class="mt-1.5 w-full p-2.5 border border-border rounded-control bg-surface"><option value="current">This session only</option><option value="last_three">Last 3 sessions</option><option value="last_five">Last 5 sessions</option><option value="history">Entire history</option></select>
+                  <select ref="summaryEvidenceSelect" v-model="summaryWindow" class="mt-1.5 w-full p-2.5 border border-border rounded-control bg-surface"><option value="current">This session only</option><option value="last_three">Last 3 sessions</option><option value="last_five">Last 5 sessions</option><option value="history">Entire history</option></select>
                 </label>
                 <label class="block">
                   <span class="text-caption font-semibold">Anchor session</span>
@@ -105,11 +105,12 @@
                 <div class="min-w-0">
                   <p class="text-caption font-semibold text-ink">{{ summaryLensLabel }} · {{ summaryWindowLabel }}</p>
                   <p class="text-caption text-ink-muted mt-0.5">{{ evidenceWindow.length ? `${evidenceWindow.length} session source${evidenceWindow.length===1?'':'s'} selected` : 'Choose an available anchor session to generate.' }}</p>
-                  <p v-if="summaryGenerationMessage" class="text-caption mt-1" :class="summaryGenerationError ? 'text-state-danger' : 'text-ink-muted'">{{ summaryGenerationMessage }}</p>
+                  <SummaryEvidenceLimitNotice v-if="summaryGenerationErrorCode === 'EVIDENCE_WINDOW_TOO_LARGE'" :message="summaryGenerationMessage" @adjust="adjustSummaryEvidence" />
+                  <p v-else-if="summaryGenerationMessage" class="text-caption mt-1" :class="summaryGenerationError ? 'text-state-danger' : 'text-ink-muted'">{{ summaryGenerationMessage }}</p>
                 </div>
                 <div class="flex w-full sm:w-auto flex-col sm:flex-row gap-2">
                   <button v-if="intelligenceMode === 'client_summary' && form.body.trim() && form.body.trim() !== SESSION_SUMMARY_TEMPLATE.trim()" type="button" class="button-secondary w-full sm:w-auto justify-center" :disabled="generatingSummary || copySummaryState === 'copying' || !!sourceReview || summaryUnsafe || sourceSafetyChecking" @click="copySummary">{{ copySummaryLabel }}</button>
-                  <button type="button" class="button-primary w-full sm:w-auto sm:min-w-[15rem] justify-center shrink-0" :disabled="generatingSummary || loadingEvidence || !anchorSessionId || Boolean(evidenceError) || guidanceDictation.busy.value" @click="generateSummary">{{ generatingSummary ? 'Preparing…' : intelligenceMode === 'therapist_formulation' ? 'Prepare therapist formulation' : (hasExistingSummary ? 'Regenerate client summary' : 'Generate client summary') }}</button>
+                  <button v-if="summaryGenerationErrorCode !== 'EVIDENCE_WINDOW_TOO_LARGE'" type="button" class="button-primary w-full sm:w-auto sm:min-w-[15rem] justify-center shrink-0" :disabled="generatingSummary || loadingEvidence || !anchorSessionId || Boolean(evidenceError) || guidanceDictation.busy.value" @click="generateSummary">{{ generatingSummary ? 'Preparing…' : summaryGenerationErrorCode === 'EVIDENCE_WINDOW_TOO_LARGE' ? 'Adjust evidence' : intelligenceMode === 'therapist_formulation' ? 'Prepare therapist formulation' : (hasExistingSummary ? 'Regenerate client summary' : 'Generate client summary') }}</button>
                 </div>
               </div>
             </div>
@@ -152,6 +153,7 @@
   </teleport>
 </template>
 <script setup>
+import SummaryEvidenceLimitNotice from './SummaryEvidenceLimitNotice.vue'
 import ClinicalIntelligenceControls from './ClinicalIntelligenceControls.vue'
 import SummaryEvidencePanel from './SummaryEvidencePanel.vue'
 import TherapistFormulationPanel from './TherapistFormulationPanel.vue'
@@ -177,6 +179,8 @@ const isSessionSummary = computed(() => form.documentType === 'session_summary')
 const loading = ref(true), saving = ref(false), action = ref(''), error = ref(''), saveMessage = ref(props.document ? 'Saved' : 'Not saved yet'), sources = ref([]), selectedSourceIds = ref([]), addedSourceIds = ref([]), expandedSourceId = ref(null), sourceQuery = ref(''), visibleSourceCount = ref(SOURCE_PAGE_SIZE), currentDocument = ref(props.document), baseline = ref(''), profile = ref({}), sourcePanelOpen = ref(false)
 const initialGeneration=props.document?.content?.summaryGeneration || props.document?.content?.clinicalIntelligence?.generation || null
 const generatingSummary = ref(false), loadingEvidence = ref(false), evidenceError = ref(''), copySummaryState = ref('idle'), summaryLens = ref(initialGeneration?.lens || 'general'), summaryWindow = ref(initialGeneration?.window === 'recent' ? 'last_three' : initialGeneration?.window || 'last_three'), therapistGuidance = ref(''), summaryGenerationMessage = ref(''), summaryGenerationError = ref(false), summarySources = ref(props.document?.content?.clinicalIntelligence?.sources || props.document?.sourceManifest || []), summaryClaims = ref(props.document?.content?.clinicalIntelligence?.claims || []), summaryGeneration = ref(initialGeneration), previousSummaryVersions = ref(props.document?.content?.clinicalIntelligence?.history || []), lastGeneratedBody = ref(props.document?.content?.clinicalIntelligence?.lastGeneratedBody || ''), availableSummarySessions = ref([]), anchorSessionId = ref(null), evidenceDateAutofillArmed = ref(false)
+const summaryEvidenceSelect=ref(null),summaryGenerationErrorCode=ref('')
+async function adjustSummaryEvidence(){await scrollToComposerTarget(summaryEvidenceSelect)}
 const pendingSummary=ref(null)
 const intelligenceMode=ref('client_summary'),includeZoomSummary=ref(false),privateFormulation=ref(null)
 const intelligenceSelection=computed(()=>({clientId:props.client.id,anchorSessionId:anchorSessionId.value,scope:'longitudinal',window:summaryWindow.value}))
@@ -192,7 +196,7 @@ async function scrollToComposerTarget(target){
   element.focus?.({preventScroll:true})
 }
 const refinementContext=computed(()=>summaryContextKey([props.client.id,currentDocument.value?.id,summaryLens.value,summaryWindow.value,anchorSessionId.value,therapistGuidance.value,intelligenceMode.value,includeZoomSummary.value]))
-watch(refinementContext,()=>{pendingSummary.value=null;privateFormulation.value=null})
+watch(refinementContext,()=>{pendingSummary.value=null;privateFormulation.value=null;if(summaryGenerationErrorCode.value==='EVIDENCE_WINDOW_TOO_LARGE'){summaryGenerationErrorCode.value='';summaryGenerationError.value=false;summaryGenerationMessage.value=''}})
 const guidanceDictation=useWhisperDictation({onText:text=>{therapistGuidance.value=appendDictation(therapistGuidance.value,text,'\n')}})
 const initialBody = props.document?.content?.body || (initialType === 'session_summary' ? SESSION_SUMMARY_TEMPLATE : '')
 const initialRichContent = props.document?.content?.richContent || (initialType === 'session_summary' && initialBody.trim() && initialBody.trim() !== SESSION_SUMMARY_TEMPLATE.trim() ? summaryBodyToRichContent(initialBody) : null)
@@ -309,9 +313,10 @@ async function requestSummaryRefinement(payload){
 }
 async function generateSummary(payload=null){
   if(generatingSummary.value || saving.value || sourceSafetyChecking.value || finalised.value || loadingEvidence.value || !anchorSessionId.value || evidenceError.value || guidanceDictation.busy.value)return
+  if(summaryGenerationErrorCode.value==='EVIDENCE_WINDOW_TOO_LARGE')return adjustSummaryEvidence()
   const refinement=payload&&typeof payload.instruction==='string'?payload:null
   const baseBody=form.body,contextKey=refinementContext.value
-  generatingSummary.value=true;summaryGenerationError.value=false;summaryGenerationMessage.value='Preparing an editable summary...';pendingSummary.value=null
+  generatingSummary.value=true;summaryGenerationError.value=false;summaryGenerationErrorCode.value='';summaryGenerationMessage.value='Preparing an editable summary...';pendingSummary.value=null
   await scrollToComposerTarget(composerGenerationProgress)
   try{
     const result=await generateClientSessionSummary({clientId:props.client.id,lens:summaryLens.value,window:summaryWindow.value,therapistGuidance:therapistGuidance.value,
@@ -323,7 +328,7 @@ async function generateSummary(payload=null){
     await scrollToComposerTarget(composerDocumentCanvas)
   }catch(error){
     if(error.code==='SOURCE_REVIEW_REQUIRED'){sourceReview.value=error.review||{message:error.message,sources:[]};summaryGenerationMessage.value='Source review is required. The existing draft is unchanged.';return}
-    summaryGenerationError.value=true;summaryGenerationMessage.value=(error.message||'Generation failed.')+' The current draft is unchanged.'
+    summaryGenerationErrorCode.value=error.code||'';summaryGenerationError.value=true;summaryGenerationMessage.value=(error.message||'Generation failed.')+' The current draft is unchanged.'
   }finally{generatingSummary.value=false}
 }
 function acceptSummaryRevision(){

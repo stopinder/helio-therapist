@@ -6,6 +6,7 @@ import { effectiveSummaryOptions, summaryInstructionRequirements, resourceAppend
 import { INTELLIGENCE_VERSION, getSummaryModality, normalizeIntelligenceOptions } from '../../src/lib/summaryModalities.js';
 import { verifySummaryResource } from '../_lib/summary-resource-check.js';
 import { loadModalitySources, verifyModalitySources, listModalityAvailability } from '../_lib/modality-intelligence/sources.js';
+import { planEvidenceBatches, modalityWorkflowLimits } from '../_lib/modality-intelligence/evidence-batches.js';
 import { runModalityPipeline } from '../_lib/modality-intelligence/pipeline.js';
 import { failure } from '../_lib/modality-intelligence/contracts.js';
 
@@ -38,7 +39,9 @@ export default async function handler(req,res) {
       requiresSuppliedSequence:/as (?:I |we |you )?(?:described|taught|practised)|exact (?:steps|sequence)|use (?:my|the recorded) (?:steps|sequence)/i.test(request.therapistGuidance+' '+request.refinementRequest) };
     if (request.intelligenceOptions.mode==='therapist_formulation' && requirements.exercise) throw failure('FORMULATION_ADDITION_MISMATCH','Choose Client summary to prepare the requested practice instructions. Therapist formulation is a separate working view.',400);
     const resourceVerification = await verifySummaryResource(request.summaryOptions.resource);
-    const run = await createTextAIWorkflow({feature:AI_FEATURES.CLIENT_SESSION_SUMMARY,userId:user.id,maxCalls:request.intelligenceOptions.mode==='therapist_formulation'?2:4,maxInputChars:500000,maxOutputTokens:16500});
+    // Complete size/serialization preflight before consuming an allowance.
+    const plan=planEvidenceBatches(pack.sources);
+    const run = await createTextAIWorkflow({feature:AI_FEATURES.CLIENT_SESSION_SUMMARY,userId:user.id,...modalityWorkflowLimits(plan,request.intelligenceOptions.mode)});
     const result = await runModalityPipeline({pack,lens:request.lens,options:request.intelligenceOptions,summaryOptions:request.summaryOptions,requirements,therapistGuidance:request.therapistGuidance,refinementRequest:request.refinementRequest,previousDraft:request.previousDraft,run});
     await verifyModalitySources(supabase,user.id,request,pack);
     if (result.outcome !== 'ready') return res.status(200).json({success:true,data:result});

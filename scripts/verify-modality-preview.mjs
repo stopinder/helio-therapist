@@ -17,7 +17,7 @@ window.modalityFixture={calls:[],writes:[],zoomReads:0,fail:false};
 export const listClientSummaryEvidence=async()=>[{sessionId:'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',occurredAt:'2026-01-01T10:00:00Z',sourceType:'original_encounter'}];
 export const listDocumentSourceSessions=async()=>[];
 export const checkSummarySourceSafety=async()=>({safe:true});
-export async function generateClientSessionSummary(request){window.modalityFixture.calls.push(request);await new Promise(r=>setTimeout(r,50));if(window.modalityFixture.fail)throw new Error('Synthetic provider failure');const formulation={...formulationFixture(request.lens),modalityId:request.lens,evidence:evidenceFixture().observations,visibility:'therapist_only',sourceWarnings:[]};return {outcome:'ready',mode:request.intelligenceOptions.mode,formulation,...(request.intelligenceOptions.mode==='client_summary'?{draft:{body:renderModalityDocument(compositionFixture(request.lens),modalityStrategy(request.lens))}}:{}),lens:request.lens,window:request.window,claims:[],sources:[],generationId:'synthetic-generation',generatedAt:'2026-01-01',promptVersion:'synthetic-only',reviewRequired:true};}
+export async function generateClientSessionSummary(request){window.modalityFixture.calls.push(request);await new Promise(r=>setTimeout(r,50));if(window.modalityFixture.tooLarge)throw Object.assign(new Error('Selection exceeds the bounded review capacity. No source text has been dropped.'),{code:'EVIDENCE_WINDOW_TOO_LARGE'});if(window.modalityFixture.fail)throw new Error('Synthetic provider failure');const formulation={...formulationFixture(request.lens),modalityId:request.lens,evidence:evidenceFixture().observations,visibility:'therapist_only',sourceWarnings:[]};return {outcome:'ready',mode:request.intelligenceOptions.mode,formulation,...(request.intelligenceOptions.mode==='client_summary'?{draft:{body:renderModalityDocument(compositionFixture(request.lens),modalityStrategy(request.lens))}}:{}),lens:request.lens,window:request.window,claims:[],sources:[],generationId:'synthetic-generation',generatedAt:'2026-01-01',promptVersion:'synthetic-only',reviewRequired:true};}
 const blocked=async()=>{window.modalityFixture.writes.push('blocked');throw new Error('No writes allowed in the preview fixture');};
 export const createClientDocumentDraft=blocked,saveClientDocumentDraft=blocked,downloadClientDocument=blocked,finaliseClientDocument=blocked;
 `;
@@ -39,6 +39,16 @@ try{
   await page.getByTestId('clinical-intelligence-controls').scrollIntoViewIfNeeded();assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'page must not overflow');const controls=page.getByTestId('clinical-intelligence-controls');assert.ok(await controls.evaluate(el=>el.scrollWidth<=el.clientWidth+1),'controls fit viewport');
   await page.screenshot({path:out+'/controls-'+viewport.width+'.png',fullPage:true});await page.getByTestId('therapist-formulation').scrollIntoViewIfNeeded();await page.screenshot({path:out+'/formulation-'+viewport.width+'.png',fullPage:true});
   await page.getByRole('radio',{name:/Client summary/}).check();await expect(page.locator('.tiptap')).toContainText('Understanding the pattern');await page.evaluate(()=>window.modalityFixture.fail=true);await page.getByRole('button',{name:'Regenerate client summary',exact:true}).click();await expect(page.getByText('Synthetic provider failure The current draft is unchanged.',{exact:true}).first()).toBeVisible();await expect(page.locator('.tiptap')).toContainText('Understanding the pattern');
+  await page.evaluate(()=>{window.modalityFixture.fail=false;window.modalityFixture.tooLarge=true});
+  await page.getByRole('button',{name:'Regenerate client summary',exact:true}).click();
+  const notice=page.getByTestId('summary-evidence-limit');await expect(notice).toBeVisible();
+  const before=await page.evaluate(()=>window.modalityFixture.calls.length);
+  await notice.getByRole('button',{name:'Adjust evidence',exact:true}).click();
+  const evidenceSelect=page.locator('select').filter({has:page.locator('option[value="last_five"]')});await expect(evidenceSelect).toBeFocused();
+  assert.equal(await page.evaluate(()=>window.modalityFixture.calls.length),before);await expect(page.locator('.tiptap')).toContainText('Understanding the pattern');
+  assert.ok(await notice.evaluate(el=>el.scrollWidth<=el.clientWidth+1),'recovery notice fits viewport');
+  await notice.scrollIntoViewIfNeeded();await page.screenshot({path:out+'/evidence-recovery-'+viewport.width+'.png',fullPage:true});
+  await evidenceSelect.selectOption('current');await expect(notice).toHaveCount(0);assert.equal(await page.evaluate(()=>window.modalityFixture.calls.length),before);
   assert.deepEqual(await page.evaluate(()=>window.modalityFixture.writes),[]);assert.deepEqual(errors,[]);console.log(JSON.stringify({viewport,zoomOptIn:'PASS',privateBoundary:'PASS',clientPreservation:'PASS',responsiveLayout:'PASS',unexpectedWrites:0,browserErrors:0}));await context.close();
  }
 }finally{clearTimeout(deadline);await browser?.close();await server?.close();}

@@ -3,6 +3,7 @@ import { assertSourceAvailable, assertDocumentSourcesUsable } from '../source-re
 import { summaryClinicalEvidence } from '../../../src/lib/summaryEvidence.js';
 import { isUnusableSummary } from '../../../src/lib/summarySafety.js';
 import { failure } from './contracts.js';
+import { MAX_WINDOW_SOURCE_CHARS, evidenceSizeError } from './evidence-batches.js';
 
 const CAPTURE_FIELDS = ['presentingConcerns','sessionThemes','interventionsUsed','clientResponse','progressGoals','planNextSession','whatHappened','themes','interventions','outcomes','learning'];
 const CARE_KINDS = new Set(['current_focus','shared_understanding','trying','change_noticed','learning','themes','interventions','outcomes']);
@@ -102,7 +103,7 @@ export async function loadModalitySources(db, userId, request, { forViewing = fa
   const omitted = sessions.filter(session => !encounterSources.some(source => source.encounterId === session.id));
   if (omitted.length) warnings.push(`${omitted.length} selected session(s) have no included clinical material and cannot support a claim about continuity.`);
   const sourceChars = sources.reduce((total,source) => total + source.text.length,0);
-  if (!forViewing && sourceChars > 160000) throw failure('EVIDENCE_WINDOW_TOO_LARGE','The selected material is too large for one draft. Choose a shorter evidence window; no material has been silently dropped.',413);
+  if (!forViewing && sourceChars > MAX_WINDOW_SOURCE_CHARS) throw evidenceSizeError();
   const snapshot = fingerprint({ client, sessions, sources, versions:transcripts.map(row => [row.id,row.source_version,row.source_review]), captures, documents:selectedDocuments.map(doc=>[doc.id,doc.updated_at,doc.version]), careItems });
   return { client, sessions, sources, manifest, zoomSummaries, warnings, snapshot, sessionCount:new Set(encounterSources.map(source=>source.encounterId)).size };
 }
