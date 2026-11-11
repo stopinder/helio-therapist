@@ -91,6 +91,7 @@
                    <button v-if="summaryDocument?.content?.body && summaryDocument.status !== 'completed'" type="button" class="button-secondary !min-h-0 py-1.5 px-3 text-body-sm shadow-sm" :aria-expanded="showRefinement" @click="showRefinement = !showRefinement">{{ showRefinement ? 'Hide refinement' : 'Refine' }}</button>
                   <details class="relative" data-testid="summary-more-actions"><summary class="button-secondary !min-h-0 py-1.5 px-3 text-body-sm cursor-pointer">More</summary><div class="absolute right-0 z-20 mt-2 w-56 rounded-panel border border-border bg-surface-elevated p-3 shadow-lg space-y-3">
                     <button v-if="transcript" type="button" @click="askHeliosAboutSession" class="block text-body-sm text-action-link">Ask Helios</button>
+                    <button v-if="summaryDocument?.content?.body && summaryDocument.status !== 'completed'" @click="generateSummary" :disabled="isGenerating || transcriptLoading || !!transcriptError || !transcript" class="block text-body-sm text-action-link">Regenerate</button>
                     <button v-if="summaryDocument?.content?.body && summaryDocument.status !== 'completed'" @click="showSummaryOptions = true" class="block text-body-sm text-action-link">Generation settings</button>
                     <RouterLink v-if="summaryDocument?.id" :to="{ name: 'ClientWorkspace', params: { clientId: session.clientId }, query: { document: summaryDocument.id } }" class="block text-body-sm text-action-link">Open in Client Documents</RouterLink>
                   </div></details>
