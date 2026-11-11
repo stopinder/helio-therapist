@@ -1,0 +1,24 @@
+name: Summary identity lifecycle verification
+on:
+  push:
+    branches: [feat/modality-intelligence-preview-20261110]
+    paths: [.github/workflows/summary-identity-verification.yml]
+permissions:
+  contents: read
+jobs:
+  source:
+    if: github.repository == 'stopinder/helio-therapist' && github.ref == 'refs/heads/feat/modality-intelligence-preview-20261110'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: 60cfa52d482495df478c550e98789902137dfba2
+          persist-credentials: false
+      - name: Export source without credentials or clinical records
+        run: git archive --format=tar.gz --output=/tmp/helios-identity-source.tgz HEAD
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: helios-identity-source
+          path: /tmp/helios-identity-source.tgz
+          retention-days: 1
