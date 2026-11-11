@@ -26,7 +26,7 @@ test('SessionWorkspace uses therapist-first language', () => {
 })
 
 test('Session summary is the primary visible section', () => {
-  assert.match(source, /<h2[^>]*>Session summary<\/h2>/)
+  assert.match(source, /<h2[^>]*>\{\{ summaryKind === 'across' \? 'Across-session review' : 'Session summary' \}\}<\/h2>/)
 })
 
 test('Transcript and Reflection are present but secondary/collapsible', () => {
