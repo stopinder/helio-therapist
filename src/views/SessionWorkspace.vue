@@ -336,6 +336,7 @@ async function switchSummaryKind(kind){
     excludeEarlierZoomNotes.value=generation?.excludeEarlierZoomNotes===true;
     pendingSummary.value=null;sourceReview.value=null;generationError.value='';summaryReviewError.value='';showRefinement.value=false;showSummaryOptions.value=!selected?.content?.body;
     if(selected)await verifySavedSummary();
+    await router.replace({query:{...route.query,summaryKind:kind}});
   }catch(error){generationError.value=error?.message||'Unable to open the selected summary.';}
   finally{summarySwitching.value=false;}
 }
@@ -370,6 +371,7 @@ const sourceReviewNeedsTranscript=computed(()=>{
 });
 async function retryCurrentSessionOnly(){
   if(isGenerating.value)return;
+  if(summaryKind.value==='across')await switchSummaryKind('session');
   summaryWindow.value='current';excludeEarlierZoomNotes.value=true;
   sourceReview.value=null;
   await generateSummary();
@@ -501,7 +503,7 @@ async function installSummaryResult(result,instruction=''){
   const snapshot={body:existing.body,richContent:existing.richContent||null,generation:existing.summaryGeneration||existing.clinicalIntelligence?.generation||null,
     sources:summaryDocument.value?.sourceManifest||[],claims:existing.clinicalIntelligence?.claims||[],lastGeneratedBody:existing.clinicalIntelligence?.lastGeneratedBody||'',timestamp:new Date().toISOString(),type:'pre_regeneration'};
   const history=existing.body?[...previous,snapshot].slice(-5):previous;
-  const dates=(result.sources||[]).map(source=>String(source.occurredAt||source.sourceOccurredAt||'').slice(0,10)).filter(date=>/^\\d{4}-\\d{2}-\\d{2}$/.test(date)).sort();
+  const dates=(result.sources||[]).map(source=>String(source.occurredAt||source.sourceOccurredAt||'').slice(0,10)).filter(date=>/^\d{4}-\d{2}-\d{2}$/.test(date)).sort();
   const dateCoverage={start:dates[0]||workspaceSession.value.date||null,end:dates.at(-1)||workspaceSession.value.date||null};
   const content={...existing,body:result.draft.body,richContent:null,summaryGeneration:generation,
     clinicalIntelligence:{generation,claims:result.claims||[],sources:result.sources||[],history,lastGeneratedBody:result.draft.body},history};
