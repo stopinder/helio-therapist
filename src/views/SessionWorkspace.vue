@@ -169,7 +169,7 @@
                 :candidate="pendingSummary" :error="generationError"
                 @generate="requestSummaryRefinement" @accept="acceptSummaryRevision" @discard="pendingSummary=null" />
 
-              <div v-if="summaryDocument?.content?.summaryGeneration?.reviewRequired" data-testid="summary-therapist-approval" class="rounded-panel border border-border bg-surface-elevated p-4 space-y-2">
+              <div v-if="summaryDocument?.content?.summaryGeneration?.reviewRequired" data-testid="summary-therapist-approval" class="rounded-control border border-border bg-surface-subtle px-3 py-2 space-y-1">
                 <div class="flex flex-wrap items-center justify-between gap-3">
                   <div>
                     <p class="font-semibold text-ink">{{ needsTherapistReview ? 'Draft — therapist review needed' : 'Summary reviewed by therapist' }}</p>
