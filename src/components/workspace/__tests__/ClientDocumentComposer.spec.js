@@ -96,6 +96,9 @@ describe('ClientDocumentComposer', () => {
   })
 
   it('hides the previous summary while a replacement is generating and restores it on failure', async () => {
+    clientDocs.listClientSummaryEvidence.mockResolvedValueOnce([
+      { sessionId: 's1', occurredAt: '2026-10-29T10:00:00Z', reviewedAt: '2026-10-29T12:00:00Z' }
+    ])
     let rejectGeneration
     clientDocs.generateClientSessionSummary.mockImplementationOnce(() => new Promise((resolve, reject) => {
       rejectGeneration = reject
@@ -127,10 +130,13 @@ describe('ClientDocumentComposer', () => {
 
     expect(wrapper.find('[data-testid="summary-generation-placeholder"]').exists()).toBe(false)
     expect(wrapper.find('[data-testid="rich-document-editor-stub"]').element.value).toBe('Previous summary text')
-    expect(wrapper.text()).toContain('Generation failed — previous summary unchanged. AI failed')
+    expect(wrapper.text()).toContain('AI failed The current draft is unchanged.')
   })
 
   it('preserves text on generation failure', async () => {
+    clientDocs.listClientSummaryEvidence.mockResolvedValueOnce([
+      { sessionId: 's1', occurredAt: '2026-10-29T10:00:00Z', reviewedAt: '2026-10-29T12:00:00Z' }
+    ])
     clientDocs.generateClientSessionSummary.mockRejectedValue(new Error('AI failed'))
     
     const wrapper = mount(ClientDocumentComposer, {
@@ -149,9 +155,29 @@ describe('ClientDocumentComposer', () => {
     await flushPromises()
 
     expect(clientDocs.generateClientSessionSummary).toHaveBeenCalledTimes(1)
-    expect(wrapper.text()).toContain('Generation failed — previous summary unchanged. AI failed')
+    expect(wrapper.text()).toContain('AI failed The current draft is unchanged.')
     expect(wrapper.find('[data-testid="rich-document-editor-stub"]').element.value).toBe('Original Text')
   })
+  it('an evidence limit offers an actionable selection change without retrying or losing the draft', async () => {
+    clientDocs.listClientSummaryEvidence.mockResolvedValueOnce([{sessionId:'s1',occurredAt:'2026-10-29T10:00:00Z'}]);
+    clientDocs.generateClientSessionSummary.mockRejectedValueOnce(Object.assign(new Error('Selection exceeds the review capacity.'),{code:'EVIDENCE_WINDOW_TOO_LARGE'}));
+    const wrapper=mount(ClientDocumentComposer,{attachTo:document.body,props:{client:mockClient,initialDocumentType:'session_summary'},global:{stubs:{teleport:true,RichDocumentEditor:RichDocumentEditorStub}}});
+    await flushPromises();
+    await wrapper.get('[data-testid="rich-document-editor-stub"]').setValue('Preserve this therapist draft.');
+    await wrapper.findAll('button').find(button=>/generate client summary/i.test(button.text())).trigger('click');
+    await flushPromises();
+    const notice=wrapper.get('[data-testid="summary-evidence-limit"]');
+    expect(notice.text()).toContain('Retrying the same selection will not help.');
+    await notice.get('button').trigger('click');await flushPromises();
+    expect(document.activeElement).toBe(wrapper.findAll('select').find(select=>select.text().includes('Last 5 sessions')).element);
+    expect(clientDocs.generateClientSessionSummary).toHaveBeenCalledTimes(1);
+    expect(wrapper.get('[data-testid="rich-document-editor-stub"]').element.value).toBe('Preserve this therapist draft.');
+    await wrapper.findAll('select').find(select=>select.text().includes('Last 5 sessions')).setValue('current');
+    await flushPromises();expect(wrapper.find('[data-testid="summary-evidence-limit"]').exists()).toBe(false);
+    expect(clientDocs.generateClientSessionSummary).toHaveBeenCalledTimes(1);
+    wrapper.unmount();
+  })
+
 })
 
 

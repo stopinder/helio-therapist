@@ -23,7 +23,7 @@ test('reserveDictationUsage uses public gateway', async () => {
   const supabase = mockSupabase({
     reserve_dictation_usage: (params, options) => {
       assert.strictEqual(options, undefined);
-      return { data: null, error: null };
+      return { data: { plan:'free', periodStart:'2026-11-01', secondsUsed:30, secondsLimit:3600, secondsRemaining:3570 }, error: null };
     }
   });
 

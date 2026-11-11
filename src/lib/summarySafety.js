@@ -8,6 +8,7 @@ export function isSummaryReviewNotice(value) {
 }
 export function isUnusableSummary(content) {
   if (!content || typeof content !== 'object') return false;
+  if (content.visibility === 'therapist_only' || content.mode === 'therapist_formulation' || content.summaryGeneration?.mode === 'therapist_formulation' || content.clinicalIntelligence?.generation?.mode === 'therapist_formulation') return true;
   const outcome = content.summaryGeneration?.outcome || content.clinicalIntelligence?.generation?.outcome || content.generationOutcome;
   return Boolean((outcome && outcome !== 'ready') || content.sourceReview?.state === 'needs_review' || isSummaryReviewNotice(content.body));
 }
@@ -21,4 +22,11 @@ export function assertUsableSummaryResult(result) {
     error.code = 'INVALID_SUMMARY_OUTCOME'; throw error;
   }
   return result;
+}
+
+export function assertClientDocumentContent(content) {
+  if (content?.mode === 'therapist_formulation' || content?.visibility === 'therapist_only' || content?.formulation?.visibility === 'therapist_only' || content?.summaryGeneration?.mode === 'therapist_formulation' || content?.clinicalIntelligence?.generation?.mode === 'therapist_formulation') {
+    throw Object.assign(new Error('Private working formulations cannot be saved as client documents.'), {code:'PRIVATE_FORMULATION_NOT_CLIENT_DOCUMENT'});
+  }
+  return content;
 }

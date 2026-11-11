@@ -9,7 +9,7 @@ export function summaryClinicalEvidence(body) {
   for(const line of String(body||'').split(/\r?\n/)) {
     const heading=line.trim().replace(/^#{1,3}\s+/,'').replace(/:$/,'');
     if(/^Optional (?:exercise|practice|resource)(?:\s+to\s+(?:consider|try))?(?:\s*[:(]|$)/i.test(heading)) {proposal=true;continue;}
-    if(proposal && SUMMARY_HEADINGS.has(heading) && !/^Optional /i.test(heading))proposal=false;
+    if(proposal && SUMMARY_HEADINGS.has(heading) && !/^(?:Optional |Somatic check-in)/i.test(heading))proposal=false;
     if(!proposal)lines.push(line);
   }
   return lines.join('\n').trim();

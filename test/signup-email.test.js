@@ -83,7 +83,7 @@ test('send-only Resend key still sends welcome email when contact sync is forbid
 test('welcome template contains branded HTML, CTA and plain-text fallback', () => {
   const email = heliosWelcomeEmail({ firstName: '<Robert>', openHeliosUrl: 'https://helio.works/overview?x=1&y=2' })
   assert.equal(email.subject, 'Welcome to Helios')
-  assert.match(email.html, /CLINICAL WORKSPACE/)
+  assert.match(email.html, /a calm clinical workspace for psychotherapists/)
   assert.match(email.html, /Open Helios/)
   assert.match(email.html, /&lt;Robert&gt;/)
   assert.match(email.html, /https:\/\/helio\.works\/overview\?x=1&amp;y=2/)

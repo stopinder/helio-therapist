@@ -16,7 +16,7 @@ test('every modality inherits Rogers-informed, evidence-first therapeutic useful
     assert.match(prompt,/Do not claim insight, resilience, progress or meaningful change merely because the client described a difficulty/);
     assert.match(prompt,/Never manufacture equal responsibility/);
   }
-  assert.equal(SUMMARY_POLICY_VERSION,'helios-summary-authoring/1.1.0');
+  assert.equal(SUMMARY_POLICY_VERSION,'helios-summary-authoring/1.2.0');
   assert.match(summaryAuthoringPrompt('General'),/Do not flatter, congratulate routinely|minimise pain|Never flatter, congratulate routinely/);
 });
 

@@ -69,7 +69,7 @@ test.describe('Transcript CBT Therapy Focus handoff', () => {
     await expect(page.getByText('CBT reflection requested')).toBeVisible({ timeout:15000 });
     await page.getByRole('button', { name:'Prepare CBT Therapy Focus suggestions' }).click();
     await expect.poll(() => generated).toBe(true);
-    await expect(page).toHaveURL(new RegExp(`/clients/${clientId}\\?tab=Therapy%20Focus`));
+    await expect(page).toHaveURL(new RegExp(`/clients/${clientId}\\?tab=Therapy(?:\\+|%20)Focus`));
 
     await expect(page.getByText('Session transcript · AI-assisted · not saved')).toBeVisible({ timeout:15000 });
     await expect(page.getByText('Consider collaboratively testing the anxious prediction with a small, agreed behavioural experiment.')).toBeVisible();

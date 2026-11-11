@@ -117,8 +117,8 @@ export async function searchResearchDetailed(query, options = {}) {
 }
 // Compatibility for other existing research callers. Main orchestration uses the
 // detailed result so partial outages cannot masquerade as an evidence gap.
-export async function searchResearch(query) {
-  const { records, providers } = await searchResearchDetailed(query);
+export async function searchResearch(query, options = {}) {
+  const { records, providers } = await searchResearchDetailed(query, options);
   if (providers.every(p => p.status === 'failed')) throw Object.assign(new Error('All research providers failed'), { status: 502 });
   const unique = new Map();
   for (const r of records) {

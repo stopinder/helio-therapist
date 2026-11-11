@@ -50,7 +50,7 @@ describe('ClinicalSummaryWorkingMaterial', () => {
     expect(wrapper.find('[data-testid="clinical-summary-workspace"]').exists()).toBe(true);
     
     const preparationSection = wrapper.find('.bg-surface-elevated');
-    expect(preparationSection.text()).toContain('Prepare Clinical Record');
+    expect(preparationSection.text()).toContain('Prepare from existing clinical material');
 
     // Verify AI-review warning (message prop of NoticeBanner)
     expect(wrapper.text()).toContain('AI-assisted content must be reviewed and approved by the therapist before it becomes part of the clinical record.');

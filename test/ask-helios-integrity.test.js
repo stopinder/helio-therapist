@@ -3,26 +3,39 @@ import assert from 'node:assert';
 import { searchResearch } from '../api/_lib/research-retrieval.js';
 import { buildResearchAssistantPrompt, validateAndFormatReferences } from '../api/_lib/ai-research.js';
 
+
+const researchFixture = async (url) => {
+  const data = url.includes('/esearch.fcgi')
+    ? { esearchresult: { idlist: ['123'] } }
+    : url.includes('/esummary.fcgi')
+      ? { result: { '123': { uid: '123', title: 'A trial of CBT', authors: [{ name: 'Researcher A' }], pubdate: '2024 Jan', fulljournalname: 'Journal of Therapy' } } }
+      : url.includes('europepmc')
+        ? { resultList: { result: [
+            { pmid: '123', title: 'A trial of CBT', authorString: 'Researcher A', pubYear: '2024', abstractText: 'Research evidence.' },
+            { pmid: '456', title: 'A second study', authorString: 'Researcher B', pubYear: '2023', abstractText: 'Other evidence.' }
+          ] } }
+        : null;
+  if (url.includes('/efetch.fcgi')) return { ok: true, text: async () => '<PubmedArticle><PMID>123</PMID><AbstractText>CBT trial abstract.</AbstractText></PubmedArticle>' };
+  if (!data) throw new Error('Unexpected research provider endpoint: ' + url);
+  return { ok: true, text: async () => JSON.stringify(data) };
+};
+
 test('Ask Helios Integrity: Research Retrieval', async (t) => {
-  await t.test('searchResearch returns normalized results from PubMed/Europe PMC', async () => {
-    // Note: In CI we might want to mock these, but for this integrity test we check normalization
-    const results = await searchResearch('cbt for depression');
-    assert(Array.isArray(results), 'Should return an array');
-    if (results.length > 0) {
-      const first = results[0];
-      assert(first.id, 'Result should have an ID');
-      assert(first.title, 'Result should have a title');
-      assert(first.url, 'Result should have a URL');
-      assert(first.source, 'Result should have a source (PubMed or Europe PMC)');
+  await t.test('searchResearch returns normalized results from both providers without external network dependency', async () => {
+    const results = await searchResearch('cbt for depression', { fetchImpl: researchFixture, throttle: false });
+    assert.equal(results.length, 2);
+    assert.deepEqual(results.map(item => item.id).sort(), ['pmid:123','pmid:456']);
+    for (const result of results) {
+      assert.ok(result.title && result.url && result.source);
+      assert.match(result.url, /^https:\/\//);
+      assert.ok(['PubMed','Europe PMC'].includes(result.source));
     }
   });
 
-  await t.test('searchResearch deduplicates results', async () => {
-    // Mocking might be needed for perfect dedupe test, but we verify the logic
-    const results = await searchResearch('depression');
-    const ids = results.map(r => r.id);
-    const uniqueIds = new Set(ids);
-    assert.strictEqual(ids.length, uniqueIds.size, 'IDs should be unique');
+  await t.test('searchResearch deduplicates PubMed and Europe PMC records sharing a PMID', async () => {
+    const results = await searchResearch('depression', { fetchImpl: researchFixture, throttle: false });
+    assert.equal(results.filter(result => result.id === 'pmid:123').length, 1);
+    assert.equal(new Set(results.map(result => result.id)).size, results.length);
   });
 });
 

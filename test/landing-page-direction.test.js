@@ -18,7 +18,7 @@ describe('Landing Page Direction', () => {
   })
 
   test('prioritizes pricing in the primary navigation and lands directly on the pricing block', () => {
-    assert.match(landingSource, /<nav class="header-nav"[^>]*>\s*<a href="#pricing-cta">Pricing<\/a>/)
+    assert.match(landingSource, /<nav class="account-nav"[^>]*aria-label="Primary navigation"[^>]*>\s*<a href="#pricing-cta" class="pricing-nav-link">Pricing<\/a>/)
     assert.match(landingSource, /<section id="pricing" class="trust-section">/)
     assert.match(landingSource, /<div id="pricing-cta" class="pricing-cta">/)
   })
@@ -130,7 +130,7 @@ describe('Landing Page Direction', () => {
     assert.doesNotMatch(landingSource, /Robert Ormiston MBACP/)
     assert.doesNotMatch(landingSource, /Psychotherapist · Founder of Helios/)
     assert.doesNotMatch(landingSource, /Independent, therapist-built practice software/)
-    assert.match(landingSource, /Clinical workspace software for therapists\./)
+    assert.match(landingSource, /Helios · Clinical workspace for therapists/)
     assert.match(landingSource, /Helios is operated by Chrysalis Therapy Services\./)
   })
 })

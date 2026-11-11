@@ -425,7 +425,7 @@ test.describe('Clinical Record approval and amendment flow', () => {
 
             await page
                 .getByRole('button', {
-                    name: 'Prepare empty Clinical Record draft'
+                    name: 'Start blank instead'
                 })
                 .click();
 

@@ -95,9 +95,9 @@ test('Direct session summary keeps full fidelity for the current encounter and c
 })
 
 test('SessionWorkspace keeps the previous summary visible when regeneration fails', () => {
-  assert.match(source, /generationError\s*&&\s*!summaryDocument/)
+  assert.match(source, /generationError\s*&&\s*\(!summaryDocument/)
   assert.match(source, /Generation failed — previous summary unchanged\./)
-  assert.match(source, /<template v-else-if="summaryDocument && !summaryUnsafe">/)
+  assert.match(source, /<template v-else-if="intelligenceMode === 'client_summary' && summaryDocument && !summaryUnsafe">/)
   assert.match(source, /<SessionSummaryDocument/)
 })
 

@@ -1,0 +1,60 @@
+name: Modality intelligence preview
+on:
+  pull_request:
+    paths:
+      - 'api/_lib/modality-intelligence/**'
+      - 'api/ai/modality-summary.js'
+      - 'api/_lib/ai-execution.js'
+      - 'src/**'
+      - 'test/**'
+      - 'scripts/*modality*'
+      - '.github/workflows/modality-intelligence-preview.yml'
+  push:
+    branches: [feat/modality-intelligence-preview-20261110]
+    paths:
+      - 'api/**'
+      - 'src/**'
+      - 'test/**'
+      - 'scripts/*modality*'
+      - '.github/workflows/modality-intelligence-preview.yml'
+permissions:
+  contents: read
+concurrency:
+  group: modality-preview-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --ignore-scripts --no-fund
+      - name: Audit all dependencies
+        run: npm audit --audit-level=moderate
+      - name: Complete Node regression suite
+        run: npm test
+      - name: Complete Vue and API component suite
+        run: npm run test:components
+      - name: Production bundle compilation, not deployment
+        run: npm run build
+      - name: Compare all modality contracts without an AI call
+        run: node scripts/evaluate-modality-intelligence.mjs > modality-contracts.json
+      - name: Install browser for synthetic visual checks
+        run: npx playwright install --with-deps chromium
+      - name: Verify real composer in desktop and mobile browsers
+        run: node scripts/verify-modality-preview.mjs
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: modality-preview-synthetic-verification
+          path: |
+            modality-contracts.json
+            test-results/modality-preview/*.png
+          if-no-files-found: warn
+          retention-days: 7
