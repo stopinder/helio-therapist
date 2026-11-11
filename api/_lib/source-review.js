@@ -37,7 +37,7 @@ export async function assertSourcesUnchanged(db,userId,sources){
 }
 /** Follow saved evidence recursively within the same owner/client, including legacy summaries. */
 export async function assertDocumentSourcesUsable(db,userId,document,visited=new Set()){
-  if(document.document_type!=='session_summary')return;
+  if(!['session_summary','across_session_review'].includes(document.document_type))return;
   if(isUnusableSummary(document.content))throw reviewRequired('This saved item is a source-review notice, not a usable summary. Review its source and regenerate.');
   if(visited.has(document.id)||visited.size>=12)throw reviewRequired('The summary evidence chain needs review.');
   visited.add(document.id);
@@ -73,10 +73,10 @@ export async function documentReviewStatus(db,userId,document){
 
 /** New drafts need an explicit therapist review before finalisation. */
 export function assertTherapistApprovedSummary(document){
-  if(document?.document_type!=='session_summary')return;
+  if(!['session_summary','across_session_review'].includes(document?.document_type))return;
   const generation=document?.content?.summaryGeneration;
   if(generation?.reviewRequired!==true)return; // Do not retrospectively gate legacy records.
   if(typeof generation.reviewedAt!=='string'||!Number.isFinite(Date.parse(generation.reviewedAt))){
-    throw Object.assign(new Error('Review and approve the editable session summary before finalising.'),{status:409,code:'THERAPIST_REVIEW_REQUIRED'});
+    throw Object.assign(new Error('Review and approve the editable clinical summary before finalising.'),{status:409,code:'THERAPIST_REVIEW_REQUIRED'});
   }
 }
