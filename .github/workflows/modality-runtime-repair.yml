@@ -1,0 +1,24 @@
+name: Modality live-generation repair verification
+on:
+  push:
+    branches: [feat/modality-intelligence-preview-20261110]
+    paths: [.github/workflows/modality-runtime-repair.yml]
+permissions:
+  contents: read
+jobs:
+  source:
+    if: github.repository == 'stopinder/helio-therapist' && github.ref == 'refs/heads/feat/modality-intelligence-preview-20261110'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: 1d2e6e70ea54a8a9b0cb36d324f12090a348de92
+          persist-credentials: false
+      - name: Export reviewed source only, without credentials or clinical data
+        run: git archive --format=tar.gz --output=/tmp/helios-runtime-source.tgz HEAD
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: helios-runtime-source
+          path: /tmp/helios-runtime-source.tgz
+          retention-days: 1
