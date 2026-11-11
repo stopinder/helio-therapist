@@ -4,7 +4,12 @@ import { assertUsableSummaryResult } from './summarySafety.js';
 async function requestModality(payload) {
   const response = await authenticatedFetch('/api/ai/modality-summary',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
   const result = await response.json().catch(()=>null);
-  if (!response.ok || !result?.success) throw Object.assign(new Error(result?.error?.message || 'Clinical intelligence could not be prepared. Your existing work is unchanged.'),{code:result?.error?.code || 'INTELLIGENCE_UNAVAILABLE',status:response.status});
+  if (!response.ok || !result?.success) {
+    const referenceId = /^[0-9a-f-]{36}$/i.test(result?.error?.referenceId || '') ? result.error.referenceId : null;
+    const message = result?.error?.message || 'Clinical intelligence could not be prepared. Your existing work is unchanged.';
+    throw Object.assign(new Error(message + (referenceId ? ` Reference: ${referenceId}.` : '')),
+      {code:result?.error?.code || 'INTELLIGENCE_UNAVAILABLE',status:response.status,referenceId,details:result?.error?.details});
+  }
   return result.data;
 }
 export async function listModalityEvidence(clientId){const result=await requestModality({clientId,scope:'longitudinal',action:'availability'});return result.availableSessions||[];}

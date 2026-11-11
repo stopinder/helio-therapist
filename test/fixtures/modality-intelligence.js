@@ -33,3 +33,8 @@ export function passageEvidenceFixture(request) {
   value.observations[0].citations = [{passageId:input.sources[0].passages[0].id}];
   return value;
 }
+
+export function compositionCandidateFixture(lens) {
+  const value = compositionFixture(lens);
+  return { ...value, sections: Object.fromEntries(Object.entries(value.sections).map(([key, section]) => [key, {claims:section.claims}])) };
+}

@@ -9,11 +9,11 @@ import { parseModalityRequest } from '../api/ai/modality-summary.js';
 import { summaryClinicalEvidence } from '../src/lib/summaryEvidence.js';
 import { parseSummaryBlocks } from '../src/lib/summaryAuthoring.js';
 import { assertClientDocumentContent, isUnusableSummary } from '../src/lib/summarySafety.js';
-import { packFixture, evidenceFixture, passageEvidenceFixture, formulationFixture, compositionFixture, completed, SOURCE_ID, SYNTHETIC_MODALITY_CASES } from './fixtures/modality-intelligence.js';
+import { packFixture, evidenceFixture, passageEvidenceFixture, formulationFixture, compositionFixture, compositionCandidateFixture, completed, SOURCE_ID, SYNTHETIC_MODALITY_CASES } from './fixtures/modality-intelligence.js';
 
 const base={pack:packFixture(),lens:'gentle_cbt',options:{mode:'client_summary',includeZoomSummary:false},summaryOptions:{audience:'individual',addition:'none'},requirements:{exercise:false}};
 const clone=value=>structuredClone(value);
-function staged(lens,composed=compositionFixture(lens)) {let index=0;const calls=[];return {calls,run:async request=>{calls.push(request);return completed(index++===0?passageEvidenceFixture(request):index===2?formulationFixture(lens):composed);}};}
+function staged(lens,composed=compositionCandidateFixture(lens)) {let index=0;const calls=[];return {calls,run:async request=>{calls.push(request);return completed(index++===0?passageEvidenceFixture(request):index===2?formulationFixture(lens):composed);}};}
 
 test('each modality registers independent formulation keys, composition keys and strategy',()=>{
   assert.doesNotThrow(assertModalityRegistry);
@@ -90,13 +90,13 @@ test('composition cannot quietly drop the requested eight steps or a check-in',(
   c.practice.steps.pop();assert.ok(compositionIssues(c,e,requirements).includes('REQUESTED_EXERCISE_MISSING'));
 });
 test('canonical or supplied sequence cannot be replaced by an unlabelled general adaptation',async()=>{
-  const c=compositionFixture('gentle_cbt');c.practice.status='needs_clarification';c.practice.clarification='No precise sequence was supplied.';
+  const c=compositionCandidateFixture('gentle_cbt');c.practice.status='needs_clarification';c.practice.clarification='No precise sequence was supplied.';
   const mock=staged('gentle_cbt',c);
   await assert.rejects(runModalityPipeline({...base,requirements:{exercise:true,requiresSuppliedSequence:true},run:mock.run}),{code:'EXERCISE_SEQUENCE_UNAVAILABLE'});
   assert.equal(mock.calls.length,3);
 });
-test('one bounded repair fixes missing instructions; a second failure never returns a successful draft',async()=>{
-  const wrong=compositionFixture('gentle_cbt');wrong.sections.cycle.body+=' An unsupported extra claim.';
+test('one bounded repair cannot release an unselected external link; a second failure returns no draft',async()=>{
+  const wrong=compositionCandidateFixture('gentle_cbt');wrong.sections.cycle.claims[0].text+=' Visit https://example.invalid/unselected.';
   let calls=0;const outputs=[evidenceFixture(),formulationFixture('gentle_cbt'),wrong,wrong];
   await assert.rejects(runModalityPipeline({...base,run:async req=>completed(calls++===0?passageEvidenceFixture(req):outputs[calls-1])}),{code:'INTELLIGENCE_DELIVERABLE_INCOMPLETE'});assert.equal(calls,4);
 });

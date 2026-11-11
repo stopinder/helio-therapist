@@ -8,7 +8,7 @@ import {requireAuthenticatedUser} from '../../api/_lib/supabase.js';
 import {createTextAIWorkflow} from '../../api/_lib/ai-execution.js';
 import {loadModalitySources} from '../../api/_lib/modality-intelligence/sources.js';
 import {verifySummaryResource} from '../../api/_lib/summary-resource-check.js';
-import {packFixture,evidenceFixture,passageEvidenceFixture,formulationFixture,compositionFixture,completed,SOURCE_ID} from '../../test/fixtures/modality-intelligence.js';
+import {packFixture,evidenceFixture,passageEvidenceFixture,formulationFixture,compositionCandidateFixture,completed,SOURCE_ID} from '../../test/fixtures/modality-intelligence.js';
 
 vi.mock('./api.js',()=>({authenticatedFetch:vi.fn()}));
 vi.mock('./documentProfile.js',()=>({loadDocumentProfile:vi.fn(async()=>({})),profileDisplay:()=>({heading:'Synthetic practice',footer:'Helios'})}));
@@ -29,7 +29,7 @@ beforeEach(()=>{
  vi.clearAllMocks();queries=[];requests=[];
  tables={clients:[{id:clientId,user_id:user,display_name:'Synthetic client',reference:'TEST',archived:false}],sessions:[{id:sessionId,user_id:user,client_id:clientId,occurred_at:'2026-01-01T10:00:00Z'}],zoom_transcripts:[{id:transcriptId,therapist_user_id:user,client_id:clientId,session_ref:sessionId,original_transcript:packFixture().sources[0].text,zoom_generated_summary:'Zoom-only private test phrase.',source_version:1,source_review:{state:'unreviewed'},received_at:'2026-01-01T11:00:00Z',deleted_at:null}],session_capture_drafts:[],documents:[],client_care_items:[]};
  db={from:vi.fn(query),rpc:vi.fn(async()=>({data:false,error:null}))};requireAuthenticatedUser.mockResolvedValue({supabase:db,user:{id:user}});
- let index=0;run=vi.fn(async req=>{requests.push(req);return completed(index++===0?passageEvidenceFixture(req):index===2?formulationFixture('gentle_cbt'):compositionFixture('gentle_cbt'));});createTextAIWorkflow.mockResolvedValue(run);
+ let index=0;run=vi.fn(async req=>{requests.push(req);return completed(index++===0?passageEvidenceFixture(req):index===2?formulationFixture('gentle_cbt'):compositionCandidateFixture('gentle_cbt'));});createTextAIWorkflow.mockResolvedValue(run);
 });
 describe('source-aware modality gateway',()=>{
  const base={clientId,sessionId,transcriptId,lens:'gentle_cbt'};
@@ -44,7 +44,7 @@ describe('source-aware modality gateway',()=>{
  });
  it('excludes Zoom text by default and includes it only as a separately typed secondary source',async()=>{
   await invoke(base);expect(JSON.stringify(requests)).not.toContain('Zoom-only private test phrase.');
-  requests.length=0;run.mockImplementationOnce(async req=>{requests.push(req);return completed(passageEvidenceFixture(req))}).mockImplementationOnce(async()=>completed(formulationFixture('gentle_cbt'))).mockImplementationOnce(async()=>completed(compositionFixture('gentle_cbt')));
+  requests.length=0;run.mockImplementationOnce(async req=>{requests.push(req);return completed(passageEvidenceFixture(req))}).mockImplementationOnce(async()=>completed(formulationFixture('gentle_cbt'))).mockImplementationOnce(async()=>completed(compositionCandidateFixture('gentle_cbt')));
   const res=await invoke({...base,intelligenceOptions:{includeZoomSummary:true}});expect(res.statusCode).toBe(200);const input=JSON.parse(requests[0].messages[1].content);const zoom=input.sources.find(s=>s.type==='zoom_summary');expect(zoom.secondary).toBe(true);expect(zoom.encounterId).toBe(sessionId);expect(zoom.id).not.toBe(SOURCE_ID);
  });
  it('ownership filters bind every clinical table before generation',async()=>{
@@ -61,7 +61,7 @@ describe('source-aware modality gateway',()=>{
   tables.zoom_transcripts[0].source_review={state:'needs_review',message:'Review source assignment.'};const res=await invoke(base);expect(res.payload.data.outcome).toBe('needs_review');expect(createTextAIWorkflow).not.toHaveBeenCalled();
  });
  it('rejects changed versions after generation, preserving the previous draft',async()=>{
-  let index=0;run.mockImplementation(async req=>{const value=index++===0?passageEvidenceFixture(req):index===2?formulationFixture('gentle_cbt'):compositionFixture('gentle_cbt');if(index===3)tables.zoom_transcripts[0].source_version=2;return completed(value);});
+  let index=0;run.mockImplementation(async req=>{const value=index++===0?passageEvidenceFixture(req):index===2?formulationFixture('gentle_cbt'):compositionCandidateFixture('gentle_cbt');if(index===3)tables.zoom_transcripts[0].source_version=2;return completed(value);});
   const res=await invoke(base);expect(res.statusCode).toBe(409);expect(res.payload.error.code).toBe('SOURCE_CHANGED');expect(res.payload.data).toBeUndefined();
  });
  it('does not send private reflection, risk or supervision care items to any stage',async()=>{
@@ -100,7 +100,7 @@ describe('source-aware modality gateway',()=>{
     requests.push(req);const input=JSON.parse(req.messages[1].content),schema=req.responseFormat.json_schema.schema;
     if(schema.properties.observations){const v=evidenceFixture();v.observations[0].citations=[{passageId:input.sources[0].passages.at(-1).id}];return completed(v);}
     if(schema.properties.priorities&&!schema.properties.fields)return completed({priorities:[{observationIds:['e1'],importance:'Observed clinical priority.'}]});
-    return completed(schema.properties.fields?formulationFixture('gentle_cbt'):compositionFixture('gentle_cbt'));
+    return completed(schema.properties.fields?formulationFixture('gentle_cbt'):compositionCandidateFixture('gentle_cbt'));
   });
   const res=await invoke({...base,window:'recent'});
   expect(res.statusCode).toBe(200);expect(res.payload.data.architecture.evidenceCoverage.batchCount).toBe(3);expect(res.payload.data.sessionCount).toBe(3);
@@ -122,18 +122,18 @@ describe('source-aware modality gateway',()=>{
 // Only authentication/database and the external provider are controlled fixtures.
 describe('complete recent-session generation and recovery',()=>{
  const editor={props:['modelValue'],emits:['update:modelValue'],template:'<textarea data-testid="integration-editor" :value="modelValue" @input="$emit(\'update:modelValue\', $event.target.value)" />'};
- async function openComposer(){
+ async function openComposer(lens='gentle_cbt'){
    const fixture=recentSessionFixture();tables.sessions=fixture.sessions;tables.zoom_transcripts=fixture.transcripts;
    authenticatedFetch.mockImplementation(async(url,options)=>{
      expect(url).toBe('/api/ai/modality-summary');
      const response=await invoke(JSON.parse(options.body));
      return {ok:response.statusCode<400,status:response.statusCode,json:async()=>response.payload};
    });
-   run.mockImplementation(recentSessionProvider({requests}));
+   run.mockImplementation(recentSessionProvider({requests,lens}));
    const wrapper=mount(Composer,{props:{client:{id:clientId,display_name:'Synthetic couple'},initialDocumentType:'session_summary'},global:{stubs:{teleport:true,RichDocumentEditor:editor,HelpLink:true}}});
    await flushPromises();
    const select=wrapper.findAll('select').find(el=>el.find('option[value="gentle_cbt"]').exists());
-   await select.setValue('gentle_cbt');await flushPromises();
+   await select.setValue(lens);await flushPromises();
    return wrapper;
  }
  it('renders an editable supported draft for all three long recent sessions without saving',async()=>{
@@ -157,6 +157,50 @@ describe('complete recent-session generation and recovery',()=>{
        expect(source.passages.map(p=>p.text).join('')).toBe(transcript.original_transcript.trim()); // Loader trims only outer whitespace; internal text is exact.
      }
    }finally{wrapper.unmount();}
+ });
+ it('generates the actual three-session TA composer path with readable tentative interpretations',async()=>{
+   const wrapper=await openComposer('transactional_analysis');
+   run.mockImplementation(recentSessionProvider({requests,lens:'transactional_analysis',fault:'hypothesis_without_cue'}));
+   try {
+     await wrapper.findAll('button').find(b=>b.text()==='Generate client summary').trigger('click');await flushPromises();
+     const body=wrapper.get('[data-testid="integration-editor"]').element.value;
+     for(const item of RECENT_CASES)expect(body).toContain(item.sentence);
+     expect(body).toContain('Noticing the exchange');
+     expect(body).toContain('One possible interpretation:');
+     expect(body).not.toContain('Understanding the pattern');
+     expect(requests).toHaveLength(6); // Three evidence reads, focus, TA formulation, composition; no format repair.
+     expect(createTextAIWorkflow).toHaveBeenCalledTimes(1);
+     expect(wrapper.emitted('saved')).toBeUndefined();
+   } finally {wrapper.unmount();}
+ });
+ it('explains final validation failure in the actual composer and correlates content-free diagnostics',async()=>{
+   const wrapper=await openComposer('transactional_analysis');
+   const warn=vi.spyOn(console,'warn').mockImplementation(()=>{});
+   try {
+     const button=label=>wrapper.findAll('button').find(b=>b.text()===label);
+     await button('Generate client summary').trigger('click');await flushPromises();
+     await wrapper.get('[data-testid="integration-editor"]').setValue('Therapist draft to preserve.');
+     run.mockImplementation(recentSessionProvider({requests,lens:'transactional_analysis',fault:'invalid_composition'}));
+     await button('Regenerate client summary').trigger('click');await flushPromises();
+     const notice=wrapper.get('[data-testid="summary-evidence-limit"]');
+     expect(notice.text()).toContain('source material was gathered');
+     expect(notice.text()).toContain('a sentence without valid supporting evidence');
+     expect(notice.text()).toContain('Reference:');
+     expect(notice.text()).not.toContain('Review your instructions');
+     expect(wrapper.get('[data-testid="integration-editor"]').element.value).toBe('Therapist draft to preserve.');
+     const log=warn.mock.calls.find(call=>call[1]==='INTELLIGENCE_DELIVERABLE_INCOMPLETE');
+     expect(log[2]).toMatchObject({stage:'composition',checks:['INVALID_CLAIM_REFERENCE']});
+     expect(notice.text()).toContain(log[2].referenceId);
+     expect(JSON.stringify(log)).not.toContain('Therapist draft to preserve');
+     for(const item of RECENT_CASES)expect(JSON.stringify(log)).not.toContain(item.sentence);
+     expect(JSON.stringify(log)).not.toContain(clientId);
+     run.mockImplementation(recentSessionProvider({requests,lens:'transactional_analysis'}));
+     await button('Try again').trigger('click');await flushPromises();
+     expect(wrapper.find('[data-testid="summary-evidence-limit"]').exists()).toBe(false);
+     expect(wrapper.text()).toContain('Revised draft ready to preview. Your current draft is unchanged.');
+     expect(wrapper.get('[data-testid="integration-editor"]').element.value).toBe('Therapist draft to preserve.');
+     expect(wrapper.emitted('saved')).toBeUndefined();
+   } finally {warn.mockRestore();wrapper.unmount();}
  });
  it('keeps the editable draft on invalid references, then offers a reviewable replacement after explicit retry',async()=>{
    const wrapper=await openComposer();

@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {planEvidenceBatches,MAX_BATCH_SOURCE_CHARS,MAX_BATCH_JSON_CHARS,MAX_WINDOW_SOURCE_CHARS,modalityWorkflowLimits} from '../api/_lib/modality-intelligence/evidence-batches.js';
 import {runModalityPipeline} from '../api/_lib/modality-intelligence/pipeline.js';
-import {packFixture,evidenceFixture,formulationFixture,compositionFixture,completed} from './fixtures/modality-intelligence.js';
+import {packFixture,evidenceFixture,formulationFixture,compositionCandidateFixture,completed} from './fixtures/modality-intelligence.js';
 
 const source=(n,size=80000)=>({id:`transcript:${n}`,type:'transcript',encounterId:`session:${n}`,occurredAt:`2026-01-0${n}`,secondary:false,text:('Client: A synthetic observation about the session.\n').repeat(Math.ceil(size/50)).slice(0,size)+`\nFinal observation for session ${n}.`});
 function assertCovered(original,plan) {
@@ -41,7 +41,7 @@ function mockStages({reviewBatch=0,invalidQuote=false,emptyBatch=0}={}){
     }
     if(schema.properties.priorities&&!schema.properties.fields)return completed({priorities:[{observationIds:[input.observations[0].id],importance:'A supported focus across the selected window.'}]});
     if(schema.properties.fields)return completed(formulationFixture('gentle_cbt'));
-    return completed(compositionFixture('gentle_cbt'));
+    return completed(compositionCandidateFixture('gentle_cbt'));
   }};
 }
 const request=sources=>({pack:{...packFixture(),sources},lens:'gentle_cbt',options:{mode:'client_summary'},summaryOptions:{audience:'shared'},requirements:{exercise:false}});

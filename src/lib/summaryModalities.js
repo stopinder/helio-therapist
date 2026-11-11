@@ -1,5 +1,5 @@
 // Public, versioned modality contracts. Clinical source text never belongs here.
-export const INTELLIGENCE_VERSION = 'helios-modality-intelligence/2.1.0';
+export const INTELLIGENCE_VERSION = 'helios-modality-intelligence/2.2.0';
 export const SUMMARY_MODALITIES = Object.freeze({
   general: {
     id: 'general', label: 'General', version: '1.0.0',

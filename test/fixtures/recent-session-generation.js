@@ -35,9 +35,11 @@ export function recentSessionProvider({lens='gentle_cbt',requests=[],fault=null}
       fields[Object.keys(fields)[0]]=input.observations.map(o=>({text:o.text,evidenceIds:[o.id],status:'supported'}));
       return completed({fields,limitations:['Synthetic provider transport fixture; not a clinical quality assessment.']});
     }
-    const sections=Object.fromEntries(Object.keys(SUMMARY_MODALITIES[lens].sections).map(key=>[key,{body:'',claims:[]}]));
+    const sections=Object.fromEntries(Object.keys(SUMMARY_MODALITIES[lens].sections).map(key=>[key,{claims:[]}]));
     const claims=input.observations.map(o=>({text:o.text,evidenceIds:[o.id],status:'observation'}));
-    sections[Object.keys(sections)[0]]={body:claims.map(c=>c.text).join(' '),claims};
+    if(fault==='invalid_composition')claims[0].evidenceIds=[];
+    if(fault==='hypothesis_without_cue')claims[1].status='hypothesis';
+    sections[Object.keys(sections)[0]]={claims};
     return completed({sections,practice:{status:'not_requested',title:'',introduction:'',sequenceBasis:'not_applicable',steps:[],checkInSteps:[],safety:'',clarification:''}});
   };
 }

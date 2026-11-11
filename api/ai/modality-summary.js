@@ -8,7 +8,7 @@ import { verifySummaryResource } from '../_lib/summary-resource-check.js';
 import { loadModalitySources, verifyModalitySources, listModalityAvailability } from '../_lib/modality-intelligence/sources.js';
 import { planEvidenceBatches, modalityWorkflowLimits } from '../_lib/modality-intelligence/evidence-batches.js';
 import { runModalityPipeline } from '../_lib/modality-intelligence/pipeline.js';
-import { failure } from '../_lib/modality-intelligence/contracts.js';
+import { failure, safeCompositionChecks } from '../_lib/modality-intelligence/contracts.js';
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 export function parseModalityRequest(body = {}) {
@@ -24,7 +24,9 @@ export function parseModalityRequest(body = {}) {
     intelligenceOptions:normalizeIntelligenceOptions(body.intelligenceOptions),summaryOptions:effectiveSummaryOptions(body.summaryOptions || {},therapistGuidance,refinementRequest) };
 }
 export default async function handler(req,res) {
+  const referenceId = randomUUID();
   res.setHeader('Cache-Control','no-store');
+  res.setHeader('X-Helios-Request-Id',referenceId);
   if (req.method !== 'POST') { res.setHeader('Allow','POST'); return res.status(405).json({success:false,error:{code:'METHOD_NOT_ALLOWED',message:'Method not allowed'}}); }
   try {
     const {supabase,user} = await requireAuthenticatedUser(req);
@@ -53,8 +55,10 @@ export default async function handler(req,res) {
   } catch(error) {
     if(error.code==='SOURCE_REVIEW_REQUIRED') return res.status(200).json({success:true,data:{outcome:'needs_review',review:{message:error.message,sources:error.review?[error.review]:[]}}});
     // Never log clinical content, prompts, generated text, identities, URLs or provider error bodies.
-    console.warn('[Modality intelligence]',String(error.code || error.name || 'UNAVAILABLE').slice(0,80));
+    const checks = error.code === 'INTELLIGENCE_DELIVERABLE_INCOMPLETE' ? safeCompositionChecks(error.validationIssues) : [];
+    const details = checks.length ? { stage:'composition', checks } : undefined;
+    console.warn('[Modality intelligence]',String(error.code || error.name || 'UNAVAILABLE').slice(0,80),{referenceId,...(details || {})});
     const permitted = error.code && (isBudgetError(error) || error.status < 500);
-    return res.status(error.status || 500).json({success:false,error:{code:error.code || 'INTELLIGENCE_UNAVAILABLE',message:permitted?error.message:'Clinical intelligence is temporarily unavailable. Your existing work is unchanged.'}});
+    return res.status(error.status || 500).json({success:false,error:{code:error.code || 'INTELLIGENCE_UNAVAILABLE',message:permitted?error.message:'Clinical intelligence is temporarily unavailable. Your existing work is unchanged.',referenceId,...(details ? {details} : {})}});
   }
 }

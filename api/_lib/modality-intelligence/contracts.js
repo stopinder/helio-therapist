@@ -23,24 +23,71 @@ export function formulationSchema(lens, evidenceIds) {
   const profile = modalityStrategy(lens);
   return object({ fields: object(Object.fromEntries(Object.keys(profile.formulation).map(key => [key, list(item)]))), limitations: strings });
 }
-export function compositionSchema(lens, evidenceIds) {
+export function compositionSchema(lens, evidenceIds, requirements = {}) {
   const claim = object({ text: string, evidenceIds: list(enumeration(evidenceIds)), status: enumeration(['observation','hypothesis']) });
-  const section = object({ body: string, claims: list(claim) });
+  // Each sentence has one authoritative representation. The server renders body.
+  const section = object({ claims: list(claim) });
   const step = object({ number: { type: 'integer' }, instruction: string, evidenceIds: list(enumeration(evidenceIds)) });
   return object({
     sections: object(Object.fromEntries(Object.keys(modalityStrategy(lens).sections).map(key => [key, section]))),
-    practice: object({ status: enumeration(['not_requested','ready','needs_clarification']), title: string,
+    practice: requirements.exercise ? object({ status: enumeration(['not_requested','ready','needs_clarification']), title: string,
       introduction: string, sequenceBasis: enumeration(['not_applicable','supplied_sequence','adaptation']),
-      steps: list(step), checkInSteps: list(step), safety: string, clarification: string })
+      steps: list(step), checkInSteps: list(step), safety: string, clarification: string }) : object({
+        status: enumeration(['not_requested']), title: enumeration(['']), introduction: enumeration(['']),
+        sequenceBasis: enumeration(['not_applicable']), steps: { ...list(step), maxItems: 0 },
+        checkInSteps: { ...list(step), maxItems: 0 }, safety: enumeration(['']), clarification: enumeration([''])
+      })
   });
 }
+// Called only after strict provider-shape validation. No uncited prose is discarded:
+// a body field is not permitted in the provider response in the first place.
+export function materializeComposition(candidate) {
+  return { ...candidate, sections: Object.fromEntries(Object.entries(candidate.sections).map(([key, section]) => {
+    const claims = section.claims.map(claim => ({ ...claim,
+      text: claim.status === 'hypothesis' && claim.text.trim() && !/^One possible interpretation:/i.test(claim.text.trimStart())
+        ? `One possible interpretation: ${claim.text}` : claim.text
+    }));
+    return [key, { body: claims.map(claim => claim.text).join(' '), claims }];
+  })) };
+}
+
+// Allowlisted, content-free failure diagnostics. Never include source text, client
+// identities, instructions, provider responses or model-supplied explanations.
+const COMPOSITION_CHECKS = Object.freeze({
+  CLAIM_WITHOUT_SECTION: 'inconsistent summary sections',
+  SECTION_WITHOUT_EVIDENCE: 'a section without supporting evidence',
+  UNSELECTED_RESOURCE_LINK: 'an unrequested external link',
+  UNCITED_SENTENCE: 'text without supporting evidence',
+  INVALID_CLAIM_REFERENCE: 'a sentence without valid supporting evidence',
+  METHOD_INSTRUCTION_IS_NOT_SESSION_EVENT: 'practice instructions presented as session events',
+  UNLABELLED_HYPOTHESIS: 'an interpretation not clearly marked as tentative',
+  EMPTY_DOCUMENT: 'missing summary content',
+  UNREQUESTED_ADDITION: 'an unrequested exercise',
+  REQUESTED_EXERCISE_MISSING: 'missing requested exercise steps or safety guidance',
+  REQUESTED_SOMATIC_CHECKIN_MISSING: 'missing requested body check-in steps',
+  SUPPLIED_SEQUENCE_REQUIRED: 'the requested exact exercise sequence was not used',
+  SEQUENCE_EVIDENCE_REQUIRED: 'exercise steps without their supplied evidence',
+  SEQUENCE_BASIS_MISSING: 'an unspecified exercise basis',
+  INVALID_PRACTICE_REFERENCE: 'exercise steps with invalid supporting references'
+});
+export function safeCompositionChecks(values) {
+  return [...new Set(Array.isArray(values) ? values.filter(value => typeof value === 'string' && Object.hasOwn(COMPOSITION_CHECKS, value)) : [])];
+}
+export function compositionFailure(issues) {
+  const checks = safeCompositionChecks(issues);
+  const reasons = checks.map(check => COMPOSITION_CHECKS[check]).join('; ') || 'incomplete summary content';
+  return Object.assign(failure('INTELLIGENCE_DELIVERABLE_INCOMPLETE',
+    `The source material was gathered, but the generated summary failed its final checks: ${reasons}. Your existing draft is unchanged. No partial summary was returned.`),
+    { stage: 'composition', validationIssues: checks });
+}
+
 // Validate provider output independently of the provider's strict schema. Errors contain codes only.
 export function validateShape(value, schema, depth = 0) {
   if (depth > 12) return false;
   if (schema.enum && !schema.enum.includes(value)) return false;
   if (schema.type === 'string') return typeof value === 'string' && value.length <= 14000;
   if (schema.type === 'integer') return Number.isInteger(value);
-  if (schema.type === 'array') return Array.isArray(value) && value.length <= 80 && value.every(item => validateShape(item, schema.items, depth + 1));
+  if (schema.type === 'array') return Array.isArray(value) && value.length <= 80 && (schema.maxItems === undefined || value.length <= schema.maxItems) && value.every(item => validateShape(item, schema.items, depth + 1));
   if (schema.type === 'object') {
     if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
     const keys = Object.keys(value);

@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { prepareEvidencePassages, resolveEvidencePassages, MAX_EVIDENCE_PASSAGES, MAX_PASSAGE_CHARS } from '../api/_lib/modality-intelligence/evidence-passages.js';
 import { verifyEvidence, validateShape, parseOutput } from '../api/_lib/modality-intelligence/contracts.js';
 import { runModalityPipeline } from '../api/_lib/modality-intelligence/pipeline.js';
-import { packFixture, evidenceFixture, passageEvidenceFixture, formulationFixture, compositionFixture, completed } from './fixtures/modality-intelligence.js';
+import { packFixture, evidenceFixture, passageEvidenceFixture, formulationFixture, compositionCandidateFixture, completed } from './fixtures/modality-intelligence.js';
 
 const candidate = (prepared, ids=[prepared.sources[0].passages[0].id]) => {
   const value = evidenceFixture();
@@ -99,7 +99,7 @@ test('complete pipeline no longer asks the provider to copy or repair punctuatio
   const pack=packFixture(unusual);
   const result=await runModalityPipeline({pack,lens:'gentle_cbt',options:{mode:'client_summary'},summaryOptions:{audience:'shared'},requirements:{exercise:false},run:async request=>{
     requests.push(request);calls++;
-    return completed(calls===1?passageEvidenceFixture(request):calls===2?formulationFixture('gentle_cbt'):compositionFixture('gentle_cbt'));
+    return completed(calls===1?passageEvidenceFixture(request):calls===2?formulationFixture('gentle_cbt'):compositionCandidateFixture('gentle_cbt'));
   }});
   assert.equal(calls,3);assert.equal(result.outcome,'ready');
   assert.equal(result.claims[0].citations[0].quote,unusual);
