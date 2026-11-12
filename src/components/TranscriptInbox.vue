@@ -20,15 +20,8 @@
       </header>
 
       <div v-if="transcripts.length" class="queue-controls">
-        <label class="inbox-search">
-          <span class="sr-only">Search transcripts</span>
-          <span class="search-control">
-            <Search class="workspace-icon search-icon" aria-hidden="true" />
-            <input v-model="searchQuery" class="control-field min-h-touch" type="search" placeholder="Search transcripts" />
-          </span>
-        </label>
         <div class="filters" role="group" aria-label="Transcript views">
-          <button v-for="filter in filters" :key="filter.id" type="button" class="min-h-touch type-ui" :class="{ active: filterMode === filter.id }" :aria-pressed="filterMode === filter.id" @click="setFilter(filter.id)">
+          <button v-for="filter in filters" :key="filter.id" type="button" class="type-ui" :class="{ active: filterMode === filter.id }" :aria-pressed="filterMode === filter.id" @click="setFilter(filter.id)">
             {{ filter.label }}<template v-if="filter.id === 'attention'"> · {{ actionableCount }}</template>
           </button>
         </div>
@@ -36,6 +29,13 @@
           <Archive class="workspace-icon-sm" aria-hidden="true" />
           <span>{{ saving ? 'Archiving…' : 'Archive all' }}</span>
         </button>
+        <label class="inbox-search">
+          <span class="sr-only">Search transcripts</span>
+          <span class="search-control">
+            <Search class="workspace-icon search-icon" aria-hidden="true" />
+            <input v-model="searchQuery" class="control-field" type="search" placeholder="Search transcripts" />
+          </span>
+        </label>
       </div>
 
       <p v-if="errorMessage" class="notice error" role="alert">{{ errorMessage }}</p><p v-else-if="successMessage" class="notice success" role="status">{{ successMessage }}</p>
@@ -976,26 +976,28 @@ watch(()=>props.openTranscriptId,openQueuedTranscript);watch(searchQuery,()=>{hi
 .header-supporting { max-width:46rem; margin-top:.45rem; }
 
 .queue-controls {
-  display:grid;
-  grid-template-columns:minmax(240px,1fr) auto auto;
-  gap:var(--space-inline-md);
+  display:flex;
+  flex-wrap:wrap;
+  gap:.5rem;
   align-items:center;
   margin:0 0 var(--space-stack-lg);
-  padding:var(--space-stack-sm);
-  border:1px solid var(--border-muted);
-  border-radius:var(--radius-panel);
-  background:var(--surface-muted);
+  padding:0 0 var(--space-stack-md);
+  border-bottom:1px solid var(--border-muted);
 }
-.inbox-search { min-width:0; }
+.inbox-search { flex:0 1 12.5rem; width:12.5rem; min-width:0; margin-left:auto; }
 .search-control { position:relative; display:block; }
-.search-control .control-field { padding-left:2.55rem; background:var(--surface-elevated); }
-.search-icon { position:absolute; left:.85rem; top:50%; z-index:1; transform:translateY(-50%); color:var(--accent); pointer-events:none; }
-.filters { display:inline-flex; min-height:var(--control-target); padding:.2rem; border:1px solid var(--border); border-radius:var(--radius-control); background:var(--surface-raised); }
-.filters button { border:0; background:transparent; color:var(--text-secondary); cursor:pointer; padding:.55rem .8rem; border-radius:calc(var(--radius-control) - .18rem); transition:background-color var(--motion-standard) var(--motion-ease),color var(--motion-standard) var(--motion-ease); }
-.filters button:hover { background:var(--state-hover); }
-.filters button.active { background:var(--state-selected); color:var(--accent); font-weight:600; }
+.search-control .control-field { height:2rem; min-height:2rem; padding:.35rem .65rem .35rem 2rem; font-size:var(--type-metadata-size); line-height:1.1rem; background:var(--surface-elevated); }
+.search-icon { position:absolute; left:.65rem; top:50%; z-index:1; width:.875rem; height:.875rem; transform:translateY(-50%); color:var(--accent); pointer-events:none; }
+.filters { display:flex; flex-wrap:wrap; gap:.25rem; min-width:0; max-width:100%; }
+.filters button { min-height:2rem; border:1px solid var(--border-muted); background:var(--state-selected); color:var(--accent); cursor:pointer; padding:.35rem .625rem; border-radius:var(--radius-control); font-size:var(--type-metadata-size); line-height:1.1rem; white-space:nowrap; transition:background-color var(--motion-standard) var(--motion-ease),color var(--motion-standard) var(--motion-ease); }
+.filters button:hover { border-color:var(--accent); background:var(--surface-reflection-hover); }
+.filters button.active { border-color:var(--accent); background:var(--accent); color:var(--text-on-action); font-weight:600; }
 .compact-button { min-height:2.45rem; padding:.45rem .75rem; }
-.clear-all { white-space:nowrap; }
+.queue-controls .clear-all { min-height:2rem; padding:.35rem .625rem; border-color:var(--border-muted); color:var(--accent); background:transparent; font-size:var(--type-metadata-size); line-height:1.1rem; white-space:nowrap; }
+.queue-controls .clear-all .workspace-icon-sm { width:.875rem; height:.875rem; }
+@media (pointer:coarse) {
+  .filters button,.queue-controls .clear-all,.search-control .control-field { min-height:var(--control-target); }
+}
 
 .notice { margin:0 0 var(--space-stack-md); padding:.75rem 1rem; border-radius:var(--radius-control); border:1px solid var(--border); background:var(--surface-raised); }
 .notice.error { border-color:rgb(154 79 71 / .25); background:var(--state-danger-surface); color:var(--state-danger); }
@@ -1218,10 +1220,6 @@ watch(()=>props.openTranscriptId,openQueuedTranscript);watch(searchQuery,()=>{hi
 .review-choices fieldset label { display:flex; align-items:center; gap:.7rem; cursor:pointer; }
 
 @media (max-width: 820px) {
-  .queue-controls { grid-template-columns:1fr; }
-  .filters { width:100%; }
-  .filters button { flex:1; }
-  .clear-all { justify-self:start; }
   .zoom-note-card,.inline-assignment,.matched-note,.triage-actions,.conversation-preview { margin-left:0; }
   .assignment-intro { align-self:start; }
   .inline-client-picker { grid-template-columns:minmax(0,1fr) max-content max-content; }
