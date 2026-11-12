@@ -10,9 +10,18 @@
       <header class="page-header inbox-page-header">
         <div class="header-orientation">
           <span class="icon-surface icon-surface-accent header-icon" aria-hidden="true"><Inbox class="workspace-icon-lg" /></span>
-          <div>
+          <div class="header-copy">
             <p class="type-eyebrow text-accent">Zoom imports</p>
-            <h1 class="type-page-title text-ink">Transcript Inbox</h1>
+            <div class="header-heading">
+              <h1 class="type-page-title text-ink">Transcript Inbox</h1>
+        <label v-if="transcripts.length" class="inbox-search">
+          <span class="sr-only">Search transcripts</span>
+          <span class="search-control">
+            <Search class="workspace-icon search-icon" aria-hidden="true" />
+            <input v-model="searchQuery" class="control-field" type="search" placeholder="Search transcripts" />
+          </span>
+        </label>
+            </div>
             <p class="type-body text-ink-muted header-supporting">Identify the session, place it with the right client, or clear it from the queue. Nothing is analysed automatically.</p>
           </div>
         </div>
@@ -21,7 +30,7 @@
 
       <div v-if="transcripts.length" class="queue-controls">
         <div class="filters" role="group" aria-label="Transcript views">
-          <button v-for="filter in filters" :key="filter.id" type="button" class="type-ui" :class="{ active: filterMode === filter.id }" :aria-pressed="filterMode === filter.id" @click="setFilter(filter.id)">
+          <button v-for="filter in filters" :key="filter.id" type="button" class="type-ui inbox-control" :class="{ active: filterMode === filter.id }" :aria-pressed="filterMode === filter.id" @click="setFilter(filter.id)">
             {{ filter.label }}<template v-if="filter.id === 'attention'"> · {{ actionableCount }}</template>
           </button>
         </div>
@@ -29,13 +38,7 @@
           <Archive class="workspace-icon-sm" aria-hidden="true" />
           <span>{{ saving ? 'Archiving…' : 'Archive all' }}</span>
         </button>
-        <label class="inbox-search">
-          <span class="sr-only">Search transcripts</span>
-          <span class="search-control">
-            <Search class="workspace-icon search-icon" aria-hidden="true" />
-            <input v-model="searchQuery" class="control-field" type="search" placeholder="Search transcripts" />
-          </span>
-        </label>
+
       </div>
 
       <p v-if="errorMessage" class="notice error" role="alert">{{ errorMessage }}</p><p v-else-if="successMessage" class="notice success" role="status">{{ successMessage }}</p>
@@ -927,7 +930,7 @@ watch(()=>props.openTranscriptId,openQueuedTranscript);watch(searchQuery,()=>{hi
 .transcript-inbox {
   max-width: 1040px;
   margin: 0 auto;
-  padding: var(--space-page);
+  padding: var(--space-stack-lg) var(--space-page) var(--space-page);
   color: var(--text-primary);
 }
 .inbox-page-header {
@@ -937,7 +940,9 @@ watch(()=>props.openTranscriptId,openQueuedTranscript);watch(searchQuery,()=>{hi
   gap:var(--space-inline-lg);
   margin:0 0 var(--space-stack-xl);
 }
-.header-orientation { display:flex; align-items:flex-start; gap:var(--space-inline-md); }
+.header-orientation { display:flex; flex:1; min-width:0; align-items:flex-start; gap:var(--space-inline-md); }
+.header-copy { flex:1; min-width:0; }
+.header-heading { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:.75rem 1.25rem; }
 .header-icon { width:2.75rem; height:2.75rem; margin-top:.15rem; }
 .header-supporting { max-width:46rem; margin-top:.45rem; }
 
@@ -955,9 +960,6 @@ watch(()=>props.openTranscriptId,openQueuedTranscript);watch(searchQuery,()=>{hi
 .search-control .control-field { height:2rem; min-height:2rem; padding:.35rem .65rem .35rem 2rem; font-size:var(--type-metadata-size); line-height:1.1rem; background:var(--surface-elevated); }
 .search-icon { position:absolute; left:.65rem; top:50%; z-index:1; width:.875rem; height:.875rem; transform:translateY(-50%); color:var(--accent); pointer-events:none; }
 .filters { display:flex; flex-wrap:wrap; gap:.25rem; min-width:0; max-width:100%; }
-.filters button { min-height:2rem; border:1px solid var(--border-muted); background:var(--state-selected); color:var(--accent); cursor:pointer; padding:.35rem .5rem; border-radius:var(--radius-control); font-size:var(--type-metadata-size); line-height:1.1rem; white-space:nowrap; transition:background-color var(--motion-standard) var(--motion-ease),color var(--motion-standard) var(--motion-ease); }
-.filters button:hover { border-color:var(--accent); background:var(--surface-reflection-hover); }
-.filters button.active { border-color:var(--accent); background:var(--accent); color:var(--text-on-action); font-weight:600; }
 .compact-button { min-height:2.45rem; padding:.45rem .75rem; }
 .queue-controls .clear-all { display:inline-flex; align-items:center; justify-content:center; gap:.35rem; min-height:2rem; padding:.35rem .625rem; border-color:var(--border-muted); color:var(--accent); background:transparent; font-size:var(--type-metadata-size); line-height:1.1rem; white-space:nowrap; }
 .queue-controls .clear-all .workspace-icon-sm { width:.875rem; height:.875rem; }

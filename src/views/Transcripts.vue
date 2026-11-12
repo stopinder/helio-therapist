@@ -15,22 +15,22 @@
     </div>
 
     <main v-else class="flex-1 overflow-y-auto p-page">
-      <div class="max-w-[68rem] mx-auto mb-stack-md">
-        <div class="flex items-center justify-between mb-stack-md">
+      <div class="inbox-toolbar-shell">
+        <div class="inbox-topbar">
           <div v-if="returnClientId">
             <router-link
               :to="{ name: 'ClientWorkspace', params: { clientId: returnClientId }, query: { tab: 'Transcripts' } }"
-              class="text-body-sm font-medium text-action-link hover:underline"
+              class="inbox-control"
             >← Back to client transcripts</router-link>
           </div>
           <div v-else>
-            <AppButton variant="secondary" @click="goBack">← Back</AppButton>
+            <button type="button" class="inbox-control" @click="goBack">← Back</button>
           </div>
-          <div class="flex gap-inline-sm">
-            <button type="button" class="button-secondary" :disabled="checkingZoom" @click="checkZoomNotes">{{ checkingZoom ? 'Checking Zoom…' : 'Check Zoom Notes' }}</button>
-            <button type="button" class="button-secondary" :aria-expanded="showPasteImport" @click="togglePasteImport">{{ showPasteImport ? 'Close paste' : 'Paste transcript' }}</button>
+          <div class="inbox-import-actions">
+            <button type="button" class="inbox-control" :disabled="checkingZoom" @click="checkZoomNotes">{{ checkingZoom ? 'Checking Zoom…' : 'Check Zoom Notes' }}</button>
+            <button type="button" class="inbox-control" :aria-expanded="showPasteImport" @click="togglePasteImport">{{ showPasteImport ? 'Close paste' : 'Paste transcript' }}</button>
             <input ref="fileInput" class="sr-only" type="file" accept=".vtt,.txt,text/vtt,text/plain" @change="importTranscriptFile" />
-            <button type="button" class="button-secondary" :disabled="importing" @click="fileInput?.click()">{{ importing ? 'Importing…' : 'Choose file' }}</button>
+            <button type="button" class="inbox-control" :disabled="importing" @click="fileInput?.click()">{{ importing ? 'Importing…' : 'Choose file' }}</button>
           </div>
         </div>
 
@@ -54,7 +54,6 @@
 import { computed, ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import TranscriptInbox from '../components/TranscriptInbox.vue'
-import AppButton from '../components/ui/AppButton.vue'
 import { listClients } from '../lib/clients.js'
 import { authenticatedFetch } from '../lib/api.js'
 
@@ -153,3 +152,10 @@ onMounted(async () => {
   await load()
 })
 </script>
+
+<style scoped>
+.inbox-toolbar-shell { max-width:1040px; margin:0 auto; padding:0 var(--space-page); }
+.inbox-topbar { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:.5rem 1rem; }
+.inbox-import-actions { display:flex; flex-wrap:wrap; align-items:center; gap:.25rem; }
+@media (max-width:640px) { .inbox-toolbar-shell { padding:0 1rem; } }
+</style>
