@@ -7,7 +7,7 @@ alter table public.transcript_source_review_events add constraint transcript_sou
   check(action in ('confirm','flag','split','reassign','correction','undo'));
 
 -- Never return clinical text in an impact preview. Only owner-scoped references.
-create or replace function public.transcript_assignment_impact(p_user_id uuid, p_transcript_id uuid)
+create or replace function public.transcript_assignment_impact(p_user_id uuid, p_transcript_id uuid, p_previous_session_id uuid default null)
 returns jsonb language plpgsql security invoker set search_path='' as $$
 declare
   t public.zoom_transcripts%rowtype; s public.sessions%rowtype;
@@ -16,6 +16,11 @@ begin
   if current_user not in ('postgres','service_role') then raise exception 'Forbidden' using errcode='42501'; end if;
   select * into t from public.zoom_transcripts where id=p_transcript_id and therapist_user_id=p_user_id and deleted_at is null;
   if not found then raise exception 'Transcript not found.' using errcode='P0002'; end if;
+  if p_previous_session_id is not null then
+    select * into s from public.sessions where id=p_previous_session_id and user_id=p_user_id;
+    if not found then raise exception 'The previous encounter is unavailable.' using errcode='23514'; end if;
+    t.session_ref:=s.id::text; t.client_id:=s.client_id;
+  end if;
   if t.source_parent_id is not null or t.source_review->>'state'='separated'
     or exists(select 1 from public.zoom_transcripts where source_parent_id=t.id and deleted_at is null) then
     items:=items||jsonb_build_array(jsonb_build_object('kind','segments','label','Reviewed conversation segments','count',1));
@@ -50,8 +55,8 @@ begin
   end loop;
   return items;
 end; $$;
-revoke all on function public.transcript_assignment_impact(uuid,uuid) from public,anon,authenticated;
-grant execute on function public.transcript_assignment_impact(uuid,uuid) to service_role;
+revoke all on function public.transcript_assignment_impact(uuid,uuid,uuid) from public,anon,authenticated;
+grant execute on function public.transcript_assignment_impact(uuid,uuid,uuid) to service_role;
 
 create or replace function public.correct_transcript_assignment(
   p_user_id uuid,p_transcript_id uuid,p_action text,p_expected_version uuid default null,
@@ -112,6 +117,9 @@ begin
       select * into target from public.sessions where id::text=prior->>'sessionId' and user_id=p_user_id and client_id::text=prior->>'clientId' for update;
       if not found or (to_jsonb(target)-'notes') is distinct from event.review->'previousEncounter' then
         raise exception 'The previous encounter changed. Review it before restoring the link. Nothing changed.' using errcode='40001'; end if;
+    end if;
+    if prior->>'sessionId' is not null and jsonb_array_length(public.transcript_assignment_impact(p_user_id,t.id,(prior->>'sessionId')::uuid))>0 then
+      raise exception 'The previous encounter has related work now. Review it before restoring the link. Nothing changed.' using errcode='23514';
     end if;
     update public.zoom_transcripts set client_id=(prior->>'clientId')::uuid,session_ref=prior->>'sessionId',status=prior->>'status',
       attention_cleared_at=(prior->>'attentionClearedAt')::timestamptz,inbox_archived_at=(prior->>'inboxArchivedAt')::timestamptz,

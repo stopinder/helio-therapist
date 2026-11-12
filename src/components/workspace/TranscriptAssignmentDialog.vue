@@ -18,7 +18,7 @@
             <div class="flex flex-wrap gap-2">
               <button v-if="result.canUndo" class="button-secondary" :disabled="busy" @click="save('undo')">{{ busy ? 'Undoing…' : 'Undo correction' }}</button>
               <RouterLink v-if="result.action === 'reassign' && result.sessionId" :to="workspace(result.clientId,result.sessionId)" class="button-primary" @click="emit('close')">Open corrected encounter</RouterLink>
-              <button v-if="result.action === 'detach_archive'" class="button-secondary" @click="emit('show-archive'); emit('close')">View archived transcript</button>
+              <RouterLink v-if="result.action === 'detach_archive'" :to="{path:'/transcripts',query:{transcript:transcriptId,view:'archived'}}" class="button-secondary" @click="emit('show-archive'); emit('close')">View archived transcript</RouterLink>
               <button class="button-primary" :disabled="busy" @click="emit('close')">Done</button>
             </div>
           </div>
