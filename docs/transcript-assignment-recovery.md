@@ -35,7 +35,11 @@ The API never falls back to a pretend archive. Read-only preview access supports
 
 Migration: `supabase/migrations/20261112123000_transcript_assignment_recovery.sql`.
 
-The shared-database migration was rejected by automatic approval review because it would install schema and live correction/deletion procedures outside the preview-only deployment boundary. It has **not** been applied. No alternative write route was used. Database installation requires explicit approval; preview actions report the missing setup rather than silently doing nothing.
+The user explicitly approved installation on 12 November 2026. The migration is now installed on the shared database as version `20261112115534` (`transcript_assignment_recovery`). The archive column and both service-only routines were verified. No existing clinical records were altered.
+
+Live synthetic verification exercised inspect, detach, stale-write rejection, Undo, detach/archive, reassignment, protected-document blocking, disputed-source holds and deletion/tombstones. All assertions passed inside a rolled-back transaction; no synthetic accounts or records were retained.
+
+The protected-preview fetch remains blocked by automatic approval review because that tool creates/reuses a temporary share link; synthetic testing approval did not explicitly authorize that sharing mechanism. No workaround was used. The deployed application is available for the therapist's own testing; direct authenticated preview endpoint verification is not claimed.
 
 The migration adds an archive timestamp and service-only SECURITY INVOKER routines, with fixed search paths and existing owner-readable audit storage. It contains no update/delete of existing clinical rows. Runtime corrections occur only after an authenticated therapist explicitly confirms an action.
 
@@ -44,3 +48,6 @@ The migration adds an archive timestamp and service-only SECURITY INVOKER routin
 Focused API, PostgreSQL/PGlite and component tests cover ownership isolation, explicit confirmation, read-only impact checks, stale writes, detach, archive, reassignment, delete erasure/tombstones, protected work, source holds and Undo. Browser fixtures exercise the actual Vue panel on desktop/mobile, reopening, reassignment, deletion, protected-work review and visible failure. Screenshots are inspected for layout and overflow. Tests use synthetic data, not live clinical records.
 
 Broader repository Quality failures must be distinguished from these focused checks and remain a production-release blocker.
+
+
+Latest code validation: the focused recovery, Inbox handoff, source-review dialog and summary-first safety workflows pass, including all six desktop/mobile browser scenarios and the application build. The preview deployment for application commit `68a050aace840268004c0ac5abfb9e76364c8f53` is READY. Broader Quality and Help Centre workflows remain red, so this is not a production release.
