@@ -51,3 +51,10 @@ body { background:var(--surface-canvas); }
 :where(button,a[href],input,select,textarea,summary,[tabindex]:not([tabindex="-1"])):focus-visible{outline:2px solid var(--focus)!important;outline-offset:3px;box-shadow:none}:where(button,input,select,textarea):disabled,[aria-disabled="true"]{cursor:not-allowed;color:var(--state-disabled);border-color:var(--border-muted);background-color:var(--surface-muted)}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:1ms!important;animation-iteration-count:1!important;scroll-behavior:auto!important;transition-duration:1ms!important}}
 .sidebar-btn{@apply w-full text-left type-body px-3.5 py-2.5 rounded-control transition-all text-ink-secondary hover:bg-surface-muted focus-visible:outline-none}.sidebar-btn:hover{transform:translateX(1px)}.sidebar-btn.primary{@apply bg-accent text-on-action hover:bg-accent-hover}.sidebar-section{@apply mt-5 border-t border-border pt-4}.sidebar-section-title{@apply type-eyebrow text-ink-muted mb-2.5 px-inline-md}
+
+/* Shared Inbox actions and filters use one compact branded control. */
+.inbox-control { display:inline-flex; align-items:center; justify-content:center; min-height:2rem; padding:.35rem .5rem; border:1px solid var(--border-muted); border-radius:var(--radius-control); background:var(--state-selected); color:var(--accent); font-size:var(--type-metadata-size); font-weight:500; line-height:1.1rem; white-space:nowrap; text-decoration:none; cursor:pointer; transition:background-color var(--motion-standard) var(--motion-ease),color var(--motion-standard) var(--motion-ease); }
+.inbox-control:hover:not(:disabled) { border-color:var(--accent); background:var(--surface-reflection-hover); }
+.inbox-control.active { border-color:var(--accent); background:var(--accent); color:var(--text-on-action); font-weight:600; }
+.inbox-control:disabled { opacity:.6; cursor:wait; }
+@media (pointer:coarse) { .inbox-control { min-height:var(--control-target); } }
