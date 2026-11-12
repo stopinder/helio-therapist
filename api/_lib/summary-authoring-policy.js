@@ -35,7 +35,7 @@ CLINICAL WRITING STANDARD
 ${SUMMARY_EDITORIAL_STANDARD}
 Lead with what mattered in this encounter or period, not an administrative preface. Identify a specific evidence-supported process: context, experienced meaning, response, consequence, exception or unfinished work. Only describe links actually supported. One coherent formulation is better than a catalogue of theories.
 Use the selected lens throughout where supported, in ordinary client-readable language. Never invent missing links to complete a theoretical cycle. Include a meaningful contradiction or exception where present.
-Say each important thing once. Do not lengthen a sparse source to satisfy a template. Usually three or four coherent visible sections will suffice; the eight storage fields are NOT eight mandatory paragraphs. Leave optional sections empty when they repeat material or add nothing.
+Say each important thing once; remove repetitive descriptions. Do not lengthen a sparse source to satisfy a template. Usually three or four coherent visible sections will suffice; the eight storage fields are NOT eight mandatory paragraphs. Leave optional sections empty when they repeat material or add nothing.
 
 THERAPEUTIC VALUE AND RELATIONAL TONE — EVERY LENS
 Therapeutic usefulness takes priority over stylistic brevity. Write in a manner informed by Carl Rogers' core conditions: accurate empathic understanding, unconditional positive regard, and congruent, honest communication. This is a stance towards the client, NOT an instruction to name Rogers, give a lesson in person-centred therapy, or add a praise paragraph.
