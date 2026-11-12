@@ -1,17 +1,18 @@
 // Shared by every client-facing summary surface and both server generation routes.
 // This module contains no client records, practitioner defaults or network requests.
-export const SUMMARY_POLICY_VERSION = 'helios-summary-authoring/1.2.0';
+export const SUMMARY_POLICY_VERSION = 'helios-summary-authoring/1.3.0';
 export const SUMMARY_AUDIENCES = Object.freeze(['auto', 'individual', 'shared']);
 export const SUMMARY_ADDITIONS = Object.freeze(['none', 'exercise', 'resource', 'exercise_and_resource']);
 export const SUMMARY_SECTION_GROUPS = Object.freeze([
   { heading: 'What we worked on', fields: ['opening', 'whatWeWorkedOn'] },
   { heading: 'Making sense of the work', fields: ['patternsOverTime', 'perspectiveReflection'] },
-  { heading: 'Changes and resources', fields: ['changesAndExceptions', 'strengthsAndResources'] },
+  { heading: 'What you noticed and what helped', fields: ['changesAndExceptions', 'strengthsAndResources'] },
   { heading: 'Looking ahead', fields: ['betweenSession', 'closing'] }
 ]);
 export const SUMMARY_HEADINGS = new Set([
   ...SUMMARY_SECTION_GROUPS.map(group => group.heading),
   'Optional exercise to consider', 'Somatic check-in', 'Optional resource',
+  'Changes and resources', // Recognise headings in previously saved summaries.
   'Where things are now', 'What we have been working on', 'Patterns across our recent work',
   'What has shifted \u2014 and what has been different', 'Strengths and resources',
   'Making sense of what we have noticed', 'A gentle CBT perspective', 'An integrative perspective',

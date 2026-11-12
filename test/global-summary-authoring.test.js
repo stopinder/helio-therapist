@@ -38,10 +38,10 @@ test('individual audience does not turn discussion of other people into couples 
 });
 test('exercises require an explicit addition choice and remain prospective and adaptable',()=>{
   const prompt=summaryAuthoringPrompt('IFS',{addition:'exercise'});
-  assert.match(prompt,/explicitly requested an optional prospective exercise/);
+  assert.match(prompt,/explicitly requested optional prospective guidance/);
   assert.match(prompt,/decline, modify or stop/);
   assert.match(prompt,/NOT completed, assigned or agreed/);
-  assert.match(prompt,/unless explicitly requested and supported/);
+  assert.match(prompt,/unless established in the source/);
 });
 test('four visible groups preserve clinical text without requiring all eight fields',()=>{
   const sections={...fields(),whatWeWorkedOn:'Work described.',perspectiveReflection:'A tentative meaning.',changesAndExceptions:'A change with limits.',betweenSession:'An open question.'};
