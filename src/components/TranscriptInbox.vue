@@ -202,7 +202,7 @@
                   <span>Open full transcript</span>
                 </button>
               </div>
-              <div v-if="filterMode === 'attention'" class="record-actions">
+              <div v-if="filterMode === 'attention' || filterMode === 'unassigned'" class="record-actions">
                 <button type="button" class="quiet-action" title="Archive from Inbox. The client and encounter assignment is retained." :disabled="inboxBusy" @click="archiveFromInbox(transcript)">
                   <Archive class="workspace-icon-sm" aria-hidden="true" />
                   <span>{{ rowActionSavingId === transcript.id && rowActionSavingMode === 'archive' ? 'Archiving…' : 'Archive from Inbox' }}</span>
@@ -408,7 +408,7 @@ const matchingTranscripts = computed(() => {
   const query = searchQuery.value.trim().toLowerCase();
   return transcripts.value.filter(item => {
     if (filterMode.value === 'attention' && !needsAttention(item)) return false;
-    if (filterMode.value === 'unassigned' && (item.clientId || item.sessionRef || item.inboxArchivedAt || item.completedAt)) return false;
+    if (filterMode.value === 'unassigned' && (item.clientId || item.sessionRef || item.inboxArchivedAt || item.attentionClearedAt || item.completedAt || item.sourceReview?.state === 'separated')) return false;
     if (filterMode.value === 'history' && (needsAttention(item) || item.inboxArchivedAt)) return false;
     if (filterMode.value === 'archived' && !item.inboxArchivedAt) return false;
     if (!query) return true;
@@ -841,7 +841,7 @@ async function archiveFromInbox(transcript){
     replaceTranscriptInList(data.transcript);
     removeExpandedRow(transcript.id);
     lastClearedBatch.value=[data.transcript];
-    rowFeedback.value={message:'Archived from Inbox. The client assignment is retained.',archived:true};
+    rowFeedback.value={message:transcript.clientId?'Archived from Inbox. The client assignment is retained.':'Archived from Inbox. The transcript remains unassigned.',archived:true};
     successMessage.value='Transcript archived. Restore it any time from Archived.';
   }catch(error){
     errorMessage.value=error.message||'Unable to archive this transcript.';

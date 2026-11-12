@@ -1,10 +1,10 @@
 import { mount, flushPromises } from '@vue/test-utils'
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import TranscriptInbox from './TranscriptInbox.vue'
-const mocks = vi.hoisted(() => ({ fetch: vi.fn() }))
+const mocks = vi.hoisted(() => ({ fetch: vi.fn(), push: vi.fn() }))
 vi.mock('../lib/api.js', () => ({ authenticatedFetch: mocks.fetch }))
 vi.mock('../lib/clients.js', () => ({ createClient: vi.fn(), listClients: vi.fn().mockResolvedValue([]) }))
-vi.mock('vue-router', () => ({ useRoute: () => ({ query: {} }), useRouter: () => ({ push: vi.fn() }) }))
+vi.mock('vue-router', () => ({ useRoute: () => ({ query: {} }), useRouter: () => ({ push: mocks.push }) }))
 const row = { id: 'unassigned-source', clientId: null, receivedAt: '2026-11-11T09:00:00Z', status: 'unassigned' }
 const detail = { ...row, text: '[ ] Unknown: Hello. [ ] Unknown: This is the full conversation, including a distinctive clue.' }
 const response = value => ({ ok: true, json: async () => value })
@@ -53,4 +53,21 @@ describe('identifying an unassigned transcript', () => {
     await flushPromises()
     expect(wrapper.find('.conversation-preview').text()).toContain('distinctive clue')
   })
+  it('Unassigned stays in the Inbox, excludes already archived imports and offers removal actions', async () => {
+    mocks.fetch.mockResolvedValueOnce(response({ transcripts: [row, { ...row, id: 'legacy-archived', attentionClearedAt: '2026-11-11T10:00:00Z' }] }))
+    wrapper = mount(TranscriptInbox, { attachTo: document.body, global: { stubs: { SourceReviewDialog: true, TranscriptAssignmentDialog: true, AddClientModal: true } } })
+    await flushPromises()
+    await button(wrapper, 'Unassigned').trigger('click')
+    expect(wrapper.findAll('.transcript-row')).toHaveLength(1)
+    expect(button(wrapper, 'Archive from Inbox')).toBeDefined()
+    expect(button(wrapper, 'Delete')).toBeDefined()
+    expect(mocks.push).not.toHaveBeenCalled()
+    mocks.fetch.mockResolvedValueOnce(response({ transcript: { ...row, inboxArchivedAt: '2026-11-12T12:00:00Z', updatedAt: '2026-11-12T12:00:00Z' } }))
+    await button(wrapper, 'Archive from Inbox').trigger('click')
+    await flushPromises()
+    expect(wrapper.findAll('.transcript-row')).toHaveLength(0)
+    expect(wrapper.text()).toContain('The transcript remains unassigned.')
+    expect(mocks.push).not.toHaveBeenCalled()
+  })
+
 })

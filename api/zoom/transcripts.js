@@ -1,3 +1,4 @@
+import { visibleInboxTranscripts } from '../_lib/sample-transcript-visibility.js';
 import { createHash } from 'node:crypto';
 import { getSupabaseUserClient, requireAuthenticatedUser } from '../_lib/supabase.js';
 
@@ -91,6 +92,9 @@ export default async function handler(req, res) {
           .eq('therapist_user_id', user.id).eq('id', id).is('deleted_at', null).maybeSingle());
         if (error) throw error;
         if (!data) return res.status(404).json({ error: 'Transcript not found.' });
+        if (!hasSessionFilter && !(await visibleInboxTranscripts({ supabase, userId: user.id, rows: [data] })).length) {
+          return res.status(404).json({ error: 'This sample transcript belongs to an archived sample client.' });
+        }
         return res.status(200).json({ transcript: serialiseTranscript(data), capabilities: { assignmentRecovery: archiveSupportAvailable } });
       }
 
@@ -101,7 +105,8 @@ export default async function handler(req, res) {
         return query.order('received_at', { ascending: false });
       });
       if (error) throw error;
-      return res.status(200).json({ transcripts: (data || []).map((row) => serialiseTranscript(row, { list: !hasSessionFilter })), capabilities: { assignmentRecovery: archiveSupportAvailable } });
+      const visibleRows = hasSessionFilter ? (data || []) : await visibleInboxTranscripts({ supabase, userId: user.id, rows: data || [] });
+      return res.status(200).json({ transcripts: visibleRows.map((row) => serialiseTranscript(row, { list: !hasSessionFilter })), capabilities: { assignmentRecovery: archiveSupportAvailable } });
     }
 
     if (req.method === 'DELETE') {
