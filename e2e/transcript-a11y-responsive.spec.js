@@ -111,7 +111,7 @@ test.describe('Transcript Workflow - A11y & Responsive', () => {
             const clientSelect = transcriptRow.getByRole('combobox');
             await expect(clientSelect).toBeVisible();
             await clientSelect.selectOption({ label: 'John Doe' });
-            await expect(transcriptRow.getByRole('button', { name: 'Assign' })).toBeEnabled();
+            await expect(transcriptRow.getByRole('button', { name: 'Assign & open Clinical', exact: true })).toBeEnabled();
 
             await transcriptRow.getByRole('button', { name: 'Open full transcript' }).click();
             await expect(page.getByText('Transcript review')).toBeVisible();

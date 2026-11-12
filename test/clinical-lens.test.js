@@ -37,7 +37,7 @@ test('Clinical Lens: UI uses lens configuration', async () => {
   assert.match(carePanel, /Review with Helios/)
   assert.match(carePanel, /availableLenses/)
   assert.match(carePanel, /sections=computed/)
-  assert.match(carePanel, /v-for="l in availableLenses"/)
+  assert.match(carePanel, /v-for="option in availableLenses"/)
   assert.match(careFocus, /sectionTitle\(item\.kind\)/)
   assert.match(careFocus, /Open full Therapy Focus/)
 })

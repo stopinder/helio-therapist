@@ -51,7 +51,7 @@ test('sample clients can be archived and restored without deletion', async () =>
 test('client rows remain directly and keyboard navigable', async () => {
   const view = await readFile(new URL('../src/views/Clients.vue', import.meta.url), 'utf8')
   assert.match(view, /tabindex="0" role="link"/)
-  assert.match(view, /openClient\(client\.id\)/)
+  assert.match(view, /openClient\(client\)/)
 })
 
 test('directory loads real upcoming appointments and listClients keeps active-only default', async () => {

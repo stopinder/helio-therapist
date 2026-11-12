@@ -32,7 +32,7 @@ test('AI reflection API remains owned-reflection scoped while allowing reviewed 
 
 test('dictation remains transient server-side and returns text only', () => {
   assert.match(transcribeApi, /audio\.transcriptions\.create/)
-  assert.match(transcribeApi, /return res\.status\(200\)\.json\(\{ success: true, text:/)
+  assert.match(transcribeApi, /return res\.status\(200\)\.json\(\{[\s\S]*success: true,[\s\S]*text: result\.text/)
   assert.doesNotMatch(transcribeApi, /supabase\s*\.\s*from\(/)
   assert.doesNotMatch(transcribeApi, /\.from\(['"](?:private_reflections|sessions|clients)['"]\)/)
   assert.doesNotMatch(transcribeApi, /storage\./)

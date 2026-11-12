@@ -20,7 +20,7 @@ test('reflection saving has length validation and error handling', async () => {
   assert.match(workspace, /const isBodyValid = computed\(\(\) => \(body\.value \|\| ''\)\.length <= maxReflectionCharacters\)/)
   assert.match(workspace, /const isBodyReady = computed\(\(\) => Boolean\(body\.value\.trim\(\)\) && isBodyValid\.value\)/)
   assert.match(workspace, /if \(!isBodyReady\.value\)/)
-  assert.match(workspace, /:disabled="saving \|\| !isBodyReady"/)
+  assert.match(workspace, /:disabled="saving \|\| !isBodyReady \|\| dictation\.busy\.value"/)
   assert.match(workspace, /error\?\.code === '23514'/)
   assert.match(workspace, /'Your reflection is too long to be saved\.'/)
 })
@@ -35,5 +35,8 @@ test('summary generation handles non-JSON responses safely', async () => {
 
 test('transcription also uses safe JSON parsing', async () => {
   const workspace = await readFile(new URL('../src/components/ReflectionWorkspace.vue', import.meta.url), 'utf8')
-  assert.match(workspace, /async function transcribe\(\)[\s\S]*await safeParseJson\(response\)/)
+  const dictation = await readFile(new URL('../src/composables/useWhisperDictation.js', import.meta.url), 'utf8')
+  assert.match(workspace, /useWhisperDictation/)
+  assert.match(dictation, /authenticatedFetch\('\/api\/ai\/transcribe'/)
+  assert.match(dictation, /await response\.json\(\)\.catch\(\(\) => \(\{\}\)\)/)
 })

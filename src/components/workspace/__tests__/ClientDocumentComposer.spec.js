@@ -96,6 +96,9 @@ describe('ClientDocumentComposer', () => {
   })
 
   it('hides the previous summary while a replacement is generating and restores it on failure', async () => {
+    clientDocs.listClientSummaryEvidence.mockResolvedValueOnce([
+      { sessionId: 's1', occurredAt: '2026-10-29T10:00:00Z', reviewedAt: '2026-10-29T12:00:00Z' }
+    ])
     let rejectGeneration
     clientDocs.generateClientSessionSummary.mockImplementationOnce(() => new Promise((resolve, reject) => {
       rejectGeneration = reject
@@ -127,10 +130,13 @@ describe('ClientDocumentComposer', () => {
 
     expect(wrapper.find('[data-testid="summary-generation-placeholder"]').exists()).toBe(false)
     expect(wrapper.find('[data-testid="rich-document-editor-stub"]').element.value).toBe('Previous summary text')
-    expect(wrapper.text()).toContain('Generation failed — previous summary unchanged. AI failed')
+    expect(wrapper.text()).toContain('AI failed The current draft is unchanged.')
   })
 
   it('preserves text on generation failure', async () => {
+    clientDocs.listClientSummaryEvidence.mockResolvedValueOnce([
+      { sessionId: 's1', occurredAt: '2026-10-29T10:00:00Z', reviewedAt: '2026-10-29T12:00:00Z' }
+    ])
     clientDocs.generateClientSessionSummary.mockRejectedValue(new Error('AI failed'))
     
     const wrapper = mount(ClientDocumentComposer, {
@@ -149,7 +155,7 @@ describe('ClientDocumentComposer', () => {
     await flushPromises()
 
     expect(clientDocs.generateClientSessionSummary).toHaveBeenCalledTimes(1)
-    expect(wrapper.text()).toContain('Generation failed — previous summary unchanged. AI failed')
+    expect(wrapper.text()).toContain('AI failed The current draft is unchanged.')
     expect(wrapper.find('[data-testid="rich-document-editor-stub"]').element.value).toBe('Original Text')
   })
 })

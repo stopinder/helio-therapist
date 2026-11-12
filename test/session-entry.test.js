@@ -28,7 +28,7 @@ test('Client Workspace session entry behavior', async () => {
   assert.match(header, /workspaceError/)
   assert.match(header, /Couldn’t open Clinical Workspace\. Please try again\./)
   
-  assert.match(workspace, /s\.status === 'source_ready'/)
+  assert.match(workspace, /s\.status==='source_ready'/)
 
   // ClientWorkspace view no longer manages session ceremony state
   assert.doesNotMatch(workspace, /const\s+sessionBusy\s*=\s*ref\(false\)/)
