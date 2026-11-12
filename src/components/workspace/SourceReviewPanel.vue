@@ -13,7 +13,7 @@
           <blockquote class="whitespace-pre-wrap text-body-sm">{{ item.quote }}</blockquote>
         </div>
         <details v-if="source.zoomNote" open data-testid="review-zoom-note" class="rounded-control border border-border-muted p-3"><summary class="cursor-pointer font-semibold text-action-link">Zoom note · quick session overview</summary><p class="mt-2 text-caption text-ink-muted">A secondary interpretation, not independent proof of client identity.</p><p class="whitespace-pre-wrap break-words text-body-sm mt-2">{{ source.zoomNote }}</p></details>
-        <details v-if="source.text?.trim()" :open="needsTranscriptReview" data-testid="review-original-transcript" class="rounded-control border border-border-muted p-3"><summary class="cursor-pointer text-action-link">View original transcript (only when needed)</summary><label class="mt-3 block"><span class="font-semibold text-body-sm">{{ lines.length }} numbered lines</span><textarea :value="numberedSource" readonly rows="12" class="mt-2 w-full font-mono text-body-sm border border-border rounded-control p-3" aria-label="Original transcript with line numbers"></textarea></label></details>
+        <details v-if="source.text?.trim()" :open="needsTranscriptReview" data-testid="review-original-transcript" class="rounded-control border border-border-muted p-3"><summary class="cursor-pointer text-action-link">View original transcript (only when needed)</summary><TranscriptConversation v-if="mode !== 'split'" class="mt-3" :transcript="source" /><label v-else class="mt-3 block"><span class="font-semibold text-body-sm">{{ lines.length }} numbered lines</span><textarea :value="numberedSource" readonly rows="12" class="mt-2 w-full font-mono text-body-sm border border-border rounded-control p-3" aria-label="Original transcript with line numbers"></textarea></label></details>
         <p v-if="!source.text?.trim() && !source.zoomNote?.trim()" class="text-body-sm text-state-danger">No transcript or Zoom note is available. Recover the source before confirming or splitting.</p>
         <p v-else-if="!source.text?.trim()" class="text-caption text-ink-muted">No original transcript was imported. You can review the available Zoom note and confirm the assigned encounter without inventing transcript evidence.</p>
         <fieldset class="flex flex-wrap gap-4"><legend class="font-semibold mb-2">What does this source contain?</legend><label><input v-model="mode" type="radio" value="confirm" :disabled="busy" /> One encounter</label><label v-if="!source.parentId && source.text?.trim()"><input v-model="mode" type="radio" value="split" :disabled="busy" /> Separate conversations</label><label v-if="source.clientId && source.sessionId && !source.parentId"><input v-model="mode" type="radio" value="reassign" :disabled="busy" /> Wrong client — reassign</label></fieldset>
@@ -63,7 +63,7 @@
               <label>Client<select v-model="segment.clientId" class="control-field" @change="segment.reviewed=false"><option value="">Choose client</option><option v-for="client in clients" :key="client.id" :value="client.id">{{ client.name || client.display_name }}</option></select></label>
               <label>Encounter date and time<input v-model="segment.localDate" type="datetime-local" class="control-field" @input="segment.reviewed=false" /></label>
             </div>
-            <details><summary class="cursor-pointer text-action-link">Review this conversation's selected text</summary><pre class="whitespace-pre-wrap break-words max-h-64 overflow-auto text-body-sm mt-2">{{ segmentText(segment) }}</pre></details>
+            <details><summary class="cursor-pointer text-action-link">Review this conversation's selected text</summary><TranscriptConversation class="mt-3" :transcript="{ text: segmentText(segment) }" /></details>
             <label class="flex gap-2"><input v-model="segment.reviewed" type="checkbox" /><span>I reviewed these boundaries and this client assignment.</span></label>
             <button v-if="segments.length>2" type="button" class="button-secondary" @click="segments.splice(index,1)">Remove conversation</button>
           </fieldset>
@@ -80,6 +80,7 @@
   </section>
 </template>
 <script setup>
+import TranscriptConversation from '../TranscriptConversation.vue'
 import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue';
 import { RouterLink } from 'vue-router';
 import { authenticatedFetch } from '../../lib/api.js';

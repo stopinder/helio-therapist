@@ -56,7 +56,7 @@ test('Transcript Inbox surfaces structured Zoom note and speaker clues without o
   assert.match(inbox, /function zoomNoteBlocks\(value\)/)
   assert.match(inbox, /function visibleZoomNoteBlocks\(transcript\)/)
   assert.match(inbox, /function zoomNoteCanExpand\(transcript\)/)
-  assert.match(inbox, /No Zoom note excerpt is available/)
+  assert.match(inbox, /No Zoom note is available/)
 })
 
 
@@ -124,16 +124,15 @@ test('Transcript Inbox client assignment controls cannot overflow the assignment
 test('Transcript Inbox renders readable conversation turns instead of raw source text in preview', () => {
   assert.match(inbox, /class="conversation-preview"/)
   assert.match(inbox, /Transcript preview/)
-  assert.match(inbox, /speakerTrackLabel\(speakerSummary\(transcript\)\)/)
-  assert.match(inbox, /Includes unidentified speaker/)
-  assert.match(inbox, /previewConversation\(transcript\)/)
-  assert.match(inbox, /togglePreviewDepth\(transcript\.id\)/)
+  assert.match(inbox, /Zoom did not identify every speaker/)
+  assert.match(inbox, /<TranscriptConversation :transcript="transcript"/)
+  assert.doesNotMatch(inbox, /transcriptPreview\(transcript\)/)
   assert.doesNotMatch(inbox, /<pre v-if="expandedRows\.has\(transcript\.id\)"/)
 })
 
 test('full transcript defaults to readable conversation with search and preserves raw source', () => {
   assert.match(inbox, /Search this transcript/)
-  assert.match(inbox, /filteredSelectedConversationTurns/)
+  assert.match(inbox, /:query="transcriptSearch"/)
   assert.match(inbox, /Readable view of the original Zoom transcript/)
   assert.match(inbox, /Raw source/)
   assert.match(inbox, /Exact imported text retained for source fidelity/)

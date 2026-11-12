@@ -258,7 +258,7 @@
                   <div v-if="transcriptLoading" class="flex items-center justify-center p-8"><span class="w-6 h-6 border-2 border-state-selected border-t-transparent rounded-full animate-spin"></span></div>
                   <div v-else-if="transcriptError" class="text-state-danger text-body-sm p-4 text-center">{{ transcriptError }}</div>
                   <div v-else-if="!transcript" class="text-ink-muted text-body-sm p-8 text-center">Linked transcript is not available yet.</div>
-                  <pre v-else class="whitespace-pre-wrap break-words font-mono text-body-sm leading-relaxed text-ink-secondary max-h-[36rem] overflow-auto">{{ transcript.text }}</pre>
+                  <TranscriptConversation v-else :transcript="transcript" />
                 </div>
               </section>
 
@@ -293,6 +293,8 @@
 </template>
 
 <script setup>
+import TranscriptConversation from '../components/TranscriptConversation.vue';
+
 import SummaryRefinementPanel from '../components/workspace/SummaryRefinementPanel.vue';
 import { candidateMatches, summaryContextKey } from '../lib/summaryAuthoring.js';
 import HelpLink from '../components/help/HelpLink.vue'

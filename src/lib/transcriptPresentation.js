@@ -140,17 +140,6 @@ export function transcriptSpeakerSummary(transcript) {
   }
 }
 
-export function conversationPreview(transcript, { expanded = false } = {}) {
-  const turns = conversationTurns(transcript)
-  const limit = expanded ? 30 : 12
-  return {
-    turns: turns.slice(0, limit),
-    totalTurns: turns.length,
-    limit,
-    hasMore: turns.length > limit
-  }
-}
-
 export function searchConversationTurns(turns, query) {
   const needle = String(query || '').trim().toLowerCase()
   if (!needle) return turns

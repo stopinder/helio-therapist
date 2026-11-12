@@ -31,7 +31,7 @@
             <details v-if="source.text || source.zoomNote" class="rounded-control border border-border-muted p-3">
               <summary class="cursor-pointer font-medium text-action-link">Review source</summary>
               <p v-if="source.zoomNote" class="mt-3 whitespace-pre-wrap break-words text-body-sm">{{ source.zoomNote }}</p>
-              <details v-if="source.text" class="mt-3"><summary class="cursor-pointer text-action-link">Original transcript</summary><pre class="mt-2 max-h-64 overflow-auto whitespace-pre-wrap break-words font-sans text-body-sm">{{ source.text }}</pre></details>
+              <details v-if="source.text" class="mt-3"><summary class="cursor-pointer text-action-link">Original transcript</summary><TranscriptConversation class="mt-3" :transcript="source" /></details>
             </details>
             <div v-if="source.blocked" class="rounded-control border border-border-muted p-4 space-y-3" data-testid="assignment-affected-work">
               <h3 class="font-semibold text-ink">Related work needs review</h3>
@@ -68,6 +68,7 @@
 </template>
 
 <script setup>
+import TranscriptConversation from '../TranscriptConversation.vue'
 import { ref, computed, watch, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import { RouterLink } from 'vue-router'
 import { authenticatedFetch } from '../../lib/api.js'

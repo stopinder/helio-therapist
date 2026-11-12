@@ -38,9 +38,9 @@ test('TranscriptTab is NOT mounted by SessionWorkspace', () => {
   assert.strictEqual(source.includes('<TranscriptTab'), false, 'TranscriptTab should be removed')
 })
 
-test('transcript text is rendered directly only when expanded', () => {
+test('shared readable transcript is rendered only when expanded', () => {
   assert.match(source, /v-if="showTranscript"/)
-  assert.match(source, /\{\{\s*transcript\.text\s*\}\}/)
+  assert.match(source, /<TranscriptConversation v-else :transcript="transcript"/)
 })
 
 test('Session summary persistence uses clientDocuments/document draft helpers', () => {

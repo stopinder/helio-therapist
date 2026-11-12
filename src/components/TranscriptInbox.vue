@@ -170,13 +170,29 @@
                 <span>{{ expandedNoteIds.has(transcript.id) ? 'Show less' : 'Show more' }}</span>
               </button>
             </section>
-            <p v-else class="triage-preview">{{ transcriptPreview(transcript) }}</p>
+            <p v-else-if="!expandedRows.has(transcript.id)" class="triage-preview">No Zoom note is available. Preview the transcript to identify the session before choosing a client.</p>
+
+            <section v-if="expandedRows.has(transcript.id)" class="conversation-preview" tabindex="-1" aria-label="Transcript preview">
+              <header class="conversation-preview-header">
+                <div>
+                  <p class="type-eyebrow text-accent">Transcript preview</p>
+                  <p class="type-metadata text-ink-muted">Read or search the source before choosing a client. No assignment is required.</p>
+                  <div class="identity-clues">
+                    <span v-if="transcript.sourceTitle">Zoom title: {{ transcript.sourceTitle }}</span>
+                    <span v-if="speakerSummary(transcript).identifiedSpeakers.length">Named speakers: {{ speakerSummary(transcript).identifiedSpeakers.join(', ') }}</span>
+                    <span v-if="speakerSummary(transcript).hasUnidentified">Zoom did not identify every speaker.</span>
+                  </div>
+                </div>
+                <button type="button" class="quiet-action" @click="openTranscript(transcript)">Open full transcript</button>
+              </header>
+              <TranscriptConversation :transcript="transcript" :show-raw-control="false" />
+            </section>
 
             <div class="triage-actions">
               <div class="utility-actions">
-                <button type="button" class="quiet-action" :aria-expanded="expandedRows.has(transcript.id)" @click="toggleExpand(transcript.id, $event)">
+                <button type="button" class="quiet-action" :disabled="previewLoadingId === transcript.id" :aria-expanded="expandedRows.has(transcript.id)" @click="toggleExpand(transcript.id, $event)">
                   <Eye class="workspace-icon-sm" aria-hidden="true" />
-                  <span>{{ expandedRows.has(transcript.id) ? 'Hide preview' : 'Preview transcript' }}</span>
+                  <span>{{ previewLoadingId === transcript.id ? 'Loading transcript…' : expandedRows.has(transcript.id) ? 'Hide preview' : 'Preview transcript' }}</span>
                 </button>
                 <button type="button" class="quiet-action" @click="openTranscript(transcript)">
                   <FileText class="workspace-icon-sm" aria-hidden="true" />
@@ -194,40 +210,7 @@
                 </button>
               </div>
             </div>
-            <section v-if="expandedRows.has(transcript.id)" class="conversation-preview" aria-label="Transcript preview">
-              <header class="conversation-preview-header">
-                <div>
-                  <p class="type-eyebrow text-accent">Transcript preview</p>
-                  <div class="identity-clues">
-                    <span v-if="transcript.sourceTitle">Zoom title: {{ transcript.sourceTitle }}</span>
-                    <span v-if="speakerSummary(transcript).identifiedSpeakers.length">Named speakers: {{ speakerSummary(transcript).identifiedSpeakers.join(', ') }}</span>
-                    <span>{{ speakerTrackLabel(speakerSummary(transcript)) }}</span>
-                    <span v-if="speakerSummary(transcript).hasUnidentified">Includes unidentified speaker</span>
-                  </div>
-                </div>
-                <span class="type-metadata text-ink-muted">{{ previewConversation(transcript).totalTurns }} readable turn{{ previewConversation(transcript).totalTurns === 1 ? '' : 's' }}</span>
-              </header>
-              <div v-if="previewConversation(transcript).turns.length" class="conversation-turns conversation-turns-preview">
-                <article v-for="(turn, index) in previewConversation(transcript).turns" :key="`${turn.key}-${turn.sourceIndex}-${index}`" class="conversation-turn">
-                  <header class="turn-header">
-                    <span class="turn-speaker" :class="{ unidentified: !turn.identified }">{{ turn.speaker }}</span>
-                    <time v-if="turn.time" class="turn-time">{{ turn.time }}</time>
-                  </header>
-                  <p>{{ turn.text }}</p>
-                </article>
-              </div>
-              <p v-else class="conversation-empty">No readable conversation turns could be extracted from this source.</p>
-              <footer v-if="previewConversation(transcript).totalTurns > 12" class="conversation-preview-footer">
-                <button type="button" class="zoom-note-toggle" :aria-expanded="expandedPreviewIds.has(transcript.id)" @click="togglePreviewDepth(transcript.id)">
-                  <ChevronUp v-if="expandedPreviewIds.has(transcript.id)" class="workspace-icon-sm" aria-hidden="true" />
-                  <ChevronDown v-else class="workspace-icon-sm" aria-hidden="true" />
-                  <span>{{ expandedPreviewIds.has(transcript.id) ? 'Show less' : 'Show more' }}</span>
-                </button>
-                <span v-if="expandedPreviewIds.has(transcript.id) && previewConversation(transcript).hasMore" class="type-metadata text-ink-muted">
-                  Showing the first {{ previewConversation(transcript).limit }} of {{ previewConversation(transcript).totalTurns }} turns. Open the full transcript for the rest.
-                </span>
-              </footer>
-            </section>
+
           </div>
         </article>
         <div v-if="hasMoreHistory" class="load-more-row"><button class="load-more" type="button" @click="historyLimit += historyPageSize">Load more</button></div>
@@ -294,18 +277,7 @@
               <span v-if="selectedSpeakerSummary.hasUnidentified">Includes unidentified speaker</span>
             </div>
           </div>
-          <div v-if="filteredSelectedConversationTurns.length" class="conversation-turns conversation-turns-full">
-            <article v-for="(turn, index) in filteredSelectedConversationTurns" :key="`${turn.key}-${turn.sourceIndex}-${index}`" class="conversation-turn">
-              <header class="turn-header">
-                <span class="turn-speaker" :class="{ unidentified: !turn.identified }">{{ turn.speaker }}</span>
-                <time v-if="turn.time" class="turn-time">{{ turn.time }}</time>
-              </header>
-              <p>{{ turn.text }}</p>
-            </article>
-          </div>
-          <div v-else class="conversation-empty">
-            {{ transcriptSearch ? 'No transcript turns match your search.' : 'No readable conversation turns could be extracted from this source.' }}
-          </div>
+          <TranscriptConversation :transcript="selected" :query="transcriptSearch" :searchable="false" :show-raw-control="false" />
         </div>
         <div v-if="showRaw" class="raw-source-panel">
           <div class="raw-source-heading">
@@ -350,7 +322,8 @@ import { useRoute, useRouter } from 'vue-router'
 import { Archive, ArrowLeft, CalendarDays, Check, CheckCircle2, ChevronDown, ChevronUp, Eye, FileText, Inbox, Search, Sparkles, Trash2, UserPlus, UserRound, UsersRound } from '@lucide/vue'
 import { authenticatedFetch } from '../lib/api.js'
 import { createClient } from '../lib/clients.js'
-import { conversationPreview, conversationTurns, searchConversationTurns, transcriptSpeakerSummary } from '../lib/transcriptPresentation.js'
+import { transcriptSpeakerSummary } from '../lib/transcriptPresentation.js'
+import TranscriptConversation from './TranscriptConversation.vue'
 import AddClientModal from './sidebar/AddClientModal.vue'
 import StatusIndicator from './ui/StatusIndicator.vue'
 import SourceReviewDialog from './workspace/SourceReviewDialog.vue'
@@ -409,7 +382,7 @@ const inboxRoot = ref(null), lastAssignment = ref(null), lastAssignmentLabel = r
 let listScrollPosition = null
 const inboxBusy = computed(() => refreshing.value || saving.value || !!assignmentSavingId.value || !!encounterDateSavingId.value || !!rowActionSavingId.value || !!navigationSavingId.value)
 const transcripts = ref([]), selected = ref(null), selectedClientId = ref(''), selectedLens = ref(''), sourceRetention = ref('keep_until_review'), transcriptSearch = ref('')
-const editingClient = ref(false), editingChoices = ref(false), searchQuery = ref(''), filterMode = ref('attention'), showRaw = ref(false), expandedRows = ref(new Set()), expandedNoteIds = ref(new Set()), expandedPreviewIds = ref(new Set()), assignmentDrafts = ref({}), encounterDateDrafts = ref({}), assignmentSavingId = ref(null), encounterDateSavingId = ref(null), rowActionSavingId = ref(null), rowActionSavingMode = ref(''), detailReturnId = ref(null)
+const editingClient = ref(false), editingChoices = ref(false), searchQuery = ref(''), filterMode = ref('attention'), showRaw = ref(false), expandedRows = ref(new Set()), expandedNoteIds = ref(new Set()), previewLoadingId = ref(null), assignmentDrafts = ref({}), encounterDateDrafts = ref({}), assignmentSavingId = ref(null), encounterDateSavingId = ref(null), rowActionSavingId = ref(null), rowActionSavingMode = ref(''), detailReturnId = ref(null)
 const loading = ref(true), saving = ref(false), errorMessage = ref(''), successMessage = ref('')
 const showAddClient = ref(false), addingClient = ref(false), addClientError = ref(''), addClientTranscriptId = ref(null), addClientInitialName = ref('')
 const lastClearedBatch = ref([])
@@ -424,9 +397,7 @@ function canDeleteTranscript(transcript) {
     !transcript.completedAt);
 }
 const isEligibleForDeletion = computed(() => canDeleteTranscript(selected.value));
-const selectedConversationTurns = computed(() => conversationTurns(selected.value));
 const selectedSpeakerSummary = computed(() => transcriptSpeakerSummary(selected.value));
-const filteredSelectedConversationTurns = computed(() => searchConversationTurns(selectedConversationTurns.value, transcriptSearch.value));
 const filters = [{ id: 'attention', label: 'Needs attention' }, { id: 'unassigned', label: 'Unassigned' }, { id: 'history', label: 'History' }, { id: 'archived', label: 'Archived' }]
 const actionableCount = computed(() => transcripts.value.filter(item => needsAttention(item)).length)
 const sampleTranscriptCount = computed(() => transcripts.value.filter(isSampleTranscript).length)
@@ -505,16 +476,6 @@ function speakerTrackLabel(summary){
   const count=Number(summary?.speakerCount||0)
   return `${count} speaker track${count===1?'':'s'}`
 }
-function previewConversation(transcript){
-  return conversationPreview(transcript,{expanded:expandedPreviewIds.value.has(transcript?.id)})
-}
-function togglePreviewDepth(id){
-  if(!id)return
-  const next=new Set(expandedPreviewIds.value)
-  if(next.has(id))next.delete(id)
-  else next.add(id)
-  expandedPreviewIds.value=next
-}
 function cleanZoomNoteText(value){
   return String(value||'')
     .replace(/\*\*(.*?)\*\*/g,'$1')
@@ -561,12 +522,6 @@ async function toggleZoomNote(id){
   if(next.has(id))next.delete(id)
   else { if (!await fetchTranscriptDetail(transcripts.value.find(item=>item.id===id))) return; next.add(id) }
   expandedNoteIds.value=next
-}
-function transcriptPreview(transcript){
-  if(typeof transcript?.text!=='string')return 'No Zoom note excerpt is available. Open Preview only if you need the source transcript.';
-  const text=transcript.text.replace(/\b\d{1,2}:\d{2}(?::\d{2})?(?:\.\d+)?\b/g,' ').replace(/\s+/g,' ').trim();
-  if(!text)return 'No transcript preview is available.';
-  return text.length>340?`${text.slice(0,337)}…`:text
 }
 function suggestedNewClientName(transcript){
   const title=String(transcript?.sourceTitle||'').trim();
@@ -698,10 +653,21 @@ async function fetchTranscriptDetail(transcript){
 }
 async function toggleExpand(id, event) {
   event.stopPropagation();
+  if (previewLoadingId.value) return;
   if (expandedRows.value.has(id)) { expandedRows.value.delete(id); return; }
-  const transcript=transcripts.value.find(item=>item.id===id);
-  const detailed=await fetchTranscriptDetail(transcript);
-  if(detailed)expandedRows.value.add(id);
+  const row = event.currentTarget.closest('[data-transcript-id]');
+  previewLoadingId.value = id;
+  errorMessage.value = '';
+  try {
+    const transcript = transcripts.value.find(item => item.id === id);
+    const detailed = await fetchTranscriptDetail(transcript);
+    if (!detailed) return;
+    expandedRows.value.add(id);
+    await nextTick();
+    const preview = row?.querySelector('.conversation-preview');
+    preview?.focus({ preventScroll: true });
+    preview?.scrollIntoView({ block: 'start' });
+  } finally { previewLoadingId.value = null; }
 }
 async function openTranscript(transcript){
   const detailed=await fetchTranscriptDetail(transcript);
@@ -1142,7 +1108,8 @@ watch(()=>props.openTranscriptId,openQueuedTranscript);watch(searchQuery,()=>{hi
 .danger-action { color:var(--state-danger); }
 .danger-action:hover:not(:disabled) { background:var(--state-danger-surface); color:var(--state-danger); }
 .conversation-preview {
-  margin:.1rem 0 0 3rem;
+  margin:1rem 0 0 3rem;
+  scroll-margin-top:6rem;
   padding:1rem;
   border:1px solid var(--border-muted);
   border-radius:var(--radius-control);
@@ -1152,18 +1119,6 @@ watch(()=>props.openTranscriptId,openQueuedTranscript);watch(searchQuery,()=>{hi
 .identity-clues { display:flex; flex-wrap:wrap; align-items:center; gap:.3rem .65rem; margin-top:.3rem; color:var(--text-muted); font-size:var(--type-metadata-size); line-height:var(--type-metadata-line); }
 .identity-clues > span { display:inline-flex; align-items:center; gap:.25rem; }
 .identity-clues > span + span::before { content:'·'; margin-right:.35rem; color:var(--border-strong); }
-.conversation-turns { border:1px solid var(--border-muted); border-radius:var(--radius-control); overflow:hidden; background:var(--surface-raised); }
-.conversation-turn { padding:.7rem .85rem .8rem; border-bottom:1px solid var(--border-muted); }
-.conversation-turn:last-child { border-bottom:0; }
-.turn-header { display:flex; align-items:baseline; justify-content:space-between; gap:.75rem; margin-bottom:.22rem; }
-.turn-speaker { color:var(--accent); font-size:var(--type-ui-size); font-weight:650; }
-.turn-speaker.unidentified { color:var(--text-muted); font-style:italic; font-weight:550; }
-.turn-time { color:var(--text-subtle); font-size:var(--type-metadata-size); font-variant-numeric:tabular-nums; }
-.conversation-turn p { margin:0; color:var(--text-secondary); font-size:.84rem; line-height:1.55; }
-.conversation-turns-preview { max-height:27rem; overflow:auto; }
-.conversation-preview-footer { display:flex; flex-wrap:wrap; align-items:center; gap:.75rem; margin-top:.65rem; }
-.conversation-empty { margin:0; padding:1rem; border:1px dashed var(--border); border-radius:var(--radius-control); color:var(--text-muted); font-size:var(--type-ui-size); text-align:center; }
-.conversation-turns-full { max-height:48rem; overflow:auto; }
 
 
 .empty-card { padding:var(--space-stack-2xl); text-align:center; border:1px solid var(--border-muted); border-radius:var(--radius-panel); background:var(--surface-raised); color:var(--text-muted); }
