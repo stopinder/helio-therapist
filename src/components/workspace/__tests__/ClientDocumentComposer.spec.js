@@ -168,7 +168,7 @@ it('offers last five and entire history and auto-fills editable period dates fro
     ])
 
     const wrapper = mount(ClientDocumentComposer, {
-      props: { client: historyMockClient, initialDocumentType: 'session_summary' },
+      props: { client: historyMockClient, initialDocumentType: 'across_session_review' },
       global: { stubs: { teleport: true, RichDocumentEditor: RichDocumentEditorStub } }
     })
     await flushPromises()
@@ -195,3 +195,20 @@ it('offers last five and entire history and auto-fills editable period dates fro
     expect(wrapper.findAll('input[type="date"]')[0].element.value).toBe('2026-10-03')
     expect(wrapper.text()).toContain('Auto-filled from the selected evidence window. You can edit or clear either date.')
   })
+
+
+it('starts a new session summary with only its anchor encounter', async () => {
+  clientDocs.listClientSummaryEvidence.mockResolvedValueOnce([
+    { sessionId:'s1', occurredAt:'2026-10-29T10:00:00Z', reviewedAt:'2026-10-29T12:00:00Z' },
+    { sessionId:'s2', occurredAt:'2026-10-22T10:00:00Z', reviewedAt:'2026-10-22T12:00:00Z' }
+  ])
+  const wrapper=mount(ClientDocumentComposer,{
+    props:{client:historyMockClient,initialDocumentType:'session_summary'},
+    global:{stubs:{teleport:true,RichDocumentEditor:RichDocumentEditorStub}}
+  })
+  await flushPromises()
+  const continuity=wrapper.findAll('select').find(select=>select.text().includes('Last 5 sessions'))
+  expect(continuity.element.value).toBe('current')
+  expect(wrapper.findAll('input[type="date"]').map(input=>input.element.value)).toEqual(['2026-10-29','2026-10-29'])
+  await wrapper.unmount()
+})

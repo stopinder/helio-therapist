@@ -53,8 +53,8 @@ test('all three source-review entry points support the corrected destination',()
   assert.match(panel,/data-testid="confirm-source-reassignment"/);
   assert.match(panel,/reassignReviewed\.value/);
   assert.match(panel,/Open corrected encounter/);
-  assert.match(inbox,/Correct client assignment/);
-  assert.match(inbox,/Correct assignment/);
+  assert.match(inbox,/<TranscriptAssignmentDialog/);
+  assert.match(inbox,/Change assignment/);
   assert.match(inbox,/if\(result\.action==='reassign'\)/);
   assert.match(session,/if\(result\.action==='reassign'\)/);
   assert.match(session,/await router\.replace\(\{name:'SessionWorkspace'/);
@@ -62,3 +62,4 @@ test('all three source-review entry points support the corrected destination',()
   assert.match(composer,/if\(result\.action==='reassign'\)/);
   assert.match(composer,/The existing summary cannot be reused as evidence/);
 });
+

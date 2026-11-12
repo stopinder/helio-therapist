@@ -67,7 +67,7 @@ test('Transcript Inbox supports archive and protected delete directly from the r
   assert.match(inbox, /expectedUpdatedAt:transcript\.updatedAt,clearAttention:true/)
   assert.match(inbox, /method:'DELETE'/)
   assert.match(inbox, /cannot be undone/)
-  assert.match(inbox, /Transcript archived\. Restore it any time from History\./)
+  assert.match(inbox, /Transcript archived\. Restore it any time from Archived\./)
   assert.equal(transcriptWorkflowState({attentionClearedAt:'saved'}).label,'Archived')
   assert.match(inbox, /Archive all/)
 })
@@ -139,3 +139,4 @@ test('full transcript defaults to readable conversation with search and preserve
   assert.match(inbox, /Exact imported text retained for source fidelity/)
   assert.match(inbox, /<pre>\{\{ selected\.text \}\}<\/pre>/)
 })
+

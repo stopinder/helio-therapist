@@ -1,0 +1,86 @@
+name: Release regression comparison
+on:
+  pull_request:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  compare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      BASE_SHA: ${{ github.event.pull_request.base.sha }}
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --ignore-scripts --no-fund
+      - name: Compare full Node and component suites with the production base
+        shell: bash
+        run: |
+          set -euo pipefail
+          baseline_dir="$RUNNER_TEMP/helios-production-base"
+          git worktree add --detach "$baseline_dir" "$BASE_SHA"
+          ln -s "$GITHUB_WORKSPACE/node_modules" "$baseline_dir/node_modules"
+          set +e
+          npm test > "$RUNNER_TEMP/candidate-node.log" 2>&1
+          candidate_node_exit=$?
+          npm run test:components -- --reporter=json --outputFile="$RUNNER_TEMP/candidate-components.json" > "$RUNNER_TEMP/candidate-components.log" 2>&1
+          candidate_component_exit=$?
+          cd "$baseline_dir"
+          npm test > "$RUNNER_TEMP/baseline-node.log" 2>&1
+          baseline_node_exit=$?
+          npm run test:components -- --reporter=json --outputFile="$RUNNER_TEMP/baseline-components.json" > "$RUNNER_TEMP/baseline-components.log" 2>&1
+          baseline_component_exit=$?
+          set -e
+          export candidate_node_exit candidate_component_exit baseline_node_exit baseline_component_exit
+          python3 - <<'PY'
+          import json, os, pathlib, re
+          root=pathlib.Path(os.environ['RUNNER_TEMP'])
+          def node_failures(label):
+              text=(root/(label+'-node.log')).read_text()
+              counts=re.findall(r'^# tests (\d+)',text,re.M)
+              if not counts or int(counts[-1])<1: raise RuntimeError(label+' Node suite did not complete')
+              failures=set()
+              for name in re.findall(r'^\s*not ok \d+ - (.+)$',text,re.M):
+                  failures.add(re.sub(r'^.*?/(?=test/)', '', name))
+              return failures,int(counts[-1])
+          def component_failures(label):
+              data=json.loads((root/(label+'-components.json')).read_text())
+              if data.get('numTotalTests',0)<1: raise RuntimeError(label+' component suite did not complete')
+              failures=set()
+              for suite in data.get('testResults',[]):
+                  assertions=suite.get('assertionResults',[])
+                  for assertion in assertions:
+                      if assertion.get('status')=='failed': failures.add(assertion['fullName'])
+                  if suite.get('status')=='failed' and not assertions:
+                      failures.add(re.sub(r'^.*?/(?=src/)', '',suite['name']))
+              return failures,data['numTotalTests']
+          failed=False
+          for kind,reader in [('Node',node_failures),('Component',component_failures)]:
+              baseline,base_total=reader('baseline')
+              candidate,current_total=reader('candidate')
+              added=sorted(candidate-baseline)
+              removed=sorted(baseline-candidate)
+              print(json.dumps({'suite':kind,'baseline_tests':base_total,'candidate_tests':current_total,'baseline_failures':len(baseline),'candidate_failures':len(candidate),'new_failures':added,'resolved_failures':removed},indent=2))
+              failed=failed or bool(added)
+          if failed: raise SystemExit('New failures compared with production must be resolved before release.')
+          PY
+      - name: Verify release-specific behaviour
+        run: >-
+          node --test
+          test/independent-summary-documents.test.js
+          test/transcript-assignment-recovery.test.js
+          test/transcript-assignment-recovery-db.test.js
+          test/summary-source-review-db.test.js
+          test/transcript-clear-behaviour.test.js
+          test/transcript-summary-handoff.test.js
+      - name: Audit runtime dependencies
+        run: npm audit --omit=dev --audit-level=high
+      - name: Build application
+        run: npm run build

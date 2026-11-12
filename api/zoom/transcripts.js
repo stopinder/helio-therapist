@@ -1,8 +1,8 @@
 import { createHash } from 'node:crypto';
 import { getSupabaseUserClient, requireAuthenticatedUser } from '../_lib/supabase.js';
 
-const transcriptFields = 'id, zoom_meeting_id, zoom_meeting_uuid, zoom_note_id, source_title, structured_transcript, zoom_generated_summary, original_format, original_transcript, source, status, client_id, session_ref, source_occurred_at, received_at, updated_at, requested_lens, source_retention, review_choices_saved_at, completed_at, attention_cleared_at, source_version, source_review';
-const transcriptListFields = 'id, zoom_meeting_id, zoom_meeting_uuid, zoom_note_id, source_title, speaker_clues:structured_transcript->speakers, zoom_generated_summary, original_format, source, status, client_id, session_ref, source_occurred_at, received_at, updated_at, requested_lens, source_retention, review_choices_saved_at, completed_at, attention_cleared_at, source_version, source_review';
+const transcriptFields = 'id, zoom_meeting_id, zoom_meeting_uuid, zoom_note_id, source_title, structured_transcript, zoom_generated_summary, original_format, original_transcript, source, status, client_id, session_ref, source_occurred_at, received_at, updated_at, requested_lens, source_retention, review_choices_saved_at, completed_at, attention_cleared_at, inbox_archived_at, source_version, source_review';
+const transcriptListFields = 'id, zoom_meeting_id, zoom_meeting_uuid, zoom_note_id, source_title, speaker_clues:structured_transcript->speakers, zoom_generated_summary, original_format, source, status, client_id, session_ref, source_occurred_at, received_at, updated_at, requested_lens, source_retention, review_choices_saved_at, completed_at, attention_cleared_at, inbox_archived_at, source_version, source_review';
 const MAX_MANUAL_TRANSCRIPT_BYTES = 2 * 1024 * 1024;
 const MANUAL_SOURCE = 'zoom_manual';
 
@@ -31,6 +31,7 @@ function serialiseTranscript(row, { list = false } = {}) {
     sourceRetention: row.source_retention,
     reviewChoicesSavedAt: row.review_choices_saved_at,
     completedAt: row.completed_at,
+    inboxArchivedAt: row.inbox_archived_at,
     attentionClearedAt: row.attention_cleared_at
   };
 }
@@ -58,6 +59,17 @@ function normaliseManualImport({ filename, text }) {
   };
 }
 
+// Keep read-only previews usable before the additive migration is installed.
+// Writes never fall back: archiving must be confirmed by its persisted explicit state.
+async function readWithArchiveCompatibility(fields, buildQuery) {
+  const result = await buildQuery(fields);
+  if (result.error && ['42703', 'PGRST204'].includes(result.error.code) && /inbox_archived_at/.test(result.error.message || '')) {
+    const legacy = await buildQuery(fields.replace('inbox_archived_at, ', ''));
+    return { ...legacy, archiveSupportAvailable: false };
+  }
+  return { ...result, archiveSupportAvailable: true };
+}
+
 export default async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
 
@@ -75,19 +87,21 @@ export default async function handler(req, res) {
       }
 
       if (id) {
-        const { data, error } = await supabase.from('zoom_transcripts').select(transcriptFields)
-          .eq('therapist_user_id', user.id).eq('id', id).is('deleted_at', null).maybeSingle();
+        const { data, error, archiveSupportAvailable } = await readWithArchiveCompatibility(transcriptFields, fields => supabase.from('zoom_transcripts').select(fields)
+          .eq('therapist_user_id', user.id).eq('id', id).is('deleted_at', null).maybeSingle());
         if (error) throw error;
         if (!data) return res.status(404).json({ error: 'Transcript not found.' });
-        return res.status(200).json({ transcript: serialiseTranscript(data) });
+        return res.status(200).json({ transcript: serialiseTranscript(data), capabilities: { assignmentRecovery: archiveSupportAvailable } });
       }
 
       const fields = hasSessionFilter ? transcriptFields : transcriptListFields;
-      let query = supabase.from('zoom_transcripts').select(fields).eq('therapist_user_id', user.id).is('deleted_at', null);
-      if (hasSessionFilter) query = query.eq('session_ref', sessionRef).eq('client_id', clientId);
-      const { data, error } = await query.order('received_at', { ascending: false });
+      const { data, error, archiveSupportAvailable } = await readWithArchiveCompatibility(fields, selectedFields => {
+        let query = supabase.from('zoom_transcripts').select(selectedFields).eq('therapist_user_id', user.id).is('deleted_at', null);
+        if (hasSessionFilter) query = query.eq('session_ref', sessionRef).eq('client_id', clientId);
+        return query.order('received_at', { ascending: false });
+      });
       if (error) throw error;
-      return res.status(200).json({ transcripts: (data || []).map((row) => serialiseTranscript(row, { list: !hasSessionFilter })) });
+      return res.status(200).json({ transcripts: (data || []).map((row) => serialiseTranscript(row, { list: !hasSessionFilter })), capabilities: { assignmentRecovery: archiveSupportAvailable } });
     }
 
     if (req.method === 'DELETE') {
@@ -165,12 +179,13 @@ export default async function handler(req, res) {
         const { data, error } = await supabase.from('zoom_transcripts')
           .update({ 
             attention_cleared_at: new Date().toISOString(),
+            inbox_archived_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
           })
           .in('id', ids)
           .eq('therapist_user_id', user.id)
           .is('completed_at', null)
-          .is('attention_cleared_at', null)
+          .is('inbox_archived_at', null)
           .is('deleted_at', null)
           .select(transcriptFields);
           
@@ -198,7 +213,7 @@ export default async function handler(req, res) {
         clearAttention !== undefined
       )) return res.status(400).json({ error: 'Update the encounter date before assigning or changing this transcript.' });
 
-      const { data: existing, error: existingError } = await supabase.from('zoom_transcripts').select('id, status, client_id, session_ref, source_occurred_at, review_choices_saved_at, updated_at, completed_at, deleted_at').eq('id', id).eq('therapist_user_id', user.id).maybeSingle();
+      const { data: existing, error: existingError } = await supabase.from('zoom_transcripts').select('id, status, client_id, session_ref, source_occurred_at, review_choices_saved_at, updated_at, completed_at, deleted_at, inbox_archived_at').eq('id', id).eq('therapist_user_id', user.id).maybeSingle();
       if (existingError) throw existingError;
       if (!existing) return res.status(404).json({ error: 'Transcript not found.' });
       if (!expectedUpdatedAt || typeof expectedUpdatedAt !== 'string') return res.status(400).json({ error: 'Reload this transcript before saving changes.' });
@@ -218,7 +233,7 @@ export default async function handler(req, res) {
         return res.status(409).json({ error: 'The encounter date can only be changed before this transcript is assigned or reviewed.' });
       }
 
-      if (restoreAttention === true && (existing.completed_at !== null || existing.deleted_at !== null)) {
+      if (restoreAttention === true && ((existing.completed_at !== null && !existing.inbox_archived_at) || existing.deleted_at !== null)) {
         return res.status(409).json({ error: 'Completed or deleted transcripts cannot be returned to Needs attention.' });
       }
 
@@ -318,14 +333,17 @@ export default async function handler(req, res) {
       if (clearAttention === true) {
         if (existing.deleted_at !== null) return res.status(409).json({ error: 'Deleted transcripts cannot be cleared from attention.' });
         update.attention_cleared_at = new Date().toISOString();
+        update.inbox_archived_at = new Date().toISOString();
       }
       if (restoreAttention === true) {
         update.attention_cleared_at = null;
+        update.inbox_archived_at = null;
       }
 
       let updateQuery = supabase.from('zoom_transcripts').update(update).eq('id', id).eq('therapist_user_id', user.id).eq('updated_at', expectedUpdatedAt);
       if (restoreAttention === true) {
-        updateQuery = updateQuery.is('completed_at', null).is('deleted_at', null);
+        updateQuery = updateQuery.is('deleted_at', null);
+        if (!existing.inbox_archived_at) updateQuery = updateQuery.is('completed_at', null);
       }
       const { data, error } = await updateQuery.select(transcriptFields).maybeSingle();
       if (error) throw error;
@@ -335,7 +353,9 @@ export default async function handler(req, res) {
 
     return res.status(405).json({ error: 'Method not allowed.' });
   } catch (error) {
+    if (['42703','PGRST204'].includes(error.code) && /inbox_archived_at/.test(error.message || '')) return res.status(503).json({ error: 'Archive support is awaiting database setup for this preview. Nothing changed.' });
     console.error('[Zoom Transcript Inbox] Error:', error.message);
     return res.status(error.status || 500).json({ error: 'Unable to access the transcript inbox.' });
   }
 }
+

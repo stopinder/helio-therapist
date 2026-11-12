@@ -30,9 +30,13 @@ test('TranscriptInbox has restoration logic for individual items', () => {
   assert.match(inboxSource, /Return to Needs attention/)
 })
 
-test('TranscriptInbox filtering includes cleared, completed and verified-matched items in history', () => {
+test('TranscriptInbox separates explicit archives from history and retains completed and verified assignments', () => {
   assert.match(inboxSource, /if \(filterMode\.value === 'attention' && !needsAttention\(item\)\) return false/)
-  assert.match(inboxSource, /if \(filterMode\.value === 'history' && needsAttention\(item\)\) return false/)
+  assert.match(inboxSource, /if \(filterMode\.value === 'history' && \(needsAttention\(item\) \|\| item\.inboxArchivedAt\)\) return false/)
   for (const row of [{attentionClearedAt:'saved'},{completedAt:'saved'},{clientId:'c',sessionRef:'s',status:'unassigned'}]) assert.equal(transcriptNeedsAttention(row),false)
+  assert.match(inboxSource, /if \(filterMode\.value === 'archived' && !item\.inboxArchivedAt\) return false/)
+  const archivedReview = { inboxArchivedAt:'saved', sourceReview:{state:'needs_review'} }
+  assert.equal(transcriptNeedsAttention(archivedReview),false)
+  assert.equal(archivedReview.sourceReview.state,'needs_review')
   assert.equal(transcriptNeedsAttention({}),true)
 })

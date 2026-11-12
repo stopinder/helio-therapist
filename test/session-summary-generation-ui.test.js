@@ -12,7 +12,8 @@ const ifsMigration = await readFile(new URL('../supabase/migrations/202610291142
 
 test('SessionWorkspace presents inline summary customization before first generation', () => {
   assert.match(source, /data-testid="session-summary-options"/)
-  assert.match(source, /Prepare session summary/)
+  assert.match(source, /Prepare \{\{ summaryKind === 'across'/)
+  assert.match(source, /summaryKind === 'across' \? 'Across-session review'/)
   assert.match(source, /Summary approach/)
   assert.match(source, /General/)
   assert.match(source, /Integrative/)
@@ -21,7 +22,7 @@ test('SessionWorkspace presents inline summary customization before first genera
   assert.match(source, /Transactional Analysis/)
   assert.match(source, /Evidence/)
   assert.match(source, /This session/)
-  assert.match(source, /Recent sessions/)
+  assert.match(source, /Current encounter and up to two earlier sessions/)
   assert.match(source, /Add emphasis or instruction/)
   assert.match(source, /Generate summary/i)
   assert.match(source, /v-if="transcript"/i)

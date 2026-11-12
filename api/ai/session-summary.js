@@ -172,6 +172,11 @@ export default async function handler(req, res) {
       }
       return true;
     });
+    // An across-session review must have more than the anchor encounter.
+    // Report missing usable continuity before consuming an AI action.
+    if(window==='recent'&&selectedSources.length<2)return res.status(409).json({
+      success:false,error:{code:'INSUFFICIENT_CONTINUITY',message:'An across-session review needs at least two usable encounters. Prepare a session summary, or add and review an earlier transcript.'}
+    });
     for(const source of selectedSources)assertSourceAvailable(source.row);
     const generationId = randomUUID();
     const generatedAt = new Date().toISOString();

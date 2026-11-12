@@ -27,10 +27,10 @@ test('client workspace opens the document requested by the session summary hando
   assert.match(panel, /section-documents/);
 });
 
-test('saving a session summary document preserves its existing session linkage', async () => {
+test('saving a summary preserves provenance when unchanged and replaces stale sources on regeneration', async () => {
   const service = await read('../src/lib/clientDocuments.js');
 
-  assert.match(service, /if\(!source\?\.sessionId\)continue/);
-  assert.match(service, /candidate\?\.sessionId===source\.sessionId/);
+  assert.match(service, /changes\.sourceManifest===undefined\?document\.sourceManifest/);
+  assert.match(service, /Array\.isArray\(changes\.sourceManifest\)/);
   assert.match(service, /source_manifest:mergeSourceManifest\(document,changes\)/);
 });

@@ -65,7 +65,15 @@
               </details>
               <div class="flex flex-wrap items-start justify-between gap-4">
                 <div>
-                  <h2 class="font-serif text-h2 text-ink">Session summary</h2>
+                  <h2 class="font-serif text-h2 text-ink">{{ summaryKind === 'across' ? 'Across-session review' : 'Session summary' }}</h2>
+                  <p v-if="summaryDocument?.content?.summaryGeneration" class="mt-1 text-caption text-ink-secondary">
+                    {{ generatedSummaryLabel }} · {{ summaryDocument.content.summaryGeneration.sessionCount || (summaryKind === 'across' ? 'Several' : 1) }} session(s)
+                    <span v-if="summaryDocument.periodStart || summaryDocument.periodEnd"> · {{ summaryDocument.periodStart || 'Earlier' }} – {{ summaryDocument.periodEnd || 'Current' }}</span>
+                  </p>
+                  <div class="mt-3 inline-flex flex-wrap gap-1 rounded-control border border-border bg-surface-subtle p-1" role="group" aria-label="Clinical document">
+                    <button type="button" class="px-3 py-1.5 text-body-sm rounded-control" :class="summaryKind === 'session' ? 'bg-surface text-action-link font-semibold shadow-sm' : 'text-ink-secondary'" :disabled="isGenerating || reviewSaveBusy || isEditingSummary || summarySwitching" :aria-pressed="summaryKind === 'session'" @click="switchSummaryKind('session')">Session summary</button>
+                    <button type="button" class="px-3 py-1.5 text-body-sm rounded-control" :class="summaryKind === 'across' ? 'bg-surface text-action-link font-semibold shadow-sm' : 'text-ink-secondary'" :disabled="isGenerating || reviewSaveBusy || isEditingSummary || summarySwitching" :aria-pressed="summaryKind === 'across'" @click="switchSummaryKind('across')">Across-session review</button>
+                  </div>
                   <p v-if="summaryDocument?.id" class="mt-1 text-caption text-ink-muted">{{ summaryDocument.status === 'completed' ? 'Finalised in this client’s Documents.' : 'Saved in this client’s Documents.' }}</p>
                   <div v-if="summaryDocument?.content?.body && summaryDocument.status !== 'completed'" class="mt-2 flex flex-wrap items-center gap-2 text-caption text-ink-muted">
                     <span>{{ generatedSummaryLabel }}</span>
@@ -78,10 +86,15 @@
                     <button v-if="!isEditingSummary" @click="isEditingSummary = true" class="text-body-sm font-medium text-action-link hover:underline">Edit</button>
                     <button v-else @click="isEditingSummary = false" class="text-body-sm font-medium text-action-link hover:underline">Done reading</button>
                   </template>
-                  <button v-if="transcript" type="button" @click="askHeliosAboutSession" class="button-secondary !min-h-0 py-1.5 px-3 text-body-sm shadow-sm">Ask Helios</button>
-                  <button v-if="summaryDocument?.content?.body && summaryDocument.status !== 'completed'" @click="generateSummary" :disabled="isGenerating || transcriptLoading || !!transcriptError || !transcript" class="text-body-sm font-medium text-ink-muted hover:text-ink disabled:opacity-50">Regenerate</button>
+                  
+                  
                    <button v-if="summaryDocument?.content?.body && summaryDocument.status !== 'completed'" type="button" class="button-secondary !min-h-0 py-1.5 px-3 text-body-sm shadow-sm" :aria-expanded="showRefinement" @click="showRefinement = !showRefinement">{{ showRefinement ? 'Hide refinement' : 'Refine' }}</button>
-                  <RouterLink v-if="summaryDocument?.id" :to="{ name: 'ClientWorkspace', params: { clientId: session.clientId }, query: { document: summaryDocument.id } }" class="button-secondary !min-h-0 py-1.5 px-3 text-body-sm shadow-sm">Open in Client Documents</RouterLink>
+                  <details class="relative" data-testid="summary-more-actions"><summary class="button-secondary !min-h-0 py-1.5 px-3 text-body-sm cursor-pointer">More</summary><div class="absolute right-0 z-20 mt-2 w-56 rounded-panel border border-border bg-surface-elevated p-3 shadow-lg space-y-3">
+                    <button v-if="transcript" type="button" @click="askHeliosAboutSession" class="block text-body-sm text-action-link">Ask Helios</button>
+                    <button v-if="summaryDocument?.content?.body && summaryDocument.status !== 'completed'" @click="generateSummary" :disabled="isGenerating || transcriptLoading || !!transcriptError || !transcript" class="block text-body-sm text-action-link">Regenerate</button>
+                    <button v-if="summaryDocument?.content?.body && summaryDocument.status !== 'completed'" @click="showSummaryOptions = true" class="block text-body-sm text-action-link">Generation settings</button>
+                    <RouterLink v-if="summaryDocument?.id" :to="{ name: 'ClientWorkspace', params: { clientId: session.clientId }, query: { document: summaryDocument.id } }" class="block text-body-sm text-action-link">Open in Client Documents</RouterLink>
+                  </div></details>
                   <button @click="copySummary" :disabled="isGenerating || !summaryDocument?.content?.body || !!sourceReview || summaryUnsafe || needsTherapistReview" class="button-secondary !min-h-0 py-1.5 px-3 text-body-sm shadow-sm">Copy summary</button>
                 </div>
               </div>
@@ -98,7 +111,7 @@
                 data-testid="session-summary-options"
               >
                 <div class="flex flex-col gap-1">
-                  <h3 class="text-h3 font-semibold text-ink">Prepare session summary</h3>
+                  <h3 class="text-h3 font-semibold text-ink">Prepare {{ summaryKind === 'across' ? 'across-session review' : 'session summary' }}</h3>
                   <p class="text-body-sm text-ink-secondary">Choose how Helios should frame this summary. Your preferred approach is remembered for this client.</p>
                 </div>
 
@@ -117,10 +130,7 @@
 
                   <label class="block">
                     <span class="text-caption font-semibold text-ink">Evidence</span>
-                    <select v-model="summaryWindow" class="mt-1 w-full p-2.5 border border-border rounded-control bg-surface">
-                      <option value="current">This session</option>
-                      <option value="recent">Recent sessions</option>
-                    </select>
+                    <p class="mt-2 text-body-sm text-ink-secondary">{{ summaryKind === 'across' ? 'Current encounter and up to two earlier sessions' : 'This encounter only' }}</p>
                   </label>
                 </div>
                 <label v-if="summaryWindow === 'recent'" class="mt-3 flex items-start gap-2 text-body-sm text-ink-secondary" data-testid="exclude-earlier-zoom-notes">
@@ -159,7 +169,7 @@
                 :candidate="pendingSummary" :error="generationError"
                 @generate="requestSummaryRefinement" @accept="acceptSummaryRevision" @discard="pendingSummary=null" />
 
-              <div v-if="summaryDocument?.content?.summaryGeneration?.reviewRequired" data-testid="summary-therapist-approval" class="rounded-panel border border-border bg-surface-elevated p-4 space-y-2">
+              <div v-if="summaryDocument?.content?.summaryGeneration?.reviewRequired" data-testid="summary-therapist-approval" class="rounded-control border border-border bg-surface-subtle px-3 py-2 space-y-1">
                 <div class="flex flex-wrap items-center justify-between gap-3">
                   <div>
                     <p class="font-semibold text-ink">{{ needsTherapistReview ? 'Draft — therapist review needed' : 'Summary reviewed by therapist' }}</p>
@@ -184,8 +194,9 @@
                   </div>
                 </div>
                 <SessionSummaryDocument :body="pendingSummary.result.draft.body" compact />
+                <details class="rounded-control border border-border bg-surface-subtle p-3" data-testid="compare-saved-version"><summary class="cursor-pointer text-body-sm font-medium text-action-link">Compare with saved version</summary><SessionSummaryDocument :body="summaryDocument.content.body" compact /></details>
               </section>
-              <div ref="summaryDisplayedDocument" class="relative min-h-[12rem]">
+              <div v-if="!pendingSummary" ref="summaryDisplayedDocument" class="relative min-h-[12rem]">
                 <div v-if="isGenerating" ref="summaryGenerationProgress" tabindex="-1" data-testid="summary-generation-progress" role="status" aria-live="polite" class="py-20 text-center text-ink-muted bg-surface rounded-panel border border-state-selected/40 flex flex-col items-center gap-3 shadow-sm scroll-mt-8">
                   <span class="w-10 h-10 border-4 border-state-selected border-t-transparent rounded-full motion-safe:animate-spin" aria-hidden="true"></span>
                   <p class="type-body-medium">{{ summaryDocument?.content?.body ? 'Regenerating session summary…' : 'Generating session summary…' }}</p>
@@ -293,7 +304,7 @@ import { useRoute, useRouter, RouterLink } from 'vue-router';
 import { supabase } from '../lib/supabase.js';
 import { getSession } from '../lib/sessions.js';
 import { getClient, updateClientSummaryPreference } from '../lib/clients.js';
-import { findSessionSummary, createClientDocumentDraft, saveClientDocumentDraft, generateSessionSummary, checkSummarySourceSafety } from '../lib/clientDocuments.js';
+import { findSessionSummary, findAcrossSessionReview, createClientDocumentDraft, saveClientDocumentDraft, generateSessionSummary, checkSummarySourceSafety } from '../lib/clientDocuments.js';
 import { authenticatedFetch } from '../lib/api.js';
 import SessionWorkspaceHeader from '../components/workspace/SessionWorkspaceHeader.vue';
 import ReflectionTab from '../components/workspace/ReflectionTab.vue';
@@ -311,6 +322,25 @@ const router = useRouter();
 const { openClinicalContext } = useAskHelios();
 const session = ref(null), client = ref(null), loading = ref(true), error = ref(''), transcript = ref(null), transcriptLoading = ref(false), transcriptError = ref(''), therapistName = ref('');
 const summaryDocument = ref(null);
+const summaryKind=ref(route.query.summaryKind==='across'?'across':'session'),summarySwitching=ref(false);
+async function switchSummaryKind(kind){
+  if(!['session','across'].includes(kind)||kind===summaryKind.value||isGenerating.value||reviewSaveBusy.value||isEditingSummary.value||summarySwitching.value)return;
+  summarySwitching.value=true;
+  try{
+    // Flush any in-flight autosave before changing the document identity.
+    if(saveTimer){clearTimeout(saveTimer);saveTimer=null;if(summaryDocument.value?.status==='draft')summaryDocument.value=await saveClientDocumentDraft(summaryDocument.value,{content:summaryDocument.value.content});}
+    const selected=kind==='across'?await findAcrossSessionReview({clientId:session.value.clientId,sessionId:session.value.id}):await findSessionSummary({clientId:session.value.clientId,sessionId:session.value.id});
+    summaryKind.value=kind;summaryDocument.value=selected;
+    const generation=selected?.content?.summaryGeneration||selected?.content?.clinicalIntelligence?.generation;
+    summaryWindow.value=kind==='across'?'recent':'current';
+    summaryLens.value=generation?.lens||client.value?.preferred_summary_lens||'integrative';
+    excludeEarlierZoomNotes.value=generation?.excludeEarlierZoomNotes===true;
+    pendingSummary.value=null;sourceReview.value=null;generationError.value='';summaryReviewError.value='';showRefinement.value=false;showSummaryOptions.value=!selected?.content?.body;
+    if(selected)await verifySavedSummary();
+    await router.replace({query:{...route.query,summaryKind:kind}});
+  }catch(error){generationError.value=error?.message||'Unable to open the selected summary.';}
+  finally{summarySwitching.value=false;}
+}
 const sessionScrollContainer=ref(null),summaryGenerationProgress=ref(null),summaryRevisionPreview=ref(null),summaryDisplayedDocument=ref(null),sourceReviewNotice=ref(null);
 const showScrollActions=ref(false),showRefinement=ref(false);
 function handleSessionScroll(event){showScrollActions.value=(event?.target?.scrollTop||0)>280;}
@@ -342,6 +372,7 @@ const sourceReviewNeedsTranscript=computed(()=>{
 });
 async function retryCurrentSessionOnly(){
   if(isGenerating.value)return;
+  if(summaryKind.value==='across')await switchSummaryKind('session');
   summaryWindow.value='current';excludeEarlierZoomNotes.value=true;
   sourceReview.value=null;
   await generateSummary();
@@ -473,12 +504,14 @@ async function installSummaryResult(result,instruction=''){
   const snapshot={body:existing.body,richContent:existing.richContent||null,generation:existing.summaryGeneration||existing.clinicalIntelligence?.generation||null,
     sources:summaryDocument.value?.sourceManifest||[],claims:existing.clinicalIntelligence?.claims||[],lastGeneratedBody:existing.clinicalIntelligence?.lastGeneratedBody||'',timestamp:new Date().toISOString(),type:'pre_regeneration'};
   const history=existing.body?[...previous,snapshot].slice(-5):previous;
+  const dates=(result.sources||[]).map(source=>String(source.occurredAt||source.sourceOccurredAt||'').slice(0,10)).filter(date=>/^\d{4}-\d{2}-\d{2}$/.test(date)).sort();
+  const dateCoverage={start:dates[0]||workspaceSession.value.date||null,end:dates.at(-1)||workspaceSession.value.date||null};
   const content={...existing,body:result.draft.body,richContent:null,summaryGeneration:generation,
     clinicalIntelligence:{generation,claims:result.claims||[],sources:result.sources||[],history,lastGeneratedBody:result.draft.body},history};
   if(summaryDocument.value){
-    summaryDocument.value=await saveClientDocumentDraft(summaryDocument.value,{content,sourceManifest:result.sources});
+    summaryDocument.value=await saveClientDocumentDraft(summaryDocument.value,{content,sourceManifest:result.sources,periodStart:dateCoverage.start,periodEnd:dateCoverage.end});
   }else{
-    summaryDocument.value=await createClientDocumentDraft({client:client.value,title:'Session Summary - '+workspaceSession.value.date,documentType:'session_summary',content,sourceManifest:result.sources});
+    summaryDocument.value=await createClientDocumentDraft({client:client.value,title:(summaryKind.value==='across'?'Across-session review - ':'Session Summary - ')+workspaceSession.value.date,documentType:summaryKind.value==='across'?'across_session_review':'session_summary',periodStart:dateCoverage.start,periodEnd:dateCoverage.end,content,sourceManifest:result.sources});
   }
   sourceReview.value=null;summaryReviewError.value='';isEditingSummary.value=false;
   showSummaryOptions.value=false;showSummaryGuidance.value=false;showRefinement.value=false;therapistGuidance.value='';
@@ -589,11 +622,11 @@ async function loadSession(){
     const [sessionData,clientData]=await Promise.all([getSession({clientId,sessionId}),getClient({clientId}),loadTherapistProfile()]);
     session.value=sessionData;
     client.value=clientData;
-    summaryDocument.value = await findSessionSummary({ clientId, sessionId });
+    summaryDocument.value = summaryKind.value==='across'?await findAcrossSessionReview({clientId,sessionId}):await findSessionSummary({ clientId, sessionId });
     await verifySavedSummary();
     const previousGeneration = summaryDocument.value?.content?.summaryGeneration || null;
     summaryLens.value = previousGeneration?.lens || clientData.preferred_summary_lens || 'integrative';
-    summaryWindow.value = previousGeneration?.window || 'current';
+    summaryWindow.value = summaryKind.value==='across'?'recent':'current';
     excludeEarlierZoomNotes.value = previousGeneration?.excludeEarlierZoomNotes === true ||
       (previousGeneration?.excludeEarlierZoomNotes == null && Boolean(previousGeneration?.reviewCautions?.some(note => note.includes('Earlier Zoom notes excluded by therapist choice'))));
     showSummaryOptions.value = summaryUnsafe.value || !summaryDocument.value?.content?.body;

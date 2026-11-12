@@ -1,5 +1,6 @@
 <template>
-  <Teleport to="body">
+  <TranscriptAssignmentDialog v-if="correcting" :transcript-id="transcriptId" @close="finishCorrection" @changed="handleCorrected" />
+  <Teleport v-else to="body">
     <div
       data-testid="source-review-overlay"
       class="fixed inset-0 z-[120] flex items-center justify-center bg-backdrop p-2 sm:p-5"
@@ -28,6 +29,7 @@
           </button>
         </header>
         <div data-testid="source-review-scroll-area" class="min-h-0 flex-1 overflow-y-auto overscroll-contain p-3 sm:p-5">
+          <button type="button" class="button-secondary mb-4" @click="correcting=true">Change assignment</button>
           <SourceReviewPanel :key="transcriptId" :transcript-id="transcriptId" embedded @close="requestClose" @resolved="emit('resolved', $event)" />
         </div>
       </section>
@@ -38,6 +40,10 @@
 <script setup>
 import { nextTick, onMounted, onUnmounted, ref } from 'vue'
 import SourceReviewPanel from './SourceReviewPanel.vue'
+import TranscriptAssignmentDialog from './TranscriptAssignmentDialog.vue'
+const correcting=ref(false),pendingCorrection=ref(null)
+function handleCorrected(result){pendingCorrection.value=result}
+function finishCorrection(){correcting.value=false;if(pendingCorrection.value){emit('resolved',{...pendingCorrection.value,assignmentCorrection:true});pendingCorrection.value=null}}
 
 defineProps({
   transcriptId: { type: String, required: true },
@@ -84,3 +90,4 @@ onUnmounted(() => {
   })
 })
 </script>
+

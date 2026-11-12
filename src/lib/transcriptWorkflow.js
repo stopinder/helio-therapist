@@ -4,6 +4,7 @@ export function hasLinkedEncounter(transcript) {
   return Boolean(hasId(transcript?.clientId) && hasId(transcript?.sessionRef));
 }
 export function transcriptWorkflowState(transcript) {
+  if (transcript?.inboxArchivedAt) return { id: 'archived', label: 'Archived', tone: 'neutral' };
   if(transcript?.sourceReview?.state==='separated')return{id:'separated',label:'Separated original',tone:'neutral'};
   if(transcript?.sourceReview?.state==='needs_review')return{id:'source-review',label:'Source needs review',tone:'warning'};
   if (transcript?.completedAt) return { id: 'complete', label: 'Inbox setup complete', tone: 'success' };
@@ -14,7 +15,7 @@ export function transcriptWorkflowState(transcript) {
   return { id: 'needs-client', label: 'Needs client', tone: 'warning' };
 }
 export function transcriptNeedsAttention(transcript) {
-  return Boolean(transcript && transcript.sourceReview?.state!=='separated' && (transcript.sourceReview?.state==='needs_review' || (!hasLinkedEncounter(transcript) && !transcript.completedAt && !transcript.attentionClearedAt)));
+  return Boolean(transcript && !transcript.inboxArchivedAt && transcript.sourceReview?.state!=='separated' && (transcript.sourceReview?.state==='needs_review' || (!hasLinkedEncounter(transcript) && !transcript.completedAt && !transcript.attentionClearedAt)));
 }
 export function assignedTranscriptIdentity(transcript, clientLabel) {
   return hasId(transcript?.clientId) ? (clientLabel || 'Assigned client') : null;
@@ -41,10 +42,11 @@ export function normaliseInboxReturnState(value) {
   const finite = (number, fallback, max) => typeof number === 'number' && Number.isFinite(number)
     ? Math.min(max, Math.max(0, number)) : fallback;
   return {
-    filter: value.filter === 'history' ? 'history' : 'attention',
+    filter: ['history','archived','unassigned'].includes(value.filter) ? value.filter : 'attention',
     search: typeof value.search === 'string' ? value.search.slice(0, 500) : '',
     historyLimit: Math.max(20, Math.floor(finite(value.historyLimit, 20, 10000))),
     scrollTop: finite(value.scrollTop, 0, 10000000),
     windowY: finite(value.windowY, 0, 10000000)
   };
 }
+
