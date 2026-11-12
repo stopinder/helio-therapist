@@ -8,7 +8,7 @@ test('Session Capture / Transcript rendering wiring', async () => {
   // Verify transcript is reachable
   assert.match(workspace, /View transcript/)
   assert.match(workspace, /v-if="showTranscript"/)
-  assert.match(workspace, /\{\{\s*transcript\.text\s*\}\}/)
+  assert.match(workspace, /<TranscriptConversation v-else :transcript="transcript"/)
 })
 
 test('ReflectionTab is present', async () => {

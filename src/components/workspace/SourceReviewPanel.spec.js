@@ -119,4 +119,18 @@ describe('note-first source review',()=>{
    expect(JSON.parse(post[1].body).context).toBe('')
    w.unmount()
  })
+ it('uses the readable source by default and preserves exact numbered lines for conversation separation',async()=>{
+   const original='[ ] Unknown: Hello.\n[ ] Unknown: A useful identifying clue.'
+   setup({text:original})
+   const w=mount(SourceReviewPanel,{props:{transcriptId:sourceVersion,embedded:true},global:{stubs:{RouterLink:true}}})
+   await flushPromises()
+   expect(w.find('.reader-passages').text()).toContain('A useful identifying clue.')
+   expect(w.find('.reader-passages').text()).not.toContain('Unknown:')
+   expect(w.find('textarea[aria-label="Original transcript with line numbers"]').exists()).toBe(false)
+   await w.find('input[value="split"]').setValue()
+   expect(w.find('textarea[aria-label="Original transcript with line numbers"]').element.value).toContain('1 | [ ] Unknown: Hello.')
+   expect(w.find('textarea[aria-label="Original transcript with line numbers"]').element.value).toContain('2 | [ ] Unknown: A useful identifying clue.')
+   w.unmount()
+ })
+
 })
