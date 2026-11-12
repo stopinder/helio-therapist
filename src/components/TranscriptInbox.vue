@@ -989,11 +989,11 @@ watch(()=>props.openTranscriptId,openQueuedTranscript);watch(searchQuery,()=>{hi
 .search-control .control-field { height:2rem; min-height:2rem; padding:.35rem .65rem .35rem 2rem; font-size:var(--type-metadata-size); line-height:1.1rem; background:var(--surface-elevated); }
 .search-icon { position:absolute; left:.65rem; top:50%; z-index:1; width:.875rem; height:.875rem; transform:translateY(-50%); color:var(--accent); pointer-events:none; }
 .filters { display:flex; flex-wrap:wrap; gap:.25rem; min-width:0; max-width:100%; }
-.filters button { min-height:2rem; border:1px solid var(--border-muted); background:var(--state-selected); color:var(--accent); cursor:pointer; padding:.35rem .625rem; border-radius:var(--radius-control); font-size:var(--type-metadata-size); line-height:1.1rem; white-space:nowrap; transition:background-color var(--motion-standard) var(--motion-ease),color var(--motion-standard) var(--motion-ease); }
+.filters button { min-height:2rem; border:1px solid var(--border-muted); background:var(--state-selected); color:var(--accent); cursor:pointer; padding:.35rem .5rem; border-radius:var(--radius-control); font-size:var(--type-metadata-size); line-height:1.1rem; white-space:nowrap; transition:background-color var(--motion-standard) var(--motion-ease),color var(--motion-standard) var(--motion-ease); }
 .filters button:hover { border-color:var(--accent); background:var(--surface-reflection-hover); }
 .filters button.active { border-color:var(--accent); background:var(--accent); color:var(--text-on-action); font-weight:600; }
 .compact-button { min-height:2.45rem; padding:.45rem .75rem; }
-.queue-controls .clear-all { min-height:2rem; padding:.35rem .625rem; border-color:var(--border-muted); color:var(--accent); background:transparent; font-size:var(--type-metadata-size); line-height:1.1rem; white-space:nowrap; }
+.queue-controls .clear-all { display:inline-flex; align-items:center; justify-content:center; gap:.35rem; min-height:2rem; padding:.35rem .625rem; border-color:var(--border-muted); color:var(--accent); background:transparent; font-size:var(--type-metadata-size); line-height:1.1rem; white-space:nowrap; }
 .queue-controls .clear-all .workspace-icon-sm { width:.875rem; height:.875rem; }
 @media (pointer:coarse) {
   .filters button,.queue-controls .clear-all,.search-control .control-field { min-height:var(--control-target); }
