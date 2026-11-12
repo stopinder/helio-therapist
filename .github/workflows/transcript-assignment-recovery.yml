@@ -1,0 +1,33 @@
+name: Transcript assignment recovery
+on:
+  pull_request:
+    paths:
+      - 'api/zoom/transcript-assignment.js'
+      - 'api/zoom/transcripts.js'
+      - 'src/components/TranscriptInbox.vue'
+      - 'src/components/workspace/TranscriptAssignmentDialog*'
+      - 'src/lib/transcriptWorkflow.js'
+      - 'supabase/migrations/*transcript_assignment_recovery.sql'
+      - 'test/transcript-assignment-recovery*'
+      - '.github/workflows/transcript-assignment-recovery.yml'
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --ignore-scripts --no-fund
+      - name: Verify transaction rollback, ownership, deletion, undo and source holds
+        run: node --test test/transcript-assignment-recovery.test.js test/transcript-assignment-recovery-db.test.js test/summary-source-review-db.test.js
+      - name: Verify correction dialog
+        run: npx vitest run src/components/workspace/TranscriptAssignmentDialog.spec.js src/components/workspace/SourceReviewDialog.spec.js
+      - name: Build application
+        run: npm run build

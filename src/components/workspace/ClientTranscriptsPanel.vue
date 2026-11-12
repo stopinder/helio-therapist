@@ -1,5 +1,6 @@
 <template>
   <section class="bg-surface-elevated border border-border-muted rounded-panel p-inline-lg max-w-3xl mx-auto" data-testid="client-transcripts-panel">
+    <TranscriptAssignmentDialog v-if="correctionId" :transcript-id="correctionId" @close="correctionId=null" @changed="load" />
     <div class="flex items-start justify-between gap-inline-md pt-stack-md mb-stack-lg">
       <div>
         <h3 class="text-h3 font-semibold text-ink">Transcripts</h3>
@@ -38,6 +39,7 @@
               data-testid="open-clinical-workspace"
             >Open Clinical Workspace</RouterLink>
             <RouterLink v-else-if="transcript.sourceReview?.state === 'needs_review' || transcript.sourceReview?.state === 'separated'" :to="{path:'/transcripts',query:{transcript:transcript.id,returnClientId:props.clientId}}" class="button-primary">Review source</RouterLink>
+            <button type="button" class="button-secondary" @click="correctionId=transcript.id">Change assignment</button>
             <button type="button" class="button-secondary" :disabled="detailLoadingId === transcript.id" @click="toggleTranscript(transcript.id)">
               {{ detailLoadingId === transcript.id ? 'Loading source...' : expandedId === transcript.id ? 'Hide transcript' : 'View transcript' }}
             </button>
@@ -101,6 +103,8 @@
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue'
 import { RouterLink } from 'vue-router'
+import TranscriptAssignmentDialog from './TranscriptAssignmentDialog.vue'
+const correctionId=ref(null)
 import { authenticatedFetch } from '../../lib/api.js'
 import { listSessions } from '../../lib/sessions.js'
 import { sessionSummaryDestination } from '../../lib/transcriptWorkflow.js'
@@ -260,3 +264,4 @@ watch(() => props.clientId, () => {
 
 onMounted(load)
 </script>
+

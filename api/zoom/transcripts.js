@@ -1,8 +1,8 @@
 import { createHash } from 'node:crypto';
 import { getSupabaseUserClient, requireAuthenticatedUser } from '../_lib/supabase.js';
 
-const transcriptFields = 'id, zoom_meeting_id, zoom_meeting_uuid, zoom_note_id, source_title, structured_transcript, zoom_generated_summary, original_format, original_transcript, source, status, client_id, session_ref, source_occurred_at, received_at, updated_at, requested_lens, source_retention, review_choices_saved_at, completed_at, attention_cleared_at, source_version, source_review';
-const transcriptListFields = 'id, zoom_meeting_id, zoom_meeting_uuid, zoom_note_id, source_title, speaker_clues:structured_transcript->speakers, zoom_generated_summary, original_format, source, status, client_id, session_ref, source_occurred_at, received_at, updated_at, requested_lens, source_retention, review_choices_saved_at, completed_at, attention_cleared_at, source_version, source_review';
+const transcriptFields = 'id, zoom_meeting_id, zoom_meeting_uuid, zoom_note_id, source_title, structured_transcript, zoom_generated_summary, original_format, original_transcript, source, status, client_id, session_ref, source_occurred_at, received_at, updated_at, requested_lens, source_retention, review_choices_saved_at, completed_at, attention_cleared_at, inbox_archived_at, source_version, source_review';
+const transcriptListFields = 'id, zoom_meeting_id, zoom_meeting_uuid, zoom_note_id, source_title, speaker_clues:structured_transcript->speakers, zoom_generated_summary, original_format, source, status, client_id, session_ref, source_occurred_at, received_at, updated_at, requested_lens, source_retention, review_choices_saved_at, completed_at, attention_cleared_at, inbox_archived_at, source_version, source_review';
 const MAX_MANUAL_TRANSCRIPT_BYTES = 2 * 1024 * 1024;
 const MANUAL_SOURCE = 'zoom_manual';
 
@@ -31,6 +31,7 @@ function serialiseTranscript(row, { list = false } = {}) {
     sourceRetention: row.source_retention,
     reviewChoicesSavedAt: row.review_choices_saved_at,
     completedAt: row.completed_at,
+    inboxArchivedAt: row.inbox_archived_at,
     attentionClearedAt: row.attention_cleared_at
   };
 }
@@ -165,6 +166,7 @@ export default async function handler(req, res) {
         const { data, error } = await supabase.from('zoom_transcripts')
           .update({ 
             attention_cleared_at: new Date().toISOString(),
+            inbox_archived_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
           })
           .in('id', ids)
@@ -318,9 +320,11 @@ export default async function handler(req, res) {
       if (clearAttention === true) {
         if (existing.deleted_at !== null) return res.status(409).json({ error: 'Deleted transcripts cannot be cleared from attention.' });
         update.attention_cleared_at = new Date().toISOString();
+        update.inbox_archived_at = new Date().toISOString();
       }
       if (restoreAttention === true) {
         update.attention_cleared_at = null;
+        update.inbox_archived_at = null;
       }
 
       let updateQuery = supabase.from('zoom_transcripts').update(update).eq('id', id).eq('therapist_user_id', user.id).eq('updated_at', expectedUpdatedAt);
@@ -339,3 +343,4 @@ export default async function handler(req, res) {
     return res.status(error.status || 500).json({ error: 'Unable to access the transcript inbox.' });
   }
 }
+

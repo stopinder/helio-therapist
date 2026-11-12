@@ -1,6 +1,11 @@
 <template>
   <section ref="inboxRoot" class="transcript-inbox">
     <SourceReviewDialog v-if="reviewSourceId" :transcript-id="reviewSourceId" :source-label="reviewSourceLabel" @close="reviewSourceId=''" @resolved="handleSourceReviewed" />
+    <TranscriptAssignmentDialog v-if="correctionId" :transcript-id="correctionId" :clients="clients" @close="correctionId=''" @changed="handleAssignmentCorrected" @show-archive="setFilter('archived')" />
+    <div v-if="rowFeedback" class="fixed bottom-4 left-4 right-4 z-50 mx-auto max-w-xl rounded-panel border border-border bg-surface-elevated p-4 shadow-overlay" :role="rowFeedback.error ? 'alert' : 'status'" data-testid="transcript-action-feedback">
+      <p :class="rowFeedback.error ? 'text-state-danger' : 'text-ink'">{{ rowFeedback.message }}</p>
+      <div class="mt-2 flex flex-wrap gap-3"><button v-if="rowFeedback.archived" class="button-secondary" :disabled="inboxBusy" @click="undoClearAttention">Undo archive</button><button v-if="rowFeedback.archived" class="button-secondary" @click="setFilter('archived'); rowFeedback=null">View archived</button><button class="button-secondary" @click="rowFeedback=null">Dismiss</button></div>
+    </div>
     <template v-if="!selected">
       <header class="page-header inbox-page-header">
         <div class="header-orientation">
@@ -67,6 +72,10 @@
               <StatusIndicator class="status-indicator" :tone="workflowTone(transcript)">{{ workflowState(transcript).label }}</StatusIndicator>
             </div>
 
+            <div v-if="transcript.clientId || transcript.sessionRef" class="matched-note">
+              <span class="text-body-sm">Assigned to <strong>{{ clientName(transcript.clientId) || 'Client needs checking' }}</strong></span>
+              <button type="button" class="button-secondary compact-button" :disabled="inboxBusy" @click="correctionId=transcript.id">Change assignment</button>
+            </div>
             <div v-if="transcript.sourceReview?.state==='needs_review'" class="matched-note"><span>Check the original before preparing or sharing a summary.</span><button class="button-primary" @click.stop="openInboxSourceReview(transcript)">Review source</button></div>
             <div v-else-if="transcript.sourceReview?.state==='separated'" class="matched-note"><span>Original retained. Use its reviewed conversation segments.</span><button class="button-secondary" @click.stop="openInboxSourceReview(transcript)">View separation</button></div>
             <div v-else-if="filterMode === 'attention' && !transcript.clientId && !transcript.sessionRef" class="inline-assignment">
@@ -135,7 +144,7 @@
             <div v-else-if="isVerifiedMatch(transcript)" class="matched-note">
               <span class="matched-copy"><CheckCircle2 class="workspace-icon" aria-hidden="true" /> Assigned to {{ clientName(transcript.clientId) || 'client' }}</span>
               <button type="button" class="button-primary compact-button" :disabled="inboxBusy" @click="openLinkedSessionFromRow(transcript)">{{ navigationSavingId === transcript.id ? 'Opening workspace…' : 'Open Clinical Workspace' }}</button>
-              <button type="button" class="button-secondary compact-button" :disabled="inboxBusy" @click.stop="openInboxSourceReview(transcript)">Correct client assignment</button><span v-if="navigationErrorId === transcript.id" class="type-metadata text-state-danger" role="alert">{{ errorMessage }}</span>
+              <span v-if="navigationErrorId === transcript.id" class="type-metadata text-state-danger" role="alert">{{ errorMessage }}</span>
             </div>
 
             <div v-else-if="transcript.clientId || transcript.sessionRef" class="matched-note"><span>The assignment needs an encounter check.</span><button class="button-secondary" @click="openTranscript(transcript)">Review assignment</button></div>
@@ -175,9 +184,9 @@
                 </button>
               </div>
               <div v-if="filterMode === 'attention'" class="record-actions">
-                <button type="button" class="quiet-action" :disabled="inboxBusy" @click="archiveFromInbox(transcript)">
+                <button type="button" class="quiet-action" title="Archive from Inbox. The client and encounter assignment is retained." :disabled="inboxBusy" @click="archiveFromInbox(transcript)">
                   <Archive class="workspace-icon-sm" aria-hidden="true" />
-                  <span>{{ rowActionSavingId === transcript.id && rowActionSavingMode === 'archive' ? 'Archiving…' : 'Archive' }}</span>
+                  <span>{{ rowActionSavingId === transcript.id && rowActionSavingMode === 'archive' ? 'Archiving…' : 'Archive from Inbox' }}</span>
                 </button>
                 <button v-if="canDeleteTranscript(transcript)" type="button" class="quiet-action danger-action" :disabled="inboxBusy" @click="deleteFromInbox(transcript)">
                   <Trash2 class="workspace-icon-sm" aria-hidden="true" />
@@ -245,7 +254,7 @@
         <div><p class="type-eyebrow">Just assigned</p><strong role="status">Assigned to {{ lastAssignmentLabel }}.</strong><p>Encounter: {{ formatDate(lastAssignment.sourceOccurredAt || lastAssignment.receivedAt) }}</p><p class="type-metadata">{{ lastAssignment.sourceTitle }}</p><p class="type-metadata">Assignment saved. Open Clinical Workspace to choose a lens and prepare your summary.</p></div>
         <div class="assignment-outcomes"><button v-if="sessionSummaryDestination(lastAssignment)" class="button-primary" :disabled="inboxBusy" @click="openLinkedSessionFromRow(lastAssignment)">{{ navigationSavingId === lastAssignment.id ? 'Opening workspace…' : 'Open Clinical Workspace' }}</button><button class="button-secondary" :disabled="inboxBusy" @click="lastAssignment = null">Dismiss</button></div><p v-if="navigationErrorId === lastAssignment.id" class="type-metadata text-state-danger" role="alert">{{ errorMessage }}</p>
       </section>
-      <section class="workflow-section client-section"><template v-if="!selected.clientId || editingClient"><div><p class="eyebrow">Client</p><h2>Client</h2><p>Select the client this original Zoom transcript belongs to. Helio will not guess.</p></div><div class="assignment-controls"><div v-if="!selected.clientId" class="encounter-date-field detail-encounter-date"><div class="encounter-date-heading"><div><label for="selected-encounter-date">Encounter date</label><p>This date controls longitudinal ordering and becomes the session date when assigned.</p></div><span class="encounter-time">Time: {{ formatTime(selected.sourceOccurredAt || selected.receivedAt) }}</span></div><div class="encounter-date-controls"><input id="selected-encounter-date" v-model="encounterDateDrafts[selected.id]" class="control-field min-h-touch" type="date" :disabled="inboxBusy" /><button type="button" class="button-secondary compact-button" :disabled="inboxBusy || !encounterDateChanged(selected)" @click="saveEncounterDate(selected)"><CalendarDays class="workspace-icon-sm" aria-hidden="true" /><span>{{ encounterDateSavingId === selected.id ? 'Saving…' : 'Save date' }}</span></button></div></div><div class="flex items-center gap-2"><label for="client-select" class="sr-only">Client</label><select id="client-select" v-model="selectedClientId" :disabled="inboxBusy" class="flex-1"><option value="" disabled>Select a client…</option><option v-for="client in clients" :key="client.id" :value="client.id">{{ client.name }}</option></select><button type="button" class="secondary whitespace-nowrap" @click="openAddClientForSelected">Add client</button></div><div class="assignment-actions"><button v-if="selected.clientId" class="secondary" :disabled="saving" @click="editingClient = false">Cancel</button><button class="primary" :disabled="inboxBusy || !selectedClientId || selectedClientId === selected.clientId" @click="saveAssignment({openSummary:true})">{{ saving ? 'Saving…' : selected.clientId ? 'Change client & open Clinical Workspace' : 'Assign & open Clinical Workspace' }}</button><button class="secondary" :disabled="inboxBusy || !selectedClientId || selectedClientId === selected.clientId" @click="saveAssignment({openSummary:false})">Assign &amp; stay in inbox</button></div></div></template><template v-else><div><p class="eyebrow">Client</p><h2>{{ clientName(selected.clientId) }}</h2><p>Assigned client</p></div><button class="secondary" @click="openInboxSourceReview(selected)">Correct assignment</button></template></section>
+      <section class="workflow-section client-section"><template v-if="!selected.clientId || editingClient"><div><p class="eyebrow">Client</p><h2>Client</h2><p>Select the client this original Zoom transcript belongs to. Helio will not guess.</p></div><div class="assignment-controls"><div v-if="!selected.clientId" class="encounter-date-field detail-encounter-date"><div class="encounter-date-heading"><div><label for="selected-encounter-date">Encounter date</label><p>This date controls longitudinal ordering and becomes the session date when assigned.</p></div><span class="encounter-time">Time: {{ formatTime(selected.sourceOccurredAt || selected.receivedAt) }}</span></div><div class="encounter-date-controls"><input id="selected-encounter-date" v-model="encounterDateDrafts[selected.id]" class="control-field min-h-touch" type="date" :disabled="inboxBusy" /><button type="button" class="button-secondary compact-button" :disabled="inboxBusy || !encounterDateChanged(selected)" @click="saveEncounterDate(selected)"><CalendarDays class="workspace-icon-sm" aria-hidden="true" /><span>{{ encounterDateSavingId === selected.id ? 'Saving…' : 'Save date' }}</span></button></div></div><div class="flex items-center gap-2"><label for="client-select" class="sr-only">Client</label><select id="client-select" v-model="selectedClientId" :disabled="inboxBusy" class="flex-1"><option value="" disabled>Select a client…</option><option v-for="client in clients" :key="client.id" :value="client.id">{{ client.name }}</option></select><button type="button" class="secondary whitespace-nowrap" @click="openAddClientForSelected">Add client</button></div><div class="assignment-actions"><button v-if="selected.clientId" class="secondary" :disabled="saving" @click="editingClient = false">Cancel</button><button class="primary" :disabled="inboxBusy || !selectedClientId || selectedClientId === selected.clientId" @click="saveAssignment({openSummary:true})">{{ saving ? 'Saving…' : selected.clientId ? 'Change client & open Clinical Workspace' : 'Assign & open Clinical Workspace' }}</button><button class="secondary" :disabled="inboxBusy || !selectedClientId || selectedClientId === selected.clientId" @click="saveAssignment({openSummary:false})">Assign &amp; stay in inbox</button></div></div></template><template v-else><div><p class="eyebrow">Client</p><h2>{{ clientName(selected.clientId) }}</h2><p>Assigned client</p></div><button class="secondary" @click="correctionId=selected.id">Change assignment</button></template></section>
       <section v-if="selected.clientId && !editingClient" class="ready-card">
         <div>
           <p class="eyebrow">Assigned</p>
@@ -254,7 +263,7 @@
         </div>
         <div class="assignment-actions">
           <button v-if="sessionSummaryDestination(selected)" class="primary" :disabled="inboxBusy" @click="openLinkedSession">Open Clinical Workspace</button>
-          <button v-if="selected.clientId && selected.sessionRef" class="secondary" @click.stop="openInboxSourceReview(selected)">Review or correct client</button>
+          <button v-if="selected.clientId && selected.sessionRef" class="secondary" @click.stop="correctionId=selected.id">Change assignment</button>
           <button class="secondary" @click="openClientTranscripts">Client transcripts</button>
           <button class="secondary" @click="closeTranscript">Back to inbox</button>
         </div>
@@ -343,6 +352,18 @@ import { conversationPreview, conversationTurns, searchConversationTurns, transc
 import AddClientModal from './sidebar/AddClientModal.vue'
 import StatusIndicator from './ui/StatusIndicator.vue'
 import SourceReviewDialog from './workspace/SourceReviewDialog.vue'
+import TranscriptAssignmentDialog from './workspace/TranscriptAssignmentDialog.vue'
+const correctionId=ref(''),rowFeedback=ref(null)
+async function handleAssignmentCorrected(result){
+  lastAssignment.value=null
+  try{
+    const response=await authenticatedFetch('/api/zoom/transcripts');const data=await response.json();
+    if(!response.ok)throw new Error('Refresh failed')
+    transcripts.value=data.transcripts||[]
+    if(selected.value){selected.value=transcripts.value.find(t=>t.id===selected.value.id)||null}
+    for(const transcript of transcripts.value)initialiseAssignmentDraft(transcript)
+  }catch{rowFeedback.value={error:true,message:'The correction was saved, but the list could not refresh. Reopen Transcript Inbox to see the current assignment.'}}
+}
 const reviewSourceId=ref(''),reviewSourceLabel=ref('')
 function openInboxSourceReview(transcript){
   if(!transcript?.id){errorMessage.value='No original transcript is linked to this item.';return}
@@ -403,14 +424,15 @@ const isEligibleForDeletion = computed(() => canDeleteTranscript(selected.value)
 const selectedConversationTurns = computed(() => conversationTurns(selected.value));
 const selectedSpeakerSummary = computed(() => transcriptSpeakerSummary(selected.value));
 const filteredSelectedConversationTurns = computed(() => searchConversationTurns(selectedConversationTurns.value, transcriptSearch.value));
-const filters = [{ id: 'attention', label: 'Needs attention' }, { id: 'history', label: 'History' }]
+const filters = [{ id: 'attention', label: 'Needs attention' }, { id: 'history', label: 'History' }, { id: 'archived', label: 'Archived' }]
 const actionableCount = computed(() => transcripts.value.filter(item => needsAttention(item)).length)
 const sampleTranscriptCount = computed(() => transcripts.value.filter(isSampleTranscript).length)
 const matchingTranscripts = computed(() => {
   const query = searchQuery.value.trim().toLowerCase();
   return transcripts.value.filter(item => {
     if (filterMode.value === 'attention' && !needsAttention(item)) return false;
-    if (filterMode.value === 'history' && needsAttention(item)) return false;
+    if (filterMode.value === 'history' && (needsAttention(item) || item.inboxArchivedAt)) return false;
+    if (filterMode.value === 'archived' && !item.inboxArchivedAt) return false;
     if (!query) return true;
     return [
       labelFor(item), rowTitle(item), triageIdentity(item), clientName(item.clientId),
@@ -419,8 +441,8 @@ const matchingTranscripts = computed(() => {
     ].some(value => String(value || '').toLowerCase().includes(query))
   }).sort((a,b)=>new Date(b.receivedAt||0)-new Date(a.receivedAt||0))
 })
-const visibleTranscripts = computed(() => filterMode.value === 'history' ? matchingTranscripts.value.slice(0, historyLimit.value) : matchingTranscripts.value)
-const hasMoreHistory = computed(() => filterMode.value === 'history' && visibleTranscripts.value.length < matchingTranscripts.value.length)
+const visibleTranscripts = computed(() => filterMode.value !== 'attention' ? matchingTranscripts.value.slice(0, historyLimit.value) : matchingTranscripts.value)
+const hasMoreHistory = computed(() => filterMode.value !== 'attention' && visibleTranscripts.value.length < matchingTranscripts.value.length)
 function setFilter(id){ filterMode.value=id; historyLimit.value=historyPageSize }
 function formatDate(value){ const date=new Date(value);return Number.isNaN(date.getTime())?'Date unavailable':date.toLocaleString(undefined,{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}) }
 function formatTime(value){ const date=new Date(value);return Number.isNaN(date.getTime())?'Unavailable':date.toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'}) }
@@ -625,8 +647,10 @@ async function undoClearAttention() {
     lastClearedBatch.value = batch.filter((_, index) => results[index].status === 'rejected');
     if (lastClearedBatch.value.length) {
       errorMessage.value = 'Unable to undo some items. Retry Undo for the remaining items.';
+      rowFeedback.value={error:true,message:errorMessage.value,archived:true};
     } else {
       successMessage.value = 'Archive undone.';
+      rowFeedback.value={message:'Archive undone. The transcript is restored.'};
     }
   } finally {
     saving.value = false;
@@ -839,12 +863,15 @@ async function archiveFromInbox(transcript){
       body:JSON.stringify({id:transcript.id,expectedUpdatedAt:transcript.updatedAt,clearAttention:true})
     });
     const data=await response.json().catch(()=>({}));
-    if(!response.ok||!data.transcript)throw new Error(data.error||'Unable to archive this transcript.');
+    if(!response.ok || data.transcript?.id!==transcript.id || !data.transcript?.inboxArchivedAt)throw new Error(data.error||'The archive could not be confirmed. Reload to check the saved status.');
     replaceTranscriptInList(data.transcript);
     removeExpandedRow(transcript.id);
-    successMessage.value='Transcript archived. Restore it any time from History.';
+    lastClearedBatch.value=[data.transcript];
+    rowFeedback.value={message:'Archived from Inbox. The client assignment is retained.',archived:true};
+    successMessage.value='Transcript archived. Restore it any time from Archived.';
   }catch(error){
     errorMessage.value=error.message||'Unable to archive this transcript.';
+    rowFeedback.value={error:true,message:errorMessage.value};
   }finally{
     rowActionSavingId.value=null;
     rowActionSavingMode.value='';
