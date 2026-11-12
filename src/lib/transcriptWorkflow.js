@@ -42,7 +42,7 @@ export function normaliseInboxReturnState(value) {
   const finite = (number, fallback, max) => typeof number === 'number' && Number.isFinite(number)
     ? Math.min(max, Math.max(0, number)) : fallback;
   return {
-    filter: ['history','archived'].includes(value.filter) ? value.filter : 'attention',
+    filter: ['history','archived','unassigned'].includes(value.filter) ? value.filter : 'attention',
     search: typeof value.search === 'string' ? value.search.slice(0, 500) : '',
     historyLimit: Math.max(20, Math.floor(finite(value.historyLimit, 20, 10000))),
     scrollTop: finite(value.scrollTop, 0, 10000000),

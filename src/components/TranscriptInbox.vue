@@ -78,7 +78,7 @@
             </div>
             <div v-if="transcript.sourceReview?.state==='needs_review'" class="matched-note"><span>Check the original before preparing or sharing a summary.</span><button class="button-primary" @click.stop="openInboxSourceReview(transcript)">Review source</button></div>
             <div v-else-if="transcript.sourceReview?.state==='separated'" class="matched-note"><span>Original retained. Use its reviewed conversation segments.</span><button class="button-secondary" @click.stop="openInboxSourceReview(transcript)">View separation</button></div>
-            <div v-else-if="filterMode === 'attention' && !transcript.clientId && !transcript.sessionRef" class="inline-assignment">
+            <div v-else-if="(filterMode === 'attention' || filterMode === 'unassigned') && !transcript.clientId && !transcript.sessionRef" class="inline-assignment">
               <div class="assignment-intro">
                 <span class="assignment-icon" aria-hidden="true"><UserPlus class="workspace-icon" /></span>
                 <div>
@@ -315,8 +315,9 @@
         </div>
       </section>
       <section v-if="selected.reviewChoicesSavedAt || editingChoices" class="review-choices"><div><p class="eyebrow">Review choices</p><h2>Review choices</h2><p>Choose what, if anything, should be requested later and how the original source should be retained. This does not start analysis.</p></div><label for="clinical-output">Requested output</label><select id="clinical-output" v-model="selectedLens"><option value="">No output requested</option><option value="clinical_summary">Clinical summary</option><option value="draft_note">Draft clinical note</option><option value="cbt">CBT reflection</option></select><fieldset><legend>Source retention</legend><label><input v-model="sourceRetention" type="radio" value="keep_until_review" /> Keep the original source until I review it</label><label><input v-model="sourceRetention" type="radio" value="delete_after_approved_output" /> Mark for deletion after I approve an output</label></fieldset><div class="assignment-actions"><button v-if="selected.reviewChoicesSavedAt" class="secondary" :disabled="saving" @click="editingChoices = false">Cancel</button><button class="primary save-choices" :disabled="saving" @click="saveReviewChoices">{{ saving ? 'Saving…' : selected.reviewChoicesSavedAt ? 'Update review choices' : 'Save review choices' }}</button></div></section>
-      <section v-if="!isVerifiedMatch(selected) && (selected.completedAt || selected.attentionClearedAt)" class="ready-card complete-card">
-        <div v-if="selected.completedAt">
+      <section v-if="selected.inboxArchivedAt || (!isVerifiedMatch(selected) && (selected.completedAt || selected.attentionClearedAt))" class="ready-card complete-card">
+        <div v-if="selected.inboxArchivedAt"><p class="eyebrow">Archived</p><h2>Transcript archived</h2><p>The source is retained. Its assignment and source-review warning, if any, are unchanged.</p></div>
+        <div v-else-if="selected.completedAt">
           <p class="eyebrow">Triage complete</p>
           <h2>Transcript triage complete</h2>
           <p>Client, session and review choices have been recorded. No requested output or Clinical Record was created by this triage step.</p>
@@ -327,7 +328,8 @@
           <p>This transcript is archived and no longer appears in Needs attention. The original source is preserved.</p>
         </div>
         <div class="assignment-actions">
-          <button v-if="selected.attentionClearedAt && !selected.completedAt" class="primary" :disabled="saving" @click="restoreToAttention">Return to Needs attention</button>
+          <button v-if="selected.inboxArchivedAt" class="primary" :disabled="saving" @click="restoreToAttention">Restore from archive</button>
+          <button v-else-if="selected.attentionClearedAt && !selected.completedAt" class="primary" :disabled="saving" @click="restoreToAttention">Return to Needs attention</button>
           <button v-if="selected.clientId && selected.sessionRef" class="secondary" @click="openLinkedSession">Open Clinical Workspace</button>
         </div>
       </section>
@@ -425,13 +427,14 @@ const isEligibleForDeletion = computed(() => canDeleteTranscript(selected.value)
 const selectedConversationTurns = computed(() => conversationTurns(selected.value));
 const selectedSpeakerSummary = computed(() => transcriptSpeakerSummary(selected.value));
 const filteredSelectedConversationTurns = computed(() => searchConversationTurns(selectedConversationTurns.value, transcriptSearch.value));
-const filters = [{ id: 'attention', label: 'Needs attention' }, { id: 'history', label: 'History' }, { id: 'archived', label: 'Archived' }]
+const filters = [{ id: 'attention', label: 'Needs attention' }, { id: 'unassigned', label: 'Unassigned' }, { id: 'history', label: 'History' }, { id: 'archived', label: 'Archived' }]
 const actionableCount = computed(() => transcripts.value.filter(item => needsAttention(item)).length)
 const sampleTranscriptCount = computed(() => transcripts.value.filter(isSampleTranscript).length)
 const matchingTranscripts = computed(() => {
   const query = searchQuery.value.trim().toLowerCase();
   return transcripts.value.filter(item => {
     if (filterMode.value === 'attention' && !needsAttention(item)) return false;
+    if (filterMode.value === 'unassigned' && (item.clientId || item.sessionRef || item.inboxArchivedAt || item.completedAt)) return false;
     if (filterMode.value === 'history' && (needsAttention(item) || item.inboxArchivedAt)) return false;
     if (filterMode.value === 'archived' && !item.inboxArchivedAt) return false;
     if (!query) return true;
@@ -617,9 +620,10 @@ async function clearAllAttention() {
     saving.value = false;
   }
 }
-function isRestoredTranscript(transcript, id) {
+function isRestoredTranscript(transcript, id, previous = null) {
   return transcript && typeof transcript === 'object' && !Array.isArray(transcript) &&
-    transcript.id === id && transcript.attentionClearedAt === null && transcript.completedAt === null &&
+    transcript.id === id && transcript.attentionClearedAt === null && !transcript.inboxArchivedAt &&
+    (transcript.completedAt === null || (previous?.inboxArchivedAt && transcript.completedAt === previous.completedAt)) &&
     typeof transcript.updatedAt === 'string' && Number.isFinite(Date.parse(transcript.updatedAt)) &&
     typeof transcript.text === 'string' && typeof transcript.status === 'string' &&
     ['clientId', 'sessionRef', 'reviewChoicesSavedAt'].every(key =>
@@ -641,7 +645,7 @@ async function undoClearAttention() {
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data?.error || 'Unable to restore transcript.');
-      if (!isRestoredTranscript(data?.transcript, t.id)) throw new Error('Invalid restoration response.');
+      if (!isRestoredTranscript(data?.transcript, t.id, t)) throw new Error('Invalid restoration response.');
       replaceTranscriptInList(data.transcript);
     }));
     // Retain the original versions for retries, including stale-write conflicts.
@@ -658,10 +662,10 @@ async function undoClearAttention() {
   }
 }
 async function restoreToAttention() {
-  if (saving.value || !selected.value?.attentionClearedAt || selected.value.completedAt) return;
+  if (saving.value || (!selected.value?.inboxArchivedAt && (!selected.value?.attentionClearedAt || selected.value.completedAt))) return;
   const transcript = await patchTranscript({ restoreAttention: true }, 'Unable to restore this transcript.');
   if (transcript) {
-    successMessage.value = 'Restored to Needs attention.';
+    successMessage.value = 'Archive removed. The assignment and source-review status are retained.';
   }
 }
 function replaceTranscriptInList(transcript) {
@@ -728,7 +732,7 @@ async function refreshAfterImport(){
   try{await load();return !errorMessage.value}finally{refreshing.value=false}
 }
 defineExpose({refreshAfterImport})
-async function patchTranscript(body,fallbackMessage){saving.value=true;errorMessage.value='';successMessage.value='';try{const response=await authenticatedFetch('/api/zoom/transcripts',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:selected.value.id,expectedUpdatedAt:selected.value.updatedAt,...body})});const data=await response.json().catch(()=>({}));if(!response.ok)throw new Error(data.error||fallbackMessage);if(body.restoreAttention && !isRestoredTranscript(data?.transcript,selected.value.id))throw new Error(fallbackMessage);replaceTranscript(data.transcript);return data.transcript}catch(error){errorMessage.value=error.message||fallbackMessage;return null}finally{saving.value=false}}
+async function patchTranscript(body,fallbackMessage){saving.value=true;errorMessage.value='';successMessage.value='';try{const response=await authenticatedFetch('/api/zoom/transcripts',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:selected.value.id,expectedUpdatedAt:selected.value.updatedAt,...body})});const data=await response.json().catch(()=>({}));if(!response.ok)throw new Error(data.error||fallbackMessage);if(body.restoreAttention && !isRestoredTranscript(data?.transcript,selected.value.id,selected.value))throw new Error(fallbackMessage);replaceTranscript(data.transcript);return data.transcript}catch(error){errorMessage.value=error.message||fallbackMessage;return null}finally{saving.value=false}}
 async function saveEncounterDate(transcript,{quiet=false}={}){
   if(!transcript?.id||encounterDateSavingId.value)return transcript
   if(!encounterDateChanged(transcript))return transcript
@@ -944,7 +948,7 @@ async function openClientTranscripts(){if(!selected.value?.clientId)return;await
 async function openLinkedSession(){return openLinkedSessionFromRow(selected.value)}
 function downloadRaw(transcript){const blob=new Blob([transcript.text],{type:'text/plain;charset=utf-8'});const link=document.createElement('a');link.href=URL.createObjectURL(blob);link.download=`helio-zoom-transcript-${transcript.meetingId||transcript.id}.txt`;link.click();URL.revokeObjectURL(link.href)}
 async function openQueuedTranscript(id){if(!id)return;if(!transcripts.value.length)await load();const transcript=transcripts.value.find(item=>String(item.id)===String(id));if(transcript)await openTranscript(transcript)}
-watch(()=>props.openTranscriptId,openQueuedTranscript);watch(searchQuery,()=>{historyLimit.value=historyPageSize});onMounted(async()=>{await load();await restoreInboxContext();openQueuedTranscript(props.openTranscriptId)})
+watch(()=>props.openTranscriptId,openQueuedTranscript);watch(searchQuery,()=>{historyLimit.value=historyPageSize});onMounted(async()=>{await load();await restoreInboxContext();if(['archived','unassigned'].includes(route.query.view))setFilter(route.query.view);openQueuedTranscript(props.openTranscriptId)})
 </script>
 <style scoped>
 .assignment-handoff { display:flex; flex-wrap:wrap; gap:1rem; justify-content:space-between; }

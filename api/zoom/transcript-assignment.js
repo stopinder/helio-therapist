@@ -34,7 +34,7 @@ return async function handler(req, res) {
     });
     if (error) {
       const status = error.code === '40001' || error.code === '23514' ? 409 : error.code === 'P0002' ? 404 : error.code === '42501' ? 403 : 503;
-      const message = ['40001', '23514', 'P0002'].includes(error.code) ? error.message : 'The correction could not be saved. Nothing changed. Please try again.';
+      const message = ['PGRST202','42883'].includes(error.code) ? 'Assignment correction is awaiting database setup for this preview. Nothing changed.' : ['40001', '23514', 'P0002'].includes(error.code) ? error.message : 'The correction could not be saved. Nothing changed. Please try again.';
       console.warn('[Transcript assignment]', { code: error.code, status });
       return res.status(status).json({ error: { message, code: error.code } });
     }

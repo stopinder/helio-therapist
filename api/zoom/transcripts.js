@@ -59,6 +59,17 @@ function normaliseManualImport({ filename, text }) {
   };
 }
 
+// Keep read-only previews usable before the additive migration is installed.
+// Writes never fall back: archiving must be confirmed by its persisted explicit state.
+async function readWithArchiveCompatibility(fields, buildQuery) {
+  const result = await buildQuery(fields);
+  if (result.error && ['42703', 'PGRST204'].includes(result.error.code) && /inbox_archived_at/.test(result.error.message || '')) {
+    const legacy = await buildQuery(fields.replace('inbox_archived_at, ', ''));
+    return { ...legacy, archiveSupportAvailable: false };
+  }
+  return { ...result, archiveSupportAvailable: true };
+}
+
 export default async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
 
@@ -76,19 +87,21 @@ export default async function handler(req, res) {
       }
 
       if (id) {
-        const { data, error } = await supabase.from('zoom_transcripts').select(transcriptFields)
-          .eq('therapist_user_id', user.id).eq('id', id).is('deleted_at', null).maybeSingle();
+        const { data, error, archiveSupportAvailable } = await readWithArchiveCompatibility(transcriptFields, fields => supabase.from('zoom_transcripts').select(fields)
+          .eq('therapist_user_id', user.id).eq('id', id).is('deleted_at', null).maybeSingle());
         if (error) throw error;
         if (!data) return res.status(404).json({ error: 'Transcript not found.' });
-        return res.status(200).json({ transcript: serialiseTranscript(data) });
+        return res.status(200).json({ transcript: serialiseTranscript(data), capabilities: { assignmentRecovery: archiveSupportAvailable } });
       }
 
       const fields = hasSessionFilter ? transcriptFields : transcriptListFields;
-      let query = supabase.from('zoom_transcripts').select(fields).eq('therapist_user_id', user.id).is('deleted_at', null);
-      if (hasSessionFilter) query = query.eq('session_ref', sessionRef).eq('client_id', clientId);
-      const { data, error } = await query.order('received_at', { ascending: false });
+      const { data, error, archiveSupportAvailable } = await readWithArchiveCompatibility(fields, selectedFields => {
+        let query = supabase.from('zoom_transcripts').select(selectedFields).eq('therapist_user_id', user.id).is('deleted_at', null);
+        if (hasSessionFilter) query = query.eq('session_ref', sessionRef).eq('client_id', clientId);
+        return query.order('received_at', { ascending: false });
+      });
       if (error) throw error;
-      return res.status(200).json({ transcripts: (data || []).map((row) => serialiseTranscript(row, { list: !hasSessionFilter })) });
+      return res.status(200).json({ transcripts: (data || []).map((row) => serialiseTranscript(row, { list: !hasSessionFilter })), capabilities: { assignmentRecovery: archiveSupportAvailable } });
     }
 
     if (req.method === 'DELETE') {
@@ -340,6 +353,7 @@ export default async function handler(req, res) {
 
     return res.status(405).json({ error: 'Method not allowed.' });
   } catch (error) {
+    if (['42703','PGRST204'].includes(error.code) && /inbox_archived_at/.test(error.message || '')) return res.status(503).json({ error: 'Archive support is awaiting database setup for this preview. Nothing changed.' });
     console.error('[Zoom Transcript Inbox] Error:', error.message);
     return res.status(error.status || 500).json({ error: 'Unable to access the transcript inbox.' });
   }

@@ -16,6 +16,7 @@
             <p v-else-if="result.deleted" class="text-body-sm">The imported source has been deleted from Helios. The original in Zoom is unchanged.</p>
             <p v-else class="text-body-sm">The correction is saved. Existing client records have not been moved or deleted.</p>
             <div class="flex flex-wrap gap-2">
+              <RouterLink v-if="result.action === 'detach'" :to="{path:'/transcripts',query:{view:'unassigned'}}" class="button-secondary" @click="emit('close')">View Unassigned</RouterLink>
               <button v-if="result.canUndo" class="button-secondary" :disabled="busy" @click="save('undo')">{{ busy ? 'Undoing…' : 'Undo correction' }}</button>
               <RouterLink v-if="result.action === 'reassign' && result.sessionId" :to="workspace(result.clientId,result.sessionId)" class="button-primary" @click="emit('close')">Open corrected encounter</RouterLink>
               <RouterLink v-if="result.action === 'detach_archive'" :to="{path:'/transcripts',query:{transcript:transcriptId,view:'archived'}}" class="button-secondary" @click="emit('show-archive'); emit('close')">View archived transcript</RouterLink>
