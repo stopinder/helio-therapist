@@ -6,6 +6,8 @@ import {
   sampleStructuredTranscript
 } from './_lib/sample-practice.js';
 
+import { sampleClientIsActive } from './_lib/sample-transcript-visibility.js';
+
 const SAMPLE_REFS = ['SAMPLE-001', 'SAMPLE-002', 'SAMPLE-003', 'SAMPLE-004'];
 
 function isoDaysAgo(days, hour = 10) {
@@ -42,7 +44,7 @@ function sampleTranscriptRow({ userId, clientId = null, sessionId = null, noteId
 async function ensureBaseWorkspace({ service, userClient, userId }) {
   const { data: clients, error } = await service
     .from('clients')
-    .select('id,reference,display_name')
+    .select('id,reference,display_name,archived')
     .eq('user_id', userId);
   if (error) throw error;
 
@@ -64,7 +66,7 @@ async function ensureBaseWorkspace({ service, userClient, userId }) {
 
   const { data: sampleClients, error: sampleError } = await service
     .from('clients')
-    .select('id,reference,display_name')
+    .select('id,reference,display_name,archived')
     .eq('user_id', userId)
     .in('reference', SAMPLE_REFS);
   if (sampleError) throw sampleError;
@@ -498,25 +500,28 @@ export default async function handler(req, res) {
     const clients = await ensureBaseWorkspace({ service, userClient, userId: user.id });
     const alex = clients.get('SAMPLE-001');
     const daniel = clients.get('SAMPLE-003');
-    const alexSessions = await ensureThirdAlexSession({ service, userClient, userId: user.id, alexId: alex.id });
-    if (alexSessions.length < 3) throw Object.assign(new Error('Sample Alex history could not be prepared.'), { status: 500, code: 'SAMPLE_HISTORY_INCOMPLETE' });
-
-    const alexTranscripts = await ensureAlexTranscriptHistory({ service, userId: user.id, alex, sessions: alexSessions });
-    const danielWorked = await ensureDanielWorkedExample({ service, userId: user.id, daniel });
-    const inboxTranscript = await ensureSampleInboxTranscript({ service, userId: user.id });
-    const sampleSummary = await ensureSampleSummaryDocument({ service, userId: user.id, alex, transcripts: alexTranscripts });
+    let alexTranscripts = [], inboxTranscript = null, sampleSummary = null;
+    if (sampleClientIsActive(alex)) {
+      const alexSessions = await ensureThirdAlexSession({ service, userClient, userId: user.id, alexId: alex.id });
+      if (alexSessions.length < 3) throw Object.assign(new Error('Sample Alex history could not be prepared.'), { status: 500, code: 'SAMPLE_HISTORY_INCOMPLETE' });
+      alexTranscripts = await ensureAlexTranscriptHistory({ service, userId: user.id, alex, sessions: alexSessions });
+      inboxTranscript = await ensureSampleInboxTranscript({ service, userId: user.id });
+      sampleSummary = await ensureSampleSummaryDocument({ service, userId: user.id, alex, transcripts: alexTranscripts });
+    }
+    const danielWorked = sampleClientIsActive(daniel)
+      ? await ensureDanielWorkedExample({ service, userId: user.id, daniel }) : null;
 
     return res.status(200).json({
       success: true,
       data: {
         clientsCreated: 4,
-        transcriptInboxItems: 1,
+        transcriptInboxItems: inboxTranscript ? 1 : 0,
         transcriptHistoryItems: alexTranscripts.length,
-        reviewedSessionCaptures: alexTranscripts.length + 1,
+        reviewedSessionCaptures: alexTranscripts.length + (danielWorked ? 1 : 0),
         danielWorkedExampleReady: Boolean(danielWorked?.transcript?.id),
-        longitudinalSummaryReady: true,
-        sampleSummaryDocumentId: sampleSummary.id,
-        inboxTranscriptId: inboxTranscript.id,
+        longitudinalSummaryReady: Boolean(sampleSummary?.id),
+        sampleSummaryDocumentId: sampleSummary?.id || null,
+        inboxTranscriptId: inboxTranscript?.id || null,
         startPath: '/transcripts'
       }
     });
