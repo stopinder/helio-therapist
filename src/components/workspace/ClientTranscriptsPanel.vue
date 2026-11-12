@@ -93,7 +93,7 @@
         <p v-if="detailErrors[transcript.id]" class="mt-3 text-body-sm text-state-danger" role="alert">{{ detailErrors[transcript.id] }}</p>
         <div v-if="expandedId === transcript.id" class="mt-stack-md border-t border-border-muted pt-stack-md">
           <p class="text-caption text-ink-muted mb-stack-sm">Original transcript · unchanged source</p>
-          <pre class="whitespace-pre-wrap break-words text-body-sm text-ink-secondary font-sans max-h-96 overflow-y-auto">{{ transcript.text }}</pre>
+          <TranscriptConversation :transcript="transcript" />
         </div>
       </article>
     </div>
@@ -101,6 +101,8 @@
 </template>
 
 <script setup>
+import TranscriptConversation from '../TranscriptConversation.vue'
+
 import { computed, onMounted, ref, watch } from 'vue'
 import { RouterLink } from 'vue-router'
 import TranscriptAssignmentDialog from './TranscriptAssignmentDialog.vue'

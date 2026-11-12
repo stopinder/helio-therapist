@@ -1,7 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import {
-  conversationPreview,
   conversationTurns,
   formatTranscriptTime,
   searchConversationTurns,
@@ -64,26 +63,6 @@ test('cleans legacy Unknown raw transcript lines and groups consecutive utteranc
   assert.equal(turns[0].text, 'Hello? Caught you staring out the window. Just waiting patiently.')
   assert.equal(turns[1].speaker, 'Robert Ormiston')
   assert.equal(turns[1].time, '0:05')
-})
-
-test('preview shows 12 grouped turns by default and up to 30 when expanded', () => {
-  const transcript = {
-    structuredTranscript: {
-      speakers: [
-        { speaker_id: '1', display_name: 'Therapist' },
-        { speaker_id: '2', display_name: 'Client' }
-      ],
-      items: Array.from({ length: 40 }, (_, index) => ({
-        speaker_id: String((index % 2) + 1),
-        start_time: `00:00:${String(index).padStart(2, '0')}.000`,
-        text: `Turn ${index + 1}`
-      }))
-    }
-  }
-
-  assert.equal(conversationPreview(transcript).turns.length, 12)
-  assert.equal(conversationPreview(transcript).hasMore, true)
-  assert.equal(conversationPreview(transcript, { expanded: true }).turns.length, 30)
 })
 
 test('speaker summary and search work on the readable conversation model', () => {
