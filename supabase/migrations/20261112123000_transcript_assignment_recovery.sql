@@ -126,6 +126,7 @@ begin
     if p_target_session_id is not null then
       select * into target from public.sessions where id=p_target_session_id and user_id=p_user_id and client_id=p_target_client_id for update;
       if not found then raise exception 'The selected encounter was not found for this client.' using errcode='P0002'; end if;
+      if target.status not in ('source_ready','in_progress') then raise exception 'Choose an open or imported encounter. Approved records require explicit correction.' using errcode='23514'; end if;
       if exists(select 1 from public.zoom_transcripts where session_ref=target.id::text and deleted_at is null) then
         raise exception 'The target encounter already has a transcript. Choose a new imported encounter.' using errcode='23514'; end if;
     else

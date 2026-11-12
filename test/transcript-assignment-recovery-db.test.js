@@ -27,6 +27,7 @@ async function correct(db, action, extra={}){
  return (await db.query('select public.correct_transcript_assignment($1,$2,$3,$4,$5,$6,$7,$8) as result',
  [extra.owner||user,source,action,extra.version||row.source_version,extra.updatedAt||row.updated_at,extra.client||null,extra.session||null,extra.event||null])).rows[0].result;
 }
+async function rejected(db,run,pattern){await db.exec('savepoint expected_error');try{await assert.rejects(run,pattern)}finally{await db.exec('rollback to savepoint expected_error; release savepoint expected_error')}}
 test('assignment recovery transactions preserve ownership, records and source safety',async t=>{
  const db=await setup();
  const check=async(name,run)=>t.test(name,async()=>{await db.exec('begin');try{await run()}finally{await db.exec('rollback')}});
@@ -37,7 +38,7 @@ test('assignment recovery transactions preserve ownership, records and source sa
  await check('detach removes both links, retains source and supports undo',async()=>{
    const before=await current(db),result=await correct(db,'detach');let row=await current(db);assert.equal(row.client_id,null);assert.equal(row.session_ref,null);assert.equal(row.original_transcript,before.original_transcript);assert.notEqual(row.source_version,before.source_version);
    const restored=await correct(db,'undo',{event:result.eventId});row=await current(db);assert.equal(row.client_id,a);assert.equal(row.session_ref,session);assert.equal(restored.canUndo,false);
-   await assert.rejects(()=>correct(db,'undo',{event:result.eventId}),/no longer be undone/);
+   await rejected(db,()=>correct(db,'undo',{event:result.eventId}),/no longer be undone/);
  });
  await check('detach and archive persists its own archive state',async()=>{
    await correct(db,'detach_archive');const row=await current(db);assert.equal(row.client_id,null);assert.equal(row.session_ref,null);assert.ok(row.inbox_archived_at);assert.ok(row.attention_cleared_at);
@@ -49,8 +50,8 @@ test('assignment recovery transactions preserve ownership, records and source sa
  });
  await check('reassignment can select a verified existing encounter and rejects foreign clients',async()=>{
    await db.query("insert into sessions(id,user_id,client_id,occurred_at,status,notes,notes_status,workflow_status)values($1,$2,$3,now(),'source_ready','','draft','transcript_received')",[b,user,b]);
-   await assert.rejects(()=>correct(db,'reassign',{client:foreign}),/not found/);
-   await assert.rejects(()=>correct(db,'reassign',{client:b,session:session}),/not found/);
+   await rejected(db,()=>correct(db,'reassign',{client:foreign}),/not found/);
+   await rejected(db,()=>correct(db,'reassign',{client:b,session:session}),/not found/);
    const result=await correct(db,'reassign',{client:b,session:b});assert.equal(result.sessionId,b);
  });
  await check('deletion is atomic, erases imported content and retains a tombstone',async()=>{
@@ -61,20 +62,20 @@ test('assignment recovery transactions preserve ownership, records and source sa
    const before=await current(db);
    await db.query(`insert into documents(user_id,client_id,client_ref,client_name,title,document_type,status,content,source_manifest)values($1,$2::uuid,$2::text,'Alex','Saved summary','session_summary','draft','{"body":"Clinical material"}',$3)`,[user,a,JSON.stringify([{kind:'zoom_transcript',sessionId:session,transcriptId:source,sourceVersion:before.source_version}])]);
    const preview=await correct(db,'inspect');assert.equal(preview.blocked,true);assert.ok(preview.affected.some(i=>i.label==='Saved summary'));
-   await assert.rejects(()=>correct(db,'detach_delete'),/Related work/);assert.equal((await current(db)).client_id,a);
+   await rejected(db,()=>correct(db,'detach_delete'),/Related work/);assert.equal((await current(db)).client_id,a);
    await correct(db,'flag');assert.equal((await current(db)).source_review.state,'needs_review');
-   await assert.rejects(()=>db.query("update documents set status='final' where user_id=$1",[user]),/requires review/);
+   await rejected(db,()=>db.query("update documents set status='final' where user_id=$1",[user]),/requires review/);
  });
  await check('stale versions and later source edits prevent correction and undo',async()=>{
    const before=await current(db),result=await correct(db,'detach');
-   await assert.rejects(()=>correct(db,'detach_archive',{version:before.source_version,updatedAt:before.updated_at}),/changed/);
+   await rejected(db,()=>correct(db,'detach_archive',{version:before.source_version,updatedAt:before.updated_at}),/changed/);
    await db.query('update sessions set version=version+1 where id=$1',[session]);
-   await assert.rejects(()=>correct(db,'undo',{event:result.eventId}),/encounter changed/);
+   await rejected(db,()=>correct(db,'undo',{event:result.eventId}),/encounter changed/);
  });
  await check('service-only RPC rejects foreign owners and browser invocation',async()=>{
-   await assert.rejects(()=>correct(db,'inspect',{owner:other}),/not found/);
+   await rejected(db,()=>correct(db,'inspect',{owner:other}),/not found/);
    const privileges=(await db.query("select has_function_privilege('authenticated','public.correct_transcript_assignment(uuid,uuid,text,uuid,timestamptz,uuid,uuid,uuid)','execute') as allowed")).rows[0];assert.equal(privileges.allowed,false);
-   await db.exec('set role authenticated');try{await assert.rejects(()=>correct(db,'inspect'))}finally{await db.exec('reset role')}
+   await db.exec('set role authenticated');try{await rejected(db,()=>correct(db,'inspect'))}finally{await db.exec('reset role')}
  });
  }finally{await db.close()}
 });

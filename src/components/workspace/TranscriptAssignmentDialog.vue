@@ -112,7 +112,7 @@ watch([action,targetClientId,targetSessionId],()=>{confirmed.value=false})
 watch(targetClientId,async id=>{
   const version=++sessionVersion;targetSessionId.value='';targetSessions.value=[];sessionsLoading.value=!!id
   if(!id)return
-  try{const rows=await listSessions({clientId:id});if(version===sessionVersion)targetSessions.value=(rows||[]).filter(s=>String(s.clientId)===String(id))}
+  try{const rows=await listSessions({clientId:id});if(version===sessionVersion)targetSessions.value=(rows||[]).filter(s=>String(s.clientId)===String(id) && ['source_ready','in_progress'].includes(s.status))}
   catch{if(version===sessionVersion)error.value='Existing encounters could not be loaded. A new imported encounter is available.'}
   finally{if(version===sessionVersion)sessionsLoading.value=false}
 })

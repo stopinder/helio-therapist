@@ -1,5 +1,5 @@
 <template>
-  <TranscriptAssignmentDialog v-if="correcting" :transcript-id="transcriptId" @close="correcting=false" @changed="handleCorrected" />
+  <TranscriptAssignmentDialog v-if="correcting" :transcript-id="transcriptId" @close="finishCorrection" @changed="handleCorrected" />
   <Teleport v-else to="body">
     <div
       data-testid="source-review-overlay"
@@ -41,8 +41,9 @@
 import { nextTick, onMounted, onUnmounted, ref } from 'vue'
 import SourceReviewPanel from './SourceReviewPanel.vue'
 import TranscriptAssignmentDialog from './TranscriptAssignmentDialog.vue'
-const correcting=ref(false)
-function handleCorrected(result){emit('resolved',{...result,assignmentCorrection:true})}
+const correcting=ref(false),pendingCorrection=ref(null)
+function handleCorrected(result){pendingCorrection.value=result}
+function finishCorrection(){correcting.value=false;if(pendingCorrection.value){emit('resolved',{...pendingCorrection.value,assignmentCorrection:true});pendingCorrection.value=null}}
 
 defineProps({
   transcriptId: { type: String, required: true },

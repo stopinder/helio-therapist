@@ -125,7 +125,7 @@ const template = source.match(/<template>([\s\S]*?)<script setup>/)[1].replace(/
 const render = new Function('Vue', compile(template, { mode: 'function' }).code)(Vue)
 async function html(overrides) {
   const bindings = `${names}, expandedRows, assignmentDrafts, assignmentSavingId, detailReturnId, editingClient, editingChoices, showRaw, filters, matchingTranscripts, visibleTranscripts, hasMoreHistory, actionableCount, historyLimit, historyPageSize, rowTitle, formatDate, workflowTone, workflowState, labelFor, clientName, selectedClientId, selectedLens, sourceRetention, showAddClient, addingClient, addClientError, isEligibleForDeletion`
-  const state = evaluateSetup(() => {}, `${bindings}, clients: props.clients, inboxRoot, reviewSourceId, sessionSummaryDestination, lastAssignment, lastAssignmentLabel, navigationSavingId, navigationErrorId, inboxBusy, encounterDateDrafts, encounterDateSavingId, rowActionSavingId, rowActionSavingMode, expandedNoteIds, expandedPreviewIds, transcriptSearch, selectedSpeakerSummary, filteredSelectedConversationTurns, addClientInitialName, ${[...script.matchAll(/^(?:async )?function (\w+)/gm)].map(m => m[1]).join(',')}`)
+  const state = evaluateSetup(() => {}, `${bindings}, correctionId, rowFeedback, clients: props.clients, inboxRoot, reviewSourceId, sessionSummaryDestination, lastAssignment, lastAssignmentLabel, navigationSavingId, navigationErrorId, inboxBusy, encounterDateDrafts, encounterDateSavingId, rowActionSavingId, rowActionSavingMode, expandedNoteIds, expandedPreviewIds, transcriptSearch, selectedSpeakerSummary, filteredSelectedConversationTurns, addClientInitialName, ${[...script.matchAll(/^(?:async )?function (\w+)/gm)].map(m => m[1]).join(',')}`)
 
   for (const [key, value] of Object.entries(overrides)) state[key].value = value
   state.loading.value = false
@@ -142,7 +142,7 @@ test('History explanation appears above populated and empty lists; completion la
   assert.ok(populated.includes('class="inbox-list"'), 'History inbox list exists')
   assert.ok(populated.indexOf(explanation) < populated.indexOf('class="inbox-list"'))
   assert.equal(populated.split('Inbox setup complete').length - 1, 1)
-  assert.equal(populated.split('Archived').length - 1, 1)
+  assert.equal(populated.split('Archived').length - 1, 2)
   const empty = await html({ filterMode: 'history', transcripts: [] })
   assert.ok(empty.indexOf(explanation) >= 0)
   assert.ok(empty.indexOf(explanation) < empty.indexOf('empty-card'))
@@ -184,10 +184,10 @@ function api(rows, beforeUpdate = () => {}) {
     return res
   }
 }
-const row = (id, overrides = {}) => ({ id, therapist_user_id: 'owner', completed_at: null, deleted_at: null, attention_cleared_at: null, updated_at: 'original-version', original_transcript: 'Original', client_id: 'client', session_ref: 'session', review_choices_saved_at: 'reviewed', ...overrides })
+const row = (id, overrides = {}) => ({ id, therapist_user_id: 'owner', completed_at: null, deleted_at: null, attention_cleared_at: null, inbox_archived_at: null, updated_at: 'original-version', original_transcript: 'Original', client_id: 'client', session_ref: 'session', review_choices_saved_at: 'reviewed', ...overrides })
 
 test('repeated batch clearing preserves existing timestamps and all protected records and fields', async () => {
-  const rows = [row('a'), row('already', { attention_cleared_at: 'earlier' }), row('completed', { completed_at: 'complete' }), row('deleted', { deleted_at: 'deleted' }), row('foreign', { therapist_user_id: 'other' }), row('not-requested')]
+  const rows = [row('a'), row('already', { attention_cleared_at: 'earlier', inbox_archived_at: 'earlier' }), row('completed', { completed_at: 'complete' }), row('deleted', { deleted_at: 'deleted' }), row('foreign', { therapist_user_id: 'other' }), row('not-requested')]
   const original = structuredClone(rows)
   const request = api(rows)
   const body = { action: 'clear-attention', ids: rows.slice(0, -1).map(t => t.id) }
@@ -200,10 +200,11 @@ test('repeated batch clearing preserves existing timestamps and all protected re
   assert.deepEqual(second.data.transcripts, [])
   assert.deepEqual(rows, afterFirst)
   assert.deepEqual(rows.slice(1), original.slice(1))
-  const { attention_cleared_at, updated_at, ...unchanged } = rows[0]
-  const { attention_cleared_at: oldClear, updated_at: oldUpdate, ...originalFields } = original[0]
+  const { attention_cleared_at, inbox_archived_at, updated_at, ...unchanged } = rows[0]
+  const { attention_cleared_at: oldClear, inbox_archived_at: oldArchive, updated_at: oldUpdate, ...originalFields } = original[0]
   assert.deepEqual(unchanged, originalFields)
   assert.ok(attention_cleared_at)
+  assert.ok(inbox_archived_at)
   assert.notEqual(updated_at, oldUpdate)
 })
 
@@ -279,5 +280,6 @@ test('eligible server restoration succeeds without modifying completion or trans
   assert.equal(result.code, 200)
   assert.equal(result.data.transcript.completedAt, null)
   assert.equal(result.data.transcript.attentionClearedAt, null)
-  assert.deepEqual(rows[0], { ...original, attention_cleared_at: null, updated_at: rows[0].updated_at })
+  assert.deepEqual(rows[0], { ...original, attention_cleared_at: null, inbox_archived_at: null, updated_at: rows[0].updated_at })
 })
+

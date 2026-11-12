@@ -29,5 +29,15 @@ jobs:
         run: node --test test/transcript-assignment-recovery.test.js test/transcript-assignment-recovery-db.test.js test/summary-source-review-db.test.js
       - name: Verify correction dialog
         run: npx vitest run src/components/workspace/TranscriptAssignmentDialog.spec.js src/components/workspace/SourceReviewDialog.spec.js
+      - name: Install test browser
+        run: npx playwright install --with-deps chromium
+      - name: Verify desktop and mobile recovery flows
+        run: npx playwright test --config playwright.assignment-recovery.config.js
+      - name: Save interface verification images
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: assignment-recovery-interface
+          path: test-results/*.png
       - name: Build application
         run: npm run build

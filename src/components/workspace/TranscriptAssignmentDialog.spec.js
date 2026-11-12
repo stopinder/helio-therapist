@@ -9,7 +9,7 @@ const id='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',version='bbbbbbbb-bbbb-4bbb-8bbb
 const source={id,clientId:'old',sessionId:'session',sourceVersion:version,updatedAt:'2026-11-12T12:00:00Z',occurredAt:'2026-11-11T10:00:00Z',text:'Original session transcript',affected:[],blocked:false}
 const response=data=>({ok:true,json:async()=>({data})})
 let wrapper
-async function open(value=source){mocks.fetch.mockResolvedValueOnce(response(value));wrapper=mount(TranscriptAssignmentDialog,{props:{transcriptId:id,clients:[{id:'old',name:'Original client'},{id:'new',name:'Correct client'}]},attachTo:document.body,global:{stubs:{RouterLink:{template:'<a><slot /></a>'}}}});await flushPromises();return wrapper}
+async function open(value=source){mocks.fetch.mockResolvedValueOnce(response(value));wrapper=mount(TranscriptAssignmentDialog,{props:{transcriptId:id,clients:[{id:'old',name:'Original client'},{id:'new',name:'Correct client'}]},attachTo:document.body,global:{stubs:{Teleport:true,RouterLink:{template:'<a><slot /></a>'}}}});await flushPromises();return wrapper}
 beforeEach(()=>{vi.clearAllMocks();mocks.sessions.mockResolvedValue([])})
 afterEach(()=>{wrapper?.unmount();document.body.innerHTML=''})
 describe('assignment correction panel',()=>{

@@ -172,7 +172,7 @@ export default async function handler(req, res) {
           .in('id', ids)
           .eq('therapist_user_id', user.id)
           .is('completed_at', null)
-          .is('attention_cleared_at', null)
+          .is('inbox_archived_at', null)
           .is('deleted_at', null)
           .select(transcriptFields);
           
@@ -200,7 +200,7 @@ export default async function handler(req, res) {
         clearAttention !== undefined
       )) return res.status(400).json({ error: 'Update the encounter date before assigning or changing this transcript.' });
 
-      const { data: existing, error: existingError } = await supabase.from('zoom_transcripts').select('id, status, client_id, session_ref, source_occurred_at, review_choices_saved_at, updated_at, completed_at, deleted_at').eq('id', id).eq('therapist_user_id', user.id).maybeSingle();
+      const { data: existing, error: existingError } = await supabase.from('zoom_transcripts').select('id, status, client_id, session_ref, source_occurred_at, review_choices_saved_at, updated_at, completed_at, deleted_at, inbox_archived_at').eq('id', id).eq('therapist_user_id', user.id).maybeSingle();
       if (existingError) throw existingError;
       if (!existing) return res.status(404).json({ error: 'Transcript not found.' });
       if (!expectedUpdatedAt || typeof expectedUpdatedAt !== 'string') return res.status(400).json({ error: 'Reload this transcript before saving changes.' });
@@ -220,7 +220,7 @@ export default async function handler(req, res) {
         return res.status(409).json({ error: 'The encounter date can only be changed before this transcript is assigned or reviewed.' });
       }
 
-      if (restoreAttention === true && (existing.completed_at !== null || existing.deleted_at !== null)) {
+      if (restoreAttention === true && ((existing.completed_at !== null && !existing.inbox_archived_at) || existing.deleted_at !== null)) {
         return res.status(409).json({ error: 'Completed or deleted transcripts cannot be returned to Needs attention.' });
       }
 
@@ -329,7 +329,8 @@ export default async function handler(req, res) {
 
       let updateQuery = supabase.from('zoom_transcripts').update(update).eq('id', id).eq('therapist_user_id', user.id).eq('updated_at', expectedUpdatedAt);
       if (restoreAttention === true) {
-        updateQuery = updateQuery.is('completed_at', null).is('deleted_at', null);
+        updateQuery = updateQuery.is('deleted_at', null);
+        if (!existing.inbox_archived_at) updateQuery = updateQuery.is('completed_at', null);
       }
       const { data, error } = await updateQuery.select(transcriptFields).maybeSingle();
       if (error) throw error;

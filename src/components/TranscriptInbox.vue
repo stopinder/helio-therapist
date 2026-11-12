@@ -372,6 +372,7 @@ function openInboxSourceReview(transcript){
   reviewSourceId.value=transcript.id
 }
 async function handleSourceReviewed(result){
+  if(result.assignmentCorrection){await handleAssignmentCorrected(result);return}
   if(['confirm','reassign'].includes(result.action))reviewSourceId.value=''
   // Reconcile the rows without toggling the Inbox loading placeholder or
   // remounting the open transcript. Keep filters, search and typed assignments.

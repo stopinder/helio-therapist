@@ -14,7 +14,7 @@ test('all three source-review entrypoints open a shared, visible dialog rather t
     assert.doesNotMatch(parent,/<SourceReviewPanel v-if="reviewTranscriptId"|<SourceReviewPanel v-if="reviewSourceId"/)
     assert.match(parent,/@close="reviewTranscriptId=''"|@close="reviewSourceId=''"/)
   }
-  assert.match(dialog,/<Teleport to="body">/)
+  assert.match(dialog,/<Teleport(?: v-else)? to="body">/)
   assert.match(dialog,/role="dialog"/)
   assert.match(dialog,/aria-modal="true"/)
   assert.match(dialog,/data-testid="source-review-scroll-area"/)
@@ -44,3 +44,4 @@ test('session screen distinguishes sources without claiming a verified boundary'
   assert.match(session,/Review source \{\{ index\+1 \}\} of \{\{ reviewableSources.length \}\}/)
   assert.match(session,/reviewSourceLabel/)
 })
+
