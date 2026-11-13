@@ -2,8 +2,8 @@ import { scoreAnswers } from './scoring.js'
 import { dimensions, DISCLAIMER, BOUNDARY_NOTE, REPORT_VERSION, reportSections } from './content.js'
 
 /** Only deterministic rules may introduce observations. The model is a writer, not the scorer. */
-export function buildResult(answers) {
-  const scored = scoreAnswers(answers)
+export function buildResult(answers, questionSetId = 'original') {
+  const scored = scoreAnswers(answers, questionSetId)
   const interpreted = scored.dimensionScores.map(score => {
     const definition = dimensions.find(d => d.id === score.id)
     const pole = score.lean ? definition[score.lean] : null
@@ -78,6 +78,7 @@ export function buildResult(answers) {
 
   return {
     quizVersion: scored.quizVersion,
+    questionSetId: scored.questionSetId,
     reportVersion: REPORT_VERSION,
     exercise: 'What kind of therapist are you?',
     disclaimer: DISCLAIMER,
