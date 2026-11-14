@@ -43,6 +43,11 @@ test.describe('Transcript CBT Therapy Focus handoff', () => {
         if (url.searchParams.get('id') === `eq.${sessionId}`) return json({ id:sessionId, user_id:userId, client_id:clientId, occurred_at:'2026-08-12T10:00:00.000Z', status:'in_progress', workflow_status:'review_choices_saved', notes:'', notes_status:'draft', version:1, created_at:'2026-08-12T10:00:00Z', updated_at:'2026-08-12T10:00:00Z' });
         return json([]);
       }
+      if (table === 'save_reviewed_care_item') {
+        const payload=request.postDataJSON();
+        careInsert={client_id:payload.p_client_id,kind:payload.p_kind,body:payload.p_body,origin:'ai_assisted',provenance_session_id:payload.p_provenance_session_id,ai_prompt_version:payload.p_prompt_version,evidence:payload.p_evidence};
+        return json([{id:'ffffffff-ffff-4fff-8fff-ffffffffffff',...careInsert,status:'current',created_at:'2026-08-16T20:00:00Z',updated_at:'2026-08-16T20:00:00Z'}]);
+      }
       if (table === 'client_care_items') {
         if (request.method() === 'POST') {
           careInsert = request.postDataJSON();

@@ -81,14 +81,16 @@ async function loadHistorySources(supabase, { clientId, userId, window }) {
   }
 
   const candidates = buildClinicalIntelligenceSessionCandidates({ captures, summaryDocuments, sessions, transcriptRows });
-  return selectClinicalIntelligenceSources(candidates, { limit: windowLimit(window) }).map(row => ({
+  const sources = selectClinicalIntelligenceSources(candidates, { limit: windowLimit(window) }).map(row => ({
     id: `session:${row.session_id}`,
     sessionId: row.session_id,
     occurredAt: row.sessions?.occurred_at || null,
     reviewedAt: row.reviewed_at || null,
     sourceType: row.evidence_source === 'session_summary' ? 'transcript_backed_session_summary' : 'reviewed_session_capture',
+    reviewStatus: row.evidence_source === 'session_summary' ? (row.document_status || 'draft') : 'reviewed',
     content: row.content || {}
   }));
+  return { sources, coverage: { totalSessions: sessions.length, eligibleSessions: candidates.length, selectedSessions: sources.length, selectedSessionIds: sources.map(source => source.sessionId), reviewedAt: new Date().toISOString() } };
 }
 
 export default async function handler(req, res) {
@@ -132,10 +134,11 @@ export default async function handler(req, res) {
     const lensConfig = resolveLensConfig(lensId);
     let approvedContext = '';
     let historySources = [];
+    let coverage = null;
     let contextVersion = 'therapy-focus-reflection-v1';
 
     if (sourceMode === 'history') {
-      historySources = await loadHistorySources(supabase, { clientId, userId:user.id, window });
+      ({ sources: historySources, coverage } = await loadHistorySources(supabase, { clientId, userId:user.id, window }));
       if (!historySources.length) {
         return res.status(409).json({
           success:false,
@@ -196,7 +199,8 @@ export default async function handler(req, res) {
       sourceMode,
       window,
       reviewGoal,
-      sources:historySources.map(({ id, sessionId, occurredAt, reviewedAt, sourceType }) => ({ id, sessionId, occurredAt, reviewedAt, sourceType }))
+      coverage,
+      sources:historySources.map(({ id, sessionId, occurredAt, reviewedAt, sourceType, reviewStatus }) => ({ id, sessionId, occurredAt, reviewedAt, sourceType, reviewStatus }))
     });
   } catch (error) {
     console.error('[Therapy Focus suggestions] failed', error.message);
