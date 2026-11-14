@@ -27,7 +27,7 @@
         <div>
           <p class="type-overline text-action-link">Helios Clinical Intelligence</p>
           <h3 class="text-h3 font-semibold text-ink mt-1">Review Therapy Focus with Helios</h3>
-          <p class="text-body-sm text-ink-muted mt-1 max-w-3xl">Helios reviews therapist-approved session evidence and the current Therapy Focus, then proposes additions or meaningful updates for you to accept, edit or decline.</p>
+          <p class="text-body-sm text-ink-muted mt-1 max-w-3xl">Helios compares the available session evidence and the current Therapy Focus, then proposes additions or meaningful updates for you to accept, edit or decline.</p>
         </div>
         <button type="button" class="text-body-sm font-medium text-ink-muted hover:text-ink" @click="closeReview">Close</button>
       </div>
@@ -100,7 +100,11 @@
 
     <div v-if="suggestionSource==='clinical_history' && historySources.length" class="rounded-control border border-border-muted bg-surface-subtle px-inline-md py-stack-sm">
       <p class="text-caption font-semibold text-ink">Evidence reviewed</p>
-      <p class="mt-1 text-caption text-ink-muted">{{ historySources.map(source => formatDate(source.occurredAt)).filter(Boolean).join(' · ') }} · {{ historySources.length }} session source{{ historySources.length===1?'':'s' }}</p>
+      <p v-if="historyCoverage" class="mt-1 text-caption text-ink-muted">{{ historyCoverage.selectedSessions }} of {{ historyCoverage.totalSessions }} recorded sessions included. Sessions without eligible reviewed material, and sessions outside the selected window, are not evidence for this review.</p>
+      <p v-if="historySources.length===1" class="mt-1 text-caption text-ink-muted">One session supports a snapshot, not an established pattern across sessions.</p>
+      <p v-if="!suggestions.length" class="mt-1 text-body-sm text-ink-secondary">No supported additions or meaningful changes were identified.</p>
+      <p class="mt-1 text-caption text-ink-muted">{{ historySources.length }} session source{{ historySources.length===1?'':'s' }}</p>
+      <p v-for="source in historySources" :key="source.id" class="mt-1 text-caption text-ink-muted">{{ formatDate(source.occurredAt) || 'Date unavailable' }} · {{ source.sourceType==='reviewed_session_capture' ? 'Reviewed Session Capture' : 'Transcript-backed summary' }} · {{ source.reviewStatus || 'Review status unavailable' }}</p>
     </div>
 
     <section v-if="suggestions.length" class="space-y-stack-md">
@@ -150,7 +154,8 @@
         <article v-for="item in itemsFor(section.kind)" :key="item.id" class="py-stack-md flex gap-inline-md justify-between items-start">
           <div>
             <p class="text-body text-ink leading-relaxed">{{ item.body }}</p>
-            <p class="text-caption text-ink-muted mt-stack-xs">{{ formatDate(item.updatedAt) }}<span v-if="item.origin==='ai_assisted'"> · AI-assisted, therapist accepted</span></p>
+            <p v-if="item.evidence" class="text-caption text-ink-muted mt-stack-xs">{{ epistemicLabel(item.evidence.epistemic) }} · {{ evidenceStrengthLabel(item.evidence.evidenceStrength) }} · Evidence: {{ (item.evidence.sources || []).map(source => formatDate(source.occurredAt) || 'Date unavailable').join(' · ') }}</p>
+            <p class="text-caption text-ink-muted mt-stack-xs">Updated {{ formatDate(item.updatedAt) }}<span v-if="item.origin==='ai_assisted'"> · AI-assisted, therapist accepted</span></p>
           </div>
           <select :value="item.status" class="shrink-0 border border-border rounded-control bg-surface px-inline-sm py-stack-xs text-caption text-ink-secondary" @change="changeStatus(item,$event.target.value)">
             <option value="current">Current</option>
@@ -162,6 +167,14 @@
       </div>
     </section>
   </div>
+  <details v-if="items.some(item=>item.status==='historical')" class="border-t border-border-muted pt-stack-md">
+    <summary class="cursor-pointer text-body-sm font-medium text-action-link">Earlier Therapy Focus</summary>
+    <article v-for="item in items.filter(item=>item.status==='historical')" :key="item.id" class="mt-stack-md border-l-2 border-border-muted pl-inline-md">
+      <p class="text-caption font-semibold text-ink-muted">{{ sectionTitle(item.kind) }} · Earlier working view</p>
+      <p class="mt-1 text-body-sm text-ink-secondary">{{ item.body }}</p>
+      <p class="mt-1 text-caption text-ink-muted">{{ formatDate(item.updatedAt) }}</p>
+    </article>
+  </details>
   <p v-if="saveError && !showReview" class="text-body-sm text-state-danger">{{ saveError }}</p>
 </section>
 </template>
@@ -170,14 +183,14 @@
 import HelpLink from '../help/HelpLink.vue'
 import { computed,nextTick,onMounted,ref } from 'vue'
 import { LoaderCircle, Send } from '@lucide/vue'
-import { createClientCareItem,generateCareSuggestions,listClientCareItems,updateClientCareItem } from '../../lib/clientCare.js'
+import { saveReviewedCareItem,generateCareSuggestions,listClientCareItems,updateClientCareItem } from '../../lib/clientCare.js'
 import { appendDictation, useWhisperDictation } from '../../composables/useWhisperDictation.js'
 import WhisperMicButton from '../ui/WhisperMicButton.vue'
 import { CLINICAL_LENSES,DEFAULT_LENS_ID,getLens } from '../../lib/clinicalLenses.js'
 
 const props=defineProps({clientId:{type:String,required:true}})
 const emit=defineEmits(['changed'])
-const items=ref([]),loading=ref(true),capture=ref(''),steering=ref(''),suggestions=ref([]),generating=ref(false),saving=ref(false),captureError=ref(''),saveError=ref(''),selectedLensId=ref(DEFAULT_LENS_ID),showReview=ref(false),reviewMode=ref('history'),historyWindow=ref('last_three'),reviewGoal=ref('fill_empty'),suggestionSource=ref(''),historySources=ref([]),provenanceSessionId=ref(null),saveAcceptedArea=ref(null)
+const items=ref([]),loading=ref(true),capture=ref(''),steering=ref(''),suggestions=ref([]),generating=ref(false),saving=ref(false),captureError=ref(''),saveError=ref(''),selectedLensId=ref(DEFAULT_LENS_ID),showReview=ref(false),reviewMode=ref('history'),historyWindow=ref('history'),reviewGoal=ref('review_updates'),suggestionSource=ref(''),historySources=ref([]),historyCoverage=ref(null),provenanceSessionId=ref(null),saveAcceptedArea=ref(null)
 const dictation=useWhisperDictation({onText:text=>{capture.value=appendDictation(capture.value,text,'\n')}})
 
 const lens=computed(()=>getLens(selectedLensId.value))
@@ -195,7 +208,7 @@ function suggestionSourceLabel(suggestion){
   const dates=(suggestion.sourceIds||[]).map(id=>historySources.value.find(source=>source.id===id)?.occurredAt).filter(Boolean).map(formatDate)
   return dates.length?[...new Set(dates)].join(' · '):'selected clinical evidence'
 }
-function resetSuggestionContext(){suggestions.value=[];suggestionSource.value='';historySources.value=[];captureError.value='';provenanceSessionId.value=null}
+function resetSuggestionContext(){suggestions.value=[];suggestionSource.value='';historySources.value=[];historyCoverage.value=null;captureError.value='';provenanceSessionId.value=null}
 function openHistoryReview(){reviewMode.value='history';showReview.value=true;resetSuggestionContext()}
 function openReflection(){reviewMode.value='reflection';showReview.value=true;resetSuggestionContext()}
 function closeReview(){showReview.value=false}
@@ -268,6 +281,10 @@ async function generateReflection(){
   }
 }
 async function generateHistory(){
+  if(generating.value)return
+  suggestions.value=[]
+  historySources.value=[]
+  historyCoverage.value=null
   generating.value=true
   captureError.value=''
   suggestionSource.value=''
@@ -284,6 +301,7 @@ async function generateHistory(){
     })
     suggestions.value=result.suggestions.map(suggestion=>({...suggestion,decision:'pending'}))
     historySources.value=Array.isArray(result.sources)?result.sources:[]
+    historyCoverage.value=result.coverage||null
     suggestionSource.value='clinical_history'
   }catch(error){
     captureError.value=error.message||'Therapy Focus could not be reviewed just now.'
@@ -304,19 +322,21 @@ async function saveAccepted(){
         body:suggestion.body,
         origin:'ai_assisted',
         provenanceSessionId:provenanceSessionId.value,
-        aiPromptVersion:suggestion.promptVersion
+        aiPromptVersion:suggestion.promptVersion,
+        evidence: suggestionSource.value==='clinical_history' ? {
+          sources:historySources.value.filter(source=>(suggestion.sourceIds||[]).includes(source.id)),
+          epistemic:suggestion.epistemic, evidenceStrength:suggestion.evidenceStrength,
+          coverage:historyCoverage.value
+        } : null
       }
-      if(suggestion.action==='update'&&targetItem(suggestion)){
-        const old=targetItem(suggestion)
-        await updateClientCareItem(old.id,{status:'historical'})
-        const saved=await createClientCareItem(createPayload)
-        items.value=[saved,...items.value.map(item=>item.id===old.id?{...item,status:'historical'}:item)]
-      }else{
-        const saved=await createClientCareItem(createPayload)
-        items.value.unshift(saved)
-      }
+      const old=suggestion.action==='update'?targetItem(suggestion):null
+      const saved=await saveReviewedCareItem({...createPayload,replacesId:old?.id||null})
+      items.value=[saved,...items.value.map(item=>item.id===old?.id?{...item,status:'historical'}:item)]
+      suggestion.decision='saved'
+      suggestions.value=suggestions.value.filter(item=>item.id!==suggestion.id)
+      emit('changed',items.value)
     }
-    suggestions.value=suggestions.value.filter(suggestion=>suggestion.decision!=='accepted')
+    suggestions.value=suggestions.value.filter(suggestion=>suggestion.decision!=='saved')
     if(!suggestions.value.length){
       suggestionSource.value=''
       provenanceSessionId.value=null

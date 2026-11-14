@@ -66,8 +66,9 @@
             </div>
 
             <CurrentCareFocus
-              :key="careRefreshKey"
+              :key="`${route.params.clientId}:${careRefreshKey}`"
               :client="client"
+              :sessions="sessions"
               :refresh-key="careRefreshKey"
               :lens-id="selectedLensId"
               @open-focus="openWorkspaceSection('therapy')"
@@ -79,8 +80,8 @@
               <section class="rounded-panel border border-border-muted bg-surface-elevated px-inline-lg py-stack-lg" aria-labelledby="latest-work-heading">
                 <div class="flex items-start justify-between gap-inline-md">
                   <div>
-                    <h3 id="latest-work-heading" class="text-h3 font-semibold text-ink">Latest work</h3>
-                    <p class="mt-1 text-caption text-ink-muted">The most recent clinical activity, not the full history.</p>
+                    <h3 id="latest-work-heading" class="text-h3 font-semibold text-ink">Recent sessions</h3>
+                    <p class="mt-1 text-caption text-ink-muted">Session availability and review status. The clinical working view is above.</p>
                   </div>
                   <button v-if="sessions.length" type="button" class="text-body-sm font-medium text-action-link hover:underline" @click="openWorkspaceSection('history')">View history</button>
                 </div>
@@ -120,7 +121,7 @@
               <span class="shrink-0 text-body-sm font-semibold text-action-link">{{ therapyOpen ? 'Hide' : 'Open' }}</span>
             </button>
             <div v-if="therapyOpen" class="mt-stack-lg">
-              <ClientCarePanel :client-id="String(route.params.clientId)" @changed="careRefreshKey++" />
+              <ClientCarePanel :key="String(route.params.clientId)" :client-id="String(route.params.clientId)" @changed="careRefreshKey++" />
             </div>
           </section>
 

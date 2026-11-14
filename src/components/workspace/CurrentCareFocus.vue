@@ -4,7 +4,7 @@
       <div>
         <p class="type-overline text-action-link">Therapy</p>
         <h2 class="mt-1 text-h2 font-semibold text-ink">Therapy Focus</h2>
-        <p class="mt-1 max-w-2xl text-body-sm text-ink-muted">The current working view of what matters in the therapy, without opening the full record.</p>
+        <p class="mt-1 max-w-2xl text-body-sm text-ink-muted">The working understanding, what has changed, and what the work is teaching us over time.</p>
       </div>
       <button type="button" class="button-secondary shrink-0" @click="$emit('open-focus')">Open full Therapy Focus</button>
     </header>
@@ -38,10 +38,13 @@
 
     <p v-if="loading" class="mt-stack-md text-body-sm text-ink-muted">Loading Therapy Focus…</p>
 
+    <p v-else-if="loadError" class="mt-stack-md text-body-sm text-state-danger" role="alert">{{ loadError }}</p>
+
     <div v-else-if="currentItems.length" class="mt-stack-md divide-y divide-border-muted border-y border-border-muted">
-      <article v-for="item in currentItems.slice(0, 4)" :key="item.id" class="py-stack-sm">
+      <article v-for="item in overviewItems" :key="item.id" class="py-stack-sm">
         <p class="text-caption font-semibold text-ink-muted">{{ sectionTitle(item.kind) }}</p>
-        <p class="mt-1 text-body-sm leading-relaxed text-ink-secondary">{{ item.body }}</p>
+        <p class="mt-1 text-body-sm leading-relaxed text-ink-secondary">{{ item.body || emptyLabel(item.kind) }}</p>
+        <p v-if="!item.empty" class="mt-1 text-caption text-ink-muted">{{ focusEvidenceLabel(item.evidence) }}</p>
       </article>
     </div>
 
@@ -50,9 +53,11 @@
       <p class="mt-1 text-caption text-ink-muted">Add an aim manually, or open the full Therapy Focus to review the clinical history with Helios.</p>
     </div>
 
+    <p v-if="!loading && !loadError && currentItems.length" class="mt-stack-md text-caption text-ink-muted" data-testid="focus-coverage">{{ coverageLabel }}</p>
+
     <footer class="mt-stack-md flex flex-wrap items-center gap-inline-md">
       <button v-if="!addingAim" type="button" class="text-body-sm font-medium text-action-link hover:underline" @click="addingAim=true">+ Add aim or objective</button>
-      <span v-if="currentItems.length > 4" class="text-caption text-ink-muted">+ {{ currentItems.length - 4 }} more in full Therapy Focus</span>
+      <span v-if="additionalCount > 0" class="text-caption text-ink-muted">+ {{ additionalCount }} more in full Therapy Focus</span>
     </footer>
 
     <div v-if="addingAim" class="mt-stack-md rounded-control border border-border-muted bg-surface-subtle p-inline-md py-stack-md">
@@ -76,16 +81,20 @@ import { createClientCareItem, listClientCareItems } from '../../lib/clientCare.
 import { updateClientFocus } from '../../lib/clients.js'
 import { getLens, DEFAULT_LENS_ID } from '../../lib/clinicalLenses.js'
 import { appendDictation, useWhisperDictation } from '../../composables/useWhisperDictation.js'
+import { focusOverviewItems, focusEvidenceLabel, focusCoverage } from '../../lib/therapyFocusOverview.js'
 import WhisperMicButton from '../ui/WhisperMicButton.vue'
 
 const props=defineProps({
   client:{type:Object,required:true},
+  sessions:{type:Array,default:()=>[]},
   refreshKey:{type:Number,default:0},
   lensId:{type:String,default:DEFAULT_LENS_ID}
 })
 const emit=defineEmits(['open-focus','client-updated','changed'])
 const items=ref([])
 const loading=ref(true)
+const loadError=ref('')
+let loadVersion=0
 const addingAim=ref(false)
 const aimDraft=ref('')
 const savingAim=ref(false)
@@ -105,13 +114,20 @@ function toggleDictation(target){if(!focusDictation.recording.value){dictationTa
 
 const lens=computed(()=>getLens(props.lensId))
 const currentItems=computed(()=>items.value.filter(item=>item.status==='current'))
-function sectionTitle(kind){return lens.value.sections[kind]?.label || 'Therapy Focus'}
+const overviewItems=computed(()=>focusOverviewItems(items.value,lens.value.sections))
+const additionalCount=computed(()=>currentItems.value.length-overviewItems.value.filter(item=>!item.empty).length)
+const coverageLabel=computed(()=>focusCoverage(items.value,props.sessions))
+function sectionTitle(kind){return lens.value.sections[kind]?.label || ({narrative:'Clinical narrative',themes:'Recurring themes',interventions:'What has been tried',outcomes:'Change and outcomes',shared_understanding:'Shared understanding',trying:'What we’re trying',change_noticed:'Change noticed',learning:'Learning'}[kind]) || 'Therapy Focus'}
+function emptyLabel(kind){return ({change_noticed:'No comparison over time has been recorded yet.',learning:'No learning from the work has been recorded yet.',outcomes:'No outcome has been recorded yet.'}[kind]) || 'Not yet recorded. This does not establish that it is absent from the therapy.'}
 
 async function load(){
+  const version=++loadVersion
   loading.value=true
-  try{items.value=await listClientCareItems(props.client.id)}
-  catch{items.value=[]}
-  finally{loading.value=false}
+  loadError.value=''
+  items.value=[]
+  try{const result=await listClientCareItems(props.client.id);if(version===loadVersion)items.value=result}
+  catch{if(version===loadVersion)loadError.value='Therapy Focus could not be loaded. Please try again.'}
+  finally{if(version===loadVersion)loading.value=false}
 }
 function cancelAim(){addingAim.value=false;aimDraft.value='';aimError.value=''}
 async function saveAim(){
