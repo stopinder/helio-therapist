@@ -1,6 +1,7 @@
+import { MODALITY_SECTION_GROUPS, summaryLensSectionGroups } from './summaryLenses.js';
 // Shared by every client-facing summary surface and both server generation routes.
 // This module contains no client records, practitioner defaults or network requests.
-export const SUMMARY_POLICY_VERSION = 'helios-summary-authoring/1.3.0';
+export const SUMMARY_POLICY_VERSION = 'helios-summary-authoring/1.4.0';
 export const SUMMARY_AUDIENCES = Object.freeze(['auto', 'individual', 'shared']);
 export const SUMMARY_ADDITIONS = Object.freeze(['none', 'exercise', 'resource', 'exercise_and_resource']);
 export const SUMMARY_SECTION_GROUPS = Object.freeze([
@@ -9,8 +10,18 @@ export const SUMMARY_SECTION_GROUPS = Object.freeze([
   { heading: 'What you noticed and what helped', fields: ['changesAndExceptions', 'strengthsAndResources'] },
   { heading: 'Looking ahead', fields: ['betweenSession', 'closing'] }
 ]);
+export const ACROSS_SESSION_SECTION_GROUPS = Object.freeze([
+  { heading: 'The recurring pattern', fields: ['opening', 'patternsOverTime'] },
+  { heading: 'What is changing', fields: ['changesAndExceptions'] },
+  { heading: 'What helps, and under what conditions', fields: ['strengthsAndResources'] },
+  { heading: 'What remains unresolved', fields: ['whatWeWorkedOn', 'perspectiveReflection'] },
+  { heading: 'Where the work might go next', fields: ['betweenSession', 'closing'] }
+]);
 export const SUMMARY_HEADINGS = new Set([
   ...SUMMARY_SECTION_GROUPS.map(group => group.heading),
+  ...ACROSS_SESSION_SECTION_GROUPS.map(group => group.heading),
+  ...Object.values(MODALITY_SECTION_GROUPS).flat().map(group => group.heading),
+  ...['clinical', 'gentle_cbt', 'internal_family_systems', 'transactional_analysis'].flatMap(lens => summaryLensSectionGroups(lens, 'across_session_review', []).map(group => group.heading)),
   'Optional exercise to consider', 'Somatic check-in', 'Optional resource',
   'Changes and resources', // Recognise headings in previously saved summaries.
   'Where things are now', 'What we have been working on', 'Patterns across our recent work',
@@ -75,8 +86,9 @@ export function effectiveSummaryOptions(options = {}, guidance = '', refinement 
 export function wantsSummaryExercise(options) {
   return ['exercise', 'exercise_and_resource'].includes(options?.addition);
 }
-export function renderSummarySections(sections = {}) {
-  return SUMMARY_SECTION_GROUPS.map(group => {
+export function renderSummarySections(sections = {}, documentKind = 'session_summary', lens = 'integrative') {
+  const groups = summaryLensSectionGroups(lens, documentKind, documentKind === 'across_session_review' ? ACROSS_SESSION_SECTION_GROUPS : SUMMARY_SECTION_GROUPS);
+  return groups.map(group => {
     const paragraphs = group.fields.map(key => typeof sections[key] === 'string' ? sections[key].trim() : '').filter(Boolean);
     return paragraphs.length ? `${group.heading}\n\n${paragraphs.join('\n\n')}` : '';
   }).filter(Boolean).join('\n\n');

@@ -7,7 +7,7 @@ import { summaryAuthoringPrompt } from '../api/_lib/summary-authoring-policy.js'
 import { clientSessionSummaryLensRule } from '../api/_lib/ai-client-session-summary.js';
 const endpoint=await readFile(new URL('../api/ai/client-session-summary.js',import.meta.url),'utf8');
 test('session summary prompt revision improves clinical prose without relaxing evidence or therapist review',()=>{
-  assert.equal(CLIENT_SESSION_SUMMARY_PROMPT_VERSION,SUMMARY_POLICY_VERSION+'/longitudinal');
+  assert.equal(CLIENT_SESSION_SUMMARY_PROMPT_VERSION,SUMMARY_POLICY_VERSION+'/helios-across-session-review/1.0.0');
   const options={audience:'shared',addition:'none'};
   assert.equal(clientSessionSummarySystemPrompt('integrative',options),summaryAuthoringPrompt(clientSessionSummaryLensRule('integrative'),options));
   const prompt=clientSessionSummarySystemPrompt('integrative',options);
@@ -18,9 +18,9 @@ test('different lenses direct different interpretive reasoning with exactly the 
   const ifs=clientSessionSummarySystemPrompt('internal_family_systems');
   const cbt=clientSessionSummarySystemPrompt('gentle_cbt');
   const general=clientSessionSummarySystemPrompt('general');
-  assert.deepEqual(CLIENT_SESSION_SUMMARY_LENSES,['general','integrative','gentle_cbt','internal_family_systems','transactional_analysis']);
+  assert.deepEqual(CLIENT_SESSION_SUMMARY_LENSES,['clinical','integrative','gentle_cbt','internal_family_systems','transactional_analysis']);
   assert.match(ta,/crossed transactions/);assert.match(ta,/Parent, Adult and Child/);assert.match(ta,/Do not import IFS-specific/);
-  assert.match(ifs,/unblending/);assert.match(cbt,/maintenance cycles/);assert.match(general,/model-neutral/);assert.notEqual(ta,ifs);
+  assert.match(ifs,/unblending/);assert.match(cbt,/maintenance cycles/);assert.equal(general,clientSessionSummarySystemPrompt('integrative'));assert.notEqual(ta,ifs);
 });
 test('strict evidence citation schema and generation service remain unchanged',()=>{
   const schema=clientSessionSummaryResponseFormat(['fictional-source-1','fictional-source-2']);

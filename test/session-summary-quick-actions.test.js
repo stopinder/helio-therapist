@@ -36,7 +36,7 @@ test('Regenerate displays a compact inline proposal and preserves therapist sele
 });
 
 test('saved generation settings are reused and advanced controls remain collapsed',()=>{
-  assert.match(session, /summaryLens\.value = previousGeneration\?\.lens \|\| clientData\.preferred_summary_lens/);
+  assert.match(session, /summaryLens\.value = normalizeSummaryLens\(previousGeneration\?\.lens \|\| clientData\.preferred_summary_lens/);
   assert.match(session, /excludeEarlierZoomNotes:excludeEarlierZoomNotes\.value/);
   assert.match(session, /previousGeneration\?\.excludeEarlierZoomNotes === true/);
   assert.match(session, /showSummaryOptions\.value = summaryUnsafe\.value \|\| !summaryDocument\.value\?\.content\?\.body/);

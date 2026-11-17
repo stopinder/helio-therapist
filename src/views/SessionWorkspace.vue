@@ -116,7 +116,7 @@
                   <label class="block">
                     <span class="text-caption font-semibold text-ink">Summary approach</span>
                     <select v-model="summaryLens" class="mt-1 w-full p-2.5 border border-border rounded-control bg-surface" @change="savePreferredSummaryLens">
-                      <option value="general">General</option>
+                      <option value="clinical">Clinical</option>
                       <option value="integrative">Integrative</option>
                       <option value="gentle_cbt">CBT</option>
                       <option value="internal_family_systems">Internal Family Systems (IFS)</option>
@@ -207,7 +207,7 @@
                     <p class="text-state-danger text-body-sm">Generation failed — previous summary unchanged. {{ generationError }}</p>
                     <button @click="generateSummary" class="button-primary mt-3 py-stack-xs px-inline-md text-body-sm">Retry</button>
                   </div>
-                  <SessionSummaryDocument v-if="!isEditingSummary" :body="summaryDocument.content.body" :clientName="client?.name" :date="workspaceSession.date" />
+                  <SessionSummaryDocument v-if="!isEditingSummary" :body="summaryDocument.content.body" :title="summaryKind === 'across' ? 'Across-session review' : 'Session Summary'" :clientName="client?.name" :date="summaryKind === 'across' ? [summaryDocument.periodStart, summaryDocument.periodEnd].filter(Boolean).join(' – ') : workspaceSession.date" />
                   <div v-else class="bg-surface rounded-panel border border-border p-6 shadow-sm animate-expandIn">
                     <textarea v-model="summaryDocument.content.body" class="w-full min-h-[30rem] p-6 border border-border rounded-control bg-surface-subtle type-body-long focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-all resize-y" placeholder="No session summary yet." @input="handleSummaryInput"></textarea>
                     <p v-if="summarySaveError" class="mt-3 text-body-sm text-state-danger" role="alert">{{ summarySaveError }}</p>
@@ -289,6 +289,7 @@
 </template>
 
 <script setup>
+import { normalizeSummaryLens } from '../lib/summaryLenses.js';
 import TranscriptConversation from '../components/TranscriptConversation.vue';
 
 import SummaryRefinementPanel from '../components/workspace/SummaryRefinementPanel.vue';
@@ -331,7 +332,7 @@ async function switchSummaryKind(kind){
     summaryKind.value=kind;summaryDocument.value=selected;
     const generation=selected?.content?.summaryGeneration||selected?.content?.clinicalIntelligence?.generation;
     summaryWindow.value=kind==='across'?'recent':'current';
-    summaryLens.value=generation?.lens||client.value?.preferred_summary_lens||'integrative';
+    summaryLens.value=normalizeSummaryLens(generation?.lens||client.value?.preferred_summary_lens||'integrative');
     excludeEarlierZoomNotes.value=generation?.excludeEarlierZoomNotes===true;
     pendingSummary.value=null;sourceReview.value=null;generationError.value='';summaryReviewError.value='';showRefinement.value=false;showSummaryOptions.value=!selected?.content?.body;
     if(selected)await verifySavedSummary();
@@ -624,7 +625,7 @@ async function loadSession(){
     summaryDocument.value = summaryKind.value==='across'?await findAcrossSessionReview({clientId,sessionId}):await findSessionSummary({ clientId, sessionId });
     await verifySavedSummary();
     const previousGeneration = summaryDocument.value?.content?.summaryGeneration || null;
-    summaryLens.value = previousGeneration?.lens || clientData.preferred_summary_lens || 'integrative';
+    summaryLens.value = normalizeSummaryLens(previousGeneration?.lens || clientData.preferred_summary_lens || 'integrative');
     summaryWindow.value = summaryKind.value==='across'?'recent':'current';
     excludeEarlierZoomNotes.value = previousGeneration?.excludeEarlierZoomNotes === true ||
       (previousGeneration?.excludeEarlierZoomNotes == null && Boolean(previousGeneration?.reviewCautions?.some(note => note.includes('Earlier Zoom notes excluded by therapist choice'))));
@@ -658,7 +659,7 @@ async function loadTranscript(){
 
 const summaryGeneration = computed(() => summaryDocument.value?.content?.summaryGeneration || null);
 function summaryApproachLabel(lens) {
-  return ({ general: 'General', integrative: 'Integrative', gentle_cbt: 'CBT', internal_family_systems: 'Internal Family Systems (IFS)', transactional_analysis: 'Transactional Analysis' })[lens] || 'Integrative';
+  return ({ clinical: 'Clinical', general: 'Integrative', integrative: 'Integrative', gentle_cbt: 'CBT', internal_family_systems: 'Internal Family Systems (IFS)', transactional_analysis: 'Transactional Analysis' })[lens] || 'Integrative';
 }
 function summaryWindowLabel(window) {
   return window === 'recent' ? 'Recent sessions' : 'This session';

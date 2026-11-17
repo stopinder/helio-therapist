@@ -16,13 +16,13 @@ test('every modality inherits Rogers-informed, evidence-first therapeutic useful
     assert.match(prompt,/Do not claim insight, resilience, progress or meaningful change merely because the client described a difficulty/);
     assert.match(prompt,/Never manufacture equal responsibility/);
   }
-  assert.equal(SUMMARY_POLICY_VERSION,'helios-summary-authoring/1.3.0');
+  assert.equal(SUMMARY_POLICY_VERSION,'helios-summary-authoring/1.4.0');
   assert.match(summaryAuthoringPrompt('General'),/Do not flatter, congratulate routinely|minimise pain|Never flatter, congratulate routinely/);
 });
 
 test('each lens expresses the stance in its own language rather than appending theory jargon',()=>{
   const expected={
-    general:['particular effort','false reassurance'],
+    clinical:['formal, provisional clinical formulation','protective factors','unassessed'],
     integrative:['relational awareness','do not impose a positive interpretation'],
     gentle_cbt:['what the client noticed, tested or learned','not as a success verdict'],
     internal_family_systems:['clarity, curiosity or compassion','responding with care to a younger part','do not declare a Self state'],

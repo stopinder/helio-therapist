@@ -46,7 +46,7 @@ test('exercises require an explicit addition choice and remain prospective and a
 test('four visible groups preserve clinical text without requiring all eight fields',()=>{
   const sections={...fields(),whatWeWorkedOn:'Work described.',perspectiveReflection:'A tentative meaning.',changesAndExceptions:'A change with limits.',betweenSession:'An open question.'};
   const body=renderClientSessionSummary(sections,'gentle_cbt');
-  assert.equal(body,renderSummarySections(sections));
+  assert.equal(body,renderSummarySections(sections,'session_summary','gentle_cbt'));
   assert.equal(parseSummaryBlocks(body).filter(block=>block.type==='heading').length,4);
   assert.doesNotMatch(body,/A gentle CBT perspective|Closing reflection/);
   for(const value of Object.values(sections).filter(Boolean))assert.ok(body.includes(value));

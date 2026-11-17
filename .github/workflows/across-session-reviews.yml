@@ -1,0 +1,35 @@
+name: Across-session structure and clinical lenses
+on:
+  pull_request:
+    paths:
+      - 'api/_lib/*summary*.js'
+      - api/_lib/across-session-review.js
+      - 'api/ai/*session-summary.js'
+      - 'src/lib/summary*.js'
+      - src/components/workspace/SessionSummaryDocument.vue
+      - src/components/workspace/ClientDocumentComposer.vue
+      - src/views/SessionWorkspace.vue
+      - 'test/*summary*.test.js'
+      - test/across-session-review-structure.test.js
+      - scripts/compare-across-session-lenses.mjs
+      - scripts/verify-summary-lenses.mjs
+      - .github/workflows/across-session-reviews.yml
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --ignore-scripts --no-fund
+      - run: node --test test/across-session-review-structure.test.js test/clinical-summary-lens-db.test.js test/global-summary-authoring.test.js test/session-summary-prompt-quality.test.js test/session-summary-generation-ui.test.js test/independent-summary-documents.test.js test/therapeutic-value-global.test.js test/session-summary-quick-actions.test.js test/refine-session-summary.test.js
+      - run: npx vitest run src/lib/globalSummaryRoutes.spec.js
+      - run: node scripts/compare-across-session-lenses.mjs
+      - run: npm run build
+      - run: npx playwright install --with-deps chromium
+      - run: node scripts/verify-summary-lenses.mjs

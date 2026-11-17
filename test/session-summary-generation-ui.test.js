@@ -15,7 +15,7 @@ test('SessionWorkspace presents inline summary customization before first genera
   assert.match(source, /Prepare \{\{ summaryKind === 'across'/)
   assert.match(source, /summaryKind === 'across' \? 'Across-session review'/)
   assert.match(source, /Summary approach/)
-  assert.match(source, /General/)
+  assert.match(source, /Clinical/)
   assert.match(source, /Integrative/)
   assert.match(source, />CBT</)
   assert.match(source, /Internal Family Systems \(IFS\)/)
@@ -109,7 +109,7 @@ test('Session summary API supports current or recent transcript-backed evidence'
   assert.match(apiSource, /window === 'recent'/)
   assert.match(apiSource, /sources\.length >= \(window === 'recent' \? 3 : 1\)/)
   assert.match(apiSource, /therapist_guidance/)
-  assert.match(apiSource, /promptVersion: PROMPT_VERSION/)
+  assert.match(apiSource, /promptVersion: window === 'current' \? PROMPT_VERSION : ACROSS_SESSION_REVIEW_VERSION/)
 })
 
 test('SessionWorkspace calls generateSessionSummary helper', () => {

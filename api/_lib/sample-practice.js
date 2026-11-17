@@ -55,6 +55,7 @@ export function sampleCaptureDraftForTranscript(transcript, { sampleVerified = f
 function alexSections(lens, count) {
   const longitudinal = count > 1;
   const perspective = {
+    clinical: 'The documented presentation is work-related worry with repeated checking and difficulty disengaging. The sample supports a provisional maintaining-factor formulation; wider developmental, diagnostic and risk assessment information is not established by this material.',
     general: 'Across the available sessions, the useful thread is the relationship between work pressure, checking and Alex’s ability to disengage in the evening.',
     integrative: 'An integrative reading keeps both the practical checking cycle and the emotional meaning of high standards in view, without reducing the work to one model.',
     gentle_cbt: 'From a CBT perspective, the evidence supports a maintenance loop in which work-related worry prompts checking, checking briefly reduces uncertainty, and repeated checking makes it harder to disengage.',
@@ -80,7 +81,7 @@ function priyaSections(lens, count) {
     patternsOverTime: count > 1 ? 'Across the available material, grief is described as variable rather than linear, with difficult periods becoming more noticeable around reminders and milestones.' : '',
     changesAndExceptions: 'The material identifies supportive connection as something Priya can approach gently rather than as evidence that grief should already have resolved.',
     strengthsAndResources: 'Priya can name changes in emotional intensity and identify trusted people who feel safe enough for gradual reconnection.',
-    perspectiveReflection: lens === 'general' ? 'The sample summary keeps grief variability and social support in view without treating either as a diagnosis or a fixed trajectory.' : 'The selected perspective is applied only to the synthetic evidence and does not add a diagnosis or causal explanation.',
+    perspectiveReflection: lens === 'clinical' ? 'The documented context is bereavement with variable distress and supportive relationships. The sample does not establish a diagnosis or a comprehensive risk assessment; these remain assessment limits.' : lens === 'general' ? 'The sample summary keeps grief variability and social support in view without treating either as a diagnosis or a fixed trajectory.' : 'The selected perspective is applied only to the synthetic evidence and does not add a diagnosis or causal explanation.',
     betweenSession: 'Make one gentle reconnection with a trusted friend and notice what feels supportive or too much.',
     closing: 'Continue making room for grief to vary while tracking which forms of connection feel supportive.'
   };

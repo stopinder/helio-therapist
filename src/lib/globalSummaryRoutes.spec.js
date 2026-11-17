@@ -9,6 +9,7 @@ import directHandler from '../../api/ai/session-summary.js';
 import longitudinalHandler from '../../api/ai/client-session-summary.js';
 import { CLIENT_SESSION_SUMMARY_FIELDS, CLIENT_SESSION_SUMMARY_LENSES } from '../../api/_lib/ai-client-session-summary.js';
 import { SUMMARY_POLICY_VERSION } from './summaryAuthoring.js';
+import { renderClientSessionSummary } from '../../api/_lib/ai-client-session-summary.js';
 const clientId='11111111-1111-4111-8111-111111111111',sessionId='22222222-2222-4222-8222-222222222222',transcriptId='33333333-3333-4333-8333-333333333333',userId='44444444-4444-4444-8444-444444444444';
 const text='The participants described pausing a difficult exchange while returning to it remained unresolved.';
 const sourceId='session:'+sessionId;
@@ -45,7 +46,7 @@ for(const [route,handler,extra] of [['encounter',directHandler,{sessionId,transc
     expect(res.statusCode).toBe(200);expect(res.payload.data.outcome).toBe('ready');expect(runTextAI).toHaveBeenCalledTimes(1);
     expect(runTextAI.mock.calls[0][0].messages[0].content).toContain(SUMMARY_POLICY_VERSION);
     expect(runTextAI.mock.calls[0][0].messages[0].content).toContain('Address both/all consistently');
-    expect(res.payload.data.resourceSelection).toBeNull();expect(res.payload.data.draft.body).toContain('What we worked on');
+    expect(res.payload.data.resourceSelection).toBeNull();expect(res.payload.data.draft.body).toBe(renderClientSessionSummary(output().sections,lens,route === 'encounter' ? 'session_summary' : 'across_session_review'));
     expect(res.payload.data.qualityReview.kind).toBe('mechanical_editorial_checks');
   });
   it('checks ownership before checking an external resource or calling AI',async()=>{
