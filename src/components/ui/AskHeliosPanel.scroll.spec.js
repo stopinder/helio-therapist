@@ -21,7 +21,7 @@ const rect = top => ({ top, bottom: top + 320, left: 0, right: 440, width: 440, 
 let wrappers = []
 async function settle() { await nextTick(); await flushPromises(); await nextTick() }
 function panel() {
-  const w = mount(AskHeliosPanel, { attachTo: document.body, global: { stubs: { 'router-link': true } } })
+  const w = mount(AskHeliosPanel, { attachTo: document.body, global: { stubs: { 'router-link': true, teleport: true } } })
   wrappers.push(w)
   return w
 }

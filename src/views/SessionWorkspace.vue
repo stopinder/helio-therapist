@@ -75,9 +75,10 @@
                     <button type="button" class="px-3 py-1.5 text-body-sm rounded-control" :class="summaryKind === 'across' ? 'bg-surface text-action-link font-semibold shadow-sm' : 'text-ink-secondary'" :disabled="isGenerating || reviewSaveBusy || isEditingSummary || summarySwitching" :aria-pressed="summaryKind === 'across'" @click="switchSummaryKind('across')">Across-session review</button>
                   </div>
                   <p v-if="summaryDocument?.id" class="mt-1 text-caption text-ink-muted">{{ summaryDocument.status === 'completed' ? 'Finalised in this client’s Documents.' : 'Saved in this client’s Documents.' }}</p>
+                  <RouterLink v-if="summaryDocument?.id" :to="{ name: 'ClientWorkspace', params: { clientId: session.clientId }, query: { document: summaryDocument.id } }" class="mt-1 inline-block text-caption text-action-link hover:underline">Open in Client Documents</RouterLink>
                   <div v-if="summaryDocument?.content?.body && summaryDocument.status !== 'completed'" class="mt-2 flex flex-wrap items-center gap-2 text-caption text-ink-muted">
                     <span>{{ generatedSummaryLabel }}</span>
-                    <button type="button" class="button-secondary text-body-sm" @click="showSummaryOptions = !showSummaryOptions">{{ showSummaryOptions ? 'Hide lens options' : 'Change lens / options' }}</button>
+                    <button type="button" class="button-secondary text-body-sm" @click="showSummaryOptions = !showSummaryOptions">{{ showSummaryOptions ? 'Hide generation settings' : 'Generation settings' }}</button>
                   </div>
                 </div>
                 <div class="flex flex-wrap items-center justify-end gap-3">
@@ -89,12 +90,7 @@
                   
                   
                    <button v-if="summaryDocument?.content?.body && summaryDocument.status !== 'completed'" type="button" class="button-secondary !min-h-0 py-1.5 px-3 text-body-sm shadow-sm" :aria-expanded="showRefinement" @click="showRefinement = !showRefinement">{{ showRefinement ? 'Hide refinement' : 'Refine' }}</button>
-                  <details class="relative" data-testid="summary-more-actions"><summary class="button-secondary !min-h-0 py-1.5 px-3 text-body-sm cursor-pointer">More</summary><div class="absolute right-0 z-20 mt-2 w-56 rounded-panel border border-border bg-surface-elevated p-3 shadow-lg space-y-3">
-                    <button v-if="transcript" type="button" @click="askHeliosAboutSession" class="block text-body-sm text-action-link">Ask Helios</button>
-                    <button v-if="summaryDocument?.content?.body && summaryDocument.status !== 'completed'" @click="generateSummary" :disabled="isGenerating || transcriptLoading || !!transcriptError || !transcript" class="block text-body-sm text-action-link">Regenerate</button>
-                    <button v-if="summaryDocument?.content?.body && summaryDocument.status !== 'completed'" @click="showSummaryOptions = true" class="block text-body-sm text-action-link">Generation settings</button>
-                    <RouterLink v-if="summaryDocument?.id" :to="{ name: 'ClientWorkspace', params: { clientId: session.clientId }, query: { document: summaryDocument.id } }" class="block text-body-sm text-action-link">Open in Client Documents</RouterLink>
-                  </div></details>
+                  <button v-if="summaryDocument?.content?.body && summaryDocument.status !== 'completed'" type="button" @click="generateSummary" :disabled="isGenerating || transcriptLoading || !!transcriptError || !transcript" class="button-secondary !min-h-0 py-1.5 px-3 text-body-sm">Regenerate</button>
                   <button @click="copySummary" :disabled="isGenerating || !summaryDocument?.content?.body || !!sourceReview || summaryUnsafe || needsTherapistReview" class="button-secondary !min-h-0 py-1.5 px-3 text-body-sm shadow-sm">Copy summary</button>
                 </div>
               </div>
@@ -321,7 +317,7 @@ const cameFromClientTranscripts = computed(() => route.query.from === 'client-tr
 const prepareRequested = computed(() => route.query.prepare === '1');
 const inboxReturnDestination = computed(() => ({ name: 'Transcripts', query: typeof route.query.inboxReturn === 'string' ? { resume: route.query.inboxReturn } : {} }));
 const router = useRouter();
-const { openClinicalContext } = useAskHelios();
+const { registerWorkspaceContext } = useAskHelios();
 const session = ref(null), client = ref(null), loading = ref(true), error = ref(''), transcript = ref(null), transcriptLoading = ref(false), transcriptError = ref(''), therapistName = ref('');
 const summaryDocument = ref(null);
 const summaryKind=ref(route.query.summaryKind==='across'?'across':'session'),summarySwitching=ref(false);
@@ -444,17 +440,18 @@ function handleSessionUpdate(updatedSession) {
   session.value = updatedSession;
   activeView.value = 'clinical';
 }
-function askHeliosAboutSession() {
-  if (!session.value?.clientId || !session.value?.id) return;
-  void openClinicalContext({
+const releaseWorkspaceContext = registerWorkspaceContext(() => {
+  if (!session.value?.clientId || !session.value?.id) return null;
+  return {
     clientId: String(session.value.clientId),
     clientName: client.value?.display_name || client.value?.name || '',
     anchorSessionId: String(session.value.id),
     window: summaryWindow.value === 'recent' ? 'last_three' : 'current',
     lens: summaryLens.value,
     source: 'session_workspace'
-  });
-}
+  };
+});
+onBeforeUnmount(releaseWorkspaceContext);
 
 async function requestSummaryRefinement(payload) {
   if(payload.baseBody!==summaryDocument.value?.content?.body || payload.contextKey!==refinementContext.value)return;

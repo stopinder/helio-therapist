@@ -1,17 +1,21 @@
 <template>
+  <Teleport to="body">
   <Transition name="slide-right">
     <div
       v-if="isPanelOpen"
-      class="fixed bottom-0 right-0 z-40 flex flex-col border-l border-border bg-surface shadow-overlay transition-all duration-300 ease-in-out"
+      id="ask-helios-panel"
+      role="region"
+      aria-labelledby="ask-helios-title"
+      class="fixed bottom-0 right-0 z-40 min-w-0 md:max-w-[calc(100vw-16rem)] flex flex-col border-l border-border bg-surface shadow-overlay transition-all duration-300 ease-in-out"
       :class="isExpanded ? 'inset-x-0 top-16 md:left-64' : 'top-16'"
       :style="!isExpanded ? { width: 'min(100vw, ' + panelWidth + 'px)' } : {}"
-      @keydown.esc="exitAnswerFocus"
+      @keydown.esc="isAnswerFocused ? exitAnswerFocus() : closePanel()"
     >
       <div v-if="!isExpanded" class="absolute inset-y-0 left-0 w-1 cursor-col-resize hover:bg-accent/30 active:bg-accent/50" @mousedown="startResizing"></div>
       <header class="flex h-12 shrink-0 items-center justify-between border-b border-border-muted bg-surface-subtle px-4">
         <div class="flex min-w-0 items-center gap-2">
           <Sparkles class="h-5 w-5 shrink-0 text-accent" />
-          <h2 class="type-body-medium font-semibold text-ink">Ask Helios</h2>
+          <h2 id="ask-helios-title" class="type-body-medium font-semibold text-ink">Ask Helios</h2>
           <span v-if="isAnswerFocused" class="truncate text-[10px] font-medium uppercase tracking-wider text-ink-muted">Answer focus</span>
         </div>
         <div class="flex items-center gap-1">
@@ -29,7 +33,7 @@
             <Minimize2 v-else class="h-4 w-4" />
           </button>
           <button type="button" class="rounded-control p-1.5 text-ink-secondary hover:bg-surface-muted"
-            title="Close panel" @click="closePanel"><X class="h-4 w-4" />
+            title="Close Ask Helios" aria-label="Close Ask Helios" @click="closePanel"><X class="h-4 w-4" />
           </button>
         </div>
       </header>
@@ -49,10 +53,10 @@
 
       <div v-if="mode === 'workspace' && clinicalContext && !showHistory && !isAnswerFocused"
         class="shrink-0 border-b border-border-muted bg-surface-subtle"
-        :class="isExpanded && !showExpandedContextDetails ? 'px-4 py-2' : 'px-4 py-3'"
+        :class="!showExpandedContextDetails ? 'px-4 py-2' : 'px-4 py-3'"
         data-testid="ask-helios-clinical-context">
-        <div v-if="isExpanded && !showExpandedContextDetails" class="flex items-center justify-between gap-3" data-testid="ask-helios-clinical-context-compact">
-          <div class="min-w-0 flex items-center gap-2 text-xs text-ink-secondary">
+        <div v-if="!showExpandedContextDetails" class="flex items-center justify-between gap-3" data-testid="ask-helios-clinical-context-compact">
+          <div class="min-w-0 flex flex-wrap items-center gap-2 text-xs text-ink-secondary">
             <span class="shrink-0 text-[10px] font-bold uppercase tracking-wider text-accent">Clinical context</span>
             <span class="truncate font-semibold text-ink">{{ clinicalContext.clientName || 'Selected client' }}</span>
             <span class="text-ink-subtle">·</span>
@@ -77,7 +81,7 @@
               <p class="mt-1 text-[11px] text-ink-muted">{{ clinicalContext.sourceCount ? clinicalContext.sourceCount + ' session source' + (clinicalContext.sourceCount === 1 ? '' : 's') + ' currently available' : 'Sources are checked when you ask a question.' }}</p>
             </div>
             <div class="flex items-center gap-3">
-              <button v-if="isExpanded" type="button" class="text-[11px] font-medium text-accent hover:underline"
+              <button type="button" class="text-[11px] font-medium text-accent hover:underline"
                 @click="showExpandedContextDetails = false">Done</button>
               <button type="button" class="text-[11px] font-medium text-ink-muted hover:text-ink"
                 :disabled="isLoading" @click="clearClinicalContext">Clear</button>
@@ -287,6 +291,7 @@
       </footer>
     </div>
   </Transition>
+  </Teleport>
   <AskHeliosReflectionBridge
     v-if="reflectionBridgeDraft"
     :draft="reflectionBridgeDraft"

@@ -6,6 +6,7 @@ import * as api from '../../lib/api.js'
 
 vi.mock('../../lib/api.js')
 config.global.stubs['router-link'] = true
+config.global.stubs.teleport = true
 const ok = payload => ({ ok: true, json: () => Promise.resolve({ success: true, ...payload }) })
 
 describe('AskHeliosPanel', () => {
@@ -345,6 +346,8 @@ describe('AskHeliosPanel', () => {
     expect(ask.mode.value).toBe('workspace')
     expect(w.find('[data-testid="ask-helios-clinical-context"]').exists()).toBe(true)
     expect(w.text()).toContain('Client A')
+    expect(w.findAll('select')).toHaveLength(0)
+    await w.find('[data-testid="ask-helios-clinical-context-compact"] button').trigger('click')
     expect(w.text()).toContain('Internal Family Systems (IFS)')
     expect(w.text()).toContain('Entire history')
     expect(w.text()).toContain('Ask Helios does not write to the clinical record')
