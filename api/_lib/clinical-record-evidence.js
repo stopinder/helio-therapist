@@ -27,7 +27,7 @@ export function parseApprovedRecord(notes){
     return val?`${CLINICAL_RECORD_FIELD_LABELS[key]}: ${val}`:'';
   }).filter(Boolean).join('\n');
 }
-export function buildClinicalRecordSources({sessionId,sessions=[],captures=[],summaries=[],careItems=[]}){
+export function buildClinicalRecordSources({sessionId,sessions=[],captures=[],summaries=[],careItems=[],reflections=[],transcripts=[]}){
   const bySession=new Map(sessions.map(s=>[String(s.id),s]));
   const result=[];
   const seen=new Set();
@@ -59,8 +59,13 @@ export function buildClinicalRecordSources({sessionId,sessions=[],captures=[],su
       reviewStatus:doc.status==='completed'?'finalised':'working draft',text:summaryClinicalEvidence(doc.content?.body)});
   }
   for(const sess of sessions){
-    if(sess.status!=='completed')continue;
     const text=parseApprovedRecord(sess.notes);
+    if(sess.status!=='completed'){
+      const raw=compactSourceText(sess.notes,7200);
+      let legacy='';try{legacy=compactSourceText(JSON.parse(raw)?.legacyNotes,7200)}catch{legacy=raw}
+      add({id:`record:${sess.id}`,kind:'therapist_notes',title:'Saved therapist notes · working draft',sessionId:sess.id,recordId:sess.id,updatedAt:sess.updated_at,occurredAt:sess.occurred_at,reviewStatus:'working draft; not approved',text:[text,legacy].filter(Boolean).join('\n')});
+      continue;
+    }
     add({id:`record:${sess.id}`,kind:'approved_record',title:'Approved Clinical Record',
       sessionId:sess.id,recordId:sess.id,updatedAt:sess.updated_at,occurredAt:sess.occurred_at,
       reviewStatus:'approved',text});
@@ -71,11 +76,23 @@ export function buildClinicalRecordSources({sessionId,sessions=[],captures=[],su
       sessionId:item.provenance_session_id,recordId:item.id,updatedAt:item.updated_at,
       reviewStatus:'therapist-maintained',text});
   }
+  for(const row of transcripts){
+    if(row.source_review?.state!=='confirmed'||!bySession.has(String(row.session_ref)))continue;
+    add({id:`transcript:${row.id}`,kind:'reviewed_transcript',title:'Client-confirmed session transcript',
+      sessionId:row.session_ref,recordId:row.id,updatedAt:row.updated_at,
+      occurredAt:bySession.get(String(row.session_ref))?.occurred_at,reviewStatus:'client and encounter confirmed; clinical wording needs review',text:compactSourceText(row.original_transcript,7200)});
+  }
+  for(const row of reflections){
+    if(row.session_ref&&!bySession.has(String(row.session_ref)))continue;
+    add({id:`reflection:${row.id}`,kind:'private_reflection',title:'Private therapist reflection',
+      sessionId:row.session_ref,recordId:row.id,updatedAt:row.updated_at,occurredAt:row.created_at,
+      reviewStatus:'private working material; explicitly selected by therapist',text:compactSourceText(row.body,7200)});
+  }
   return result.sort((a,b)=>{
     const pa=a.sessionId===sessionId?0:a.kind==='current_focus'?1:2;
     const pb=b.sessionId===sessionId?0:b.kind==='current_focus'?1:2;
     return pa-pb || Date.parse(b.occurredAt||b.updatedAt||0)-Date.parse(a.occurredAt||a.updatedAt||0);
-  }).slice(0,12);
+  });
 }
 
 // Fixed messages only: never echo rejected model text, quotations or unknown source IDs.

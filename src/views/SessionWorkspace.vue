@@ -264,7 +264,7 @@
                   <span class="text-ink-muted transition-transform duration-200" :class="{ 'rotate-180': showReflection }">▼</span>
                 </button>
                 <div v-if="showReflection" class="border-t border-border p-6 bg-surface-subtle">
-                  <ReflectionTab :clientId="session.clientId" :sessionId="session.id" />
+                  <ReflectionTab id="therapist-reflection" :clientId="session.clientId" :sessionId="session.id" />
                 </div>
               </section>
             </div>

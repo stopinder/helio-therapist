@@ -6,7 +6,7 @@ import { suggestClinicalRecordFields } from '../../lib/clinicalRecordSuggestions
 import { saveSessionDraft, completeSessionRecord } from '../../lib/sessions.js';
 import { getSessionCapture } from '../../lib/sessionCaptures.js';
 import { CLINICAL_RECORD_FIELDS, validateClinicalRecordSuggestions } from '../../../api/_lib/clinical-record-evidence.js';
-vi.mock('../../lib/clinicalRecordSuggestions.js',()=>({suggestClinicalRecordFields:vi.fn()}));
+vi.mock('../../lib/clinicalRecordSuggestions.js',()=>({suggestClinicalRecordFields:vi.fn(),inspectClinicalRecordMaterial:vi.fn().mockRejectedValue(new Error('Source list unavailable in this fixture'))}));
 vi.mock('../../lib/sessions.js',()=>({saveSessionDraft:vi.fn(),completeSessionRecord:vi.fn()}));
 vi.mock('../../lib/sessionCaptures.js',()=>({getSessionCapture:vi.fn()}));
 vi.mock('../../composables/useWhisperDictation.js',async()=>{

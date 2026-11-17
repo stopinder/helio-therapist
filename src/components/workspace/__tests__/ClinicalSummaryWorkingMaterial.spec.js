@@ -49,7 +49,7 @@ describe('ClinicalSummaryWorkingMaterial', () => {
     // Preparation state is active when status is 'not_started' (default for no notes)
     expect(wrapper.find('[data-testid="clinical-summary-workspace"]').exists()).toBe(true);
     
-    const preparationSection = wrapper.find('.bg-surface-elevated');
+    const preparationSection = wrapper.findAll('.bg-surface-elevated').find(section => section.find('h3')?.text() === 'Prepare Clinical Record');
     expect(preparationSection.text()).toContain('Prepare Clinical Record');
 
     // Verify AI-review warning (message prop of NoticeBanner)

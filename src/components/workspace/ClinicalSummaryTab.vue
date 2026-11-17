@@ -5,16 +5,42 @@
       <div class="flex flex-wrap items-start justify-between gap-3">
         <div class="min-w-0 flex-1">
           <h3 class="text-h3 font-semibold text-ink">Prepare from existing clinical material</h3>
-          <p class="mt-1 text-body-sm text-ink-secondary">Reuse reviewed Session Captures, saved Session Summaries and earlier approved records. Helios shows supporting passages for each suggestion. Nothing is saved or approved automatically.</p>
+          <p class="mt-1 text-body-sm text-ink-secondary">Choose from this client’s saved summaries, reviewed captures, approved records and confirmed transcripts. Private reflections are used only when you select them. Helios shows supporting passages for each suggestion. Nothing is saved or approved automatically.</p>
         </div>
-        <button type="button" class="button-primary" :disabled="suggestionsLoading || submitting" @click="requestExistingSuggestions()">{{ suggestionsLoading ? 'Reviewing sources…' : suggestions ? 'Refresh suggestions' : 'Prepare from existing material' }}</button>
+        <button type="button" class="button-primary" :disabled="materialLoading || suggestionsLoading || submitting" @click="requestExistingSuggestions()">{{ suggestionsLoading ? 'Reviewing sources…' : suggestions ? 'Refresh suggestions' : 'Prepare from existing material' }}</button>
       </div>
       <div class="flex flex-wrap gap-3 items-center">
-        <button type="button" class="button-secondary" :disabled="suggestionsLoading || submitting" @click="requestExistingSuggestions('presentingConcerns')">Ask Helios: presenting concerns</button>
+        <button type="button" class="button-secondary" :disabled="materialLoading || suggestionsLoading || submitting" @click="requestExistingSuggestions('presentingConcerns')">Ask Helios: presenting concerns</button>
         <p class="text-caption text-ink-muted">Presenting concerns means what brought the client to therapy; current session themes are considered separately.</p>
       </div>
+      <section class="space-y-3 border-t border-border pt-4" data-testid="clinical-record-source-list">
+        <div class="flex flex-wrap justify-between items-center gap-2">
+          <h4 class="font-semibold text-body-sm">Choose source material</h4>
+          <button type="button" class="button-secondary" :disabled="materialLoading || suggestionsLoading" @click="loadMaterial">{{ materialLoading ? 'Checking saved sources…' : 'Refresh source list' }}</button>
+        </div>
+        <p v-if="materialError" class="text-body-sm text-state-danger" role="alert">{{ materialError }}</p>
+        <template v-if="material">
+          <p class="text-caption text-ink-muted">{{ material.sources.length }} usable sources found across {{ material.sessionsChecked }} encounters up to this session. {{ selectedSourceIds.length }} selected. Draft summaries remain unapproved interpretations.</p>
+          <p v-if="material.historyLimited" class="text-caption text-state-danger">This is a bounded history window (up to 200 encounters). Some older material may not be listed.</p>
+          <p v-if="material.currentSourceBlocked" class="text-body-sm text-state-danger">The current encounter source needs review. Open its source below before asking Helios.</p>
+          <p v-if="!material.sources.length" class="text-body-sm text-ink-secondary">No eligible source text was found. This does not mean the client has no saved material. Review the items below or start an editable draft.</p>
+          <article v-for="source in material.sources" :key="source.id" class="rounded-control border border-border p-3">
+            <label class="flex items-start gap-3 cursor-pointer">
+              <input v-model="selectedSourceIds" type="checkbox" :value="source.id" :disabled="suggestionsLoading" class="mt-1 h-4 w-4" @change="sourceSelectionChanged" />
+              <span><strong>{{ source.title }}</strong><span class="block text-caption text-ink-muted">{{ source.reviewStatus }}<span v-if="source.occurredAt"> · {{ new Date(source.occurredAt).toLocaleDateString() }}</span></span><span v-if="source.requiresSelection" class="block text-caption">Private reflection: selecting this permits Helios to consider it for this draft. It is not a client statement or approved clinical fact.</span></span>
+            </label>
+            <details class="mt-2 text-body-sm"><summary class="cursor-pointer text-action-link">Preview source</summary><p class="mt-2 whitespace-pre-wrap">{{ source.preview }}</p><p class="text-caption text-ink-muted">Preview may be shortened. Open the original to review it in full.</p></details>
+            <a :href="sourceLocation(source)" class="mt-2 inline-block text-body-sm text-action-link underline" target="_blank" rel="noopener">Open original source</a>
+          </article>
+          <div v-for="source in material.unavailable" :key="source.id" class="rounded-control bg-surface-subtle p-3 text-body-sm">
+            <strong>{{ source.title }}</strong><p>{{ source.reason }}</p><a :href="sourceLocation(source)" target="_blank" rel="noopener" class="text-action-link underline">Open to review</a>
+          </div>
+        </template>
+        <button v-if="status === 'not_started'" type="button" class="button-secondary" :disabled="submitting" @click="prepareDraft">Write an editable draft</button>
+      </section>
       <p v-if="suggestionError" class="text-body-sm text-state-danger" role="alert">{{ suggestionError }}</p>
       <div v-if="suggestions" class="space-y-4" data-testid="clinical-record-suggested-fields">
+        <p class="text-caption text-ink-muted">{{ suggestions.sources?.length || 0 }} sources used in this preparation<span v-if="suggestions.availableSourceCount > suggestions.sources?.length"> out of {{ suggestions.availableSourceCount }} selected; remaining sources exceeded the preparation size limit</span>.</p>
         <ClinicalRecordSuggestionFeedback :result="suggestions" :busy="suggestionsLoading || submitting" @retry="requestExistingSuggestions" />
         <div class="flex flex-wrap items-center justify-between gap-2">
           <p class="text-body-sm font-semibold">Suggestions with matching source passages · therapist review required</p>
@@ -43,31 +69,12 @@
       <h3 class="text-h3 font-semibold text-ink mb-6">Prepare Clinical Record</h3>
       
       <div class="space-y-8">
-        <section>
-          <h4 class="text-body-sm font-bold text-ink uppercase tracking-wider mb-4">Source Material Checklist</h4>
-          <div class="space-y-3">
-            <div v-for="item in checklist" :key="item.id" class="flex items-center gap-3">
-              <div 
-                class="w-5 h-5 rounded border flex items-center justify-center text-xs"
-                :class="item.available ? 'bg-state-success-surface border-state-success text-state-success' : 'bg-surface-subtle border-border text-ink-muted'"
-              >
-                {{ item.available ? '✓' : '' }}
-              </div>
-              <span class="text-body-sm" :class="item.available ? 'text-ink' : 'text-ink-muted'">
-                {{ item.label }} 
-                <StatusBadge v-if="item.available" status="success" label="Available" class="ml-2" />
-                <StatusBadge v-else-if="item.required" status="high" label="Required" class="ml-2" />
-              </span>
-            </div>
-          </div>
-        </section>
-
         <section class="p-4 bg-surface-subtle rounded border border-border">
           <div class="flex items-center justify-between mb-2">
             <span class="text-body-sm font-medium text-ink">Workflow Status</span>
             <StatusBadge :status="status" :label="statusLabel" />
           </div>
-          <p class="text-caption text-ink-muted">{{ reviewedCapture ? 'Your reviewed Session Capture is available as working source material. Choose what to carry into this separate Clinical Record draft.' : 'No reviewed Session Capture is available yet. You can return to Session Capture or begin an empty therapist-authored draft.' }}</p>
+          <p class="text-caption text-ink-muted">{{ reviewedCapture ? 'Your reviewed Session Capture is available as working source material. Choose what to carry into this separate Clinical Record draft.' : 'Choose saved sources above, review any source that needs attention, or write an editable draft. A reviewed Session Capture is optional.' }}</p>
         </section>
 
         <section v-if="reviewedCapture" class="rounded-panel border border-state-info/20 bg-state-info/10 p-4">
@@ -94,13 +101,6 @@
             {{ reviewedCapture ? 'Prepare draft from reviewed Session Capture' : 'Start an empty draft instead' }}
           </button>
           
-          <div v-if="!canPrepareDraft" class="p-3 bg-state-danger-surface border border-state-danger/20 rounded flex gap-3 text-state-danger">
-            <span class="text-xl">⚠️</span>
-            <p class="text-caption leading-relaxed">
-              Missing required source material: {{ missingRequiredSources }}
-            </p>
-          </div>
-
           <NoticeBanner 
             message="AI-assisted content must be reviewed and approved by the therapist before it becomes part of the clinical record."
           >
@@ -440,7 +440,7 @@ import { mergeClinicalRecordSuggestionResult } from '../../lib/clinicalRecordSug
 import { appendDictation, useWhisperDictation } from '../../composables/useWhisperDictation.js';
 import { saveSessionDraft, completeSessionRecord } from '../../lib/sessions.js';
 import { getSessionCapture } from '../../lib/sessionCaptures.js';
-import { suggestClinicalRecordFields } from '../../lib/clinicalRecordSuggestions.js';
+import { suggestClinicalRecordFields, inspectClinicalRecordMaterial } from '../../lib/clinicalRecordSuggestions.js';
 
 const props = defineProps({
   session: {
@@ -473,6 +473,30 @@ const suggestionError = ref('');
 const acceptedEvidence = reactive({});
 const evidenceReviewed = ref(false);
 let suggestionRequestVersion = 0;
+const material = ref(null);
+const materialLoading = ref(false);
+const materialError = ref('');
+const selectedSourceIds = ref([]);
+let materialRequestVersion = 0;
+let captureRequestVersion = 0;
+async function loadMaterial(){
+  const version=++materialRequestVersion;
+  const clientId=props.session.clientId,sessionId=props.session.id;
+  materialLoading.value=true;materialError.value='';
+  try{
+    const result=await inspectClinicalRecordMaterial({clientId,sessionId});
+    if(version!==materialRequestVersion||props.session.id!==sessionId||props.session.clientId!==clientId)return;
+    material.value=result;
+    selectedSourceIds.value=result.sources.filter(source=>!source.requiresSelection).map(source=>source.id);
+    sourceSelectionChanged();
+  }catch(error){if(version===materialRequestVersion){material.value=null;selectedSourceIds.value=[];materialError.value=error.message||'Could not check saved source material. Refresh to retry.';}}
+  finally{if(version===materialRequestVersion)materialLoading.value=false;}
+}
+function sourceSelectionChanged(){suggestionRequestVersion++;suggestions.value=null;suggestionError.value='';suggestionsLoading.value=false;}
+function sourceLocation(source){
+  return source.sessionId ? `/clients/${props.session.clientId}/sessions/${source.sessionId}?view=summary${source.kind==='private_reflection'?'#therapist-reflection':''}` : `/clients/${props.session.clientId}`;
+}
+
 const hasSuggestedFields = computed(() => Object.values(suggestions.value?.fields || {}).some(field => field?.text));
 const hasAcceptedSuggestions = computed(() => Object.keys(acceptedEvidence).length > 0);
 function clearAcceptedEvidence(){for(const key of Object.keys(acceptedEvidence))delete acceptedEvidence[key];evidenceReviewed.value=false;}
@@ -482,7 +506,7 @@ async function requestExistingSuggestions(focusField=null){
   const clientId=props.session.clientId,sessionId=props.session.id;
   suggestionsLoading.value=true;suggestionError.value='';
   try{
-    const result=await suggestClinicalRecordFields({clientId,sessionId,focusField});
+    const result=await suggestClinicalRecordFields({clientId,sessionId,focusField,...(material.value?{selectedSourceIds:[...selectedSourceIds.value]}:{})});
     if(requestVersion!==suggestionRequestVersion || props.session.id!==sessionId || props.session.clientId!==clientId)return;
     // A focused retry preserves other suggestions only while their source metadata remains current.
     suggestions.value=mergeClinicalRecordSuggestionResult(suggestions.value,result,focusField);
@@ -522,13 +546,6 @@ function onClinicalFieldEdited(key){
 }
 
 
-const checklist = computed(() => [
-  { id: 1, label: 'Reviewed Session Capture', available: Boolean(reviewedCapture.value), required: false },
-  { id: 2, label: 'Therapist Notes', available: false, required: false },
-  { id: 3, label: 'Therapist Reflection', available: false, required: false },
-  { id: 4, label: 'Client Feedback', available: false, required: false }
-]);
-
 const summaryFields = {
   presentingConcerns: 'Presenting concerns',
   sessionThemes: 'Session themes',
@@ -558,18 +575,22 @@ const dictation = useWhisperDictation({
 
 onMounted(async () => {
   loadFromSession();
-  await loadReviewedCapture();
+  await Promise.all([loadReviewedCapture(),loadMaterial()]);
 });
 
 async function loadReviewedCapture() {
+  const version=++captureRequestVersion;
+  const sessionId=props.session.id,clientId=props.session.clientId;
   captureLoadError.value = '';
   try {
-    const capture = await getSessionCapture({ sessionId: props.session.id, clientId: props.session.clientId });
+    const capture = await getSessionCapture({ sessionId, clientId });
+    if(version!==captureRequestVersion||props.session.id!==sessionId||props.session.clientId!==clientId)return;
     reviewedCapture.value = capture?.status === 'reviewed' ? capture : null;
     selectedCaptureFields.value = reviewedCapture.value
       ? Object.keys(summaryFields).filter(key => reviewedCapture.value.content[key])
       : [];
   } catch (error) {
+    if(version!==captureRequestVersion)return;
     console.error('Failed to load reviewed Session Capture:', error);
     captureLoadError.value = 'Reviewed Session Capture could not be loaded.';
   }
@@ -637,9 +658,10 @@ const loadFromSession = () => {
 };
 
 // Re-load if session changes externally (e.g. from another tab/component)
-watch(() => props.session?.id, () => {
+watch(() => [props.session?.id,props.session?.clientId], () => {
+  status.value='not_started';Object.keys(summaryData).forEach(key=>summaryData[key]='');legacyNotes.value='';reviewedCapture.value=null;material.value=null;selectedSourceIds.value=[];
   suggestionRequestVersion++;suggestions.value=null;suggestionError.value='';suggestionsLoading.value=false;clearAcceptedEvidence();
-  loadFromSession();void loadReviewedCapture();
+  loadFromSession();void loadReviewedCapture();void loadMaterial();
 });
 watch(() => props.session?.notes, (newNotes, oldNotes) => {
   if (newNotes !== oldNotes) {
@@ -725,13 +747,6 @@ const recordHistory = computed(() => {
 const canPrepareDraft = computed(() => {
   // Allow starting a draft even if source material is not yet verified for this sprint
   return status.value === 'not_started';
-});
-
-const missingRequiredSources = computed(() => {
-  return checklist.value
-    .filter(item => item.required && !item.available)
-    .map(item => item.label)
-    .join(', ');
 });
 
 const statusLabel = computed(() => {

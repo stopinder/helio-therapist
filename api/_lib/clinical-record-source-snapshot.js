@@ -29,12 +29,24 @@ export async function assertClinicalRecordSourceSnapshot(db,userId,clientId,sele
         .eq('session_id',source.recordId).eq('user_id',userId).eq('client_id',clientId).eq('status','reviewed').maybeSingle();
       if(error)throw error;
       if(!equalSnapshot(before,after,['updated_at','reviewed_at','status','content']))throw changed();
-    }else if(source.kind==='approved_record'){
+    }else if(['approved_record','therapist_notes'].includes(source.kind)){
       const before=snapshot.sessions.find(row=>row.id===source.recordId);
       const {data:after,error}=await db.from('sessions').select('id,status,notes,updated_at')
-        .eq('id',source.recordId).eq('user_id',userId).eq('client_id',clientId).eq('status','completed').maybeSingle();
+        .eq('id',source.recordId).eq('user_id',userId).eq('client_id',clientId).maybeSingle();
       if(error)throw error;
       if(!equalSnapshot(before,after,['updated_at','status','notes']))throw changed();
+    }else if(source.kind==='reviewed_transcript'){
+      const before=snapshot.links.find(row=>row.id===source.recordId);
+      const {data:after,error}=await db.from('zoom_transcripts').select('id,original_transcript,source_review,source_version,updated_at')
+        .eq('id',source.recordId).eq('therapist_user_id',userId).eq('client_id',clientId).is('deleted_at',null).maybeSingle();
+      if(error)throw error;
+      if(!equalSnapshot(before,after,['updated_at','source_version','source_review','original_transcript'])||after.source_review?.state!=='confirmed')throw changed();
+    }else if(source.kind==='private_reflection'){
+      const before=snapshot.reflections.find(row=>row.id===source.recordId);
+      const {data:after,error}=await db.from('private_reflections').select('id,body,session_ref,created_at,updated_at')
+        .eq('id',source.recordId).eq('user_id',userId).eq('client_id',clientId).maybeSingle();
+      if(error)throw error;
+      if(!equalSnapshot(before,after,['updated_at','body','session_ref','created_at']))throw changed();
     }else if(source.kind==='current_focus'){
       const before=snapshot.careItems.find(row=>row.id===source.recordId);
       const {data:after,error}=await db.from('client_care_items').select('id,body,kind,status,updated_at,provenance_session_id')
