@@ -60,7 +60,6 @@
                 <p class="mt-1 text-body-sm text-ink-muted">What is most useful to hold in mind before the next session.</p>
               </div>
               <div class="flex flex-wrap items-center gap-2">
-                <button type="button" class="button-secondary" :disabled="!recentSessions.length" @click="askHeliosAboutClient">Ask Helios about this client</button>
                 <HelpLink topic="client-workspace" label="How the Client Workspace works" />
               </div>
             </div>
@@ -121,7 +120,7 @@
               <span class="shrink-0 text-body-sm font-semibold text-action-link">{{ therapyOpen ? 'Hide' : 'Open' }}</span>
             </button>
             <div v-if="therapyOpen" class="mt-stack-lg">
-              <ClientCarePanel :key="String(route.params.clientId)" :client-id="String(route.params.clientId)" @changed="careRefreshKey++" />
+              <ClientCarePanel :key="String(route.params.clientId)" :client-id="String(route.params.clientId)" :initial-lens-id="client.preferred_summary_lens || DEFAULT_LENS_ID" @lens-change="selectedLensId=$event" @changed="careRefreshKey++" />
             </div>
           </section>
 
@@ -284,13 +283,13 @@
 
 <script setup>
 import HelpLink from '../components/help/HelpLink.vue'
-import { computed, ref, onMounted, nextTick } from 'vue'
+import { computed, ref, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { getClient, getCurrentTherapistLabel, getTimelineEvents } from '../lib/clients.js'
 import { listSessions } from '../lib/sessions.js'
 import { listClientAppointments, nextClientAppointment } from '../lib/appointments.js'
 import { downloadClientDocument, listClientDocuments } from '../lib/clientDocuments.js'
-import { DEFAULT_LENS_ID } from '../lib/clinicalLenses.js'
+import { DEFAULT_LENS_ID, getLens } from '../lib/clinicalLenses.js'
 import ClientWorkspaceHeader from '../components/workspace/ClientWorkspaceHeader.vue'
 import ClientDocumentsPanel from '../components/workspace/ClientDocumentsPanel.vue'
 import ClientTranscriptsPanel from '../components/workspace/ClientTranscriptsPanel.vue'
@@ -305,7 +304,7 @@ import ClientDetails from './ClientDetails.vue'
 import { useAskHelios } from '../composables/useAskHelios.js'
 
 const route=useRoute(),router=useRouter()
-const { openClinicalContext } = useAskHelios()
+const { registerWorkspaceContext } = useAskHelios()
 const client=ref(null),loading=ref(true),error=ref('')
 const timelineEvents=ref([]),timelineLoading=ref(false)
 const documents=ref([]),documentsLoading=ref(false),documentsError=ref(''),documentComposerOpen=ref(false),editingDocument=ref(null),newDocumentType=ref('other')
@@ -344,6 +343,7 @@ async function loadClient(){
   error.value=''
   try{
     client.value=await getClient({clientId:route.params.clientId})
+    selectedLensId.value=getLens(client.value.preferred_summary_lens || DEFAULT_LENS_ID).id
     const results=await Promise.allSettled([loadTimeline(),refreshDocuments(),loadSessions(),loadAppointments(),loadTherapist()])
     for(const result of results)if(result.status==='rejected')console.error('Client workspace context failed to load:',{code:result.reason?.code||'CONTEXT_LOAD_FAILED'})
     await openRequestedDocument()
@@ -359,18 +359,19 @@ async function loadSessions(){sessionsLoading.value=true;try{sessions.value=awai
 async function loadAppointments(){appointmentsLoading.value=true;try{appointments.value=await listClientAppointments({clientId:route.params.clientId})}finally{appointmentsLoading.value=false}}
 async function loadTherapist(){therapistLabel.value=await getCurrentTherapistLabel()}
 
-function askHeliosAboutClient(){
+const releaseClientAskContext = registerWorkspaceContext(() => {
   const anchor=recentSessions.value[0]
-  if(!client.value?.id||!anchor?.id)return
-  void openClinicalContext({
+  if(!client.value?.id)return null
+  return {
     clientId:String(client.value.id),
     clientName:client.value.display_name||client.value.name||'',
-    anchorSessionId:String(anchor.id),
+    anchorSessionId:anchor?.id ? String(anchor.id) : null,
     window:'last_three',
     lens:client.value.preferred_summary_lens||'integrative',
     source:'client_workspace'
-  })
-}
+  }
+})
+onBeforeUnmount(releaseClientAskContext)
 function openSessionWorkspace(session){if(!session?.id||!client.value?.id)return;router.push({name:'SessionWorkspace',params:{clientId:client.value.id,sessionId:session.id}})}
 function viewTranscript(session){if(!session?.id||!client.value?.id)return;router.push({name:'SessionWorkspace',params:{clientId:client.value.id,sessionId:session.id},query:{view:'transcript'}})}
 function openSampleTranscript(){if(sampleTranscriptSession.value){viewTranscript(sampleTranscriptSession.value);return}openWorkspaceSection('history').then(()=>{transcriptsOpen.value=true})}

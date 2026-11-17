@@ -5,17 +5,17 @@ import { resolveLensConfig } from '../api/_lib/clinical-lenses.js'
 import { readFile } from 'node:fs/promises'
 
 test('Clinical Lens: Shared neutral configuration registry', () => {
-  assert.ok(CLINICAL_LENSES.general, 'general lens exists')
+  assert.ok(CLINICAL_LENSES.clinical, 'Clinical lens exists');assert.ok(!CLINICAL_LENSES.general, 'General is not a separate choice')
   assert.ok(CLINICAL_LENSES.gentle_cbt, 'gentle_cbt lens exists')
   assert.ok(CLINICAL_LENSES.integrative, 'integrative lens exists')
-  assert.strictEqual(DEFAULT_LENS_ID, 'gentle_cbt')
+  assert.strictEqual(DEFAULT_LENS_ID, 'integrative')
   const lens = getLens('gentle_cbt')
-  assert.strictEqual(lens.label, 'Gentle CBT')
+  assert.strictEqual(lens.label, 'CBT')
   assert.ok(lens.sections.current_focus, 'gentle_cbt has current_focus section')
   assert.ok(CLINICAL_LENSES.integrative.sections.current_focus, 'integrative has shared current_focus section')
   assert.ok(lens.aiFraming, 'gentle_cbt has aiFraming')
   const fallback = getLens('unknown_id')
-  assert.strictEqual(fallback.id, 'gentle_cbt', 'unknown lens falls back to default')
+  assert.strictEqual(fallback.id, 'integrative', 'unknown lens falls back to default')
 })
 
 test('Clinical Lens: Server-side resolution', () => {
@@ -25,9 +25,9 @@ test('Clinical Lens: Server-side resolution', () => {
   assert.ok(Array.isArray(config.allowedKinds))
   assert.ok(config.allowedKinds.includes('current_focus'))
   const integrative = resolveLensConfig('integrative')
-  assert.deepEqual(integrative.allowedKinds, ['current_focus', 'narrative', 'themes', 'interventions', 'outcomes'])
+  assert.deepEqual(integrative.allowedKinds, ['current_focus', 'shared_understanding', 'trying', 'change_noticed', 'learning'])
   const fallback = resolveLensConfig('invalid-id')
-  assert.strictEqual(fallback.id, 'gentle_cbt', 'server-side resolution falls back safely')
+  assert.strictEqual(fallback.id, 'integrative', 'server-side resolution falls back safely')
 })
 
 test('Clinical Lens: UI uses lens configuration', async () => {
@@ -37,7 +37,7 @@ test('Clinical Lens: UI uses lens configuration', async () => {
   assert.match(carePanel, /Review with Helios/)
   assert.match(carePanel, /availableLenses/)
   assert.match(carePanel, /sections=computed/)
-  assert.match(carePanel, /v-for="l in availableLenses"/)
+  assert.match(carePanel, /v-for="option in availableLenses"/)
   assert.match(careFocus, /sectionTitle\(item\.kind\)/)
   assert.match(careFocus, /Open full Therapy Focus/)
 })

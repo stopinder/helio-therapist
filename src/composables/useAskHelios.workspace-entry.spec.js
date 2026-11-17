@@ -30,6 +30,16 @@ describe('workspace header entry', () => {
     expect(ask.clinicalContext.value.lens).toBe('clinical')
     release()
   })
+  it('opens the current client context when another client conversation is already open', async () => {
+    let current = context
+    const release = ask.registerWorkspaceContext(() => current)
+    await ask.togglePanel()
+    current = { ...context, clientId: 'bbbbbbbb-bbbb-4bbb-bbbb-bbbbbbbbbbbb', clientName: 'Another fictional client' }
+    await ask.togglePanel()
+    expect(ask.isPanelOpen.value).toBe(true)
+    expect(ask.clinicalContext.value.clientId).toBe(current.clientId)
+    release()
+  })
   it('changes scope when navigating to another session and releases the departed workspace', async () => {
     const releaseOld = ask.registerWorkspaceContext(() => context)
     await ask.togglePanel()

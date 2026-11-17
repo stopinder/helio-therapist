@@ -1,72 +1,28 @@
-export const CLINICAL_LENSES = {
-  general: {
-    id: 'general',
-    label: 'General',
-    description: 'A non-prescriptive psychotherapy view that stays close to the client’s aims, shared understanding and emerging change.',
-    sections: {
-      current_focus: { label: 'Aims and objectives', emptyState: 'No aims or objectives recorded yet.' },
-      shared_understanding: { label: 'Shared understanding', emptyState: 'The working understanding is still emerging...' },
-      trying: { label: 'What we’re trying', emptyState: 'No agreed experiments or next steps recorded yet.' },
-      change_noticed: { label: 'Change noticed', emptyState: 'No change has been recorded yet.' },
-      learning: { label: 'Learning', emptyState: 'No learning has been recorded yet.' }
-    },
-    aiFraming: 'You support a qualified psychotherapist maintaining a non-prescriptive Therapy Focus.',
-    steeringPresets: [
-      { label: 'Stay close to evidence', value: 'Stay close to observable evidence and avoid premature interpretation.' },
-      { label: 'Alternative possibilities', value: 'Offer alternative hypotheses and preserve uncertainty.' }
-    ],
-    terminology: {
-      care: 'Therapy Focus',
-      suggestion: 'suggestion'
-    }
-  },
-  gentle_cbt: {
-    id: 'gentle_cbt',
-    label: 'Gentle CBT',
-    description: 'A trauma-informed, collaborative approach focusing on the connection between thoughts, feelings, and behaviors.',
-    sections: {
-      current_focus: { label: 'Aims and objectives', emptyState: 'No aims or objectives recorded yet.' },
-      shared_understanding: { label: 'Shared Understanding', emptyState: 'Working towards a shared formulation...' },
-      trying: { label: 'What we’re trying', emptyState: 'Collaborative experiments and new behaviours.' },
-      change_noticed: { label: 'Change noticed', emptyState: 'Documenting shifts and progress.' },
-      learning: { label: 'Learning', emptyState: 'Insights and new skills acquired.' }
-    },
-    aiFraming: 'You support a qualified therapist maintaining a gentle CBT-informed Therapy Focus.',
-    steeringPresets: [
-      { label: 'Focus on Cognitions', value: 'Emphasize cognitive patterns and thought records.' },
-      { label: 'Focus on Behaviors', value: 'Focus on behavioral activation and experiments.' },
-      { label: 'Focus on Emotions', value: 'Prioritize emotional awareness and regulation.' }
-    ],
-    terminology: {
-      care: 'Therapy Focus',
-      suggestion: 'suggestion'
-    }
-  },
-  integrative: {
-    id: 'integrative',
-    label: 'Integrative',
-    description: 'A flexible, non-prescriptive approach that draws from multiple therapeutic modalities as needed.',
-    sections: {
-      current_focus: { label: 'Aims and objectives', emptyState: 'No aims or objectives recorded yet.' },
-      narrative: { label: 'Clinical Narrative', emptyState: 'The story of the work is emerging...' },
-      themes: { label: 'Key Themes', emptyState: 'Important threads will appear here.' },
-      interventions: { label: 'Interventions', emptyState: 'Documenting what was tried.' },
-      outcomes: { label: 'Outcomes', emptyState: 'Noticing the impact of the work.' }
-    },
-    aiFraming: 'You support a qualified therapist maintaining a flexible, integrative Therapy Focus.',
-    steeringPresets: [
-      { label: 'Focus on Narrative', value: 'Emphasize the client\'s story and evolving meaning.' },
-      { label: 'Focus on Relationship', value: 'Focus on the therapeutic alliance and relational dynamics.' }
-    ],
-    terminology: {
-      care: 'Therapy Focus',
-      suggestion: 'possibility'
-    }
-  }
+import { SUMMARY_LENS_IDS, SUMMARY_LENS_LABELS, normalizeSummaryLens } from './summaryLenses.js';
+
+// One persisted vocabulary for Therapy Focus; a perspective changes interpretation
+// and display labels, never whether an existing entry is visible.
+export const THERAPY_FOCUS_KINDS = Object.freeze(['current_focus', 'shared_understanding', 'trying', 'change_noticed', 'learning']);
+export const LEGACY_FOCUS_KINDS = Object.freeze({ narrative: 'shared_understanding', themes: 'shared_understanding', interventions: 'trying', outcomes: 'change_noticed' });
+export function canonicalFocusKind(kind) { return LEGACY_FOCUS_KINDS[kind] || kind; }
+const headings = {
+  clinical: ['Presenting difficulties and priorities', 'Provisional clinical formulation', 'Plan and interventions', 'Clinical course and response', 'Assessment limits and learning'],
+  integrative: ['Aims and objectives', 'Shared understanding', 'What we’re trying', 'Change noticed', 'Learning'],
+  gentle_cbt: ['Goals and target difficulties', 'Triggers, meanings and maintaining cycles', 'Agreed strategies and experiments', 'Responses, exceptions and change', 'Learning from the work'],
+  internal_family_systems: ['Aims and inner experience', 'Inner positions and protective responses', 'Agreed exploration', 'Space, curiosity and choice', 'Learning about inner relationships'],
+  transactional_analysis: ['Aims and agreements', 'Transactions and relational expectations', 'Agreed changes in exchanges', 'Changes in communication and awareness', 'Learning about relational patterns']
 };
-
-export const DEFAULT_LENS_ID = 'gentle_cbt';
-
-export function getLens(id) {
-  return CLINICAL_LENSES[id] || CLINICAL_LENSES[DEFAULT_LENS_ID];
-}
+export const CLINICAL_LENSES = Object.fromEntries(SUMMARY_LENS_IDS.map(id => [id, {
+  id,
+  label: SUMMARY_LENS_LABELS[id],
+  sections: Object.fromEntries(THERAPY_FOCUS_KINDS.map((kind, index) => [kind, { label: headings[id][index], emptyState: 'Not yet recorded. This does not establish that it is absent from the therapy.' }])),
+  allowedKinds: [...THERAPY_FOCUS_KINDS],
+  aiFraming: `You support a qualified psychotherapist maintaining a provisional ${SUMMARY_LENS_LABELS[id]} Therapy Focus. Distinguish source reports, clinical hypotheses and actual agreements; never invent findings or progress.`,
+  steeringPresets: [
+    { label: 'Stay close to evidence', value: 'Stay close to observable evidence and avoid premature interpretation.' },
+    { label: 'Alternative possibilities', value: 'Offer alternative hypotheses and preserve uncertainty.' }
+  ],
+  terminology: { care: 'Therapy Focus', suggestion: 'possibility' }
+}]));
+export const DEFAULT_LENS_ID = 'integrative';
+export function getLens(id) { return CLINICAL_LENSES[normalizeSummaryLens(id)] || CLINICAL_LENSES[DEFAULT_LENS_ID]; }

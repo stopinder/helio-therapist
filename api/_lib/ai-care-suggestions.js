@@ -1,4 +1,5 @@
-export const CARE_SUGGESTIONS_PROMPT_VERSION = 'therapy-focus-longitudinal-v2';
+import { canonicalFocusKind } from '../../src/lib/clinicalLenses.js';
+export const CARE_SUGGESTIONS_PROMPT_VERSION = 'therapy-focus-longitudinal-v3';
 export const TRANSCRIPT_CBT_CARE_PROMPT_VERSION = 'transcript-cbt-therapy-focus-v1';
 
 const BASIS = new Set(['therapist_input', 'approved_record', 'both', 'session_transcript', 'clinical_history']);
@@ -16,7 +17,7 @@ export function buildCareSuggestionsPrompt({
   window = 'last_three',
   historySources = []
 }) {
-  const focusContext = currentCare
+  const focusContext = currentCare.map(item=>({...item,kind:canonicalFocusKind(item?.kind)}))
     .filter(item => lensConfig.allowedKinds.includes(item?.kind) && item?.id && item?.body)
     .map(item => `Therapy Focus item ${item.id} [${item.kind}]: ${String(item.body).slice(0, 1200)}`)
     .join('\n');
@@ -26,7 +27,7 @@ export function buildCareSuggestionsPrompt({
     : approvedContext;
 
   const modeInstruction = sourceMode === 'history'
-    ? `Review the selected clinical history and current therapist-approved Therapy Focus. The review goal is ${reviewGoal === 'fill_empty' ? 'to propose useful material for empty sections while avoiding duplication' : 'to identify meaningful additions or updates where the working view has evolved'}. The evidence window is ${window}. Every suggestion must cite one or more supplied session source IDs in sourceIds. Use evidenceStrength=recurring only when substantially similar evidence appears in at least two supplied session sources; one-session evidence is current_observation. Change requires explicit comparative evidence; silence is not improvement.`
+    ? `Review the selected clinical history and current therapist-approved Therapy Focus. The review goal is ${reviewGoal === 'fill_empty' ? 'to establish provisional starting points for empty sections from the supported current priorities, understanding and actual work. Do not require evidence of improvement or a changed existing entry before proposing a starting point. Do not invent a goal, agreement, intervention or learning to fill a section' : 'to identify meaningful additions or updates where the working view has evolved'}. The evidence window is ${window}. Every suggestion must cite one or more supplied session source IDs in sourceIds. Use evidenceStrength=recurring only when substantially similar evidence appears in at least two supplied session sources; one-session evidence is current_observation. Change requires explicit comparative evidence; silence is not improvement.`
     : 'Use the therapist-authored reflection and approved record context to suggest possible additions or meaningful updates.';
 
   return `${lensConfig.aiFraming} Generate up to 6 evidence-supported Therapy Focus possibilities (return an empty suggestions array when no meaningful update is supported) for a qualified psychotherapist to review. Never diagnose, assert certainty, or imply a suggestion is established fact. Distinguish direct observation from clinical inference and possible next steps. ${modeInstruction}
@@ -103,5 +104,7 @@ export function validateCareSuggestions(raw, {
       };
     });
 
+  // Invalid proposals must not be mistaken for a successful no-change review.
+  if (validSourceIds && suggestions.length !== parsed.suggestions.length) return null;
   return suggestions;
 }

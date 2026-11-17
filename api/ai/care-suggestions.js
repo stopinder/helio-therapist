@@ -105,7 +105,8 @@ export default async function handler(req, res) {
     const lensId = String(req.body?.lensId || '').trim();
     const sourceMode = String(req.body?.sourceMode || 'reflection').trim();
     const window = String(req.body?.window || 'last_three').trim();
-    const reviewGoal = String(req.body?.reviewGoal || 'review_updates').trim();
+    const requestedReviewGoal = String(req.body?.reviewGoal || 'review_updates').trim();
+    let reviewGoal = requestedReviewGoal;
 
     if (!UUID_PATTERN.test(clientId)) return res.status(400).json({ success:false, error:{ code:'INVALID_CLIENT_ID', message:'Open a valid client before asking Helios for Therapy Focus suggestions.' } });
     if (!SOURCE_MODES.has(sourceMode) || !WINDOWS.has(window) || !REVIEW_GOALS.has(reviewGoal)) return res.status(400).json({ success:false, error:{ code:'INVALID_REQUEST', message:'Choose a valid Therapy Focus review mode and evidence window.' } });
@@ -131,6 +132,7 @@ export default async function handler(req, res) {
       .limit(30);
     if (focusError) throw focusError;
 
+    if (sourceMode === 'history' && !(currentFocus || []).some(item=>item.body?.trim())) reviewGoal = 'fill_empty';
     const lensConfig = resolveLensConfig(lensId);
     let approvedContext = '';
     let historySources = [];
@@ -172,14 +174,15 @@ export default async function handler(req, res) {
       userId: user.id,
       promptVersion: CARE_SUGGESTIONS_PROMPT_VERSION,
       messages:[
-        {role:'system',content:'Be concise, tentative, clinically respectful, preserve psychotherapist agency, and prefer updating an existing working understanding only when the meaning has genuinely evolved.'},
+        {role:'system',content:'Be concise, tentative, clinically respectful, preserve psychotherapist agency, and establish a provisional starting view when Therapy Focus is empty, and update existing entries only when their meaning has genuinely evolved.'},
         {role:'user',content:prompt}
       ],
       responseFormat:{type:'json_object'},
       temperature:0.35,
-      maxTokens:1800
+      maxTokens:sourceMode === 'history' ? 3200 : 1800
     });
 
+    if (completion.choices?.[0]?.finish_reason === 'length') return res.status(502).json({success:false,error:{code:'THERAPY_FOCUS_REVIEW_INCOMPLETE',message:'The Therapy Focus review was incomplete. Nothing has been saved. Try fewer sessions or retry.'}});
     const validCareIds = new Set((currentFocus || []).map(item => item?.id).filter(Boolean));
     const validSourceIds = sourceMode === 'history' ? new Set(historySources.map(source => source.id)) : null;
     const suggestions = validateCareSuggestions(completion.choices?.[0]?.message?.content, {

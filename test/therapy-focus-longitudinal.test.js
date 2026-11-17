@@ -22,8 +22,7 @@ test('coverage never implies all recorded sessions were used or that legacy entr
 test('history suggestions without sources or with fabricated sources are rejected, not relabelled as supported',()=>{
  const valid={kind:'trying',body:'A possibility',sourceIds:['session:a']}
  const result=validateCareSuggestions({suggestions:[valid,{...valid,sourceIds:[]},{...valid,sourceIds:['session:a','session:other-client']}]},{allowedKinds:['trying'],validSourceIds:new Set(['session:a'])})
- assert.equal(result.length,1)
- assert.deepEqual(result[0].sourceIds,['session:a'])
+ assert.equal(result,null,'A partly invalid review must be reported as a failed review, not silently filtered')
 })
 test('longitudinal authoring distinguishes agreement, experience, outcome and uncertainty',()=>{
  const prompt=buildCareSuggestionsPrompt({lensConfig:{aiFraming:'General therapy',allowedKinds:Object.keys(sections)},sourceMode:'history'})

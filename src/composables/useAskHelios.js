@@ -258,7 +258,7 @@ export function useAskHelios() {
     return () => { if (workspaceContextProvider === provider) workspaceContextProvider = null }
   }
   function togglePanel() {
-    const context = !isPanelOpen.value ? workspaceContextProvider?.() : null
+    const context = workspaceContextProvider?.()
     if (context && (mode.value !== 'workspace' || clinicalContext.value?.clientId !== context.clientId || clinicalContext.value?.anchorSessionId !== context.anchorSessionId)) {
       return openClinicalContext(context)
     }
