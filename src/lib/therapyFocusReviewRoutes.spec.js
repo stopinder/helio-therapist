@@ -60,6 +60,12 @@ describe('Therapy Focus history API',()=>{
  it('rejects truncated model output even if its partial content happens to parse',async()=>{
   finish='length';const r=await invoke();expect(r.code).toBe(502);expect(r.payload.error.code).toBe('THERAPY_FOCUS_REVIEW_INCOMPLETE');
  });
+ it('rejects provider refusal without logging its clinical content',async()=>{
+  runTextAI.mockResolvedValueOnce({completion:{choices:[{finish_reason:'stop',message:{refusal:'Sensitive provider explanation'}}]}});
+  const warning=vi.spyOn(console,'warn').mockImplementation(()=>{});const r=await invoke();
+  expect(r.code).toBe(502);expect(r.payload.error.code).toBe('THERAPY_FOCUS_REVIEW_REFUSED');
+  expect(JSON.stringify(warning.mock.calls)).not.toContain('Sensitive provider explanation');warning.mockRestore();
+ });
  it('preserves a genuine supported-empty result without inventing starting points',async()=>{
   output.suggestions=[];const r=await invoke();expect(r.code).toBe(200);expect(r.payload.suggestions).toEqual([]);expect(r.payload.reviewGoal).toBe('fill_empty');
  });
