@@ -1,3 +1,4 @@
+import { SUMMARY_LENS_IDS, normalizeSummaryLens } from '../lib/summaryLenses.js';
 import { readonly, ref } from 'vue'
 import { authenticatedFetch } from '../lib/api.js'
 import { supabase } from '../lib/supabase.js'
@@ -157,7 +158,7 @@ export function useAskHelios() {
           clientName: restoredClinicalContext.clientName || '',
           anchorSessionId: restoredClinicalContext.anchorSessionId || null,
           window: restoredClinicalContext.window || 'last_three',
-          lens: restoredClinicalContext.lens || 'integrative',
+          lens: normalizeSummaryLens(restoredClinicalContext.lens || 'integrative'),
           sourceCount: Number.isInteger(restoredClinicalContext.sourceCount) ? restoredClinicalContext.sourceCount : 0,
           source: 'conversation_history'
         }
@@ -300,11 +301,11 @@ export function useAskHelios() {
   function setClinicalContext(changes = {}) {
     if (!clinicalContext.value) return
     const windows = new Set(['current', 'last_three', 'last_five', 'history'])
-    const lenses = new Set(['general', 'integrative', 'gentle_cbt', 'internal_family_systems', 'transactional_analysis'])
+    const lenses = new Set(SUMMARY_LENS_IDS)
     clinicalContext.value = {
       ...clinicalContext.value,
       ...(windows.has(changes.window) ? { window: changes.window } : {}),
-      ...(lenses.has(changes.lens) ? { lens: changes.lens } : {}),
+      ...(lenses.has(normalizeSummaryLens(changes.lens)) && changes.lens ? { lens: normalizeSummaryLens(changes.lens) } : {}),
       ...(typeof changes.anchorSessionId === 'string' && UUID.test(changes.anchorSessionId) ? { anchorSessionId: changes.anchorSessionId } : {}),
       ...(Number.isInteger(changes.sourceCount) && changes.sourceCount >= 0 ? { sourceCount: changes.sourceCount } : {}),
       ...(typeof changes.clientName === 'string' && changes.clientName.trim() ? { clientName: changes.clientName.slice(0, 120) } : {})
@@ -319,7 +320,7 @@ export function useAskHelios() {
     const anchorSessionId = typeof context.anchorSessionId === 'string' && UUID.test(context.anchorSessionId) ? context.anchorSessionId : null
     if (!clientId) return false
     const windows = new Set(['current', 'last_three', 'last_five', 'history'])
-    const lenses = new Set(['general', 'integrative', 'gentle_cbt', 'internal_family_systems', 'transactional_analysis'])
+    const lenses = new Set(SUMMARY_LENS_IDS)
     mode.value = 'workspace'
     resetConversation()
     clinicalContext.value = {
@@ -327,7 +328,7 @@ export function useAskHelios() {
       clientName: typeof context.clientName === 'string' ? context.clientName.slice(0, 120) : '',
       anchorSessionId,
       window: windows.has(context.window) ? context.window : (anchorSessionId ? 'current' : 'last_three'),
-      lens: lenses.has(context.lens) ? context.lens : 'integrative',
+      lens: lenses.has(normalizeSummaryLens(context.lens)) ? normalizeSummaryLens(context.lens) : 'integrative',
       source: typeof context.source === 'string' ? context.source.slice(0, 40) : 'workspace'
     }
     selectedClientId.value = clientId

@@ -1,8 +1,9 @@
+import { SUMMARY_LENS_IDS } from '../../src/lib/summaryLenses.js';
 import { clientSessionSummaryLensRule } from './ai-client-session-summary.js';
 
-export const ASK_HELIOS_CLINICAL_PROMPT_VERSION = 'ask-helios-clinical/2.3.0';
+export const ASK_HELIOS_CLINICAL_PROMPT_VERSION = 'ask-helios-clinical/2.4.0';
 export const ASK_HELIOS_CLINICAL_WINDOWS = Object.freeze(['current','last_three','last_five','history']);
-export const ASK_HELIOS_CLINICAL_LENSES = Object.freeze(['general','integrative','gentle_cbt','internal_family_systems','transactional_analysis']);
+export const ASK_HELIOS_CLINICAL_LENSES = SUMMARY_LENS_IDS;
 
 const MAX_CONTEXT_CHARS = 2800;
 const SAFE_CARE_KINDS = new Set(['current_focus','shared_understanding','trying','change_noticed','learning','themes','interventions','outcomes']);
@@ -165,7 +166,7 @@ const PERSPECTIVE_DISCIPLINE = Object.freeze({
   internal_family_systems: 'For an IFS reading, attend to protective parts, possible blending/unblending, inner relationships and Self-led awareness only where the evidence supports that lens. Do not impose TA Parent/Adult/Child ego-state categories as the central formulation.',
   gentle_cbt: 'For a CBT reading, focus on evidenced thoughts, behavioural responses, maintaining cycles and testable alternatives; do not impose IFS or TA-specific constructs.',
   integrative: 'Integrate perspectives cautiously where they illuminate recorded material; label any interpretation rather than claiming a particular theory is established.',
-  general: 'Use ordinary descriptive language, avoiding theory-specific constructs unless explicitly present in the evidence.'
+  clinical: 'Use a provisional formal clinical formulation grounded in the supplied assessment information: presentation, context, contributing and maintaining factors, protective factors, clinical course and assessment limits. Distinguish observations, reports and hypotheses. Missing information remains unassessed; do not invent a diagnosis, mental-state finding or risk clearance.'
 });
 export function askHeliosClinicalSystemPrompt(lens = 'integrative') {
   return `You are Ask Helios, a clinical thinking assistant for a qualified therapist. The therapist has explicitly selected the client/session evidence supplied in this request. Help the therapist understand what may be happening without replacing their judgement or acting as a supervisor.
