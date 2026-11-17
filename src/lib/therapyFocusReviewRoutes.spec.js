@@ -29,6 +29,12 @@ describe('Therapy Focus history API',()=>{
   const r=await invoke();expect(r.code).toBe(200);expect(r.payload.reviewGoal).toBe('fill_empty');expect(r.payload.coverage.selectedSessions).toBe(9);expect(r.payload.suggestions).toHaveLength(1);
   const request=runTextAI.mock.calls[0][0];expect(request.messages[1].content).toContain('establish provisional starting points');expect(request.messages[1].content).toContain('formal, provisional clinical formulation');
  });
+ it('can establish a starting view from nine transcript-backed draft summaries when no captures exist',async()=>{
+  tables.session_capture_drafts=[];
+  tables.documents=tables.sessions.map((session,index)=>({id:'draft-'+index,client_id:clientId,user_id:userId,document_type:'session_summary',status:'draft',archived_at:null,updated_at:session.occurred_at,content:{body:'Fictional draft summary: the participants described difficulty staying connected during disagreements and a recent instance of asking for specific help.'},source_manifest:[{kind:'zoom_transcript',id:'transcript-'+index,sessionId:session.id}]}));
+  tables.zoom_transcripts=tables.sessions.map((session,index)=>({id:'transcript-'+index,client_id:clientId,therapist_user_id:userId,session_ref:session.id,deleted_at:null}));
+  const r=await invoke();expect(r.code).toBe(200);expect(r.payload.reviewGoal).toBe('fill_empty');expect(r.payload.sources).toHaveLength(9);expect(r.payload.sources.every(s=>s.reviewStatus==='draft')).toBe(true);expect(r.payload.suggestions).toHaveLength(1);
+ });
  it('reports invalid source references as a failed review rather than a successful empty result',async()=>{
   output.suggestions[0].sourceIds=['session:invented'];const r=await invoke();expect(r.code).toBe(502);expect(r.payload.success).toBe(false);expect(r.payload.suggestions).toBeUndefined();
  });
