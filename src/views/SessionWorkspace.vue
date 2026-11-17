@@ -23,6 +23,14 @@
         <div class="max-w-4xl mx-auto space-y-12">
           <template v-if="activeView === 'clinical'">
             <div v-if="session.status === 'completed'" class="space-y-6">
+              <section class="rounded-panel border border-action-link/20 bg-surface-elevated p-5 space-y-3" data-testid="longitudinal-record-entry">
+                <div>
+                  <p class="type-overline text-action-link">Across the therapy history</p>
+                  <h2 class="mt-1 text-h3 font-semibold text-ink">Prepare a longitudinal clinical record</h2>
+                  <p class="mt-2 text-body-sm text-ink-secondary">Choose how many sessions to include. Helios will prepare one separate, editable record in this client’s Documents.</p>
+                </div>
+                <RouterLink :to="{ name: 'ClientWorkspace', params: { clientId: session.clientId }, query: { prepareClinicalRecord: '1' } }" class="button-primary inline-flex">Choose sessions and prepare record</RouterLink>
+              </section>
               <div data-testid="session-completion-handoff" class="rounded-panel border border-state-success/20 bg-state-success-surface p-6">
                 <h2 class="text-h2 font-semibold text-ink">Clinical record approved and locked.</h2>
                 <p class="mt-2 text-body-sm text-ink-secondary">The approved record is read-only. Any correction must be added as an amendment.</p>

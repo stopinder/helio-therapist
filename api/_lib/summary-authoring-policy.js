@@ -4,6 +4,7 @@ import { ACROSS_SESSION_SECTION_INSTRUCTIONS } from './across-session-review.js'
 import { SUMMARY_POLICY_VERSION, normalizeSummaryOptions, wantsSummaryExercise } from '../../src/lib/summaryAuthoring.js';
 export { SUMMARY_POLICY_VERSION };
 const FIELDS = ['opening','whatWeWorkedOn','patternsOverTime','changesAndExceptions','strengthsAndResources','perspectiveReflection','betweenSession','closing'];
+const LONGITUDINAL_CLINICAL_WRITING_STANDARD = `Write a concise, therapist-facing clinical record in professional, readable language. Attribute reports and observations to their source. Distinguish participant report, documented observation and provisional interpretation. Keep dates visible when they establish recurrence or change. Avoid praise, diagnostic conclusions, unsupported risk findings and statements that imply a completed assessment. Preserve uncertainty and identify material gaps.`;
 
 // One writing standard for initial generation and the bounded editorial revision.
 export const SUMMARY_EDITORIAL_STANDARD = `Write alongside the client, not about them as an assessed subject. Address them directly and use ordinary language. Say what they described, noticed, tried or questioned; do not grade how well they described it. Avoid examiner language such as impressive insight or considerable nuance. Warmth comes from accurate understanding, not approval.
@@ -19,12 +20,14 @@ export function summaryEditorialStandard(lens = 'integrative') {
 
 export function summaryAuthoringPrompt(lensRule, preferences = {}, documentKind = 'session_summary', lens = 'integrative') {
   const options = normalizeSummaryOptions(preferences);
-  const audience = options.audience === 'shared'
+  const audience = documentKind === 'across_session_review'
+    ? 'Write for the treating therapist as a confidential clinical record. Use professional language, clear attribution, dated examples and explicit limits. Keep the record editable for therapist review.'
+    : options.audience === 'shared'
     ? 'Write for the people attending together. Address both/all consistently. Attribute each experience by its supported speaker name or role. Never address one as you while describing the other throughout in the third person.'
     : options.audience === 'individual'
       ? 'Write for the individual client. Other people are discussed people, not additional recipients. Do not assume they attended or share responsibility.'
       : 'Determine the intended audience from explicit encounter context, not the number of names mentioned. For a jointly attended encounter address the participants consistently; otherwise write for the individual client. Do not guess attendance or identity from discussion of relatives, partners or inner parts.';
-  return `You prepare an editable, ${documentKind === 'across_session_review' ? 'across-session review' : 'therapy summary'} for therapist review. Policy: ${SUMMARY_POLICY_VERSION}.
+  return `You prepare an editable, ${documentKind === 'across_session_review' ? 'therapist-facing longitudinal clinical record' : 'therapy summary'} for therapist review. Policy: ${SUMMARY_POLICY_VERSION}.
 This policy applies to individual and joint work, every therapeutic lens, a single encounter and longitudinal summaries. It is not a diagnostic assessment or an automatically approved clinical record.
 
 AUDIENCE
@@ -36,10 +39,10 @@ Use ONLY supplied clinical sources and explicitly attributed therapist-authored 
 Original encounter material takes priority over fallible imported notes and earlier AI summaries. A summary is compressed secondary evidence, not verbatim speech. A repeated assertion in derivative summaries is not independent confirmation. Keep directly reported material, therapist observation and tentative interpretation distinct. Preserve speaker attribution and meaningful uncertainty. Never invent quotations, sensations, risk findings, diagnoses, motives, childhood origins, interventions, treatment response, progress or agreements.
 A previous draft is comparison material, NOT a new clinical source. Therapist editing instructions are directions, NOT proof that an event occurred. Preserve factual corrections supported by therapist guidance; do not silently reinstate a fact that the therapist corrected.
 Use current_observation for a single session, including its report of earlier repeated events. A recurring claim must cite two or more independent supplied session IDs. Change needs explicit comparative evidence. Silence is not improvement, recurrence is not causality, a wish is not an agreement, and pausing is not proof of subsequent repair. Never cite a source that does not support the claim.
-Private reflection, supervision and therapist-only speculation must not enter client-facing prose. Apply the separate source-integrity/output contract when supplied; ordinary uncertainty never authorises fabrication.
+Private reflection, supervision and therapist-only speculation are excluded from these source inputs and must not be inferred. Apply the separate source-integrity/output contract when supplied; ordinary uncertainty never authorises fabrication.
 
 CLINICAL WRITING STANDARD
-${summaryEditorialStandard(lens)}
+${documentKind === 'across_session_review' ? LONGITUDINAL_CLINICAL_WRITING_STANDARD : summaryEditorialStandard(lens)}
 Lead with what mattered in this encounter or period, not an administrative preface. Identify a specific evidence-supported process: context, experienced meaning, response, consequence, exception or unfinished work. Only describe links actually supported. One coherent formulation is better than a catalogue of theories.
 Use the selected lens throughout where supported, in ordinary client-readable language. Never invent missing links to complete a theoretical cycle. Include a meaningful contradiction or exception where present.
 Say each important thing once; remove repetitive descriptions. Do not lengthen a sparse source to satisfy a template. Use the selected modality structure below to organise the document; the eight storage fields are NOT eight mandatory paragraphs. Leave optional sections empty when they repeat material or add nothing.

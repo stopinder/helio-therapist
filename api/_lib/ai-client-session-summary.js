@@ -4,6 +4,7 @@ import { summaryAuthoringPrompt, SUMMARY_POLICY_VERSION } from './summary-author
 import { renderSummarySections } from '../../src/lib/summaryAuthoring.js';
 import { summaryClinicalEvidence } from '../../src/lib/summaryEvidence.js';
 import { isUnusableSummary } from '../../src/lib/summarySafety.js';
+import { formatClinicalRecordForDocument } from '../../src/lib/clinicalRecordFormat.js';
 export const CLIENT_SESSION_SUMMARY_PROMPT_VERSION = SUMMARY_POLICY_VERSION + '/' + ACROSS_SESSION_REVIEW_VERSION;
 export const CLIENT_SESSION_SUMMARY_LENSES = SUMMARY_LENS_IDS;
 export const CLIENT_SESSION_SUMMARY_FIELDS = Object.freeze(['opening','whatWeWorkedOn','patternsOverTime','changesAndExceptions','strengthsAndResources','perspectiveReflection','betweenSession','closing']);
@@ -106,7 +107,7 @@ export function selectClinicalIntelligenceSources(captures = [], { anchorSession
   return eligible.slice(0, count);
 }
 
-export function buildClinicalIntelligenceSessionCandidates({ captures = [], summaryDocuments = [], sessions = [], transcriptRows = [] } = {}) {
+export function buildClinicalIntelligenceSessionCandidates({ captures = [], summaryDocuments = [], sessions = [], transcriptRows = [], includeClinicalRecords = false } = {}) {
   const sessionDateById = new Map(
     sessions
       .filter(item => item?.id && item?.occurred_at)
@@ -119,10 +120,35 @@ export function buildClinicalIntelligenceSessionCandidates({ captures = [], summ
   );
   const bySession = new Map();
 
+  // Completed, saved Clinical Records are first-class source material for a
+  // longitudinal therapist record. Draft or in-progress notes are never used.
+  for (const session of includeClinicalRecords ? sessions : []) {
+    const notes = formatClinicalRecordForDocument(session?.notes).trim();
+    if (!session?.id || session.status !== 'completed' || session.notes_status !== 'saved' || !notes) continue;
+    const sessionId = String(session.id);
+    const occurredAt = session.occurred_at || '';
+    if (!occurredAt) continue;
+    bySession.set(sessionId, {
+      session_id: sessionId,
+      content: { existingClinicalRecord: notes },
+      reviewed_at: session.completed_at || session.updated_at || occurredAt,
+      sessions: { id: sessionId, occurred_at: occurredAt },
+      evidence_source: 'clinical_record',
+      source_types: ['clinical_record']
+    });
+  }
+
   for (const capture of captures) {
     const sessionId = String(capture?.session_id || capture?.sessionId || '');
     if (!sessionId) continue;
-    bySession.set(sessionId, { ...capture, evidence_source: 'session_capture' });
+    const existing = bySession.get(sessionId);
+    bySession.set(sessionId, existing ? {
+      ...existing,
+      ...capture,
+      content: { ...(existing.content || {}), ...(capture.content || {}) },
+      evidence_source: 'session_capture',
+      source_types: [...new Set([...(existing.source_types || ['clinical_record']), 'session_capture'])]
+    } : { ...capture, evidence_source: 'session_capture', source_types: ['session_capture'] });
   }
 
   const orderedDocuments = [...summaryDocuments].sort((a, b) =>
@@ -137,15 +163,29 @@ export function buildClinicalIntelligenceSessionCandidates({ captures = [], summ
     const transcriptSource = manifest.find(item => item?.kind === 'zoom_transcript' && (item?.sessionId || item?.id));
     if (!transcriptSource) continue;
     const sessionId = String(transcriptSource.sessionId || transcriptSessionById.get(String(transcriptSource.id || '')) || '');
-    if (!sessionId || bySession.has(sessionId)) continue;
+    if (!sessionId) continue;
     const occurredAt = sessionDateById.get(sessionId) || transcriptSource.occurredAt || '';
     if (!occurredAt) continue;
+    const existing = bySession.get(sessionId);
+    const summaryEvidence = {
+      existingSessionSummary: body
+    };
+    if (existing) {
+      if (!existing.content?.existingSessionSummary) {
+        existing.content = { ...(existing.content || {}), ...summaryEvidence };
+        existing.sourceDocumentId = existing.sourceDocumentId || document.id || null;
+        existing.document_status = existing.document_status || document.status || 'draft';
+        existing.source_types = [...new Set([...(existing.source_types || []), 'session_summary'])];
+      }
+      continue;
+    }
     bySession.set(sessionId, {
       session_id: sessionId,
-      content: { existingSessionSummary: body },
+      content: summaryEvidence,
       reviewed_at: document.updated_at || document.created_at || occurredAt,
       sessions: { id: sessionId, occurred_at: occurredAt },
       evidence_source: 'session_summary',
+      source_types: ['session_summary'],
       document_id: document.id || null,
       document_status: document.status || 'draft'
     });
@@ -164,7 +204,8 @@ export function buildClinicalIntelligenceEvidenceMap({ captures = [], careItems 
     reviewedAt: capture.reviewedAt || capture.reviewed_at || null,
     sourceDocumentId: capture.sourceDocumentId || capture.document_id || null,
     sourceStatus: capture.sourceStatus || capture.document_status || null,
-    content: capture.content && typeof capture.content === 'object' ? {...capture.content, ...(typeof capture.content.existingSessionSummary === 'string' ? {existingSessionSummary:summaryClinicalEvidence(capture.content.existingSessionSummary)} : {})} : {}
+    sourceTypes: capture.source_types || [capture.evidence_source === 'session_summary' ? 'session_summary' : capture.evidence_source === 'clinical_record' ? 'clinical_record' : 'session_capture'],
+    content: capture.content && typeof capture.content === 'object' ? {...capture.content, ...(typeof capture.content.existingSessionSummary === 'string' ? {existingSessionSummary:summaryClinicalEvidence(capture.content.existingSessionSummary)} : {}), ...(typeof capture.content.existingClinicalRecord === 'string' ? {existingClinicalRecord:summaryClinicalEvidence(capture.content.existingClinicalRecord)} : {})} : {}
   }));
 
   const currentAcceptedCareContext = careItems
@@ -191,8 +232,9 @@ export function buildClinicalIntelligenceEvidenceMap({ captures = [], careItems 
 export function buildClientSessionSummaryInput({ lens = 'integrative', window = 'last_three', captures = [], careItems = [], therapistGuidance = '', refinementRequest = '', previousDraft = '', summaryOptions = {} }) {
   const evidenceMap = buildClinicalIntelligenceEvidenceMap({ captures, careItems, therapistGuidance });
   return JSON.stringify({
-    task: window === 'current' ? 'Prepare structured Clinical Intelligence for a therapist-reviewable client summary.' : 'Prepare an across-session review of how therapy is developing across the selected encounters.',
+    task: window === 'current' ? 'Prepare structured Clinical Intelligence for a therapist-reviewable client summary.' : 'Prepare a therapist-facing longitudinal clinical record showing how therapy is developing across the selected encounters.',
     documentKind: window === 'current' ? 'session_summary' : 'across_session_review',
+    selectedSessionCount: captures.length,
     ...(window !== 'current' ? { comparisonFrame: buildAcrossSessionComparison(captures) } : {}),
     lens,
     window,
@@ -204,7 +246,7 @@ export function buildClientSessionSummaryInput({ lens = 'integrative', window = 
     } : null,
     editorialPreferences: { audience: summaryOptions.audience || 'auto', addition: summaryOptions.addition || 'none' },
     reasoningInstructions: {
-      sequence: ['map evidence by source type', 'compare reviewed sessions', 'identify evidence strength', 'draft client-facing sections'],
+      sequence: ['map evidence by source type', 'compare reviewed sessions', 'identify evidence strength', window === 'current' ? 'draft client-facing sections' : 'draft therapist-facing clinical record sections'],
       recurrenceThreshold: 'two or more session sources with substantially similar evidence',
       currentObservationRule: 'one-session evidence remains a current observation',
       connectionRule: 'possible connections remain tentative unless explicitly established',

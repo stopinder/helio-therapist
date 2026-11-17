@@ -151,25 +151,29 @@ export const HELP_ARTICLES = [
   },
   {
     id: 'client-summary', category: 'Sessions',
-    title: 'Create a client summary across one session, recent sessions or the full available history',
-    summary: 'The selected anchor sets the end of the evidence window. Choose one session, the last 3, the last 5 or the entire available history up to that anchor.',
-    keywords: ['last 3 sessions', 'last three sessions', 'last 5 sessions', 'last five sessions', 'entire history', 'available history', 'continuity', 'anchor', 'evidence window', 'create session summary', 'regenerate summary', 'generation failed', 'pdf', 'finalise', 'email'],
+    title: 'Create a longitudinal clinical record or a client summary',
+    summary: 'Prepare a separate therapist-facing record from a chosen number of sessions or the full available history. The selected anchor sets the end of the evidence window.',
+    keywords: ['longitudinal clinical record', 'last 3 sessions', 'last three sessions', 'last 5 sessions', 'choose number of sessions', 'entire history', 'available history', 'continuity', 'anchor', 'evidence window', 'create session summary', 'regenerate summary', 'generation failed', 'pdf', 'finalise', 'email'],
     sections: [
-      { heading: 'Use this to connect recent work for the client', paragraphs: [
-        'Open the client document composer using Create session summary in the client Documents area, or choose the session-summary document type in Create Document. This is not the same as opening the regular summary for one session.',
-        'Choose Perspective for the framing and Continuity for the source window. Summary anchored to identifies the available session source the document is centred on. Evidence window shows the dates actually included. Therapist additions lets you supply context, corrections or emphasis.'
+      { heading: 'Prepare a longitudinal clinical record', paragraphs: [
+        'Choose Prepare longitudinal record in the client Documents area, or use Choose sessions and prepare record from the session Clinical Record tab. Helios opens a separate therapist-facing document; it does not change an individual session record.',
+        'Choose a Perspective, then select the last 3 sessions, last 5 sessions, a custom number of 2–200 sessions, or the entire available history. Select the latest anchor session to set the end of the period. The displayed session dates show exactly what will be included. Therapist additions are optional and remain identified as therapist-authored context.'
+      ] },
+      { heading: 'Create a client-facing session summary', paragraphs: [
+        'Choose Create session summary in the client Documents area. This creates a separate client-facing document for one session, distinct from the therapist-facing longitudinal clinical record.',
+        'Choose the clinical perspective and evidence scope first. The selected anchor identifies the available session source; the evidence window shows the dates included.'
       ] },
       { heading: 'How the window is chosen', paragraphs: [
-        'For each session, Helios prefers a reviewed Session Capture when one exists. If no reviewed capture exists, an existing transcript-backed session summary already stored in the workspace can be used as the session source instead. This session uses one source; Last 3 and Last 5 look backwards from the chosen anchor; Entire history uses all available session sources up to that anchor. Later sessions remain outside the anchored window.',
-        'Transcript-backed summary fallback exists so older work does not need artificial retrospective Session Capture review. The previous summary is treated as compressed secondary evidence rather than verbatim client speech. Check the displayed evidence dates and Evidence used list before finalising.',
+        'Each completed session counts once, even when Helios has more than one source for it. A longitudinal record can use its saved Clinical Record, any reviewed Session Capture and any transcript-backed session summary. The selected session count looks backwards from the chosen anchor; later sessions remain outside the anchored window.',
+        'The Evidence used list identifies which materials contributed for each session. Session summaries are compressed secondary evidence rather than verbatim client speech. Private reflections and supervision material stay separate and are not included automatically.',
         'For session-summary documents, From and To are optional document dates. Helios auto-fills them from the selected evidence window: the same date for one session, or earliest-to-anchor for a multi-session window. You can edit or clear either date without changing which session sources are used.'
       ] },
       { heading: 'An anchored-window example', example: 'Fictional example: available session sources exist on 2, 9, 16 and 23 September. A summary anchored to 16 September can use 2, 9 and 16 September. It does not include 23 September just because that is now the most recent appointment. The dates here illustrate the rule; the evidence window in your composer is the one to check.' },
       { heading: 'Generate, review, then choose the destination', steps: [
-        'Check the anchor, source dates and your additions, then Generate client summary. If a summary already exists, the action is Regenerate client summary. The result is editable draft wording, not an automatically saved document.',
-        'During regeneration the existing summary is temporarily hidden from the editor while Helios prepares the replacement, but its text is kept unchanged until a valid new draft is ready. If generation fails, the previous summary returns unchanged and the failure message says that no replacement occurred.',
-        'Review the text for accuracy, emphasis and suitability for the client. Permitted current Therapy Focus context can inform it; private reflections and supervision material are not automatically brought into this workflow.',
-        'Use Save Draft to keep the document editable, or Finalise PDF when it is ready to become a finalised document. Finalising this document is not approving a Clinical Record.',
+        'Check the anchor, source dates and your additions, then Prepare clinical record or Generate client summary. If an editable document already contains text, the corresponding action regenerates it as a preview. The existing wording remains unchanged until you accept the replacement.',
+        'When you prepare a new version, the current text stays visible while Helios works. A proposed replacement appears below; choose Replace current clinical record with this draft only after reviewing it. If generation fails, the current text remains unchanged.',
+        'Review a longitudinal record for accurate attribution, dated evidence and the limits of what the selected sessions establish. Review a client summary for accuracy, emphasis and suitability for the client. Private reflections and supervision material are not automatically brought into either workflow.',
+        'Use Save Draft to keep either document editable, or Finalise PDF when it is ready to become read-only. A longitudinal clinical record is stored separately from the approved record for an individual session.',
         'When using Prepare email, review the email draft, attach the PDF yourself and send it through your email application. Preparing the email does not send or attach it automatically.'
       ] },
       { heading: 'If no eligible source is listed', paragraphs: [
