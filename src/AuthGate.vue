@@ -136,6 +136,7 @@
 </template>
 
 <script setup>
+import { trackOutreachSignupRequest } from './lib/outreachAttribution.js'
 import { clearInboxReturnContexts } from './lib/transcriptInboxNavigation.js'
 import { onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
@@ -328,6 +329,7 @@ const submit = async () => {
         }
       })
       if (error) throw error
+      trackOutreachSignupRequest(route.path)
       if (!data.session) {
         password.value = ''
         marketingEmailConsent.value = false
