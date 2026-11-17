@@ -35,7 +35,7 @@ Use current_observation for a single session, including its report of earlier re
 Private reflection, supervision and therapist-only speculation must not enter client-facing prose. Apply the separate source-integrity/output contract when supplied; ordinary uncertainty never authorises fabrication.
 
 CLINICAL WRITING STANDARD
-${SUMMARY_EDITORIAL_STANDARD}
+${lens === 'clinical' ? SUMMARY_EDITORIAL_STANDARD.replace('Write alongside the client, not about them as an assessed subject. Address them directly and use ordinary language.', 'Use formal clinical report prose, with clear attribution by name or role and professional, readable language. The selected audience still determines whose information belongs in the report. Do not present a generated formulation as a completed formal assessment.') : SUMMARY_EDITORIAL_STANDARD}
 Lead with what mattered in this encounter or period, not an administrative preface. Identify a specific evidence-supported process: context, experienced meaning, response, consequence, exception or unfinished work. Only describe links actually supported. One coherent formulation is better than a catalogue of theories.
 Use the selected lens throughout where supported, in ordinary client-readable language. Never invent missing links to complete a theoretical cycle. Include a meaningful contradiction or exception where present.
 Say each important thing once; remove repetitive descriptions. Do not lengthen a sparse source to satisfy a template. Use the selected modality structure below to organise the document; the eight storage fields are NOT eight mandatory paragraphs. Leave optional sections empty when they repeat material or add nothing.
