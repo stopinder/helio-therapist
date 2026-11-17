@@ -1,7 +1,7 @@
 <template>
   <section class="rounded-panel border border-border bg-surface-elevated p-5 space-y-4" data-testid="summary-refinement-panel">
-    <div><h3 class="text-h3 font-semibold text-ink">Refine Summary</h3>
-      <p class="mt-1 text-body-sm text-ink-secondary">Direct the writing, preview the revised draft, then decide what to keep. Your current draft stays unchanged until you accept the revision.</p></div>
+    <div><h3 class="text-h3 font-semibold text-ink">Refine {{ recordLabel }}</h3>
+      <p class="mt-1 text-body-sm text-ink-secondary">This is optional. To change the current draft, describe the change and preview a revision. The proposed version appears below; your current draft stays unchanged until you replace it.</p></div>
     <div class="flex flex-wrap gap-2">
       <button type="button" class="button-secondary" :disabled="busy || disabled" @click="chooseExample('understanding')">Sharpen the understanding</button>
       <button type="button" class="button-secondary" :disabled="busy || disabled" @click="chooseExample('concise')">Reduce repetition</button>
@@ -44,14 +44,14 @@
       <button type="button" class="text-body-sm text-action-link underline" :disabled="busy || disabled" @click="omitResource">Continue without a resource</button>
     </div>
     <p v-if="localError || error" role="alert" class="text-body-sm text-state-danger">{{ localError || error }}</p>
-    <button type="button" class="button-primary" data-testid="summary-preview-revision" :disabled="busy || disabled || checkingLink || !body.trim()" @click="requestRevision">{{ busy ? 'Preparing revision...' : 'Preview revised summary' }}</button>
+    <button type="button" class="button-primary" data-testid="summary-preview-revision" :disabled="busy || disabled || checkingLink || !body.trim()" @click="requestRevision">{{ busy ? 'Preparing revision...' : `Preview revised ${recordLabel}` }}</button>
     <div v-if="showPreview && candidate && candidateIsCurrent" ref="revisionPreviewTarget" tabindex="-1" class="space-y-3 border-t border-border pt-4 scroll-mt-6" data-testid="summary-revision-preview">
-      <h4 class="text-body font-semibold">Proposed revised draft</h4>
-      <p class="text-caption text-ink-muted">This has not replaced or approved the current summary. Review it, including any optional addition.</p>
+      <h4 class="text-body font-semibold">Proposed revised {{ recordLabel }}</h4>
+      <p class="text-caption text-ink-muted">This has not replaced or approved the current {{ recordLabel }}. Review it, including any optional addition.</p>
       <SessionSummaryDocument :body="candidate.result.draft.body" compact />
       <p v-for="warning in candidate.result.qualityReview?.warnings || []" :key="warning" class="text-caption text-ink-muted">{{ warning }}</p>
       <div class="flex flex-wrap gap-2">
-        <button type="button" class="button-primary" data-testid="summary-accept-revision" :disabled="busy || disabled" @click="acceptRevision">Use revised draft</button>
+        <button type="button" class="button-primary" data-testid="summary-accept-revision" :disabled="busy || disabled" @click="acceptRevision">Replace current {{ recordLabel }} with this draft</button>
         <button type="button" class="button-secondary" data-testid="summary-discard-revision" :disabled="busy" @click="emit('discard')">Keep current draft</button>
       </div>
     </div>
@@ -62,7 +62,7 @@ import { computed, ref, watch, nextTick } from 'vue';
 import { authenticatedFetch } from '../../lib/api.js';
 import { normalizeSummaryOptions, safeResourceUrl, candidateMatches } from '../../lib/summaryAuthoring.js';
 import SessionSummaryDocument from './SessionSummaryDocument.vue';
-const props=defineProps({body:{type:String,default:''},contextKey:{type:String,required:true},busy:Boolean,disabled:Boolean,candidate:{type:Object,default:null},showPreview:{type:Boolean,default:true},error:{type:String,default:''}});
+const props=defineProps({body:{type:String,default:''},contextKey:{type:String,required:true},recordLabel:{type:String,default:'summary'},busy:Boolean,disabled:Boolean,candidate:{type:Object,default:null},showPreview:{type:Boolean,default:true},error:{type:String,default:''}});
 const emit=defineEmits(['generate','accept','discard']);
 const instruction=ref(''),audience=ref('auto'),addition=ref('none');
 const resourceUrl=ref(''),resourceTitle=ref(''),resourcePurpose=ref(''),resourceReviewed=ref(false),checkedResource=ref(null),checkingLink=ref(false),localError=ref('');

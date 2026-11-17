@@ -347,6 +347,11 @@ async function loadClient(){
     const results=await Promise.allSettled([loadTimeline(),refreshDocuments(),loadSessions(),loadAppointments(),loadTherapist()])
     for(const result of results)if(result.status==='rejected')console.error('Client workspace context failed to load:',{code:result.reason?.code||'CONTEXT_LOAD_FAILED'})
     await openRequestedDocument()
+    if(route.query.prepareClinicalRecord==='1'&&!client.value?.archived){
+      newDocument('across_session_review')
+      const query={...route.query};delete query.prepareClinicalRecord
+      await router.replace({name:'ClientWorkspace',params:{clientId:route.params.clientId},query})
+    }
   }catch{
     error.value='The client workspace could not be loaded.'
   }finally{

@@ -17,9 +17,11 @@ export default async function handler(req, res) {
   if (req.method !== 'POST') { res.setHeader('Allow', 'POST'); return res.status(405).json({ success:false, error:{ code:'METHOD_NOT_ALLOWED', message:'Method not allowed' } }); }
   try {
     const { supabase, user } = await requireAuthenticatedUser(req);
-    const { clientId, lens: requestedLens='integrative', window='last_three', therapistGuidance='', refinementRequest='', previousDraft='', anchorSessionId=null, preview=false } = req.body || {};
+    const { clientId, lens: requestedLens='integrative', window='last_three', sessionCount:requestedSessionCount, therapistGuidance='', refinementRequest='', previousDraft='', anchorSessionId=null, preview=false } = req.body || {};
     const lens = normalizeSummaryLens(requestedLens);
-    if (!clientId || typeof clientId !== 'string' || !/^[0-9a-f-]{36}$/i.test(clientId) || (anchorSessionId!==null&&(typeof anchorSessionId!=='string'||!/^[0-9a-f-]{36}$/i.test(anchorSessionId))) || typeof preview!=='boolean' || !CLIENT_SESSION_SUMMARY_LENSES.includes(lens) || !['current','last_three','last_five','history'].includes(window) || typeof therapistGuidance !== 'string' || therapistGuidance.length > 6000 || typeof refinementRequest !== 'string' || refinementRequest.length > 1800 || typeof previousDraft !== 'string' || previousDraft.length > 10000 || (refinementRequest.trim() && !previousDraft.trim())) {
+    const validWindow=['current','last_three','last_five','last_n','history'].includes(window);
+    const validSessionCount=window!=='last_n'||(Number.isInteger(requestedSessionCount)&&requestedSessionCount>=2&&requestedSessionCount<=200);
+    if (!clientId || typeof clientId !== 'string' || !/^[0-9a-f-]{36}$/i.test(clientId) || (anchorSessionId!==null&&(typeof anchorSessionId!=='string'||!/^[0-9a-f-]{36}$/i.test(anchorSessionId))) || typeof preview!=='boolean' || !CLIENT_SESSION_SUMMARY_LENSES.includes(lens) || !validWindow || !validSessionCount || typeof therapistGuidance !== 'string' || therapistGuidance.length > 6000 || typeof refinementRequest !== 'string' || refinementRequest.length > 1800 || typeof previousDraft !== 'string' || previousDraft.length > 10000 || (refinementRequest.trim() && !previousDraft.trim())) {
       return res.status(400).json({ success:false, error:{ code:'INVALID_REQUEST', message:'Choose a valid client, lens and summary window.' } });
     }
     const summaryOptions=effectiveSummaryOptions(req.body?.summaryOptions ?? {}, therapistGuidance, refinementRequest);
@@ -28,7 +30,7 @@ export default async function handler(req, res) {
     if (clientError) throw clientError;
     if (!ownedClient) return res.status(404).json({ success:false, error:{ code:'CLIENT_NOT_FOUND', message:'Client not found or access denied.' } });
 
-    const captureLimit = window === 'current' ? 1 : window === 'last_three' ? 3 : window === 'last_five' ? 5 : null;
+    const captureLimit = window === 'current' ? 1 : window === 'last_three' ? 3 : window === 'last_five' ? 5 : window === 'last_n' ? requestedSessionCount : null;
     const captures = [];
     const pageSize = 200;
     for (let from = 0; ; from += pageSize) {
@@ -65,9 +67,10 @@ export default async function handler(req, res) {
     for (let from = 0; ; from += pageSize) {
       const { data: page, error: sessionError } = await supabase
         .from('sessions')
-        .select('id,occurred_at')
+        .select('id,occurred_at,status,notes,notes_status,completed_at,updated_at')
         .eq('client_id', clientId)
         .eq('user_id', user.id)
+        .eq('status', 'completed')
         .order('occurred_at', { ascending:false })
         .range(from, from + pageSize - 1);
       if (sessionError) throw sessionError;
@@ -92,7 +95,7 @@ export default async function handler(req, res) {
     const requestedAnchor=anchorSessionId||sessions[0]?.id;
     const blockedAnchor=transcriptRows.find(row=>String(row.session_ref)===String(requestedAnchor)&&['needs_review','separated'].includes(row.source_review?.state));
     if(blockedAnchor&&!preview)return res.status(200).json({success:true,data:{outcome:'needs_review',review:{message:'This encounter needs source review.',sources:[presentReview(blockedAnchor)]}}});
-    const candidates = buildClinicalIntelligenceSessionCandidates({ captures, summaryDocuments, sessions, transcriptRows });
+    const candidates = buildClinicalIntelligenceSessionCandidates({ captures, summaryDocuments, sessions, transcriptRows, includeClinicalRecords: window !== 'current' });
     const notice=summaryDocuments.find(doc=>isUnusableSummary(doc.content)&&doc.source_manifest?.some(source=>source.sessionId===requestedAnchor));
     if(notice&&!candidates.some(item=>item.session_id===requestedAnchor)&&!preview)return res.status(200).json({success:true,data:{outcome:'needs_review',review:{message:'The saved item is a source-review notice, not clinical evidence. Review the original and regenerate its session summary.',sources:transcriptRows.filter(row=>String(row.session_ref)===String(requestedAnchor)).map(presentReview)}}});
     const selectedRows=selectClinicalIntelligenceSources(candidates,{anchorSessionId,limit:captureLimit});
@@ -102,12 +105,13 @@ export default async function handler(req, res) {
       occurredAt:row.sessions?.occurred_at,
       reviewedAt:row.reviewed_at,
       evidence_source:row.evidence_source,
+      source_types:row.source_types||[row.evidence_source||'session_capture'],
       document_id:row.document_id || null,
       document_status:row.document_status || null,
       content:row.content || {}
     }));
-    if (!selectedCaptures.length) return res.status(409).json({ success:false, error:{ code:'NO_CLIENT_SUMMARY_EVIDENCE', message:'No reviewed Session Capture or existing transcript-backed session summary is available yet.' } });
-    if(preview){const availableSessions=selectClinicalIntelligenceSources(candidates,{limit:null}).map(row=>({sessionId:row.session_id,occurredAt:row.sessions?.occurred_at,reviewedAt:row.reviewed_at,sourceType:row.evidence_source||'session_capture'}));return res.status(200).json({success:true,data:{availableSessions}});}
+    if(preview){const availableSessions=selectClinicalIntelligenceSources(candidates,{limit:null}).map(row=>({sessionId:row.session_id,occurredAt:row.sessions?.occurred_at,reviewedAt:row.reviewed_at,sourceTypes:row.source_types||[row.evidence_source||'session_capture']}));return res.status(200).json({success:true,data:{availableSessions}});}
+    if (!selectedCaptures.length) return res.status(409).json({ success:false, error:{ code:'NO_CLIENT_SUMMARY_EVIDENCE', message:window==='current'?'No reviewed Session Capture or transcript-backed session summary is available for this session yet.':'No completed Clinical Record, reviewed Session Capture or transcript-backed session summary is available yet.' } });
 
     const selectedTranscriptRows=transcriptRows.filter(row=>selectedCaptures.some(capture=>String(capture.sessionId)===String(row.session_ref)));
     for(const row of selectedTranscriptRows)assertSourceAvailable(row);
@@ -144,7 +148,7 @@ export default async function handler(req, res) {
       }
       const body = renderClientSessionSummary(sampleSummary.sections, lens, window === 'current' ? 'session_summary' : 'across_session_review');
       const sources=[
-        ...evidenceMap.reviewedSessions.map(item=>({id:item.id,kind:item.sourceType==='transcript_backed_session_summary'?'session_summary':'session_capture',sessionId:item.sessionId,occurredAt:item.occurredAt,reviewedAt:item.reviewedAt,documentId:item.sourceDocumentId||undefined,status:item.sourceStatus||undefined})),
+        ...evidenceMap.reviewedSessions.flatMap(item=>(item.sourceTypes||[]).map(sourceType=>({id:`${item.id}:${sourceType}`,kind:sourceType==='session_summary'?'session_summary':sourceType==='clinical_record'?'session_clinical_record':'session_capture',sessionId:item.sessionId,occurredAt:item.occurredAt,reviewedAt:item.reviewedAt,documentId:item.sourceDocumentId||undefined,status:item.sourceStatus||undefined}))),
         ...evidenceMap.currentAcceptedCareContext.map(item=>({id:item.id,kind:'accepted_care',careKind:item.kind})),
         ...(evidenceMap.therapistAuthoredContext.content?[{id:'therapist:guidance',kind:'therapist_guidance'}]:[])
       ];
@@ -176,7 +180,9 @@ export default async function handler(req, res) {
     let { completion, model } = await runTextAI(request);
     const finishReason = completion.choices?.[0]?.finish_reason || null;
     const evidenceSources=evidenceMap.reviewedSessions.map(item=>({id:item.id,
-      [item.sourceType==='transcript_backed_session_summary'?'session_summary':'session_capture']:item.content.existingSessionSummary||JSON.stringify(item.content)}));
+      ...(typeof item.content.existingSessionSummary==='string'?{session_summary:item.content.existingSessionSummary}:{}),
+      ...(typeof item.content.existingClinicalRecord==='string'?{clinical_record:item.content.existingClinicalRecord}:{}),
+      ...(item.content.existingSessionSummary||item.content.existingClinicalRecord?{}:{session_capture:JSON.stringify(item.content)})}));
     let structured=validateSummaryOutcome(completion.choices?.[0]?.message?.content,validSourceIds,evidenceSources);
     if (!structured) {
       const truncated = finishReason === 'length';
@@ -208,7 +214,7 @@ export default async function handler(req, res) {
     }
     if(structured.outcome==='generation_failed')return res.status(502).json({success:false,error:{code:'INVALID_AI_RESPONSE',message:'No usable summary was produced. Your previous draft is unchanged.'}});
     const body = renderClientSessionSummary(structured.sections, lens, window === 'current' ? 'session_summary' : 'across_session_review') + resourceAppendix(summaryOptions.resource,resourceVerification);
-    const sources=[...selectedTranscriptRows.map(row=>({id:`transcript:${row.id}`,kind:'zoom_transcript',transcriptId:row.id,sessionId:String(row.session_ref),sourceVersion:row.source_version})),...evidenceMap.reviewedSessions.map(item=>({id:item.id,kind:item.sourceType==='transcript_backed_session_summary'?'session_summary':'session_capture',sessionId:item.sessionId,occurredAt:item.occurredAt,reviewedAt:item.reviewedAt,documentId:item.sourceDocumentId||undefined,status:item.sourceStatus||undefined})),...evidenceMap.currentAcceptedCareContext.map(item=>({id:item.id,kind:'accepted_care',careKind:item.kind})),...(evidenceMap.therapistAuthoredContext.content?[{id:'therapist:guidance',kind:'therapist_guidance'}]:[])];
+    const sources=[...selectedTranscriptRows.map(row=>({id:`transcript:${row.id}`,kind:'zoom_transcript',transcriptId:row.id,sessionId:String(row.session_ref),sourceVersion:row.source_version})),...evidenceMap.reviewedSessions.flatMap(item=>(item.sourceTypes||[]).map(sourceType=>({id:`${item.id}:${sourceType}`,kind:sourceType==='session_summary'?'session_summary':sourceType==='clinical_record'?'session_clinical_record':'session_capture',sessionId:item.sessionId,occurredAt:item.occurredAt,reviewedAt:item.reviewedAt,documentId:item.sourceDocumentId||undefined,status:item.sourceStatus||undefined}))),...evidenceMap.currentAcceptedCareContext.map(item=>({id:item.id,kind:'accepted_care',careKind:item.kind})),...(evidenceMap.therapistAuthoredContext.content?[{id:'therapist:guidance',kind:'therapist_guidance'}]:[])];
     return res.status(200).json({ success:true, data:{ outcome:'ready',generationId,generatedAt,draft:{body,sections:structured.sections},claims:structured.claims,sources,lens,window,sessionCount:selectedCaptures.length,promptVersion:CLIENT_SESSION_SUMMARY_PROMPT_VERSION,summaryOptions,resourceSelection:summaryOptions.resource?{...summaryOptions.resource,verification:resourceVerification}:null,qualityReview,model,usage:{inputTokens:Number(completion.usage?.prompt_tokens||0),outputTokens:Number(completion.usage?.completion_tokens||0),totalTokens:Number(completion.usage?.total_tokens||0)} } });
   } catch (error) {
     if(['INVALID_SUMMARY_OPTIONS','RESOURCE_NOT_VERIFIED','SUMMARY_ADDITION_NOT_VERIFIED'].includes(error.code))return res.status(error.status||422).json({success:false,error:{code:error.code,message:error.message}});
