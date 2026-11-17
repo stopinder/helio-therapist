@@ -93,8 +93,6 @@ export default async function handler(req, res) {
     }
 
     const requestedAnchor=anchorSessionId||sessions[0]?.id;
-    const blockedAnchor=transcriptRows.find(row=>String(row.session_ref)===String(requestedAnchor)&&['needs_review','separated'].includes(row.source_review?.state));
-    if(blockedAnchor&&!preview)return res.status(200).json({success:true,data:{outcome:'needs_review',review:{message:'This encounter needs source review.',sources:[presentReview(blockedAnchor)]}}});
     const candidates = buildClinicalIntelligenceSessionCandidates({ captures, summaryDocuments, sessions, transcriptRows, includeClinicalRecords: window !== 'current' });
     const notice=summaryDocuments.find(doc=>isUnusableSummary(doc.content)&&doc.source_manifest?.some(source=>source.sessionId===requestedAnchor));
     if(notice&&!candidates.some(item=>item.session_id===requestedAnchor)&&!preview)return res.status(200).json({success:true,data:{outcome:'needs_review',review:{message:'The saved item is a source-review notice, not clinical evidence. Review the original and regenerate its session summary.',sources:transcriptRows.filter(row=>String(row.session_ref)===String(requestedAnchor)).map(presentReview)}}});
@@ -113,7 +111,8 @@ export default async function handler(req, res) {
     if(preview){const availableSessions=selectClinicalIntelligenceSources(candidates,{limit:null}).map(row=>({sessionId:row.session_id,occurredAt:row.sessions?.occurred_at,reviewedAt:row.reviewed_at,sourceTypes:row.source_types||[row.evidence_source||'session_capture']}));return res.status(200).json({success:true,data:{availableSessions}});}
     if (!selectedCaptures.length) return res.status(409).json({ success:false, error:{ code:'NO_CLIENT_SUMMARY_EVIDENCE', message:window==='current'?'No reviewed Session Capture or transcript-backed session summary is available for this session yet.':'No completed Clinical Record, reviewed Session Capture or transcript-backed session summary is available yet.' } });
 
-    const selectedTranscriptRows=transcriptRows.filter(row=>selectedCaptures.some(capture=>String(capture.sessionId)===String(row.session_ref)));
+    const transcriptDerivedSessionIds=new Set(selectedCaptures.filter(capture=>capture.source_types.some(type=>type==='session_capture'||type==='session_summary')).map(capture=>String(capture.sessionId)));
+    const selectedTranscriptRows=transcriptRows.filter(row=>transcriptDerivedSessionIds.has(String(row.session_ref)));
     for(const row of selectedTranscriptRows)assertSourceAvailable(row);
     for(const capture of selectedCaptures.filter(item=>item.document_id)){
       const doc=summaryDocuments.find(item=>item.id===capture.document_id);
