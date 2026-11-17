@@ -30,9 +30,9 @@ describe('Therapy Focus history API',()=>{
   const request=runTextAI.mock.calls[0][0];expect(request.messages[1].content).toContain('establish provisional starting points');expect(request.messages[1].content).toContain('formal, provisional clinical formulation');
  });
  it('constrains generation to the actual kinds, evidence and update targets',async()=>{
-  await invoke({lensId:'ifs'});
+  await invoke({lensId:'internal_family_systems'});
   const request=runTextAI.mock.calls[0][0];
-  expect(request.responseFormat.type).toBe('json_schema');expect(request.responseFormat.json_schema.strict).toBe(true);
+  expect(request.messages[1].content).toContain('Use IFS distinctions');expect(request.responseFormat.type).toBe('json_schema');expect(request.responseFormat.json_schema.strict).toBe(true);
   const item=request.responseFormat.json_schema.schema.properties.suggestions.items;
   expect(item.additionalProperties).toBe(false);expect(item.required).toEqual(Object.keys(item.properties));
   expect(item.properties.kind.enum).toContain('shared_understanding');expect(item.properties.sourceIds.items.enum).toHaveLength(9);
