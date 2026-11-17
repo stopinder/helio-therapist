@@ -18,7 +18,7 @@ export const HELP_ARTICLES = [
         'To revisit a past meeting, find it in Recent sessions and choose Open summary. Use that dated entry rather than starting a new session.',
         'To enter the current session workflow, use Clinical Workspace. Helios may resume an existing session or create one when needed; this is not always a read-only action.',
         'To prepare a document for this client, use Create Document. The composer is separate from the session screen, and opening it does not save a document.',
-        'Choose Ask Helios about this client when you want therapist-facing clinical thinking across selected session evidence. Ask Helios opens with this client already selected, uses the most recent session as the anchor and starts with Last 3; you can change the evidence window and perspective before asking.',
+        'Use Ask Helios in the workspace header when you want therapist-facing clinical thinking across selected session evidence. Ask Helios opens with this client already selected, uses the most recent session as the anchor and starts with Last 3; you can change the evidence window and perspective before asking.',
         'To prepare reflective material for supervision, use the deliberate supervision-selection workflow. Selecting material is not emailing it to someone.'
       ] },
       { heading: 'When a client is archived', paragraphs: [
@@ -55,7 +55,7 @@ export const HELP_ARTICLES = [
     sections: [
       { heading: 'Why use Therapy Focus rather than another session note?', paragraphs: [
         'Therapy Focus is a working view that can remain useful across meetings. Use it when your understanding, an aim, something being tried or what has been noticed needs updating. It is not a chronological transcript, and Reflect on Therapy Focus is not the private Therapist Reflection area.',
-        'The Lens selector changes the headings and framing. Gentle CBT uses Aims and objectives, Shared Understanding, Trying, Change Noticed and Learning. This selector is separate from Perspective in the client-summary composer.'
+        'The Perspective selector uses Clinical, Integrative, CBT, IFS or Transactional Analysis, with corresponding headings and framing. It starts from the client’s preferred summary perspective, with Integrative as the fallback. When Therapy Focus is empty, Build from session history proposes a starting view rather than looking only for changes to existing entries. Review and save accepted proposals explicitly; nothing is saved automatically.'
       ] },
       { heading: 'From your thought to a saved change', steps: [
         'Open + Reflect on Therapy Focus. Type your observation or use Dictate to speak your own text into the field. Review the wording before generating.',

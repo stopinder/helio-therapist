@@ -99,8 +99,8 @@ test('Ask Helios clinical mode remains explicitly therapist-scoped and uses the 
 })
 
 test('Client and Session workspaces open Ask Helios with explicit clinical context', () => {
-  assert.match(clientWorkspace, /Ask Helios about this client/)
-  assert.match(clientWorkspace, /openClinicalContext\(\{/)
+  assert.match(clientWorkspace, /registerWorkspaceContext\(\(\) =>/)
+  assert.match(clientWorkspace, /onBeforeUnmount\(releaseClientAskContext\)/)
   assert.match(clientWorkspace, /window:'last_three'/)
   assert.doesNotMatch(sessionWorkspace, /summary-more-actions/)
   assert.match(sessionWorkspace, /registerWorkspaceContext\(\(\) =>/)

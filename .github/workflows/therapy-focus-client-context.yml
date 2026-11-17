@@ -1,0 +1,32 @@
+name: Client Ask Helios and initial Therapy Focus
+on:
+  pull_request:
+    paths:
+      - api/_lib/ai-care-suggestions.js
+      - api/_lib/clinical-lenses.js
+      - api/ai/care-suggestions.js
+      - src/views/ClientWorkspace.vue
+      - src/lib/clinicalLenses.js
+      - src/components/workspace/ClientCarePanel.vue
+      - src/composables/useAskHelios.js
+      - src/lib/therapyFocusReviewRoutes.spec.js
+      - scripts/verify-therapy-focus-entry.mjs
+      - .github/workflows/therapy-focus-client-context.yml
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --ignore-scripts --no-fund
+      - run: node --test test/therapy-focus-empty-review.test.js test/therapy-focus-history-review.test.js test/therapy-focus-longitudinal.test.js test/clinical-lens.test.js test/ask-helios-clinical.test.js
+      - run: npx vitest run src/lib/therapyFocusReviewRoutes.spec.js src/components/workspace/ClientCarePanel.empty-review.spec.js src/components/workspace/ClientCarePanel.longitudinal.spec.js src/components/workspace/CurrentCareFocus.spec.js src/composables/useAskHelios.workspace-entry.spec.js src/components/ui/AskHeliosPanel.spec.js
+      - run: npm run build
+      - run: npx playwright install --with-deps chromium
+      - run: node scripts/verify-therapy-focus-entry.mjs

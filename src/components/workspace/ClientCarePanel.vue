@@ -8,10 +8,10 @@
     <div class="flex items-center gap-inline-sm flex-wrap justify-end">
       <HelpLink topic="care-suggestions" label="How Therapy Focus works" />
       <label for="lens-selector" class="text-caption font-medium text-ink-muted">Perspective:</label>
-      <select id="lens-selector" v-model="selectedLensId" class="border border-border rounded-control bg-surface px-inline-sm py-stack-xs text-caption text-ink-secondary">
+      <select id="lens-selector" v-model="selectedLensId" :disabled="generating" class="border border-border rounded-control bg-surface px-inline-sm py-stack-xs text-caption text-ink-secondary">
         <option v-for="option in availableLenses" :key="option.id" :value="option.id">{{ option.label }}</option>
       </select>
-      <button type="button" class="button-secondary" :aria-expanded="showReview && reviewMode==='history'" aria-controls="therapy-focus-review" @click="openHistoryReview">Review with Helios</button>
+      <button type="button" class="button-secondary" :aria-expanded="showReview && reviewMode==='history'" aria-controls="therapy-focus-review" @click="openHistoryReview">{{ hasCurrentFocus ? 'Review with Helios' : 'Build from session history' }}</button>
       <button type="button" class="button-secondary" :aria-expanded="showReview && reviewMode==='reflection'" aria-controls="therapy-focus-review" @click="openReflection">+ Add reflection</button>
     </div>
   </header>
@@ -26,7 +26,7 @@
       <div class="flex flex-wrap items-start justify-between gap-inline-md">
         <div>
           <p class="type-overline text-action-link">Helios Clinical Intelligence</p>
-          <h3 class="text-h3 font-semibold text-ink mt-1">Review Therapy Focus with Helios</h3>
+          <h3 class="text-h3 font-semibold text-ink mt-1">{{ hasCurrentFocus ? 'Review Therapy Focus with Helios' : 'Build an initial Therapy Focus' }}</h3>
           <p class="text-body-sm text-ink-muted mt-1 max-w-3xl">Helios compares the available session evidence and the current Therapy Focus, then proposes additions or meaningful updates for you to accept, edit or decline.</p>
         </div>
         <button type="button" class="text-body-sm font-medium text-ink-muted hover:text-ink" @click="closeReview">Close</button>
@@ -35,7 +35,7 @@
       <div class="grid grid-cols-1 md:grid-cols-3 gap-inline-md">
         <label>
           <span class="text-caption font-semibold text-ink">Evidence</span>
-          <select v-model="historyWindow" class="mt-1 w-full border border-border rounded-control bg-surface px-inline-sm py-stack-sm text-body-sm text-ink-secondary">
+          <select v-model="historyWindow" :disabled="generating" class="mt-1 w-full border border-border rounded-control bg-surface px-inline-sm py-stack-sm text-body-sm text-ink-secondary">
             <option value="current">Latest session</option>
             <option value="last_three">Last 3 sessions</option>
             <option value="last_five">Last 5 sessions</option>
@@ -44,9 +44,9 @@
         </label>
         <label>
           <span class="text-caption font-semibold text-ink">Review goal</span>
-          <select v-model="reviewGoal" class="mt-1 w-full border border-border rounded-control bg-surface px-inline-sm py-stack-sm text-body-sm text-ink-secondary">
+          <select v-model="reviewGoal" :disabled="generating" class="mt-1 w-full border border-border rounded-control bg-surface px-inline-sm py-stack-sm text-body-sm text-ink-secondary">
             <option value="fill_empty">Fill empty sections</option>
-            <option value="review_updates">Review current Therapy Focus for updates</option>
+            <option value="review_updates" :disabled="!hasCurrentFocus">Review current Therapy Focus for updates</option>
           </select>
         </label>
         <label>
@@ -63,7 +63,7 @@
 
       <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-inline-md pt-stack-sm border-t border-border-muted">
         <p class="text-caption text-ink-muted">Perspective: <strong class="text-ink-secondary">{{ lens.label }}</strong>. Reviewed Session Captures are preferred; transcript-backed session summaries are used when a reviewed capture is unavailable.</p>
-        <button type="button" :disabled="generating" class="button-primary shrink-0 justify-center" @click="generateHistory">{{ generating ? 'Reviewing…' : suggestions.length && suggestionSource==='clinical_history' ? 'Review again' : 'Review Therapy Focus' }}</button>
+        <button type="button" :disabled="generating" class="button-primary shrink-0 justify-center" @click="generateHistory">{{ generating ? 'Reviewing…' : suggestions.length && suggestionSource==='clinical_history' ? 'Review again' : hasCurrentFocus ? 'Review Therapy Focus' : 'Build Therapy Focus' }}</button>
       </div>
       <p v-if="captureError" class="text-body-sm text-state-danger">{{ captureError }}</p>
     </div>
@@ -102,9 +102,11 @@
       <p class="text-caption font-semibold text-ink">Evidence reviewed</p>
       <p v-if="historyCoverage" class="mt-1 text-caption text-ink-muted">{{ historyCoverage.selectedSessions }} of {{ historyCoverage.totalSessions }} recorded sessions included. Sessions without eligible reviewed material, and sessions outside the selected window, are not evidence for this review.</p>
       <p v-if="historySources.length===1" class="mt-1 text-caption text-ink-muted">One session supports a snapshot, not an established pattern across sessions.</p>
-      <p v-if="!suggestions.length" class="mt-1 text-body-sm text-ink-secondary">No supported additions or meaningful changes were identified.</p>
-      <p class="mt-1 text-caption text-ink-muted">{{ historySources.length }} session source{{ historySources.length===1?'':'s' }}</p>
+      <p v-if="!suggestions.length" class="mt-1 text-body-sm text-ink-secondary">{{ hasCurrentFocus ? 'No supported changes were proposed. Your current Therapy Focus is unchanged.' : 'Helios did not return a supported starting point from this selection. Therapy Focus is still empty. Try the last three sessions or add your own reflection. Nothing has been saved.' }}</p>
+      <details class="mt-2">
+      <summary class="cursor-pointer text-caption text-action-link">{{ historySources.length }} session source{{ historySources.length===1?'':'s' }}</summary>
       <p v-for="source in historySources" :key="source.id" class="mt-1 text-caption text-ink-muted">{{ formatDate(source.occurredAt) || 'Date unavailable' }} · {{ source.sourceType==='reviewed_session_capture' ? 'Reviewed Session Capture' : 'Transcript-backed summary' }} · {{ source.reviewStatus || 'Review status unavailable' }}</p>
+      </details>
     </div>
 
     <section v-if="suggestions.length" class="space-y-stack-md">
@@ -181,26 +183,28 @@
 
 <script setup>
 import HelpLink from '../help/HelpLink.vue'
-import { computed,nextTick,onMounted,ref } from 'vue'
+import { computed,nextTick,onMounted,ref,watch } from 'vue'
 import { LoaderCircle, Send } from '@lucide/vue'
 import { saveReviewedCareItem,generateCareSuggestions,listClientCareItems,updateClientCareItem } from '../../lib/clientCare.js'
 import { appendDictation, useWhisperDictation } from '../../composables/useWhisperDictation.js'
 import WhisperMicButton from '../ui/WhisperMicButton.vue'
-import { CLINICAL_LENSES,DEFAULT_LENS_ID,getLens } from '../../lib/clinicalLenses.js'
+import { CLINICAL_LENSES,DEFAULT_LENS_ID,getLens,canonicalFocusKind } from '../../lib/clinicalLenses.js'
 
-const props=defineProps({clientId:{type:String,required:true}})
-const emit=defineEmits(['changed'])
-const items=ref([]),loading=ref(true),capture=ref(''),steering=ref(''),suggestions=ref([]),generating=ref(false),saving=ref(false),captureError=ref(''),saveError=ref(''),selectedLensId=ref(DEFAULT_LENS_ID),showReview=ref(false),reviewMode=ref('history'),historyWindow=ref('history'),reviewGoal=ref('review_updates'),suggestionSource=ref(''),historySources=ref([]),historyCoverage=ref(null),provenanceSessionId=ref(null),saveAcceptedArea=ref(null)
+const props=defineProps({clientId:{type:String,required:true},initialLensId:{type:String,default:DEFAULT_LENS_ID}})
+const emit=defineEmits(['changed','lens-change'])
+const items=ref([]),loading=ref(true),capture=ref(''),steering=ref(''),suggestions=ref([]),generating=ref(false),saving=ref(false),captureError=ref(''),saveError=ref(''),selectedLensId=ref(getLens(props.initialLensId).id),showReview=ref(false),reviewMode=ref('history'),historyWindow=ref('history'),reviewGoal=ref('review_updates'),suggestionSource=ref(''),historySources=ref([]),historyCoverage=ref(null),provenanceSessionId=ref(null),saveAcceptedArea=ref(null)
 const dictation=useWhisperDictation({onText:text=>{capture.value=appendDictation(capture.value,text,'\n')}})
 
+const hasCurrentFocus=computed(()=>items.value.some(item=>item.status!=='historical' && item.body?.trim()))
+watch(selectedLensId,()=>{ resetSuggestionContext();emit('lens-change',selectedLensId.value) })
 const lens=computed(()=>getLens(selectedLensId.value))
 const availableLenses=computed(()=>Object.values(CLINICAL_LENSES))
 const sections=computed(()=>Object.entries(lens.value.sections).map(([kind,cfg])=>({kind,title:cfg.label,empty:cfg.emptyState})))
 const acceptedCount=computed(()=>suggestions.value.filter(s=>s.decision==='accepted').length)
 
-function itemsFor(kind){return items.value.filter(item=>item.kind===kind&&item.status!=='historical')}
+function itemsFor(kind){return items.value.filter(item=>canonicalFocusKind(item.kind)===kind&&item.status!=='historical')}
 function targetItem(suggestion){return items.value.find(item=>item.id===suggestion.targetItemId)}
-function sectionTitle(kind){return lens.value.sections[kind]?.label||'Therapy Focus'}
+function sectionTitle(kind){return lens.value.sections[canonicalFocusKind(kind)]?.label||'Therapy Focus'}
 function epistemicLabel(value){return{observation:'Observation',clinical_inference:'Clinical inference',possible_next_step:'Possible next step'}[value]||'Possibility'}
 function basisLabel(value){return{therapist_input:'From your reflection',approved_record:'From approved record',both:'Your reflection + approved record',session_transcript:'From session transcript',clinical_history:'From clinical history'}[value]||'Source material'}
 function evidenceStrengthLabel(value){return{current_observation:'Current observation',recurring:'Recurring across sessions',explicit_change:'Explicit change',tentative_connection:'Tentative connection'}[value]||''}
@@ -209,7 +213,7 @@ function suggestionSourceLabel(suggestion){
   return dates.length?[...new Set(dates)].join(' · '):'selected clinical evidence'
 }
 function resetSuggestionContext(){suggestions.value=[];suggestionSource.value='';historySources.value=[];historyCoverage.value=null;captureError.value='';provenanceSessionId.value=null}
-function openHistoryReview(){reviewMode.value='history';showReview.value=true;resetSuggestionContext()}
+function openHistoryReview(){reviewGoal.value=hasCurrentFocus.value?'review_updates':'fill_empty';reviewMode.value='history';showReview.value=true;resetSuggestionContext()}
 function openReflection(){reviewMode.value='reflection';showReview.value=true;resetSuggestionContext()}
 function closeReview(){showReview.value=false}
 async function reviewSuggestion(suggestion,decision){

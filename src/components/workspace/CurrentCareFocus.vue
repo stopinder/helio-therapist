@@ -79,7 +79,7 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import { createClientCareItem, listClientCareItems } from '../../lib/clientCare.js'
 import { updateClientFocus } from '../../lib/clients.js'
-import { getLens, DEFAULT_LENS_ID } from '../../lib/clinicalLenses.js'
+import { getLens, DEFAULT_LENS_ID, canonicalFocusKind } from '../../lib/clinicalLenses.js'
 import { appendDictation, useWhisperDictation } from '../../composables/useWhisperDictation.js'
 import { focusOverviewItems, focusEvidenceLabel, focusCoverage } from '../../lib/therapyFocusOverview.js'
 import WhisperMicButton from '../ui/WhisperMicButton.vue'
@@ -117,7 +117,7 @@ const currentItems=computed(()=>items.value.filter(item=>item.status==='current'
 const overviewItems=computed(()=>focusOverviewItems(items.value,lens.value.sections))
 const additionalCount=computed(()=>currentItems.value.length-overviewItems.value.filter(item=>!item.empty).length)
 const coverageLabel=computed(()=>focusCoverage(items.value,props.sessions))
-function sectionTitle(kind){return lens.value.sections[kind]?.label || ({narrative:'Clinical narrative',themes:'Recurring themes',interventions:'What has been tried',outcomes:'Change and outcomes',shared_understanding:'Shared understanding',trying:'What we’re trying',change_noticed:'Change noticed',learning:'Learning'}[kind]) || 'Therapy Focus'}
+function sectionTitle(kind){return lens.value.sections[canonicalFocusKind(kind)]?.label || ({narrative:'Clinical narrative',themes:'Recurring themes',interventions:'What has been tried',outcomes:'Change and outcomes',shared_understanding:'Shared understanding',trying:'What we’re trying',change_noticed:'Change noticed',learning:'Learning'}[kind]) || 'Therapy Focus'}
 function emptyLabel(kind){return ({change_noticed:'No comparison over time has been recorded yet.',learning:'No learning from the work has been recorded yet.',outcomes:'No outcome has been recorded yet.'}[kind]) || 'Not yet recorded. This does not establish that it is absent from the therapy.'}
 
 async function load(){
