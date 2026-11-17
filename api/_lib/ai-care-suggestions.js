@@ -1,10 +1,30 @@
 import { canonicalFocusKind } from '../../src/lib/clinicalLenses.js';
-export const CARE_SUGGESTIONS_PROMPT_VERSION = 'therapy-focus-longitudinal-v3';
+export const CARE_SUGGESTIONS_PROMPT_VERSION = 'therapy-focus-longitudinal-v4';
 export const TRANSCRIPT_CBT_CARE_PROMPT_VERSION = 'transcript-cbt-therapy-focus-v1';
 
 const BASIS = new Set(['therapist_input', 'approved_record', 'both', 'session_transcript', 'clinical_history']);
 const EPISTEMIC = new Set(['observation', 'clinical_inference', 'possible_next_step']);
 const EVIDENCE_STRENGTHS = new Set(['current_observation', 'recurring', 'explicit_change', 'tentative_connection']);
+
+// Constrain generation to the categories and evidence actually supplied to this request.
+export function buildCareSuggestionsResponseFormat({ allowedKinds, validCareIds = new Set(), validSourceIds = null }) {
+  const properties = {
+    kind: { type: 'string', enum: allowedKinds },
+    body: { type: 'string' },
+    basis: { type: 'string', enum: validSourceIds ? ['clinical_history'] : ['therapist_input', 'approved_record', 'both'] },
+    epistemic: { type: 'string', enum: [...EPISTEMIC] },
+    action: { type: 'string', enum: validCareIds.size ? ['add', 'update'] : ['add'] },
+    targetItemId: { type: ['string', 'null'], enum: [...validCareIds, null] },
+    reason: { type: 'string' },
+    sourceIds: { type: 'array', items: validSourceIds ? { type: 'string', enum: [...validSourceIds] } : { type: 'string' } },
+    evidenceStrength: { type: ['string', 'null'], enum: [...EVIDENCE_STRENGTHS, null] }
+  };
+  return { type: 'json_schema', json_schema: { name: 'therapy_focus_review', strict: true, schema: {
+    type: 'object', additionalProperties: false, required: ['suggestions'], properties: {
+      suggestions: { type: 'array', items: { type: 'object', additionalProperties: false, required: Object.keys(properties), properties } }
+    }
+  } } };
+}
 
 export function buildCareSuggestionsPrompt({
   lensConfig,
@@ -70,11 +90,23 @@ export function validateCareSuggestions(raw, {
   validCareIds = new Set(),
   validSourceIds = null,
   promptVersion,
-  defaultBasis = 'therapist_input'
+  defaultBasis = 'therapist_input',
+  onInvalid = () => {}
 }) {
+  const invalid = code => { onInvalid(code); return null; };
   let parsed;
-  try { parsed = typeof raw === 'string' ? JSON.parse(raw) : raw; } catch { return null; }
-  if (!parsed || !Array.isArray(parsed.suggestions)) return null;
+  try { parsed = typeof raw === 'string' ? JSON.parse(raw) : raw; } catch { return invalid('INVALID_JSON'); }
+  if (!parsed || !Array.isArray(parsed.suggestions)) return invalid('INVALID_SHAPE');
+  if (validSourceIds) {
+    if (parsed.suggestions.length > 6) return invalid('TOO_MANY_PROPOSALS');
+    for (const item of parsed.suggestions) {
+      if (!allowedKinds.includes(item?.kind)) return invalid('UNKNOWN_CATEGORY');
+      if (typeof item.body !== 'string' || !item.body.trim()) return invalid('EMPTY_BODY');
+      if (!Array.isArray(item.sourceIds) || !item.sourceIds.length) return invalid('MISSING_SOURCE_REFERENCE');
+      if (!item.sourceIds.every(id => validSourceIds.has(id))) return invalid('INVALID_SOURCE_REFERENCE');
+      if (item.action === 'update' && !validCareIds.has(item.targetItemId)) return invalid('INVALID_UPDATE_TARGET');
+    }
+  }
 
   const suggestions = parsed.suggestions
     .filter(item => allowedKinds.includes(item?.kind) && String(item?.body || '').trim())

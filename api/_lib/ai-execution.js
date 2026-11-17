@@ -60,7 +60,7 @@ export function buildTemperatureParams(model, temperature) {
 
 export async function runTextAI({
   feature, userId, promptVersion = null, messages, temperature,
-  maxTokens, responseFormat, timeout = 20000
+  maxTokens, responseFormat, maxRetries, timeout = 20000
 }) {
   if (!Object.values(AI_FEATURES).includes(feature)) throw new Error(`Unknown AI feature: ${feature}`);
   if (!userId) throw new Error('AI execution requires an authenticated user ID');
@@ -87,7 +87,7 @@ export async function runTextAI({
   const model = isFree ? FREE_AI_TEXT_MODEL : getTextModel(feature);
   const outputLimit = isFree ? freeOutputLimit : maxTokens;
   const startedAt = Date.now();
-  const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY, timeout, ...(isFree ? { maxRetries: 0 } : {}) });
+  const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY, timeout, ...(isFree ? { maxRetries: 0 } : maxRetries === undefined ? {} : { maxRetries }) });
 
   try {
     const completion = await openai.chat.completions.create({
