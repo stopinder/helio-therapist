@@ -24,6 +24,12 @@ describe('workspace header entry', () => {
     expect(ask.messages.value).toHaveLength(1)
     release()
   })
+  it('preserves the Clinical lens when opening from a summary workspace', async () => {
+    const release = ask.registerWorkspaceContext(() => ({ ...context, lens: 'clinical' }))
+    await ask.togglePanel()
+    expect(ask.clinicalContext.value.lens).toBe('clinical')
+    release()
+  })
   it('changes scope when navigating to another session and releases the departed workspace', async () => {
     const releaseOld = ask.registerWorkspaceContext(() => context)
     await ask.togglePanel()

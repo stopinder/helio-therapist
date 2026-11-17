@@ -9,6 +9,7 @@ import directHandler from '../../api/ai/session-summary.js';
 import longitudinalHandler from '../../api/ai/client-session-summary.js';
 import { CLIENT_SESSION_SUMMARY_FIELDS, CLIENT_SESSION_SUMMARY_LENSES } from '../../api/_lib/ai-client-session-summary.js';
 import { SUMMARY_POLICY_VERSION } from './summaryAuthoring.js';
+import { renderClientSessionSummary } from '../../api/_lib/ai-client-session-summary.js';
 const clientId='11111111-1111-4111-8111-111111111111',sessionId='22222222-2222-4222-8222-222222222222',transcriptId='33333333-3333-4333-8333-333333333333',userId='44444444-4444-4444-8444-444444444444';
 const text='The participants described pausing a difficult exchange while returning to it remained unresolved.';
 const sourceId='session:'+sessionId;
@@ -45,7 +46,7 @@ for(const [route,handler,extra] of [['encounter',directHandler,{sessionId,transc
     expect(res.statusCode).toBe(200);expect(res.payload.data.outcome).toBe('ready');expect(runTextAI).toHaveBeenCalledTimes(1);
     expect(runTextAI.mock.calls[0][0].messages[0].content).toContain(SUMMARY_POLICY_VERSION);
     expect(runTextAI.mock.calls[0][0].messages[0].content).toContain('Address both/all consistently');
-    expect(res.payload.data.resourceSelection).toBeNull();expect(res.payload.data.draft.body).toContain('What we worked on');
+    expect(res.payload.data.resourceSelection).toBeNull();expect(res.payload.data.draft.body).toBe(renderClientSessionSummary(output().sections,lens,route === 'encounter' ? 'session_summary' : 'across_session_review'));
     expect(res.payload.data.qualityReview.kind).toBe('mechanical_editorial_checks');
   });
   it('checks ownership before checking an external resource or calling AI',async()=>{
@@ -75,5 +76,37 @@ for(const [route,handler,extra] of [['encounter',directHandler,{sessionId,transc
     expect(res.payload.data.resourceSelection.verification.clinicalSuitability).toBe('not_assessed');
     expect(JSON.stringify(runTextAI.mock.calls[0][0].messages)).not.toContain(resource.url);
     expect(res.payload.data.sources.some(source=>source.kind==='resource')).toBe(false);
+  });
+});
+
+for (const [route,handler,extra] of [['encounter',directHandler,{sessionId,transcriptId,window:'recent'}],['longitudinal',longitudinalHandler,{anchorSessionId:sessionId,window:'last_three'}]])describe(route+' across-session comparison',()=>{
+  it('sends the same three dated encounters to all five lenses and renders their own structures',async()=>{
+    for (const [index,date] of [[5,'2025-12-18T10:00:00Z'],[6,'2025-12-25T10:00:00Z']]) {
+      const id=String(index).repeat(8)+'-5555-4555-8555-'+String(index).repeat(12);
+      const tid=String(index+2).repeat(8)+'-7777-4777-8777-'+String(index+2).repeat(12);
+      rows.sessions.push({...rows.sessions[0],id,occurred_at:date});
+      rows.zoom_transcripts.push({...rows.zoom_transcripts[0],id:tid,session_ref:id,original_transcript:'Fictional earlier encounter: discussion remained difficult, and each participant described a different response.'});
+      rows.session_capture_drafts.push({...rows.session_capture_drafts[0],session_id:id,sessions:{...rows.session_capture_drafts[0].sessions,id,occurred_at:date}});
+    }
+    let firstFrame, firstEvidence;
+    const rendered=new Set();
+    for (const lens of CLIENT_SESSION_SUMMARY_LENSES) {
+      const res=await invoke(handler,{clientId,...extra,lens,summaryOptions:{audience:'shared'}});
+      expect(res.statusCode).toBe(200);
+      const request=runTextAI.mock.calls.at(-1)[0];
+      const packet=JSON.parse(request.messages[1].content);
+      expect(packet.comparisonFrame.sessions).toHaveLength(3);
+      const evidence=packet.sourceBlocks || packet.evidenceMap;
+      if (firstFrame) { expect(packet.comparisonFrame).toEqual(firstFrame);expect(evidence).toEqual(firstEvidence); }
+      firstFrame=packet.comparisonFrame;firstEvidence=evidence;
+      expect(request.messages[0].content).toContain('ACROSS-SESSION REVIEW — DISTINCT DOCUMENT PURPOSE');
+      expect(res.payload.data.draft.body).toBe(renderClientSessionSummary(output().sections,lens,'across_session_review'));
+      rendered.add(res.payload.data.draft.body);
+    }
+    expect(rendered.size).toBe(5);
+  });
+  it('accepts an older General request as Integrative without exposing a separate General approach',async()=>{
+    const res=await invoke(handler,{clientId,...extra,window:'current',lens:'general'});
+    expect(res.statusCode).toBe(200);expect(res.payload.data.lens).toBe('integrative');
   });
 });

@@ -1,3 +1,6 @@
+import { summaryLensSectionGroups } from '../../src/lib/summaryLenses.js';
+import { SUMMARY_SECTION_GROUPS, ACROSS_SESSION_SECTION_GROUPS } from '../../src/lib/summaryAuthoring.js';
+import { ACROSS_SESSION_SECTION_INSTRUCTIONS } from './across-session-review.js';
 import { SUMMARY_POLICY_VERSION, normalizeSummaryOptions, wantsSummaryExercise } from '../../src/lib/summaryAuthoring.js';
 export { SUMMARY_POLICY_VERSION };
 const FIELDS = ['opening','whatWeWorkedOn','patternsOverTime','changesAndExceptions','strengthsAndResources','perspectiveReflection','betweenSession','closing'];
@@ -10,14 +13,18 @@ Separate an observation made today, a reported exception and an established chan
 Keep a small number of concrete details that make this person's experience recognisable. Preserve the difficult or unfinished centre of the work. Each paragraph should add a distinct understanding; combine repeated formulations and remove abstractions that restate the same point.
 End with the actual agreement, suggestion, request or unresolved choice, using its true status. If a practice was discussed, state the supported action simply and any supported reason for trying it. Do not add steps, monitoring tasks, benefits or homework that were not discussed or expressly requested. Prefer the specific unfinished question to a report-like sentence that merely says the question of how this might affect things remains open. An honest short ending or an empty closing is better than a generic reflection.`;
 
-export function summaryAuthoringPrompt(lensRule, preferences = {}) {
+export function summaryEditorialStandard(lens = 'integrative') {
+  return lens === 'clinical' ? SUMMARY_EDITORIAL_STANDARD.replace('Write alongside the client, not about them as an assessed subject. Address them directly and use ordinary language.', 'Use formal clinical report prose, with clear attribution by name or role and professional, readable language. The selected audience still determines whose information belongs in the report. Do not present a generated formulation as a completed formal assessment.') : SUMMARY_EDITORIAL_STANDARD;
+}
+
+export function summaryAuthoringPrompt(lensRule, preferences = {}, documentKind = 'session_summary', lens = 'integrative') {
   const options = normalizeSummaryOptions(preferences);
   const audience = options.audience === 'shared'
     ? 'Write for the people attending together. Address both/all consistently. Attribute each experience by its supported speaker name or role. Never address one as you while describing the other throughout in the third person.'
     : options.audience === 'individual'
       ? 'Write for the individual client. Other people are discussed people, not additional recipients. Do not assume they attended or share responsibility.'
       : 'Determine the intended audience from explicit encounter context, not the number of names mentioned. For a jointly attended encounter address the participants consistently; otherwise write for the individual client. Do not guess attendance or identity from discussion of relatives, partners or inner parts.';
-  return `You prepare an editable, client-facing therapy summary for therapist review. Policy: ${SUMMARY_POLICY_VERSION}.
+  return `You prepare an editable, ${documentKind === 'across_session_review' ? 'across-session review' : 'therapy summary'} for therapist review. Policy: ${SUMMARY_POLICY_VERSION}.
 This policy applies to individual and joint work, every therapeutic lens, a single encounter and longitudinal summaries. It is not a diagnostic assessment or an automatically approved clinical record.
 
 AUDIENCE
@@ -32,10 +39,10 @@ Use current_observation for a single session, including its report of earlier re
 Private reflection, supervision and therapist-only speculation must not enter client-facing prose. Apply the separate source-integrity/output contract when supplied; ordinary uncertainty never authorises fabrication.
 
 CLINICAL WRITING STANDARD
-${SUMMARY_EDITORIAL_STANDARD}
+${summaryEditorialStandard(lens)}
 Lead with what mattered in this encounter or period, not an administrative preface. Identify a specific evidence-supported process: context, experienced meaning, response, consequence, exception or unfinished work. Only describe links actually supported. One coherent formulation is better than a catalogue of theories.
 Use the selected lens throughout where supported, in ordinary client-readable language. Never invent missing links to complete a theoretical cycle. Include a meaningful contradiction or exception where present.
-Say each important thing once; remove repetitive descriptions. Do not lengthen a sparse source to satisfy a template. Usually three or four coherent visible sections will suffice; the eight storage fields are NOT eight mandatory paragraphs. Leave optional sections empty when they repeat material or add nothing.
+Say each important thing once; remove repetitive descriptions. Do not lengthen a sparse source to satisfy a template. Use the selected modality structure below to organise the document; the eight storage fields are NOT eight mandatory paragraphs. Leave optional sections empty when they repeat material or add nothing.
 
 THERAPEUTIC VALUE AND RELATIONAL TONE — EVERY LENS
 Therapeutic usefulness takes priority over stylistic brevity. Write in a manner informed by Carl Rogers' core conditions: accurate empathic understanding, unconditional positive regard, and congruent, honest communication. This is a stance towards the client, NOT an instruction to name Rogers, give a lesson in person-centred therapy, or add a praise paragraph.
@@ -59,7 +66,7 @@ ${wantsSummaryExercise(options)
     : 'No NEW exercise, homework, technique, practitioner, book or video recommendation has been requested. Do not introduce one. Existing actions explicitly discussed or agreed in the clinical evidence may still be recorded with accurate attribution.'}
 External resources are selected and checked separately by the therapist, not invented by you. Do not output resource URLs or add a practitioner from a prior draft as a default. A source-confirmed practitioner mentioned as part of the session may be reported, not converted into a recommendation. Resource selection is not proof of discussion or agreement during the session.
 
-SECTION PURPOSES (empty strings are allowed)
+${documentKind === 'across_session_review' ? ACROSS_SESSION_SECTION_INSTRUCTIONS : `SECTION PURPOSES (empty strings are allowed)
 opening: brief orientation only if useful; do not recap everything.
 whatWeWorkedOn: concrete work, interaction, therapist contribution and response actually supported.
 patternsOverTime: supported recurrence or explicitly reported history, not a second narrative of today's session.
@@ -68,6 +75,14 @@ changesAndExceptions: demonstrated comparisons, changes, exceptions and limits; 
 strengthsAndResources: a concise, evidence-supported recognition of the client's effort, awareness, curiosity, care, discernment, resource or capacity when therapeutically useful. Reflect what they actually did or noticed, not generic praise or assumed progress. This can be distinct from the earlier description of the difficulty; otherwise empty.
 betweenSession: actual agreements, unfinished questions, or the expressly requested optional prospective exercise; never manufacture homework.
 closing: only a genuinely new useful thread, otherwise empty. Do not repeat the summary or question of therapeutic fit.
+`}
+
+${lens === 'clinical' ? 'CLINICAL REPORT FIELD PURPOSES: opening/whatWeWorkedOn describe presenting difficulties, assessment context and available evidence; patternsOverTime/perspectiveReflection give supported contributing and maintaining factors plus provisional formulation and alternatives; changesAndExceptions records course and evidenced differences; strengthsAndResources gives protective factors; closing records material assessment limits and outstanding questions; betweenSession records the actual plan. These clinical field meanings replace the generic narrative purposes above. State missing assessment information as unassessed; never infer a diagnosis, risk clearance or completed formal assessment.' : ''}
+
+SELECTED MODALITY DOCUMENT STRUCTURE
+Use exactly this heading-to-field organisation when composing, without writing the headings inside the field strings:
+${summaryLensSectionGroups(lens, documentKind, documentKind === 'across_session_review' ? ACROSS_SESSION_SECTION_GROUPS : SUMMARY_SECTION_GROUPS).map(group => group.heading + ': ' + group.fields.join(', ')).join('\n')}
+These are distinct paradigms, not alternative labels for the same generic narrative. Keep the scope-specific evidence rules above; do not force a finding, intervention, experiment or clinical conclusion to populate a heading.
 
 BEFORE RETURNING THE DRAFT
 Review your actual wording against the sources: correct audience/speaker attribution; remove unsupported certainty and psychological explanations; distinguish change from aspiration; remove repeated points but retain specific evidence-grounded recognition when therapeutically useful; omit unsolicited recommendations; preserve therapist corrections. Do this without adding a new inference. Never claim the draft has a clinical quality score or is clinically verified.

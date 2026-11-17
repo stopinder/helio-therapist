@@ -1,9 +1,11 @@
+import { SUMMARY_LENS_IDS, normalizeSummaryLens } from '../../src/lib/summaryLenses.js';
+import { ACROSS_SESSION_REVIEW_VERSION, acrossSessionLensRule, buildAcrossSessionComparison } from './across-session-review.js';
 import { summaryAuthoringPrompt, SUMMARY_POLICY_VERSION } from './summary-authoring-policy.js';
 import { renderSummarySections } from '../../src/lib/summaryAuthoring.js';
 import { summaryClinicalEvidence } from '../../src/lib/summaryEvidence.js';
 import { isUnusableSummary } from '../../src/lib/summarySafety.js';
-export const CLIENT_SESSION_SUMMARY_PROMPT_VERSION = SUMMARY_POLICY_VERSION + '/longitudinal';
-export const CLIENT_SESSION_SUMMARY_LENSES = Object.freeze(['general', 'integrative', 'gentle_cbt', 'internal_family_systems', 'transactional_analysis']);
+export const CLIENT_SESSION_SUMMARY_PROMPT_VERSION = SUMMARY_POLICY_VERSION + '/' + ACROSS_SESSION_REVIEW_VERSION;
+export const CLIENT_SESSION_SUMMARY_LENSES = SUMMARY_LENS_IDS;
 export const CLIENT_SESSION_SUMMARY_FIELDS = Object.freeze(['opening','whatWeWorkedOn','patternsOverTime','changesAndExceptions','strengthsAndResources','perspectiveReflection','betweenSession','closing']);
 
 const COMPARISON_TASKS = Object.freeze(['recurrence', 'change', 'stability', 'exceptions', 'resources', 'unfinished_threads', 'possible_connections']);
@@ -12,7 +14,8 @@ export const CLIENT_SESSION_SUMMARY_EVIDENCE_STRENGTHS = Object.freeze(['current
 const EVIDENCE_STRENGTHS = new Set(CLIENT_SESSION_SUMMARY_EVIDENCE_STRENGTHS);
 
 const lensRules = {
-  general: `General lens: remain model-neutral. Focus on supported themes, changes, stable threads, resources, next steps and useful connections. Where the session warrants it, reflect a particular effort, moment of awareness or useful capacity in clear, empathic language. Do not impose CBT terminology, require praise or give false reassurance.`,
+  clinical: `Clinical lens: prepare a formal, provisional clinical formulation/report from the assessment information actually supplied. Organise presenting difficulties, relevant psychosocial context, predisposing, precipitating and perpetuating factors where supported, protective factors, clinical course, assessment limits and the actual plan. Distinguish participant report, documented clinical observation and explanatory hypotheses. Formulation is not diagnosis: do not infer a disorder, mental-state examination, risk clearance, psychometric score, prognosis, causal developmental history or completed assessment. Missing assessment information remains unassessed or not established. Describe each participant fairly in joint work; never infer mutual responsibility for abuse. Use professional, precise, readable language appropriate to the selected audience; do not import private reflection or call a newly generated formulation an established shared understanding.
+For the existing storage fields: opening and whatWeWorkedOn contain assessment purpose, presenting difficulties, relevant context and available evidence; patternsOverTime and perspectiveReflection contain the supported contributing/maintaining factors and provisional formulation, with alternatives; changesAndExceptions describes course, dated differences and their limits; strengthsAndResources contains protective factors; closing records material assessment limits and unresolved clinical questions without inventing absent findings; betweenSession records the actual plan and review arrangements.`,
   gentle_cbt: `Gentle CBT lens: where supported, map situation or trigger / antecedent -> thoughts, emotions and body responses -> behaviour or coping response -> short-term consequence and longer-term consequence. Notice repeated maintenance cycles, interruptions or exceptions to a cycle, experiments, coping responses and changes over time. Explicitly look for what interrupts the usual sequence and what the client learns from trying something different. When supported, recognise what the client noticed, tested or learned and what helped them respond with more choice, even if the difficulty continues. Describe this specifically, not as a success verdict or compulsory homework. Never manufacture a complete CBT sequence when evidence is missing, and never force CBT language into client-facing prose when ordinary language is clearer.`,
   integrative: `Integrative lens: do not force a single model. Focus on explicitly supported emotional, relational, behavioural and contextual themes, shifts in understanding, unfinished threads, resources and alternative possible meanings. Reflect observed self-understanding, relational awareness, care or capacity when meaningful to the client. Preserve ambiguity where more than one meaning remains plausible; do not impose a positive interpretation.`,
   internal_family_systems: `Internal Family Systems (IFS) lens: use IFS as an organising perspective across the clinically interpretive parts of the summary when the evidence supports it, rather than confining IFS to one theory paragraph. Notice the client's own descriptions of parts or inner positions, protective intentions, blending and unblending, polarisation between parts, burdens that are explicitly named, and moments of greater curiosity, compassion, calm, clarity, confidence, courage, creativity or connectedness.
@@ -29,8 +32,12 @@ For patternsOverTime, describe a recurring polarisation or protective sequence o
   transactional_analysis: `Transactional Analysis (TA) lens: start with observable exchanges: what each person says or does, what reaction follows, and whether a more collaborative exchange becomes possible. Where the sources justify it, explore possible Parent, Adult and Child ego-state shifts; reciprocal or crossed transactions; repeated expectations, scripts or drivers; and moments of Adult-to-Adult communication. Present ego states and script meanings as tentative ways to understand the interaction, never fixed labels, diagnoses or established motives. Distinguish a reported relational sequence from any proposed explanation. Prefer a concrete description of what changed in an interaction over theoretical jargon. Do not import IFS-specific protector, exile, Self-energy, blending or unblending interpretations merely because earlier notes used that model. Where observed, reflect a moment of increased Adult awareness, ability to pause, recognition of a familiar transaction or movement towards clearer communication, without treating it as lasting change. A TA summary should offer a recognisably transactional interpretation without changing the underlying facts or inventing script history.`
 };
 
-export function clientSessionSummaryLensRule(lens = 'general') { return lensRules[lens] || lensRules.general; }
-export function clientSessionSummarySystemPrompt(lens = 'general', options = {}) { return summaryAuthoringPrompt(clientSessionSummaryLensRule(lens), options); }
+export function clientSessionSummaryLensRule(lens = 'integrative') { return lensRules[normalizeSummaryLens(lens)] || lensRules.integrative; }
+export function clientSessionSummarySystemPrompt(lens = 'integrative', options = {}) { return summaryAuthoringPrompt(clientSessionSummaryLensRule(lens), options, 'session_summary', normalizeSummaryLens(lens)); }
+
+export function clientAcrossSessionReviewSystemPrompt(lens = 'integrative', options = {}) {
+  return summaryAuthoringPrompt(clientSessionSummaryLensRule(lens) + '\nLONGITUDINAL LENS TASK\n' + acrossSessionLensRule(lens), options, 'across_session_review', normalizeSummaryLens(lens));
+}
 
 export function clientSessionSummaryResponseFormat(validSourceIds = []) {
   const sourceIds = [...new Set(
@@ -181,10 +188,12 @@ export function buildClinicalIntelligenceEvidenceMap({ captures = [], careItems 
   };
 }
 
-export function buildClientSessionSummaryInput({ lens = 'general', window = 'last_three', captures = [], careItems = [], therapistGuidance = '', refinementRequest = '', previousDraft = '', summaryOptions = {} }) {
+export function buildClientSessionSummaryInput({ lens = 'integrative', window = 'last_three', captures = [], careItems = [], therapistGuidance = '', refinementRequest = '', previousDraft = '', summaryOptions = {} }) {
   const evidenceMap = buildClinicalIntelligenceEvidenceMap({ captures, careItems, therapistGuidance });
   return JSON.stringify({
-    task: 'Prepare structured Clinical Intelligence for a therapist-reviewable client summary.',
+    task: window === 'current' ? 'Prepare structured Clinical Intelligence for a therapist-reviewable client summary.' : 'Prepare an across-session review of how therapy is developing across the selected encounters.',
+    documentKind: window === 'current' ? 'session_summary' : 'across_session_review',
+    ...(window !== 'current' ? { comparisonFrame: buildAcrossSessionComparison(captures) } : {}),
     lens,
     window,
     evidenceMap,
@@ -305,4 +314,4 @@ export function validateClientSessionSummaryResponse(value, validSourceIds = nul
   return {sections,claims};
 }
 
-export function renderClientSessionSummary(sections, lens='general') { return renderSummarySections(sections); }
+export function renderClientSessionSummary(sections, lens='integrative', documentKind='session_summary') { return renderSummarySections(sections, documentKind, lens); }

@@ -2,7 +2,7 @@
   <div class="session-summary-document surface-panel !border-none !bg-surface-raised/50 shadow-sm" :class="compact ? 'p-4' : 'p-6 sm:p-12'">
     <div class="max-w-[65ch] mx-auto">
       <header v-if="!compact" class="mb-8 border-b border-border-muted pb-6">
-        <h1 class="font-serif text-h1 text-ink mb-2">Session Summary</h1>
+        <h1 class="font-serif text-h1 text-ink mb-2">{{ title }}</h1>
         <div class="flex flex-wrap gap-x-6 gap-y-2 text-body-sm text-ink-muted">
           <div v-if="clientName" class="flex items-center gap-1.5"><User class="workspace-icon-sm" /><span>{{ clientName }}</span></div>
           <div v-if="date" class="flex items-center gap-1.5"><Calendar class="workspace-icon-sm" /><span>{{ date }}</span></div>
@@ -22,7 +22,7 @@
 import { computed } from 'vue';
 import { User, Calendar } from '@lucide/vue';
 import { parseSummaryBlocks } from '../../lib/summaryAuthoring.js';
-const props=defineProps({body:{type:String,default:''},clientName:{type:String,default:''},date:{type:String,default:''},compact:Boolean});
+const props=defineProps({title:{type:String,default:'Session Summary'},body:{type:String,default:''},clientName:{type:String,default:''},date:{type:String,default:''},compact:Boolean});
 const parsedBlocks=computed(()=>parseSummaryBlocks(props.body));
 </script>
 <style scoped>

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { SUMMARY_EDITORIAL_STANDARD, assessSummaryDraft } from '../api/_lib/summary-authoring-policy.js';
+import { SUMMARY_EDITORIAL_STANDARD, summaryEditorialStandard, assessSummaryDraft } from '../api/_lib/summary-authoring-policy.js';
 import { reviewSummaryDraft } from '../api/_lib/summary-quality-review.js';
 import { CLIENT_SESSION_SUMMARY_FIELDS, CLIENT_SESSION_SUMMARY_LENSES, clientSessionSummarySystemPrompt } from '../api/_lib/ai-client-session-summary.js';
 import { SUMMARY_POLICY_VERSION, renderSummarySections, parseSummaryBlocks } from '../src/lib/summaryAuthoring.js';
@@ -12,7 +12,7 @@ const codes=value=>assessSummaryDraft(value).map(issue=>issue.code);
 for(const lens of CLIENT_SESSION_SUMMARY_LENSES) for(const audience of ['auto','individual','shared']) {
  test(`${lens}/${audience} uses the same relational and evidence standard`,()=>{
   const prompt=clientSessionSummarySystemPrompt(lens,{audience});
-  assert.ok(prompt.includes(SUMMARY_EDITORIAL_STANDARD));
+  assert.ok(prompt.includes(summaryEditorialStandard(lens)));
   for(const phrase of ['do not grade how well','Do not manufacture agreement','A tentative opening does not license a definite causal explanation','not by itself evidence of progress','Do not add steps, monitoring tasks, benefits or homework']) assert.ok(prompt.includes(phrase));
  });
 }

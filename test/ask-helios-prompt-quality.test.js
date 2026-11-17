@@ -10,7 +10,7 @@ const syntheticCases = [
   {query:'How might I understand this relational exchange?', evidence:'A fictional couple reports escalating accusations and silence, with no established psychological diagnosis.'}
 ];
 test('clinical quality prompt has a tracked revision and direct, non-formulaic reasoning contract', () => {
-  assert.equal(ASK_HELIOS_CLINICAL_PROMPT_VERSION, 'ask-helios-clinical/2.3.0');
+  assert.equal(ASK_HELIOS_CLINICAL_PROMPT_VERSION, 'ask-helios-clinical/2.4.0');
   const prompt=askHeliosClinicalSystemPrompt('integrative');
   for (const instruction of ['Begin with a clear, specific answer','what triggers the shift','secondary summaries','not independent corroboration','one discriminating alternative','120–220 words','Do not claim to be a human clinician']) {
     assert.ok(prompt.includes(instruction), instruction);

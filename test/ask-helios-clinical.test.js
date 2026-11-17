@@ -16,7 +16,7 @@ const sessionWorkspace = await readFile(new URL('../src/views/SessionWorkspace.v
 
 test('Ask Helios clinical reasoning exposes all supported evidence windows and therapeutic perspectives', () => {
   assert.deepEqual(ASK_HELIOS_CLINICAL_WINDOWS, ['current','last_three','last_five','history'])
-  assert.deepEqual(ASK_HELIOS_CLINICAL_LENSES, ['general','integrative','gentle_cbt','internal_family_systems','transactional_analysis'])
+  assert.deepEqual(ASK_HELIOS_CLINICAL_LENSES, ['clinical','integrative','gentle_cbt','internal_family_systems','transactional_analysis'])
 })
 
 test('clinical reasoning prompt preserves therapist responsibility and uncertainty', () => {

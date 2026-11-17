@@ -1,3 +1,5 @@
+import { normalizeSummaryLens } from '../../src/lib/summaryLenses.js';
+import { buildAcrossSessionComparison, ACROSS_SESSION_REVIEW_VERSION } from '../_lib/across-session-review.js';
 import { effectiveSummaryOptions, resourceAppendix, wantsSummaryExercise, summaryInstructionRequirements } from '../../src/lib/summaryAuthoring.js';
 import { SUMMARY_POLICY_VERSION } from '../_lib/summary-authoring-policy.js';
 import { reviewSummaryDraft } from '../_lib/summary-quality-review.js';
@@ -9,6 +11,7 @@ import { requireAuthenticatedUser } from '../_lib/supabase.js';
 import { AI_FEATURES, runTextAI } from '../_lib/ai-execution.js';
 import { randomUUID } from 'node:crypto';
 import {
+  clientAcrossSessionReviewSystemPrompt,
   CLIENT_SESSION_SUMMARY_LENSES,
   clientSessionSummarySystemPrompt,
   renderClientSessionSummary
@@ -54,7 +57,7 @@ export default async function handler(req, res) {
       clientId,
       sessionId,
       transcriptId,
-      lens = 'integrative',
+      lens: requestedLens = 'integrative',
       window = 'current',
       excludeEarlierZoomNotes = false,
       therapistGuidance = '',
@@ -62,6 +65,7 @@ export default async function handler(req, res) {
       previousDraft = ''
     } = req.body || {};
 
+    const lens = normalizeSummaryLens(requestedLens);
     if (
       !clientId ||
       !sessionId ||
@@ -184,19 +188,20 @@ export default async function handler(req, res) {
     const guidance = [wantsSummaryExercise(summaryOptions) ? 'Therapist requests an optional future exercise for consideration, not an intervention performed or agreed in session.' : '', therapistGuidance.trim(), refinementRequest.trim() ? 'Therapist-authorised editorial request (NOT evidence of an intervention conducted or agreed): ' + refinementRequest.trim() : ''].filter(Boolean).join('\n\n');
     const validSourceIds = new Set(selectedSources.map(source => source.id));
     if (guidance) validSourceIds.add('therapist:guidance');
-    const systemPrompt = clientSessionSummarySystemPrompt(lens,summaryOptions)
+    const systemPrompt = (window === 'current' ? clientSessionSummarySystemPrompt(lens,summaryOptions) : clientAcrossSessionReviewSystemPrompt(lens,summaryOptions))
       .replace('Return JSON only with exactly two fields:','For a ready outcome, supply these clinical fields:')
       + '\nEvidence window: ' + window + '\n' + SUMMARY_OUTCOME_RULES;
 
     const sourceBlocks=selectedSources.map((source,index)=>sourceBlock(source,{isCurrent:index===0,suppressZoomNote:excludeEarlierZoomNotes&&index>0}));
-    const userInput=JSON.stringify({task:window==='recent'?'Prepare this encounter with prior continuity.':'Prepare this encounter only.',
+    const userInput=JSON.stringify({task:window==='recent'?'Prepare an across-session review of how therapy is developing across the selected encounters.':'Prepare this encounter only.',
+      ...(window === 'recent' ? { comparisonFrame: buildAcrossSessionComparison(selectedSources) } : {}),
       assignedClient:{id:clientId,name:session.clients?.display_name||''},sessionId,sourceBlocks,therapistGuidance:guidance,editorialPreferences:{audience:summaryOptions.audience,addition:summaryOptions.addition},
       editorialRefinement:refinementRequest.trim() ? {approvedInstruction:refinementRequest.trim(),previousDraftForComparisonOnly:previousDraft.slice(0,10000),boundary:'Neither the previous draft nor an exercise instruction is evidence of events, completed interventions or agreed homework.'} : null});
 
     const request = {
       feature: AI_FEATURES.CLIENT_SESSION_SUMMARY,
       userId: user.id,
-      promptVersion: PROMPT_VERSION,
+      promptVersion: window === 'current' ? PROMPT_VERSION : ACROSS_SESSION_REVIEW_VERSION,
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userInput }
@@ -252,7 +257,7 @@ export default async function handler(req, res) {
         try{
           const attempt=await runTextAI({...request,responseFormat:summaryOutcomeResponseFormat(ids),messages:[
             {role:'system',content:systemPrompt+'\nConflicting secondary Zoom notes were excluded. Write only from the remaining source evidence. If the ORIGINAL transcript genuinely shows mixed client encounters, return needs_review with precise transcript quotes.'},
-            {role:'user',content:JSON.stringify({task:'Prepare a cautious editable draft from this client’s remaining evidence only.',assignedClient:{id:clientId,name:session.clients?.display_name||''},sessionId,sourceBlocks:remaining.map((source,index)=>sourceBlock(source,{isCurrent:index===0,suppressZoomNote:!!source.original_transcript?.trim()})),therapistGuidance:guidance})}
+            {role:'user',content:JSON.stringify({task:'Prepare a cautious editable draft from this client’s remaining evidence only.',...(window === 'recent' ? {comparisonFrame:buildAcrossSessionComparison(remaining)} : {}),assignedClient:{id:clientId,name:session.clients?.display_name||''},sessionId,sourceBlocks:remaining.map((source,index)=>sourceBlock(source,{isCurrent:index===0,suppressZoomNote:!!source.original_transcript?.trim()})),therapistGuidance:guidance})}
           ]});
           const evidence=remaining.map(source=>({id:source.id,transcriptId:source.transcriptId,transcript:source.original_transcript||'',zoom_note:source.original_transcript?.trim()?'':(source.zoom_generated_summary||'')}));
           const checked=validateSummaryOutcome(attempt.completion.choices?.[0]?.message?.content,ids,evidence);
@@ -270,9 +275,10 @@ export default async function handler(req, res) {
       const qualityIds=new Set(usedSources.map(source=>source.id));
       if(guidance)qualityIds.add('therapist:guidance');
       const qualityInput=JSON.parse(userInput);
+      if (window === 'recent') qualityInput.comparisonFrame = buildAcrossSessionComparison(usedSources);
       qualityInput.sourceBlocks=usedSources.map((source,index)=>sourceBlock(source,{isCurrent:index===0,suppressZoomNote:(reviewCautions.length>0&&!!source.original_transcript?.trim())||(excludeEarlierZoomNotes&&index>0)}));
       const qualityEvidence=qualityInput.sourceBlocks.map(source=>({id:source.id,transcript:source.transcript,zoom_note:source.zoom_note}));
-      const reviewed=await reviewSummaryDraft({request:{...request,responseFormat:summaryOutcomeResponseFormat(qualityIds),messages:[{role:'system',content:systemPrompt},{role:'user',content:JSON.stringify(qualityInput)}]},completion,model,structured,validSourceIds:qualityIds,evidenceSources:qualityEvidence,summaryOptions,instructionRequirements});
+      const reviewed=await reviewSummaryDraft({request:{...request,responseFormat:summaryOutcomeResponseFormat(qualityIds),messages:[{role:'system',content:systemPrompt},{role:'user',content:JSON.stringify(qualityInput)}]},completion,model,structured,validSourceIds:qualityIds,evidenceSources:qualityEvidence,summaryOptions,instructionRequirements,lens});
       structured=reviewed.structured;completion=reviewed.completion;model=reviewed.model;qualityReview=reviewed.qualityReview;
     }
     await assertSourcesUnchanged(supabase,user.id,usedSources.map(source=>source.row));
@@ -289,7 +295,7 @@ export default async function handler(req, res) {
       return res.status(200).json({success:true,data:{outcome:'needs_review',review:{...structured.review,sources:reviews,
         message:verifiedPrimaryConflict(structured.review)?structured.review.message:'A safe draft could not be prepared from the current evidence. Check the client and Zoom note, or try this session only. Your previous draft is unchanged.'}}});
     }
-    const body = renderClientSessionSummary(structured.sections, lens) + resourceAppendix(summaryOptions.resource,resourceVerification);
+    const body = renderClientSessionSummary(structured.sections, lens, window === 'current' ? 'session_summary' : 'across_session_review') + resourceAppendix(summaryOptions.resource,resourceVerification);
     const sourceManifest = usedSources.map(source => ({
       id: source.id,
       sessionId: source.sessionId,
@@ -319,7 +325,7 @@ export default async function handler(req, res) {
         window,
         reviewCautions:[...reviewCautions,...(omittedEarlierSources.length?['Earlier flagged or note-only continuity sources were excluded.']:[]),...(excludeEarlierZoomNotes&&window==='recent'?['Earlier Zoom notes excluded by therapist choice.']:[])],
         sessionCount: usedSources.length,
-        promptVersion: PROMPT_VERSION,
+        promptVersion: window === 'current' ? PROMPT_VERSION : ACROSS_SESSION_REVIEW_VERSION,
         summaryOptions, resourceSelection:summaryOptions.resource?{...summaryOptions.resource,verification:resourceVerification}:null, qualityReview,
         model,
         usage: {

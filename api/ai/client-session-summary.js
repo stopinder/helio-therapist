@@ -1,3 +1,4 @@
+import { normalizeSummaryLens } from '../../src/lib/summaryLenses.js';
 import { effectiveSummaryOptions, resourceAppendix, wantsSummaryExercise, summaryInstructionRequirements } from '../../src/lib/summaryAuthoring.js';
 import { SUMMARY_POLICY_VERSION } from '../_lib/summary-authoring-policy.js';
 import { reviewSummaryDraft } from '../_lib/summary-quality-review.js';
@@ -9,14 +10,15 @@ import { requireAuthenticatedUser } from '../_lib/supabase.js';
 import { AI_FEATURES, runTextAI } from '../_lib/ai-execution.js';
 import { randomUUID } from 'node:crypto';
 import { buildSampleClientSummary } from '../_lib/sample-practice.js';
-import { CLIENT_SESSION_SUMMARY_LENSES, CLIENT_SESSION_SUMMARY_PROMPT_VERSION, buildClientSessionSummaryInput, buildClinicalIntelligenceEvidenceMap, buildClinicalIntelligenceSessionCandidates, clientSessionSummarySystemPrompt, renderClientSessionSummary, selectClinicalIntelligenceSources } from '../_lib/ai-client-session-summary.js';
+import { clientAcrossSessionReviewSystemPrompt, CLIENT_SESSION_SUMMARY_LENSES, CLIENT_SESSION_SUMMARY_PROMPT_VERSION, buildClientSessionSummaryInput, buildClinicalIntelligenceEvidenceMap, buildClinicalIntelligenceSessionCandidates, clientSessionSummarySystemPrompt, renderClientSessionSummary, selectClinicalIntelligenceSources } from '../_lib/ai-client-session-summary.js';
 
 export default async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
   if (req.method !== 'POST') { res.setHeader('Allow', 'POST'); return res.status(405).json({ success:false, error:{ code:'METHOD_NOT_ALLOWED', message:'Method not allowed' } }); }
   try {
     const { supabase, user } = await requireAuthenticatedUser(req);
-    const { clientId, lens='general', window='last_three', therapistGuidance='', refinementRequest='', previousDraft='', anchorSessionId=null, preview=false } = req.body || {};
+    const { clientId, lens: requestedLens='integrative', window='last_three', therapistGuidance='', refinementRequest='', previousDraft='', anchorSessionId=null, preview=false } = req.body || {};
+    const lens = normalizeSummaryLens(requestedLens);
     if (!clientId || typeof clientId !== 'string' || !/^[0-9a-f-]{36}$/i.test(clientId) || (anchorSessionId!==null&&(typeof anchorSessionId!=='string'||!/^[0-9a-f-]{36}$/i.test(anchorSessionId))) || typeof preview!=='boolean' || !CLIENT_SESSION_SUMMARY_LENSES.includes(lens) || !['current','last_three','last_five','history'].includes(window) || typeof therapistGuidance !== 'string' || therapistGuidance.length > 6000 || typeof refinementRequest !== 'string' || refinementRequest.length > 1800 || typeof previousDraft !== 'string' || previousDraft.length > 10000 || (refinementRequest.trim() && !previousDraft.trim())) {
       return res.status(400).json({ success:false, error:{ code:'INVALID_REQUEST', message:'Choose a valid client, lens and summary window.' } });
     }
@@ -140,7 +142,7 @@ export default async function handler(req, res) {
       if (refinementRequest.trim()) {
         return res.status(409).json({success:false,error:{code:'SAMPLE_REFINEMENT_UNAVAILABLE',message:'Sample Practice summaries are fixed demonstrations. Refine a draft from your own reviewed clinical evidence instead.'}});
       }
-      const body = renderClientSessionSummary(sampleSummary.sections, lens);
+      const body = renderClientSessionSummary(sampleSummary.sections, lens, window === 'current' ? 'session_summary' : 'across_session_review');
       const sources=[
         ...evidenceMap.reviewedSessions.map(item=>({id:item.id,kind:item.sourceType==='transcript_backed_session_summary'?'session_summary':'session_capture',sessionId:item.sessionId,occurredAt:item.occurredAt,reviewedAt:item.reviewedAt,documentId:item.sourceDocumentId||undefined,status:item.sourceStatus||undefined})),
         ...evidenceMap.currentAcceptedCareContext.map(item=>({id:item.id,kind:'accepted_care',careKind:item.kind})),
@@ -168,7 +170,7 @@ export default async function handler(req, res) {
     }
     const request = {
       feature:AI_FEATURES.CLIENT_SESSION_SUMMARY, userId:user.id, promptVersion:CLIENT_SESSION_SUMMARY_PROMPT_VERSION,
-      messages:[{role:'system',content:clientSessionSummarySystemPrompt(lens,summaryOptions).replace('Return JSON only with exactly two fields:','For a ready result, supply these clinical fields:')+'\n'+SUMMARY_OUTCOME_RULES},{role:'user',content:buildClientSessionSummaryInput({lens,window,captures:selectedCaptures,careItems:careItems||[],therapistGuidance:approvedGuidance,refinementRequest,previousDraft,summaryOptions})}],
+      messages:[{role:'system',content:(window === 'current' ? clientSessionSummarySystemPrompt(lens,summaryOptions) : clientAcrossSessionReviewSystemPrompt(lens,summaryOptions)).replace('Return JSON only with exactly two fields:','For a ready result, supply these clinical fields:')+'\n'+SUMMARY_OUTCOME_RULES},{role:'user',content:buildClientSessionSummaryInput({lens,window,captures:selectedCaptures,careItems:careItems||[],therapistGuidance:approvedGuidance,refinementRequest,previousDraft,summaryOptions})}],
       responseFormat:summaryOutcomeResponseFormat(validSourceIds), temperature:0.2, maxTokens:8000, timeout:60000
     };
     let { completion, model } = await runTextAI(request);
@@ -187,7 +189,7 @@ export default async function handler(req, res) {
         }
       });
     }
-    const reviewed=await reviewSummaryDraft({request,completion,model,structured,validSourceIds,evidenceSources,summaryOptions,instructionRequirements});
+    const reviewed=await reviewSummaryDraft({request,completion,model,structured,validSourceIds,evidenceSources,summaryOptions,instructionRequirements,lens});
     structured=reviewed.structured;completion=reviewed.completion;model=reviewed.model;
     const qualityReview=reviewed.qualityReview;
     await assertSourcesUnchanged(supabase,user.id,selectedTranscriptRows);
@@ -205,7 +207,7 @@ export default async function handler(req, res) {
       return res.status(200).json({success:true,data:{outcome:'needs_review',review:{...structured.review,sources:reviews}}});
     }
     if(structured.outcome==='generation_failed')return res.status(502).json({success:false,error:{code:'INVALID_AI_RESPONSE',message:'No usable summary was produced. Your previous draft is unchanged.'}});
-    const body = renderClientSessionSummary(structured.sections, lens) + resourceAppendix(summaryOptions.resource,resourceVerification);
+    const body = renderClientSessionSummary(structured.sections, lens, window === 'current' ? 'session_summary' : 'across_session_review') + resourceAppendix(summaryOptions.resource,resourceVerification);
     const sources=[...selectedTranscriptRows.map(row=>({id:`transcript:${row.id}`,kind:'zoom_transcript',transcriptId:row.id,sessionId:String(row.session_ref),sourceVersion:row.source_version})),...evidenceMap.reviewedSessions.map(item=>({id:item.id,kind:item.sourceType==='transcript_backed_session_summary'?'session_summary':'session_capture',sessionId:item.sessionId,occurredAt:item.occurredAt,reviewedAt:item.reviewedAt,documentId:item.sourceDocumentId||undefined,status:item.sourceStatus||undefined})),...evidenceMap.currentAcceptedCareContext.map(item=>({id:item.id,kind:'accepted_care',careKind:item.kind})),...(evidenceMap.therapistAuthoredContext.content?[{id:'therapist:guidance',kind:'therapist_guidance'}]:[])];
     return res.status(200).json({ success:true, data:{ outcome:'ready',generationId,generatedAt,draft:{body,sections:structured.sections},claims:structured.claims,sources,lens,window,sessionCount:selectedCaptures.length,promptVersion:CLIENT_SESSION_SUMMARY_PROMPT_VERSION,summaryOptions,resourceSelection:summaryOptions.resource?{...summaryOptions.resource,verification:resourceVerification}:null,qualityReview,model,usage:{inputTokens:Number(completion.usage?.prompt_tokens||0),outputTokens:Number(completion.usage?.completion_tokens||0),totalTokens:Number(completion.usage?.total_tokens||0)} } });
   } catch (error) {

@@ -1,3 +1,4 @@
+import { normalizeSummaryLens } from '../../src/lib/summaryLenses.js';
 import { requireAuthenticatedUser, getSupabaseUserClient } from '../_lib/supabase.js';
 import { AI_FEATURES, runTextAI } from '../_lib/ai-execution.js';
 import { answerWorkspaceQuestion } from '../_lib/ask-helios-workspace.js';
@@ -143,7 +144,7 @@ export default async function handler(req, res) {
         const clinicalClientId = typeof clinicalContext.clientId === 'string' ? clinicalContext.clientId : '';
         const anchorSessionId = typeof clinicalContext.anchorSessionId === 'string' ? clinicalContext.anchorSessionId : null;
         const window = ASK_HELIOS_CLINICAL_WINDOWS.includes(clinicalContext.window) ? clinicalContext.window : 'last_three';
-        const lens = ASK_HELIOS_CLINICAL_LENSES.includes(clinicalContext.lens) ? clinicalContext.lens : 'integrative';
+        const lens = ASK_HELIOS_CLINICAL_LENSES.includes(normalizeSummaryLens(clinicalContext.lens)) ? normalizeSummaryLens(clinicalContext.lens) : 'integrative';
         if (!clinicalClientId || (clientId && clientId !== clinicalClientId)) {
           return res.status(400).json({ success:false, error:{ message:'Reopen Ask Helios from the client or session you want to discuss.' } });
         }

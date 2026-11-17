@@ -60,7 +60,7 @@
                 <label class="block">
                   <span class="text-caption font-semibold">Perspective</span>
                   <span class="block text-caption text-ink-muted mt-0.5">Clinical lens</span>
-                  <select v-model="summaryLens" class="mt-1.5 w-full p-2.5 border border-border rounded-control bg-surface"><option value="general">General</option><option value="integrative">Integrative</option><option value="gentle_cbt">CBT</option><option value="internal_family_systems">Internal Family Systems (IFS)</option><option value="transactional_analysis">Transactional Analysis</option></select>
+                  <select v-model="summaryLens" class="mt-1.5 w-full p-2.5 border border-border rounded-control bg-surface"><option value="clinical">Clinical</option><option value="integrative">Integrative</option><option value="gentle_cbt">CBT</option><option value="internal_family_systems">Internal Family Systems (IFS)</option><option value="transactional_analysis">Transactional Analysis</option></select>
                 </label>
                 <label class="block">
                   <span class="text-caption font-semibold">Continuity</span>
@@ -143,6 +143,7 @@
   </teleport>
 </template>
 <script setup>
+import { normalizeSummaryLens } from '../../lib/summaryLenses.js';
 import SummaryRefinementPanel from './SummaryRefinementPanel.vue'
 import { candidateMatches, summaryContextKey, summaryBodyToRichContent, SUMMARY_SECTION_GROUPS } from '../../lib/summaryAuthoring.js'
 import SourceReviewDialog from './SourceReviewDialog.vue'
@@ -164,7 +165,7 @@ const isSessionSummary = computed(() => ['session_summary','across_session_revie
 const isAcrossSessionReview = computed(() => form.documentType === 'across_session_review' || (form.documentType === 'session_summary' && summaryWindow.value !== 'current'))
 const loading = ref(true), saving = ref(false), action = ref(''), error = ref(''), saveMessage = ref(props.document ? 'Saved' : 'Not saved yet'), sources = ref([]), selectedSourceIds = ref([]), addedSourceIds = ref([]), expandedSourceId = ref(null), sourceQuery = ref(''), visibleSourceCount = ref(SOURCE_PAGE_SIZE), currentDocument = ref(props.document), baseline = ref(''), profile = ref({}), sourcePanelOpen = ref(false)
 const initialGeneration=props.document?.content?.summaryGeneration || props.document?.content?.clinicalIntelligence?.generation || null
-const generatingSummary = ref(false), loadingEvidence = ref(false), evidenceError = ref(''), copySummaryState = ref('idle'), summaryLens = ref(initialGeneration?.lens || 'general'), summaryWindow = ref(initialGeneration?.window === 'recent' ? 'last_three' : initialGeneration?.window || (initialType === 'across_session_review' ? 'last_three' : 'current')), therapistGuidance = ref(''), summaryGenerationMessage = ref(''), summaryGenerationError = ref(false), summarySources = ref(props.document?.content?.clinicalIntelligence?.sources || props.document?.sourceManifest || []), summaryClaims = ref(props.document?.content?.clinicalIntelligence?.claims || []), summaryGeneration = ref(initialGeneration), previousSummaryVersions = ref(props.document?.content?.clinicalIntelligence?.history || []), lastGeneratedBody = ref(props.document?.content?.clinicalIntelligence?.lastGeneratedBody || ''), availableSummarySessions = ref([]), anchorSessionId = ref(null), evidenceDateAutofillArmed = ref(false)
+const generatingSummary = ref(false), loadingEvidence = ref(false), evidenceError = ref(''), copySummaryState = ref('idle'), summaryLens = ref(normalizeSummaryLens(initialGeneration?.lens || 'integrative')), summaryWindow = ref(initialGeneration?.window === 'recent' ? 'last_three' : initialGeneration?.window || (initialType === 'across_session_review' ? 'last_three' : 'current')), therapistGuidance = ref(''), summaryGenerationMessage = ref(''), summaryGenerationError = ref(false), summarySources = ref(props.document?.content?.clinicalIntelligence?.sources || props.document?.sourceManifest || []), summaryClaims = ref(props.document?.content?.clinicalIntelligence?.claims || []), summaryGeneration = ref(initialGeneration), previousSummaryVersions = ref(props.document?.content?.clinicalIntelligence?.history || []), lastGeneratedBody = ref(props.document?.content?.clinicalIntelligence?.lastGeneratedBody || ''), availableSummarySessions = ref([]), anchorSessionId = ref(null), evidenceDateAutofillArmed = ref(false)
 const pendingSummary=ref(null)
 const composerScrollContainer=ref(null),composerGenerationProgress=ref(null),composerDocumentCanvas=ref(null),showComposerTop=ref(false)
 function handleComposerScroll(event){showComposerTop.value=(event?.target?.scrollTop||0)>280}
@@ -214,7 +215,7 @@ onMounted(async()=>{
 watch(()=>form.body,()=>{if(summaryGeneration.value?.reviewedAt && currentDocument.value?.status!=='completed')summaryGeneration.value={...summaryGeneration.value,reviewedAt:null}})
 const identity = computed(() => profileDisplay(profile.value)), finalised = computed(() => currentDocument.value?.status === 'completed')
 const hasExistingSummary = computed(() => isSessionSummary.value && Boolean(form.body.trim()) && form.body.trim() !== SESSION_SUMMARY_TEMPLATE.trim())
-const summaryLensLabel = computed(() => ({ general:'General', integrative:'Integrative', gentle_cbt:'CBT', internal_family_systems:'Internal Family Systems (IFS)', transactional_analysis:'Transactional Analysis' })[summaryLens.value] || 'General')
+const summaryLensLabel = computed(() => ({ clinical:'Clinical', general:'Integrative', integrative:'Integrative', gentle_cbt:'CBT', internal_family_systems:'Internal Family Systems (IFS)', transactional_analysis:'Transactional Analysis' })[summaryLens.value] || 'Integrative')
 const copySummaryLabel = computed(() => copySummaryState.value === 'copied' ? 'Copied ✓' : copySummaryState.value === 'copying' ? 'Copying…' : copySummaryState.value === 'failed' ? 'Copy failed' : 'Copy summary')
 let copySummaryResetTimer = 0
 const summaryWindowLabel = computed(() => ({ current:'This session', last_three:'Last 3 sessions', last_five:'Last 5 sessions', history:'Entire history' })[summaryWindow.value] || 'Selected sessions')

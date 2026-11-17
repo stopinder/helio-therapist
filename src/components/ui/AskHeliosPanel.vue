@@ -91,7 +91,7 @@
             <label class="text-[11px] text-ink-secondary">
               Perspective
               <select :value="clinicalContext.lens" class="mt-1 w-full rounded-control border border-border-muted bg-surface px-2 py-1.5 text-xs text-ink" :disabled="isLoading" @change="setClinicalContext({ lens: $event.target.value })">
-                <option value="general">General</option>
+                <option value="clinical">Clinical</option>
                 <option value="integrative">Integrative</option>
                 <option value="gentle_cbt">CBT</option>
                 <option value="internal_family_systems">Internal Family Systems (IFS)</option>
@@ -360,12 +360,12 @@ const footerText = computed(() => clinicalContext.value && mode.value === 'works
   ? 'Selected clinical evidence · Therapist remains responsible'
   : currentTab.value.footer)
 const clinicalLensLabel = computed(() => ({
-  general: 'General',
+  clinical: 'Clinical', general: 'Integrative',
   integrative: 'Integrative',
   gentle_cbt: 'CBT',
   internal_family_systems: 'IFS',
   transactional_analysis: 'TA'
-})[clinicalContext.value?.lens] || 'General')
+})[clinicalContext.value?.lens] || 'Integrative')
 const clinicalWindowLabel = computed(() => ({
   current: 'This session',
   last_three: 'Last 3',
@@ -396,7 +396,7 @@ const editedCopies = ref({})
 const editingAnswerIndex = ref(-1)
 const editDraft = ref('')
 const copiedAnswerIndex = ref(-1)
-const lensNames = {general:'General',integrative:'Integrative',gentle_cbt:'CBT',internal_family_systems:'IFS',transactional_analysis:'TA'}
+const lensNames = {clinical:'Clinical',general:'Integrative',integrative:'Integrative',gentle_cbt:'CBT',internal_family_systems:'IFS',transactional_analysis:'TA'}
 const windowNames = {current:'This session',last_three:'Last 3',last_five:'Last 5',history:'Entire history'}
 function lensName(lens) { return lensNames[lens] || 'Clinical perspective' }
 function windowName(window) { return windowNames[window] || 'Selected evidence' }
