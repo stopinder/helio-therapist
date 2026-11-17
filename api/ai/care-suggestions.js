@@ -1,8 +1,9 @@
+import { randomUUID } from 'node:crypto';
 import { requireAuthenticatedUser } from '../_lib/supabase.js';
 import { loadOwnedClientAIContext } from '../_lib/client-ai-context.js';
 import { resolveLensConfig } from '../_lib/clinical-lenses.js';
 import { AI_FEATURES, runTextAI } from '../_lib/ai-execution.js';
-import { buildCareSuggestionsPrompt, CARE_SUGGESTIONS_PROMPT_VERSION, validateCareSuggestions } from '../_lib/ai-care-suggestions.js';
+import { buildCareSuggestionsPrompt, buildCareSuggestionsResponseFormat, CARE_SUGGESTIONS_PROMPT_VERSION, validateCareSuggestions } from '../_lib/ai-care-suggestions.js';
 import { buildClinicalIntelligenceSessionCandidates, selectClinicalIntelligenceSources } from '../_lib/ai-client-session-summary.js';
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -94,7 +95,13 @@ async function loadHistorySources(supabase, { clientId, userId, window }) {
 }
 
 export default async function handler(req, res) {
+  const requestId = randomUUID();
   res.setHeader('Cache-Control', 'no-store');
+  res.setHeader('X-Request-Id', requestId);
+  const rejectReview = (code, detail, message) => {
+    console.warn('[Therapy Focus review rejected]', { requestId, code, detail });
+    return res.status(502).json({ success: false, error: { code, detail, requestId, message: message + ' Nothing has been saved. Reference: ' + requestId.slice(0, 8) } });
+  };
   if (req.method !== 'POST') return res.status(405).json({ success:false, error:{ code:'METHOD_NOT_ALLOWED', message:'Method not allowed' } });
 
   try {
@@ -169,6 +176,8 @@ export default async function handler(req, res) {
       historySources
     });
 
+    const validCareIds = new Set((currentFocus || []).map(item => item?.id).filter(Boolean));
+    const validSourceIds = sourceMode === 'history' ? new Set(historySources.map(source => source.id)) : null;
     const { completion } = await runTextAI({
       feature: AI_FEATURES.CARE_SUGGESTIONS,
       userId: user.id,
@@ -177,22 +186,25 @@ export default async function handler(req, res) {
         {role:'system',content:'Be concise, tentative, clinically respectful, preserve psychotherapist agency, and establish a provisional starting view when Therapy Focus is empty, and update existing entries only when their meaning has genuinely evolved.'},
         {role:'user',content:prompt}
       ],
-      responseFormat:{type:'json_object'},
+      responseFormat:buildCareSuggestionsResponseFormat({ allowedKinds:lensConfig.allowedKinds, validCareIds, validSourceIds }),
+      timeout:45000,
+      maxRetries:0,
       temperature:0.35,
       maxTokens:sourceMode === 'history' ? 3200 : 1800
     });
 
-    if (completion.choices?.[0]?.finish_reason === 'length') return res.status(502).json({success:false,error:{code:'THERAPY_FOCUS_REVIEW_INCOMPLETE',message:'The Therapy Focus review was incomplete. Nothing has been saved. Try fewer sessions or retry.'}});
-    const validCareIds = new Set((currentFocus || []).map(item => item?.id).filter(Boolean));
-    const validSourceIds = sourceMode === 'history' ? new Set(historySources.map(source => source.id)) : null;
+    if (completion.choices?.[0]?.finish_reason === 'length') return rejectReview('THERAPY_FOCUS_REVIEW_INCOMPLETE', 'OUTPUT_LIMIT', 'The Therapy Focus review was incomplete. Try fewer sessions or retry.');
+    if (completion.choices?.[0]?.message?.refusal) return rejectReview('THERAPY_FOCUS_REVIEW_REFUSED', 'PROVIDER_REFUSAL', 'The model declined to prepare this review.');
+    let validationCode = 'INVALID_SHAPE';
     const suggestions = validateCareSuggestions(completion.choices?.[0]?.message?.content, {
       allowedKinds:lensConfig.allowedKinds,
       validCareIds,
       validSourceIds,
       promptVersion:CARE_SUGGESTIONS_PROMPT_VERSION,
-      defaultBasis:sourceMode === 'history' ? 'clinical_history' : 'therapist_input'
+      defaultBasis:sourceMode === 'history' ? 'clinical_history' : 'therapist_input',
+      onInvalid:code => { validationCode = code; }
     });
-    if (!suggestions) return res.status(502).json({ success:false, error:{ code:'INVALID_AI_RESPONSE', message:'Helios could not prepare Therapy Focus suggestions just now. Nothing has been saved.' } });
+    if (!suggestions) return rejectReview('INVALID_AI_RESPONSE', validationCode, validationCode.includes('SOURCE') ? 'The generated review contained evidence references Helios could not verify. Please retry.' : 'The generated review did not match the Therapy Focus structure. Please retry.');
 
     return res.status(200).json({
       success:true,
@@ -206,13 +218,14 @@ export default async function handler(req, res) {
       sources:historySources.map(({ id, sessionId, occurredAt, reviewedAt, sourceType, reviewStatus }) => ({ id, sessionId, occurredAt, reviewedAt, sourceType, reviewStatus }))
     });
   } catch (error) {
-    console.error('[Therapy Focus suggestions] failed', error.message);
+    console.error('[Therapy Focus suggestions] failed', { requestId, code: error.code || 'REQUEST_FAILED', status: error.status || 500 });
     const status = error.status || 500;
     const unavailable = error.code === 'AI_PROVIDER_NOT_CONFIGURED' || error.name === 'OpenAIConnectionTimeoutError';
     return res.status(unavailable ? (error.status || 503) : status).json({
       success:false,
       error:{
         code:status===401?'UNAUTHORIZED':'THERAPY_FOCUS_SUGGESTIONS_FAILED',
+        requestId,
         message:status===401?'Please sign in again.':'Helios could not prepare Therapy Focus suggestions just now. Nothing has been saved.'
       }
     });

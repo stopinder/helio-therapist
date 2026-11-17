@@ -14,7 +14,7 @@ function database(){return {from(table){
 }}}
 async function invoke(body={}){const res={code:200,payload:null,setHeader:vi.fn(),status(n){this.code=n;return this},json(p){this.payload=p;return this}};await handler({method:'POST',body:{clientId,sourceMode:'history',window:'history',lensId:'clinical',reviewGoal:'review_updates',...body}},res);return res}
 beforeEach(()=>{
- vi.clearAllMocks();finish='stop';output={suggestions:[{kind:'shared_understanding',body:'A provisional understanding based on a fictional session.',sourceIds:['session:'+sessionId(1)],evidenceStrength:'current_observation',action:'add',basis:'clinical_history',epistemic:'clinical_inference'}]};
+ vi.clearAllMocks();finish='stop';output={suggestions:[{kind:'shared_understanding',body:'A provisional understanding based on a fictional session.',sourceIds:['session:'+sessionId(1)],evidenceStrength:'current_observation',action:'add',basis:'clinical_history',epistemic:'clinical_inference',targetItemId:null,reason:'Supported by the supplied source.'}]};
  tables={clients:[{id:clientId,user_id:userId}],client_care_items:[],sessions:[],session_capture_drafts:[],documents:[],zoom_transcripts:[]};
  for(let i=1;i<=9;i++){
   const date='2026-10-'+String(i).padStart(2,'0');
@@ -28,6 +28,22 @@ describe('Therapy Focus history API',()=>{
  it('builds an initial Clinical Focus from nine eligible sessions even if the caller requests updates',async()=>{
   const r=await invoke();expect(r.code).toBe(200);expect(r.payload.reviewGoal).toBe('fill_empty');expect(r.payload.coverage.selectedSessions).toBe(9);expect(r.payload.suggestions).toHaveLength(1);
   const request=runTextAI.mock.calls[0][0];expect(request.messages[1].content).toContain('establish provisional starting points');expect(request.messages[1].content).toContain('formal, provisional clinical formulation');
+ });
+ it('constrains generation to the actual kinds, evidence and update targets',async()=>{
+  await invoke({lensId:'internal_family_systems'});
+  const request=runTextAI.mock.calls[0][0];
+  expect(request.messages[1].content).toContain('Use IFS distinctions');expect(request.responseFormat.type).toBe('json_schema');expect(request.responseFormat.json_schema.strict).toBe(true);
+  const item=request.responseFormat.json_schema.schema.properties.suggestions.items;
+  expect(item.additionalProperties).toBe(false);expect(item.required).toEqual(Object.keys(item.properties));
+  expect(item.properties.kind.enum).toContain('shared_understanding');expect(item.properties.sourceIds.items.enum).toHaveLength(9);
+  expect(item.properties.sourceIds.items.enum).toContain('session:'+sessionId(1));expect(item.properties.targetItemId.enum).toEqual([null]);
+  expect(item.properties.action.enum).toEqual(['add']);expect(request.timeout).toBe(45000);expect(request.maxRetries).toBe(0);
+ });
+ it('provides content-free diagnostics when rejecting unverified evidence',async()=>{
+  const warning=vi.spyOn(console,'warn').mockImplementation(()=>{});
+  output.suggestions[0].sourceIds=['session:invented'];const r=await invoke();
+  expect(r.payload.error.detail).toBe('INVALID_SOURCE_REFERENCE');expect(r.payload.error.requestId).toBeTruthy();
+  expect(JSON.stringify(warning.mock.calls)).not.toContain(output.suggestions[0].body);warning.mockRestore();
  });
  it('can establish a starting view from nine transcript-backed draft summaries when no captures exist',async()=>{
   tables.session_capture_drafts=[];
@@ -43,6 +59,12 @@ describe('Therapy Focus history API',()=>{
  });
  it('rejects truncated model output even if its partial content happens to parse',async()=>{
   finish='length';const r=await invoke();expect(r.code).toBe(502);expect(r.payload.error.code).toBe('THERAPY_FOCUS_REVIEW_INCOMPLETE');
+ });
+ it('rejects provider refusal without logging its clinical content',async()=>{
+  runTextAI.mockResolvedValueOnce({completion:{choices:[{finish_reason:'stop',message:{refusal:'Sensitive provider explanation'}}]}});
+  const warning=vi.spyOn(console,'warn').mockImplementation(()=>{});const r=await invoke();
+  expect(r.code).toBe(502);expect(r.payload.error.code).toBe('THERAPY_FOCUS_REVIEW_REFUSED');
+  expect(JSON.stringify(warning.mock.calls)).not.toContain('Sensitive provider explanation');warning.mockRestore();
  });
  it('preserves a genuine supported-empty result without inventing starting points',async()=>{
   output.suggestions=[];const r=await invoke();expect(r.code).toBe(200);expect(r.payload.suggestions).toEqual([]);expect(r.payload.reviewGoal).toBe('fill_empty');
