@@ -23,3 +23,7 @@ jobs:
       - run: npx vitest run src/components/ui/AskHeliosPanel.lens-actions.spec.js src/components/ui/AskHeliosPanel.spec.js
       - run: node --test test/ask-helios-clinical.test.js
       - run: npm run build
+      - name: Install browser for responsive panel verification
+        run: npx playwright install --with-deps chromium
+      - name: Verify panel bounds, settings and restored scroll at desktop, tablet and mobile sizes
+        run: node scripts/verify-ask-helios-scroll.mjs
