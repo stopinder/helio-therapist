@@ -43,7 +43,9 @@
         type="button"
         class="inline-flex h-9 items-center gap-1.5 whitespace-nowrap rounded-control border border-border-muted bg-surface px-3 type-ui font-semibold text-ink-secondary transition-colors hover:bg-surface-subtle hover:text-ink"
         :class="{ 'bg-surface-subtle text-ink': isPanelOpen }"
-        aria-label="Ask Helios AI Research Assistant"
+        aria-label="Ask Helios"
+        aria-controls="ask-helios-panel"
+        :aria-expanded="isPanelOpen"
         @click="togglePanel"
       >
         <Sparkles class="workspace-icon-sm text-accent" aria-hidden="true" />

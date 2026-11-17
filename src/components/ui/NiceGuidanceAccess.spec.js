@@ -61,7 +61,7 @@ describe('NICE external guidance access', () => {
     const ctx = panelContext('workspace')
     useAskHelios.mockReturnValue(ctx)
     authenticatedFetch.mockResolvedValue({ ok: true, json: async () => ({ success: true, ...buildNiceGuidanceReply() }) })
-    const w = mount(AskHeliosPanel, { global: { stubs: { 'router-link': true } } })
+    const w = mount(AskHeliosPanel, { global: { stubs: { 'router-link': true, teleport: true } } })
     expect(w.find('[data-nice-guidance-access]').exists()).toBe(false)
     await w.find('textarea').setValue('Find NICE guidance for clinicians')
     await w.find('form').trigger('submit')
@@ -82,7 +82,7 @@ describe('NICE external guidance access', () => {
     const restored = JSON.parse(JSON.stringify(buildNiceGuidanceReply()))
     ctx.messages.value = [{ role: 'assistant', content: restored.answer, references: restored.references }]
     useAskHelios.mockReturnValue(ctx)
-    const w = mount(AskHeliosPanel, { global: { stubs: { 'router-link': true } } })
+    const w = mount(AskHeliosPanel, { global: { stubs: { 'router-link': true, teleport: true } } })
     expect(w.find('h4').text()).toBe('Official guidance links (not read by Helios)')
   })
 })

@@ -5,7 +5,7 @@ import { supabase } from '../lib/supabase.js'
 export const ASK_HELIOS_MODES = Object.freeze(['workspace', 'research', 'reflect'])
 const isPanelOpen = ref(false)
 const isExpanded = ref(false)
-const panelWidth = ref(440)
+const panelWidth = ref(560)
 const mode = ref('workspace')
 const messages = ref([])
 const conversations = ref([])
@@ -23,11 +23,12 @@ let identityKnown = false
 let stateVersion = 0
 let restoreTarget = null
 let preparePromise = null
+let workspaceContextProvider = null
 
 function loadPrefs() {
   try {
     const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}')
-    if (Number.isFinite(saved.width)) panelWidth.value = Math.min(820, Math.max(320, saved.width))
+    if (Number.isFinite(saved.width)) panelWidth.value = Math.min(820, Math.max(560, saved.width))
     isExpanded.value = saved.isExpanded === true
     if (ASK_HELIOS_MODES.includes(saved.mode)) mode.value = saved.mode
   } catch { /* Preference storage is optional. */ }
@@ -251,14 +252,22 @@ export function useAskHelios() {
     }
     return ready
   }
+  function registerWorkspaceContext(provider) {
+    workspaceContextProvider = provider
+    return () => { if (workspaceContextProvider === provider) workspaceContextProvider = null }
+  }
   function togglePanel() {
+    const context = !isPanelOpen.value ? workspaceContextProvider?.() : null
+    if (context && (mode.value !== 'workspace' || clinicalContext.value?.clientId !== context.clientId || clinicalContext.value?.anchorSessionId !== context.anchorSessionId)) {
+      return openClinicalContext(context)
+    }
     isPanelOpen.value = !isPanelOpen.value
     return isPanelOpen.value ? initialisePanel() : Promise.resolve(true)
   }
   function openPanel() { isPanelOpen.value = true; return initialisePanel() }
   function closePanel() { isPanelOpen.value = false }
   function setWidth(width) {
-    panelWidth.value = Math.max(320, Math.min(width, window.innerWidth - 100)); savePrefs()
+    panelWidth.value = Math.max(560, Math.min(width, window.innerWidth)); savePrefs()
   }
   function toggleExpand() { isExpanded.value = !isExpanded.value; savePrefs() }
   function addMessage(message) { messages.value.push(message) }
@@ -333,7 +342,7 @@ export function useAskHelios() {
     mode: readonly(mode), messages: readonly(messages), conversations: readonly(conversations),
     activeConversationId: readonly(activeConversationId), clients: readonly(clients), selectedClientId: readonly(selectedClientId), clinicalContext: readonly(clinicalContext),
     isRestoring: readonly(isRestoring), restoreError: readonly(restoreError),
-    togglePanel, openPanel, closePanel, setWidth, toggleExpand, addMessage, assignConversationId, patchMessage,
+    registerWorkspaceContext, togglePanel, openPanel, closePanel, setWidth, toggleExpand, addMessage, assignConversationId, patchMessage,
     setMode, setSelectedClient, setClinicalContext, clearClinicalContext, openClinicalContext, clearConversation, fetchConversations, selectConversation, deleteConversation, loadClients,
     ensureConversationReady, retryRestore: () => ensureConversationReady({ retry: true }),
     getContextVersion: () => stateVersion, isContextCurrent: version => version === stateVersion

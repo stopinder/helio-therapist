@@ -15,9 +15,11 @@ const stateSource = `
 import { ref } from 'vue';
 const noOp = () => {};
 export const state = {
-  isPanelOpen: ref(true), isExpanded: ref(false), panelWidth: ref(440), mode: ref('workspace'),
+  isPanelOpen: ref(true), isExpanded: ref(false), panelWidth: ref(560), mode: ref('workspace'),
   messages: ref([]), conversations: ref([]), activeConversationId: ref(null), clients: ref([]), selectedClientId: ref(null),
   isRestoring: ref(true), restoreError: ref(''),
+  clinicalContext: ref({clientId: 'cccccccc-cccc-4ccc-cccc-cccccccccccc', clientName: 'Synthetic client', lens: 'integrative', window: 'current'}),
+  setClinicalContext: changes => { state.clinicalContext.value = { ...state.clinicalContext.value, ...changes }; }, clearClinicalContext: noOp,
   closePanel: () => { state.isPanelOpen.value = false }, setWidth: width => { state.panelWidth.value = width },
   toggleExpand: () => { state.isExpanded.value = !state.isExpanded.value },
   addMessage: noOp, clearConversation: noOp, selectConversation: noOp, deleteConversation: noOp,
@@ -31,7 +33,7 @@ import { createApp, h } from 'vue';
 import Panel from '/src/components/ui/AskHeliosPanel.vue';
 import { state } from 'virtual:ask-scroll-state';
 import '/src/main.css';
-const app = createApp(Panel);
+const app = createApp({render: () => h('div', {style: 'transform:translateZ(0);overflow:hidden;height:1px'}, [h(Panel)])});
 app.component('RouterLink', { props: ['to'], setup(props, { slots }) { return () => h('a', { href: props.to }, slots.default?.()); } });
 app.mount('#fixture');
 window.scrollFixture = {
@@ -85,7 +87,7 @@ try {
   const address = server.httpServer.address();
   const origin = 'http://127.0.0.1:' + address.port;
   browser = await chromium.launch();
-  for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 }]) {
+  for (const viewport of [{ width: 1440, height: 900 }, { width: 768, height: 900 }, { width: 390, height: 844 }]) {
     const context = await browser.newContext({ viewport });
     // Fail closed to everything except this isolated local fixture.
     await context.route('**/*', route => new URL(route.request().url()).origin === origin ? route.continue() : route.abort());
@@ -99,6 +101,17 @@ try {
     const latest = page.locator('[data-ask-message-index="5"]');
     const topDelta = () => latest.evaluate(el => el.getBoundingClientRect().top - el.parentElement.getBoundingClientRect().top);
     await expect(page.getByText('Restoring your saved conversation...')).toBeVisible();
+    const panel = page.locator('#ask-helios-panel');
+    const bounds = await panel.boundingBox();
+    assert.ok(bounds.x >= 0 && bounds.x + bounds.width <= viewport.width + 1, 'panel stays inside viewport');
+    assert.ok(bounds.height > 500, 'panel escapes transformed and clipped ancestors');
+    if (viewport.width >= 768) assert.ok(bounds.x >= 255, 'desktop sidebar remains clear');
+    await expect(panel.locator('select')).toHaveCount(0);
+    await panel.getByRole('button', {name: 'Edit', exact: true}).click();
+    await expect(panel.locator('select')).toHaveCount(2);
+    await panel.getByRole('button', {name: 'Done', exact: true}).click();
+    await expect(panel.locator('select')).toHaveCount(0);
+
     await page.evaluate(() => window.scrollTo(0, 250));
     const backgroundY = await page.evaluate(() => window.scrollY);
     await page.evaluate(() => window.scrollFixture.restore());
@@ -121,7 +134,7 @@ try {
     await page.evaluate(() => window.scrollFixture.open());
     await expect.poll(async () => Math.abs(await topDelta())).toBeLessThan(2);
     assert.deepEqual(errors, [], 'no browser runtime errors');
-    console.log(JSON.stringify({ viewport, delayedRestore: 'PASS', latestAnswerStart: 'PASS', earlierHistoryPreserved: 'PASS', manualScroll: 'PASS', historyReturn: 'PASS', panelReopen: 'PASS', backgroundScrollUnchanged: 'PASS' }));
+    console.log(JSON.stringify({ viewport, delayedRestore: 'PASS', latestAnswerStart: 'PASS', earlierHistoryPreserved: 'PASS', manualScroll: 'PASS', historyReturn: 'PASS', panelReopen: 'PASS', panelBounds: 'PASS', configurationDisclosure: 'PASS', backgroundScrollUnchanged: 'PASS' }));
     await context.close();
   }
 } finally {

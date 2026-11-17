@@ -5,6 +5,7 @@ import { useAskHelios } from '../../composables/useAskHelios.js'
 import * as api from '../../lib/api.js'
 vi.mock('../../lib/api.js')
 config.global.stubs['router-link'] = true
+config.global.stubs.teleport = true
 const ok = body => ({ ok:true, json: async()=>({success:true,...body}) })
 const clientId = 'cccccccc-cccc-4ccc-cccc-cccccccccccc'
 const sessionId = 'eeeeeeee-eeee-4eee-eeee-eeeeeeeeeeee'

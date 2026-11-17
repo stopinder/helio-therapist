@@ -27,8 +27,7 @@
     </aside>
 
     <div
-      class="flex h-full min-h-0 min-w-0 flex-1 flex-col overflow-hidden transition-[margin] duration-300 ease-in-out"
-      :style="{ marginRight: isPanelOpen && !isExpanded ? `${panelWidth}px` : '0' }"
+      class="flex h-full min-h-0 min-w-0 flex-1 flex-col overflow-hidden"
     >
       <AppHeader
         :page-name="currentPageName"
@@ -87,10 +86,8 @@ import AppHeader from '../components/shell/AppHeader.vue'
 import AppSidebar from '../components/shell/AppSidebar.vue'
 import GlobalQuickCapture from '../components/reminders/GlobalQuickCapture.vue'
 
-import { useAskHelios } from '../composables/useAskHelios.js'
-import AskHeliosPanel from '../components/ui/AskHeliosPanel.vue'
 
-const { isPanelOpen, panelWidth, isExpanded } = useAskHelios()
+import AskHeliosPanel from '../components/ui/AskHeliosPanel.vue'
 
 const { closeHelp } = useHelp()
 const route = useRoute()
