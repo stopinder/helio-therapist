@@ -33,7 +33,7 @@
             <Minimize2 v-else class="h-4 w-4" />
           </button>
           <button type="button" class="rounded-control p-1.5 text-ink-secondary hover:bg-surface-muted"
-            title="Close Ask Helios" aria-label="Close Ask Helios" @click="closePanel"><X class="h-4 w-4" />
+            title="Close panel" aria-label="Close Ask Helios" @click="closePanel"><X class="h-4 w-4" />
           </button>
         </div>
       </header>

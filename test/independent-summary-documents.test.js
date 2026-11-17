@@ -29,5 +29,7 @@ test('across-session review retains source safety and therapist approval checks'
 test('replacement displays one reading surface and saved comparison is optional',()=>{
   assert.match(workspace,/v-if="!pendingSummary" ref="summaryDisplayedDocument"/);
   assert.match(workspace,/data-testid="compare-saved-version"/);
-  assert.match(workspace,/data-testid="summary-more-actions"/);
+  assert.doesNotMatch(workspace,/data-testid="summary-more-actions"/);
+  assert.match(workspace,/>Regenerate<\/button>/);
+  assert.match(workspace,/>Open in Client Documents<\/RouterLink>/);
 });
