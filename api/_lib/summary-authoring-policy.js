@@ -13,6 +13,10 @@ Separate an observation made today, a reported exception and an established chan
 Keep a small number of concrete details that make this person's experience recognisable. Preserve the difficult or unfinished centre of the work. Each paragraph should add a distinct understanding; combine repeated formulations and remove abstractions that restate the same point.
 End with the actual agreement, suggestion, request or unresolved choice, using its true status. If a practice was discussed, state the supported action simply and any supported reason for trying it. Do not add steps, monitoring tasks, benefits or homework that were not discussed or expressly requested. Prefer the specific unfinished question to a report-like sentence that merely says the question of how this might affect things remains open. An honest short ending or an empty closing is better than a generic reflection.`;
 
+export function summaryEditorialStandard(lens = 'integrative') {
+  return lens === 'clinical' ? SUMMARY_EDITORIAL_STANDARD.replace('Write alongside the client, not about them as an assessed subject. Address them directly and use ordinary language.', 'Use formal clinical report prose, with clear attribution by name or role and professional, readable language. The selected audience still determines whose information belongs in the report. Do not present a generated formulation as a completed formal assessment.') : SUMMARY_EDITORIAL_STANDARD;
+}
+
 export function summaryAuthoringPrompt(lensRule, preferences = {}, documentKind = 'session_summary', lens = 'integrative') {
   const options = normalizeSummaryOptions(preferences);
   const audience = options.audience === 'shared'
@@ -35,7 +39,7 @@ Use current_observation for a single session, including its report of earlier re
 Private reflection, supervision and therapist-only speculation must not enter client-facing prose. Apply the separate source-integrity/output contract when supplied; ordinary uncertainty never authorises fabrication.
 
 CLINICAL WRITING STANDARD
-${lens === 'clinical' ? SUMMARY_EDITORIAL_STANDARD.replace('Write alongside the client, not about them as an assessed subject. Address them directly and use ordinary language.', 'Use formal clinical report prose, with clear attribution by name or role and professional, readable language. The selected audience still determines whose information belongs in the report. Do not present a generated formulation as a completed formal assessment.') : SUMMARY_EDITORIAL_STANDARD}
+${summaryEditorialStandard(lens)}
 Lead with what mattered in this encounter or period, not an administrative preface. Identify a specific evidence-supported process: context, experienced meaning, response, consequence, exception or unfinished work. Only describe links actually supported. One coherent formulation is better than a catalogue of theories.
 Use the selected lens throughout where supported, in ordinary client-readable language. Never invent missing links to complete a theoretical cycle. Include a meaningful contradiction or exception where present.
 Say each important thing once; remove repetitive descriptions. Do not lengthen a sparse source to satisfy a template. Use the selected modality structure below to organise the document; the eight storage fields are NOT eight mandatory paragraphs. Leave optional sections empty when they repeat material or add nothing.

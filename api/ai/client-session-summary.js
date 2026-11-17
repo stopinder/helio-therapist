@@ -189,7 +189,7 @@ export default async function handler(req, res) {
         }
       });
     }
-    const reviewed=await reviewSummaryDraft({request,completion,model,structured,validSourceIds,evidenceSources,summaryOptions,instructionRequirements});
+    const reviewed=await reviewSummaryDraft({request,completion,model,structured,validSourceIds,evidenceSources,summaryOptions,instructionRequirements,lens});
     structured=reviewed.structured;completion=reviewed.completion;model=reviewed.model;
     const qualityReview=reviewed.qualityReview;
     await assertSourcesUnchanged(supabase,user.id,selectedTranscriptRows);
