@@ -65,7 +65,7 @@ export function materialInventory(material){
     unavailable:material.unavailable};
 }
 export function validMaterialSelection(value){
-  return value===undefined||(Array.isArray(value)&&value.length<=1000&&new Set(value).size===value.length&&value.every(id=>typeof id==='string'&&/^(capture|summary|record|focus|reflection|transcript):/.test(id)&&validUuid(id.split(':')[1])));
+  return value===undefined||(Array.isArray(value)&&value.length<=2000&&new Set(value).size===value.length&&value.every(id=>typeof id==='string'&&/^(capture|summary|record|focus|reflection|transcript):/.test(id)&&validUuid(id.split(':')[1])));
 }
 export function selectClinicalMaterial(sources,selectedSourceIds){
   const explicit=Array.isArray(selectedSourceIds);

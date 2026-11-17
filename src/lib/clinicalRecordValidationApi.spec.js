@@ -60,6 +60,34 @@ describe('Clinical Record field-level recovery API and confidentiality',()=>{
     requireAuthenticatedUser.mockResolvedValue({supabase:db,user:{id:userId}});
     runTextAI.mockResolvedValue(completion(output()));
   });
+  it('inspects saved private material without spending an AI action or approving it',async()=>{
+    records.private_reflections=[{id:'55555555-5555-4555-8555-555555555555',client_id:clientId,user_id:userId,session_ref:sessionId,created_at:'2026-11-01T11:00:00Z',updated_at:'v1',body:'Therapist reflected on their own uncertainty.'}];
+    const res=await invoke({clientId,sessionId,inspect:true});
+    expect(res.statusCode).toBe(200);
+    const reflection=res.payload.data.sources.find(source=>source.kind==='private_reflection');
+    expect(reflection.requiresSelection).toBe(true);
+    expect(reflection.preview).toContain('own uncertainty');
+    expect(runTextAI).not.toHaveBeenCalled();
+    expect(records.sessions[0].notes).toBe('');
+  });
+  it('excludes private reflection from default model input and honours a deliberate opt-in',async()=>{
+    const id='55555555-5555-4555-8555-555555555555';
+    records.private_reflections=[{id,client_id:clientId,user_id:userId,session_ref:sessionId,created_at:'2026-11-01T11:00:00Z',updated_at:'v1',body:'PRIVATE_THERAPIST_OBSERVATION about personal uncertainty.'}];
+    await invoke();
+    expect(runTextAI.mock.calls[0][0].messages[1].content).not.toContain('PRIVATE_THERAPIST_OBSERVATION');
+    runTextAI.mockClear();runTextAI.mockResolvedValue(completion({fields:fields()}));
+    const res=await invoke({clientId,sessionId,selectedSourceIds:['reflection:'+id]});
+    expect(res.statusCode).toBe(200);
+    expect(runTextAI.mock.calls[0][0].messages[1].content).toContain('PRIVATE_THERAPIST_OBSERVATION');
+    expect(res.payload.data.sources).toHaveLength(1);
+  });
+  it('withholds generation for an empty or foreign source selection',async()=>{
+    let res=await invoke({clientId,sessionId,selectedSourceIds:[]});
+    expect(res.statusCode).toBe(409);expect(res.payload.error.code).toBe('NO_REUSABLE_EVIDENCE');
+    res=await invoke({clientId,sessionId,selectedSourceIds:['reflection:55555555-5555-4555-8555-555555555555']});
+    expect(res.statusCode).toBe(409);expect(res.payload.error.code).toBe('SOURCE_CHANGED');
+    expect(runTextAI).not.toHaveBeenCalled();
+  });
   it('returns validated fields and per-field reasons in one call, without saving anything',async()=>{
     const res=await invoke();
     expect(res.statusCode).toBe(200);

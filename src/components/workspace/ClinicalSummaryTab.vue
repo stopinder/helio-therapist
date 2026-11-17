@@ -478,6 +478,7 @@ const materialLoading = ref(false);
 const materialError = ref('');
 const selectedSourceIds = ref([]);
 let materialRequestVersion = 0;
+let captureRequestVersion = 0;
 async function loadMaterial(){
   const version=++materialRequestVersion;
   const clientId=props.session.clientId,sessionId=props.session.id;
@@ -578,14 +579,18 @@ onMounted(async () => {
 });
 
 async function loadReviewedCapture() {
+  const version=++captureRequestVersion;
+  const sessionId=props.session.id,clientId=props.session.clientId;
   captureLoadError.value = '';
   try {
-    const capture = await getSessionCapture({ sessionId: props.session.id, clientId: props.session.clientId });
+    const capture = await getSessionCapture({ sessionId, clientId });
+    if(version!==captureRequestVersion||props.session.id!==sessionId||props.session.clientId!==clientId)return;
     reviewedCapture.value = capture?.status === 'reviewed' ? capture : null;
     selectedCaptureFields.value = reviewedCapture.value
       ? Object.keys(summaryFields).filter(key => reviewedCapture.value.content[key])
       : [];
   } catch (error) {
+    if(version!==captureRequestVersion)return;
     console.error('Failed to load reviewed Session Capture:', error);
     captureLoadError.value = 'Reviewed Session Capture could not be loaded.';
   }
