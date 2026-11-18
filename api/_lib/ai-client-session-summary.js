@@ -118,6 +118,7 @@ export function buildClinicalIntelligenceSessionCandidates({ captures = [], summ
       .filter(item => item?.id && item?.session_ref)
       .map(item => [String(item.id), String(item.session_ref)])
   );
+  const transcriptById = new Map(transcriptRows.filter(item => item?.id).map(item => [String(item.id), item]));
   const bySession = new Map();
 
   // Completed, saved Clinical Records are first-class source material for a
@@ -166,7 +167,45 @@ export function buildClinicalIntelligenceSessionCandidates({ captures = [], summ
     if (!sessionId) continue;
     const occurredAt = sessionDateById.get(sessionId) || transcriptSource.occurredAt || '';
     if (!occurredAt) continue;
+    const linkedTranscript = transcriptSource.transcriptId || transcriptSource.id
+      ? transcriptById.get(String(transcriptSource.transcriptId || transcriptSource.id))
+      : null;
+    const recordedVersion = transcriptSource.sourceVersion || transcriptSource.source_version;
+    const staleSummary = Boolean(linkedTranscript && recordedVersion && String(recordedVersion) !== String(linkedTranscript.source_version));
+    if (staleSummary) {
+      // A changed transcript invalidates its derivative summary. Once the
+      // therapist has confirmed the current source, use that source directly
+      // for the longitudinal record instead of requiring a separate summary
+      // regeneration first. Unresolved sources are still blocked at generation.
+      const existing = bySession.get(sessionId);
+      if (existing) {
+        delete existing.content?.existingSessionSummary;
+        existing.sourceDocumentId = null;
+        existing.document_id = null;
+        existing.document_status = null;
+        existing.source_types = (existing.source_types || []).filter(type => type !== 'session_summary');
+        if(existing.evidence_source==='session_summary')existing.evidence_source='zoom_transcript';
+        existing.source_types = [...new Set([...(existing.source_types || []), 'zoom_transcript'])];
+        existing.transcript_id = String(linkedTranscript.id);
+        existing.transcript_version = linkedTranscript.source_version || null;
+        existing.transcript_review_state = linkedTranscript.source_review?.state || 'unreviewed';
+      } else {
+        bySession.set(sessionId, {
+          session_id: sessionId,
+          content: {},
+          reviewed_at: linkedTranscript.updated_at || occurredAt,
+          sessions: { id: sessionId, occurred_at: occurredAt },
+          evidence_source: 'zoom_transcript',
+          source_types: ['zoom_transcript'],
+          transcript_id: String(linkedTranscript.id),
+          transcript_version: linkedTranscript.source_version || null,
+          transcript_review_state: linkedTranscript.source_review?.state || 'unreviewed'
+        });
+      }
+      continue;
+    }
     const existing = bySession.get(sessionId);
+    if(existing?.source_types?.includes('zoom_transcript'))continue;
     const summaryEvidence = {
       existingSessionSummary: body
     };
@@ -197,14 +236,14 @@ export function buildClinicalIntelligenceSessionCandidates({ captures = [], summ
 export function buildClinicalIntelligenceEvidenceMap({ captures = [], careItems = [], therapistGuidance = '' } = {}) {
   const reviewedSessions = captures.map((capture, index) => ({
     id: `session:${capture.sessionId || capture.session_id}`,
-    sourceType: capture.sourceType || (capture.evidence_source === 'session_summary' ? 'transcript_backed_session_summary' : 'reviewed_session_capture'),
+    sourceType: capture.sourceType || (capture.evidence_source === 'session_summary' ? 'transcript_backed_session_summary' : capture.evidence_source === 'zoom_transcript' ? 'current_transcript' : 'reviewed_session_capture'),
     position: index === 0 ? 'current' : `previous_${index}`,
     sessionId: capture.sessionId || capture.session_id || null,
     occurredAt: capture.occurredAt || capture.occurred_at || null,
     reviewedAt: capture.reviewedAt || capture.reviewed_at || null,
     sourceDocumentId: capture.sourceDocumentId || capture.document_id || null,
     sourceStatus: capture.sourceStatus || capture.document_status || null,
-    sourceTypes: capture.source_types || [capture.evidence_source === 'session_summary' ? 'session_summary' : capture.evidence_source === 'clinical_record' ? 'clinical_record' : 'session_capture'],
+    sourceTypes: capture.source_types || [capture.evidence_source === 'session_summary' ? 'session_summary' : capture.evidence_source === 'clinical_record' ? 'clinical_record' : capture.evidence_source === 'zoom_transcript' ? 'zoom_transcript' : 'session_capture'],
     content: capture.content && typeof capture.content === 'object' ? {...capture.content, ...(typeof capture.content.existingSessionSummary === 'string' ? {existingSessionSummary:summaryClinicalEvidence(capture.content.existingSessionSummary)} : {}), ...(typeof capture.content.existingClinicalRecord === 'string' ? {existingClinicalRecord:summaryClinicalEvidence(capture.content.existingClinicalRecord)} : {})} : {}
   }));
 

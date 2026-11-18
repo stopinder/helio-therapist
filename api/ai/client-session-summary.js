@@ -104,19 +104,47 @@ export default async function handler(req, res) {
       reviewedAt:row.reviewed_at,
       evidence_source:row.evidence_source,
       source_types:row.source_types||[row.evidence_source||'session_capture'],
-      document_id:row.document_id || null,
+      document_id:row.document_id || row.sourceDocumentId || null,
       document_status:row.document_status || null,
+      transcript_id:row.transcript_id || null,
+      transcript_version:row.transcript_version || null,
+      transcript_review_state:row.transcript_review_state || null,
       content:row.content || {}
     }));
     if(preview){const availableSessions=selectClinicalIntelligenceSources(candidates,{limit:null}).map(row=>({sessionId:row.session_id,occurredAt:row.sessions?.occurred_at,reviewedAt:row.reviewed_at,sourceTypes:row.source_types||[row.evidence_source||'session_capture']}));return res.status(200).json({success:true,data:{availableSessions}});}
     if (!selectedCaptures.length) return res.status(409).json({ success:false, error:{ code:'NO_CLIENT_SUMMARY_EVIDENCE', message:window==='current'?'No reviewed Session Capture or transcript-backed session summary is available for this session yet.':'No completed Clinical Record, reviewed Session Capture or transcript-backed session summary is available yet.' } });
 
-    const transcriptDerivedSessionIds=new Set(selectedCaptures.filter(capture=>capture.source_types.some(type=>type==='session_capture'||type==='session_summary')).map(capture=>String(capture.sessionId)));
+    const transcriptDerivedSessionIds=new Set(selectedCaptures.filter(capture=>capture.source_types.some(type=>type==='session_capture'||type==='session_summary'||type==='zoom_transcript')).map(capture=>String(capture.sessionId)));
     const selectedTranscriptRows=transcriptRows.filter(row=>transcriptDerivedSessionIds.has(String(row.session_ref)));
     for(const row of selectedTranscriptRows)assertSourceAvailable(row);
+    const directTranscriptCaptures=selectedCaptures.filter(capture=>capture.source_types.includes('zoom_transcript'));
+    for(const capture of directTranscriptCaptures){
+      const row=selectedTranscriptRows.find(item=>String(item.id)===String(capture.transcript_id));
+      if(!row||row.source_version!==capture.transcript_version)throw Object.assign(new Error('The transcript changed while preparing the record.'),{status:409,code:'SOURCE_CHANGED'});
+      if(row.source_review?.state!=='confirmed')return res.status(200).json({success:true,data:{outcome:'needs_review',review:{message:'Confirm the updated encounter source before using it in this longitudinal record.',sources:[presentReview(row)]}}});
+      const {data:current,error:readError}=await supabase.from('zoom_transcripts')
+        .select('id,original_transcript,zoom_generated_summary,source_review,source_version,client_id,session_ref,updated_at')
+        .eq('id',row.id).eq('therapist_user_id',user.id).eq('client_id',clientId).is('deleted_at',null).maybeSingle();
+      if(readError)throw readError;
+      if(!current||current.source_version!==capture.transcript_version||current.source_review?.state!=='confirmed')throw Object.assign(new Error('The transcript changed while preparing the record.'),{status:409,code:'SOURCE_CHANGED'});
+      capture.content={...(capture.content||{}),existingTranscript:String(current.original_transcript||'').trim(),existingZoomNote:String(current.zoom_generated_summary||'').trim(),sourceClarification:String(current.source_review?.context||'').trim()};
+    }
     for(const capture of selectedCaptures.filter(item=>item.document_id)){
       const doc=summaryDocuments.find(item=>item.id===capture.document_id);
-      await assertDocumentSourcesUsable(supabase,user.id,{...doc,client_id:clientId,document_type:'session_summary'});
+      try{await assertDocumentSourcesUsable(supabase,user.id,{...doc,client_id:clientId,document_type:'session_summary'});}
+      catch(error){
+        const refreshedTranscript=error.code==='SOURCE_REVIEW_REQUIRED'&&error.review?.state==='confirmed'
+          ? directTranscriptCaptures.find(item=>String(item.transcript_id)===String(error.review.transcriptId)&&String(item.sessionId)===String(capture.sessionId))
+          : null;
+        if(!refreshedTranscript)throw error;
+        // The confirmed transcript is now included directly in the draft.
+        // Its old derivative summary is omitted from this generation and manifest.
+        capture.document_id=null;
+        capture.document_status=null;
+        capture.content={...(capture.content||{})};
+        delete capture.content.existingSessionSummary;
+        capture.source_types=capture.source_types.filter(type=>type!=='session_summary');
+      }
     }
     const { data: careItems, error: careError } = await supabase.from('client_care_items').select('id,kind,body,status,origin,provenance_session_id').eq('client_id', clientId).eq('therapist_id', user.id).eq('status', 'current').order('updated_at', { ascending:false }).limit(30);
     if (careError) throw careError;
@@ -147,7 +175,7 @@ export default async function handler(req, res) {
       }
       const body = renderClientSessionSummary(sampleSummary.sections, lens, window === 'current' ? 'session_summary' : 'across_session_review');
       const sources=[
-        ...evidenceMap.reviewedSessions.flatMap(item=>(item.sourceTypes||[]).map(sourceType=>({id:`${item.id}:${sourceType}`,kind:sourceType==='session_summary'?'session_summary':sourceType==='clinical_record'?'session_clinical_record':'session_capture',sessionId:item.sessionId,occurredAt:item.occurredAt,reviewedAt:item.reviewedAt,documentId:item.sourceDocumentId||undefined,status:item.sourceStatus||undefined}))),
+        ...evidenceMap.reviewedSessions.flatMap(item=>(item.sourceTypes||[]).filter(sourceType=>sourceType!=='zoom_transcript').map(sourceType=>({id:`${item.id}:${sourceType}`,kind:sourceType==='session_summary'?'session_summary':sourceType==='clinical_record'?'session_clinical_record':'session_capture',sessionId:item.sessionId,occurredAt:item.occurredAt,reviewedAt:item.reviewedAt,documentId:item.sourceDocumentId||undefined,status:item.sourceStatus||undefined}))),
         ...evidenceMap.currentAcceptedCareContext.map(item=>({id:item.id,kind:'accepted_care',careKind:item.kind})),
         ...(evidenceMap.therapistAuthoredContext.content?[{id:'therapist:guidance',kind:'therapist_guidance'}]:[])
       ];
@@ -181,7 +209,9 @@ export default async function handler(req, res) {
     const evidenceSources=evidenceMap.reviewedSessions.map(item=>({id:item.id,
       ...(typeof item.content.existingSessionSummary==='string'?{session_summary:item.content.existingSessionSummary}:{}),
       ...(typeof item.content.existingClinicalRecord==='string'?{clinical_record:item.content.existingClinicalRecord}:{}),
-      ...(item.content.existingSessionSummary||item.content.existingClinicalRecord?{}:{session_capture:JSON.stringify(item.content)})}));
+      ...(typeof item.content.existingTranscript==='string'?{transcript:item.content.existingTranscript}:{}),
+      ...(typeof item.content.existingZoomNote==='string'?{zoom_note:item.content.existingZoomNote}:{}),
+      ...(item.content.existingSessionSummary||item.content.existingClinicalRecord||item.content.existingTranscript||item.content.existingZoomNote?{}:{session_capture:JSON.stringify(item.content)})}));
     let structured=validateSummaryOutcome(completion.choices?.[0]?.message?.content,validSourceIds,evidenceSources);
     if (!structured) {
       const truncated = finishReason === 'length';
@@ -213,7 +243,7 @@ export default async function handler(req, res) {
     }
     if(structured.outcome==='generation_failed')return res.status(502).json({success:false,error:{code:'INVALID_AI_RESPONSE',message:'No usable summary was produced. Your previous draft is unchanged.'}});
     const body = renderClientSessionSummary(structured.sections, lens, window === 'current' ? 'session_summary' : 'across_session_review') + resourceAppendix(summaryOptions.resource,resourceVerification);
-    const sources=[...selectedTranscriptRows.map(row=>({id:`transcript:${row.id}`,kind:'zoom_transcript',transcriptId:row.id,sessionId:String(row.session_ref),sourceVersion:row.source_version})),...evidenceMap.reviewedSessions.flatMap(item=>(item.sourceTypes||[]).map(sourceType=>({id:`${item.id}:${sourceType}`,kind:sourceType==='session_summary'?'session_summary':sourceType==='clinical_record'?'session_clinical_record':'session_capture',sessionId:item.sessionId,occurredAt:item.occurredAt,reviewedAt:item.reviewedAt,documentId:item.sourceDocumentId||undefined,status:item.sourceStatus||undefined}))),...evidenceMap.currentAcceptedCareContext.map(item=>({id:item.id,kind:'accepted_care',careKind:item.kind})),...(evidenceMap.therapistAuthoredContext.content?[{id:'therapist:guidance',kind:'therapist_guidance'}]:[])];
+    const sources=[...selectedTranscriptRows.map(row=>({id:`transcript:${row.id}`,kind:'zoom_transcript',transcriptId:row.id,sessionId:String(row.session_ref),sourceVersion:row.source_version})),...evidenceMap.reviewedSessions.flatMap(item=>(item.sourceTypes||[]).filter(sourceType=>sourceType!=='zoom_transcript').map(sourceType=>({id:`${item.id}:${sourceType}`,kind:sourceType==='session_summary'?'session_summary':sourceType==='clinical_record'?'session_clinical_record':sourceType==='zoom_transcript'?'zoom_transcript':'session_capture',sessionId:item.sessionId,occurredAt:item.occurredAt,reviewedAt:item.reviewedAt,documentId:item.sourceDocumentId||undefined,status:item.sourceStatus||undefined}))),...evidenceMap.currentAcceptedCareContext.map(item=>({id:item.id,kind:'accepted_care',careKind:item.kind})),...(evidenceMap.therapistAuthoredContext.content?[{id:'therapist:guidance',kind:'therapist_guidance'}]:[])];
     return res.status(200).json({ success:true, data:{ outcome:'ready',generationId,generatedAt,draft:{body,sections:structured.sections},claims:structured.claims,sources,lens,window,sessionCount:selectedCaptures.length,promptVersion:CLIENT_SESSION_SUMMARY_PROMPT_VERSION,summaryOptions,resourceSelection:summaryOptions.resource?{...summaryOptions.resource,verification:resourceVerification}:null,qualityReview,model,usage:{inputTokens:Number(completion.usage?.prompt_tokens||0),outputTokens:Number(completion.usage?.completion_tokens||0),totalTokens:Number(completion.usage?.total_tokens||0)} } });
   } catch (error) {
     if(['INVALID_SUMMARY_OPTIONS','RESOURCE_NOT_VERIFIED','SUMMARY_ADDITION_NOT_VERIFIED'].includes(error.code))return res.status(error.status||422).json({success:false,error:{code:error.code,message:error.message}});
