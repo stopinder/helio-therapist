@@ -7,7 +7,7 @@ import { summaryAuthoringPrompt } from '../api/_lib/summary-authoring-policy.js'
 import { clientSessionSummaryLensRule } from '../api/_lib/ai-client-session-summary.js';
 const endpoint=await readFile(new URL('../api/ai/client-session-summary.js',import.meta.url),'utf8');
 test('session summary prompt revision improves clinical prose without relaxing evidence or therapist review',()=>{
-  assert.equal(CLIENT_SESSION_SUMMARY_PROMPT_VERSION,SUMMARY_POLICY_VERSION+'/helios-across-session-review/1.0.0');
+  assert.equal(CLIENT_SESSION_SUMMARY_PROMPT_VERSION,SUMMARY_POLICY_VERSION+'/helios-across-session-review/1.1.0');
   const options={audience:'shared',addition:'none'};
   assert.equal(clientSessionSummarySystemPrompt('integrative',options),summaryAuthoringPrompt(clientSessionSummaryLensRule('integrative'),options));
   const prompt=clientSessionSummarySystemPrompt('integrative',options);

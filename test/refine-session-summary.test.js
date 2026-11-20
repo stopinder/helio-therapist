@@ -28,7 +28,7 @@ test('only explicit approval can replace a draft with a refined regeneration, wi
 test('exercise is always a proposed future option and cannot be presented as completed or agreed',()=>{
  const prompt=clientSessionSummarySystemPrompt('internal_family_systems',{addition:'exercise'});
  assert.match(prompt,/Optional exercise to consider/);assert.match(prompt,/NOT completed, assigned or agreed/);
- assert.match(prompt,/decline, modify or stop/);assert.equal(CLIENT_SESSION_SUMMARY_PROMPT_VERSION,SUMMARY_POLICY_VERSION+'/helios-across-session-review/1.0.0');
+ assert.match(prompt,/decline, modify or stop/);assert.equal(CLIENT_SESSION_SUMMARY_PROMPT_VERSION,SUMMARY_POLICY_VERSION+'/helios-across-session-review/1.1.0');
  assert.match(panel,/No new exercise or resource/);assert.match(panel,/New exercises are optional suggestions/);
 });
 test('source evidence and approved editorial instruction share a validated provenance map',()=>{

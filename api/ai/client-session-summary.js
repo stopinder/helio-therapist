@@ -29,6 +29,11 @@ export default async function handler(req, res) {
     const { data: ownedClient, error: clientError } = await supabase.from('clients').select('id,reference').eq('id', clientId).eq('user_id', user.id).maybeSingle();
     if (clientError) throw clientError;
     if (!ownedClient) return res.status(404).json({ success:false, error:{ code:'CLIENT_NOT_FOUND', message:'Client not found or access denied.' } });
+    let therapistName = 'the therapist';
+    const { data: therapistProfile, error: therapistProfileError } = await supabase.from('profiles').select('full_name').eq('id', user.id).maybeSingle();
+    if (!therapistProfileError && typeof therapistProfile?.full_name === 'string' && therapistProfile.full_name.trim()) {
+      therapistName = therapistProfile.full_name.trim().slice(0, 120);
+    }
 
     const captureLimit = window === 'current' ? 1 : window === 'last_three' ? 3 : window === 'last_five' ? 5 : window === 'last_n' ? requestedSessionCount : null;
     const captures = [];
@@ -201,7 +206,7 @@ export default async function handler(req, res) {
     }
     const request = {
       feature:AI_FEATURES.CLIENT_SESSION_SUMMARY, userId:user.id, promptVersion:CLIENT_SESSION_SUMMARY_PROMPT_VERSION,
-      messages:[{role:'system',content:(window === 'current' ? clientSessionSummarySystemPrompt(lens,summaryOptions) : clientAcrossSessionReviewSystemPrompt(lens,summaryOptions)).replace('Return JSON only with exactly two fields:','For a ready result, supply these clinical fields:')+'\n'+SUMMARY_OUTCOME_RULES},{role:'user',content:buildClientSessionSummaryInput({lens,window,captures:selectedCaptures,careItems:careItems||[],therapistGuidance:approvedGuidance,refinementRequest,previousDraft,summaryOptions})}],
+      messages:[{role:'system',content:(window === 'current' ? clientSessionSummarySystemPrompt(lens,summaryOptions) : clientAcrossSessionReviewSystemPrompt(lens,summaryOptions)).replace('Return JSON only with exactly two fields:','For a ready result, supply these clinical fields:')+'\n'+SUMMARY_OUTCOME_RULES},{role:'user',content:buildClientSessionSummaryInput({lens,window,therapistName,captures:selectedCaptures,careItems:careItems||[],therapistGuidance:approvedGuidance,refinementRequest,previousDraft,summaryOptions})}],
       responseFormat:summaryOutcomeResponseFormat(validSourceIds), temperature:0.2, maxTokens:8000, timeout:60000
     };
     let { completion, model } = await runTextAI(request);
