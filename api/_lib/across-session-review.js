@@ -1,6 +1,6 @@
 import { normalizeSummaryLens } from '../../src/lib/summaryLenses.js';
 // Scope-specific instructions; no client records or model calls.
-export const ACROSS_SESSION_REVIEW_VERSION = 'helios-across-session-review/1.0.0';
+export const ACROSS_SESSION_REVIEW_VERSION = 'helios-across-session-review/1.1.0';
 
 export const ACROSS_SESSION_SECTION_INSTRUCTIONS = `ACROSS-SESSION REVIEW — DISTINCT DOCUMENT PURPOSE
 Write about how the therapy is developing over the selected period, not a recap of the latest appointment. The latest encounter is one comparison point, not the organising centre. Compare the same supplied evidence regardless of lens. Use encounter dates where available; never invent dates or chronology. Reviewed/uploaded dates are not encounter dates.
