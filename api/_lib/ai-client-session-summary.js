@@ -37,7 +37,10 @@ export function clientSessionSummaryLensRule(lens = 'integrative') { return lens
 export function clientSessionSummarySystemPrompt(lens = 'integrative', options = {}) { return summaryAuthoringPrompt(clientSessionSummaryLensRule(lens), options, 'session_summary', normalizeSummaryLens(lens)); }
 
 export function clientAcrossSessionReviewSystemPrompt(lens = 'integrative', options = {}) {
-  return summaryAuthoringPrompt(clientSessionSummaryLensRule(lens) + '\nLONGITUDINAL LENS TASK\n' + acrossSessionLensRule(lens), options, 'across_session_review', normalizeSummaryLens(lens));
+  return summaryAuthoringPrompt(clientSessionSummaryLensRule(lens) + '\nLONGITUDINAL LENS TASK\n' + acrossSessionLensRule(lens), options, 'across_session_review', normalizeSummaryLens(lens)) + `
+
+THERAPIST IDENTITY
+The input may include therapistName from the therapist's saved Settings profile. When describing a therapist action supported by the clinical sources, use that name naturally instead of repeatedly writing “the therapist.” If therapistName is “the therapist,” use that fallback. The name is attribution context, not evidence: never infer that the therapist did, said, suggested or agreed to something unless the supplied clinical material supports it.`;
 }
 
 export function clientSessionSummaryResponseFormat(validSourceIds = []) {
@@ -268,12 +271,13 @@ export function buildClinicalIntelligenceEvidenceMap({ captures = [], careItems 
   };
 }
 
-export function buildClientSessionSummaryInput({ lens = 'integrative', window = 'last_three', captures = [], careItems = [], therapistGuidance = '', refinementRequest = '', previousDraft = '', summaryOptions = {} }) {
+export function buildClientSessionSummaryInput({ lens = 'integrative', window = 'last_three', therapistName = '', captures = [], careItems = [], therapistGuidance = '', refinementRequest = '', previousDraft = '', summaryOptions = {} }) {
   const evidenceMap = buildClinicalIntelligenceEvidenceMap({ captures, careItems, therapistGuidance });
   return JSON.stringify({
-    task: window === 'current' ? 'Prepare structured Clinical Intelligence for a therapist-reviewable client summary.' : 'Prepare a therapist-facing longitudinal clinical record showing how therapy is developing across the selected encounters.',
+    task: window === 'current' ? 'Prepare structured Clinical Intelligence for a therapist-reviewable client summary.' : 'Prepare an across-session review of how therapy is developing across the selected encounters.',
     documentKind: window === 'current' ? 'session_summary' : 'across_session_review',
     selectedSessionCount: captures.length,
+    ...(window !== 'current' ? { therapistName: typeof therapistName === 'string' && therapistName.trim() ? therapistName.trim().slice(0, 120) : 'the therapist' } : {}),
     ...(window !== 'current' ? { comparisonFrame: buildAcrossSessionComparison(captures) } : {}),
     lens,
     window,
