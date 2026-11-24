@@ -1,7 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
-import { verifiedPrimaryConflict, hardBoundary, cautiousSources } from '../api/_lib/summary-draft-policy.js'
+import { verifiedPrimaryConflict, hardBoundary, cautiousSources, repeatsConfirmedPrimaryEvidence } from '../api/_lib/summary-draft-policy.js'
 import { assertTherapistApprovedSummary } from '../api/_lib/source-review.js'
 import { sourceBlock } from '../api/ai/session-summary.js'
 const read=path=>readFileSync(new URL('../'+path,import.meta.url),'utf8')
@@ -26,6 +26,17 @@ test('a confirmed primary transcript conflict remains a hard stop',()=>{
  assert.equal(hardBoundary(real),true)
  assert.deepEqual(cautiousSources([current,past],real),[])
 })
+test('only the exact primary passages already confirmed for this source can be retried',()=>{
+ const passage={sourceId:current.id,sourceType:'transcript',quote:original,verified:true,startLine:1,endLine:2}
+ const confirmed={...current,source_review:{state:'confirmed',evidence:[passage]}}
+ const repeated=review([passage])
+ assert.equal(repeatsConfirmedPrimaryEvidence([confirmed],repeated),true)
+ assert.equal(cautiousSources([confirmed],repeated)[0].zoom_generated_summary,'')
+ assert.equal(repeatsConfirmedPrimaryEvidence([current],repeated),false)
+ assert.equal(repeatsConfirmedPrimaryEvidence([confirmed],review([{...passage,startLine:4,endLine:5}])),false)
+ assert.deepEqual(cautiousSources([confirmed],review([passage,{...passage,quote:'New contradictory passage'}])),[])
+ assert.deepEqual(cautiousSources([confirmed],{...repeated,reason:'insufficient_source'}),[])
+})
 test('cautious draft excludes the conflicting secondary note but preserves primary passages',()=>{
  const selected=cautiousSources([current,past,noteOnly],review([]))
  assert.deepEqual(selected.map(x=>x.id),[current.id,past.id])
@@ -43,7 +54,7 @@ test('note-only current encounter with disputed client identity is not silently 
 })
 test('generation only flags verified primary source review, not a note-only inference',()=>{
  assert.match(api,/if\(verifiedPrimaryConflict\(structured\.review\)\)/)
- assert.match(api,/if\(structured\.outcome==='needs_review' && !hardBoundary\(structured\.review\)\)/)
+ assert.match(api,/!hardBoundary\(structured\.review\) \|\| repeatedEvidence/)
  assert.match(api,/const remaining=cautiousSources/)
  assert.match(api,/for\(const source of selectedSources\)assertSourceAvailable/)
  assert.match(api,/source\.original_transcript\?\.trim\(\)\?'':\(source\.zoom_generated_summary\|\|''\)/)
