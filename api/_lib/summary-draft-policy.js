@@ -15,6 +15,9 @@ export function hardBoundary(review){return review?.reason==='insufficient_sourc
 export function cautiousSources(sources,review){
  if (!sources?.length || (hardBoundary(review) && !repeatsConfirmedPrimaryEvidence(sources, review))) return [];
  const current=sources[0];
- if(!current.original_transcript?.trim() && (review?.requiresManualVerification||review?.evidence?.some(e=>e.sourceId===current.id&&e.sourceType==='zoom_note')))return [];
+ const currentNoteConflict = review?.evidence?.some(item =>
+   item.verified === true && item.sourceId === current.id && item.sourceType === 'zoom_note');
+ if (!current.original_transcript?.trim() &&
+     (currentNoteConflict || (review?.requiresManualVerification && current.source_review?.state !== 'confirmed'))) return [];
  return sources.filter((s,i)=>i===0||!!s.original_transcript?.trim()).map(s=>({...s,zoom_generated_summary:s.original_transcript?.trim()?'':s.zoom_generated_summary}));
 }

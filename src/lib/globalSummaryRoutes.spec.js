@@ -40,6 +40,46 @@ beforeEach(()=>{
   runTextAI.mockImplementation(async()=>({model:'synthetic-model',completion:{choices:[{finish_reason:'stop',message:{content:JSON.stringify(output())}}],usage:{prompt_tokens:20,completion_tokens:20,total_tokens:40}}}));
   verifySummaryResource.mockResolvedValue(null);
 });
+describe('confirmed note-only encounter summaries',()=>{
+  function ambiguousNote() {
+    return {outcome:'needs_review',review:{reason:'source_conflict',message:'Possible encounter ambiguity.',evidence:[]},
+      sections:Object.fromEntries(CLIENT_SESSION_SUMMARY_FIELDS.map(key=>[key,''])),claims:[]};
+  }
+  const modelResult=body=>({model:'synthetic-model',completion:{choices:[{finish_reason:'stop',message:{content:JSON.stringify(body)}}]}});
+
+  it('retries unverified ambiguity using the confirmed note and returns an attributed draft',async()=>{
+    Object.assign(rows.zoom_transcripts[0],{original_transcript:'',zoom_generated_summary:text});
+    runTextAI.mockResolvedValueOnce(modelResult(ambiguousNote()));
+    const res=await invoke(directHandler,{clientId,sessionId,transcriptId});
+    expect(res.statusCode).toBe(200);
+    expect(res.payload.data.outcome).toBe('ready');
+    expect(res.payload.data.sources[0]).toMatchObject({hasTranscript:false,hasZoomSummary:true});
+    expect(res.payload.data.reviewCautions[0]).toContain('therapist-confirmed imported Zoom note');
+    expect(runTextAI.mock.calls[1][0].messages[0].content).toContain('keep unsupported sections empty');
+    expect(db.rpc).not.toHaveBeenCalled();
+  });
+
+  it('reports a summary generation failure after repeat ambiguity without restarting identity review',async()=>{
+    Object.assign(rows.zoom_transcripts[0],{original_transcript:'',zoom_generated_summary:text});
+    runTextAI.mockResolvedValue(modelResult(ambiguousNote()));
+    const res=await invoke(directHandler,{clientId,sessionId,transcriptId});
+    expect(res.statusCode).toBe(502);
+    expect(res.payload.error).toMatchObject({code:'AI_RESPONSE_UNVERIFIED'});
+    expect(res.payload.error.message).toContain('Your source review is saved');
+    expect(runTextAI).toHaveBeenCalledTimes(2);
+    expect(db.rpc).not.toHaveBeenCalled();
+  });
+
+  it('still requires confirmation before retrying an ambiguous note-only source',async()=>{
+    Object.assign(rows.zoom_transcripts[0],{original_transcript:'',zoom_generated_summary:text,source_review:{}});
+    runTextAI.mockResolvedValueOnce(modelResult(ambiguousNote()));
+    const res=await invoke(directHandler,{clientId,sessionId,transcriptId});
+    expect(res.statusCode).toBe(200);
+    expect(res.payload.data.outcome).toBe('needs_review');
+    expect(runTextAI).toHaveBeenCalledTimes(1);
+    expect(db.rpc).not.toHaveBeenCalled();
+  });
+});
 for(const [route,handler,extra] of [['encounter',directHandler,{sessionId,transcriptId}],['longitudinal',longitudinalHandler,{anchorSessionId:sessionId}]])describe(route+' uses global authoring',()=>{
   for(const lens of CLIENT_SESSION_SUMMARY_LENSES)it('uses shared neutral policy for '+lens,async()=>{
     const res=await invoke(handler,{clientId,...extra,lens,summaryOptions:{audience:'shared'}});
