@@ -12,6 +12,14 @@ export function repeatsConfirmedPrimaryEvidence(sources, review) {
   });
 }
 export function hardBoundary(review){return review?.reason==='insufficient_source'||verifiedPrimaryConflict(review)}
+// Retain only a confirmed, single-encounter, transcript-only draft. A draft
+// which also used a secondary note or continuity needs its normal review path.
+export function canRetainConfirmedTranscriptDraft(sources, review) {
+ const current=sources?.[0];
+ return sources?.length===1 && current?.source_review?.state==='confirmed' && !!current.original_transcript?.trim() &&
+   !current.zoom_generated_summary?.trim() &&
+   (!hardBoundary(review) || repeatsConfirmedPrimaryEvidence(sources,review));
+}
 export function cautiousSources(sources,review){
  if (!sources?.length || (hardBoundary(review) && !repeatsConfirmedPrimaryEvidence(sources, review))) return [];
  const current=sources[0];

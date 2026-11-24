@@ -475,7 +475,7 @@ async function generateSummary(payload = null) {
   isGenerating.value=true;generationError.value='';pendingSummary.value=null;
   await scrollToSummaryTarget(summaryGenerationProgress);
   try{
-    const result=await generateSessionSummary({clientId:session.value.clientId,sessionId:session.value.id,transcriptId:transcript.value.id,
+    const result=await generateSessionSummary({clientId:session.value.clientId,sessionId:session.value.id,transcriptId:transcript.value.id,sourceVersion:transcript.value.sourceVersion,
       lens:summaryLens.value,window:summaryWindow.value,excludeEarlierZoomNotes:excludeEarlierZoomNotes.value,therapistGuidance:therapistGuidance.value,
       refinementRequest:refinement?.instruction||'',previousDraft:refinement?baseBody.slice(0,10000):'',summaryOptions:refinement?.summaryOptions||{}});
     if(disposed)return;
@@ -485,7 +485,7 @@ async function generateSummary(payload = null) {
     await scrollToSummaryTarget(summaryDisplayedDocument);
   }catch(err){
     if(err.code==='SOURCE_REVIEW_REQUIRED'){sourceReview.value=err.review||{message:err.message,sources:[]};await scrollToSummaryTarget(sourceReviewNotice);return;}
-    if(!disposed){generationError.value=err.message||'Summary generation failed. The current draft is unchanged.';await scrollToSummaryTarget(summaryDisplayedDocument);}
+    if(!disposed){generationError.value=(err.message||'Summary generation failed. The current draft is unchanged.')+(err.diagnosticCode?' Reference: '+err.diagnosticCode+'.':'');await scrollToSummaryTarget(summaryDisplayedDocument);}
   }finally{isGenerating.value=false;}
 }
 async function acceptSummaryRevision(){

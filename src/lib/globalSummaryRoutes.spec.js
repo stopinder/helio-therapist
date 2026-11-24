@@ -80,6 +80,147 @@ describe('confirmed note-only encounter summaries',()=>{
     expect(db.rpc).not.toHaveBeenCalled();
   });
 });
+
+describe('confirmed transcript-backed encounter failures',()=>{
+  const result=body=>({model:'synthetic-model',completion:{choices:[{finish_reason:'stop',message:{content:JSON.stringify(body)}}]}});
+  const soft=()=>({outcome:'needs_review',review:{reason:'source_conflict',message:'Synthetic unresolved secondary concern.',evidence:[]},
+    sections:Object.fromEntries(CLIENT_SESSION_SUMMARY_FIELDS.map(key=>[key,''])),claims:[]});
+  const withStyleIssue=()=>{const value=output();value.sections.strengthsAndResources=text;value.claims.push({...value.claims[0],section:'strengthsAndResources'});return value;};
+  beforeEach(()=>{rows.zoom_transcripts[0].zoom_generated_summary='Synthetic secondary note that must not enter the transcript-only retry.';});
+
+  it('does not discard a transcript-backed draft for an unverified editorial concern',async()=>{
+    runTextAI.mockResolvedValueOnce(result(soft())).mockResolvedValueOnce(result(withStyleIssue())).mockResolvedValueOnce(result(soft()));
+    const res=await invoke(directHandler,{clientId,sessionId,transcriptId});
+    expect(res.statusCode).toBe(200);
+    expect(res.payload.data.outcome).toBe('ready');
+    const packets=runTextAI.mock.calls.map(([request])=>JSON.parse(request.messages[1].content));
+    expect(packets[0].sourceBlocks[0]).toMatchObject({transcript:text,zoom_note:rows.zoom_transcripts[0].zoom_generated_summary});
+    for(const packet of packets.slice(1))expect(packet.sourceBlocks[0]).toMatchObject({transcript:text,zoom_note:''});
+    expect(db.rpc).not.toHaveBeenCalled();
+    expect(rows.zoom_transcripts[0].source_review.state).toBe('confirmed');
+  });
+
+  it('repairs a malformed transcript-only retry against the same original evidence',async()=>{
+    const invalid=output();invalid.claims[0].sourceIds=['not-a-supplied-source'];
+    runTextAI.mockResolvedValueOnce(result(soft())).mockResolvedValueOnce(result(invalid)).mockResolvedValueOnce(result(output()));
+    const res=await invoke(directHandler,{clientId,sessionId,transcriptId});
+    expect(res.statusCode).toBe(200);
+    expect(res.payload.data.outcome).toBe('ready');
+    expect(runTextAI).toHaveBeenCalledTimes(3);
+    for(const [request] of runTextAI.mock.calls.slice(1))expect(JSON.parse(request.messages[1].content).sourceBlocks[0]).toMatchObject({transcript:text,zoom_note:''});
+    expect(db.rpc).not.toHaveBeenCalled();
+  });
+
+  it('reports the attached transcript and failed stage without clearing saved review or draft',async()=>{
+    rows.documents.push({id:'synthetic-existing-draft',content:{body:'Synthetic existing draft.'}});
+    const before=structuredClone(rows);
+    runTextAI.mockResolvedValue(result(soft()));
+    const res=await invoke(directHandler,{clientId,sessionId,transcriptId});
+    expect(res.statusCode).toBe(502);
+    expect(res.payload.error.message).toContain('original transcript is attached');
+    expect(res.payload.error.message).not.toContain('Add the original transcript');
+    expect(res.payload.error.diagnosticCode).toBe('SS_RETRY_REVIEW_UNVERIFIED');
+    expect(rows).toEqual(before);
+    expect(db.rpc).not.toHaveBeenCalled();
+  });
+
+  it('rejects a generation request for an older displayed source version before calling the model',async()=>{
+    const res=await invoke(directHandler,{clientId,sessionId,transcriptId,sourceVersion:'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'});
+    expect(res.statusCode).toBe(409);
+    expect(res.payload.error.code).toBe('SOURCE_CHANGED');
+    expect(runTextAI).not.toHaveBeenCalled();
+    expect(db.rpc).not.toHaveBeenCalled();
+  });
+
+  it('uses the pinned displayed source and returns its matching version in the draft manifest',async()=>{
+    const sourceVersion='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+    rows.zoom_transcripts[0].source_version=sourceVersion;
+    const res=await invoke(directHandler,{clientId,sessionId,transcriptId,sourceVersion});
+    expect(res.payload.data.outcome).toBe('ready');
+    expect(res.payload.data.sources[0]).toMatchObject({transcriptId,sourceVersion});
+  });
+
+  it('still stops for a genuinely new verified transcript passage during editorial review',async()=>{
+    const hard=soft();hard.review.evidence=[{sourceId,sourceType:'transcript',quote:text}];
+    runTextAI.mockResolvedValueOnce(result(soft())).mockResolvedValueOnce(result(withStyleIssue())).mockResolvedValueOnce(result(hard));
+    const res=await invoke(directHandler,{clientId,sessionId,transcriptId});
+    expect(res.payload.data.outcome).toBe('needs_review');
+    expect(db.rpc).toHaveBeenCalledWith('resolve_transcript_source_review',expect.objectContaining({p_action:'flag'}));
+  });
+
+  it('keeps a retry provider failure distinct from an unverifiable review outcome',async()=>{
+    runTextAI.mockResolvedValueOnce(result(soft())).mockRejectedValueOnce(Object.assign(new Error('Synthetic private provider detail'),{code:'ETIMEDOUT'}));
+    const res=await invoke(directHandler,{clientId,sessionId,transcriptId});
+    expect(res.payload.error.diagnosticCode).toBe('SS_RETRY_UNAVAILABLE');
+    expect(JSON.stringify(res.payload)).not.toContain('Synthetic private provider detail');
+    expect(db.rpc).not.toHaveBeenCalled();
+  });
+
+  it('does not accept a malformed retry or repair as a ready draft',async()=>{
+    const invalid=output();invalid.claims[0].sourceIds=['not-a-supplied-source'];
+    runTextAI.mockResolvedValueOnce(result(soft())).mockResolvedValue(result(invalid));
+    const res=await invoke(directHandler,{clientId,sessionId,transcriptId});
+    expect(res.payload.error.diagnosticCode).toBe('SS_RETRY_INVALID');
+    expect(res.payload.data).toBeUndefined();
+    expect(runTextAI).toHaveBeenCalledTimes(3);
+    expect(db.rpc).not.toHaveBeenCalled();
+  });
+
+  it('rejects truncated retry output even if the partial response happens to parse',async()=>{
+    const truncated=result(output());truncated.completion.choices[0].finish_reason='length';
+    runTextAI.mockResolvedValueOnce(result(soft())).mockResolvedValueOnce(truncated);
+    const res=await invoke(directHandler,{clientId,sessionId,transcriptId});
+    expect(res.payload.error.diagnosticCode).toBe('SS_RETRY_TRUNCATED');
+    expect(runTextAI).toHaveBeenCalledTimes(2);
+    expect(db.rpc).not.toHaveBeenCalled();
+  });
+
+  it('sends confirmed exact passages as review context and retains a draft when editorial review repeats them',async()=>{
+    rows.zoom_transcripts[0].original_transcript='\n\n'+text+'\n';
+    rows.zoom_transcripts[0].zoom_generated_summary='';
+    const passage={sourceId,sourceType:'transcript',quote:text,verified:true,startLine:3,endLine:3};
+    rows.zoom_transcripts[0].source_review.evidence=[passage];
+    const repeated=soft();repeated.review.evidence=[{sourceId,sourceType:'transcript',quote:text}];
+    runTextAI.mockResolvedValueOnce(result(withStyleIssue())).mockResolvedValueOnce(result(repeated));
+    const res=await invoke(directHandler,{clientId,sessionId,transcriptId});
+    expect(res.payload.data.outcome).toBe('ready');
+    expect(res.payload.data.qualityReview.sourceReviewDecision).toBe('retained_confirmed_transcript_draft');
+    expect(JSON.parse(runTextAI.mock.calls[0][0].messages[1].content).sourceBlocks[0].confirmedPrimaryPassages).toEqual([{sourceId,sourceType:'transcript',quote:text,startLine:3,endLine:3}]);
+    expect(db.rpc).not.toHaveBeenCalled();
+  });
+
+  it('never retains an original with a blocking unrequested addition after an unverified editorial concern',async()=>{
+    rows.zoom_transcripts[0].zoom_generated_summary='';
+    const invalidAddition=output();invalidAddition.sections.betweenSession='Optional exercise to consider: Synthetic practice.';
+    invalidAddition.claims.push({section:'betweenSession',text:invalidAddition.sections.betweenSession,sourceIds:[sourceId],evidenceStrength:'current_observation'});
+    runTextAI.mockResolvedValueOnce(result(invalidAddition)).mockResolvedValueOnce(result(soft()));
+    const res=await invoke(directHandler,{clientId,sessionId,transcriptId});
+    expect(res.statusCode).toBe(422);
+    expect(res.payload.error.code).toBe('SUMMARY_ADDITION_NOT_VERIFIED');
+    expect(db.rpc).not.toHaveBeenCalled();
+  });
+
+  it('does not apply the editorial fallback to a draft that still used a secondary note',async()=>{
+    runTextAI.mockResolvedValueOnce(result(withStyleIssue())).mockResolvedValueOnce(result(soft()));
+    const res=await invoke(directHandler,{clientId,sessionId,transcriptId});
+    expect(res.statusCode).toBe(502);
+    expect(res.payload.error.diagnosticCode).toBe('SS_EDITORIAL_REVIEW_UNVERIFIED');
+    expect(db.rpc).not.toHaveBeenCalled();
+  });
+
+  it('logs fixed codes and flags rather than clinical content or source identifiers',async()=>{
+    const info=vi.spyOn(console,'info').mockImplementation(()=>{});
+    try {
+      runTextAI.mockResolvedValue(result(soft()));
+      await invoke(directHandler,{clientId,sessionId,transcriptId});
+      const record=info.mock.calls.find(([label])=>label==='[Session Summary diagnostic]')[1];
+      expect(record).toMatchObject({code:'SS_RETRY_REVIEW_UNVERIFIED',initialTranscriptIncluded:true,retryTranscriptIncluded:true,retryZoomNoteExcluded:true});
+      for(const value of Object.values(record))expect(typeof value==='boolean'||['SS_RETRY_REVIEW_UNVERIFIED','unverified_or_secondary_review','not_attempted'].includes(value)).toBe(true);
+      const serialized=JSON.stringify(record);
+      for(const privateValue of [clientId,sessionId,transcriptId,text,rows.zoom_transcripts[0].zoom_generated_summary])expect(serialized).not.toContain(privateValue);
+    } finally {info.mockRestore();}
+  });
+});
 for(const [route,handler,extra] of [['encounter',directHandler,{sessionId,transcriptId}],['longitudinal',longitudinalHandler,{anchorSessionId:sessionId}]])describe(route+' uses global authoring',()=>{
   for(const lens of CLIENT_SESSION_SUMMARY_LENSES)it('uses shared neutral policy for '+lens,async()=>{
     const res=await invoke(handler,{clientId,...extra,lens,summaryOptions:{audience:'shared'}});
