@@ -40,6 +40,13 @@ describe('explicit one-click encounter confirmation',()=>{
     expect(args.p_context).toBe(SOURCE_CONFIRMATION_ATTESTATION);
     expect(args.p_context.length).toBeGreaterThanOrEqual(10);
   });
+  it('retains the reviewed passages from the current server-side source',async()=>{
+    const evidence=[{sourceId:'session:'+sessionId,sourceType:'transcript',quote:'A synthetic discussion about one session',verified:true,startLine:1,endLine:1}];
+    db.request.maybeSingle.mockResolvedValueOnce({data:{id:transcriptId,source_review:{state:'needs_review',evidence}},error:null});
+    const response=await invoke(request({evidence:[{quote:'Client input is not used'}]}));
+    expect(response.statusCode).toBe(200);
+    expect(db.rpc.mock.calls[0][1].p_evidence).toEqual(evidence);
+  });
   it('preserves optional therapist context without treating it as a prerequisite',async()=>{
     const response=await invoke(request({context:'Partner mentioned, not present.'}));
     expect(response.statusCode).toBe(200);

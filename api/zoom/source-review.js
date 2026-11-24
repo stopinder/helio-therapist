@@ -46,7 +46,11 @@ export default async function handler(req,res){
     // The checked therapist attestation is sufficient for a one-encounter confirmation.
     // Preserve optional details, but never demand arbitrary filler just to pass the SQL context length check.
     const reviewContext=action==='confirm'?sourceConfirmationContext(context):context;
-    const {data,error:saveError}=await supabase.rpc('resolve_transcript_source_review',{p_user_id:user.id,p_transcript_id:id,p_expected_version:sourceVersion,p_action:action,p_context:reviewContext,p_evidence:[],p_segments:segments});
+    // Keep the exact passages displayed for the review. The RPC checks the source version again under lock.
+    const reviewedEvidence = action === 'confirm' && Array.isArray(row.source_review?.evidence)
+      ? row.source_review.evidence
+      : [];
+    const {data,error:saveError}=await supabase.rpc('resolve_transcript_source_review',{p_user_id:user.id,p_transcript_id:id,p_expected_version:sourceVersion,p_action:action,p_context:reviewContext,p_evidence:reviewedEvidence,p_segments:segments});
     if(saveError){
       const status=saveError.code==='40001'?409:saveError.code==='42501'?403:400;
       const code=saveError.code==='40001'?'SOURCE_CHANGED':saveError.code==='42501'?'SOURCE_REVIEW_FORBIDDEN':'INVALID_REVIEW';

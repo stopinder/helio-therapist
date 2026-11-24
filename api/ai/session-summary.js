@@ -5,7 +5,7 @@ import { SUMMARY_POLICY_VERSION } from '../_lib/summary-authoring-policy.js';
 import { reviewSummaryDraft } from '../_lib/summary-quality-review.js';
 import { verifySummaryResource } from '../_lib/summary-resource-check.js';
 import { SUMMARY_OUTCOME_RULES, summaryOutcomeResponseFormat, validateSummaryOutcome } from '../_lib/summary-outcome.js';
-import { verifiedPrimaryConflict, hardBoundary, cautiousSources } from '../_lib/summary-draft-policy.js';
+import { verifiedPrimaryConflict, hardBoundary, cautiousSources, repeatsConfirmedPrimaryEvidence } from '../_lib/summary-draft-policy.js';
 import { assertSourceAvailable, assertSourcesUnchanged, flagSourceReview } from '../_lib/source-review.js';
 import { requireAuthenticatedUser } from '../_lib/supabase.js';
 import { AI_FEATURES, runTextAI } from '../_lib/ai-execution.js';
@@ -247,23 +247,30 @@ export default async function handler(req, res) {
     if(structured.outcome==='generation_failed')return res.status(502).json({success:false,error:{code:'INVALID_AI_RESPONSE',message:'No usable summary was produced. Your previous draft is unchanged.'}});
     let usedSources=selectedSources;
     const reviewCautions=[];
-    if(structured.outcome==='needs_review' && !hardBoundary(structured.review)){
+    const repeatedEvidence = structured.outcome === 'needs_review' &&
+      repeatsConfirmedPrimaryEvidence(selectedSources, structured.review);
+    if (structured.outcome === 'needs_review' && (!hardBoundary(structured.review) || repeatedEvidence)) {
       const remaining=cautiousSources(selectedSources,structured.review);
       if(remaining.length){
         // A secondary note is not authoritative. Try once more using only
         // remaining original transcripts and undisputed current material.
         const ids=new Set(remaining.map(item=>item.id));
         if(guidance)ids.add('therapist:guidance');
+        const retryInstructions = repeatedEvidence
+          ? 'The therapist already reviewed the passages that prompted the first response and confirmed the encounter. Use the remaining sources to draft only if the evidence supports it. Cite precise passages for any new contradiction.'
+          : 'Conflicting secondary Zoom notes were excluded. Write only from the remaining source evidence. If the original transcript genuinely shows mixed client encounters, return needs_review with precise transcript quotes.';
         try{
           const attempt=await runTextAI({...request,responseFormat:summaryOutcomeResponseFormat(ids),messages:[
-            {role:'system',content:systemPrompt+'\nConflicting secondary Zoom notes were excluded. Write only from the remaining source evidence. If the ORIGINAL transcript genuinely shows mixed client encounters, return needs_review with precise transcript quotes.'},
+            {role:'system',content:systemPrompt+'\n'+retryInstructions},
             {role:'user',content:JSON.stringify({task:'Prepare a cautious editable draft from this client’s remaining evidence only.',...(window === 'recent' ? {comparisonFrame:buildAcrossSessionComparison(remaining)} : {}),assignedClient:{id:clientId,name:session.clients?.display_name||''},sessionId,sourceBlocks:remaining.map((source,index)=>sourceBlock(source,{isCurrent:index===0,suppressZoomNote:!!source.original_transcript?.trim()})),therapistGuidance:guidance})}
           ]});
           const evidence=remaining.map(source=>({id:source.id,transcriptId:source.transcriptId,transcript:source.original_transcript||'',zoom_note:source.original_transcript?.trim()?'':(source.zoom_generated_summary||'')}));
           const checked=validateSummaryOutcome(attempt.completion.choices?.[0]?.message?.content,ids,evidence);
           if(checked?.outcome==='ready'){
             structured=checked;usedSources=remaining;completion=attempt.completion;model=attempt.model;
-            reviewCautions.push('A conflicting Zoom-generated note was excluded. Confirm the client identity and review this editable draft before approval.');
+            reviewCautions.push(repeatedEvidence
+              ? 'Drafted from the remaining evidence after the therapist confirmed the reviewed encounter. Review this editable draft before approval.'
+              : 'A conflicting Zoom-generated note was excluded. Confirm the client identity and review this editable draft before approval.');
           }else if(checked?.outcome==='needs_review'&&hardBoundary(checked.review)){
             structured=checked;usedSources=remaining;
           }
@@ -283,6 +290,12 @@ export default async function handler(req, res) {
     }
     await assertSourcesUnchanged(supabase,user.id,usedSources.map(source=>source.row));
     if(structured.outcome==='needs_review'){
+      if (repeatsConfirmedPrimaryEvidence(usedSources, structured.review)) {
+        return res.status(502).json({success:false,error:{
+          code:'AI_RESPONSE_UNVERIFIED',
+          message:'Your source review is saved. Helios could not verify a new summary from this material. Your earlier draft is unchanged.'
+        }});
+      }
       const reviews=[];
       if(verifiedPrimaryConflict(structured.review)){
         for(const source of usedSources.filter(item=>structured.review.evidence.some(e=>e.sourceId===item.id&&e.verified&&['transcript','session_capture'].includes(e.sourceType)))){
