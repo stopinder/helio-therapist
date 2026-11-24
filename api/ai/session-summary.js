@@ -258,7 +258,9 @@ export default async function handler(req, res) {
         if(guidance)ids.add('therapist:guidance');
         const retryInstructions = repeatedEvidence
           ? 'The therapist already reviewed the passages that prompted the first response and confirmed the encounter. Use the remaining sources to draft only if the evidence supports it. Cite precise passages for any new contradiction.'
-          : 'Conflicting secondary Zoom notes were excluded. Write only from the remaining source evidence. If the original transcript genuinely shows mixed client encounters, return needs_review with precise transcript quotes.';
+          : !remaining[0].original_transcript?.trim()
+            ? 'The therapist confirmed the assigned encounter. The current encounter has an imported Zoom note only. Attribute details to that note, keep unsupported sections empty, and raise a new concern only when supported by precise passages. Do not attribute note wording directly to the client.'
+            : 'Conflicting secondary Zoom notes were excluded. Write only from the remaining source evidence. If the original transcript genuinely shows mixed client encounters, return needs_review with precise transcript quotes.';
         try{
           const attempt=await runTextAI({...request,responseFormat:summaryOutcomeResponseFormat(ids),messages:[
             {role:'system',content:systemPrompt+'\n'+retryInstructions},
@@ -270,7 +272,9 @@ export default async function handler(req, res) {
             structured=checked;usedSources=remaining;completion=attempt.completion;model=attempt.model;
             reviewCautions.push(repeatedEvidence
               ? 'Drafted from the remaining evidence after the therapist confirmed the reviewed encounter. Review this editable draft before approval.'
-              : 'A conflicting Zoom-generated note was excluded. Confirm the client identity and review this editable draft before approval.');
+              : !remaining[0].original_transcript?.trim()
+                ? 'This encounter uses a therapist-confirmed imported Zoom note. Review its accuracy before approving the draft.'
+                : 'A conflicting Zoom-generated note was excluded. Confirm the client identity and review this editable draft before approval.');
           }else if(checked?.outcome==='needs_review'&&hardBoundary(checked.review)){
             structured=checked;usedSources=remaining;
           }
@@ -296,6 +300,12 @@ export default async function handler(req, res) {
           message:'Your source review is saved. Helios could not verify a new summary from this material. Your earlier draft is unchanged.'
         }});
       }
+      if (window === 'current' && selectedSources[0].source_review?.state === 'confirmed' && !hardBoundary(structured.review)) {
+        return res.status(502).json({success:false,error:{
+          code:'AI_RESPONSE_UNVERIFIED',
+          message:'Your source review is saved. Helios could not verify a summary from this encounter. Add the original transcript if available, or use the Clinical Record tab to document the encounter manually.'
+        }});
+      }
       const reviews=[];
       if(verifiedPrimaryConflict(structured.review)){
         for(const source of usedSources.filter(item=>structured.review.evidence.some(e=>e.sourceId===item.id&&e.verified&&['transcript','session_capture'].includes(e.sourceType)))){
@@ -305,8 +315,12 @@ export default async function handler(req, res) {
         // Unverified model quotations and secondary-only notes cannot lock sources.
         for(const source of usedSources)reviews.push({transcriptId:source.transcriptId,sessionId:source.sessionId,sourceVersion:source.source_version,state:'unreviewed'});
       }
-      return res.status(200).json({success:true,data:{outcome:'needs_review',review:{...structured.review,sources:reviews,
-        message:verifiedPrimaryConflict(structured.review)?structured.review.message:'A safe draft could not be prepared from the current evidence. Check the client and Zoom note, or try this session only. Your previous draft is unchanged.'}}});
+      const message = verifiedPrimaryConflict(structured.review)
+        ? structured.review.message
+        : window === 'recent'
+          ? 'Review the assigned source or try drafting from this encounter alone.'
+          : 'Review the assigned encounter before preparing a summary.';
+      return res.status(200).json({success:true,data:{outcome:'needs_review',review:{...structured.review,sources:reviews,message}}});
     }
     const body = renderClientSessionSummary(structured.sections, lens, window === 'current' ? 'session_summary' : 'across_session_review') + resourceAppendix(summaryOptions.resource,resourceVerification);
     const sourceManifest = usedSources.map(source => ({

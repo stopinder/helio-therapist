@@ -50,8 +50,8 @@
               <p>{{ sourceReview?.message || 'This summary source needs clarification. Check the Zoom note or original evidence.' }}</p>
               <p class="text-body-sm">Your previous draft and imported note are preserved. No new summary was saved.</p>
               <div v-if="!sourceReviewNeedsTranscript && !sourceReview?.resolved" class="flex flex-wrap items-center gap-3 rounded-control bg-surface-subtle p-3" data-testid="soft-source-review">
-                <p class="flex-1 text-body-sm text-ink-secondary">A Zoom note is not proof of another client's conversation. A new draft can use this session only, excluding earlier continuity.</p>
-                <button type="button" class="button-primary" :disabled="isGenerating || transcriptLoading" @click="retryCurrentSessionOnly">Try this session only</button>
+                <p class="flex-1 text-body-sm text-ink-secondary">{{ summaryWindow === 'recent' ? 'Try drafting from this encounter alone, or review the assigned source.' : 'Review the assigned source. If only the Zoom note is available, you can confirm the encounter using that note.' }}</p>
+                <button v-if="summaryWindow === 'recent'" type="button" class="button-primary" :disabled="isGenerating || transcriptLoading" @click="retryCurrentSessionOnly">Try this session only</button>
                 <button v-if="transcript?.id" type="button" class="button-secondary" @click="openSourceReview()">Confirm client / review Zoom note</button>
               </div>
               <p v-if="sourceReviewOpenError" class="text-body-sm text-state-danger" role="alert">{{ sourceReviewOpenError }}</p>
@@ -378,8 +378,9 @@ const sourceReviewNeedsTranscript=computed(()=>{
     || review.reason==='insufficient_source';
 });
 async function retryCurrentSessionOnly(){
-  if(isGenerating.value)return;
-  if(summaryKind.value==='across')await switchSummaryKind('session');
+  if(isGenerating.value || summaryWindow.value!=='recent')return;
+  await switchSummaryKind('session');
+  if(summaryKind.value!=='session')return;
   summaryWindow.value='current';excludeEarlierZoomNotes.value=true;
   sourceReview.value=null;
   await generateSummary();
