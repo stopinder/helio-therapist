@@ -356,8 +356,12 @@
 </template>
 
 <script setup>
+import { onMounted } from 'vue'
+import { captureLandingPageView } from '../lib/landingAnalytics.js'
 import openingImage from '../assets/helios-opening-light.webp'
 import clientWorkspace from '../assets/client-workspace-final/index.js'
+
+onMounted(captureLandingPageView)
 
 const clinicalStages = [
   { number: '01', title: 'Before the session', body: 'Current focus, aims, follow-ups and recent work stay close enough to be useful.' },
