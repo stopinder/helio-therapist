@@ -662,6 +662,10 @@ async function loadTranscript(){
     if(requestedId&&!source)throw new Error('The assigned source could not be found. Return to Transcript Inbox to review it.');
     if(source&&(String(source.clientId)!==clientId||String(source.sessionRef)!==sessionRef||(requestedId&&source.id!==requestedId)))throw new Error('This transcript no longer belongs to this encounter. Return to Transcript Inbox to review its assignment.');
     transcript.value=source||null;
+    if (source?.sourceReview?.state === 'needs_review' && requestedId && route.query.reviewSource === '1') {
+      openSourceReview();
+    }
+
   }catch(err){transcriptError.value=err?.message||'Unable to load the linked transcript.'}
   finally{transcriptLoading.value=false}
 }

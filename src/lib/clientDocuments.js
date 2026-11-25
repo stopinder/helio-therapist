@@ -19,6 +19,29 @@ export function summaryAnchorId(document){
   const generation=document.content?.summaryGeneration||document.content?.clinicalIntelligence?.generation||{};
   return String(generation.anchorSessionId||document.sourceManifest?.find(source=>source.kind==='ai_generation')?.anchorSessionId||document.sourceManifest?.find(source=>source.sessionId)?.sessionId||'');
 }
+export function pendingSessionReview(session, documents) {
+  if (session.reviewTranscriptId) {
+    return {
+      label: 'Transcript source needs review.',
+      query: { view: 'summary', transcriptId: session.reviewTranscriptId, reviewSource: '1' }
+    };
+  }
+  // Documents are loaded newest first, matching the Session Workspace lookup.
+  for (const kind of ['session', 'across']) {
+    const document = documents.find(doc =>
+      summaryDocumentKind(doc) === kind && summaryAnchorId(doc) === String(session.id));
+    const generation = document?.content?.summaryGeneration;
+    if (document?.status === 'draft' && document.content?.body &&
+        generation?.reviewRequired === true && !generation.reviewedAt &&
+        !isUnusableSummary(document.content)) {
+      return {
+        label: kind === 'session' ? 'Session summary needs review.' : 'Across-session review needs approval.',
+        query: { view: 'summary', summaryKind: kind }
+      };
+    }
+  }
+  return null;
+}
 export function assertSummaryIdentity(documentType,content){
   if(!['session_summary','across_session_review'].includes(documentType))return;
   const generation=content?.summaryGeneration||content?.clinicalIntelligence?.generation||{};
