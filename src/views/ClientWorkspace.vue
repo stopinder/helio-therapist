@@ -93,7 +93,7 @@
                       <p class="mt-1 text-caption text-ink-muted">{{ humanReadableState(session) }}</p>
                     </div>
                     <div class="flex shrink-0 items-center gap-inline-sm">
-                      <button type="button" class="text-body-sm font-medium text-action-link hover:underline" @click="openSessionWorkspace(session)">Open session</button>
+                      <button type="button" class="text-body-sm font-medium text-action-link hover:underline" @click="openSessionWorkspace(session)">{{ pendingSessionReview(session, documents) ? 'Open review' : 'Open session' }}</button>
                       <button v-if="session.hasTranscript" type="button" class="text-body-sm text-ink-secondary hover:text-ink" @click="viewTranscript(session)">Transcript</button>
                     </div>
                   </article>
@@ -160,7 +160,7 @@
                       <p class="mt-1 text-body-sm text-ink-secondary">{{ humanReadableState(session) }}</p>
                     </div>
                     <div class="flex shrink-0 items-center gap-inline-sm">
-                      <button type="button" class="button-secondary !min-h-0 py-1.5" @click="openSessionWorkspace(session)">Open session</button>
+                      <button type="button" class="button-secondary !min-h-0 py-1.5" @click="openSessionWorkspace(session)">{{ pendingSessionReview(session, documents) ? 'Open review' : 'Open session' }}</button>
                       <button v-if="session.hasTranscript" type="button" class="text-body-sm font-medium text-action-link hover:underline" @click="viewTranscript(session)">Transcript</button>
                     </div>
                   </article>
@@ -288,7 +288,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { getClient, getCurrentTherapistLabel, getTimelineEvents } from '../lib/clients.js'
 import { listSessions } from '../lib/sessions.js'
 import { listClientAppointments, nextClientAppointment } from '../lib/appointments.js'
-import { downloadClientDocument, listClientDocuments } from '../lib/clientDocuments.js'
+import { downloadClientDocument, listClientDocuments, pendingSessionReview } from '../lib/clientDocuments.js'
 import { DEFAULT_LENS_ID, getLens } from '../lib/clinicalLenses.js'
 import ClientWorkspaceHeader from '../components/workspace/ClientWorkspaceHeader.vue'
 import ClientDocumentsPanel from '../components/workspace/ClientDocumentsPanel.vue'
@@ -333,8 +333,8 @@ const sampleGuide=computed(()=>{
 const nextAppointment=computed(()=>nextClientAppointment(appointments.value))
 const activeSession=computed(()=>sessions.value.find(s=>s.status==='in_progress')||null)
 const unresolvedSession=computed(()=>{
-  const unresolvedStates=['awaiting_transcript','transcript_received','needs_review','review_choices_saved','drafts_awaiting_review']
-  return sessions.value.find(s=>s.status==='source_ready'||(s.status==='completed'&&unresolvedStates.includes(s.workflowStatus)))||null
+  const unresolvedStates=['awaiting_transcript','transcript_received','review_choices_saved']
+  return sessions.value.find(s=>pendingSessionReview(s, documents.value)||s.status==='source_ready'||(s.status==='completed'&&unresolvedStates.includes(s.workflowStatus)))||null
 })
 const focusDocumentId=computed(()=>typeof route.query.document==='string'?route.query.document:'')
 
@@ -377,11 +377,25 @@ const releaseClientAskContext = registerWorkspaceContext(() => {
   }
 })
 onBeforeUnmount(releaseClientAskContext)
-function openSessionWorkspace(session){if(!session?.id||!client.value?.id)return;router.push({name:'SessionWorkspace',params:{clientId:client.value.id,sessionId:session.id}})}
+function openSessionWorkspace(session) {
+  if (!session?.id || !client.value?.id) return
+  const review = pendingSessionReview(session, documents.value)
+  router.push({
+    name: 'SessionWorkspace',
+    params: { clientId: client.value.id, sessionId: session.id },
+    ...(review ? { query: review.query } : {})
+  })
+}
 function viewTranscript(session){if(!session?.id||!client.value?.id)return;router.push({name:'SessionWorkspace',params:{clientId:client.value.id,sessionId:session.id},query:{view:'transcript'}})}
 function openSampleTranscript(){if(sampleTranscriptSession.value){viewTranscript(sampleTranscriptSession.value);return}openWorkspaceSection('history').then(()=>{transcriptsOpen.value=true})}
 function openSampleSummary(){if(sampleSummaryDocument.value&&!client.value?.archived){editDocument(sampleSummaryDocument.value);return}openWorkspaceSection('record')}
-function humanReadableState(session){if(session.status==='source_ready')return'Transcript ready for summary.';if(session.status==='in_progress')return'Clinical workspace is open.';if(session.workflowStatus==='needs_review'||session.workflowStatus==='drafts_awaiting_review')return'Review is waiting.';return session.completedAt?'Completed.':'Recorded.'}
+function humanReadableState(session) {
+  const review = pendingSessionReview(session, documents.value)
+  if (review) return review.label
+  if (session.status === 'source_ready') return 'Transcript ready for summary.'
+  if (session.status === 'in_progress') return 'Clinical workspace is open.'
+  return session.completedAt || session.status === 'completed' ? 'Completed.' : 'Recorded.'
+}
 
 async function openWorkspaceSection(section){
   if(section==='therapy')therapyOpen.value=true
