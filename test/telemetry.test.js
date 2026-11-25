@@ -47,8 +47,10 @@ test('application initializes both SDKs with the tested filter and logging disab
   const main = await readFile(new URL('../src/main.js', import.meta.url), 'utf8')
   const calls = []
   let adsTagCalls = 0
+  let outreachCalls = 0
   runInNewContext(main.replace(/^import .*$/gm, ''), {
     sanitiseTelemetryEvent,
+    installOutreachAttribution: () => { outreachCalls += 1 },
     installGoogleAdsTag: () => { adsTagCalls += 1 },
     inject: options => calls.push(['analytics', options]),
     injectSpeedInsights: options => calls.push(['speed', options]),
@@ -57,6 +59,7 @@ test('application initializes both SDKs with the tested filter and logging disab
   })
   assert.equal(calls.length, 2)
   assert.equal(adsTagCalls, 1)
+  assert.equal(outreachCalls, 1)
   for (const [, options] of calls) {
     assert.equal(options.beforeSend, sanitiseTelemetryEvent)
     assert.equal(options.debug, false)

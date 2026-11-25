@@ -5,6 +5,7 @@ import AuthGate from './AuthGate.vue'
 import router from './router'
 import './main.css'
 import { sanitiseTelemetryEvent } from './lib/telemetry.js'
+import { installOutreachAttribution } from './lib/outreachAttribution.js'
 import { installGoogleAdsTag } from './lib/googleAds.js'
 
 injectSpeedInsights({ beforeSend: sanitiseTelemetryEvent, debug: false })
@@ -13,6 +14,7 @@ installGoogleAdsTag()
 
 const app = createApp(AuthGate)
 app.use(router)
+installOutreachAttribution(router)
 
 router.isReady().then(() => {
     app.mount('#app')
