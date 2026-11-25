@@ -1,12 +1,13 @@
 import { runTextAI } from './ai-execution.js';
 import { validateSummaryOutcome } from './summary-outcome.js';
 import { assessSummaryDraft, SUMMARY_POLICY_VERSION, summaryEditorialStandard } from './summary-authoring-policy.js';
+import { canRetainConfirmedTranscriptDraft } from './summary-draft-policy.js';
 
 /** Review actual ready output. No semantic-accuracy score is claimed.
  * Original sources and the same strict output validator are used for any revision.
  * A source-review outcome is never rewritten merely to improve prose.
  */
-export async function reviewSummaryDraft({request, completion, model, structured, validSourceIds, evidenceSources, summaryOptions = {}, instructionRequirements = {}, lens = 'integrative', run = runTextAI}) {
+export async function reviewSummaryDraft({request, completion, model, structured, validSourceIds, evidenceSources, reviewedSources = [], summaryOptions = {}, instructionRequirements = {}, lens = 'integrative', run = runTextAI}) {
   const initial = { completion, model, structured };
   const audit = { policyVersion: SUMMARY_POLICY_VERSION, kind: 'mechanical_editorial_checks', revisionAttempted: false, warnings: [] };
   if (structured?.outcome !== 'ready') return { ...initial, qualityReview: audit };
@@ -23,7 +24,15 @@ export async function reviewSummaryDraft({request, completion, model, structured
       ]
     });
     const revised = validateSummaryOutcome(candidate.completion.choices?.[0]?.message?.content, validSourceIds, evidenceSources);
-    if (revised?.outcome === 'needs_review') return { ...candidate, structured: revised, qualityReview: audit };
+    if (revised?.outcome === 'needs_review') {
+      if (!canRetainConfirmedTranscriptDraft(reviewedSources,revised.review)) {
+        audit.sourceReviewDecision='unresolved_boundary';
+        return { ...candidate, structured: revised, qualityReview: audit };
+      }
+      // Retain only the earlier source-validated draft, never the review prose.
+      // Blocking instruction/addition issues below still prevent its release.
+      audit.sourceReviewDecision='retained_confirmed_transcript_draft';
+    }
     if (revised?.outcome === 'ready') {
       const remaining = assessSummaryDraft(revised, summaryOptions, instructionRequirements);
       if (!remaining.some(issue => issue.blocking) && remaining.length < issues.length) {
